@@ -1,0 +1,17 @@
+{
+  if (ctx.deploymentEnabled())   ctx.deploy().onEnter();
+  try {
+    ctx.kernalContext().gateway().readLock();
+  }
+ catch (  IllegalStateException e) {
+    throw e;
+  }
+catch (  RuntimeException|Error e) {
+    try {
+      ctx.kernalContext().gateway().readUnlock();
+    }
+ catch (    IllegalMonitorStateException ignore) {
+    }
+    throw e;
+  }
+}

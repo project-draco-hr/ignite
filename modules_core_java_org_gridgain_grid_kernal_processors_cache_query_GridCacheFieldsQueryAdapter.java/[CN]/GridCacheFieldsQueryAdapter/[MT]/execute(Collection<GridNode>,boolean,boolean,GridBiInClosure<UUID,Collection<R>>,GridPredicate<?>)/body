@@ -1,0 +1,21 @@
+{
+  if (cctx.deploymentEnabled()) {
+    try {
+      cctx.deploy().registerClasses(arguments());
+    }
+ catch (    GridException e) {
+      return (GridCacheQueryFuture<R>)new GridCacheErrorFieldsQueryFuture(cctx.kernalContext(),e,includeMetadata());
+    }
+  }
+  GridCacheQueryManager qryMgr=cctx.queries();
+  GridBiInClosure<UUID,Collection<List<Object>>> pageLsnr0=new CI2<UUID,Collection<List<Object>>>(){
+    @Override public void apply(    UUID uuid,    Collection<List<Object>> cols){
+      if (pageLsnr != null) {
+        Collection<R> col=(Collection<R>)cols;
+        pageLsnr.apply(uuid,col);
+      }
+    }
+  }
+;
+  return (GridCacheQueryFuture<R>)(nodes.size() == 1 && nodes.iterator().next().equals(cctx.discovery().localNode()) ? qryMgr.queryFieldsLocal(this,false,rmtRdcOnly,pageLsnr0,vis) : qryMgr.queryFieldsDistributed(this,nodes,false,rmtRdcOnly,pageLsnr0,vis));
+}

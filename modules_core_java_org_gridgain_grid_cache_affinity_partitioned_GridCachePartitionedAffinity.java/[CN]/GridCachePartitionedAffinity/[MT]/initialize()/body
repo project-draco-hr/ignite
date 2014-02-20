@@ -1,0 +1,16 @@
+{
+  if (!init.get() && init.compareAndSet(false,true)) {
+    nodeHash=new GridConsistentHash<>();
+    initLatch.countDown();
+  }
+ else {
+    if (initLatch.getCount() > 0) {
+      try {
+        U.await(initLatch);
+      }
+ catch (      GridInterruptedException ignored) {
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+}

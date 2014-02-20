@@ -1,0 +1,29 @@
+{
+  long end=U.currentTimeMillis() + MILLISECONDS.convert(timeout,unit);
+  if (log.isDebugEnabled())   log.debug("Read operation will be blocked on timeout [op=" + op + ", timeout="+ end+ ", queue="+ this+ ']');
+  T retVal=null;
+  int attempts=0;
+  while (end - U.currentTimeMillis() > 0) {
+    checkRemovedx();
+    attempts++;
+    try {
+      if (readSem.tryAcquire(end - U.currentTimeMillis(),MILLISECONDS)) {
+        if (peek) synchronized (mux) {
+          checkRemovedx();
+          readSem.release();
+        }
+        retVal=CU.outTx(cmd,cctx);
+      }
+    }
+ catch (    InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new GridInterruptedException("Operation has been interrupted [op=" + op + ", queue="+ this+ ']',e);
+    }
+    if (retVal != null)     break;
+    if (attempts % blockAttemptWarnThreshold == 0) {
+      if (log.isDebugEnabled())       log.debug("Exceeded warning threshold for execution attempts [op=" + op + ", attempts="+ attempts+ ", queue="+ this+ ']');
+    }
+  }
+  if (log.isDebugEnabled())   log.debug("Operation unblocked on timeout [op=" + op + ", retVal="+ retVal+ ", queue="+ this+ ']');
+  return retVal;
+}

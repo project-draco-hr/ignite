@@ -1,0 +1,10 @@
+{
+  final boolean locExec=destId == null || destId.equals(ctx.localNodeId()) || ctx.cache().cache(cacheName) != null;
+  if (locExec) {
+    final GridCache<Object,Object> cache=localCache(cacheName);
+    return op.apply(cache,ctx).chain(resultWrapper(cache,key));
+  }
+ else {
+    return ctx.grid().forPredicate(F.nodeForNodeId(destId)).compute().withResultClosure(X.NO_FAILOVER).call(GridClosureCallMode.UNICAST,new CacheOperationCallable(cacheName,op,key));
+  }
+}

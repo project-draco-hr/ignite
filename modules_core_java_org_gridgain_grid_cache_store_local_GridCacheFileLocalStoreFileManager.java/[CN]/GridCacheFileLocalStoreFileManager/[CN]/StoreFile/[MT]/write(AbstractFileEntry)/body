@@ -1,0 +1,19 @@
+{
+  try {
+    for (; ; ) {
+      EntriesBuffer buf=curBuf;
+      if (buf == null)       throw new GridException("Failed to write to closed file.");
+      if (buf.add(e)) {
+        if (needFlush(buf) && !flush(buf,null,false))         buf.awaitFlushed();
+        return e.pos;
+      }
+      if (e.len >= store.writeBufSize) {
+        if (flush(buf,e,false))         return e.pos;
+      }
+ else       flush(buf,null,false);
+    }
+  }
+ catch (  IOException ex) {
+    throw new GridException(ex);
+  }
+}

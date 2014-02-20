@@ -1,0 +1,25 @@
+{
+  List<InetAddress> res=new ArrayList<>(addrs.size());
+  Iterator<String> hostNamesIt=hostNames.iterator();
+  for (  String addr : addrs) {
+    String hostName=hostNamesIt.hasNext() ? hostNamesIt.next() : null;
+    InetAddress inetAddr=null;
+    if (!F.isEmpty(hostName)) {
+      try {
+        inetAddr=InetAddress.getByName(hostName);
+      }
+ catch (      UnknownHostException ignored) {
+      }
+    }
+    if (inetAddr == null || inetAddr.isLoopbackAddress()) {
+      try {
+        inetAddr=InetAddress.getByName(addr);
+      }
+ catch (      UnknownHostException ignored) {
+      }
+    }
+    if (inetAddr != null)     res.add(inetAddr);
+  }
+  if (res.isEmpty())   throw new GridException("Addresses can not be resolved [addr=" + addrs + ", hostNames="+ hostNames+ ']');
+  return F.viewListReadOnly(res,F.<InetAddress>identity());
+}

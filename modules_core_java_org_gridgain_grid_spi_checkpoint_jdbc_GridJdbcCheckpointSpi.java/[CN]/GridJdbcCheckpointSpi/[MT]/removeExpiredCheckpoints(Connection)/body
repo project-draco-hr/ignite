@@ -1,0 +1,30 @@
+{
+  int delCnt=0;
+  PreparedStatement selSt=null;
+  PreparedStatement delSt=null;
+  ResultSet rs=null;
+  Time time=new Time(U.currentTimeMillis());
+  GridCheckpointListener tmp=lsnr;
+  try {
+    if (tmp != null) {
+      selSt=conn.prepareStatement(selExpSql);
+      selSt.setTime(1,time);
+      rs=selSt.executeQuery();
+      while (rs.next()) {
+        tmp.onCheckpointRemoved(rs.getString(1));
+      }
+    }
+    delSt=conn.prepareStatement(delExpSql);
+    delSt.setTime(1,time);
+    delCnt=delSt.executeUpdate();
+  }
+  finally {
+    U.close(rs,log);
+    U.close(selSt,log);
+    U.close(delSt,log);
+  }
+  if (log.isDebugEnabled()) {
+    log.debug("Successfully removed expired checkpoints from: " + tblName);
+  }
+  return delCnt;
+}

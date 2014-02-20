@@ -1,0 +1,16 @@
+{
+  if (lock.readLock().tryLock()) {
+    try {
+      timeoutObj=new GridTimeoutObjectAdapter(cctx.config().getEvictSynchronizedTimeout()){
+        @Override public void onTimeout(){
+          complete(true);
+        }
+      }
+;
+      cctx.time().addTimeoutObject(timeoutObj);
+    }
+  finally {
+      lock.readLock().unlock();
+    }
+  }
+}

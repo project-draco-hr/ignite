@@ -1,0 +1,17 @@
+{
+  if (timedOut)   return null;
+  GridCacheMvccCandidate<K> c=entry.addLocal(threadId,lockVer,timeout,!inTx(),inTx(),implicitSingle());
+synchronized (mux) {
+    entries.add(entry);
+  }
+  if (c == null && timeout < 0) {
+    if (log.isDebugEnabled())     log.debug("Failed to acquire lock with negative timeout: " + entry);
+    onFailed(false);
+    return null;
+  }
+  if (timedOut) {
+    entry.removeLock(lockVer);
+    return null;
+  }
+  return c;
+}

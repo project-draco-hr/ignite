@@ -1,0 +1,12 @@
+{
+  GridFuture<Object> fut=ctx.preloader().request(F.viewReadOnly(msg.writes(),CU.<K,V>tx2key()),ctx.discovery().topologyVersion());
+  if (fut.isDone())   processPrepareRequestPreloaderSafe(fut,nodeId,msg);
+ else {
+    fut.listenAsync(new CI1<GridFuture<Object>>(){
+      @Override public void apply(      GridFuture<Object> f){
+        processPrepareRequestPreloaderSafe(f,nodeId,msg);
+      }
+    }
+);
+  }
+}

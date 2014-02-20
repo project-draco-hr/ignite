@@ -1,0 +1,20 @@
+{
+  GridCacheMvccCandidate<K> prev=null;
+  GridCacheMvccCandidate<K> owner=null;
+  V val=null;
+synchronized (this) {
+    checkObsolete();
+    GridCacheMvcc<K> mvcc=mvccExtras();
+    if (mvcc != null) {
+      prev=mvcc.anyOwner();
+      boolean emptyBefore=mvcc.isEmpty();
+      owner=mvcc.removeExplicitNodeCandidates(nodeId);
+      boolean emptyAfter=mvcc.isEmpty();
+      checkCallbacks(emptyBefore,emptyAfter);
+      val=this.val;
+      refreshRemotes();
+      if (emptyAfter)       mvccExtras(null);
+    }
+  }
+  checkOwnerChanged(prev,owner,val);
+}

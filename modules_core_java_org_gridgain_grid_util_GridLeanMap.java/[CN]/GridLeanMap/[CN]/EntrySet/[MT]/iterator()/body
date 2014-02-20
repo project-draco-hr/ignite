@@ -1,0 +1,54 @@
+{
+  return new Iterator<Entry<K,V>>(){
+    /** 
+ */
+    private int idx=-1;
+    /** 
+ */
+    private Iterator<Entry<K,V>> mapIter;
+    /** 
+ */
+    private Entry<K,V> curEnt;
+    /** 
+ * @param forceNew If forced to create new instance.
+ * @return Iterator for internal map entry set.
+ */
+    @SuppressWarnings("IfMayBeConditional") private Iterator<Entry<K,V>> getMapIterator(    boolean forceNew){
+      if (mapIter == null || forceNew) {
+        if (map != null)         mapIter=map.entrySet().iterator();
+ else {
+          mapIter=new Iterator<Entry<K,V>>(){
+            @Override public boolean hasNext(){
+              return false;
+            }
+            @Override public Entry<K,V> next(){
+              throw new NoSuchElementException();
+            }
+            @Override public void remove(){
+              throw new IllegalStateException();
+            }
+          }
+;
+        }
+      }
+      return mapIter;
+    }
+    @Override public boolean hasNext(){
+      return map != null && getMapIterator(false).hasNext();
+    }
+    @Override public Entry<K,V> next(){
+      if (!hasNext())       throw new NoSuchElementException();
+      idx++;
+      return curEnt=getMapIterator(false).next();
+    }
+    @Override public void remove(){
+      if (curEnt == null)       throw new IllegalStateException();
+      GridLeanMap.this.remove(curEnt.getKey());
+      curEnt=null;
+      mapIter=getMapIterator(true);
+      for (int i=0; i < idx && mapIter.hasNext(); i++)       mapIter.next();
+      idx--;
+    }
+  }
+;
+}

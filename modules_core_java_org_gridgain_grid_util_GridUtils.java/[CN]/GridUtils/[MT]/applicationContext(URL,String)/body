@@ -1,0 +1,23 @@
+{
+  GenericApplicationContext springCtx=new GenericApplicationContext();
+  if (excludedProps != null && excludedProps.length != 0) {
+    BeanFactoryPostProcessor postProc=new BeanFactoryPostProcessor(){
+      @Override public void postProcessBeanFactory(      ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        for (        String beanName : beanFactory.getBeanDefinitionNames()) {
+          BeanDefinition def=beanFactory.getBeanDefinition(beanName);
+          MutablePropertyValues vals=def.getPropertyValues();
+          for (          PropertyValue val : new ArrayList<>(vals.getPropertyValueList())) {
+            for (            String excludedProp : excludedProps) {
+              if (val.getName().equals(excludedProp))               vals.removePropertyValue(val);
+            }
+          }
+        }
+      }
+    }
+;
+    springCtx.addBeanFactoryPostProcessor(postProc);
+  }
+  new XmlBeanDefinitionReader(springCtx).loadBeanDefinitions(new UrlResource(cfgUrl));
+  springCtx.refresh();
+  return springCtx;
+}

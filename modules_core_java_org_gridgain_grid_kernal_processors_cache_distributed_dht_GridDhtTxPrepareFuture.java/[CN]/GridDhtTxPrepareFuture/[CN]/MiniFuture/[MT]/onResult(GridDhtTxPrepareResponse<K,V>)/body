@@ -1,0 +1,38 @@
+{
+  if (res.error() != null)   onError(res.error());
+ else {
+    if (nearMapping != null && !F.isEmpty(res.nearEvicted())) {
+      nearMapping.evictReaders(res.nearEvicted());
+      for (      GridCacheTxEntry<K,V> entry : nearMapping.entries()) {
+        if (res.nearEvicted().contains(entry.key())) {
+          while (true) {
+            try {
+              GridDhtCacheEntry<K,V> cached=(GridDhtCacheEntry<K,V>)entry.cached();
+              cached.removeReader(nearMapping.node().id(),res.messageId());
+              break;
+            }
+ catch (            GridCacheEntryRemovedException ignore) {
+              GridCacheEntryEx<K,V> e=cctx.cache().peekEx(entry.key());
+              if (e == null)               break;
+              entry.cached(e,entry.keyBytes());
+            }
+          }
+        }
+      }
+    }
+    if (!F.isEmpty(res.invalidPartitions())) {
+      for (Iterator<GridCacheTxEntry<K,V>> it=dhtMapping.entries().iterator(); it.hasNext(); ) {
+        GridCacheTxEntry<K,V> entry=it.next();
+        if (res.invalidPartitions().contains(entry.cached().partition())) {
+          it.remove();
+          if (log.isDebugEnabled())           log.debug("Removed mapping for entry from dht mapping [key=" + entry.key() + ", tx="+ tx+ ", dhtMapping="+ dhtMapping+ ']');
+        }
+      }
+      if (dhtMapping.empty()) {
+        dhtMap.remove(nodeId);
+        if (log.isDebugEnabled())         log.debug("Removed mapping for node entirely because all partitions are invalid [nodeId=" + nodeId + ", tx="+ tx+ ']');
+      }
+    }
+    onDone(tx);
+  }
+}

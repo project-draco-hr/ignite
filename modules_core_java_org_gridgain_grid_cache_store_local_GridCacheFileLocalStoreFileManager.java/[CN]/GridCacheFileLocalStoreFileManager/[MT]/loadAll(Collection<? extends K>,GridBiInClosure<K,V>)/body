@@ -1,0 +1,29 @@
+{
+  final int len=keys.size();
+  int[] hashes=new int[len];
+  byte[][] keysBytes=new byte[len][];
+  byte[][] valBytes=new byte[len][];
+  int i=0;
+  for (  Object k : keys) {
+    hashes[i]=k.hashCode();
+    keysBytes[i++]=marsh.marshal(k);
+  }
+  Lock l=filesLock.readLock();
+  l.lock();
+  try {
+    i=0;
+    while (i < hashes.length) {
+      DataEntry e=findEntry(hashes[i],keysBytes[i]);
+      if (e != null)       valBytes[i]=e.value();
+      i++;
+    }
+  }
+  finally {
+    l.unlock();
+  }
+  i=0;
+  for (  K k : keys) {
+    clo.apply(k,valBytes[i] == null ? null : marsh.<V>unmarshal(valBytes[i],LOADER));
+    i++;
+  }
+}

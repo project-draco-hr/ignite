@@ -1,0 +1,24 @@
+{
+  if (ctx.config().isDaemon())   return;
+  super.start();
+  GridStreamerConfiguration[] cfg=ctx.config().getStreamerConfiguration();
+  if (F.isEmpty(cfg)) {
+    map=Collections.emptyMap();
+    return;
+  }
+ else {
+    int len=cfg.length;
+    map=new HashMap<>(len,1.0f);
+    mBeans=new ArrayList<>(len);
+  }
+  for (  GridStreamerConfiguration c : cfg) {
+    GridLicenseUseRegistry.onUsage(STREAMING,getClass());
+    GridStreamerImpl s=new GridStreamerImpl(ctx,c);
+    s.start();
+    GridStreamerImpl old=map.put(c.getName(),s);
+    if (old != null) {
+      old.stop(true);
+      throw new GridException("Duplicate streamer name found (check configuration and " + "assign unique name to each streamer): " + c.getName());
+    }
+  }
+}

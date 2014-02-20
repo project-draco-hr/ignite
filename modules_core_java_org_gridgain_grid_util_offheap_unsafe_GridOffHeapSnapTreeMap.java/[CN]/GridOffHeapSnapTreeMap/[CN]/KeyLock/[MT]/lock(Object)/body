@@ -1,0 +1,15 @@
+{
+  Thread th=Thread.currentThread();
+  Lock l=new Lock(key,th);
+  for (; ; ) {
+    Lock l2=m.putIfAbsent(key,l);
+    if (l2 == null)     return l;
+    if (l2.owner == th)     return null;
+    try {
+      l2.await();
+    }
+ catch (    InterruptedException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+}

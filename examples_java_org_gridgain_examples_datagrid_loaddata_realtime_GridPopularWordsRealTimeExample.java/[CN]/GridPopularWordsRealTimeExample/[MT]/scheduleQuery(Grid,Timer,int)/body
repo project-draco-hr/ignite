@@ -1,0 +1,29 @@
+{
+  TimerTask task=new TimerTask(){
+    private GridCacheQuery<String,Integer> qry;
+    @Override public void run(){
+      try {
+        GridCache<String,Integer> cache=g.cache(null);
+        if (qry == null)         qry=cache.queries().createQuery(SQL,Integer.class,"length(_key) > 3 order by _val desc limit " + cnt);
+        List<Map.Entry<String,Integer>> results=new ArrayList<>(qry.execute(g).get());
+        Collections.sort(results,new Comparator<Map.Entry<String,Integer>>(){
+          @Override public int compare(          Map.Entry<String,Integer> e1,          Map.Entry<String,Integer> e2){
+            return e1.getValue() < e2.getValue() ? 1 : e1.getValue() > e2.getValue() ? -1 : 0;
+          }
+        }
+);
+        for (int i=0; i < cnt; i++) {
+          Map.Entry<String,Integer> e=results.get(i);
+          System.out.println(">>> " + e.getKey() + '='+ e.getValue());
+        }
+        System.out.println("------------");
+      }
+ catch (      GridException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+;
+  timer.schedule(task,3000,3000);
+  return task;
+}

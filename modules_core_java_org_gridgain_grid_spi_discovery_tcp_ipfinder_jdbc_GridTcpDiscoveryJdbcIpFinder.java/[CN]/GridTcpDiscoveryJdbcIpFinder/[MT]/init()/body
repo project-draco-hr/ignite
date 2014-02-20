@@ -1,0 +1,51 @@
+{
+  if (initGuard.compareAndSet(false,true)) {
+    if (dataSrc == null)     throw new GridSpiException("Data source is null (you must configure it via setDataSource(..)" + " configuration property)");
+    Connection conn=null;
+    Statement stmt=null;
+    boolean committed=false;
+    try {
+      conn=dataSrc.getConnection();
+      conn.setAutoCommit(false);
+      conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+      stmt=conn.createStatement();
+      stmt.executeUpdate(CREATE_ADDRS_TABLE_QRY);
+      conn.commit();
+      committed=true;
+      if (log.isDebugEnabled())       log.debug("DB schema has been initialized.");
+    }
+ catch (    SQLException e) {
+      U.rollbackConnectionQuiet(conn);
+      throw new GridSpiException("Failed to initialize DB schema.",e);
+    }
+ finally {
+      if (!committed)       U.rollbackConnectionQuiet(conn);
+      U.closeQuiet(stmt);
+      U.closeQuiet(conn);
+      initLatch.countDown();
+    }
+  }
+ else {
+    try {
+      U.await(initLatch);
+    }
+ catch (    GridInterruptedException e) {
+      throw new GridSpiException("Thread has been interrupted.",e);
+    }
+    Connection conn=null;
+    Statement stmt=null;
+    try {
+      conn=dataSrc.getConnection();
+      conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+      stmt=conn.createStatement();
+      stmt.execute(CHK_QRY);
+    }
+ catch (    SQLException e) {
+      throw new GridSpiException("IP finder has not been properly initialized.",e);
+    }
+ finally {
+      U.closeQuiet(stmt);
+      U.closeQuiet(conn);
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  if (!isCancelled() && results.putIfAbsent(nodeId,res) == null) {
+    if (res.error() != null) {
+      if (res.error() instanceof GridTopologyException) {
+        if (log.isDebugEnabled())         log.debug("Ignoring departed node for future: " + this);
+        if (leftRess.decrementAndGet() == 0)         readyLocks();
+      }
+ else {
+        U.warn(log,"Received failed result response to lock request (will unlock): " + res);
+        onError(res.error());
+      }
+      return;
+    }
+    if (err.get() == null) {
+      for (int i=0; i < entries.size(); i++) {
+        while (true) {
+          GridDistributedCacheEntry<K,V> entry=entries.get(i);
+          try {
+            entry.addRemoteCandidates(res.candidatesByIndex(i),lockVer,res.committedVersions(),res.rolledbackVersions());
+            if (log.isDebugEnabled())             log.debug("Processed response for entry [res=" + res + ", entry="+ entry+ ']');
+            break;
+          }
+ catch (          GridCacheEntryRemovedException ignored) {
+            if (log.isDebugEnabled())             log.debug("Failed to add candidates because entry was removed (will renew).");
+            entries.set(i,(GridDistributedCacheEntry<K,V>)cctx.cache().entryEx(entry.key()));
+          }
+        }
+      }
+      if (leftRess.decrementAndGet() == 0)       readyLocks();
+    }
+  }
+}

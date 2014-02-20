@@ -1,0 +1,13 @@
+{
+  for (Iterator<K> it=pendingLocks.keySet().iterator(); it.hasNext(); ) {
+    K key=it.next();
+    GridCacheEntryEx<K,V> entry=cctx.cache().peekEx(key);
+    if (entry == null)     it.remove();
+ else     recheck(entry);
+  }
+  if (log.isDebugEnabled())   log.debug("After rechecking finished future: " + this);
+  if (pendingLocks.isEmpty()) {
+    if (exchLog.isDebugEnabled())     exchLog.debug("Finish lock future is done: " + this);
+    onDone();
+  }
+}

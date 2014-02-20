@@ -1,0 +1,31 @@
+{
+  if (cctx.preloadEnabled()) {
+    if (log.isDebugEnabled())     log.debug("Creating initial assignments.");
+    createAssignments(EVT_NODE_JOINED,syncPreloadFut);
+  }
+  supplyPool.start();
+  demandPool.start();
+  syncPreloadFut.listenAsync(new CIX1<GridFuture<?>>(){
+    @Override public void applyx(    GridFuture<?> gridFut){
+      evictLock.writeLock().lock();
+      try {
+        evictHist=null;
+      }
+  finally {
+        evictLock.writeLock().unlock();
+      }
+    }
+  }
+);
+  if (cctx.config().getPreloadMode() == SYNC) {
+    U.log(log,"Starting preloading in SYNC mode: " + cctx.name());
+    final long start=U.currentTimeMillis();
+    syncPreloadFut.listenAsync(new CI1<GridFuture<?>>(){
+      @Override public void apply(      GridFuture<?> t){
+        U.log(log,"Completed preloading in SYNC mode [name=" + cctx.name() + ", time="+ (U.currentTimeMillis() - start)+ " ms]");
+      }
+    }
+);
+  }
+  if (!cctx.preloadEnabled())   syncPreloadFut.onDone();
+}

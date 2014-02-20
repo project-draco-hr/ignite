@@ -1,0 +1,23 @@
+{
+  Timer popularNumbersQryTimer=new Timer("numbers-query-worker");
+  final Grid g=GridGain.start("examples/config/example-cache-popularcounts.xml");
+  try {
+    TimerTask task=scheduleQuery(g,popularNumbersQryTimer,POPULAR_NUMBERS_CNT);
+    streamData(g);
+    task.run();
+    popularNumbersQryTimer.cancel();
+    g.compute().run(GridClosureCallMode.BROADCAST,new Runnable(){
+      @Override public void run(){
+        if (g.cache(null) == null)         System.err.println("Default cache not found (is example-cache-popularcounts.xml " + "configuration used on all nodes?)");
+ else {
+          System.out.println("Clearing keys from cache: " + g.cache(null).size());
+          g.cache(null).clearAll();
+        }
+      }
+    }
+).get();
+  }
+  finally {
+    GridGain.stop(true);
+  }
+}

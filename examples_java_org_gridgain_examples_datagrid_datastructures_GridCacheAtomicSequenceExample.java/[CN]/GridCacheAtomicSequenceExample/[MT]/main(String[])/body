@@ -1,0 +1,15 @@
+{
+  try (Grid g=GridGain.start("examples/config/example-cache.xml")){
+    print("Starting atomic sequence example on nodes: " + g.nodes().size());
+    final String seqName=UUID.randomUUID().toString();
+    GridCacheAtomicSequence seq=g.cache(CACHE_NAME).dataStructures().atomicSequence(seqName,0,true);
+    long firstVal=seq.get();
+    print("Sequence initial value: " + firstVal);
+    g.compute().run(BROADCAST,new SequenceClosure(CACHE_NAME,seqName)).get();
+    print("Sequence after incrementing [expected=" + (firstVal + RETRIES) + ", actual="+ seq.get()+ ']');
+  }
+   print("");
+  print("Finished atomic sequence example...");
+  print("Check all nodes for output (this node is also part of the grid).");
+  print("");
+}

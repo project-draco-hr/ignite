@@ -1,0 +1,23 @@
+{
+  try (Grid g=GridGain.start(CONFIG)){
+    GridComputeTask<String,Integer> task=new CheckPointExampleTask();
+    GridComputeTaskFuture<Integer> f=g.compute().execute(task,"Hello World",0);
+    int phraseLen=f.get();
+    System.out.println(">>>");
+    if (phraseLen < 0) {
+      System.out.println(">>> \"Hello World\" checkpoint example finished with wrong result.");
+      System.out.println(">>> Checkpoint was not found. Make sure that Checkpoint SPI on all nodes ");
+      System.out.println(">>> has the same configuration (the 'directoryPath' configuration parameter for");
+      System.out.println(">>> GridSharedFsCheckpointSpi on all nodes should point to the same location).");
+    }
+ else {
+      System.out.println(">>> Finished executing \"Hello World\" example with checkpoints.");
+      System.out.println(">>> Total number of characters in the phrase is '" + phraseLen + "'.");
+      System.out.println(">>> You should see exception stack trace from failed job on one node.");
+      System.out.println(">>> Failed job will be failed over to another node.");
+      System.out.println(">>> You should see print out of 'Hello World' on another node.");
+      System.out.println(">>> Check all nodes for output (this node is also part of the grid).");
+    }
+    System.out.println(">>>");
+  }
+ }

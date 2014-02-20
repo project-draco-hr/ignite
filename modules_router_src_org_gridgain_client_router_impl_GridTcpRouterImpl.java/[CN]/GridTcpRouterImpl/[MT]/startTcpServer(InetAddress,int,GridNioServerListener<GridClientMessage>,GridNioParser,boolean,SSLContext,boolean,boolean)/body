@@ -1,0 +1,22 @@
+{
+  try {
+    GridNioFilter codec=new GridNioCodecFilter(parser,log,false);
+    String gridName="router-" + id;
+    GridNioFilter[] filters;
+    if (sslCtx != null) {
+      GridNioSslFilter sslFilter=new GridNioSslFilter(sslCtx,log);
+      sslFilter.wantClientAuth(wantClientAuth);
+      sslFilter.needClientAuth(needClientAuth);
+      filters=new GridNioFilter[]{codec,sslFilter};
+    }
+ else     filters=new GridNioFilter[]{codec};
+    srv=GridNioServer.<GridClientMessage>builder().address(hostAddr).port(port).listener(lsnr).logger(log).selectorCount(Runtime.getRuntime().availableProcessors()).gridName(gridName).tcpNoDelay(tcpNoDelay).directBuffer(false).byteOrder(ByteOrder.nativeOrder()).socketSendBufferSize(0).socketReceiveBufferSize(0).sendQueueLimit(0).filters(filters).idleTimeout(cfg.getIdleTimeout()).build();
+    srv.start();
+    return true;
+  }
+ catch (  GridException e) {
+    if (log.isDebugEnabled())     log.debug("Failed to start TCP router protocol on port " + port + ": "+ e.getMessage());
+    srv=null;
+    return false;
+  }
+}

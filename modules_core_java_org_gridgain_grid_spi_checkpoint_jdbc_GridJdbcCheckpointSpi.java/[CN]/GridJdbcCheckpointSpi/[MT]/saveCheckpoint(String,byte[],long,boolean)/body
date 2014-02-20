@@ -1,0 +1,50 @@
+{
+  Time expTime=null;
+  if (timeout != NON_EXPIRABLE_TIMEOUT) {
+    expTime=new Time(U.currentTimeMillis() + timeout);
+  }
+  Connection conn=null;
+  try {
+    conn=getConnection();
+    int errCnt=0;
+    while (true) {
+      if (errCnt >= retryNum) {
+        throw new GridSpiException("Failed to save checkpoint after pre-configured number of " + "retries [tblName=" + tblName + ", key="+ key+ ", retryNum="+ retryNum+ ']');
+      }
+      try {
+        if (!isCheckpointExists(conn,key)) {
+          if (createCheckpoint(conn,key,state,expTime) == 0) {
+            ++errCnt;
+            U.warn(log,"Failed to create checkpoint (will try again) [tblName=" + tblName + ", key="+ key+ ']');
+            continue;
+          }
+        }
+ else {
+          if (!overwrite) {
+            return false;
+          }
+          if (updateCheckpoint(conn,key,state,expTime) == 0) {
+            ++errCnt;
+            U.warn(log,"Failed to update checkpoint as it may be deleted (will try create) [" + "tblName=" + tblName + ", key="+ key+ ']');
+            continue;
+          }
+        }
+        conn.commit();
+        return true;
+      }
+ catch (      SQLException e) {
+        U.rollbackConnection(conn,log);
+        if (++errCnt >= retryNum) {
+          throw new GridSpiException("Failed to save checkpoint [tblName=" + tblName + ", key="+ key+ ']',e);
+        }
+        U.warn(log,"Failed to save checkpoint (will try again) [tblName=" + tblName + ", key="+ key+ ']');
+      }
+    }
+  }
+ catch (  SQLException e) {
+    throw new GridSpiException("Failed to save checkpoint [tblName=" + tblName + ", key="+ key+ ']',e);
+  }
+ finally {
+    U.close(conn,log);
+  }
+}

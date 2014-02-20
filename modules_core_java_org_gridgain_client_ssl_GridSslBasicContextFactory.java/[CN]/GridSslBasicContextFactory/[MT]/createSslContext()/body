@@ -1,0 +1,21 @@
+{
+  checkParameters();
+  try {
+    KeyManagerFactory keyMgrFactory=KeyManagerFactory.getInstance(keyAlgorithm);
+    KeyStore keyStore=loadKeyStore(keyStoreType,keyStoreFilePath,keyStorePwd);
+    keyMgrFactory.init(keyStore,keyStorePwd);
+    TrustManager[] mgrs=trustMgrs;
+    if (mgrs == null) {
+      TrustManagerFactory trustMgrFactory=TrustManagerFactory.getInstance(keyAlgorithm);
+      KeyStore trustStore=loadKeyStore(trustStoreType,trustStoreFilePath,trustStorePwd);
+      trustMgrFactory.init(trustStore);
+      mgrs=trustMgrFactory.getTrustManagers();
+    }
+    SSLContext ctx=SSLContext.getInstance(proto);
+    ctx.init(keyMgrFactory.getKeyManagers(),mgrs,null);
+    return ctx;
+  }
+ catch (  GeneralSecurityException e) {
+    throw new SSLException("Failed to initialize SSL context " + parameters(),e);
+  }
+}

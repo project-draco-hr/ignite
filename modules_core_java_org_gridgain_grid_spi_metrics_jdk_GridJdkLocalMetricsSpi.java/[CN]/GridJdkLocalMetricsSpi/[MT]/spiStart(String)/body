@@ -1,0 +1,61 @@
+{
+  startStopwatch();
+  updater=new GridWorker(gridName,"gridgain-metrics-updater",log){
+    private long prevGcTime=-1;
+    private long prevCpuTime=-1;
+    @Override protected void body() throws GridInterruptedException {
+      while (!isCancelled()) {
+        U.sleep(updateFreq);
+        gcCpuLoad=getGcCpuLoad();
+        cpuLoad=getCpuLoad();
+      }
+    }
+    private double getGcCpuLoad(){
+      long gcTime=0;
+      for (      GarbageCollectorMXBean bean : gc) {
+        long colTime=bean.getCollectionTime();
+        if (colTime > 0)         gcTime+=colTime;
+      }
+      gcTime/=getAvailableProcessors();
+      double gc=0;
+      if (prevGcTime > 0) {
+        long gcTimeDiff=gcTime - prevGcTime;
+        gc=(double)gcTimeDiff / updateFreq;
+      }
+      prevGcTime=gcTime;
+      return gc;
+    }
+    private double getCpuLoad(){
+      long cpuTime;
+      try {
+        cpuTime=U.<Long>property(os,"processCpuTime");
+      }
+ catch (      GridRuntimeException ignored) {
+        return -1;
+      }
+      cpuTime/=1000000 * getAvailableProcessors();
+      double cpu=0;
+      if (prevCpuTime > 0) {
+        long cpuTimeDiff=cpuTime - prevCpuTime;
+        cpu=Math.min(1.0,(double)cpuTimeDiff / updateFreq);
+      }
+      prevCpuTime=cpuTime;
+      return cpu;
+    }
+  }
+;
+  new GridThread(updater).start();
+  if (enableFsMetrics) {
+    if (fsRoot != null) {
+      fsRootFile=new File(fsRoot);
+      if (!fsRootFile.exists()) {
+        U.warn(log,"Invalid file system root name: " + fsRoot);
+        fsRootFile=null;
+      }
+    }
+ else     fsRootFile=getDefaultFileSystemRoot();
+  }
+ else   fsRootFile=null;
+  registerMBean(gridName,this,GridJdkLocalMetricsSpiMBean.class);
+  if (log.isDebugEnabled())   log.debug(startInfo());
+}

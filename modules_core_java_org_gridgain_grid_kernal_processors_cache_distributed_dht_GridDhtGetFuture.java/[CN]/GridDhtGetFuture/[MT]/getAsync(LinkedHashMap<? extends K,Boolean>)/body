@@ -1,0 +1,61 @@
+{
+  if (F.isEmpty(keys))   return new GridFinishedFuture<Collection<GridCacheEntryInfo<K,V>>>(cctx.kernalContext(),Collections.<GridCacheEntryInfo<K,V>>emptyList());
+  final Collection<GridCacheEntryInfo<K,V>> infos=new LinkedList<>();
+  GridCompoundFuture<Boolean,Boolean> txFut=null;
+  for (  Map.Entry<? extends K,Boolean> k : keys.entrySet()) {
+    while (true) {
+      GridDhtCacheEntry<K,V> e=cache().entryExx(k.getKey(),topVer);
+      try {
+        GridCacheEntryInfo<K,V> info=e.info();
+        if (info == null)         continue;
+        GridFuture<Boolean> f=k.getValue() ? e.addReader(reader,msgId) : null;
+        if (f != null) {
+          if (txFut == null)           txFut=new GridCompoundFuture<>(cctx.kernalContext(),CU.boolReducer());
+          txFut.add(f);
+        }
+        infos.add(info);
+        break;
+      }
+ catch (      GridCacheEntryRemovedException ignore) {
+        if (log.isDebugEnabled())         log.debug("Got removed entry when getting a DHT value: " + e);
+      }
+ finally {
+        cctx.evicts().touch(e);
+      }
+    }
+  }
+  if (txFut != null)   txFut.markInitialized();
+  GridFuture<Map<K,V>> fut;
+  if (txFut == null || txFut.isDone()) {
+    if (reload && cctx.isStoreEnabled() && cctx.store().configured())     fut=cache().reloadAllAsync(keys.keySet(),true,filters);
+ else     fut=tx == null ? cache().getDhtAllAsync(keys.keySet(),filters) : tx.getAllAsync(keys.keySet(),null,filters);
+  }
+ else {
+    fut=new GridEmbeddedFuture<>(txFut,new C2<Boolean,Exception,GridFuture<Map<K,V>>>(){
+      @Override public GridFuture<Map<K,V>> apply(      Boolean b,      Exception e){
+        if (e != null)         throw new GridClosureException(e);
+        if (reload)         return cache().reloadAllAsync(keys.keySet(),true,filters);
+ else         return tx == null ? cache().getDhtAllAsync(keys.keySet(),filters) : tx.getAllAsync(keys.keySet(),null,filters);
+      }
+    }
+,cctx.kernalContext());
+  }
+  return new GridEmbeddedFuture<>(cctx.kernalContext(),fut,new C2<Map<K,V>,Exception,Collection<GridCacheEntryInfo<K,V>>>(){
+    @Override public Collection<GridCacheEntryInfo<K,V>> apply(    Map<K,V> map,    Exception e){
+      if (e != null) {
+        onDone(e);
+        return Collections.emptyList();
+      }
+ else {
+        for (Iterator<GridCacheEntryInfo<K,V>> it=infos.iterator(); it.hasNext(); ) {
+          GridCacheEntryInfo<K,V> info=it.next();
+          V v=map.get(info.key());
+          if (v == null)           it.remove();
+ else           info.value(v);
+        }
+        return infos;
+      }
+    }
+  }
+);
+}

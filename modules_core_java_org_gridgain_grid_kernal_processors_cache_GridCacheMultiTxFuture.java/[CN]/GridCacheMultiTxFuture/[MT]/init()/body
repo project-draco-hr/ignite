@@ -1,0 +1,22 @@
+{
+  if (F.isEmpty(txs)) {
+    remainingTxs=Collections.emptySet();
+    onDone(true);
+  }
+ else {
+    remainingTxs=new GridConcurrentHashSet<>(txs);
+    for (    final GridCacheTxEx<K,V> tx : txs) {
+      if (!tx.done()) {
+        tx.finishFuture().listenAsync(new CI1<GridFuture<GridCacheTx>>(){
+          @Override public void apply(          GridFuture<GridCacheTx> t){
+            remainingTxs.remove(tx);
+            checkRemaining();
+          }
+        }
+);
+      }
+ else       remainingTxs.remove(tx);
+    }
+    checkRemaining();
+  }
+}

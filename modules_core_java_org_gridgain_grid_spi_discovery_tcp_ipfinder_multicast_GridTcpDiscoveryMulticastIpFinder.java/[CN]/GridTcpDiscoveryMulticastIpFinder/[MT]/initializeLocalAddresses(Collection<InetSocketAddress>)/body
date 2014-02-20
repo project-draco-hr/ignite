@@ -1,0 +1,21 @@
+{
+  String overrideMcastGrp=System.getProperty(GG_OVERRIDE_MCAST_GRP);
+  if (overrideMcastGrp != null)   mcastGrp=overrideMcastGrp;
+  if (F.isEmpty(mcastGrp))   throw new GridSpiException("Multicast IP address is not specified.");
+  if (mcastPort < 0 || mcastPort > 65535)   throw new GridSpiException("Invalid multicast port: " + mcastPort);
+  if (resWaitTime <= 0)   throw new GridSpiException("Invalid wait time, value greater than zero is expected: " + resWaitTime);
+  if (addrReqAttempts <= 0)   throw new GridSpiException("Invalid number of address request attempts, " + "value greater than zero is expected: " + addrReqAttempts);
+  if (F.isEmpty(getRegisteredAddresses()))   U.warn(log,"GridTcpDiscoveryMulticastIpFinder has no pre-configured addresses " + "(it is recommended in production to specify at least one address in " + "GridTcpDiscoveryMulticastIpFinder.getAddresses() configuration property)");
+  InetAddress mcastAddr;
+  try {
+    mcastAddr=InetAddress.getByName(mcastGrp);
+  }
+ catch (  UnknownHostException e) {
+    throw new GridSpiException("Unknown multicast group: " + mcastGrp,e);
+  }
+  if (!mcastAddr.isMulticastAddress())   throw new GridSpiException("Invalid multicast group address: " + mcastAddr);
+  addrSnd=new AddressSender(mcastAddr,addrs);
+  addrSnd.start();
+  Collection<InetSocketAddress> res=requestAddresses(mcastAddr);
+  if (!res.isEmpty())   registerAddresses(res);
+}

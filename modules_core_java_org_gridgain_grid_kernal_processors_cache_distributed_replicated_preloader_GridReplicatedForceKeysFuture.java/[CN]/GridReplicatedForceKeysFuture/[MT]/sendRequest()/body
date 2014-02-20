@@ -1,0 +1,23 @@
+{
+  if (isDone())   return;
+  GridNode oldest=null;
+  for (  GridNode n : rmtNodes) {
+    GridNode node=cctx.discovery().node(n.id());
+    if (node == null)     continue;
+    if (oldest == null || n.order() < oldest.order())     oldest=n;
+  }
+  if (oldest == null)   onDone(null);
+  GridReplicatedForceKeysRequest<K,V> req=new GridReplicatedForceKeysRequest<>(futId,reqKeys,topVer);
+  try {
+    reqNodeId=oldest.id();
+    cctx.io().send(oldest.id(),req);
+  }
+ catch (  GridTopologyException ignored) {
+    if (log.isDebugEnabled())     log.debug("Remote node left grid while sending (will retry): " + this);
+    rmtNodes.remove(oldest);
+    sendRequest();
+  }
+catch (  GridException e) {
+    onDone(e);
+  }
+}

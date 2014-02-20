@@ -1,0 +1,31 @@
+{
+  GridNearTxPrepareFuture<K,V> fut=prepFut.get();
+  if (fut == null) {
+    if (!prepFut.compareAndSet(null,fut=new GridNearTxPrepareFuture<>(cctx,this)))     return prepFut.get();
+  }
+ else   return fut;
+  if (pessimistic()) {
+    if (!state(PREPARING)) {
+      if (setRollbackOnly()) {
+        if (timedOut())         fut.onError(new GridCacheTxTimeoutException("Transaction timed out and was rolled back: " + this));
+ else         fut.onError(new GridException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
+      }
+ else       fut.onError(new GridCacheTxRollbackException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
+      return fut;
+    }
+    try {
+      userPrepare();
+      if (!state(PREPARED)) {
+        setRollbackOnly();
+        fut.onError(new GridException("Invalid transaction state for commit [state=" + state() + ", tx="+ this+ ']'));
+        return fut;
+      }
+      fut.complete();
+    }
+ catch (    GridException e) {
+      fut.onError(e);
+    }
+  }
+ else   prepareOnTopology();
+  return fut;
+}

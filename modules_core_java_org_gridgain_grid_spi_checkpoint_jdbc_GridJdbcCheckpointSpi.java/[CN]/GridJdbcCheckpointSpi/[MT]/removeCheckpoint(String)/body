@@ -1,0 +1,28 @@
+{
+  Connection conn=null;
+  PreparedStatement st=null;
+  boolean rmv=false;
+  try {
+    conn=getConnection();
+    st=conn.prepareStatement(delSql);
+    st.setString(1,key);
+    if (st.executeUpdate() > 0) {
+      rmv=true;
+      GridCheckpointListener tmp=lsnr;
+      if (tmp != null) {
+        tmp.onCheckpointRemoved(key);
+      }
+    }
+    conn.commit();
+  }
+ catch (  SQLException e) {
+    U.rollbackConnection(conn,log);
+    U.error(log,"Failed to remove checkpoint [tblName=" + tblName + ", key="+ key+ ']',e);
+    return false;
+  }
+ finally {
+    U.close(st,log);
+    U.close(conn,log);
+  }
+  return rmv;
+}

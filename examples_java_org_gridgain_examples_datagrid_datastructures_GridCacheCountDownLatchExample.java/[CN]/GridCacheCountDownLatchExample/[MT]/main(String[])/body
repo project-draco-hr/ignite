@@ -1,0 +1,15 @@
+{
+  try (Grid g=GridGain.start("examples/config/example-cache.xml")){
+    print("Starting count down latch example on grid of size: " + g.nodes().size());
+    final String latchName=UUID.randomUUID().toString();
+    GridCacheCountDownLatch latch=g.cache(CACHE_NAME).dataStructures().countDownLatch(latchName,INITIAL_COUNT,false,true);
+    print("Latch initial value: " + latch.count());
+    for (int i=0; i < INITIAL_COUNT; i++)     g.compute().run(UNICAST,new LatchClosure(CACHE_NAME,latchName)).get();
+    latch.await();
+    print("All latch closures have completed.");
+  }
+   print("");
+  print("Finished count down latch example...");
+  print("Check all nodes for output (this node is also part of the grid).");
+  print("");
+}

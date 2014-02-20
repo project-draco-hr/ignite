@@ -1,0 +1,18 @@
+{
+  boolean hasSrvs=routers.isEmpty();
+  final Collection<InetSocketAddress> connSrvs=(hasSrvs) ? new LinkedHashSet<>(srvs) : routers;
+  if (hasSrvs) {
+    try {
+      for (      GridClientNodeImpl node : top.nodes())       connSrvs.addAll(node.availableAddresses(cfg.getProtocol()));
+    }
+ catch (    GridClientDisconnectedException ignored) {
+    }
+  }
+  connMgr.init(connSrvs);
+  Map<String,GridClientCacheMode> overallCaches=new HashMap<>();
+  for (  GridClientNodeImpl node : top.nodes())   overallCaches.putAll(node.caches());
+  for (  Map.Entry<String,GridClientCacheMode> entry : overallCaches.entrySet()) {
+    GridClientDataAffinity affinity=affinity(entry.getKey());
+    if (affinity instanceof GridClientPartitionedAffinity && entry.getValue() != GridClientCacheMode.PARTITIONED)     log.warning(GridClientPartitionedAffinity.class.getSimpleName() + " is used for a cache configured " + "for non-partitioned mode [cacheName="+ entry.getKey()+ ", cacheMode="+ entry.getValue()+ ']');
+  }
+}

@@ -1,0 +1,20 @@
+{
+  Collection<GridComputeJob> res=new ArrayList<>(gridSize);
+  for (int i=0; i < gridSize; i++) {
+    res.add(new GridComputeJobAdapter(){
+      /** 
+ * Injected grid. 
+ */
+      @GridInstanceResource private Grid g;
+      @Nullable @Override public GridBiTuple<Long,Long> execute() throws GridException {
+        GridGgfs ggfs=g.ggfs(ggfsName);
+        if (ggfs == null)         return F.t(0L,0L);
+        GridGgfsMetrics metrics=ggfs.metrics();
+        long loc=metrics.localSpaceSize();
+        return F.t(loc,metrics.maxSpaceSize());
+      }
+    }
+);
+  }
+  return res;
+}

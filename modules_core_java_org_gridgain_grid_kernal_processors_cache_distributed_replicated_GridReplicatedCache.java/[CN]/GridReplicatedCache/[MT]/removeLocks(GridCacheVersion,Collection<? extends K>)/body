@@ -1,0 +1,34 @@
+{
+  if (keys.isEmpty())   return;
+  Collection<GridNode> nodes=ctx.affinity().remoteNodes(keys);
+  try {
+    GridDistributedUnlockRequest<K,V> req=new GridDistributedUnlockRequest<>(keys.size());
+    req.version(ver);
+    for (    K key : keys) {
+      while (true) {
+        GridDistributedCacheEntry<K,V> entry=peekexx(key);
+        try {
+          if (entry != null) {
+            GridCacheMvccCandidate<K> cand=entry.candidate(ver);
+            if (cand != null) {
+              if (entry.removeLock(cand.version())) {
+                if (nodes.isEmpty())                 continue;
+                req.addKey(entry.key(),entry.getOrMarshalKeyBytes(),ctx);
+              }
+            }
+          }
+          break;
+        }
+ catch (        GridCacheEntryRemovedException ignored) {
+          if (log.isDebugEnabled())           log.debug("Attempted to remove lock from removed entry (will retry) [rmvVer=" + ver + ", entry="+ entry+ ']');
+        }
+      }
+    }
+    if (nodes.isEmpty())     return;
+    req.completedVersions(ctx.tm().committedVersions(ver),ctx.tm().rolledbackVersions(ver));
+    if (!F.isEmpty(req.keyBytes()) || !F.isEmpty(req.keys()))     ctx.io().safeSend(nodes,req,null);
+  }
+ catch (  GridException ex) {
+    U.error(log,"Failed to unlock the lock for keys: " + keys,ex);
+  }
+}

@@ -1,0 +1,18 @@
+{
+  while (true) {
+    int cnt=activeCnt.get();
+    if (cnt == 0) {
+      if (log.isDebugEnabled())       log.debug("IPC IO not released (count was 0): " + this);
+      return;
+    }
+    if (activeCnt.compareAndSet(cnt,cnt - 1)) {
+      if (cnt == 1) {
+        ipcCache.remove(endpointAddr,this);
+        if (log.isDebugEnabled())         log.debug("IPC IO stopping as unused: " + this);
+        stop();
+      }
+ else       if (log.isDebugEnabled())       log.debug("IPC IO released: " + this);
+      return;
+    }
+  }
+}

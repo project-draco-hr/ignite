@@ -1,0 +1,10 @@
+{
+  checkRemovedx();
+  if (!collocated)   throw new GridException("Operation items(..) is supported only in collocated mode.");
+  if (F.isEmpty(positions))   return Collections.emptyList();
+  GridCacheQuery<GridCacheQueueItemKey,GridCacheQueueItemImpl<T>> qry=qryFactory.itemsAtPositionsQuery(type);
+  Collection<GridCacheQueueItemImpl<T>> queueItems=F.viewReadOnly(qry.queryArguments(qid,positions).execute(cctx.grid().forNodes(Collections.singleton(CU.primaryNode(cctx,key)))).get(),F.<GridCacheQueueItemImpl<T>>mapEntry2Value());
+  Collection<T> userItems=new LinkedList<>();
+  for (  GridCacheQueueItemImpl<T> queueItem : queueItems)   userItems.add(queueItem.userObject());
+  return userItems;
+}

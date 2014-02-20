@@ -1,0 +1,15 @@
+{
+  Object rootLog;
+  Object nullApp;
+  try {
+    Class<?> logCls=Class.forName("org.apache.log4j.Logger");
+    rootLog=logCls.getMethod("getRootLogger").invoke(logCls);
+    nullApp=Class.forName("org.apache.log4j.varia.NullAppender").newInstance();
+    Class appCls=Class.forName("org.apache.log4j.Appender");
+    rootLog.getClass().getMethod("addAppender",appCls).invoke(rootLog,nullApp);
+  }
+ catch (  Exception e) {
+    throw new GridException("Failed to add no-op logger for Log4j.",e);
+  }
+  return new GridBiTuple<>(rootLog,nullApp);
+}

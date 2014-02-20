@@ -1,0 +1,20 @@
+{
+  Collection<String> foundFiles=new HashSet<>(tstampCache.size());
+  long start=U.currentTimeMillis();
+  processHttp(foundFiles);
+  if (getLogger().isDebugEnabled()) {
+    getLogger().debug("HTTP scanner time in ms: " + (U.currentTimeMillis() - start));
+  }
+  if (!isFirstScan()) {
+    Collection<String> deletedFiles=new HashSet<>(tstampCache.keySet());
+    deletedFiles.removeAll(foundFiles);
+    if (!deletedFiles.isEmpty()) {
+      List<String> uris=new ArrayList<>();
+      for (      String file : deletedFiles) {
+        uris.add(getFileUri(getFileName(file)));
+      }
+      tstampCache.keySet().removeAll(deletedFiles);
+      getListener().onDeletedFiles(uris);
+    }
+  }
+}

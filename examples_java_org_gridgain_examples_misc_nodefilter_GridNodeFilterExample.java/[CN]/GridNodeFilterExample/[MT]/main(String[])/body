@@ -1,0 +1,21 @@
+{
+  GridConfiguration cfg=new GridConfiguration();
+  Map<String,Serializable> attrs=new HashMap<>();
+  attrs.put("custom_attribute","custom_value");
+  cfg.setUserAttributes(attrs);
+  cfg.setGridName("OneMoreGrid");
+  try (Grid first=GridGain.start();Grid second=GridGain.start(cfg)){
+    Collection<GridNode> nodes=first.forPredicate(new GridJexlPredicate<GridNode>("node.attributes().get('custom_attribute') == 'custom_value'","node")).nodes();
+    Collection<GridNode> allNodes=first.nodes();
+    if (nodes.size() == 1) {
+      System.out.println(">>>");
+      System.out.println(">>> Finished executing Grid \"Node Filter\" example.");
+      System.out.println(">>> Total number of found nodes is " + nodes.size() + " from "+ allNodes.size()+ " available.");
+      System.out.println(">>> We found only one node that has necessary attribute defined.");
+      System.out.println(">>>");
+    }
+ else {
+      throw new GridException("Found " + nodes.size() + " nodes by node filter, but only 1 was expected.");
+    }
+  }
+ }

@@ -1,0 +1,38 @@
+{
+  Class<?> cls=clss.get(clsName);
+  if (cls == null) {
+    try {
+      cls=Class.forName(clsName,true,clsLdr);
+      Class<?> cur=clss.putIfAbsent(clsName,cls);
+      if (cur == null) {
+        for (        String a : alias) {
+          clss.putIfAbsent(a,cls);
+        }
+        onDeployed(cls);
+      }
+    }
+ catch (    ClassNotFoundException ignored) {
+      for (      String a : alias) {
+        cls=clss.get(a);
+        if (cls != null)         return cls;
+ else         if (!a.equals(clsName)) {
+          try {
+            cls=Class.forName(a,true,clsLdr);
+          }
+ catch (          ClassNotFoundException ignored0) {
+            continue;
+          }
+          Class<?> cur=clss.putIfAbsent(a,cls);
+          if (cur == null) {
+            for (            String a1 : alias) {
+              if (a1 != a)               clss.putIfAbsent(a1,cls);
+            }
+            onDeployed(cls);
+          }
+          return cls;
+        }
+      }
+    }
+  }
+  return cls;
+}

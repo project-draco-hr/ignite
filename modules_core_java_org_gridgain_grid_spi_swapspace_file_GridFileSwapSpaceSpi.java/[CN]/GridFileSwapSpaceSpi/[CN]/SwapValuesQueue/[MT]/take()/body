@@ -1,0 +1,23 @@
+{
+  lock.lock();
+  try {
+    while (size < minTakeSize)     mayTake.await();
+    int size=0;
+    int cnt=0;
+    for (    SwapValue val : deq) {
+      size+=val.len;
+      cnt++;
+      if (size >= minTakeSize)       break;
+    }
+    SwapValue[] vals=new SwapValue[cnt];
+    for (int i=0; i < cnt; i++) {
+      SwapValue val=deq.pollFirst();
+      vals[i]=val;
+    }
+    if ((this.size-=size) < maxSize)     mayAdd.signalAll();
+    return new SwapValues(vals,size);
+  }
+  finally {
+    lock.unlock();
+  }
+}

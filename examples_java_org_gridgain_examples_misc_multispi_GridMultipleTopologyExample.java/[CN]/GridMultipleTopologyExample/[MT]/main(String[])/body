@@ -1,0 +1,23 @@
+{
+  AbstractApplicationContext ctx=new ClassPathXmlApplicationContext("org/gridgain/examples/misc/multispi/master.xml");
+  GridConfiguration cfg=ctx.getBean("grid.cfg",GridConfiguration.class);
+  try (Grid g=GridGain.start(cfg)){
+    if (g.nodes().size() == 3) {
+      GridComputeTaskFuture<Integer> futA=g.compute().execute(GridSegmentATask.class,null,0);
+      GridComputeTaskFuture<Integer> futB=g.compute().execute(GridSegmentBTask.class,null,0);
+      futA.get();
+      futB.get();
+      System.out.println(">>>");
+      System.out.println(">>> Finished executing Grid \"Multiple Topology\" example with custom tasks.");
+      System.out.println(">>> You should see print out of 'Executing job on node that is from segment A.'" + "on node that has attribute \"segment=A\"");
+      System.out.println(">>> and 'Executing job on node that is from segment B.' on node that has " + "attribute \"segment=B\"");
+      System.out.println(">>> Check all nodes for output (this node is not a part of the grid).");
+      System.out.println(">>>");
+    }
+ else {
+      System.err.println(">>>");
+      System.err.println(">>> Incorrect topology. Ensure that you started two remote nodes using GridNodeAStartup " + "and GridNodeBStartup.");
+      System.err.println(">>>");
+    }
+  }
+ }

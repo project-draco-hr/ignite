@@ -1,0 +1,59 @@
+{
+  Collection<GridNode> nodes=ctx.affinity().remoteNodes(keys);
+  final GridReplicatedLockFuture<K,V> fut=new GridReplicatedLockFuture<>(ctx,keys,threadId,tx,this,nodes,timeout,filter);
+  GridDistributedLockRequest<K,V> req=new GridDistributedLockRequest<>(locNodeId,tx != null ? tx.xidVersion() : null,threadId,fut.futureId(),fut.version(),tx != null,isRead,isolation,isInvalidate,timeout,keys.size(),tx == null ? keys.size() : tx.size(),tx == null ? null : tx.groupLockKey(),tx != null && tx.partitionLock());
+  try {
+    if (tx != null)     tx.topologyVersion(ctx.discovery().topologyVersion());
+    if (!ctx.mvcc().addFuture(fut))     throw new IllegalStateException("Duplicate future ID: " + fut);
+    boolean distribute=false;
+    for (    K key : keys) {
+      while (true) {
+        GridDistributedCacheEntry<K,V> entry=null;
+        try {
+          entry=entryexx(key);
+          if (!ctx.isAll(entry.wrap(false),filter)) {
+            if (log.isDebugEnabled())             log.debug("Entry being locked did not pass filter (will not lock): " + entry);
+            fut.onDone(false);
+            return fut;
+          }
+          GridCacheMvccCandidate<K> cand=fut.addEntry(entry);
+          if (cand != null) {
+            GridCacheTxEntry<K,V> writeEntry=tx != null ? tx.writeMap().get(key) : null;
+            req.addKeyBytes(key,cand.reentry() ? null : entry.getOrMarshalKeyBytes(),writeEntry,retval,entry.localCandidates(fut.version()),null,ctx);
+            req.completedVersions(ctx.tm().committedVersions(fut.version()),ctx.tm().rolledbackVersions(fut.version()));
+            distribute=!cand.reentry();
+            if (distribute && writeEntry != null)             writeEntry.transferRequired(false);
+          }
+ else           if (fut.isDone())           return fut;
+          break;
+        }
+ catch (        GridCacheEntryRemovedException ignored) {
+          if (log.isDebugEnabled())           log.debug("Got removed entry in lockAsync(..) method (will retry): " + entry);
+        }
+      }
+    }
+    if (!distribute)     fut.complete(true);
+    if (nodes.isEmpty())     fut.readyLocks();
+    if (fut.isDone())     return fut;
+    try {
+      ctx.io().safeSend(fut.nodes(),req,new P1<GridNode>(){
+        @Override public boolean apply(        GridNode node){
+          fut.onNodeLeft(node.id());
+          return !fut.isDone();
+        }
+      }
+);
+    }
+ catch (    GridException e) {
+      U.error(log,"Failed to send lock request to node [nodes=" + U.toShortString(nodes) + ", req="+ req+ ']',e);
+      fut.onError(e);
+    }
+    return fut;
+  }
+ catch (  GridException e) {
+    Throwable err=new GridException("Failed to acquire asynchronous lock for keys: " + keys,e);
+    fut.onError(err);
+    ctx.mvcc().removeFuture(fut);
+    return fut;
+  }
+}

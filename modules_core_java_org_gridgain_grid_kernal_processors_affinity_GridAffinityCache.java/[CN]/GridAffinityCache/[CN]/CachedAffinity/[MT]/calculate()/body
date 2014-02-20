@@ -1,0 +1,32 @@
+{
+  if (calculated.compareAndSet(false,true)) {
+    try {
+      Map<UUID,Set<Integer>> tmpPrm=new HashMap<>();
+      Map<UUID,Set<Integer>> tmpBkp=new HashMap<>();
+      for (int partsCnt=arr.length, p=0; p < partsCnt; p++) {
+        arr[p]=affinity(p,topVer);
+        Map<UUID,Set<Integer>> tmp=tmpPrm;
+        Map<UUID,Set<Integer>> map=primary;
+        for (        GridNode node : arr[p]) {
+          UUID id=node.id();
+          Set<Integer> set=tmp.get(id);
+          if (set == null) {
+            tmp.put(id,set=new HashSet<>());
+            map.put(id,Collections.unmodifiableSet(set));
+          }
+          set.add(p);
+          tmp=tmpBkp;
+          map=backup;
+        }
+      }
+    }
+ catch (    RuntimeException|Error e) {
+      this.e=new GridRuntimeException("Failed to calculate affinity cache" + " [topVer=" + topVer + ", partitions="+ partitions()+ ']',e);
+      throw e;
+    }
+ finally {
+      latch.countDown();
+    }
+  }
+ else   await();
+}

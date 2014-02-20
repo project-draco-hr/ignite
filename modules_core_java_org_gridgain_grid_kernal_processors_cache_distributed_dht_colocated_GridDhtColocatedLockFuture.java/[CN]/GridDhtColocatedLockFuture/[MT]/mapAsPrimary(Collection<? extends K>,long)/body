@@ -1,0 +1,20 @@
+{
+  Collection<K> distributedKeys=new ArrayList<>(keys.size());
+  for (  K key : keys) {
+    if (!cctx.affinity().primary(cctx.localNode(),key,topVer)) {
+      for (      K k : keys)       cctx.mvcc().removeExplicitLock(threadId,k,lockVer);
+      return false;
+    }
+    addLocalKey(key,topVer,distributedKeys);
+    if (isDone())     return true;
+  }
+  trackable=false;
+  if (!distributedKeys.isEmpty()) {
+    if (tx != null) {
+      tx.addKeyMapping(cctx.localNode(),distributedKeys);
+      if (tx.implicit())       tx.onePhaseCommit(true);
+    }
+    lockLocally(distributedKeys,topVer,null);
+  }
+  return true;
+}

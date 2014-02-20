@@ -1,0 +1,26 @@
+{
+  int i=0;
+  while (true) {
+    final long right=unsharedRight(holder,unlinked);
+    if (right == 0) {
+      if (!shouldUpdate(func,null,expected)) {
+        return noUpdateResult(func,null);
+      }
+      if (newValue == null || attemptInsertIntoEmpty(key,newValue,holder)) {
+        return updateResult(func,null);
+      }
+    }
+ else {
+      final long ovl=shrinkOVL(right);
+      if (isShrinkingOrUnlinked(ovl)) {
+        waitUntilShrinkCompleted(right,ovl);
+      }
+ else       if (right == right(holder)) {
+        final Object vo=attemptUpdate(key,k,func,expected,newValue,holder,right,ovl,unlinked);
+        if (vo != SpecialRetry) {
+          return vo;
+        }
+      }
+    }
+  }
+}

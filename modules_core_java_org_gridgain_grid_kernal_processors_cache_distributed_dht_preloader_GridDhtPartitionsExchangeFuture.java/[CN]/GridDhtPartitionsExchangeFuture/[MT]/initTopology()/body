@@ -1,0 +1,13 @@
+{
+  rmtNodes=new ConcurrentLinkedQueue<>(CU.aliveRemoteNodes(cctx,exchId.topologyVersion()));
+  rmtIds=Collections.unmodifiableSet(new HashSet<>(F.nodeIds(rmtNodes)));
+  for (  Map.Entry<UUID,GridDhtPartitionsSingleMessage<K,V>> m : new HashMap<>(msgs).entrySet()) {
+    onReceive(m.getKey(),m.getValue());
+  }
+  if (oldestNode.get().id().equals(cctx.nodeId())) {
+    if (allReceived() && ready.get() && replied.compareAndSet(false,true)) {
+      spreadPartitions(top.partitionMap(true));
+      onDone(exchId.topologyVersion());
+    }
+  }
+}

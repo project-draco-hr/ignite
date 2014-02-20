@@ -1,0 +1,23 @@
+{
+  try (Grid g=GridGain.start("examples/config/example-default.xml")){
+    long N=100;
+    final UUID exampleNodeId=g.localNode().id();
+    final GridPredicate<GridNode> nodeFilter=new GridPredicate<GridNode>(){
+      @Override public boolean apply(      GridNode n){
+        return g.forRemotes().nodes().isEmpty() || !n.id().equals(exampleNodeId);
+      }
+    }
+;
+    long start=System.currentTimeMillis();
+    BigInteger fib=g.forPredicate(nodeFilter).compute().call(UNICAST,new FibonacciClosure(nodeFilter),N).get();
+    long duration=System.currentTimeMillis() - start;
+    System.out.println(">>>");
+    System.out.println(">>> Finished executing Fibonacci for '" + N + "' in "+ duration+ " ms.");
+    System.out.println(">>> Fibonacci sequence for input number '" + N + "' is '"+ fib+ "'.");
+    System.out.println(">>> If you re-run this example w/o stopping remote nodes - the performance will");
+    System.out.println(">>> increase since intermediate results are pre-cache on remote nodes.");
+    System.out.println(">>> You should see prints out every recursive Fibonacci execution on grid nodes.");
+    System.out.println(">>> Check remote nodes for output.");
+    System.out.println(">>>");
+  }
+ }

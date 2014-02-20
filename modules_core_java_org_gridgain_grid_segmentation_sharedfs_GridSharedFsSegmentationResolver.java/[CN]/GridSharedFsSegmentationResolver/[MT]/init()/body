@@ -1,0 +1,24 @@
+{
+  if (initGuard.compareAndSet(false,true)) {
+    try {
+      if (path == null)       throw new GridSpiException("Shared file system path is null " + "(it should be configured via setPath(..) configuration property).");
+      URL folderUrl=U.resolveGridGainUrl(path);
+      if (folderUrl == null)       throw new GridException("Failed to resolve path: " + path);
+      File tmp;
+      try {
+        tmp=new File(folderUrl.toURI());
+      }
+ catch (      URISyntaxException e) {
+        throw new GridException("Failed to resolve path: " + path,e);
+      }
+      folder=tmp;
+    }
+  finally {
+      initLatch.countDown();
+    }
+  }
+ else {
+    U.await(initLatch);
+    if (folder == null)     throw new GridException("Segmentation resolver was not properly initialized.");
+  }
+}

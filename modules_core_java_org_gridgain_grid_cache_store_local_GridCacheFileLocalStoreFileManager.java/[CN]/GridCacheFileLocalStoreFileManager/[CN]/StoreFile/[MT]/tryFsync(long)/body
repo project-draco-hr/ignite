@@ -1,0 +1,11 @@
+{
+  EntriesBuffer buf=curBuf;
+  if (buf == null)   return 0;
+  if (buf.created <= lastFsync)   return store.fsyncDelay;
+  long awaitToFsync=lastFsync + store.fsyncDelay - U.microTime();
+  if (awaitToFsync <= 0) {
+    fsync();
+    awaitToFsync=store.fsyncDelay;
+  }
+  return awaitToFsync;
+}

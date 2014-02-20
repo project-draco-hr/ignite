@@ -1,0 +1,17 @@
+{
+  if (clsLdr == null)   clsLdr=getClass().getClassLoader();
+  if (clsLdr instanceof GridDeploymentClassLoader) {
+    GridDeploymentInfo ldr=(GridDeploymentInfo)clsLdr;
+    if ((ldr.deployMode() == ISOLATED || ldr.deployMode() == PRIVATE) && (ctx.config().getDeploymentMode() == SHARED || ctx.config().getDeploymentMode() == CONTINUOUS) && !U.hasAnnotation(cls,GridInternal.class))     throw new GridException("Attempt to deploy class loaded in ISOLATED or PRIVATE mode on node with " + "SHARED or CONTINUOUS deployment mode [cls=" + cls + ", clsDeployMode="+ ldr.deployMode()+ ", localDeployMode="+ ctx.config().getDeploymentMode()+ ']');
+    GridDeploymentMetadata meta=new GridDeploymentMetadata();
+    meta.alias(cls.getName());
+    meta.classLoader(clsLdr);
+    GridDeployment dep=locStore.getDeployment(meta);
+    if (dep == null) {
+      dep=ldrStore.getDeployment(ldr.classLoaderId());
+      if (dep == null)       dep=verStore.getDeployment(ldr.classLoaderId());
+    }
+    return dep;
+  }
+ else   return locDep != null ? locDep : locStore.explicitDeploy(cls,clsLdr);
+}

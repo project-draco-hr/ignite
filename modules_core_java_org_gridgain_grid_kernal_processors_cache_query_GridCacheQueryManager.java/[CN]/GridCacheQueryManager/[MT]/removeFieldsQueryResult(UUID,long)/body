@@ -1,0 +1,18 @@
+{
+  if (sndId == null)   return;
+  Map<Long,GridFutureAdapter<GridIndexingFieldsResult>> futs=fieldsQryRes.get(sndId);
+  if (futs != null) {
+    GridFuture<GridIndexingFieldsResult> fut;
+synchronized (futs) {
+      fut=futs.remove(reqId);
+    }
+    if (fut != null) {
+      try {
+        fut.get().iterator().close();
+      }
+ catch (      GridException e) {
+        U.error(log,"Failed to close iterator.",e);
+      }
+    }
+  }
+}

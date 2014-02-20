@@ -1,0 +1,34 @@
+{
+  checkError();
+  Iterator<R> it=null;
+  while (it == null || !it.hasNext()) {
+    Collection<R> c;
+synchronized (mux) {
+      it=iter;
+      if (it != null && it.hasNext())       break;
+      c=queue.poll();
+      if (c != null)       it=iter=c.iterator();
+      if (isDone() && queue.peek() == null)       break;
+    }
+    if (c == null && !isDone()) {
+      loadPage();
+      long timeout=qry.timeout();
+      long waitTime=timeout == 0 ? Long.MAX_VALUE : timeout - (U.currentTimeMillis() - startTime);
+      if (waitTime <= 0) {
+        it=Collections.<R>emptyList().iterator();
+        break;
+      }
+synchronized (mux) {
+        try {
+          if (queue.isEmpty() && !isDone())           mux.wait(waitTime);
+        }
+ catch (        InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new GridException("Query was interrupted: " + qry,e);
+        }
+      }
+    }
+  }
+  checkError();
+  return it;
+}

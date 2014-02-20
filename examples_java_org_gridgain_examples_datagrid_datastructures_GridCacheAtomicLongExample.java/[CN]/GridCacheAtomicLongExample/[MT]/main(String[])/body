@@ -1,0 +1,15 @@
+{
+  try (Grid g=GridGain.start("examples/config/example-cache.xml")){
+    print("Starting atomic long example on nodes: " + g.nodes().size());
+    int nodes=g.nodes().size();
+    String atomicName=UUID.randomUUID().toString();
+    GridCacheAtomicLong atomicLong=g.cache(CACHE_NAME).dataStructures().atomicLong(atomicName,0,true);
+    print("Atomic long initial size : " + atomicLong.get() + '.');
+    g.compute().call(BROADCAST,new IncrementClosure(CACHE_NAME,atomicName)).get();
+    print("");
+    print("AtomicLong after incrementing [expected=" + (nodes * RETRIES) + ", actual="+ atomicLong.get()+ ']');
+    print("Finished atomic long example...");
+    print("Check all nodes for output (this node is also part of the grid).");
+    print("");
+  }
+ }

@@ -1,0 +1,105 @@
+{
+  f.writeCh.position(0);
+  GridCacheFileLocalChannelScanner scan=new GridCacheFileLocalChannelScanner(compactBuf,f.writeCh);
+  HashMap<Long,List<Op>> txs=new HashMap<>();
+  long pos=0;
+  long liveSize=0;
+  try {
+    for (; ; ) {
+      short magic=scan.getShort();
+      if (magic == EntryType.COMMIT.magic) {
+        long xid=scan.getLong();
+        List<Op> txOps=txs.remove(xid);
+        if (txOps != null) {
+          for (          Op op : txOps) {
+            if (op.rmv) {
+              boolean res=map.remove(op.keyHash,op.old.position());
+              assert res;
+              file(op.old.position()).decrementLiveSize(op.old.size());
+            }
+ else {
+              liveSize+=op.size;
+              if (op.old == null)               map.add(op.keyHash,op.addr);
+ else {
+                boolean res=map.replace(op.keyHash,op.old.position(),op.addr);
+                assert res;
+                file(op.old.position()).decrementLiveSize(op.old.size());
+              }
+            }
+          }
+          liveSize+=10;
+        }
+      }
+ else {
+        int keySize;
+        int keyHash;
+        long xid;
+        int skipSize;
+        int entrySize;
+        int hdrSize;
+        if (magic == EntryType.PUT.magic) {
+          keySize=scan.getInt();
+          int valSize=scan.getInt();
+          keyHash=scan.getInt();
+          scan.getInt();
+          xid=scan.getLong();
+          skipSize=keySize + valSize;
+          entrySize=PutEntry.HEADER_SIZE + skipSize;
+          hdrSize=PutEntry.HEADER_SIZE;
+        }
+ else         if (magic == EntryType.REMOVE.magic) {
+          keySize=scan.getInt();
+          keyHash=scan.getInt();
+          xid=scan.getLong();
+          skipSize=16 + keySize;
+          entrySize=RmvEntry.HEADER_SIZE + keySize;
+          hdrSize=RmvEntry.HEADER_SIZE;
+        }
+ else         throw new GridException("Failed to read entry: [file=" + f + ", magic="+ Integer.toHexString(magic)+ "]");
+        if (xids.get() < xid)         xids.lazySet(xid);
+        if (!scan.skip(skipSize))         break;
+        byte[] key=new byte[keySize];
+        ByteBuffer keyBuf=ByteBuffer.wrap(key);
+        do         f.read(keyBuf,pos + hdrSize + keyBuf.position());
+ while (keyBuf.hasRemaining());
+        DataEntry e=findEntry(keyHash,key);
+        if (xid != 0) {
+          Op op=new Op();
+          op.keyHash=keyHash;
+          op.old=e;
+          op.rmv=magic == EntryType.REMOVE.magic;
+          if (!op.rmv) {
+            op.size=entrySize;
+            op.addr=f.withFileId(pos);
+          }
+          if ((op.rmv && op.old != null) || !op.rmv) {
+            List<Op> txOps=txs.get(xid);
+            if (txOps == null)             txs.put(xid,txOps=new ArrayList<>());
+            txOps.add(op);
+          }
+        }
+ else         if (magic == EntryType.PUT.magic) {
+          liveSize+=entrySize;
+          if (e == null)           map.add(keyHash,f.withFileId(pos));
+ else {
+            boolean res=map.replace(keyHash,e.position(),f.withFileId(pos));
+            assert res;
+            file(e.position()).decrementLiveSize(e.size());
+          }
+        }
+ else         if (e != null) {
+          boolean res=map.remove(keyHash,e.position());
+          assert res;
+          file(e.position()).decrementLiveSize(e.size());
+        }
+      }
+      pos=scan.position();
+    }
+  }
+ catch (  EOFException ignored) {
+  }
+  f.fileSize=pos;
+  f.writeCh.truncate(pos);
+  f.writeCh.position(pos);
+  f.liveSize.set(liveSize);
+}

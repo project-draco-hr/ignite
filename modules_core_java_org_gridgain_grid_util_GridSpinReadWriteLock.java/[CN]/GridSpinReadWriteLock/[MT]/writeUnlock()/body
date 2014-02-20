@@ -1,0 +1,13 @@
+{
+  long threadId=Thread.currentThread().getId();
+  if (threadId != writeLockOwner)   throw new IllegalMonitorStateException();
+  if (writeLockEntryCnt > 1) {
+    writeLockEntryCnt--;
+    return;
+  }
+  writeLockEntryCnt=0;
+  writeLockOwner=-1;
+  int update=readLockEntryCnt.get() > 0 ? 1 : 0;
+  boolean b=compareAndSet(STATE_OFFS,-1,update);
+  assert b;
+}

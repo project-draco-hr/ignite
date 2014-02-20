@@ -1,0 +1,53 @@
+{
+  if (allKeys.isEmpty()) {
+    if (state(PREPARED))     fut.complete();
+ else     if (state(ROLLING_BACK)) {
+      if (doneFlag.compareAndSet(false,true)) {
+        cctx.tm().rollbackTx(this);
+        state(ROLLED_BACK);
+        fut.onError(new GridCacheTxRollbackException("Transaction was rolled back: " + this));
+        if (log.isDebugEnabled())         log.debug("Rolled back empty transaction: " + this);
+      }
+    }
+    fut.complete();
+    return;
+  }
+  try {
+    userPrepare();
+    if (fut.nodes().isEmpty())     fut.onAllReplies();
+ else {
+      GridDistributedBaseMessage<K,V> req=new GridDistributedTxPrepareRequest<>(this,optimistic() && serializable() ? readEntries() : null,writeEntries(),groupLockKey(),partitionLock(),fut.nodesMapping());
+      candidatesByKey(req,writeMap());
+      req.completedVersions(cctx.tm().committedVersions(minVer),cctx.tm().rolledbackVersions(minVer));
+      try {
+        cctx.mvcc().addFuture(fut);
+        cctx.io().safeSend(fut.nodes(),req,new GridPredicate<GridNode>(){
+          @Override public boolean apply(          GridNode n){
+            GridReplicatedTxPrepareFuture<K,V> fut=prepareFut.get();
+            fut.onNodeLeft(n.id());
+            return !fut.isDone();
+          }
+        }
+);
+      }
+ catch (      GridException e) {
+        String msg="Failed to send prepare request to nodes [req=" + req + ", nodes="+ U.toShortString(fut.nodes())+ ']';
+        U.error(log,msg,e);
+        fut.onError(new GridCacheTxRollbackException(msg,e));
+      }
+    }
+  }
+ catch (  GridCacheTxTimeoutException|GridCacheTxOptimisticException e) {
+    fut.onError(e);
+  }
+catch (  GridException e) {
+    setRollbackOnly();
+    try {
+      rollback();
+    }
+ catch (    GridException e1) {
+      U.error(log(),"Failed to rollback transaction: " + this,e1);
+    }
+    fut.onError(new GridCacheTxRollbackException("Failed to prepare transaction: " + this,e));
+  }
+}

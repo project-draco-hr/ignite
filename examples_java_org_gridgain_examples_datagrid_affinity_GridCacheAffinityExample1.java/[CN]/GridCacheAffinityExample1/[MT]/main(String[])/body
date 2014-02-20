@@ -1,0 +1,30 @@
+{
+  try (Grid g=GridGain.start(args.length == 0 ? CONFIG : args[0])){
+    Collection<String> keys=new ArrayList<>('Z' - 'A' + 1);
+    for (char c='A'; c <= 'Z'; c++)     keys.add(Character.toString(c));
+    populateCache(g,keys);
+    Map<String,String> results=new TreeMap<>();
+    for (    final String key : keys) {
+      String res=g.compute().call(BALANCE,new GridCallable<String>(){
+        @GridCacheAffinityMapped public String affinityKey(){
+          return key;
+        }
+        @GridCacheName public String cacheName(){
+          return NAME;
+        }
+        @Nullable @Override public String call(){
+          info("Executing affinity job for key: " + key);
+          GridCache<String,String> cache=g.cache(NAME);
+          if (cache == null) {
+            info("Cache not found [nodeId=" + g.localNode().id() + ", cacheName="+ NAME+ ']');
+            return "Error";
+          }
+          return cache.peek(key);
+        }
+      }
+).get();
+      results.put(key,res);
+    }
+    for (    Map.Entry<String,String> e : results.entrySet())     info("Affinity job result for key '" + e.getKey() + "': "+ e.getValue());
+  }
+ }

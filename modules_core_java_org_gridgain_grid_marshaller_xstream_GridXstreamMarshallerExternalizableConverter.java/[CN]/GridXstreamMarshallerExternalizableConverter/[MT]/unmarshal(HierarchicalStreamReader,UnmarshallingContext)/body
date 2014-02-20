@@ -1,0 +1,37 @@
+{
+  Class type=ctx.getRequiredType();
+  try {
+    Constructor ctor=type.getConstructor();
+    ctor.setAccessible(true);
+    final Externalizable obj=(Externalizable)ctor.newInstance();
+    CustomObjectInputStream.StreamCallback callback=new CustomObjectInputStream.StreamCallback(){
+      @Override public Object readFromStream(){
+        reader.moveDown();
+        Object item=ctx.convertAnother(obj,mapper.realClass(reader.getNodeName()));
+        reader.moveUp();
+        return item;
+      }
+      @Override public Map readFieldsFromStream(){
+        throw new UnsupportedOperationException();
+      }
+      @Override public void defaultReadObject(){
+        throw new UnsupportedOperationException();
+      }
+      @Override public void registerValidation(      ObjectInputValidation val,      int pri) throws NotActiveException {
+        throw new NotActiveException("Stream is inactive.");
+      }
+      @Override public void close(){
+        throw new UnsupportedOperationException("Objects are not allowed to apply ObjectInput.close() " + "from readExternal()");
+      }
+    }
+;
+    CustomObjectInputStream in=CustomObjectInputStream.getInstance(ctx,callback);
+    obj.readExternal(in);
+    Object res=invoker.callReadResolve(obj);
+    in.popCallback();
+    return res;
+  }
+ catch (  Exception e) {
+    throw new ConversionException("Cannot construct " + type.getClass(),e);
+  }
+}

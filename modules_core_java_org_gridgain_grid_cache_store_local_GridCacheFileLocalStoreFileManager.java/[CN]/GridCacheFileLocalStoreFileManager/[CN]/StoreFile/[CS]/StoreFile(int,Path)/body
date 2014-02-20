@@ -1,0 +1,16 @@
+{
+  this.idx=idx;
+  this.path=path;
+  String name=path.getFileName().toString();
+  String[] res=name.split("_");
+  fileIdx=Long.parseLong(res[0]);
+  compactIdx=Long.parseLong(res[1]);
+  EnumSet<StandardOpenOption> writeOptions=EnumSet.of(WRITE,READ);
+  if (store.fsyncDelay == 0)   writeOptions.add(DSYNC);
+  writeCh=FileChannel.open(path,writeOptions);
+  lock(writeCh,path);
+  readCh=AsynchronousFileChannel.open(path,READ);
+  fileSize=writeCh.size();
+  writeCh.position(fileSize);
+  liveSize=new AtomicLong();
+}

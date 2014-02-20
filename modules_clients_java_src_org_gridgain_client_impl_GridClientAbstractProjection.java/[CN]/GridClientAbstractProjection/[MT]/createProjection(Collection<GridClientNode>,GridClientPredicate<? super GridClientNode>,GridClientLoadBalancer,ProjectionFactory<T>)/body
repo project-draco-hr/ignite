@@ -1,0 +1,13 @@
+{
+  if (nodes != null && nodes.isEmpty())   throw new GridClientException("Failed to create projection: given nodes collection is empty.");
+  if (filter != null && this.filter != null)   filter=new GridClientAndPredicate<>(this.filter,filter);
+ else   if (filter == null)   filter=this.filter;
+  Collection<GridClientNode> subset=intersection(this.nodes,nodes);
+  if (subset != null && subset.isEmpty())   throw new GridClientException("Failed to create projection (given node set does not overlap with " + "existing node set) [prjNodes=" + this.nodes + ", nodes="+ nodes);
+  if (filter != null && subset != null) {
+    subset=applyFilter(subset,filter);
+    if (subset != null && subset.isEmpty())     throw new GridClientException("Failed to create projection (none of the nodes in projection node " + "set passed the filter) [prjNodes=" + subset + ", filter="+ filter+ ']');
+  }
+  if (balancer == null)   balancer=this.balancer;
+  return factory.create(nodes,filter,balancer);
+}

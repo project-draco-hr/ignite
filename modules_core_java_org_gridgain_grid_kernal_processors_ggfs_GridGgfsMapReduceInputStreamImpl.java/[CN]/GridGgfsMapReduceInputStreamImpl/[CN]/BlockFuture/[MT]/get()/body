@@ -1,0 +1,18 @@
+{
+  process();
+  if (releasePrefetch()) {
+    BlockFuture nextBlockFut=lastFut;
+    while (true) {
+      if (nextBlockFut.isDone()) {
+        Block nextBlock=nextBlockFut.get();
+        if (nextBlock != null)         nextBlockFut=nextBlock.nextBlock();
+ else         break;
+      }
+ else {
+        if (nextBlockFut.acquirePrefetch())         nextBlockFut.process();
+        break;
+      }
+    }
+  }
+  return super.get();
+}

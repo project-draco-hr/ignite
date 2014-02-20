@@ -1,0 +1,20 @@
+{
+  storeBlocksAsync(blocksMsg.blocks()).listenAsync(new CI1<GridFuture<?>>(){
+    @Override public void apply(    GridFuture<?> fut){
+      GridException err=null;
+      try {
+        fut.get();
+      }
+ catch (      GridException e) {
+        err=e;
+      }
+      try {
+        ggfsCtx.send(nodeId,topic,new GridGgfsAckMessage(blocksMsg.fileId(),blocksMsg.id(),err),SYSTEM_POOL);
+      }
+ catch (      GridException e) {
+        U.warn(log,"Failed to send batch acknowledgement (did node leave the grid?) [nodeId=" + nodeId + ", fileId="+ blocksMsg.fileId()+ ", batchId="+ blocksMsg.id()+ ']',e);
+      }
+    }
+  }
+);
+}

@@ -1,0 +1,23 @@
+{
+  ClassLoader clsLdr=GridUriDeploymentClassLoaderFactory.create(U.gridClassLoader(),file,log);
+  List<Class<? extends GridComputeTask<?,?>>> tasks=doc.getTasks(clsLdr);
+  List<Class<? extends GridComputeTask<?,?>>> validTasks=null;
+  if (!F.isEmpty(tasks)) {
+    validTasks=new ArrayList<>();
+    for (    Class<? extends GridComputeTask<?,?>> task : tasks) {
+      if (!isAllowedTaskClass(task)) {
+        U.warn(log,"Failed to load task. Task should be public none-abstract class " + "(might be inner static one) that implements GridComputeTask interface [taskCls=" + task + ']');
+      }
+ else {
+        if (log.isDebugEnabled())         log.debug("Found grid deployment task: " + task.getName());
+        validTasks.add(task);
+      }
+    }
+  }
+  GridUriDeploymentFileProcessorResult res=new GridUriDeploymentFileProcessorResult();
+  res.setFile(file);
+  res.setClassLoader(clsLdr);
+  if (!F.isEmpty(validTasks))   res.setTaskClasses(validTasks);
+ else   if (log.isDebugEnabled())   log.debug("No tasks loaded from file [file=" + file.getAbsolutePath() + ", uri="+ U.hidePassword(uri)+ ']');
+  return res;
+}

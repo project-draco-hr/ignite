@@ -1,0 +1,19 @@
+{
+  ClassLoader clsLdr=GridUriDeploymentClassLoaderFactory.create(U.gridClassLoader(),file,log);
+  Set<Class<? extends GridComputeTask<?,?>>> clss=GridUriDeploymentDiscovery.getClasses(clsLdr,file);
+  GridUriDeploymentFileProcessorResult res=new GridUriDeploymentFileProcessorResult();
+  res.setFile(file);
+  res.setClassLoader(clsLdr);
+  if (clss != null) {
+    List<Class<? extends GridComputeTask<?,?>>> validTasks=new ArrayList<>(clss.size());
+    for (    Class<? extends GridComputeTask<?,?>> cls : clss) {
+      if (isAllowedTaskClass(cls)) {
+        if (log.isDebugEnabled())         log.debug("Found grid deployment task: " + cls.getName());
+        validTasks.add(cls);
+      }
+    }
+    if (!validTasks.isEmpty())     res.setTaskClasses(validTasks);
+ else     if (log.isDebugEnabled())     log.debug("No tasks loaded from file [file=" + file.getAbsolutePath() + ", uri="+ U.hidePassword(uri)+ ']');
+  }
+  return res;
+}

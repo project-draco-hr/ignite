@@ -1,0 +1,39 @@
+{
+  this.m=m;
+  this.descending=descending;
+  this.forward=!descending ? Right : Left;
+  this.reverse=!descending ? Left : Right;
+  final Comparable<? super K> fromCmp;
+  final boolean fromIncl=!descending ? minIncl : maxIncl;
+  final Comparable<? super K> toCmp;
+  final boolean toIncl=!descending ? maxIncl : minIncl;
+  if (!descending) {
+    fromCmp=minCmp;
+    toCmp=maxCmp;
+  }
+ else {
+    fromCmp=maxCmp;
+    toCmp=minCmp;
+  }
+  rootHolderSnapshot=m.holderRef;
+  final long root=right(rootHolderSnapshot);
+  if (toCmp != null) {
+    this.endKey=(GridOffHeapSmartPointer)m.boundedExtreme(minCmp,minIncl,maxCmp,maxIncl,true,forward);
+    if (this.endKey == null) {
+      return;
+    }
+  }
+ else {
+    this.endKey=null;
+  }
+  this.path=new long[1 + height(root)];
+  if (fromCmp == null) {
+    pushFirst(root);
+  }
+ else {
+    pushFirst(root,fromCmp,fromIncl);
+    if (depth > 0 && vOptIsNull(top())) {
+      advance();
+    }
+  }
+}

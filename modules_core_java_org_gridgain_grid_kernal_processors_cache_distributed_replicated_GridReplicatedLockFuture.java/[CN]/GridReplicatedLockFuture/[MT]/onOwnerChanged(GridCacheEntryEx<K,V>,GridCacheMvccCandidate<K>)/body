@@ -1,0 +1,31 @@
+{
+  if (!isDone() && leftRess.get() == 0) {
+    boolean locked=true;
+    boolean hasKey=false;
+    for (int i=0; i < entries.size(); i++) {
+      while (true) {
+        GridCacheEntryEx<K,V> cached=entries.get(i);
+        if (cached.key().equals(entry.key())) {
+          hasKey=true;
+          if (log.isDebugEnabled())           log.debug("Found future for owner change: " + this);
+          if (!locked)           return true;
+        }
+        try {
+          if (!locked(cached)) {
+            locked=false;
+            if (hasKey)             return true;
+          }
+          break;
+        }
+ catch (        GridCacheEntryRemovedException ignore) {
+          if (log.isDebugEnabled())           log.debug("Got removed entry in onOwnerChanged method (will retry): " + cached);
+          entries.set(i,(GridDistributedCacheEntry<K,V>)cctx.cache().entryEx(cached.key()));
+        }
+      }
+    }
+    if (log.isDebugEnabled())     log.debug("Local lock acquired for entries: " + entries);
+    if (locked)     onComplete(true);
+    return hasKey;
+  }
+  return false;
+}

@@ -1,0 +1,72 @@
+{
+  Collection<InetSocketAddress> rmtAddrs=new HashSet<>();
+  try {
+    DatagramPacket reqPckt=new DatagramPacket(MSG_ADDR_REQ_DATA,MSG_ADDR_REQ_DATA.length,mcastAddr,mcastPort);
+    byte[] resData=new byte[AddressResponse.MAX_DATA_LENGTH];
+    DatagramPacket resPckt=new DatagramPacket(resData,resData.length);
+    boolean sndError=false;
+    for (int i=0; i < addrReqAttempts; i++) {
+      MulticastSocket sock=null;
+      try {
+        sock=new MulticastSocket(0);
+        sock.setLoopbackMode(false);
+        sock.setSoTimeout(resWaitTime);
+        reqPckt.setData(MSG_ADDR_REQ_DATA);
+        try {
+          sock.send(reqPckt);
+        }
+ catch (        IOException e) {
+          if (!handleNetworkError(e))           break;
+          if (i < addrReqAttempts - 1) {
+            if (log.isDebugEnabled())             log.debug("Failed to send multicast address request (will retry in 500 ms): " + e);
+            U.sleep(500);
+          }
+ else {
+            if (log.isDebugEnabled())             log.debug("Failed to send multicast address request: " + e);
+          }
+          sndError=true;
+          continue;
+        }
+        long rcvEnd=U.currentTimeMillis() + resWaitTime;
+        try {
+          while (U.currentTimeMillis() < rcvEnd) {
+            sock.receive(resPckt);
+            byte[] data=resPckt.getData();
+            if (!U.bytesEqual(U.GG_HEADER,0,data,0,U.GG_HEADER.length)) {
+              U.error(log,"Failed to verify message header.");
+              continue;
+            }
+            AddressResponse addrRes;
+            try {
+              addrRes=new AddressResponse(data);
+            }
+ catch (            GridException e) {
+              LT.warn(log,e,"Failed to deserialize multicast response.");
+              continue;
+            }
+            rmtAddrs.addAll(addrRes.addresses());
+          }
+        }
+ catch (        SocketTimeoutException ignored) {
+          if (log.isDebugEnabled())           log.debug("Address receive timeout.");
+        }
+      }
+ catch (      IOException e) {
+        U.error(log,"Failed to request nodes addresses.",e);
+      }
+ finally {
+        U.close(sock);
+      }
+      if (!rmtAddrs.isEmpty())       break;
+      if (i < addrReqAttempts - 1)       U.sleep(200);
+    }
+    if (log.isDebugEnabled())     log.debug("Received nodes addresses: " + rmtAddrs);
+    if (rmtAddrs.isEmpty() && sndError)     U.quietAndWarn(log,"Failed to send multicast address request. " + "Check multicast is enabled on this node.");
+    return rmtAddrs;
+  }
+ catch (  GridInterruptedException ignored) {
+    U.warn(log,"Got interrupted while sending address request.");
+    Thread.currentThread().interrupt();
+    return rmtAddrs;
+  }
+}

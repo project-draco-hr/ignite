@@ -1,0 +1,13 @@
+{
+  ctx.gateway().readLock();
+  try {
+    GridProjection prj=projection0().forNodes(nodes);
+    long startTime=U.currentTimeMillis();
+    Collection<R> res=prj.compute().execute(new GridStreamerQueryTask<>(clo,streamer.name()),null,0).get();
+    streamer.onQueryCompleted(U.currentTimeMillis() - startTime,prj.nodes().size());
+    return res;
+  }
+  finally {
+    ctx.gateway().readUnlock();
+  }
+}

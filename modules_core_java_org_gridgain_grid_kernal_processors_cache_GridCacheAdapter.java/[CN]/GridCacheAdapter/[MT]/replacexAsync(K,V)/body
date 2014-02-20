@@ -1,0 +1,15 @@
+{
+  A.notNull(key,"key",val,"val");
+  validateCacheKey(key);
+  validateCacheValue(val);
+  ctx.denyOnLocalRead();
+  return asyncOp(new AsyncOp<Boolean>(key){
+    @Override public GridFuture<Boolean> op(    GridCacheTxLocalAdapter<K,V> tx){
+      return tx.putxAsync(key,val,ctx.hasPeekArray());
+    }
+    @Override public String toString(){
+      return "replacexAsync [key=" + key + ", val="+ val+ ']';
+    }
+  }
+);
+}

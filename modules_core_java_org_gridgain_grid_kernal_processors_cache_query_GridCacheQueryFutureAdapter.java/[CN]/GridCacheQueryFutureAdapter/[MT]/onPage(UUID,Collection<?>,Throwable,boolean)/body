@@ -1,0 +1,38 @@
+{
+  if (isCancelled())   return;
+  if (log.isDebugEnabled())   log.debug("Received query result page [nodeId=" + nodeId + ", qryId="+ qry.id+ ", data="+ data+ ", err="+ err+ ", finished="+ finished+ "]");
+  if (err != null) synchronized (mux) {
+    enqueue(Collections.emptyList());
+    onPage(nodeId,true);
+    onDone(nodeId != null ? new GridException("Failed to execute query on node [query=" + qry + ", nodeId="+ nodeId+ "]",err) : new GridException("Failed to execute query locally: " + qry,err));
+    mux.notifyAll();
+  }
+ else {
+    if (data == null)     data=Collections.emptyList();
+    data=dedupIfRequired((Collection<Object>)data);
+    if (pageLsnr != null)     pageLsnr.apply(nodeId,(Collection<R>)data);
+    if (locRdc == null) {
+synchronized (mux) {
+        enqueue(data);
+        if (qry.keepAll())         allCol.addAll(maskNulls((Collection<Object>)data));
+        if (onPage(nodeId,finished)) {
+          onDone((Collection<R>)(qry.keepAll() ? unmaskNulls(allCol) : data));
+          clear();
+        }
+        mux.notifyAll();
+      }
+    }
+ else {
+synchronized (mux) {
+        for (        Object obj : data)         locRdc.collect(obj);
+        if (onPage(nodeId,finished)) {
+          clear();
+          List<R> resCol=Collections.singletonList((R)locRdc.apply());
+          enqueue(resCol);
+          onDone(resCol);
+          mux.notifyAll();
+        }
+      }
+    }
+  }
+}

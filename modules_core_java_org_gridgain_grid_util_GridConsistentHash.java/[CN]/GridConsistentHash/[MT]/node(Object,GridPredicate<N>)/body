@@ -1,0 +1,32 @@
+{
+  if (p == null || p.length == 0)   return node(key);
+  int hash=hash(key);
+  rw.readLock().lock();
+  try {
+    final int size=nodes.size();
+    if (size == 0)     return null;
+    Set<N> failed=null;
+    for (    SortedSet<N> set : circle.tailMap(hash,true).values()) {
+      for (      N n : set) {
+        if (failed != null && failed.contains(n))         continue;
+        if (apply(p,n))         return n;
+        if (failed == null)         failed=new GridLeanSet<>(size);
+        failed.add(n);
+        if (failed.size() == size)         return null;
+      }
+    }
+    for (    SortedSet<N> set : circle.headMap(hash,false).values()) {
+      for (      N n : set) {
+        if (failed != null && failed.contains(n))         continue;
+        if (apply(p,n))         return n;
+        if (failed == null)         failed=new GridLeanSet<>(size);
+        failed.add(n);
+        if (failed.size() == size)         return null;
+      }
+    }
+    return null;
+  }
+  finally {
+    rw.readLock().unlock();
+  }
+}

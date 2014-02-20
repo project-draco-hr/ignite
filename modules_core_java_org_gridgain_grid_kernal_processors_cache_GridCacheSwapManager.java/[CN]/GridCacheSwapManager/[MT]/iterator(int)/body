@@ -1,0 +1,44 @@
+{
+  if (!swapEnabled() && !offHeapEnabled())   return null;
+  checkIteratorQueue();
+  if (offHeapEnabled() && !swapEnabled())   return offHeapIterator(part);
+  if (swapEnabled() && !offHeapEnabled())   return swapIterator(part);
+  return new GridCloseableIteratorAdapter<Map.Entry<byte[],GridCacheSwapEntry<V>>>(){
+    private GridCloseableIterator<Map.Entry<byte[],GridCacheSwapEntry<V>>> it;
+    private boolean offheap=true;
+    private boolean done;
+{
+      it=offHeapIterator(part);
+      advance();
+    }
+    private void advance() throws GridException {
+      if (it != null && it.hasNext())       return;
+      if (it != null)       it.close();
+      if (offheap) {
+        offheap=false;
+        it=swapIterator(part);
+        if (it == null || !it.hasNext()) {
+          it.close();
+          done=true;
+        }
+      }
+ else       done=true;
+    }
+    @Override protected Map.Entry<byte[],GridCacheSwapEntry<V>> onNext() throws GridException {
+      if (done)       throw new NoSuchElementException();
+      Map.Entry<byte[],GridCacheSwapEntry<V>> e=it.next();
+      advance();
+      return e;
+    }
+    @Override protected boolean onHasNext(){
+      return !done;
+    }
+    @Override protected void onRemove(){
+      throw new UnsupportedOperationException();
+    }
+    @Override protected void onClose() throws GridException {
+      if (it != null)       it.close();
+    }
+  }
+;
+}

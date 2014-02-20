@@ -1,0 +1,13 @@
+{
+  Collection<GridCacheTxEntry<K,V>> entries=(tx.local() && !tx.dht()) ? tx.allEntries() : tx.writeEntries();
+  for (  GridCacheTxEntry<K,V> entry : entries) {
+    GridCacheEntryEx<K,V> cached=entry.cached();
+    if (cached == null)     cached=cctx.cache().peekEx(entry.key());
+    if (cached.detached())     continue;
+    if (cached.obsolete() || cached.markObsoleteIfEmpty(tx.xidVersion()))     cctx.cache().removeEntry(cached);
+    if (tx.dht() && isNearEnabled(cctx)) {
+      GridNearCacheEntry<K,V> e=cctx.dht().near().peekExx(entry.key());
+      if (e != null && e.markObsoleteIfEmpty(tx.xidVersion()))       cctx.dht().near().removeEntry(e);
+    }
+  }
+}

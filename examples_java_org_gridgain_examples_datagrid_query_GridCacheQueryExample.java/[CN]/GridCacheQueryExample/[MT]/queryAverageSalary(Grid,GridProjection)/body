@@ -1,0 +1,47 @@
+{
+  GridCacheProjection<GridCacheAffinityKey<UUID>,AffinityPerson> cache=cache(g);
+  GridCacheReduceQuery<GridCacheAffinityKey<UUID>,AffinityPerson,GridBiTuple<Double,Integer>,Double> qry=cache.queries().createReduceQuery(SQL,AffinityPerson.class,"from AffinityPerson, Organization " + "where AffinityPerson.orgId = Organization.id and lower(Organization.name) = lower(?)");
+  qry.remoteReducer(new GridClosure<Object[],GridReducer<Map.Entry<GridCacheAffinityKey<UUID>,AffinityPerson>,GridBiTuple<Double,Integer>>>(){
+    private final GridReducer<Map.Entry<GridCacheAffinityKey<UUID>,AffinityPerson>,GridBiTuple<Double,Integer>> rdc=new GridReducer<Map.Entry<GridCacheAffinityKey<UUID>,AffinityPerson>,GridBiTuple<Double,Integer>>(){
+      private double sum;
+      private int cnt;
+      @Override public boolean collect(      Map.Entry<GridCacheAffinityKey<UUID>,AffinityPerson> e){
+        sum+=e.getValue().getSalary();
+        cnt++;
+        return true;
+      }
+      @Override public GridBiTuple<Double,Integer> apply(){
+        return new GridBiTuple<>(sum,cnt);
+      }
+    }
+;
+    @Override public GridReducer<Map.Entry<GridCacheAffinityKey<UUID>,AffinityPerson>,GridBiTuple<Double,Integer>> apply(    Object[] args){
+      return rdc;
+    }
+  }
+);
+  qry.localReducer(new GridClosure<Object[],GridReducer<GridBiTuple<Double,Integer>,Double>>(){
+    private final GridReducer<GridBiTuple<Double,Integer>,Double> rdc=new GridReducer<GridBiTuple<Double,Integer>,Double>(){
+      private double sum;
+      private int cnt;
+      @Override public boolean collect(      GridBiTuple<Double,Integer> t){
+        sum+=t.get1();
+        cnt+=t.get2();
+        return true;
+      }
+      @Override public Double apply(){
+        double avg=cnt == 0 ? 0 : sum / cnt;
+        sum=0;
+        cnt=0;
+        return avg;
+      }
+    }
+;
+    @Override public GridReducer<GridBiTuple<Double,Integer>,Double> apply(    Object[] args){
+      return rdc;
+    }
+  }
+);
+  print("Average salary for 'GridGain' employees: " + qry.queryArguments("GridGain").reduce(p).get());
+  print("Average salary for 'Other' employees: " + qry.queryArguments("Other").reduce(p).get());
+}

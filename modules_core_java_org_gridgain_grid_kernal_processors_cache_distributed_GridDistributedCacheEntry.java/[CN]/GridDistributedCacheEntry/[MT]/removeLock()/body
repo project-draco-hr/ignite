@@ -1,0 +1,21 @@
+{
+  GridCacheMvccCandidate<K> prev=null;
+  GridCacheMvccCandidate<K> owner=null;
+  V val;
+synchronized (this) {
+    GridCacheMvcc<K> mvcc=mvccExtras();
+    if (mvcc != null) {
+      prev=mvcc.anyOwner();
+      boolean emptyBefore=mvcc.isEmpty();
+      owner=mvcc.releaseLocal();
+      boolean emptyAfter=mvcc.isEmpty();
+      checkCallbacks(emptyBefore,emptyAfter);
+      if (emptyAfter)       mvccExtras(null);
+    }
+    val=this.val;
+  }
+  if (log.isDebugEnabled())   log.debug("Released local candidate from entry [owner=" + owner + ", prev="+ prev+ ", entry="+ this+ ']');
+  if (prev != null && owner != prev)   checkThreadChain(prev);
+  checkOwnerChanged(prev,owner,val);
+  return owner != prev ? prev : null;
+}

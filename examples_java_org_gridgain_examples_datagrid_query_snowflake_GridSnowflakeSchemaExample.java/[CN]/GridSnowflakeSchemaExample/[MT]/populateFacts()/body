@@ -1,0 +1,12 @@
+{
+  GridCache<Integer,Object> dimCache=GridGain.grid().cache("replicated");
+  GridCache<Integer,Object> factCache=GridGain.grid().cache("partitioned");
+  GridCacheProjection<Integer,DimStore> stores=dimCache.projection(Integer.class,DimStore.class);
+  GridCacheProjection<Integer,DimProduct> prods=dimCache.projection(Integer.class,DimProduct.class);
+  for (int i=0; i < 100; i++) {
+    int id=idGen++;
+    DimStore store=GridExamplesUtils.rand(stores.values());
+    DimProduct prod=GridExamplesUtils.rand(prods.values());
+    factCache.put(id,new FactPurchase(id,prod.getId(),store.getId(),(i + 1)));
+  }
+}

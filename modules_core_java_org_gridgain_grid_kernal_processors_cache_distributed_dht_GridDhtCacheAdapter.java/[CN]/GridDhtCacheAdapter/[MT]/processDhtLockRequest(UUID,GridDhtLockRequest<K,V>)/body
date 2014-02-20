@@ -1,0 +1,15 @@
+{
+  if (beforePessimisticLock == null)   processDhtLockRequest0(nodeId,req);
+ else {
+    GridFuture<Object> fut=beforePessimisticLock.apply(req.keys(),req.inTx());
+    if (fut != null) {
+      fut.listenAsync(new CI1<GridFuture<Object>>(){
+        @Override public void apply(        GridFuture<Object> t){
+          processDhtLockRequest0(nodeId,req);
+        }
+      }
+);
+    }
+ else     processDhtLockRequest0(nodeId,req);
+  }
+}

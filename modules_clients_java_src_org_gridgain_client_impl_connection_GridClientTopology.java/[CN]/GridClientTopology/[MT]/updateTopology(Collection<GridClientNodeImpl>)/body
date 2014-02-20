@@ -1,0 +1,27 @@
+{
+  Collection<TopologyEvent> evts=new LinkedList<>();
+  lock.writeLock().lock();
+  try {
+    Map<UUID,GridClientNodeImpl> updated=new HashMap<>();
+    Collection<GridClientNodeImpl> preparedNodes=F.transform(nodeList,new C1<GridClientNodeImpl,GridClientNodeImpl>(){
+      @Override public GridClientNodeImpl apply(      GridClientNodeImpl e){
+        return prepareNode(e);
+      }
+    }
+);
+    for (    GridClientNodeImpl node : preparedNodes) {
+      updated.put(node.nodeId(),node);
+      if (!nodes.containsKey(node.nodeId()))       evts.add(new TopologyEvent(true,node));
+    }
+    for (    Map.Entry<UUID,GridClientNodeImpl> e : nodes.entrySet()) {
+      if (!updated.containsKey(e.getKey()))       evts.add(new TopologyEvent(false,e.getValue()));
+    }
+    nodes=updated;
+    lastError=null;
+    if (!evts.isEmpty())     notifyEvents(evts);
+    return preparedNodes;
+  }
+  finally {
+    lock.writeLock().unlock();
+  }
+}

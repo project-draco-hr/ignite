@@ -1,0 +1,31 @@
+{
+  if (log.isDebugEnabled())   log.debug("Handling request [target=" + target + ", req="+ req+ ", srvReq="+ srvReq+ ']');
+  if (target.startsWith("/gridgain")) {
+    processRequest(target,srvReq,res);
+    req.setHandled(true);
+  }
+ else   if (target.startsWith("/favicon.ico")) {
+    if (favicon == null) {
+      res.setStatus(HttpServletResponse.SC_NOT_FOUND);
+      req.setHandled(true);
+      return;
+    }
+    res.setStatus(HttpServletResponse.SC_OK);
+    res.setContentType("image/x-icon");
+    res.getOutputStream().write(favicon);
+    res.getOutputStream().flush();
+    req.setHandled(true);
+  }
+ else {
+    if (dfltPage == null) {
+      res.setStatus(HttpServletResponse.SC_NOT_FOUND);
+      req.setHandled(true);
+      return;
+    }
+    res.setStatus(HttpServletResponse.SC_OK);
+    res.setContentType("text/html");
+    res.getWriter().write(dfltPage);
+    res.getWriter().flush();
+    req.setHandled(true);
+  }
+}

@@ -1,0 +1,30 @@
+{
+  while (!isCancelled()) {
+    long now=U.currentTimeMillis();
+    for (Iterator<GridTimeoutObject> iter=timeoutObjs.iterator(); iter.hasNext(); ) {
+      GridTimeoutObject timeoutObj=iter.next();
+      if (timeoutObj.endTime() <= now) {
+        iter.remove();
+        if (log.isDebugEnabled())         log.debug("Timeout has occurred: " + timeoutObj);
+        try {
+          timeoutObj.onTimeout();
+        }
+ catch (        Throwable e) {
+          U.error(log,"Error when executing timeout callback: " + timeoutObj,e);
+        }
+      }
+ else       break;
+    }
+synchronized (mux) {
+      while (true) {
+        GridTimeoutObject first=timeoutObjs.firstx();
+        if (first != null) {
+          long waitTime=first.endTime() - U.currentTimeMillis();
+          if (waitTime > 0)           mux.wait(waitTime);
+ else           break;
+        }
+ else         mux.wait(5000);
+      }
+    }
+  }
+}

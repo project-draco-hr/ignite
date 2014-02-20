@@ -1,0 +1,13 @@
+{
+  GridCacheTxLocalAdapter<K,V> tx;
+  if (cctx.isDht())   tx=cctx.dht().near().context().tm().localTx();
+ else   tx=cctx.tm().localTx();
+  if (tx != null) {
+    long entryTtl=tx.entryTtl(key);
+    if (entryTtl > 0)     return entryTtl;
+  }
+synchronized (this) {
+    checkObsolete();
+    return ttlExtras();
+  }
+}

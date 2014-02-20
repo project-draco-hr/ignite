@@ -1,0 +1,33 @@
+{
+  JarFile jarFile=null;
+  try {
+    jarFile=new JarFile(jarName,true);
+    Manifest manifest=jarFile.getManifest();
+    if (manifest == null) {
+      return pubKey == null;
+    }
+    Set<String> manifestFiles=getSignedFiles(manifest);
+    Enumeration<JarEntry> entries=jarFile.entries();
+    while (entries.hasMoreElements()) {
+      JarEntry jarEntry=entries.nextElement();
+      if (jarEntry.isDirectory()) {
+        continue;
+      }
+      verifyDigestsImplicitly(jarFile.getInputStream(jarEntry));
+      if (verifyEntry(jarEntry,manifest,pubKey,allSigned,false) == false) {
+        return false;
+      }
+      manifestFiles.remove(jarEntry.getName());
+    }
+    return manifestFiles.size() <= 0;
+  }
+ catch (  SecurityException e) {
+    if (log.isDebugEnabled()) {
+      log.debug("Got security error (ignoring): " + e.getMessage());
+    }
+  }
+ finally {
+    U.close(jarFile,log);
+  }
+  return false;
+}

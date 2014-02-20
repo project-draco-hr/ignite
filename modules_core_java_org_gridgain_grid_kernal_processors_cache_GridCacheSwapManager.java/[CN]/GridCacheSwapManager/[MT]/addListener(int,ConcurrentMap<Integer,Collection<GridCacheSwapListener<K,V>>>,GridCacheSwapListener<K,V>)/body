@@ -1,0 +1,29 @@
+{
+  Collection<GridCacheSwapListener<K,V>> lsnrs=map.get(part);
+  while (true) {
+    if (lsnrs != null) {
+      boolean empty;
+synchronized (lsnrs) {
+        if (!lsnrs.isEmpty()) {
+          lsnrs.add(lsnr);
+          break;
+        }
+ else         empty=true;
+      }
+      assert empty;
+      lsnrs=swapLsnrs.remove(part,lsnrs) ? null : swapLsnrs.get(part);
+    }
+ else {
+      lsnrs=new GridConcurrentHashSet<GridCacheSwapListener<K,V>>(){
+        @Override public boolean equals(        Object o){
+          return o == this;
+        }
+      }
+;
+      lsnrs.add(lsnr);
+      Collection<GridCacheSwapListener<K,V>> old=swapLsnrs.putIfAbsent(part,lsnrs);
+      if (old == null)       break;
+ else       lsnrs=old;
+    }
+  }
+}

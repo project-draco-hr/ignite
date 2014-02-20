@@ -1,0 +1,19 @@
+{
+  if (commit.compareAndSet(false,true)) {
+    try {
+      tx.commit0();
+      onComplete();
+    }
+ catch (    GridCacheTxTimeoutException e) {
+      onError(e);
+    }
+catch (    GridException e) {
+      if (tx.state() == UNKNOWN) {
+        onError(new GridCacheTxHeuristicException("Commit only partially succeeded " + "(entries will be invalidated on remote nodes once transaction timeout passes): " + tx,e));
+      }
+ else {
+        onError(new GridCacheTxRollbackException("Failed to commit transaction (will attempt rollback): " + tx,e));
+      }
+    }
+  }
+}

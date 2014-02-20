@@ -1,0 +1,19 @@
+{
+  System.out.println(">>>");
+  System.out.println(">>> Starting store rollback example.");
+  System.out.println(">>>");
+  GridCache<UUID,Person> cache=GridGain.grid().cache(null);
+  GridCacheTx tx=cache.txStart();
+  try {
+    Person val=cache.get(PERSON_ID);
+    System.out.println("Read value: " + val);
+    val=cache.put(PERSON_ID,person(PERSON_ID,"James","Maxwell","Famous scientist"));
+    System.out.println("Overwrote old value: " + val);
+    val=cache.get(PERSON_ID);
+    System.out.println("Read value: " + val);
+  }
+  finally {
+    tx.end();
+  }
+  System.out.println("Key value after rollback: " + cache.get(PERSON_ID));
+}

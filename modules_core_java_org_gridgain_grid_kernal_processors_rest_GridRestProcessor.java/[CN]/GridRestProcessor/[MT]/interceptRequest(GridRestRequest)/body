@@ -1,0 +1,20 @@
+{
+  GridClientMessageInterceptor interceptor=ctx.config().getClientMessageInterceptor();
+  if (interceptor == null)   return;
+  for (  String param : INTERCEPTED_PARAMS) {
+    Object oldVal=req.parameter(param);
+    if (oldVal != null) {
+      Object newVal=interceptor.onReceive(oldVal);
+      req.parameter(param,newVal);
+    }
+  }
+  int i=1;
+  while (true) {
+    Object k=req.parameter("k" + i);
+    Object v=req.parameter("v" + i);
+    if (k == null && v == null)     break;
+    if (k != null)     req.parameter("k" + i,interceptor.onReceive(k));
+    if (v != null)     req.parameter("v" + i,interceptor.onReceive(v));
+    i++;
+  }
+}

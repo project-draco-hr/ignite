@@ -1,0 +1,34 @@
+{
+  try {
+    InetAddress.getLocalHost();
+  }
+ catch (  UnknownHostException ignored) {
+    return;
+  }
+  int port;
+  RandomAccessFile ra=null;
+  FileLock lock=null;
+  try {
+    File file=new File(System.getProperty("java.io.tmpdir"),"gridgain.lastport.tmp");
+    file.setReadable(true,false);
+    file.setWritable(true,false);
+    ra=new RandomAccessFile(file,"rw");
+    lock=ra.getChannel().lock();
+    ra.seek(0);
+    String startPortStr=ra.readLine();
+    int startPort;
+    if (startPortStr != null && !startPortStr.isEmpty()) {
+      startPort=Integer.valueOf(startPortStr) + 1;
+      if (startPort > MAX_PORT)       startPort=MIN_PORT;
+    }
+ else     startPort=MIN_PORT;
+    port=findPort(startPort);
+    ra.setLength(0);
+    ra.writeBytes(String.valueOf(port));
+  }
+  finally {
+    if (lock != null)     lock.release();
+    if (ra != null)     ra.close();
+  }
+  System.out.println(port);
+}

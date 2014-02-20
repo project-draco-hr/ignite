@@ -1,0 +1,21 @@
+{
+  this.ctx=ctx;
+  if (!(loadFactor > 0) || initCap < 0 || concurrencyLevel <= 0)   throw new IllegalArgumentException();
+  if (concurrencyLevel > MAX_SEGS)   concurrencyLevel=MAX_SEGS;
+  int sshift=0;
+  int ssize=1;
+  while (ssize < concurrencyLevel) {
+    ++sshift;
+    ssize<<=1;
+  }
+  segShift=32 - sshift;
+  segMask=ssize - 1;
+  segs=(Segment[])Array.newInstance(Segment.class,ssize);
+  if (initCap > MAX_CAP)   initCap=MAX_CAP;
+  int c=initCap / ssize;
+  if (c * ssize < initCap)   ++c;
+  int cap=1;
+  while (cap < c)   cap<<=1;
+  if (cap < 16)   cap=16;
+  for (int i=0; i < segs.length; ++i)   segs[i]=new Segment(cap,loadFactor);
+}

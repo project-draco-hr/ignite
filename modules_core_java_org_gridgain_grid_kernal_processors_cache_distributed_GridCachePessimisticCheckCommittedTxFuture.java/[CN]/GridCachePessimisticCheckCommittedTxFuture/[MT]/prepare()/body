@@ -1,0 +1,40 @@
+{
+  if (log.isDebugEnabled())   log.debug("Checking if transaction was committed on remote nodes: " + tx);
+  long originatingThreadId=tx.threadId();
+  if (tx instanceof GridCacheTxRemoteEx)   originatingThreadId=((GridCacheTxRemoteEx)tx).remoteThreadId();
+  GridCacheCommittedTxInfo<K,V> txInfo=cctx.tm().txCommitted(tx.nearXidVersion(),tx.eventNodeId(),originatingThreadId);
+  if (txInfo != null) {
+    onDone(txInfo);
+    markInitialized();
+    return;
+  }
+  Collection<GridNode> checkNodes=CU.remoteNodes(cctx,tx.topologyVersion());
+  if (tx instanceof GridDhtTxRemote) {
+    if (tx.nodeId().equals(failedNodeId) && !tx.eventNodeId().equals(failedNodeId)) {
+      nearCheck=true;
+      GridNode nearNode=cctx.discovery().node(tx.eventNodeId());
+      if (nearNode == null) {
+        onDone(new GridTopologyException("Failed to check near transaction state (near node left grid): " + tx.eventNodeId()));
+        return;
+      }
+      checkNodes=Collections.singletonList(nearNode);
+    }
+  }
+  for (  GridNode rmtNode : checkNodes) {
+    if (rmtNode.id().equals(failedNodeId))     continue;
+    MiniFuture fut=new MiniFuture(rmtNode.id());
+    GridCachePessimisticCheckCommittedTxRequest<K,V> req=new GridCachePessimisticCheckCommittedTxRequest<>(tx,originatingThreadId,futureId(),fut.futureId());
+    add(fut);
+    try {
+      cctx.io().send(rmtNode.id(),req);
+    }
+ catch (    GridTopologyException ignored) {
+      fut.onNodeLeft();
+    }
+catch (    GridException e) {
+      fut.onError(e);
+      break;
+    }
+  }
+  markInitialized();
+}

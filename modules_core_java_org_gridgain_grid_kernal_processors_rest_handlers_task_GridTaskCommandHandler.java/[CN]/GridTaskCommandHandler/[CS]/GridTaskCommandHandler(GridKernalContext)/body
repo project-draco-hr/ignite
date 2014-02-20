@@ -1,0 +1,34 @@
+{
+  super(ctx);
+  ctx.io().addMessageListener(TOPIC_REST,new GridMessageListener(){
+    @Override public void onMessage(    UUID nodeId,    Object msg){
+      if (!(msg instanceof GridTaskResultRequest)) {
+        U.warn(log,"Received unexpected message instead of task result request: " + msg);
+        return;
+      }
+      try {
+        GridTaskResultRequest req=(GridTaskResultRequest)msg;
+        GridTaskResultResponse res=new GridTaskResultResponse();
+        GridUuid taskId=req.taskId();
+        TaskDescriptor desc=taskDescs.get(taskId);
+        if (desc != null) {
+          res.found(true);
+          res.finished(desc.finished());
+          Throwable err=desc.error();
+          if (err != null)           res.error(err.getMessage());
+ else {
+            res.result(desc.result());
+            res.resultBytes(ctx.config().getMarshaller().marshal(desc.result()));
+          }
+        }
+ else         res.found(false);
+        Object topic=ctx.config().getMarshaller().unmarshal(req.topicBytes(),null);
+        ctx.io().send(nodeId,topic,res,SYSTEM_POOL);
+      }
+ catch (      GridException e) {
+        U.error(log,"Failed to send job task result response.",e);
+      }
+    }
+  }
+);
+}

@@ -1,0 +1,20 @@
+{
+  try {
+    BufferedReader br=new BufferedReader(new InputStreamReader(streamToGrab));
+    String line;
+    while ((line=br.readLine()) != null && !isInterrupted()) {
+      if (line.startsWith(PID_MSG_PREFIX))       pid=line.substring(PID_MSG_PREFIX.length());
+ else       if (printC != null)       printC.apply(line);
+    }
+  }
+ catch (  IOException e) {
+    U.error(log,"Caught IOException while grabbing stream",e);
+    try {
+      proc.exitValue();
+      if (procKilledC != null)       procKilledC.apply();
+    }
+ catch (    IllegalThreadStateException e1) {
+      if (!interrupted())       U.error(log,"Failed to get exit value from process.",e1);
+    }
+  }
+}

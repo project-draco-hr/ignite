@@ -1,0 +1,45 @@
+{
+  AddressResponse res;
+  try {
+    res=new AddressResponse(addrs);
+  }
+ catch (  GridException e) {
+    U.error(log,"Failed to prepare multicast message.",e);
+    return;
+  }
+  byte[] reqData=new byte[MSG_ADDR_REQ_DATA.length];
+  DatagramPacket pckt=new DatagramPacket(reqData,reqData.length);
+  while (!isInterrupted()) {
+    try {
+      MulticastSocket sock;
+synchronized (this) {
+        if (isInterrupted())         return;
+        sock=this.sock;
+        if (sock == null)         sock=createSocket();
+      }
+      sock.receive(pckt);
+      if (!U.bytesEqual(U.GG_HEADER,0,reqData,0,U.GG_HEADER.length)) {
+        U.error(log,"Failed to verify message header.");
+        continue;
+      }
+      try {
+        sock.send(new DatagramPacket(res.data(),res.data().length,pckt.getAddress(),pckt.getPort()));
+      }
+ catch (      IOException e) {
+        if (e.getMessage().contains("Operation not permitted")) {
+          if (log.isDebugEnabled())           log.debug("Got 'operation not permitted' error, ignoring: " + e);
+        }
+ else         throw e;
+      }
+    }
+ catch (    IOException e) {
+      if (!isInterrupted()) {
+        U.error(log,"Failed to send/receive address message (will try to reconnect).",e);
+synchronized (this) {
+          U.close(sock);
+          sock=null;
+        }
+      }
+    }
+  }
+}

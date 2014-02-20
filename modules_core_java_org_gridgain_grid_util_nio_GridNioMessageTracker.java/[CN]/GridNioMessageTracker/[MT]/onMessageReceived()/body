@@ -1,0 +1,26 @@
+{
+  int cnt=msgCnt.incrementAndGet();
+  if (cnt >= msgQueueLimit && !paused) {
+    lock.lock();
+    try {
+      if (!paused && msgCnt.get() >= msgQueueLimit) {
+        ses.pauseReads();
+        paused=true;
+      }
+    }
+  finally {
+      lock.unlock();
+    }
+    if (paused && msgCnt.get() < msgQueueLimit && lock.tryLock()) {
+      try {
+        if (paused) {
+          ses.resumeReads();
+          paused=false;
+        }
+      }
+  finally {
+        lock.unlock();
+      }
+    }
+  }
+}

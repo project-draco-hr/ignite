@@ -1,0 +1,24 @@
+{
+  Collection<GridNode> nodes=nodes(grid);
+  if (qryLog.isDebugEnabled())   qryLog.debug(U.compact("Executing reduce query " + toShortString(nodes)));
+  if (locRdc == null) {
+    GridFutureAdapter<R2> errFut=new GridFutureAdapter<>(cctx.kernalContext());
+    errFut.onDone(new GridException("Local reducer must be set."));
+    return errFut;
+  }
+  GridCacheQueryFuture<R2> fut=execute(nodes,false,false,null,null);
+  final ReduceFuture<R2> rdcFut=new ReduceFuture<>(fut);
+  fut.listenAsync(new GridInClosure<GridFuture<Collection<R2>>>(){
+    @Override public void apply(    GridFuture<Collection<R2>> fut){
+      try {
+        Collection<R2> coll=fut.get();
+        rdcFut.onDone(coll.iterator().next());
+      }
+ catch (      GridException e) {
+        rdcFut.onDone(e);
+      }
+    }
+  }
+);
+  return rdcFut;
+}

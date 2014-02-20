@@ -1,0 +1,22 @@
+{
+  Connection conn=null;
+  String cfgPath=SSL_ENABLED ? "examples/config/example-cache-ssl.xml" : "examples/config/example-cache.xml";
+  try (Grid g=GridGain.start(cfgPath)){
+    GridCache<Object,Object> cache=g.cache(CACHE_NAME);
+    populate(cache);
+    Class.forName("org.gridgain.jdbc.GridJdbcDriver");
+    String url="jdbc:gridgain://localhost/" + CACHE_NAME;
+    if (cache.configuration().getCacheMode() == LOCAL)     url+="?nodeId=" + g.localNode().id();
+    conn=DriverManager.getConnection(url,configuration());
+    System.out.println(">>>");
+    queryAllPersons(conn);
+    System.out.println(">>>");
+    queryPersons(conn,30);
+    System.out.println(">>>");
+    queryPersonsInOrganization(conn,"GridGain");
+    System.out.println(">>>");
+  }
+  finally {
+    if (conn != null)     conn.close();
+  }
+}

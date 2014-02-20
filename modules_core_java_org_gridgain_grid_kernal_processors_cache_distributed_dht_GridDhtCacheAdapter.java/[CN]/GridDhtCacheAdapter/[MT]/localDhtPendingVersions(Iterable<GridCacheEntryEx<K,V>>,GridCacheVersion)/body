@@ -1,0 +1,18 @@
+{
+  Collection<GridCacheVersion> lessPending=new GridLeanSet<>(5);
+  for (  GridCacheEntryEx<K,V> entry : entries) {
+    while (true) {
+      try {
+        for (        GridCacheMvccCandidate cand : entry.localCandidates()) {
+          if (cand.version().isLess(baseVer))           lessPending.add(cand.version());
+        }
+        break;
+      }
+ catch (      GridCacheEntryRemovedException ignored) {
+        if (log.isDebugEnabled())         log.debug("Got removed entry is localDhtPendingVersions (will retry): " + entry);
+        entry=entryExx(entry.key());
+      }
+    }
+  }
+  return lessPending;
+}

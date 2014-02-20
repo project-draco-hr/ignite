@@ -1,0 +1,38 @@
+{
+  GridCacheConfiguration cfg=cctx.config();
+  maxBufSize=cfg.getContinuousQueryMaximumBufferSize();
+  queue=new LinkedBlockingQueue<>(cfg.getContinuousQueryQueueSize() / maxBufSize);
+  threads.add(new GridThread(new GridWorker(cctx.gridName(),"continuous-query-notifier",log){
+    @Override protected void body(){
+      while (!isCancelled()) {
+        Queue<GridCacheContinuousQueryEntry<K,V>> q;
+        try {
+          q=queue.take();
+        }
+ catch (        InterruptedException ignored) {
+          break;
+        }
+        GridCacheContinuousQueryEntry<K,V> e;
+        while ((e=q.poll()) != null) {
+          for (          ListenerInfo<K,V> lsnr : lsnrs.values())           lsnr.onEntryUpdate(e);
+        }
+      }
+    }
+  }
+));
+  threads.add(new GridThread(new GridWorker(cctx.gridName(),"continuous-query-unwinder",log){
+    @Override protected void body(){
+      while (!isCancelled()) {
+        try {
+          U.sleep(FORCE_UNWIND_INTERVAL);
+        }
+ catch (        GridInterruptedException ignored) {
+          break;
+        }
+        unwind(true);
+      }
+    }
+  }
+));
+  U.startThreads(threads);
+}

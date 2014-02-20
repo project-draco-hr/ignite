@@ -1,0 +1,24 @@
+{
+  Timer popularNumbersQryTimer=new Timer("numbers-query-worker");
+  final Grid g=GridGain.start("examples/config/example-streamer.xml");
+  try {
+    TimerTask task=scheduleQuery(g,popularNumbersQryTimer);
+    streamData(g);
+    task.run();
+    popularNumbersQryTimer.cancel();
+    g.compute().run(GridClosureCallMode.BROADCAST,new Runnable(){
+      @Override public void run(){
+        GridStreamer streamer=g.streamer("popular-numbers");
+        if (streamer == null)         System.err.println("Default streamer not found (is example-streamer.xml " + "configuration used on all nodes?)");
+ else {
+          System.out.println("Clearing number counters from streamer.");
+          streamer.reset();
+        }
+      }
+    }
+).get();
+  }
+  finally {
+    GridGain.stop(true);
+  }
+}

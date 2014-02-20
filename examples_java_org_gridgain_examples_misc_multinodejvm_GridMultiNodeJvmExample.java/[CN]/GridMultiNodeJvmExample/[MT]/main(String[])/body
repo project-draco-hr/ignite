@@ -1,0 +1,29 @@
+{
+  try {
+    ExecutorService exe=new ThreadPoolExecutor(NODE_COUNT,NODE_COUNT,0,TimeUnit.MILLISECONDS,new LinkedBlockingQueue<Runnable>());
+    final GridTcpDiscoveryIpFinder ipFinder=new GridTcpDiscoveryVmIpFinder(true);
+    for (int i=0; i < NODE_COUNT; i++) {
+      final String nodeName="jvm-node-" + i;
+      exe.submit(new Callable<Object>(){
+        @Override public Object call() throws Exception {
+          GridConfiguration cfg=new GridConfiguration();
+          cfg.setGridName(nodeName);
+          GridTcpDiscoverySpi discoSpi=new GridTcpDiscoverySpi();
+          discoSpi.setIpFinder(ipFinder);
+          cfg.setDiscoverySpi(discoSpi);
+          GridGain.start(cfg);
+          return null;
+        }
+      }
+);
+    }
+    exe.shutdown();
+    exe.awaitTermination(20,TimeUnit.SECONDS);
+    Grid g=GridGain.grid("jvm-node-0");
+    System.out.println("Number of nodes in the grid: " + g.nodes().size());
+    JOptionPane.showMessageDialog(null,new JComponent[]{new JLabel("GridGain JVM cloud started."),new JLabel("Press OK to stop all nodes.")},"GridGain",JOptionPane.INFORMATION_MESSAGE);
+  }
+  finally {
+    GridGain.stopAll(true);
+  }
+}

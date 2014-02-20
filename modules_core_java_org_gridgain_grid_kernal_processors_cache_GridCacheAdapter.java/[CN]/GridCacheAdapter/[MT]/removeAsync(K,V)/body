@@ -1,0 +1,23 @@
+{
+  ctx.denyOnLocalRead();
+  A.notNull(key,"key",val,"val");
+  validateCacheKey(key);
+  validateCacheValue(val);
+  return asyncOp(new AsyncOp<Boolean>(key){
+    @Override public GridFuture<Boolean> op(    GridCacheTxLocalAdapter<K,V> tx){
+      if (ctx.deploymentEnabled()) {
+        try {
+          ctx.deploy().registerClass(val);
+        }
+ catch (        GridException e) {
+          return new GridFinishedFuture<>(ctx.kernalContext(),e);
+        }
+      }
+      return tx.removexAsync(key,null,ctx.vararg(F.<K,V>cacheContainsPeek(val)));
+    }
+    @Override public String toString(){
+      return "removeAsync [key=" + key + ", val="+ val+ ']';
+    }
+  }
+);
+}

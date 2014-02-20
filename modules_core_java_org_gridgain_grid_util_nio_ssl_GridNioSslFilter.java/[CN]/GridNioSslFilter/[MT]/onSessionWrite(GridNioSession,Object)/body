@@ -1,0 +1,23 @@
+{
+  ByteBuffer input=checkMessage(ses,msg);
+  if (!input.hasRemaining())   return new GridNioFinishedFuture<Object>(null);
+  GridNioSslHandler hnd=sslHandler(ses);
+  hnd.lock();
+  try {
+    if (hnd.isOutboundDone())     return new GridNioFinishedFuture<Object>(new IOException("Failed to send data (secure session was " + "already closed): " + ses));
+    if (hnd.isHandshakeFinished()) {
+      hnd.encrypt(input);
+      return hnd.writeNetBuffer();
+    }
+ else {
+      if (log.isDebugEnabled())       log.debug("Write request received during handshake, scheduling deferred write: " + ses);
+      return hnd.deferredWrite(input);
+    }
+  }
+ catch (  SSLException e) {
+    throw new GridNioException("Failed to encode SSL data: " + ses,e);
+  }
+ finally {
+    hnd.unlock();
+  }
+}

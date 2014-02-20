@@ -1,0 +1,13 @@
+{
+  GridCacheContext<?,?> ctx=cache.context();
+  if (isNearEnabled(ctx)) {
+    GridDhtCache dht=ctx.near().dht();
+    GridCacheContext<?,?> dhtCtx=dht.context();
+    for (    GridCacheManager mgr : dhtManagers(dhtCtx))     mgr.onKernalStart();
+    dht.onKernalStart();
+    if (log.isDebugEnabled())     log.debug("Executed onKernalStart() callback for DHT cache: " + dht.name());
+  }
+  for (  GridCacheManager mgr : F.view(ctx.managers(),F0.notContains(dhtExcludes(ctx))))   mgr.onKernalStart();
+  cache.onKernalStart();
+  if (log.isDebugEnabled())   log.debug("Executed onKernalStart() callback for cache [name=" + cache.name() + ", mode="+ cache.configuration().getCacheMode()+ ']');
+}

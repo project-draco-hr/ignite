@@ -1,0 +1,23 @@
+{
+  this.fut=fut;
+  GridCacheQueryBaseAdapter<K,V> qry=fut.query();
+  GridPredicate<GridCacheEntry<K,V>> prjPred=qry.projectionFilter() == null ? F.<GridCacheEntry<K,V>>alwaysTrue() : qry.projectionFilter();
+  GridClosure<V,Object> trans=null;
+  if (qry instanceof GridCacheTransformQueryAdapter) {
+    GridCacheTransformQueryAdapter tmp=(GridCacheTransformQueryAdapter)qry;
+    trans=tmp.remoteTransformer() == null ? null : (GridClosure<V,Object>)tmp.remoteTransformer().apply(qry.getClosureArguments());
+  }
+  GridReducer<Map.Entry<K,V>,Object> rdc=null;
+  if (qry instanceof GridCacheReduceQueryAdapter) {
+    GridCacheReduceQueryAdapter tmp=(GridCacheReduceQueryAdapter)qry;
+    rdc=tmp.remoteReducer() == null ? null : (GridReducer<Map.Entry<K,V>,Object>)tmp.remoteReducer().apply(qry.getClosureArguments());
+  }
+  GridReducer<List<Object>,Object> fieldsRdc=null;
+  if (qry instanceof GridCacheReduceFieldsQueryAdapter) {
+    GridCacheReduceFieldsQueryAdapter tmp=(GridCacheReduceFieldsQueryAdapter)qry;
+    fieldsRdc=tmp.remoteReducer() == null ? null : (GridReducer<List<Object>,Object>)tmp.remoteReducer().apply(qry.getClosureArguments());
+  }
+  boolean incMeta=false;
+  if (qry instanceof GridCacheFieldsQuery)   incMeta=((GridCacheFieldsQuery)qry).includeMetadata();
+  return new GridCacheQueryInfo<>(true,single,prjPred,trans,rdc,fieldsRdc,qry,qry.pageSize(),qry.cloneValues(),qry.includeBackups(),fut,null,-1,incMeta,vis,true);
+}

@@ -1,0 +1,26 @@
+{
+  try {
+    GridProductLicense lic=licProc != null ? licProc.license() : null;
+    URLConnection conn=new URL(HTTP_URL + (HTTP_URL.endsWith(".php") ? '?' : '&') + (topSize > 0 ? "t=" + topSize + "&" : "")+ (lic != null ? "l=" + lic.id() + "&" : "")+ "p="+ gridName).openConnection();
+    if (!isCancelled()) {
+      conn.setConnectTimeout(3000);
+      conn.setReadTimeout(3000);
+      InputStream in=null;
+      Document dom=null;
+      try {
+        in=conn.getInputStream();
+        if (in == null)         return;
+        dom=tidy.parseDOM(in,null);
+      }
+ catch (      IOException e) {
+        if (log.isDebugEnabled())         log.debug("Failed to connect to GridGain update server. " + e.getMessage());
+      }
+ finally {
+        U.close(in,log);
+      }
+      if (dom != null)       latestVer=obtainVersionFrom(dom);
+    }
+  }
+ catch (  Exception ignore) {
+  }
+}

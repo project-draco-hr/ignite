@@ -1,0 +1,55 @@
+{
+  try (Grid g=GridGain.start(args.length == 0 ? "examples/config/example-default.xml" : args[0])){
+    if (g.nodes().size() < 2) {
+      System.err.println("Two or more nodes are needed.");
+      return;
+    }
+    GridProjection rmt=g.forNode(g.forRemotes().nodes().iterator().next());
+    final int MSG_NUM=1 + new Random().nextInt(100);
+    rmt.compute().run(UNICAST,new GridRunnable(){
+      @GridInstanceResource private Grid g;
+      @Override public void run(){
+        final CountDownLatch latch=new CountDownLatch(1);
+        g.nodeLocalMap().put("latch",latch);
+        g.message().localListen(null,new GridMessagingListenActor<String>(){
+          private final CRC32 crc32=new CRC32();
+          private final AtomicInteger cnt=new AtomicInteger();
+          @Override protected void receive(          UUID nodeId,          String rcvMsg) throws Throwable {
+            System.out.println("Calculating for: " + rcvMsg);
+            crc32.update(rcvMsg.getBytes(UTF_8));
+            if (cnt.incrementAndGet() == MSG_NUM) {
+              stop();
+              g.nodeLocalMap().put("crc32",crc32.getValue());
+              latch.countDown();
+            }
+ else             skip();
+          }
+        }
+);
+      }
+    }
+).get();
+    for (int i=0; i < MSG_NUM; i++)     rmt.message().send(null,"Message " + i);
+    rmt.compute().run(UNICAST,new GridRunnable(){
+      @GridInstanceResource private Grid g;
+      @Override public void run(){
+        CountDownLatch latch=(CountDownLatch)g.nodeLocalMap().get("latch");
+        try {
+          latch.await();
+        }
+ catch (        InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+).get();
+    Long crc32=rmt.compute().call(UNICAST,new Callable<Long>(){
+      @GridInstanceResource private Grid g;
+      @Override public Long call() throws Exception {
+        return (Long)g.nodeLocalMap().get("crc32");
+      }
+    }
+).get();
+    System.out.println("CRC32: " + crc32);
+  }
+ }

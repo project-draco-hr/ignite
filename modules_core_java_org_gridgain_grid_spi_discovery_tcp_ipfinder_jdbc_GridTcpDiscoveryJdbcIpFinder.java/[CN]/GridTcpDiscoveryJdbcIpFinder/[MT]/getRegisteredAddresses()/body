@@ -1,0 +1,23 @@
+{
+  init();
+  Connection conn=null;
+  PreparedStatement stmt=null;
+  ResultSet rs=null;
+  try {
+    conn=dataSrc.getConnection();
+    conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+    stmt=conn.prepareStatement(GET_ADDRS_QRY);
+    rs=stmt.executeQuery();
+    Collection<InetSocketAddress> addrs=new LinkedList<>();
+    while (rs.next())     addrs.add(new InetSocketAddress(rs.getString(1),rs.getInt(2)));
+    return addrs;
+  }
+ catch (  SQLException e) {
+    throw new GridSpiException("Failed to get registered addresses version.",e);
+  }
+ finally {
+    U.closeQuiet(rs);
+    U.closeQuiet(stmt);
+    U.closeQuiet(conn);
+  }
+}

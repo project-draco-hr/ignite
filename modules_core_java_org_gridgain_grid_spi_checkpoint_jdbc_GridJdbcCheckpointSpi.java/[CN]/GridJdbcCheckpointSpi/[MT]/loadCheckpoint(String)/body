@@ -1,0 +1,21 @@
+{
+  Connection conn=null;
+  PreparedStatement st=null;
+  ResultSet rs=null;
+  try {
+    conn=getConnection();
+    st=conn.prepareStatement(selSql);
+    st.setString(1,key);
+    st.setTime(2,new Time(U.currentTimeMillis()));
+    rs=st.executeQuery();
+    return rs.next() ? rs.getBytes(1) : null;
+  }
+ catch (  SQLException e) {
+    throw new GridSpiException("Failed to load checkpoint [tblName=" + tblName + ", key="+ key+ ']',e);
+  }
+ finally {
+    U.close(rs,log);
+    U.close(st,log);
+    U.close(conn,log);
+  }
+}

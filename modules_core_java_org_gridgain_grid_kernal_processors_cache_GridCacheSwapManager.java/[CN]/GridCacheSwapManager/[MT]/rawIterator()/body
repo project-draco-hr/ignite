@@ -1,0 +1,54 @@
+{
+  if (!swapEnabled() && !offHeapEnabled())   return new GridEmptyCloseableIterator<>();
+  checkIteratorQueue();
+  if (offHeapEnabled() && !swapEnabled())   return rawOffHeapIterator();
+  if (swapEnabled() && !offHeapEnabled())   return rawSwapIterator();
+  return new GridCloseableIteratorAdapter<Map.Entry<byte[],byte[]>>(){
+    private GridCloseableIterator<Map.Entry<byte[],byte[]>> it;
+    private boolean offheapFlag=true;
+    private boolean done;
+    private Map.Entry<byte[],byte[]> cur;
+{
+      it=rawOffHeapIterator();
+      if (it == null || !it.hasNext()) {
+        it.close();
+        offheapFlag=false;
+      }
+      advance();
+    }
+    private void advance() throws GridException {
+      if (it.hasNext())       return;
+      it.close();
+      if (offheapFlag) {
+        offheapFlag=false;
+        it=rawSwapIterator();
+        if (it == null || !it.hasNext()) {
+          it.close();
+          done=true;
+        }
+      }
+ else       done=true;
+    }
+    @Override protected Map.Entry<byte[],byte[]> onNext() throws GridException {
+      if (done)       throw new NoSuchElementException();
+      cur=it.next();
+      advance();
+      return cur;
+    }
+    @Override protected boolean onHasNext(){
+      return !done;
+    }
+    @Override protected void onRemove() throws GridException {
+      if (offheapFlag) {
+        K key=unmarshal(cur.getKey(),cctx.deploy().globalLoader());
+        int part=cctx.affinity().partition(key);
+        offheap.removex(spaceName,part,key,cur.getKey());
+      }
+ else       it.removeX();
+    }
+    @Override protected void onClose() throws GridException {
+      if (it != null)       it.close();
+    }
+  }
+;
+}

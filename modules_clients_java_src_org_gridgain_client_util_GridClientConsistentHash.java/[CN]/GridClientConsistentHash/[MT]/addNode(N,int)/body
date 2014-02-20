@@ -1,0 +1,23 @@
+{
+  if (node == null)   return false;
+  long seed=affSeed.hashCode() * 31 + hash(node);
+  rw.writeLock().lock();
+  try {
+    if (!nodes.add(node))     return false;
+    int hash=hash(seed);
+    SortedSet<N> set=circle.get(hash);
+    if (set == null)     circle.put(hash,set=new TreeSet<>(nodesComp));
+    set.add(node);
+    for (int i=1; i <= replicas; i++) {
+      seed=seed * affSeed.hashCode() + i;
+      hash=hash(seed);
+      set=circle.get(hash);
+      if (set == null)       circle.put(hash,set=new TreeSet<>(nodesComp));
+      set.add(node);
+    }
+    return true;
+  }
+  finally {
+    rw.writeLock().unlock();
+  }
+}

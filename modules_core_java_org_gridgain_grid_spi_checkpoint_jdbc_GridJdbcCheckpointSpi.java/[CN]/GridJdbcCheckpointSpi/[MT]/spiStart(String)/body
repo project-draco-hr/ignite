@@ -1,0 +1,52 @@
+{
+  startStopwatch();
+  assertParameter(dataSrc != null,"dataSrc != null");
+  assertParameter(!F.isEmpty(tblName),"!F.isEmpty(tblName)");
+  assertParameter(!F.isEmpty(keyName),"!F.isEmpty(keyName)");
+  assertParameter(!F.isEmpty(keyType),"!F.isEmpty(keyType)");
+  assertParameter(!F.isEmpty(valName),"!F.isEmpty(valName)");
+  assertParameter(!F.isEmpty(valType),"!F.isEmpty(valType)");
+  assertParameter(!F.isEmpty(expDateName),"!F.isEmpty(expDateName)");
+  assertParameter(!F.isEmpty(expDateType),"!F.isEmpty(expDateType)");
+  crtTblSql=sql(CREATE_TABLE_SQL,tblName,keyName,keyType,valName,valType,expDateName,expDateType);
+  chkTblExistsSql=sql(CHECK_TABLE_EXISTS_SQL,tblName);
+  chkExistsSql=sql(CHECK_EXISTS_SQL,tblName,keyName);
+  updateSql=sql(UPDATE_SQL,tblName,valName,expDateName,keyName);
+  insSql=sql(INSERT_SQL,tblName,keyName,valName,expDateName);
+  delSql=sql(DELETE_SQL,tblName,keyName,expDateName);
+  selSql=sql(SELECT_SQL,valName,tblName,keyName,expDateName);
+  delExpSql=sql(DELETE_EXPIRED_SQL,tblName,expDateName);
+  selExpSql=sql(SELECT_EXPIRED_SQL,keyName,tblName,expDateName);
+  Connection conn=null;
+  try {
+    conn=getConnection();
+    int errCnt=0;
+    while (true) {
+      try {
+        if (!isCheckpointTableExists(conn)) {
+          createCheckpointTable(conn);
+        }
+        conn.commit();
+        break;
+      }
+ catch (      SQLException e) {
+        U.rollbackConnection(conn,log);
+        if (++errCnt >= retryNum) {
+          throw new GridSpiException("Failed to create checkpoint table: " + tblName,e);
+        }
+        if (log.isDebugEnabled()) {
+          log.debug("Failed to create checkpoint table as it may already exist (will try again): " + tblName);
+        }
+      }
+    }
+  }
+ catch (  SQLException e) {
+    throw new GridSpiException("Failed to start jdbc checkpoint SPI: " + tblName,e);
+  }
+ finally {
+    U.close(conn,log);
+  }
+  if (log.isDebugEnabled()) {
+    log.debug(startInfo());
+  }
+}
