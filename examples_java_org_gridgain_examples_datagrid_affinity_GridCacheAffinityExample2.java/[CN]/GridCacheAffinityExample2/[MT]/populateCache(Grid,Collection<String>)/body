@@ -1,8 +1,8 @@
 {
-  GridProjection prj=g.forCaches(NAME);
+  GridProjection prj=g.forCache(NAME);
   if (prj.nodes().contains(g.localNode()))   prj=g.forLocal();
-  prj.compute().run(UNICAST,new GridInClosure<Collection<String>>(){
-    @Override public void apply(    Collection<String> keys){
+  prj.compute().apply(new GridClosure<Collection<String>,Void>(){
+    @Override public Void apply(    Collection<String> keys){
       info("Storing keys in cache: " + keys);
       GridCache<String,String> c=g.cache(NAME);
       try {
@@ -11,6 +11,7 @@
  catch (      GridException e) {
         throw new GridRuntimeException(e);
       }
+      return null;
     }
   }
 ,keys).get();
