@@ -1,0 +1,17 @@
+{
+  A.notNull(p,"p");
+  guard();
+  try {
+    GridContinuousHandler hnd=new GridMessageListenHandler(topic,(GridBiPredicate<UUID,Object>)p);
+    return ctx.continuous().startRoutine(hnd,1,0,false,prj.predicate()).chain(new CX1<GridFuture<UUID>,Object>(){
+      @Override public Object applyx(      GridFuture<UUID> f) throws GridException {
+        f.get();
+        return null;
+      }
+    }
+);
+  }
+  finally {
+    unguard();
+  }
+}

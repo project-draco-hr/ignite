@@ -1,10 +1,9 @@
 {
-  Collection<? extends GridNode> subgrid=getThreadContext(TC_SUBGRID);
-  if (subgrid == null)   subgrid=ctx.discovery().allNodes();
-  Collection<? extends GridNode> nodes=ctx.topology().getTopology(ses,subgrid);
-  if (F.isEmpty(nodes))   throw new GridEmptyProjectionException("Topology projection is empty.");
-  List<GridNode> shuffledNodes=new ArrayList<>(nodes.size());
-  for (  GridNode node : nodes)   shuffledNodes.add(node);
+  Collection<UUID> top=ses.getTopology();
+  Collection<? extends GridNode> subgrid=top != null ? ctx.discovery().nodes(top) : ctx.discovery().allNodes();
+  if (F.isEmpty(subgrid))   throw new GridEmptyProjectionException("Topology projection is empty.");
+  List<GridNode> shuffledNodes=new ArrayList<>(subgrid.size());
+  for (  GridNode node : subgrid)   shuffledNodes.add(node);
   if (shuffledNodes.size() > 1)   Collections.shuffle(shuffledNodes);
   return shuffledNodes;
 }

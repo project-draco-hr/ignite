@@ -73,46 +73,58 @@ commState.readItems=0;
 commState.cur=null;
 commState.idx++;
 case 11:
-byte[] nodeFilterBytes0=commState.getByteArray();
-if (nodeFilterBytes0 == BYTE_ARR_NOT_READ) return false;
-nodeFilterBytes=nodeFilterBytes0;
-commState.idx++;
-case 12:
 byte[] sesAttrsBytes0=commState.getByteArray();
 if (sesAttrsBytes0 == BYTE_ARR_NOT_READ) return false;
 sesAttrsBytes=sesAttrsBytes0;
 commState.idx++;
-case 13:
+case 12:
 if (buf.remaining() < 1) return false;
 sesFullSup=commState.getBoolean();
 commState.idx++;
-case 14:
+case 13:
 GridUuid sesId0=commState.getGridUuid();
 if (sesId0 == GRID_UUID_NOT_READ) return false;
 sesId=sesId0;
 commState.idx++;
-case 15:
+case 14:
 byte[] siblingsBytes0=commState.getByteArray();
 if (siblingsBytes0 == BYTE_ARR_NOT_READ) return false;
 siblingsBytes=siblingsBytes0;
 commState.idx++;
-case 16:
+case 15:
 if (buf.remaining() < 8) return false;
 startTaskTime=commState.getLong();
 commState.idx++;
-case 17:
+case 16:
 String taskClsName0=commState.getString();
 if (taskClsName0 == STR_NOT_READ) return false;
 taskClsName=taskClsName0;
 commState.idx++;
-case 18:
+case 17:
 String taskName0=commState.getString();
 if (taskName0 == STR_NOT_READ) return false;
 taskName=taskName0;
 commState.idx++;
-case 19:
+case 18:
 if (buf.remaining() < 8) return false;
 timeout=commState.getLong();
+commState.idx++;
+case 19:
+if (commState.readSize == -1) {
+if (buf.remaining() < 4) return false;
+commState.readSize=commState.getInt();
+}
+if (commState.readSize >= 0) {
+if (top == null) top=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+UUID _val=commState.getUuid();
+if (_val == UUID_NOT_READ) return false;
+top.add((UUID)_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
 commState.idx++;
 case 20:
 String userVer0=commState.getString();
