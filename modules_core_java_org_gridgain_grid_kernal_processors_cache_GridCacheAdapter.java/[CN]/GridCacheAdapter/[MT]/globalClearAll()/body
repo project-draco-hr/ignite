@@ -1,8 +1,11 @@
 {
   try {
-    Collection<GridNode> nodes=ctx.grid().forCaches(name()).forRemotes().nodes();
+    Collection<GridNode> nodes=ctx.grid().forCache(name()).forRemotes().nodes();
     GridFuture<Object> fut=null;
-    if (!nodes.isEmpty())     fut=ctx.closures().callAsyncNoFailover(BROADCAST,new GlobalClearAllCallable(name()),nodes,gridCfg.getNetworkTimeout(),true);
+    if (!nodes.isEmpty()) {
+      ctx.kernalContext().task().setThreadContext(TC_TIMEOUT,gridCfg.getNetworkTimeout());
+      fut=ctx.closures().callAsyncNoFailover(BROADCAST,new GlobalClearAllCallable(name()),nodes,true);
+    }
     clearAll();
     if (fut != null)     fut.get();
   }
