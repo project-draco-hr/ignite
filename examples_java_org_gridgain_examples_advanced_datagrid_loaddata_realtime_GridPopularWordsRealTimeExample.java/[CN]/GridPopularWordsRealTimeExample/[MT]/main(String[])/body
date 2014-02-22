@@ -1,0 +1,30 @@
+{
+  String ggHome=GridExamplesUtils.resolveGridGainHome();
+  if (ggHome == null)   throw new RuntimeException("GRIDGAIN_HOME must be set to GridGain installation root.");
+  final File inputDir=new File(ggHome,"examples/java/org/gridgain/examples/datagrid/loaddata/realtime/books");
+  if (!inputDir.exists()) {
+    System.err.println("Input directory does not exist: " + inputDir.getAbsolutePath());
+    return;
+  }
+  Timer popularWordsQryTimer=new Timer("words-query-worker");
+  final Grid g=GridGain.start("examples/config/example-cache-popularcounts.xml");
+  try {
+    TimerTask task=scheduleQuery(g,popularWordsQryTimer,POPULAR_WORDS_CNT);
+    streamData(g,inputDir);
+    task.run();
+    popularWordsQryTimer.cancel();
+    g.compute().run(new Runnable(){
+      @Override public void run(){
+        if (g.cache(null) == null)         System.err.println("Default cache not found (is example-cache-popularcounts.xml " + "configuration used on all nodes?)");
+ else {
+          System.out.println("Clearing keys from cache: " + g.cache(null).size());
+          g.cache(null).clearAll();
+        }
+      }
+    }
+).get();
+  }
+  finally {
+    GridGain.stop(true);
+  }
+}

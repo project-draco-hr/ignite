@@ -1,0 +1,44 @@
+{
+  try (Grid g=GridGain.start("examples/config/example-cache.xml")){
+    GridCacheContinuousQuery<UUID,Person> qry=null;
+    try {
+      GridCache<UUID,Person> cache=g.cache(CACHE_NAME);
+      Person p1=new Person("John","Doe",500);
+      Person p2=new Person("Jane","Doe",2000);
+      Person p3=new Person("John","Smith",1000);
+      cache.putx(p1.getId(),p1);
+      cache.putx(p2.getId(),p2);
+      cache.putx(p3.getId(),p3);
+      qry=cache.queries().createContinuousQuery();
+      qry.callback(new GridBiPredicate<UUID,Collection<Map.Entry<UUID,Person>>>(){
+        @Override public boolean apply(        UUID uuid,        Collection<Map.Entry<UUID,Person>> entries){
+          for (          Map.Entry<UUID,Person> e : entries) {
+            Person p=e.getValue();
+            System.out.println(">>>");
+            System.out.println(">>> " + p.getFirstName() + " "+ p.getLastName()+ "'s salary is "+ p.getSalary());
+            System.out.println(">>>");
+          }
+          return true;
+        }
+      }
+);
+      qry.filter(new GridBiPredicate<UUID,Person>(){
+        @Override public boolean apply(        UUID uuid,        Person person){
+          return person.getSalary() > 1000;
+        }
+      }
+);
+      qry.execute();
+      Person p4=new Person("Mike","Smith",2000);
+      Person p5=new Person("Jane","White",500);
+      Person p6=new Person("Mike","Green",1500);
+      cache.putx(p4.getId(),p4);
+      cache.putx(p5.getId(),p5);
+      cache.putx(p6.getId(),p6);
+      Thread.sleep(2000);
+    }
+  finally {
+      if (qry != null)       qry.cancel();
+    }
+  }
+ }
