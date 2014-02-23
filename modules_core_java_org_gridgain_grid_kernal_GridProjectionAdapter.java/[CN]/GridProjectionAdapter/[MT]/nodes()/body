@@ -1,7 +1,18 @@
 {
   guard();
   try {
-    return F.view(ctx.discovery().nodes(),predicate());
+    if (ids != null) {
+      Collection<GridNode> nodes=new ArrayList<>(ids.size());
+      for (      UUID id : ids) {
+        GridNode node=ctx.discovery().node(id);
+        if (node != null)         nodes.add(node);
+      }
+      return nodes;
+    }
+ else {
+      Collection<GridNode> all=ctx.discovery().nodes();
+      return p != null ? F.view(all,p) : all;
+    }
   }
   finally {
     unguard();
