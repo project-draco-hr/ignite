@@ -1,0 +1,26 @@
+{
+  try {
+    if (itemView.get(entry.getKey()) != null) {
+      keys.add(entry.getKey());
+      if (size > 0 && keys.size() == size) {
+        GridCacheTx tx=CU.txStartInternal(cctx,itemView,PESSIMISTIC,REPEATABLE_READ);
+        try {
+          itemView.removeAll(keys);
+          tx.commit();
+        }
+  finally {
+          tx.end();
+        }
+        retVal.set1(retVal.get1() + size);
+        keys.clear();
+      }
+    }
+ else     itemView.removex(entry.getKey());
+  }
+ catch (  GridException e) {
+    U.error(log,"Failed to remove items: " + keys,e);
+    retVal.set2(e);
+    return false;
+  }
+  return true;
+}

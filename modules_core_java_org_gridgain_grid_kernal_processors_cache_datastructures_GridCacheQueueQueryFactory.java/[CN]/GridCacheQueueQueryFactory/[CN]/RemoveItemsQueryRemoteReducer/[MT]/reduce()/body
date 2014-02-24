@@ -1,0 +1,18 @@
+{
+  if (retVal.get2() != null)   return retVal;
+  try {
+    GridCacheTx tx=CU.txStartInternal(cctx,itemView,PESSIMISTIC,REPEATABLE_READ);
+    try {
+      itemView.removeAll(keys);
+      tx.commit();
+    }
+  finally {
+      tx.end();
+    }
+    retVal.set1(keys.size());
+  }
+ catch (  GridException e) {
+    retVal.set2(e);
+  }
+  return retVal;
+}
