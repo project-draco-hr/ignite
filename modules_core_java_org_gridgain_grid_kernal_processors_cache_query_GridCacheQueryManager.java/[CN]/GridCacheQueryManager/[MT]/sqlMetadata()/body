@@ -1,28 +1,28 @@
 {
-  Callable<Collection<CacheMetadata>> job=new MetadataJob(spi);
+  Callable<Collection<CacheSqlMetadata>> job=new MetadataJob(spi);
   Collection<GridNode> nodes=F.view(cctx.discovery().remoteNodes(),new P1<GridNode>(){
     @Override public boolean apply(    GridNode n){
       return U.hasCache(n,space);
     }
   }
 );
-  Collection<Collection<CacheMetadata>> res=new ArrayList<>(nodes.size() + 1);
-  GridFuture<Collection<Collection<CacheMetadata>>> rmtFut=null;
+  Collection<Collection<CacheSqlMetadata>> res=new ArrayList<>(nodes.size() + 1);
+  GridFuture<Collection<Collection<CacheSqlMetadata>>> rmtFut=null;
   if (!nodes.isEmpty())   rmtFut=cctx.closures().callAsyncNoFailover(BROADCAST,F.asSet(job),nodes,true);
-  GridFuture<Collection<CacheMetadata>> locFut=cctx.closures().callLocalSafe(job,true);
+  GridFuture<Collection<CacheSqlMetadata>> locFut=cctx.closures().callLocalSafe(job,true);
   if (rmtFut != null)   res.addAll(rmtFut.get());
   res.add(locFut.get());
-  Map<String,Collection<CacheMetadata>> map=new HashMap<>();
-  for (  Collection<CacheMetadata> col : res) {
-    for (    CacheMetadata meta : col) {
+  Map<String,Collection<CacheSqlMetadata>> map=new HashMap<>();
+  for (  Collection<CacheSqlMetadata> col : res) {
+    for (    CacheSqlMetadata meta : col) {
       String name=meta.cacheName();
-      Collection<CacheMetadata> cacheMetas=map.get(name);
+      Collection<CacheSqlMetadata> cacheMetas=map.get(name);
       if (cacheMetas == null)       map.put(name,cacheMetas=new LinkedList<>());
       cacheMetas.add(meta);
     }
   }
-  Collection<GridCacheMetadata> col=new ArrayList<>(map.size());
-  col.add(new CacheMetadata(map.remove(space)));
-  for (  Collection<CacheMetadata> metas : map.values())   col.add(new CacheMetadata(metas));
+  Collection<GridCacheSqlMetadata> col=new ArrayList<>(map.size());
+  col.add(new CacheSqlMetadata(map.remove(space)));
+  for (  Collection<CacheSqlMetadata> metas : map.values())   col.add(new CacheSqlMetadata(metas));
   return col;
 }
