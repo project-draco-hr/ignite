@@ -1,10 +1,8 @@
 {
-  boolean retVal;
-  GridCacheReduceQuery<GridCacheQueueItemKey,GridCacheQueueItemImpl<T>,boolean[],Boolean> qry=qryFactory.containsQuery(type).queryArguments(qid,hashes).closureArguments(cctx.cache().name(),items);
+  GridCacheReduceQuery<GridCacheQueueItemKey,GridCacheQueueItemImpl<T>,boolean[],Boolean> qry=qryFactory.containsQuery(type,items).queryArguments(qid,hashes);
   if (collocated) {
     GridNode node=CU.primaryNode(cctx,key);
-    retVal=qry.reduce(cctx.grid().forNode(node)).get();
+    qry.projection(cctx.grid().forNode(node));
   }
- else   retVal=qry.reduce(cctx.grid()).get();
-  return retVal;
+  return qry.reduce().get();
 }

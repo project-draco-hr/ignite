@@ -1,15 +1,9 @@
 {
   GridPredicate<GridCacheEntry<K,V>> prjPred=req.projectionFilter() == null ? F.<GridCacheEntry<K,V>>alwaysTrue() : req.projectionFilter();
-  GridClosure<V,Object> trans=req.transformer() == null ? null : (GridClosure<V,Object>)req.transformer().apply(req.closureArguments());
-  GridReducer<Map.Entry<K,V>,Object> rdc=req.reducer() == null ? null : (GridReducer<Map.Entry<K,V>,Object>)req.reducer().apply(req.closureArguments());
-  GridReducer<List<Object>,Object> fieldsRdc=req.fieldsReducer() == null ? null : (GridReducer<List<Object>,Object>)req.fieldsReducer().apply(req.closureArguments());
-  GridCacheQueryBaseAdapter<?,?> qry=fields ? new GridCacheFieldsQueryAdapter((GridCacheContext<Object,Object>)cctx,req.clause(),(GridPredicate)prjPred,req.cloneValues() ? EnumSet.of(GridCacheFlag.CLONE) : EnumSet.noneOf(GridCacheFlag.class)) : new GridCacheQueryAdapter<>(cctx,req.queryId(),req.type(),req.clause(),null,req.className(),prjPred,req.cloneValues() ? EnumSet.of(GridCacheFlag.CLONE) : EnumSet.noneOf(GridCacheFlag.class));
-  qry.remoteKeyFilter(req.keyFilter());
-  qry.remoteValueFilter(req.valueFilter());
-  qry.beforeCallback(req.beforeCallback());
-  qry.afterCallback(req.afterCallback());
-  qry.setClosureArguments(req.closureArguments());
-  qry.arguments(req.arguments());
-  qry.includeBackups(req.includeBackups());
+  GridClosure<V,Object> trans=(GridClosure<V,Object>)req.transformer();
+  GridReducer<Map.Entry<K,V>,Object> rdc=(GridReducer<Map.Entry<K,V>,Object>)req.reducer();
+  GridReducer<List<Object>,Object> fieldsRdc=(GridReducer<List<Object>,Object>)req.fieldsReducer();
+  GridCacheQueryBaseAdapter<K,V,GridCacheQueryBase> qry=fields ? new GridCacheFieldsQueryAdapter(cctx,req.clause(),(GridPredicate)prjPred,req.cloneValues() ? EnumSet.of(GridCacheFlag.CLONE) : EnumSet.noneOf(GridCacheFlag.class)) : new GridCacheQueryAdapter<>(cctx,req.queryId(),req.type(),req.clause(),null,req.className(),prjPred,req.cloneValues() ? EnumSet.of(GridCacheFlag.CLONE) : EnumSet.noneOf(GridCacheFlag.class));
+  qry.init(req.keyFilter(),req.valueFilter(),req.beforeCallback(),req.afterCallback(),req.arguments(),req.includeBackups());
   return new GridCacheQueryInfo<>(false,req.single(),prjPred,trans,rdc,fieldsRdc,qry,req.pageSize(),req.cloneValues(),req.includeBackups(),null,sndId,req.id(),req.includeMetaData(),req.visitor(),req.allPages());
 }
