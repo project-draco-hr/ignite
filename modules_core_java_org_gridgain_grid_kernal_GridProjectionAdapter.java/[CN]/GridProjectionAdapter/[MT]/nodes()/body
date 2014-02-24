@@ -2,12 +2,19 @@
   guard();
   try {
     if (ids != null) {
-      Collection<GridNode> nodes=new ArrayList<>(ids.size());
-      for (      UUID id : ids) {
-        GridNode node=ctx.discovery().node(id);
-        if (node != null)         nodes.add(node);
+      if (ids.isEmpty())       return Collections.emptyList();
+ else       if (ids.size() == 1) {
+        GridNode node=ctx.discovery().node(F.first(ids));
+        return node != null ? Collections.singleton(node) : Collections.<GridNode>emptyList();
       }
-      return nodes;
+ else {
+        Collection<GridNode> nodes=new ArrayList<>(ids.size());
+        for (        UUID id : ids) {
+          GridNode node=ctx.discovery().node(id);
+          if (node != null)           nodes.add(node);
+        }
+        return nodes;
+      }
     }
  else {
       Collection<GridNode> all=ctx.discovery().nodes();
