@@ -1,0 +1,32 @@
+{
+  try (Grid grid=GridGain.start(args.length == 0 ? "examples/config/example-cache.xml" : args[0])){
+    grid.forCache(CACHE_NAME).events().consumeRemote(new GridBiPredicate<UUID,GridCacheEvent>(){
+      @Override public boolean apply(      UUID nodeId,      GridCacheEvent evt){
+        System.out.println("Received event [evt=" + evt.name() + ", key="+ evt.key()+ ", oldVal="+ evt.oldValue()+ ", newVal="+ evt.newValue());
+        return true;
+      }
+    }
+,new GridPredicate<GridCacheEvent>(){
+      /** 
+ * Auto-inject grid instance. 
+ */
+      @GridInstanceResource private Grid g;
+      @Override public boolean apply(      GridCacheEvent evt){
+        Integer key=evt.key();
+        return key >= 10 && g.cache(CACHE_NAME).affinity().isPrimary(g.localNode(),key);
+      }
+    }
+,EVT_CACHE_OBJECT_PUT,EVT_CACHE_OBJECT_REMOVED).get();
+    GridCache<Integer,String> cache=grid.cache(CACHE_NAME);
+    cache.putx(2,"value2");
+    cache.putx(5,"value5");
+    cache.putx(8,"value8");
+    cache.putx(10,"value10");
+    cache.putx(25,"value25");
+    cache.putx(33,"value33");
+    cache.removex(2);
+    cache.removex(5);
+    cache.removex(10);
+    cache.removex(33);
+  }
+ }
