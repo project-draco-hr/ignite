@@ -1,0 +1,19 @@
+{
+  try (Grid g=GridGain.start("examples/config/example-default.xml")){
+    if (g.nodes().size() == 1) {
+      System.out.println(">>> Need at least 2 nodes to demonstrate messaging.");
+      return;
+    }
+    System.out.println();
+    System.out.println(">>> Messaging example started.");
+    GridProjection rmtPrj=g.forRemotes();
+    startListening(rmtPrj);
+    for (int i=0; i < 10; i++)     rmtPrj.message().send(TOPIC.UNORDERED,Integer.toString(i));
+    System.out.println();
+    System.out.println(">>> Finished sending unordered messages.");
+    for (int i=0; i < 10; i++)     rmtPrj.message().send(TOPIC.ORDERED,Integer.toString(i));
+    System.out.println();
+    System.out.println(">>> Finished sending ordered messages.");
+    System.out.println(">>> Check output on all nodes for message printouts.");
+  }
+ }
