@@ -4,10 +4,24 @@
     int nodes=g.nodes().size();
     String atomicName=UUID.randomUUID().toString();
     GridCacheAtomicLong atomicLong=g.cache(CACHE_NAME).dataStructures().atomicLong(atomicName,0,true);
-    print("Atomic long initial size : " + atomicLong.get() + '.');
-    g.compute().call(new IncrementClosure(CACHE_NAME,atomicName)).get();
+    print("Atomic long initial value : " + atomicLong.get() + '.');
+    atomicLong.incrementAndGet();
+    print("Atomic long value after increment: " + atomicLong.get());
+    atomicLong.compareAndSet(2,new GridPredicate<Long>(){
+      @Override public boolean apply(      Long val){
+        return val == 0;
+      }
+    }
+);
+    print("Atomic long value after failed CAS: " + atomicLong.get());
+    atomicLong.compareAndSet(2,new GridPredicate<Long>(){
+      @Override public boolean apply(      Long val){
+        return val == 1;
+      }
+    }
+);
+    print("Atomic long value after successful CAS: " + atomicLong.get());
     print("");
-    print("AtomicLong after incrementing [expected=" + (nodes * RETRIES) + ", actual="+ atomicLong.get()+ ']');
     print("Finished atomic long example...");
     print("Check all nodes for output (this node is also part of the grid).");
     print("");
