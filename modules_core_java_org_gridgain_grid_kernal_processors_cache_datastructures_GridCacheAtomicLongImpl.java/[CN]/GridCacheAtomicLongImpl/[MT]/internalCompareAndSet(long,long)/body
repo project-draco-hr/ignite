@@ -5,10 +5,9 @@
       try {
         GridCacheAtomicLongValue val=atomicView.get(key);
         if (val == null)         throw new GridException("Failed to find atomic long with given name: " + name);
-        boolean retVal=p.apply(val.get());
-        for (        GridPredicate<Long> p : ps)         retVal&=p.apply(val.get());
+        boolean retVal=val.get() == expVal;
         if (retVal) {
-          val.set(l);
+          val.set(newVal);
           atomicView.put(key,val);
           tx.commit();
         }
