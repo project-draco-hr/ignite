@@ -1,8 +1,5 @@
 {
-  for (  GridCacheQueueType type : GridCacheQueueType.values()) {
-    itemsQrys.put(type,qry.createQuery(SQL,GridCacheQueueItemImpl.class.getName(),"qid=? " + queueOrder(type)));
-    itemsAtPosQrys.put(type,qry.createQuery(SQL,GridCacheQueueItemImpl.class.getName(),"select * from " + "(select *, rownum as r from " + "(select * from GridCacheQueueItemImpl where qid=? " + queueOrder(type) + ')'+ ") where r-1 in (select * from table(x int=?))"));
-    GridCacheReduceQuery<GridCacheQueueItemKey,GridCacheQueueItemImpl<T>,Integer,Integer> posOfItemQry=qry.createReduceQuery(SQL,GridCacheQueueItemImpl.class.getName(),"qid=?" + queueOrder(type));
-    posOfItemQrys.put(type,posOfItemQry);
-  }
+  itemsQry=qry.createQuery(SQL,GridCacheQueueItemImpl.class.getName(),"qid=? " + "order by seq asc");
+  itemsAtPosQry=qry.createQuery(SQL,GridCacheQueueItemImpl.class.getName(),"select * from " + "(select *, rownum as r from " + "(select * from GridCacheQueueItemImpl where qid=? "+ "order by seq asc" + ')' + ") where r-1 in (select * from table(x int=?))");
+  posOfItemQry=qry.createReduceQuery(SQL,GridCacheQueueItemImpl.class.getName(),"qid=? " + "order by seq asc");
 }

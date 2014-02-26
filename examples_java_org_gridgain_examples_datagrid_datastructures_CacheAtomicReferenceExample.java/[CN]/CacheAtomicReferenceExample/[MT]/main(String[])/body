@@ -5,13 +5,15 @@
     String val=UUID.randomUUID().toString();
     GridCacheAtomicReference<String> ref=g.cache(CACHE_NAME).dataStructures().atomicReference(refName,val,true);
     print("Atomic reference initial value : " + ref.get() + '.');
+    Runnable c=new ReferenceClosure(CACHE_NAME,refName);
+    g.compute().run(c).get();
     String newVal=UUID.randomUUID().toString();
     print("Try to change value of atomic reference with wrong expected value.");
     ref.compareAndSet("WRONG EXPECTED VALUE",newVal);
-    print("Atomic reference value : " + ref.get() + '.');
+    g.compute().run(c).get();
     print("Try to change value of atomic reference with correct expected value.");
     ref.compareAndSet(val,newVal);
-    print("Atomic reference value : " + ref.get() + '.');
+    g.compute().run(c).get();
   }
    print("");
   print("Finished atomic reference example...");
