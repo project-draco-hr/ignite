@@ -1,11 +1,11 @@
 {
   GridCacheProjection<GridCacheAffinityKey<UUID>,AffinityPerson> cache=cache(g);
-  GridCacheTransformQuery<GridCacheAffinityKey<UUID>,AffinityPerson,String> qry=cache.queries().createTransformQuery(SQL,AffinityPerson.class,"from AffinityPerson, Organization " + "where AffinityPerson.orgId = Organization.id and lower(Organization.name) = lower(?)");
-  qry=qry.projection(p).remoteTransformer(new GridClosure<AffinityPerson,String>(){
-    @Override public String apply(    AffinityPerson p){
-      return p.getLastName();
+  GridCacheQuery<Map.Entry<GridCacheAffinityKey<UUID>,AffinityPerson>> qry=cache.queries().createSqlQuery(AffinityPerson.class,"from AffinityPerson, Organization " + "where AffinityPerson.orgId = Organization.id and lower(Organization.name) = lower(?)");
+  Collection<String> names=qry.projection(p).execute(new GridClosure<Map.Entry<GridCacheAffinityKey<UUID>,AffinityPerson>,String>(){
+    @Override public String apply(    Map.Entry<GridCacheAffinityKey<UUID>,AffinityPerson> e){
+      return e.getValue().getLastName();
     }
   }
-);
-  print("Names of all 'GridGain' employees: " + qry.queryArguments("GridGain").execute().get());
+,"GridGain").get();
+  print("Names of all 'GridGain' employees: " + names);
 }

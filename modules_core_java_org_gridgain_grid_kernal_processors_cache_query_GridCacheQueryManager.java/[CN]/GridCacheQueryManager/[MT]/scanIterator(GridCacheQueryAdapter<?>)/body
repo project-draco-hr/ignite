@@ -1,0 +1,42 @@
+{
+  P1<GridCacheEntry<K,V>> filter=new P1<GridCacheEntry<K,V>>(){
+    @Override public boolean apply(    GridCacheEntry<K,V> e){
+      return qry.projectionFilter() == null || qry.projectionFilter().apply((GridCacheEntry<Object,Object>)e);
+    }
+  }
+;
+  Map<K,V> resMap=new HashMap();
+  GridCacheProjection<K,V> prj=cctx.cache().projection(filter);
+  for (  K key : prj.keySet()) {
+    V val=prj.peek(key);
+    if (val != null)     resMap.put(key,val);
+  }
+  Set<Map.Entry<K,V>> entries=resMap.entrySet();
+  final GridBiPredicate<K,V> keyValFilter=qry.remoteFilter();
+  injectResources(keyValFilter);
+  final GridIterator<GridIndexingKeyValueRow<K,V>> it=F.iterator(entries,new C1<Map.Entry<K,V>,GridIndexingKeyValueRow<K,V>>(){
+    @Override public GridIndexingKeyValueRow<K,V> apply(    Map.Entry<K,V> e){
+      return new GridIndexingKeyValueRowAdapter<>(e.getKey(),e.getValue());
+    }
+  }
+,true,new P1<Map.Entry<K,V>>(){
+    @Override public boolean apply(    Map.Entry<K,V> e){
+      return keyValFilter == null || keyValFilter.apply(e.getKey(),e.getValue());
+    }
+  }
+);
+  return new GridCloseableIteratorAdapter<GridIndexingKeyValueRow<K,V>>(){
+    @Override protected boolean onHasNext(){
+      return it.hasNext();
+    }
+    @Override protected GridIndexingKeyValueRow<K,V> onNext(){
+      return it.next();
+    }
+    @Override protected void onRemove(){
+      it.remove();
+    }
+    @Override protected void onClose(){
+    }
+  }
+;
+}

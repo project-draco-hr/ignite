@@ -1,16 +1,16 @@
 {
   Collection<GridNode> nodes=nodes();
   if (log.isDebugEnabled())   log.debug("Executing query [query=" + this + ", nodes="+ nodes+ ']');
-  if (ctx.deploymentEnabled()) {
+  if (cctx.deploymentEnabled()) {
     try {
-      ctx.deploy().registerClasses(filter);
-      ctx.deploy().registerClasses(args);
-      registerClasses();
+      cctx.deploy().registerClasses(cls,filter,rmtReducer,rmtTransform);
+      cctx.deploy().registerClasses(args);
     }
  catch (    GridException e) {
-      return new GridCacheQueryErrorFuture<>(ctx.kernalContext(),e);
+      return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),e);
     }
   }
-  GridCacheQueryManager qryMgr=ctx.queries();
-  return null;
+  GridCacheQueryBean bean=new GridCacheQueryBean(this,(GridReducer<Object,Object>)rmtReducer,(GridClosure<Object,Object>)rmtTransform,args);
+  GridCacheQueryManager qryMgr=cctx.queries();
+  return (GridCacheQueryFuture<R>)(nodes.size() == 1 && F.first(nodes).id().equals(cctx.localNodeId()) ? qryMgr.queryLocal(bean) : qryMgr.queryDistributed(bean,nodes));
 }

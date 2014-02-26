@@ -1,34 +1,11 @@
 {
   GridCacheProjection<GridCacheAffinityKey<UUID>,AffinityPerson> cache=cache(g);
-  GridCacheReduceQuery<GridCacheAffinityKey<UUID>,AffinityPerson,GridBiTuple<Double,Integer>,Double> qry=cache.queries().createReduceQuery(SQL,AffinityPerson.class,"from AffinityPerson, Organization " + "where AffinityPerson.orgId = Organization.id and lower(Organization.name) = lower(?)");
-  qry=qry.projection(p).remoteReducer(new GridReducer<Map.Entry<GridCacheAffinityKey<UUID>,AffinityPerson>,GridBiTuple<Double,Integer>>(){
-    private double sum;
-    private int cnt;
-    @Override public boolean collect(    Map.Entry<GridCacheAffinityKey<UUID>,AffinityPerson> e){
-      sum+=e.getValue().getSalary();
-      cnt++;
-      return true;
-    }
-    @Override public GridBiTuple<Double,Integer> reduce(){
-      return new GridBiTuple<>(sum,cnt);
-    }
+  GridCacheQuery<Map.Entry<GridCacheAffinityKey<UUID>,AffinityPerson>> qry=cache.queries().createSqlQuery(AffinityPerson.class,"from AffinityPerson, Organization " + "where " + "AffinityPerson.orgId = Organization.id and lower(Organization.name) = lower(?)");
+  GridCacheQueryFuture<GridBiTuple<Double,Integer>> fut=qry.projection(p).execute(new RemoteReducer(),"GridGain");
+  LocalReducer locRdc=new LocalReducer();
+  GridBiTuple<Double,Integer> t;
+  while ((t=fut.next()) != null) {
+    if (!locRdc.collect(t))     break;
   }
-).localReducer(new GridReducer<GridBiTuple<Double,Integer>,Double>(){
-    private double sum;
-    private int cnt;
-    @Override public boolean collect(    GridBiTuple<Double,Integer> t){
-      sum+=t.get1();
-      cnt+=t.get2();
-      return true;
-    }
-    @Override public Double reduce(){
-      double avg=cnt == 0 ? 0 : sum / cnt;
-      sum=0;
-      cnt=0;
-      return avg;
-    }
-  }
-);
-  print("Average salary for 'GridGain' employees: " + qry.queryArguments("GridGain").reduce().get());
-  print("Average salary for 'Other' employees: " + qry.queryArguments("Other").reduce().get());
+  print("Average salary for 'GridGain' employees: " + locRdc.reduce());
 }

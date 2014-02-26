@@ -10,12 +10,11 @@
  else {
     if (data == null)     data=Collections.emptyList();
     data=dedupIfRequired((Collection<Object>)data);
-    if (pageLsnr != null)     pageLsnr.apply(nodeId,(Collection<R>)data);
 synchronized (mux) {
       enqueue(data);
-      if (qry.keepAll())       allCol.addAll(maskNulls((Collection<Object>)data));
+      if (qry.query().keepAll())       allCol.addAll(maskNulls((Collection<Object>)data));
       if (onPage(nodeId,finished)) {
-        onDone((Collection<R>)(qry.keepAll() ? unmaskNulls(allCol) : data));
+        onDone((Collection<R>)(qry.query().keepAll() ? unmaskNulls(allCol) : data));
         clear();
       }
       mux.notifyAll();
