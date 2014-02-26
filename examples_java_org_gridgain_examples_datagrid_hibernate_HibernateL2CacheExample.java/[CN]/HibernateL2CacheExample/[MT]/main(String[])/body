@@ -1,0 +1,81 @@
+{
+  try (Grid grid=GridGain.start(HibernateL2CacheExampleNodeStartup.configuration())){
+    SessionFactory sesFactory=createHibernateSessionFactory();
+    System.out.println(">>>\n>>> Creating objects.\n>>>");
+    final long userId;
+    Session ses=sesFactory.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      User user=new User("jedi","Luke","Skywalker");
+      user.getPosts().add(new Post(user,"Let the Force be with you."));
+      ses.save(user);
+      user=new User("tdurden","Tyler","Durden");
+      user.getPosts().add(new Post(user,"The things you own end up owning you."));
+      ses.save(user);
+      user=new User("jsmith","John","Smith");
+      user.getPosts().add(new Post(user,"Never send a human to do a machine's job."));
+      ses.save(user);
+      tx.commit();
+      userId=user.getId();
+    }
+  finally {
+      ses.close();
+    }
+    printStats(sesFactory);
+    printStats(grid);
+    System.out.println(">>>\n>>> Querying object by ID.\n>>>");
+    for (int i=0; i < 3; i++) {
+      ses=sesFactory.openSession();
+      try {
+        Transaction tx=ses.beginTransaction();
+        User user=(User)ses.get(User.class,userId);
+        System.out.println("User: " + user);
+        for (        Post post : user.getPosts())         System.out.println("\tPost: " + post);
+        tx.commit();
+      }
+  finally {
+        ses.close();
+      }
+    }
+    printStats(sesFactory);
+    printStats(grid);
+    System.out.println(">>>\n>>> Querying all User objects.\n>>>");
+    for (int i=0; i < 3; i++) {
+      List<User> users=runQuery(sesFactory,User.class,null);
+      System.out.println("Users: " + users);
+    }
+    printStats(sesFactory);
+    printStats(grid);
+    System.out.println(">>>\n>>> Querying User objects by lastName.\n>>>");
+    for (int i=0; i < 3; i++) {
+      List<User> users=runQuery(sesFactory,User.class,new GridClosure<Criteria,Criteria>(){
+        @Override public Criteria apply(        Criteria c){
+          return c.add(Restrictions.eq("lastName","Smith"));
+        }
+      }
+);
+      System.out.println("Users by last name: " + users);
+    }
+    printStats(sesFactory);
+    printStats(grid);
+    System.out.println(">>>\n>>> Querying all Post objects.\n>>>");
+    for (int i=0; i < 3; i++) {
+      List<Post> posts=runQuery(sesFactory,Post.class,null);
+      System.out.println("Posts: " + posts);
+    }
+    printStats(sesFactory);
+    printStats(grid);
+    System.out.println(">>>\n>>> Querying Post objects by author ID.\n>>>");
+    for (int i=0; i < 3; i++) {
+      List<Post> posts=runQuery(sesFactory,Post.class,new GridClosure<Criteria,Criteria>(){
+        @Override public Criteria apply(        Criteria c){
+          return c.createCriteria("author").add(Restrictions.eq("id",userId));
+        }
+      }
+);
+      System.out.println("Posts by author ID: " + posts);
+    }
+    printStats(sesFactory);
+    printStats(grid);
+  }
+ }
