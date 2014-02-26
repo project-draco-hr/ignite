@@ -1,0 +1,20 @@
+{
+  try {
+    GridCacheQueue<String> queue=GridGain.grid().cache(cacheName).dataStructures().queue(queueName,0,false,true);
+    if (put) {
+      UUID locId=GridGain.grid().localNode().id();
+      for (int i=0; i < RETRIES; i++) {
+        String item=locId + "_" + Integer.toString(i);
+        queue.put(item);
+        print("Queue item has been added: " + item);
+      }
+    }
+ else {
+      for (int i=0; i < RETRIES; i++)       print("Queue item has been read from queue head: " + queue.take());
+      for (int i=0; i < RETRIES; i++)       print("Queue item has been read from queue head: " + queue.poll());
+    }
+  }
+ catch (  GridException e) {
+    throw new RuntimeException(e);
+  }
+}
