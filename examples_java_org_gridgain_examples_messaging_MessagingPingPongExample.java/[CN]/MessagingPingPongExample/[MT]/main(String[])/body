@@ -1,0 +1,53 @@
+{
+  try (Grid g=GridGain.start("examples/config/example-compute.xml")){
+    if (g.forRemotes().nodes().size() < 1) {
+      System.err.println("I need a partner to play a ping pong!");
+      return;
+    }
+    GridProjection nodeB=g.forRemotes().forRandom();
+    nodeB.message().remoteListen(null,new GridBiPredicate<UUID,String>(){
+      @Override public boolean apply(      UUID nodeId,      String rcvMsg){
+        System.out.println(rcvMsg);
+        try {
+          if ("PING".equals(rcvMsg)) {
+            g.forNodeId(nodeId).message().send(null,"PONG");
+            return true;
+          }
+          return false;
+        }
+ catch (        GridException e) {
+          throw new GridClosureException(e);
+        }
+      }
+    }
+).get();
+    int MAX_PLAYS=10;
+    final CountDownLatch cnt=new CountDownLatch(MAX_PLAYS);
+    g.message().localListen(null,new GridBiPredicate<UUID,String>(){
+      @Override public boolean apply(      UUID nodeId,      String rcvMsg){
+        System.out.println(rcvMsg);
+        try {
+          if (cnt.getCount() == 1) {
+            g.forNodeId(nodeId).message().send(null,"STOP");
+            cnt.countDown();
+            return false;
+          }
+ else           if ("PONG".equals(rcvMsg))           g.forNodeId(nodeId).message().send(null,"PING");
+          cnt.countDown();
+          return true;
+        }
+ catch (        GridException e) {
+          throw new GridClosureException(e);
+        }
+      }
+    }
+);
+    nodeB.message().send(null,"PING");
+    try {
+      cnt.await();
+    }
+ catch (    InterruptedException e) {
+      System.err.println("Hm... let us finish the game!\n" + e);
+    }
+  }
+ }
