@@ -1,0 +1,24 @@
+{
+  if (args.length == 0)   print("Please provide file name and regular expression.");
+ else   if (args.length == 1)   print("Please provide regular expression.");
+ else {
+    Grid g=GridGain.start("examples/config/example-ggfs.xml");
+    try {
+      String fileName=args[0];
+      File file=new File(fileName);
+      String regexStr=args[1];
+      GridGgfs fs=g.ggfs("ggfs");
+      GridGgfsPath workDir=new GridGgfsPath("/examples/ggfs");
+      GridGgfsPath fsPath=new GridGgfsPath(workDir,file.getName());
+      writeFile(fs,fsPath,file);
+      Collection<Line> lines=fs.execute(new GrepTask(),GridGgfsNewLineRecordResolver.NEW_LINE,Collections.singleton(fsPath),false,regexStr);
+      if (lines.isEmpty())       print("No lines were found.");
+ else {
+        for (        Line line : lines)         print(line.fileLine());
+      }
+    }
+  finally {
+      GridGain.stop(false);
+    }
+  }
+}
