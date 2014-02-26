@@ -7,23 +7,23 @@
   if (pessimistic()) {
     if (!state(PREPARING)) {
       if (setRollbackOnly()) {
-        if (timedOut())         fut.onError(new GridCacheTxTimeoutException("Transaction timed out and was rolled back: " + this));
- else         fut.onError(new GridException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
+        if (timedOut())         fut.onError(null,null,new GridCacheTxTimeoutException("Transaction timed out and was " + "rolled back: " + this));
+ else         fut.onError(null,null,new GridException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
       }
- else       fut.onError(new GridCacheTxRollbackException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
+ else       fut.onError(null,null,new GridCacheTxRollbackException("Invalid transaction state for prepare " + "[state=" + state() + ", tx="+ this+ ']'));
       return fut;
     }
     try {
       userPrepare();
       if (!state(PREPARED)) {
         setRollbackOnly();
-        fut.onError(new GridException("Invalid transaction state for commit [state=" + state() + ", tx="+ this+ ']'));
+        fut.onError(null,null,new GridException("Invalid transaction state for commit [state=" + state() + ", tx="+ this+ ']'));
         return fut;
       }
       fut.complete();
     }
  catch (    GridException e) {
-      fut.onError(e);
+      fut.onError(null,null,e);
     }
   }
  else   prepareOnTopology();
