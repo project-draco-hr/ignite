@@ -12,5 +12,7 @@
   }
   GridCacheQueryBean bean=new GridCacheQueryBean(this,(GridReducer<Object,Object>)rmtReducer,(GridClosure<Object,Object>)rmtTransform,args);
   GridCacheQueryManager qryMgr=cctx.queries();
-  return (GridCacheQueryFuture<R>)(nodes.size() == 1 && F.first(nodes).id().equals(cctx.localNodeId()) ? qryMgr.queryLocal(bean) : qryMgr.queryDistributed(bean,nodes));
+  boolean loc=nodes.size() == 1 && F.first(nodes).id().equals(cctx.localNodeId());
+  if (type == SQL_FIELDS)   return (GridCacheQueryFuture<R>)(loc ? qryMgr.queryFieldsLocal(bean) : qryMgr.queryFieldsDistributed(bean,nodes));
+ else   return (GridCacheQueryFuture<R>)(loc ? qryMgr.queryLocal(bean) : qryMgr.queryDistributed(bean,nodes));
 }
