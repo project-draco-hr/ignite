@@ -1,17 +1,15 @@
 {
-  A.notNull(r,"job");
-  if (r instanceof GridComputeJob)   return (GridComputeJob)r;
-  if (r instanceof GridComputeJobMasterLeaveAware) {
+  A.notNull(job,"job");
+  if (job instanceof GridComputeJobMasterLeaveAware) {
     return new GridMasterLeaveAwareComputeJobAdapter(){
 {
-        peerDeployLike(U.peerDeployAware(r));
+        peerDeployLike(U.peerDeployAware(job));
       }
       @Nullable @Override public Object execute(){
-        r.run();
-        return null;
+        return job.apply(arg);
       }
       @Override public void onMasterNodeLeft(      GridComputeTaskSession ses) throws GridException {
-        ((GridComputeJobMasterLeaveAware)r).onMasterNodeLeft(ses);
+        ((GridComputeJobMasterLeaveAware)job).onMasterNodeLeft(ses);
       }
     }
 ;
@@ -19,11 +17,10 @@
  else {
     return new GridComputeJobAdapter(){
 {
-        peerDeployLike(U.peerDeployAware(r));
+        peerDeployLike(U.peerDeployAware(job));
       }
       @Nullable @Override public Object execute(){
-        r.run();
-        return null;
+        return job.apply(arg);
       }
     }
 ;

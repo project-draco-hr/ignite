@@ -3,18 +3,39 @@
   if (c instanceof GridComputeJob) {
     return (GridComputeJob)c;
   }
-  return new GridComputeJobAdapter(){
+  if (c instanceof GridComputeJobMasterLeaveAware) {
+    return new GridMasterLeaveAwareComputeJobAdapter(){
 {
-      setPeerDeployAware(U.peerDeployAware(c));
-    }
-    @Override public Object execute(){
-      try {
-        return c.call();
+        setPeerDeployAware(U.peerDeployAware(c));
       }
- catch (      Exception e) {
-        throw new GridRuntimeException(e);
+      @Override public Object execute(){
+        try {
+          return c.call();
+        }
+ catch (        Exception e) {
+          throw new GridRuntimeException(e);
+        }
+      }
+      @Override public void onMasterNodeLeft(      GridComputeTaskSession ses) throws GridException {
+        ((GridComputeJobMasterLeaveAware)c).onMasterNodeLeft(ses);
       }
     }
-  }
 ;
+  }
+ else {
+    return new GridComputeJobAdapter(){
+{
+        setPeerDeployAware(U.peerDeployAware(c));
+      }
+      @Override public Object execute(){
+        try {
+          return c.call();
+        }
+ catch (        Exception e) {
+          throw new GridRuntimeException(e);
+        }
+      }
+    }
+;
+  }
 }
