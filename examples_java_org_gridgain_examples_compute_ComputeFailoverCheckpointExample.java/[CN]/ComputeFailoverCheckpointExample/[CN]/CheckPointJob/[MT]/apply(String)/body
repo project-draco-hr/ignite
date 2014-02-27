@@ -16,9 +16,11 @@
     for (int i=idx; i < words.size(); i++) {
       sum+=words.get(i).length();
       this.state=new GridBiTuple<>(i + 1,sum);
-      jobSes.saveCheckpoint(cpKey,state);
-      System.out.println(">>> Job will be failed over to another node.");
-      if (i == 0)       throw new GridRuntimeException("Expected example job exception.");
+      jobSes.saveCheckpoint(cpKey,this.state);
+      if (i == 0) {
+        System.out.println(">>> Job will be failed over to another node.");
+        throw new GridComputeJobFailoverException("Expected example job exception.");
+      }
     }
     return sum;
   }
