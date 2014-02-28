@@ -12,12 +12,6 @@
       User user=new User("jedi","Luke","Skywalker");
       user.getPosts().add(new Post(user,"Let the Force be with you."));
       ses.save(user);
-      user=new User("tdurden","Tyler","Durden");
-      user.getPosts().add(new Post(user,"The things you own end up owning you."));
-      ses.save(user);
-      user=new User("jsmith","John","Smith");
-      user.getPosts().add(new Post(user,"Never send a human to do a machine's job."));
-      ses.save(user);
       tx.commit();
       userId=user.getId();
     }
@@ -25,7 +19,6 @@
       ses.close();
     }
     printStats(sesFactory);
-    printStats(grid);
     System.out.println();
     System.out.println(">>> Querying object by ID.");
     for (int i=0; i < 3; i++) {
@@ -42,48 +35,5 @@
       }
     }
     printStats(sesFactory);
-    printStats(grid);
-    System.out.println();
-    System.out.println(">>> Querying all User objects.");
-    for (int i=0; i < 3; i++) {
-      List<User> users=runQuery(sesFactory,User.class,null);
-      System.out.println("Users: " + users);
-    }
-    printStats(sesFactory);
-    printStats(grid);
-    System.out.println();
-    System.out.println(">>>Querying User objects by lastName.");
-    for (int i=0; i < 3; i++) {
-      List<User> users=runQuery(sesFactory,User.class,new GridClosure<Criteria,Criteria>(){
-        @Override public Criteria apply(        Criteria c){
-          return c.add(Restrictions.eq("lastName","Smith"));
-        }
-      }
-);
-      System.out.println("Users by last name: " + users);
-    }
-    printStats(sesFactory);
-    printStats(grid);
-    System.out.println();
-    System.out.println(">>> Querying all Post objects.");
-    for (int i=0; i < 3; i++) {
-      List<Post> posts=runQuery(sesFactory,Post.class,null);
-      System.out.println("Posts: " + posts);
-    }
-    printStats(sesFactory);
-    printStats(grid);
-    System.out.println();
-    System.out.println(">>> Querying Post objects by author ID.");
-    for (int i=0; i < 3; i++) {
-      List<Post> posts=runQuery(sesFactory,Post.class,new GridClosure<Criteria,Criteria>(){
-        @Override public Criteria apply(        Criteria c){
-          return c.createCriteria("author").add(Restrictions.eq("id",userId));
-        }
-      }
-);
-      System.out.println("Posts by author ID: " + posts);
-    }
-    printStats(sesFactory);
-    printStats(grid);
   }
  }
