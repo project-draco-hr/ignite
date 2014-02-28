@@ -1,6 +1,6 @@
 {
   if (isCancelled())   return;
-  if (log.isDebugEnabled())   log.debug("Received query result page [nodeId=" + nodeId + ", qryId="+ qry.id+ ", data="+ data+ ", err="+ err+ ", finished="+ finished+ "]");
+  if (log.isDebugEnabled())   log.debug("Received query result page [nodeId=" + nodeId + ", data="+ data+ ", err="+ err+ ", finished="+ finished+ "]");
   if (err != null) synchronized (mux) {
     enqueue(Collections.emptyList());
     onPage(nodeId,true);
@@ -10,29 +10,14 @@
  else {
     if (data == null)     data=Collections.emptyList();
     data=dedupIfRequired((Collection<Object>)data);
-    if (pageLsnr != null)     pageLsnr.apply(nodeId,(Collection<R>)data);
-    if (locRdc == null) {
 synchronized (mux) {
-        enqueue(data);
-        if (qry.keepAll())         allCol.addAll(maskNulls((Collection<Object>)data));
-        if (onPage(nodeId,finished)) {
-          onDone((Collection<R>)(qry.keepAll() ? unmaskNulls(allCol) : data));
-          clear();
-        }
-        mux.notifyAll();
+      enqueue(data);
+      if (qry.query().keepAll())       allCol.addAll(maskNulls((Collection<Object>)data));
+      if (onPage(nodeId,finished)) {
+        onDone((Collection<R>)(qry.query().keepAll() ? unmaskNulls(allCol) : data));
+        clear();
       }
-    }
- else {
-synchronized (mux) {
-        for (        Object obj : data)         locRdc.collect(obj);
-        if (onPage(nodeId,finished)) {
-          clear();
-          List<R> resCol=Collections.singletonList((R)locRdc.reduce());
-          enqueue(resCol);
-          onDone(resCol);
-          mux.notifyAll();
-        }
-      }
+      mux.notifyAll();
     }
   }
 }

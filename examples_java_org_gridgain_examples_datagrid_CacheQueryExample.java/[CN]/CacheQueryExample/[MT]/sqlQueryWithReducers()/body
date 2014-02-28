@@ -1,19 +1,7 @@
 {
   GridCacheProjection<GridCacheAffinityKey<UUID>,Person> cache=GridGain.grid().cache(CACHE_NAME);
-  GridCacheReduceQuery<GridCacheAffinityKey<UUID>,Person,GridBiTuple<Double,Integer>,Double> qry=cache.queries().createReduceQuery(SQL,Person.class,"from Person, Organization " + "where Person.orgId = Organization.id and lower(Organization.name) = lower(?)");
-  qry=qry.remoteReducer(new GridReducer<Map.Entry<GridCacheAffinityKey<UUID>,Person>,GridBiTuple<Double,Integer>>(){
-    private double sum;
-    private int cnt;
-    @Override public boolean collect(    Map.Entry<GridCacheAffinityKey<UUID>,Person> e){
-      sum+=e.getValue().salary;
-      cnt++;
-      return true;
-    }
-    @Override public GridBiTuple<Double,Integer> reduce(){
-      return new GridBiTuple<>(sum,cnt);
-    }
-  }
-).localReducer(new GridReducer<GridBiTuple<Double,Integer>,Double>(){
+  GridCacheQuery<Map.Entry<GridCacheAffinityKey<UUID>,Person>> qry=cache.queries().createSqlQuery(Person.class,"from Person, Organization " + "where Person.orgId = Organization.id and lower(Organization.name)" + " = lower(?)");
+  GridReducer<GridBiTuple<Double,Integer>,Double> locRdc=new GridReducer<GridBiTuple<Double,Integer>,Double>(){
     private double sum;
     private int cnt;
     @Override public boolean collect(    GridBiTuple<Double,Integer> t){
@@ -28,7 +16,19 @@
       return avg;
     }
   }
-);
-  print("Average salary for 'GridGain' employees: " + qry.queryArguments("GridGain").reduce().get());
-  print("Average salary for 'Other' employees: " + qry.queryArguments("Other").reduce().get());
+;
+  Collection<GridBiTuple<Double,Integer>> res=qry.execute(new GridReducer<Map.Entry<GridCacheAffinityKey<UUID>,Person>,GridBiTuple<Double,Integer>>(){
+    private double sum;
+    private int cnt;
+    @Override public boolean collect(    Map.Entry<GridCacheAffinityKey<UUID>,Person> e){
+      sum+=e.getValue().salary;
+      cnt++;
+      return true;
+    }
+    @Override public GridBiTuple<Double,Integer> reduce(){
+      return new GridBiTuple<>(sum,cnt);
+    }
+  }
+,"GridGain").get();
+  print("Average salary for 'GridGain' employees: " + F.reduce(res,locRdc));
 }

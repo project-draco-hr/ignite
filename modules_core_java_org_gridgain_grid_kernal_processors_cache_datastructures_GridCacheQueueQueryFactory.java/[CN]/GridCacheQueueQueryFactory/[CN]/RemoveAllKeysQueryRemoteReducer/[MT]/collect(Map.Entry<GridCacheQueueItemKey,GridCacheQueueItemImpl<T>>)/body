@@ -3,15 +3,11 @@
     if (itemView.get(entry.getKey()) != null) {
       keys.add(entry.getKey());
       if (size > 0 && keys.size() == size) {
-        GridCacheTx tx=CU.txStartInternal(cctx,itemView,PESSIMISTIC,REPEATABLE_READ);
-        try {
+        try (GridCacheTx tx=CU.txStartInternal(cctx,itemView,PESSIMISTIC,REPEATABLE_READ)){
           itemView.removeAll(keys);
           tx.commit();
         }
-  finally {
-          tx.close();
-        }
-        retVal.set1(retVal.get1() + size);
+         retVal.set1(retVal.get1() + size);
         keys.clear();
       }
     }
