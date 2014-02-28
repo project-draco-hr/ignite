@@ -1,15 +1,11 @@
 {
   try {
     if (!keys.isEmpty()) {
-      GridCacheTx tx=CU.txStartInternal(cctx,itemView,PESSIMISTIC,REPEATABLE_READ);
-      try {
+      try (GridCacheTx tx=CU.txStartInternal(cctx,itemView,PESSIMISTIC,REPEATABLE_READ)){
         itemView.removeAll(keys);
         tx.commit();
       }
-  finally {
-        tx.close();
-      }
-      retVal.set1(retVal.get1() + keys.size());
+       retVal.set1(retVal.get1() + keys.size());
       keys.clear();
     }
   }
