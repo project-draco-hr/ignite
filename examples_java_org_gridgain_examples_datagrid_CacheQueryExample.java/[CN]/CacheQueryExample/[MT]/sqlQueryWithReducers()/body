@@ -1,22 +1,6 @@
 {
   GridCacheProjection<GridCacheAffinityKey<UUID>,Person> cache=GridGain.grid().cache(CACHE_NAME);
   GridCacheQuery<Map.Entry<GridCacheAffinityKey<UUID>,Person>> qry=cache.queries().createSqlQuery(Person.class,"from Person, Organization " + "where Person.orgId = Organization.id and lower(Organization.name)" + " = lower(?)");
-  GridReducer<GridBiTuple<Double,Integer>,Double> locRdc=new GridReducer<GridBiTuple<Double,Integer>,Double>(){
-    private double sum;
-    private int cnt;
-    @Override public boolean collect(    GridBiTuple<Double,Integer> t){
-      sum+=t.get1();
-      cnt+=t.get2();
-      return true;
-    }
-    @Override public Double reduce(){
-      double avg=cnt == 0 ? 0 : sum / cnt;
-      sum=0;
-      cnt=0;
-      return avg;
-    }
-  }
-;
   Collection<GridBiTuple<Double,Integer>> res=qry.execute(new GridReducer<Map.Entry<GridCacheAffinityKey<UUID>,Person>,GridBiTuple<Double,Integer>>(){
     private double sum;
     private int cnt;
@@ -30,5 +14,12 @@
     }
   }
 ,"GridGain").get();
-  print("Average salary for 'GridGain' employees: " + F.reduce(res,locRdc));
+  double sum=0.0d;
+  int cnt=0;
+  for (  GridBiTuple<Double,Integer> t : res) {
+    sum+=t.get1();
+    cnt+=t.get2();
+  }
+  double avg=sum / cnt;
+  print("Average salary for 'GridGain' employees: " + avg);
 }
