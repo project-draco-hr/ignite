@@ -3,11 +3,12 @@
     try {
       Map<UUID,Set<Integer>> tmpPrm=new HashMap<>();
       Map<UUID,Set<Integer>> tmpBkp=new HashMap<>();
-      for (int partsCnt=arr.length, p=0; p < partsCnt; p++) {
-        arr[p]=affinity(p,topVer);
+      Collection<GridNode> nodes=ctx.discovery().cacheAffinityNodes(cacheName,topVer);
+      arr=aff.assignPartitions(new GridCacheAffinityFunctionContextImpl(sort(nodes),topVer));
+      for (int partsCnt=arr.size(), p=0; p < partsCnt; p++) {
         Map<UUID,Set<Integer>> tmp=tmpPrm;
         Map<UUID,Set<Integer>> map=primary;
-        for (        GridNode node : arr[p]) {
+        for (        GridNode node : arr.get(p)) {
           UUID id=node.id();
           Set<Integer> set=tmp.get(id);
           if (set == null) {
