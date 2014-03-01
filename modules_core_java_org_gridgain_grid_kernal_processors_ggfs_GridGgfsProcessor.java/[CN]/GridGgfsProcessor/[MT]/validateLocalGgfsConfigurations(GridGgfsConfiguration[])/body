@@ -16,11 +16,8 @@
  else       if (offHeapSize > 0 && maxSpaceSize > maxHeapSize + offHeapSize)       throw new GridException("Maximum GGFS space size cannot be greater than size of available heap " + "memory and offheap storage [maxHeapSize=" + maxHeapSize + ", offHeapSize="+ offHeapSize+ ", maxGgfsSpaceSize="+ maxSpaceSize+ ']');
     }
     if (dataCache.configuration().getCacheMode() == PARTITIONED) {
-      GridCacheAffinityFunction aff=dataCache.configuration().getAffinity();
-      if (aff != null) {
-        int backups=aff.keyBackups();
-        if (backups != 0)         throw new GridException("GGFS data cache cannot be used with backups (set backup count " + "to 0 and restart the grid): " + cfg.getDataCacheName());
-      }
+      int backups=dataCache.configuration().getBackups();
+      if (backups != 0)       throw new GridException("GGFS data cache cannot be used with backups (set backup count " + "to 0 and restart the grid): " + cfg.getDataCacheName());
     }
     if (cfg.getMaxSpaceSize() == 0 && dataCache.configuration().getMemoryMode() == OFFHEAP_VALUES)     U.warn(log,"GGFS max space size is not specified but data cache values are stored off-heap (max " + "space will be limited to 80% of max JVM heap size): " + cfg.getName());
     boolean secondary=cfg.getDefaultMode() == PROXY;
