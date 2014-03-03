@@ -1,0 +1,36 @@
+{
+  A.notNull(c,"job");
+  if (c instanceof GridComputeJobMasterLeaveAware) {
+    return new GridMasterLeaveAwareComputeJobAdapter(){
+      @GridCacheName private final String cn=cacheName;
+      @GridCacheAffinityKeyMapped private final Object ak=affKey;
+      @Override public Object execute(){
+        try {
+          return c.call();
+        }
+ catch (        Exception e) {
+          throw new GridRuntimeException(e);
+        }
+      }
+      @Override public void onMasterNodeLeft(      GridComputeTaskSession ses) throws GridException {
+        ((GridComputeJobMasterLeaveAware)c).onMasterNodeLeft(ses);
+      }
+    }
+;
+  }
+ else {
+    return new GridComputeJobAdapter(){
+      @GridCacheName private final String cn=cacheName;
+      @GridCacheAffinityKeyMapped private final Object ak=affKey;
+      @Override public Object execute(){
+        try {
+          return c.call();
+        }
+ catch (        Exception e) {
+          throw new GridRuntimeException(e);
+        }
+      }
+    }
+;
+  }
+}
