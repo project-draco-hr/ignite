@@ -1,0 +1,21 @@
+{
+  List<GridNode>[] cp=new List[prevAssignment.length];
+  Map<UUID,PartitionSet> parts=new HashMap<>();
+  for (int part=0; part < prevAssignment.length; part++) {
+    List<GridNode> partNodes=prevAssignment[part];
+    List<GridNode> partNodesCp=new ArrayList<>(partNodes.size());
+    for (    GridNode affNode : partNodes) {
+      if (!leftNodeId.equals(affNode.id())) {
+        partNodesCp.add(affNode);
+        PartitionSet partSet=parts.get(affNode.id());
+        if (partSet == null) {
+          partSet=new PartitionSet(affNode.id());
+          parts.put(affNode.id(),partSet);
+        }
+        partSet.add(part);
+      }
+    }
+    cp[part]=partNodesCp;
+  }
+  return F.t(cp,sortedSets(parts,ASC_CMP));
+}
