@@ -1,11 +1,11 @@
 {
   GridCache<GridCacheAffinityKey<UUID>,Person> cache=GridGain.grid().cache(CACHE_NAME);
-  GridCacheTransformQuery<GridCacheAffinityKey<UUID>,Person,String> qry=cache.queries().createTransformQuery(SQL,Person.class,"from Person, Organization " + "where Person.orgId = Organization.id and lower(Organization.name) = lower(?)");
-  qry=qry.remoteTransformer(new GridClosure<Person,String>(){
-    @Override public String apply(    Person p){
-      return p.lastName;
+  GridCacheQuery<Map.Entry<GridCacheAffinityKey<UUID>,Person>> qry=cache.queries().createSqlQuery(Person.class,"from Person, Organization " + "where Person.orgId = Organization.id and lower(Organization.name) = lower(?)");
+  GridClosure<Map.Entry<GridCacheAffinityKey<UUID>,Person>,String> trans=new GridClosure<Map.Entry<GridCacheAffinityKey<UUID>,Person>,String>(){
+    @Override public String apply(    Map.Entry<GridCacheAffinityKey<UUID>,Person> e){
+      return e.getValue().lastName;
     }
   }
-);
-  print("Names of all 'GridGain' employees: " + qry.queryArguments("GridGain").execute().get());
+;
+  print("Names of all 'GridGain' employees: " + qry.execute(trans,"GridGain").get());
 }
