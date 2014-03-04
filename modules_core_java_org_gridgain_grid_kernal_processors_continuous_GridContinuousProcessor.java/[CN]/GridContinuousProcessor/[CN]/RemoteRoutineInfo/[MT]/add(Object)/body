@@ -1,11 +1,24 @@
 {
   Collection<Object> toSnd=null;
-synchronized (this) {
-    buf.add(obj);
-    if (buf.size() == bufSize) {
+  if (buf.sizex() >= bufSize - 1) {
+    lock.writeLock().lock();
+    try {
+      buf.add(obj);
       toSnd=buf;
-      buf=new ArrayList<>(bufSize);
+      buf=new ConcurrentLinkedDeque8<>();
       if (interval > 0)       lastSndTime=U.currentTimeMillis();
+    }
+  finally {
+      lock.writeLock().unlock();
+    }
+  }
+ else {
+    lock.readLock().lock();
+    try {
+      buf.add(obj);
+    }
+  finally {
+      lock.readLock().unlock();
     }
   }
   return toSnd;
