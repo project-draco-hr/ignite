@@ -8,16 +8,16 @@
   long end=timeout == 0 ? Long.MAX_VALUE : timeout + now;
   if (end < 0)   end=Long.MAX_VALUE;
   checkShutdown();
-  Collection<GridComputeTaskFuture<T>> taskFuts=new ArrayList<>();
+  Collection<GridFuture<T>> taskFuts=new ArrayList<>();
   for (  Callable<T> cmd : tasks) {
-    GridComputeTaskFuture<T> fut=prj.compute().execute(new GridExecutorCallableTask<T>(cmd.getClass()),cmd);
+    GridFuture<T> fut=prj.compute().call(cmd);
     taskFuts.add(fut);
   }
   T res=null;
   boolean isInterrupted=false;
   boolean isResRcvd=false;
   int errCnt=0;
-  for (  GridComputeTaskFuture<T> fut : taskFuts) {
+  for (  GridFuture<T> fut : taskFuts) {
     now=U.currentTimeMillis();
     boolean cancel=false;
     if (!isInterrupted && !isResRcvd && now < end) {
