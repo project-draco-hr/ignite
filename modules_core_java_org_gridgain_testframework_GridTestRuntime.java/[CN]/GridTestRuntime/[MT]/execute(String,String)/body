@@ -1,0 +1,15 @@
+{
+  Process proc=start(script,args);
+  InputStream in=proc.getInputStream();
+  ByteArrayOutputStream out=new ByteArrayOutputStream();
+  if (in != null)   IOUtils.copy(in,out);
+  try {
+    int exitCode=proc.waitFor();
+    if (exitCode != 0)     throw new IOException("Failed to execute script (unexpected exit code)" + " [exitCode=" + exitCode + ", script="+ script+ ", out="+ out+ ']');
+  }
+ catch (  InterruptedException ignore) {
+    Thread.currentThread().interrupt();
+    proc.destroy();
+  }
+  return out;
+}

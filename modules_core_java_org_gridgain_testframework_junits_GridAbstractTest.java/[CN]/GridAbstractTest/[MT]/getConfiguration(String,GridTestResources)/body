@@ -1,0 +1,40 @@
+{
+  GridConfiguration cfg=new GridConfiguration();
+  cfg.setGridName(gridName);
+  cfg.setGridLogger(rsrcs.getLogger());
+  cfg.setMarshaller(rsrcs.getMarshaller());
+  cfg.setNodeId(rsrcs.getNodeId());
+  cfg.setGridGainHome(rsrcs.getGridgainHome());
+  cfg.setMBeanServer(rsrcs.getMBeanServer());
+  cfg.setPeerClassLoadingEnabled(true);
+  GridTcpCommunicationSpi commSpi=new GridTcpCommunicationSpi();
+  commSpi.setLocalPort(GridTestUtils.getNextCommPort(getClass()));
+  commSpi.setTcpNoDelay(true);
+  cfg.setCommunicationSpi(commSpi);
+  GridTcpDiscoverySpi discoSpi=new GridTcpDiscoverySpi();
+  if (isDebug()) {
+    discoSpi.setMaxMissedHeartbeats(Integer.MAX_VALUE);
+    cfg.setNetworkTimeout(Long.MAX_VALUE);
+  }
+ else {
+    cfg.setNetworkTimeout(10000);
+    discoSpi.setMaxMissedHeartbeats(30);
+  }
+  discoSpi.setHeartbeatFrequency(1000);
+  String mcastAddr=GridTestUtils.getNextMulticastGroup(getClass());
+  if (!F.isEmpty(mcastAddr)) {
+    GridTcpDiscoveryMulticastIpFinder ipFinder=new GridTcpDiscoveryMulticastIpFinder();
+    ipFinder.setMulticastGroup(mcastAddr);
+    ipFinder.setMulticastPort(GridTestUtils.getNextMulticastPort(getClass()));
+    discoSpi.setIpFinder(ipFinder);
+  }
+  cfg.setDiscoverySpi(discoSpi);
+  GridSharedFsCheckpointSpi cpSpi=new GridSharedFsCheckpointSpi();
+  Collection<String> paths=new ArrayList<>();
+  paths.add(getDefaultCheckpointPath(cfg.getMarshaller()));
+  cpSpi.setDirectoryPaths(paths);
+  cfg.setCheckpointSpi(cpSpi);
+  cfg.setRestEnabled(false);
+  cfg.setIncludeEventTypes(GridEventType.EVTS_ALL);
+  return cfg;
+}
