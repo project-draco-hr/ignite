@@ -1,20 +1,3 @@
 {
-  GenericApplicationContext springCtx;
-  try {
-    springCtx=new GenericApplicationContext();
-    new XmlBeanDefinitionReader(springCtx).loadBeanDefinitions(new UrlResource(springCfgUrl));
-    springCtx.refresh();
-  }
- catch (  BeansException e) {
-    throw new GridException("Failed to instantiate Spring XML application context [springUrl=" + springCfgUrl + ", err="+ e.getMessage()+ ']',e);
-  }
-  Map<String,GridConfiguration> cfgMap;
-  try {
-    cfgMap=springCtx.getBeansOfType(GridConfiguration.class);
-  }
- catch (  BeansException e) {
-    throw new GridException("Failed to instantiate bean [type=" + GridConfiguration.class + ", err="+ e.getMessage()+ ']',e);
-  }
-  if (cfgMap == null || cfgMap.isEmpty())   throw new GridException("Failed to find grid configuration in: " + springCfgUrl);
-  return F.t(cfgMap.values(),springCtx);
+  return GridGainEx.loadConfigurations(springCfgUrl);
 }
