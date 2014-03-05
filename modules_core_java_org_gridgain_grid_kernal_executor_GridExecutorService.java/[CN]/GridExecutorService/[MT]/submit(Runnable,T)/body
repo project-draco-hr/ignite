@@ -1,6 +1,12 @@
 {
   A.notNull(task,"task != null");
   checkShutdown();
-  deployTask(GridExecutorCallableTask.class,task);
-  return addFuture(prj.compute().execute(new GridExecutorCallableTask<T>(task.getClass()),new GridExecutorRunnableAdapter<>(task,res)));
+  GridFuture<T> fut=prj.compute().run(task).chain(new CX1<GridFuture<?>,T>(){
+    @Override public T applyx(    GridFuture<?> fut) throws GridException {
+      fut.get();
+      return res;
+    }
+  }
+);
+  return addFuture(fut);
 }
