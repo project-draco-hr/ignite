@@ -11,8 +11,13 @@
     curDirPath=dirPaths.peek();
     if (new File(curDirPath).exists())     folder=new File(curDirPath);
  else {
-      if (getGridGainHome() != null && !getGridGainHome().isEmpty()) {
-        folder=new File(getGridGainHome(),curDirPath);
+      if (!F.isEmpty(getGridGainHome())) {
+        try {
+          folder=U.resolveWorkDirectory(curDirPath);
+        }
+ catch (        IOException e) {
+          throw new GridSpiException(e);
+        }
         if (!folder.mkdirs() && !folder.exists()) {
           dirPaths.poll();
           if (!dirPaths.isEmpty())           continue;
