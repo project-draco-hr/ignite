@@ -19,8 +19,10 @@
     }
   }
   Collections.sort(lst,COMPARATOR);
-  List<GridNode> res=new ArrayList<>(backups + 1);
+  int primaryAndBackups=backups + 1;
+  List<GridNode> res=new ArrayList<>(primaryAndBackups);
   GridNode primary=lst.get(0).get2();
+  res.add(primary);
   for (int i=1; i < lst.size(); i++) {
     GridBiTuple<Long,GridNode> next=lst.get(i);
     GridNode node=next.get2();
@@ -31,14 +33,14 @@
  else {
       if (!res.contains(node) && (backupFilter == null || backupFilter.apply(primary,node)))       res.add(next.get2());
     }
-    if (res.size() == backups + 1)     break;
+    if (res.size() == primaryAndBackups)     break;
   }
-  if (res.size() < backups + 1 && exclNeighbors) {
+  if (res.size() < primaryAndBackups && nodes.size() >= primaryAndBackups && exclNeighbors) {
     for (int i=1; i < lst.size(); i++) {
       GridBiTuple<Long,GridNode> next=lst.get(i);
       GridNode node=next.get2();
       if (!res.contains(node))       res.add(next.get2());
-      if (res.size() == backups + 1)       break;
+      if (res.size() == primaryAndBackups)       break;
     }
   }
   return res;
