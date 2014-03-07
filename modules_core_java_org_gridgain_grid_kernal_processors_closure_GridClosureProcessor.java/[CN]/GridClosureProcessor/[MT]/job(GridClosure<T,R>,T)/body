@@ -1,0 +1,22 @@
+{
+  A.notNull(job,"job");
+  if (job instanceof GridComputeJobMasterLeaveAware) {
+    return new GridMasterLeaveAwareComputeJobAdapter(){
+      @Nullable @Override public Object execute(){
+        return job.apply(arg);
+      }
+      @Override public void onMasterNodeLeft(      GridComputeTaskSession ses) throws GridException {
+        ((GridComputeJobMasterLeaveAware)job).onMasterNodeLeft(ses);
+      }
+    }
+;
+  }
+ else {
+    return new GridComputeJobAdapter(){
+      @Nullable @Override public Object execute(){
+        return job.apply(arg);
+      }
+    }
+;
+  }
+}
