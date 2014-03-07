@@ -1,0 +1,33 @@
+{
+  final AtomicLong valCntr=new AtomicLong();
+  final GridSwapKey key=new GridSwapKey("key");
+  final CountDownLatch wLatch=new CountDownLatch(1);
+  final AtomicBoolean done=new AtomicBoolean();
+  GridFuture<?> wFut=multithreadedAsync(new Callable<Object>(){
+    @Nullable @Override public Object call() throws Exception {
+      while (!done.get()) {
+        long val=valCntr.incrementAndGet();
+        spi.store(null,key,Long.toString(val).getBytes(),context());
+        if (val == 1)         wLatch.countDown();
+      }
+      return null;
+    }
+  }
+,8);
+  wLatch.await();
+  GridFuture<?> rFut=multithreadedAsync(new Callable<Object>(){
+    @Nullable @Override public Object call() throws Exception {
+      while (valCntr.get() < 1000) {
+        byte[] val=spi.read(null,key,context());
+        assertNotNull(val);
+        long lval=Long.parseLong(new String(val));
+        assertTrue(lval <= valCntr.get());
+      }
+      return null;
+    }
+  }
+,8);
+  rFut.get();
+  done.set(true);
+  wFut.get();
+}

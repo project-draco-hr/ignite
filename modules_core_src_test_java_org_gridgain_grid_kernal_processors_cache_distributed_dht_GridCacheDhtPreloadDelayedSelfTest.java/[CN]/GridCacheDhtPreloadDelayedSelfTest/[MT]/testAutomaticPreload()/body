@@ -1,0 +1,23 @@
+{
+  delay=PRELOAD_DELAY;
+  preloadMode=GridCachePreloadMode.SYNC;
+  Grid g0=startGrid(0);
+  int cnt=KEY_CNT;
+  GridCache<String,Integer> c0=g0.cache(null);
+  for (int i=0; i < cnt; i++)   c0.put(Integer.toString(i),i);
+  Grid g1=startGrid(1);
+  Grid g2=startGrid(2);
+  U.sleep(1000);
+  GridCache<String,Integer> c1=g1.cache(null);
+  GridCache<String,Integer> c2=g2.cache(null);
+  GridDhtCache<String,Integer> d0=dht(0);
+  GridDhtCache<String,Integer> d1=dht(1);
+  GridDhtCache<String,Integer> d2=dht(2);
+  info("Partition map for node 0: " + d0.topology().partitionMap(false).toFullString());
+  info("Partition map for node 1: " + d1.topology().partitionMap(false).toFullString());
+  info("Partition map for node 2: " + d2.topology().partitionMap(false).toFullString());
+  checkMaps(true,d0.topology().partitionMap(true),d1.topology().partitionMap(true),d2.topology().partitionMap(true));
+  checkCache(c0,cnt);
+  checkCache(c1,cnt);
+  checkCache(c2,cnt);
+}

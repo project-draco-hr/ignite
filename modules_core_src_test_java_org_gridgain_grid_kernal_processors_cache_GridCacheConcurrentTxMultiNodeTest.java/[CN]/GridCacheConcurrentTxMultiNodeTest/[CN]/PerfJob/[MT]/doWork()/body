@@ -1,0 +1,28 @@
+{
+  GridCache cache=grid.cache(null);
+  Session ses=new Session(terminalId());
+  GridCacheTx tx=cache.txStart();
+  try {
+    try {
+      Request req=new Request(getId());
+      req.setMessageId(getId());
+      String key=req.getCacheKey();
+      startTimer("putRequest",tx.xid(),key,terminalId());
+      put(req,key,terminalId());
+      stopTimer("putRequest");
+      key=ses.getCacheKey();
+      startTimer("putSession",tx.xid(),key,terminalId());
+      put(ses,key,terminalId());
+      stopTimer("putSession");
+      startTimer("commit",tx.xid(),null,terminalId());
+      tx.commit();
+      stopTimer("commit");
+    }
+  finally {
+      tx.close();
+    }
+  }
+ catch (  GridException e) {
+    e.printStackTrace();
+  }
+}

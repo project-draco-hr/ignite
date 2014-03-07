@@ -1,0 +1,34 @@
+{
+  GridComputeTaskFuture<Void> fut=master.forPredicate(workerNodesFilter).compute().execute(new GridCacheGroupLockPutTask(preferredNodeId,CACHE_NAME),dataChunk);
+  fut.listenAsync(new CI1<GridFuture<Void>>(){
+    @Override public void apply(    GridFuture<Void> f){
+      GridComputeTaskFuture taskFut=(GridComputeTaskFuture)f;
+      boolean fail=false;
+      try {
+        f.get();
+      }
+ catch (      GridException ignore) {
+        info("Put task failed, going to remap keys: " + dataChunk.size());
+        fail=true;
+      }
+ finally {
+        resQueue.remove(taskFut);
+        try {
+          if (fail)           remap(master,dataChunk);
+        }
+ catch (        GridException e) {
+          info("Failed to remap task [data=" + dataChunk.size() + ", e="+ e+ ']');
+        }
+      }
+    }
+  }
+);
+  try {
+    resQueue.put(fut);
+    if (fut.isDone())     resQueue.remove(fut);
+  }
+ catch (  InterruptedException ignored) {
+    info(">>>> Failed to wait for future submission: " + fut);
+    Thread.currentThread().interrupt();
+  }
+}

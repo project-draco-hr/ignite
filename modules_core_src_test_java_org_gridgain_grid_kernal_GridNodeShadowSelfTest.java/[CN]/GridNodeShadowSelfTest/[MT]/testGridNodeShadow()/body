@@ -1,0 +1,31 @@
+{
+  try {
+    Grid g1=startGrid(1);
+    g1.events().localListen(new TestEventListener(),EVTS_DISCOVERY);
+    Grid g2=startGrid(2);
+    GridNode node=g2.localNode();
+    stopGrid(2);
+    Map<Integer,GridNodeShadow> evtsToShadows=ex.exchange(null,getTestTimeout(),SECONDS);
+    assertFalse(evtsToShadows.containsKey(DIRTY_MSG_KEY));
+    assertTrue(evtsToShadows.containsKey(EVT_NODE_JOINED));
+    assertTrue(evtsToShadows.containsKey(EVT_NODE_LEFT));
+    for (    Map.Entry<Integer,GridNodeShadow> evtToShadow : evtsToShadows.entrySet()) {
+      GridNodeShadow sh=evtToShadow.getValue();
+      assertEquals(node.id(),sh.id());
+      assertTrue(CollectionUtils.isEqualCollection(node.addresses(),sh.addresses()));
+      assertTrue(CollectionUtils.isEqualCollection(node.hostNames(),sh.hostNames()));
+      Map<String,Object> shAttrs=sh.attributes();
+      for (      Map.Entry<String,Object> e : node.attributes().entrySet()) {
+        Object value=e.getValue();
+        if (value != null) {
+          if (value.getClass().isArray())           assertTrue(Arrays.equals((Object[])value,(Object[])shAttrs.get(e.getKey())));
+ else           assertEquals(value,shAttrs.get(e.getKey()));
+        }
+ else         assertNull(shAttrs.get(e.getKey()));
+      }
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

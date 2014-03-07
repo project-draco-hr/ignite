@@ -1,0 +1,15 @@
+{
+  GridCacheTx tx=grid.cache(null).txStart(PESSIMISTIC,REPEATABLE_READ);
+  try {
+    GridCacheEntryEx<String,Integer> dhtEntry=dht(grid).peekEx(key);
+    if (DEBUG)     info("DHT entry [hash=" + System.identityHashCode(dhtEntry) + ", xid="+ tx.xid()+ ", entry="+ dhtEntry+ ']');
+    String val=grid.<String,String>cache(null).get(key);
+    assertNotNull(val);
+    assertEquals("val",val);
+    tx.commit();
+    return val;
+  }
+  finally {
+    tx.close();
+  }
+}

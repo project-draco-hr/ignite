@@ -1,0 +1,38 @@
+{
+  final ByteArrayOutputStream out=new ByteArrayOutputStream();
+  GridInClosure<TestObject> writer=new CIX1<TestObject>(){
+    @Override public void applyx(    TestObject obj) throws GridException {
+      out.reset();
+      ObjectOutputStream objOut=null;
+      try {
+        objOut=new ObjectOutputStream(out);
+        objOut.writeObject(obj);
+      }
+ catch (      IOException e) {
+        throw new GridException(e);
+      }
+ finally {
+        U.close(objOut,log);
+      }
+    }
+  }
+;
+  GridOutClosure<TestObject> reader=new COX<TestObject>(){
+    @Override public TestObject applyx() throws GridException {
+      ByteArrayInputStream in=new ByteArrayInputStream(out.toByteArray());
+      ObjectInputStream objIn=null;
+      try {
+        objIn=new ObjectInputStream(in);
+        return (TestObject)objIn.readObject();
+      }
+ catch (      ClassNotFoundException|IOException e) {
+        throw new GridException(e);
+      }
+ finally {
+        U.close(objIn,log);
+      }
+    }
+  }
+;
+  runTest("Serialization",writer,reader);
+}

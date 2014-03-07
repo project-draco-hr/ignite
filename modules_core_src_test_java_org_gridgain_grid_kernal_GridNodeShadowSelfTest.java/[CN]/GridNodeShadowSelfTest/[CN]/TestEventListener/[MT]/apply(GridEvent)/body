@@ -1,0 +1,20 @@
+{
+  if (!(evt instanceof GridDiscoveryEvent)) {
+    error("Received unexpected event in TestEventListener: " + evt);
+    evtsToShadows.put(DIRTY_MSG_KEY,null);
+    return true;
+  }
+  GridDiscoveryEvent evt0=(GridDiscoveryEvent)evt;
+  GridNodeShadow sh=evt0.shadow();
+  evtsToShadows.put(evt0.type(),sh);
+  if (evt0.type() == EVT_NODE_LEFT) {
+    try {
+      ex.exchange(evtsToShadows,getTestTimeout(),SECONDS);
+    }
+ catch (    Exception e) {
+      error(e.getMessage());
+      evtsToShadows.put(DIRTY_MSG_KEY,null);
+    }
+  }
+  return true;
+}

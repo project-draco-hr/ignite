@@ -1,0 +1,18 @@
+{
+  GridConfiguration cfg=getConfiguration(getTestGridName());
+  GridTcpDiscoverySpi discoSpi=new GridTcpDiscoverySpi();
+  discoSpi.setIpFinder(IP_FINDER);
+  cfg.setDiscoverySpi(discoSpi);
+  GridCacheConfiguration cc=defaultCacheConfiguration();
+  cc.setName("partitioned");
+  cc.setCacheMode(GridCacheMode.PARTITIONED);
+  cc.setAffinityMapper(new GridGgfsGroupDataBlocksKeyMapper(128));
+  cc.setBackups(0);
+  cc.setAtomicityMode(TRANSACTIONAL);
+  GridCacheConfiguration metaCfg=defaultCacheConfiguration();
+  metaCfg.setName("replicated");
+  metaCfg.setCacheMode(GridCacheMode.REPLICATED);
+  metaCfg.setAtomicityMode(TRANSACTIONAL);
+  cfg.setCacheConfiguration(metaCfg,cc);
+  return cfg;
+}

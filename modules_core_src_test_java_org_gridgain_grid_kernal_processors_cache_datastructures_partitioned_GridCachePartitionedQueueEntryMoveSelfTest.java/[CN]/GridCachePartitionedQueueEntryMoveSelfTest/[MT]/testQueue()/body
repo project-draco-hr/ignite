@@ -1,0 +1,63 @@
+{
+  try {
+    startGrids(GRID_CNT);
+    final String queueName="queue-name-" + UUID.randomUUID();
+    System.out.println(StringUtils.repeat("\n",20));
+    final CountDownLatch latch1=new CountDownLatch(1);
+    GridFuture<?> fut1=grid(0).scheduler().runLocal(new CAX(){
+      @GridInstanceResource private Grid grid;
+      @Override public void applyx() throws GridException {
+        GridCacheQueue<Integer> queue=grid.cache(null).dataStructures().queue(queueName,QUEUE_CAP,true,true);
+        for (int i=0; i < QUEUE_CAP * 2; i++) {
+          if (i == QUEUE_CAP) {
+            latch1.countDown();
+          }
+          try {
+            info(">>> Putting value: " + i);
+            queue.put(i);
+            info(">>> Value is in queue: " + i);
+          }
+ catch (          Error|RuntimeException e) {
+            error("Failed to put value: " + i,e);
+            throw e;
+          }
+        }
+      }
+    }
+);
+    latch1.await();
+    startAdditionalNodes(BACKUP_CNT + 2,queueName);
+    System.out.println(StringUtils.repeat("\n",20));
+    GridFuture<?> fut2=grid(GRID_CNT).scheduler().runLocal(new CAX(){
+      @GridInstanceResource private Grid grid;
+      @Override public void applyx() throws GridException {
+        GridCacheQueue<Integer> queue=grid.cache(null).dataStructures().queue(queueName,Integer.MAX_VALUE,true,true);
+        int cnt=0;
+        do {
+          try {
+            Integer i=queue.poll();
+            if (i != null) {
+              info(">>> Polled value: " + cnt);
+              cnt++;
+            }
+ else {
+              info(">>> Waiting for value...");
+              U.sleep(2000);
+            }
+          }
+ catch (          GridException|Error|RuntimeException e) {
+            error("Failed to poll value.",e);
+            throw e;
+          }
+        }
+ while (cnt < QUEUE_CAP * 2);
+      }
+    }
+);
+    fut1.get();
+    fut2.get();
+  }
+  finally {
+    stopAllGrids();
+  }
+}

@@ -1,0 +1,29 @@
+{
+  GridConfiguration c=super.getConfiguration(gridName);
+  GridTcpDiscoverySpi disco=new GridTcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  c.setDiscoverySpi(disco);
+  GridH2IndexingSpi indexing=new GridH2IndexingSpi();
+  indexing.setDefaultIndexPrimitiveKey(true);
+  indexing.setIndexCustomFunctionClasses(SqlFunctions.class);
+  c.setIndexingSpi(indexing);
+  c.setSwapSpaceSpi(new GridFileSwapSpaceSpi());
+  c.setMarshaller(new GridOptimizedMarshaller(false));
+  GridCacheConfiguration[] ccs=new GridCacheConfiguration[2];
+  for (int i=0; i < ccs.length; i++) {
+    GridCacheConfiguration cc=defaultCacheConfiguration();
+    if (i > 0)     cc.setName("c" + i);
+    cc.setCacheMode(cacheMode());
+    cc.setAtomicityMode(atomicityMode());
+    cc.setDistributionMode(distributionMode());
+    cc.setWriteSynchronizationMode(FULL_SYNC);
+    cc.setStore(store);
+    cc.setPreloadMode(SYNC);
+    cc.setSwapEnabled(true);
+    cc.setEvictNearSynchronized(false);
+    if (cacheMode() == GridCacheMode.PARTITIONED)     cc.setBackups(gridCount());
+    ccs[i]=cc;
+  }
+  c.setCacheConfiguration(ccs);
+  return c;
+}

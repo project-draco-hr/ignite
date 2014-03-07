@@ -1,0 +1,67 @@
+{
+  createSessionFactories(accessType);
+  try {
+    final int ENTITY_CNT=100;
+    Session ses=sesFactory1.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      for (int i=0; i < ENTITY_CNT; i++) {
+        Entity e=new Entity(i,"name-" + i);
+        Collection<ChildEntity> children=new ArrayList<>();
+        for (int j=0; j < 3; j++)         children.add(new ChildEntity());
+        e.setChildren(children);
+        ses.save(e);
+      }
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    loadEntities(sesFactory2,ENTITY_CNT);
+    SecondLevelCacheStatistics stats1=sesFactory1.getStatistics().getSecondLevelCacheStatistics(ENTITY_NAME);
+    SecondLevelCacheStatistics stats2=sesFactory2.getStatistics().getSecondLevelCacheStatistics(ENTITY_NAME);
+    NaturalIdCacheStatistics idStats1=sesFactory1.getStatistics().getNaturalIdCacheStatistics(NATURAL_ID_REGION);
+    NaturalIdCacheStatistics idStats2=sesFactory2.getStatistics().getNaturalIdCacheStatistics(NATURAL_ID_REGION);
+    SecondLevelCacheStatistics colStats1=sesFactory1.getStatistics().getSecondLevelCacheStatistics(CHILD_COLLECTION_REGION);
+    SecondLevelCacheStatistics colStats2=sesFactory2.getStatistics().getSecondLevelCacheStatistics(CHILD_COLLECTION_REGION);
+    assertEquals(ENTITY_CNT,stats1.getElementCountInMemory());
+    assertEquals(ENTITY_CNT,stats2.getElementCountInMemory());
+    assertEquals(ENTITY_CNT,idStats1.getElementCountInMemory());
+    assertEquals(ENTITY_CNT,idStats2.getElementCountInMemory());
+    assertEquals(ENTITY_CNT,colStats1.getElementCountInMemory());
+    assertEquals(ENTITY_CNT,colStats2.getElementCountInMemory());
+    ses=sesFactory1.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      ses.createQuery("delete from " + ENTITY_NAME + " where name='no such name'").executeUpdate();
+      ses.createQuery("delete from " + ChildEntity.class.getName() + " where id=-1").executeUpdate();
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    assertEquals(0,stats1.getElementCountInMemory());
+    assertEquals(0,stats2.getElementCountInMemory());
+    assertEquals(0,idStats1.getElementCountInMemory());
+    assertEquals(0,idStats2.getElementCountInMemory());
+    assertEquals(0,colStats1.getElementCountInMemory());
+    assertEquals(0,colStats2.getElementCountInMemory());
+    loadEntities(sesFactory1,10);
+    assertEquals(10,stats1.getElementCountInMemory());
+    assertEquals(10,stats2.getElementCountInMemory());
+    assertEquals(10,idStats1.getElementCountInMemory());
+    assertEquals(10,idStats2.getElementCountInMemory());
+    sesFactory2.getCache().evictEntityRegion(ENTITY_NAME);
+    assertEquals(0,stats1.getElementCountInMemory());
+    assertEquals(0,stats2.getElementCountInMemory());
+    sesFactory2.getCache().evictNaturalIdRegion(ENTITY_NAME);
+    assertEquals(0,idStats1.getElementCountInMemory());
+    assertEquals(0,idStats2.getElementCountInMemory());
+    sesFactory2.getCache().evictCollectionRegion(CHILD_COLLECTION_REGION);
+    assertEquals(0,colStats1.getElementCountInMemory());
+    assertEquals(0,colStats2.getElementCountInMemory());
+  }
+  finally {
+    cleanup();
+  }
+}

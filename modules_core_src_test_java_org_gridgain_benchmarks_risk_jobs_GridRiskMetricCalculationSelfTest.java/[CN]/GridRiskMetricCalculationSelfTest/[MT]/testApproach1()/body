@@ -1,0 +1,25 @@
+{
+  Grid worker=startGridsMultiThreaded(1);
+  try {
+    GridRiskMain.main(String.valueOf(ENTRIES_COUNT / 10),String.valueOf(EVENTS_COUNT / 10),MASTER_CFG,"true","approach1");
+    GridCache<GridRiskAffinityKey,Map<GridRiskDataKey,GridRiskDataEntry>> cache=worker.cache("approach1");
+    assertNotNull("Expects cache configured.",cache);
+    List<GridRiskEvent> evts=events(EVENTS_COUNT);
+    for (int i=0; i < 10; i++) {
+      Map<GridRiskDataKey,GridRiskDataEntry> valMap=cache.randomEntry().get();
+      GridRiskDataEntry val=F.first(valMap.values());
+      if (val == null) {
+        i--;
+        continue;
+      }
+      GridRiskDataEntry check=new GridRiskDataEntry(val);
+      updateEntry(check,evts);
+      System.out.println("Grid: " + val);
+      System.out.println("Calc: " + check);
+      System.out.println();
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

@@ -1,0 +1,19 @@
+{
+  GridConfiguration cfg=super.getConfiguration(gridName);
+  GridCacheConfiguration cacheCfg=defaultCacheConfiguration();
+  cacheCfg.setCacheMode(GridCacheMode.PARTITIONED);
+  cacheCfg.setWriteSynchronizationMode(GridCacheWriteSynchronizationMode.FULL_SYNC);
+  cacheCfg.setPreloadMode(NONE);
+  cacheCfg.setAffinity(aff);
+  cacheCfg.setSwapEnabled(false);
+  cacheCfg.setEvictSynchronized(true);
+  cacheCfg.setEvictNearSynchronized(true);
+  cacheCfg.setAtomicityMode(TRANSACTIONAL);
+  cacheCfg.setDistributionMode(NEAR_PARTITIONED);
+  cfg.setCacheConfiguration(cacheCfg);
+  GridTcpDiscoverySpi disco=new GridTcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(disco);
+  cfg.setUserAttributes(F.asMap(GridCacheModuloAffinityFunction.IDX_ATTR,cntr.getAndIncrement()));
+  return cfg;
+}

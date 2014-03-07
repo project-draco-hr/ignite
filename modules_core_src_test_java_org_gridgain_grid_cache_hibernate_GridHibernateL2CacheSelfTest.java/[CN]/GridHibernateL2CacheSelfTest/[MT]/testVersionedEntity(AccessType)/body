@@ -1,0 +1,68 @@
+{
+  createSessionFactories(accessType);
+  try {
+    Session ses=sesFactory1.openSession();
+    VersionedEntity e0=new VersionedEntity(0);
+    try {
+      Transaction tx=ses.beginTransaction();
+      ses.save(e0);
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    ses=sesFactory1.openSession();
+    long ver;
+    try {
+      ver=((VersionedEntity)ses.load(VersionedEntity.class,0)).getVersion();
+    }
+  finally {
+      ses.close();
+    }
+    SecondLevelCacheStatistics stats1=sesFactory1.getStatistics().getSecondLevelCacheStatistics(VERSIONED_ENTITY_NAME);
+    SecondLevelCacheStatistics stats2=sesFactory2.getStatistics().getSecondLevelCacheStatistics(VERSIONED_ENTITY_NAME);
+    assertEquals(1,stats1.getElementCountInMemory());
+    assertEquals(1,stats2.getElementCountInMemory());
+    ses=sesFactory2.openSession();
+    try {
+      assertEquals(ver,((VersionedEntity)ses.load(VersionedEntity.class,0)).getVersion());
+    }
+  finally {
+      ses.close();
+    }
+    assertEquals(1,stats2.getElementCountInMemory());
+    assertEquals(1,stats2.getHitCount());
+    if (accessType == AccessType.READ_ONLY)     return;
+    e0.setVersion(ver - 1);
+    ses=sesFactory1.openSession();
+    Transaction tx=ses.beginTransaction();
+    try {
+      ses.update(e0);
+      tx.commit();
+      fail("Commit must fail.");
+    }
+ catch (    StaleObjectStateException e) {
+      log.info("Expected exception: " + e);
+    }
+ finally {
+      tx.rollback();
+      ses.close();
+    }
+    sesFactory1.getStatistics().clear();
+    stats1=sesFactory1.getStatistics().getSecondLevelCacheStatistics(VERSIONED_ENTITY_NAME);
+    ses=sesFactory1.openSession();
+    try {
+      assertEquals(ver,((VersionedEntity)ses.load(VersionedEntity.class,0)).getVersion());
+    }
+  finally {
+      ses.close();
+    }
+    assertEquals(1,stats1.getElementCountInMemory());
+    assertEquals(1,stats1.getHitCount());
+    assertEquals(1,stats2.getElementCountInMemory());
+    assertEquals(1,stats2.getHitCount());
+  }
+  finally {
+    cleanup();
+  }
+}

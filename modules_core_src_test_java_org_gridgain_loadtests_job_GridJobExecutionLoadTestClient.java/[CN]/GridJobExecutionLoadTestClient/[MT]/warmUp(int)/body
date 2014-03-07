@@ -1,0 +1,27 @@
+{
+  X.println("Warming up...");
+  final GridProjection rmts=g.forRemotes();
+  GridLoadTestUtils.runMultithreadedInLoop(new Callable<Object>(){
+    @Nullable @Override public Object call(){
+      try {
+        rmts.compute().execute(GridJobExecutionLoadTestTask.class,null).get();
+      }
+ catch (      GridException e) {
+        e.printStackTrace();
+      }
+      return null;
+    }
+  }
+,noThreads,WARM_UP_DURATION);
+  try {
+    g.compute().run(new GridAbsClosure(){
+      @Override public void apply(){
+        System.gc();
+      }
+    }
+).get();
+  }
+ catch (  GridException e) {
+    throw new IllegalStateException(e);
+  }
+}
