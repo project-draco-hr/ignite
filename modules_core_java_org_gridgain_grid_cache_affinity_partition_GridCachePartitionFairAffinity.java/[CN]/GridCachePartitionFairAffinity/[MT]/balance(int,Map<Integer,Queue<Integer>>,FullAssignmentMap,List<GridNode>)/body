@@ -1,0 +1,51 @@
+{
+  int idealPartCnt=parts / topSnapshot.size();
+  Map<UUID,PartitionSet> mapping=fullMap.tierMapping(tier);
+  PrioritizedPartitionMap underloadedNodes=filterNodes(mapping,idealPartCnt,false);
+  PrioritizedPartitionMap overloadedNodes=filterNodes(mapping,idealPartCnt,true);
+  do {
+    boolean retry=false;
+    for (    PartitionSet overloaded : overloadedNodes.assignments()) {
+      U.debug(log,"Stealing partitions from overloaded set: " + overloaded);
+      for (      Integer part : overloaded.partitions()) {
+        U.debug(log,"Trying to move partition: " + part);
+        boolean assigned=false;
+        for (        PartitionSet underloaded : underloadedNodes.assignments()) {
+          U.debug(log,"Trying to move partition to underloaded set: " + underloaded);
+          if (fullMap.assign(part,tier,underloaded.node(),false,pendingParts)) {
+            if (overloaded.size() <= idealPartCnt)             overloadedNodes.remove(overloaded.nodeId());
+ else             overloadedNodes.update();
+            if (underloaded.size() >= idealPartCnt)             underloadedNodes.remove(underloaded.nodeId());
+ else             underloadedNodes.update();
+            assigned=true;
+            retry=true;
+            break;
+          }
+ else {
+            U.debug(log,"Failed to assign: " + part);
+          }
+        }
+        if (!assigned) {
+          for (          PartitionSet underloaded : underloadedNodes.assignments()) {
+            U.debug(log,"Trying to forcibly move partition to underloaded set: " + underloaded);
+            if (fullMap.assign(part,tier,underloaded.node(),true,pendingParts)) {
+              if (overloaded.size() <= idealPartCnt)               overloadedNodes.remove(overloaded.nodeId());
+ else               overloadedNodes.update();
+              if (underloaded.size() >= idealPartCnt)               underloadedNodes.remove(underloaded.nodeId());
+ else               underloadedNodes.update();
+              retry=true;
+              break;
+            }
+ else {
+              U.debug(log,"Failed to assign: " + part);
+            }
+          }
+        }
+        if (retry)         break;
+      }
+      if (retry)       break;
+    }
+    if (!retry)     break;
+  }
+ while (true);
+}
