@@ -1,5 +1,4 @@
 {
-  if (prevAssignment != null)   U.debug(log,"Assigning partitions: " + Arrays.asList(prevAssignment) + ", topSnapshot="+ topSnapshot);
   if (topSnapshot.size() == 1) {
     GridNode primary=F.first(topSnapshot);
     List<GridNode>[] assignments=createEmpty(1);
@@ -12,7 +11,6 @@
   Map<Integer,Queue<Integer>> pendingParts=new HashMap<>();
   FullAssignmentMap fullMap=new FullAssignmentMap(tiers,assignment,topSnapshot);
   for (int tier=0; tier < tiers; tier++) {
-    U.debug(log,"Assigning tier: " + tier);
     Queue<Integer> pending=pendingParts.get(tier);
     for (int part=0; part < parts; part++) {
       if (fullMap.assignments[part].size() < tier + 1) {
@@ -23,11 +21,8 @@
         if (!pending.contains(part))         pending.add(part);
       }
     }
-    U.debug(log,"Assigning pending partitions for tier [tier=" + tier + ", pending="+ pendingParts+ ']');
     assignPending(tier,pendingParts,fullMap,topSnapshot);
-    U.debug(log,"Balancing parititions: " + Arrays.asList(fullMap.assignments) + ", tier0="+ fullMap.tierMapping(0)+ ", tier1="+ fullMap.tierMapping(1));
     balance(tier,pendingParts,fullMap,topSnapshot);
   }
-  U.debug(log,">>>>> Assigned partitions: " + Arrays.asList(fullMap.assignments));
   return fullMap.assignments;
 }

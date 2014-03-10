@@ -6,12 +6,9 @@
   do {
     boolean retry=false;
     for (    PartitionSet overloaded : overloadedNodes.assignments()) {
-      U.debug(log,"Stealing partitions from overloaded set: " + overloaded);
       for (      Integer part : overloaded.partitions()) {
-        U.debug(log,"Trying to move partition: " + part);
         boolean assigned=false;
         for (        PartitionSet underloaded : underloadedNodes.assignments()) {
-          U.debug(log,"Trying to move partition to underloaded set: " + underloaded);
           if (fullMap.assign(part,tier,underloaded.node(),false,pendingParts)) {
             if (overloaded.size() <= idealPartCnt)             overloadedNodes.remove(overloaded.nodeId());
  else             overloadedNodes.update();
@@ -22,12 +19,10 @@
             break;
           }
  else {
-            U.debug(log,"Failed to assign: " + part);
           }
         }
         if (!assigned) {
           for (          PartitionSet underloaded : underloadedNodes.assignments()) {
-            U.debug(log,"Trying to forcibly move partition to underloaded set: " + underloaded);
             if (fullMap.assign(part,tier,underloaded.node(),true,pendingParts)) {
               if (overloaded.size() <= idealPartCnt)               overloadedNodes.remove(overloaded.nodeId());
  else               overloadedNodes.update();
@@ -37,7 +32,6 @@
               break;
             }
  else {
-              U.debug(log,"Failed to assign: " + part);
             }
           }
         }
