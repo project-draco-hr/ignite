@@ -1,7 +1,12 @@
 {
   if (store instanceof GridLifecycleAware) {
     try {
-      ((GridLifecycleAware)store).stop();
+      if (cctx.config().isWriteBehindEnabled()) {
+        if (!cctx.isNear())         ((GridLifecycleAware)store).stop();
+      }
+ else {
+        if (cctx.isNear() || !CU.isNearEnabled(cctx))         ((GridLifecycleAware)store).stop();
+      }
     }
  catch (    GridException e) {
       U.error(log(),"Failed to stop cache store.",e);

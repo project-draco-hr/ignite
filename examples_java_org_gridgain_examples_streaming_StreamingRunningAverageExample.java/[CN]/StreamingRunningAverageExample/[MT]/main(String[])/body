@@ -1,0 +1,71 @@
+{
+  Grid grid=GridGain.start("examples/config/example-streamer.xml");
+  System.out.println();
+  System.out.println(">>> Streaming running average example started.");
+  final GridStreamer streamer=grid.streamer("running-average");
+  final int rndRange=100;
+  Thread qryThread=new Thread(new Runnable(){
+    @SuppressWarnings("BusyWait") @Override public void run(){
+      while (!Thread.interrupted()) {
+        try {
+          try {
+            Thread.sleep(3000);
+          }
+ catch (          InterruptedException ignore) {
+            return;
+          }
+          double avg=streamer.context().reduce(new GridClosure<GridStreamerContext,Average>(){
+            @Override public Average apply(            GridStreamerContext ctx){
+              return ctx.<String,Average>localSpace().get("avg");
+            }
+          }
+,new GridReducer<Average,Double>(){
+            private Average avg=new Average();
+            @Override public boolean collect(            @Nullable Average a){
+              if (a != null)               avg.add(a);
+              return true;
+            }
+            @Override public Double reduce(){
+              return avg.average();
+            }
+          }
+);
+          System.out.println("Got streamer query result [avg=" + avg + ", idealAvg="+ (rndRange / 2)+ ']');
+        }
+ catch (        GridException e) {
+          System.out.println("Failed to execute streamer query: " + e);
+        }
+      }
+    }
+  }
+);
+  Thread evtThread=new Thread(new Runnable(){
+    @Override public void run(){
+      Random rnd=new Random();
+      while (!Thread.interrupted()) {
+        try {
+          streamer.addEvent(rnd.nextInt(rndRange));
+        }
+ catch (        GridException e) {
+          System.out.println("Failed to add streamer event: " + e);
+        }
+      }
+    }
+  }
+);
+  try {
+    System.out.println(">>> Starting streamer query and producer threads. Press enter to stop this example.");
+    qryThread.start();
+    evtThread.start();
+    try (BufferedReader in=new BufferedReader(new InputStreamReader(System.in))){
+      in.readLine();
+    }
+   }
+  finally {
+    qryThread.interrupt();
+    evtThread.interrupt();
+    qryThread.join();
+    evtThread.join();
+    GridGain.stopAll(false);
+  }
+}
