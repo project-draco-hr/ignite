@@ -1,6 +1,20 @@
 {
   if (log.isDebugEnabled())   log.debug("Received DHT atomic update future result [nodeId=" + nodeId + ", updateRes="+ updateRes+ ']');
   if (updateRes.error() != null)   this.updateRes.addFailedKeys(updateRes.failedKeys(),updateRes.error());
+  if (!F.isEmpty(updateRes.nearEvicted())) {
+    if (nearEntries != null) {
+      for (      K key : updateRes.nearEvicted()) {
+        try {
+          for (          GridDhtCacheEntry<K,V> entry : nearEntries) {
+            if (key.equals(entry.key()))             entry.removeReader(nodeId,updateRes.messageId());
+          }
+        }
+ catch (        GridCacheEntryRemovedException e) {
+          e.printStackTrace();
+        }
+      }
+    }
+  }
   mappings.remove(nodeId);
   checkComplete();
 }

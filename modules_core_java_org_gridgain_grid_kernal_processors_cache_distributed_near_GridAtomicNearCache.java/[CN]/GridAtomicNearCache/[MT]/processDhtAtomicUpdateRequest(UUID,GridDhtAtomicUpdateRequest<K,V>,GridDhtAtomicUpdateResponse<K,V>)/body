@@ -1,0 +1,29 @@
+{
+  GridCacheVersion ver=req.writeVersion();
+  for (int i=0; i < req.nearSize(); i++) {
+    K key=req.nearKey(i);
+    try {
+      while (true) {
+        try {
+          GridCacheEntryEx<K,V> entry=peekEx(key);
+          if (entry == null) {
+            res.addNearEvicted(key,req.nearKeyBytes(i));
+            break;
+          }
+          V val=req.nearValue(i);
+          byte[] valBytes=req.nearValueBytes(i);
+          GridCacheOperation op=(val != null || valBytes != null) ? UPDATE : DELETE;
+          entry.innerUpdate(ver,nodeId,nodeId,op,val,valBytes,false,false,req.ttl(),true,true,false,true,CU.<K,V>empty(),DR_NONE,-1,-1,null,false);
+          if (entry.obsolete())           removeEntry(entry);
+          break;
+        }
+ catch (        GridCacheEntryRemovedException ignored) {
+          if (log.isDebugEnabled())           log.debug("Got removed entry while updating near value (will retry): " + key);
+        }
+      }
+    }
+ catch (    GridException e) {
+      res.addFailedKey(key,new GridException("Failed to update near cache key: " + key,e));
+    }
+  }
+}
