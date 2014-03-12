@@ -1,0 +1,15 @@
+{
+  final long topVer=req.topologyVersion();
+  cctx.affinity().affinityReadyFuture(req.topologyVersion()).listenAsync(new CI1<GridFuture<Long>>(){
+    @Override public void apply(    GridFuture<Long> fut){
+      List<List<GridNode>> assignment=cctx.affinity().assignments(topVer);
+      try {
+        cctx.io().send(node,new GridDhtAffinityAssignmentResponse<K,V>(topVer,assignment));
+      }
+ catch (      GridException e) {
+        U.error(log,"Failed to send affinity assignment response to remote node [node=" + node + ']',e);
+      }
+    }
+  }
+);
+}

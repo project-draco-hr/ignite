@@ -1,0 +1,26 @@
+{
+  boolean complete;
+  GridLogger log0=log;
+synchronized (this) {
+    while (!availableNodes.isEmpty()) {
+      GridNode node=availableNodes.poll();
+      try {
+        ctx.io().send(node,new GridDhtAffinityAssignmentRequest<K,V>(topVer));
+        if (ctx.discovery().node(node.id()) == null) {
+          U.warn(log0,"Failed to request affinity assignment from remote node (node left grid, will " + "continue to another node): " + node);
+          continue;
+        }
+        pendingNode=node;
+        break;
+      }
+ catch (      GridTopologyException ignored) {
+        U.warn(log0,"Failed to request affinity assignment from remote node (node left grid, will " + "continue to another node): " + node);
+      }
+catch (      GridException e) {
+        U.error(log0,"Failed to request affinity assignment from remote node (will " + "continue to another node): " + node,e);
+      }
+    }
+    complete=pendingNode == null;
+  }
+  if (complete)   onDone((List<List<GridNode>>)null);
+}
