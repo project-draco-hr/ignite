@@ -18,14 +18,70 @@ if (futVer0 == CACHE_VER_NOT_READ) return false;
 futVer=futVer0;
 commState.idx++;
 case 5:
+if (commState.readSize == -1) {
+if (buf.remaining() < 4) return false;
+commState.readSize=commState.getInt();
+}
+if (commState.readSize >= 0) {
+if (nearValBytes == null) nearValBytes=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+GridCacheValueBytes _val=commState.getValueBytes();
+if (_val == VAL_BYTES_NOT_READ) return false;
+nearValBytes.add((GridCacheValueBytes)_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 6:
+if (commState.readSize == -1) {
+if (buf.remaining() < 4) return false;
+commState.readSize=commState.getInt();
+}
+if (commState.readSize >= 0) {
+if (nearValsIdxs == null) nearValsIdxs=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+if (buf.remaining() < 4) return false;
+int _val=commState.getInt();
+nearValsIdxs.add((Integer)_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 7:
 byte[] remapKeysBytes0=commState.getByteArray();
 if (remapKeysBytes0 == BYTE_ARR_NOT_READ) return false;
 remapKeysBytes=remapKeysBytes0;
 commState.idx++;
-case 6:
+case 8:
 byte[] retValBytes0=commState.getByteArray();
 if (retValBytes0 == BYTE_ARR_NOT_READ) return false;
 retValBytes=retValBytes0;
+commState.idx++;
+case 9:
+if (commState.readSize == -1) {
+if (buf.remaining() < 4) return false;
+commState.readSize=commState.getInt();
+}
+if (commState.readSize >= 0) {
+if (skippedIdxs == null) skippedIdxs=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+if (buf.remaining() < 4) return false;
+int _val=commState.getInt();
+skippedIdxs.add((Integer)_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 10:
+GridCacheVersion ver0=commState.getCacheVersion();
+if (ver0 == CACHE_VER_NOT_READ) return false;
+ver=ver0;
 commState.idx++;
 }
 return true;
