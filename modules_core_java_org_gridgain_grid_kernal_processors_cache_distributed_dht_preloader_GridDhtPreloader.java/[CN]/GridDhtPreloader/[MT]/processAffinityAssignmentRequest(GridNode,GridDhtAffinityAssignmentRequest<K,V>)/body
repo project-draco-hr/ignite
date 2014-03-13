@@ -1,7 +1,9 @@
 {
   final long topVer=req.topologyVersion();
+  U.debug(log,"Processing affinity assignment request: " + node + ", req="+ req);
   cctx.affinity().affinityReadyFuture(req.topologyVersion()).listenAsync(new CI1<GridFuture<Long>>(){
     @Override public void apply(    GridFuture<Long> fut){
+      U.debug(log,"Affinity is ready for topology: " + topVer);
       List<List<GridNode>> assignment=cctx.affinity().assignments(topVer);
       try {
         cctx.io().send(node,new GridDhtAffinityAssignmentResponse<K,V>(topVer,assignment));
