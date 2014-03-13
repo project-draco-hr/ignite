@@ -4,7 +4,10 @@
     @Override public void postProcessBeanFactory(    ConfigurableListableBeanFactory beanFactory) throws BeansException {
       for (      String beanName : beanFactory.getBeanDefinitionNames()) {
         BeanDefinition def=beanFactory.getBeanDefinition(beanName);
-        if (includedBeanClasses != null && !includedBeanClasses.contains(def.getBeanClassName())) {
+        try {
+          Class.forName(def.getBeanClassName());
+        }
+ catch (        ClassNotFoundException e) {
           ((DefaultListableBeanFactory)beanFactory).removeBeanDefinition(beanName);
           continue;
         }
