@@ -1,2 +1,18 @@
 {
+  long topVer=updateReq.topologyVersion();
+  Collection<GridNode> dhtNodes=cctx.dht().topology().nodes(entry.partition(),topVer);
+  if (log.isDebugEnabled())   log.debug("Mapping entry to DHT nodes [nodes=" + U.nodeIds(dhtNodes) + ", entry="+ entry+ ']');
+  Collection<GridNode> dhtRemoteNodes=F.view(dhtNodes,rmtNodes);
+  GridCacheWriteSynchronizationMode syncMode=updateReq.writeSynchronizationMode();
+  keys.add(entry.key());
+  for (  GridNode node : dhtRemoteNodes) {
+    UUID nodeId=node.id();
+    GridDhtAtomicUpdateRequest<K,V> updateReq=mappings.get(nodeId);
+    if (updateReq == null) {
+      updateReq=new GridDhtAtomicUpdateRequest<>(nodeId,futVer,writeVer,syncMode,topVer,ttl);
+      mappings.put(nodeId,updateReq);
+    }
+    updateReq.addWriteValue(entry.key(),entry.keyBytes(),val,valBytes,drTtl,drExpireTime,drVer);
+    log.info("Add dht update " + entry.key() + " "+ cctx.localNode().attribute(GridNodeAttributes.ATTR_GRID_NAME));
+  }
 }
