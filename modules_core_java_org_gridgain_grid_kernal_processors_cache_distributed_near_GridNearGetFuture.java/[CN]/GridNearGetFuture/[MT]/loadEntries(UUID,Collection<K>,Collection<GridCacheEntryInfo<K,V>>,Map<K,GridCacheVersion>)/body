@@ -4,22 +4,22 @@
   if (!empty) {
     GridCacheVersion ver=F.isEmpty(infos) ? null : cctx.versions().next();
     for (    GridCacheEntryInfo<K,V> info : infos) {
-      if (!cctx.cache().affinity().isPrimaryOrBackup(cctx.localNode(),info.key())) {
-        try {
+      try {
+        info.unmarshalValue(cctx,cctx.deploy().globalLoader());
+        if (!cctx.cache().affinity().isPrimaryOrBackup(cctx.localNode(),info.key())) {
           GridNearCacheEntry<K,V> entry=cache().entryExx(info.key());
           GridCacheVersion saved=savedVers.get(info.key());
-          info.unmarshalValue(cctx,cctx.deploy().globalLoader());
           entry.loadedValue(tx,nodeId,info.value(),info.valueBytes(),ver,info.version(),saved,info.ttl(),info.expireTime(),true);
         }
- catch (        GridCacheEntryRemovedException ignore) {
-          if (log.isDebugEnabled())           log.debug("Got removed entry while processing get response (will not retry).");
-        }
-catch (        GridException e) {
-          onDone(e);
-          return Collections.emptyMap();
-        }
+        map.put(info.key(),info.value());
       }
-      map.put(info.key(),info.value());
+ catch (      GridCacheEntryRemovedException ignore) {
+        if (log.isDebugEnabled())         log.debug("Got removed entry while processing get response (will not retry).");
+      }
+catch (      GridException e) {
+        onDone(e);
+        return Collections.emptyMap();
+      }
     }
   }
   return map;
