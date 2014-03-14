@@ -1,0 +1,41 @@
+{
+  int idealPartCnt=parts / topSnapshot.size();
+  Map<UUID,PartitionSet> mapping=fullMap.tierMapping(tier);
+  PrioritizedPartitionMap underloadedNodes=filterNodes(mapping,idealPartCnt,false);
+  PrioritizedPartitionMap overloadedNodes=filterNodes(mapping,idealPartCnt,true);
+  do {
+    boolean retry=false;
+    for (    PartitionSet overloaded : overloadedNodes.assignments()) {
+      for (      Integer part : overloaded.partitions()) {
+        boolean assigned=false;
+        for (        PartitionSet underloaded : underloadedNodes.assignments()) {
+          if (fullMap.assign(part,tier,underloaded.node(),false,pendingParts)) {
+            if (overloaded.size() <= idealPartCnt)             overloadedNodes.remove(overloaded.nodeId());
+ else             overloadedNodes.update();
+            if (underloaded.size() >= idealPartCnt)             underloadedNodes.remove(underloaded.nodeId());
+ else             underloadedNodes.update();
+            assigned=true;
+            retry=true;
+            break;
+          }
+        }
+        if (!assigned) {
+          for (          PartitionSet underloaded : underloadedNodes.assignments()) {
+            if (fullMap.assign(part,tier,underloaded.node(),true,pendingParts)) {
+              if (overloaded.size() <= idealPartCnt)               overloadedNodes.remove(overloaded.nodeId());
+ else               overloadedNodes.update();
+              if (underloaded.size() >= idealPartCnt)               underloadedNodes.remove(underloaded.nodeId());
+ else               underloadedNodes.update();
+              retry=true;
+              break;
+            }
+          }
+        }
+        if (retry)         break;
+      }
+      if (retry)       break;
+    }
+    if (!retry)     break;
+  }
+ while (true);
+}
