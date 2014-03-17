@@ -14,10 +14,16 @@
   }
 ,log);
   String jettyPath=ctx.config().getRestJettyPath();
-  if (jettyPath == null)   jettyPath=DFLT_CFG_PATH;
-  final URL cfgUrl=U.resolveGridGainUrl(jettyPath);
-  if (cfgUrl == null)   throw new GridSpiException("Invalid Jetty configuration file: " + jettyPath);
- else   if (log.isDebugEnabled())   log.debug("Jetty configuration file: " + cfgUrl);
+  final URL cfgUrl;
+  if (jettyPath == null) {
+    cfgUrl=null;
+    if (log.isDebugEnabled())     log.debug("Jetty configuration file is not provided, using defaults.");
+  }
+ else {
+    cfgUrl=U.resolveGridGainUrl(jettyPath);
+    if (cfgUrl == null)     throw new GridSpiException("Invalid Jetty configuration file: " + jettyPath);
+ else     if (log.isDebugEnabled())     log.debug("Jetty configuration file: " + cfgUrl);
+  }
   loadJettyConfiguration(cfgUrl);
   AbstractNetworkConnector connector=getJettyConnector();
   try {
