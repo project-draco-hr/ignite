@@ -6,15 +6,15 @@
     try {
       V v=null;
       boolean isNear=entry != null;
-      if (isNear)       v=entry.innerGet(tx,false,false,true,true,true,true,filters);
+      if (isNear)       v=entry.innerGet(tx,false,false,true,true,true,true,topVer,filters);
       GridNode primary=null;
       if (v == null && allowLocRead) {
         GridDhtCache<K,V> dht=cache().dht();
         try {
           entry=dht.context().isSwapOrOffheapEnabled() ? dht.entryEx(key) : dht.peekEx(key);
           if (entry != null) {
-            boolean isNew=entry.isNewLocked();
-            v=entry.innerGet(tx,true,false,true,true,false,!isNear,filters);
+            boolean isNew=entry.isNewLocked(topVer);
+            v=entry.innerGet(tx,true,false,true,true,false,!isNear,topVer,filters);
             if (v == null && isNew && entry.markObsoleteIfEmpty(ver))             dht.removeIfObsolete(key);
           }
           if (v != null)           near.metrics0().onRead(true);
@@ -27,7 +27,7 @@
         }
  finally {
           if (entry != null && (tx == null || (!tx.implicit() && tx.isolation() == READ_COMMITTED))) {
-            dht.context().evicts().touch(entry);
+            dht.context().evicts().touch(entry,topVer);
             entry=null;
           }
         }
@@ -66,7 +66,7 @@ catch (    GridCacheFilterFailedException e) {
       break;
     }
  finally {
-      if (entry != null && !reload && tx == null)       cctx.evicts().touch(entry);
+      if (entry != null && !reload && tx == null)       cctx.evicts().touch(entry,topVer);
     }
   }
   return savedVers;

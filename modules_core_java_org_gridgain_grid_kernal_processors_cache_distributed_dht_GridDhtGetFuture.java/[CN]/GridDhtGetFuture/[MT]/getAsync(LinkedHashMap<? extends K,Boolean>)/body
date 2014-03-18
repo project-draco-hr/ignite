@@ -8,7 +8,7 @@
       try {
         GridCacheEntryInfo<K,V> info=e.info();
         if (info == null)         continue;
-        GridFuture<Boolean> f=k.getValue() ? e.addReader(reader,msgId) : null;
+        GridFuture<Boolean> f=k.getValue() ? e.addReader(reader,msgId,topVer) : null;
         if (f != null) {
           if (txFut == null)           txFut=new GridCompoundFuture<>(cctx.kernalContext(),CU.boolReducer());
           txFut.add(f);
@@ -20,7 +20,7 @@
         if (log.isDebugEnabled())         log.debug("Got removed entry when getting a DHT value: " + e);
       }
  finally {
-        cctx.evicts().touch(e);
+        cctx.evicts().touch(e,topVer);
       }
     }
   }

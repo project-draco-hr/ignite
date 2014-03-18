@@ -4,14 +4,15 @@
     Map<K,V> locVals=new HashMap<>(keys.size(),1.0f);
     GridCacheVersion obsoleteVer=null;
     boolean success=true;
+    long topVer=ctx.discovery().topologyVersion();
     for (    K key : keys) {
       GridCacheEntryEx<K,V> entry=null;
       while (true) {
         try {
           entry=ctx.isSwapOrOffheapEnabled() ? entryEx(key) : peekEx(key);
           if (entry != null) {
-            boolean isNew=entry.isNewLocked();
-            V v=entry.innerGet(null,true,false,true,true,true,true,filter);
+            boolean isNew=entry.isNewLocked(topVer);
+            V v=entry.innerGet(null,true,false,true,true,true,true,topVer,filter);
             if (v == null) {
               if (obsoleteVer == null)               obsoleteVer=context().versions().next();
               if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(key);
@@ -35,7 +36,7 @@ catch (        GridException e) {
           return new GridFinishedFuture<>(ctx.kernalContext(),e);
         }
  finally {
-          if (entry != null)           ctx.evicts().touch(entry);
+          if (entry != null)           ctx.evicts().touch(entry,topVer);
         }
       }
       if (!success)       break;

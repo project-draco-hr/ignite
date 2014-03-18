@@ -1,7 +1,14 @@
 {
   GridAffinityAssignment aff=head.get();
-  if (aff.topologyVersion() >= topVer)   return new GridFinishedFutureEx<>(topVer);
+  if (aff.topologyVersion() >= topVer) {
+    U.debug(log,"Returning finished future for readyFuture [head=" + aff.topologyVersion() + ", topVer="+ topVer+ ']');
+    return new GridFinishedFutureEx<>(topVer);
+  }
   GridFutureAdapter<Long> fut=F.addIfAbsent(readyFuts,topVer,new AffinityReadyFuture(ctx.kernalContext()));
-  if (head.get().topologyVersion() >= topVer)   fut.onDone(topVer);
+  aff=head.get();
+  if (aff.topologyVersion() >= topVer) {
+    U.debug(log,"Completing topology ready future right away [head=" + aff.topologyVersion() + ", topVer="+ topVer+ ']');
+    fut.onDone(topVer);
+  }
   return fut;
 }

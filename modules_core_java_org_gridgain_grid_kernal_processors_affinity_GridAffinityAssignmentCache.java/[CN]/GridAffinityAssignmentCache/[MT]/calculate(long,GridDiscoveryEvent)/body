@@ -1,4 +1,5 @@
 {
+  U.debug(log,"Calculating affinity [topVer=" + topVer + ", locNodeId="+ ctx.localNodeId()+ ']');
   GridAffinityAssignment prev=affCache.get(topVer - 1);
   List<GridNode> sorted;
   if (ctx.isLocal())   sorted=Collections.singletonList(ctx.localNode());
@@ -16,7 +17,10 @@
     if (head.compareAndSet(headItem,updated))     break;
   }
   for (  Map.Entry<Long,AffinityReadyFuture> entry : readyFuts.entrySet()) {
-    if (entry.getKey() >= topVer)     entry.getValue().onDone(topVer);
+    if (entry.getKey() <= topVer) {
+      U.debug(log,"Completing topology ready future (calculated affinity) [locNodeId=" + ctx.localNodeId() + ", futVer="+ entry.getKey()+ ", topVer="+ topVer+ ']');
+      entry.getValue().onDone(topVer);
+    }
   }
   return updated.assignment();
 }
