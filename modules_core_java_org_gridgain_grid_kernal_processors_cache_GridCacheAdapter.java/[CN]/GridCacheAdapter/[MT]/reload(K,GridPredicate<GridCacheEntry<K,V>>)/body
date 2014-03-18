@@ -2,10 +2,10 @@
   ctx.denyOnFlags(F.asList(LOCAL,READ));
   A.notNull(key,"key");
   validateCacheKey(key);
-  long topVer=ctx.discovery().topologyVersion();
+  long topVer=ctx.affinity().affinityTopologyVersion();
   while (true) {
     try {
-      if (ctx.isNear() && ctx.affinity().localNode(key,ctx.discovery().topologyVersion()))       return null;
+      if (ctx.isNear() && ctx.affinity().localNode(key,topVer))       return null;
       return ctx.cloneOnFlag(entryEx(key).innerReload(topVer,filter));
     }
  catch (    GridCacheEntryRemovedException ignored) {
