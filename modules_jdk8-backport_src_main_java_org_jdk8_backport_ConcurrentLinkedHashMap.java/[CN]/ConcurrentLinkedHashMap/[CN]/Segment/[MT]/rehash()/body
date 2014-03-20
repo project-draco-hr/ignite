@@ -1,0 +1,37 @@
+{
+  HashEntry<K,V>[] oldTbl=tbl;
+  int oldCap=oldTbl.length;
+  if (oldCap >= MAX_CAP_LIMIT)   return;
+  int c=cnt;
+  HashEntry<K,V>[] newTbl=HashEntry.newArray(oldCap << 1);
+  threshold=(int)(newTbl.length * loadFactor);
+  int sizeMask=newTbl.length - 1;
+  for (int i=0; i < oldCap; i++) {
+    HashEntry<K,V> e=oldTbl[i];
+    if (e != null) {
+      HashEntry<K,V> next=e.next;
+      int idx=e.hash & sizeMask;
+      if (next == null)       newTbl[idx]=e;
+ else {
+        HashEntry<K,V> lastRun=e;
+        int lastIdx=idx;
+        for (HashEntry<K,V> last=next; last != null; last=last.next) {
+          int k=last.hash & sizeMask;
+          if (k != lastIdx) {
+            lastIdx=k;
+            lastRun=last;
+          }
+        }
+        newTbl[lastIdx]=lastRun;
+        for (HashEntry<K,V> p=e; p != lastRun; p=p.next) {
+          int k=p.hash & sizeMask;
+          HashEntry<K,V> n=newTbl[k];
+          HashEntry<K,V> e0=new HashEntry<>(p.key,p.hash,n,p.val,p.node,p.modCnt);
+          newTbl[k]=e0;
+        }
+      }
+    }
+  }
+  cnt=c;
+  tbl=newTbl;
+}
