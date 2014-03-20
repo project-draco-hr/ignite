@@ -1,0 +1,21 @@
+{
+  assert(dataSum == 0 || dirty);
+  final COWEpoch succ=successorRef.get();
+  if (freezeRequested) {
+    succ.value=freezeAndClone(value);
+    succ.setFrozenValue(value);
+  }
+ else {
+    succ.value=value;
+    if (dirty) {
+      succ.dirty=true;
+    }
+ else {
+      succ.setFrozenValue(_frozenValue);
+    }
+  }
+  succ.initialSize=initialSize + dataSum;
+  _active=succ;
+  successorTicket.leave(0);
+  succ._activated.releaseShared(1);
+}
