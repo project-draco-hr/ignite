@@ -1,0 +1,22 @@
+{
+  while (true) {
+    COWEpoch succ=epoch.successorRef.get();
+    if (succ == null) {
+      final COWEpoch newEpoch=new COWEpoch(mutation);
+      final Epoch.Ticket newTicket=newEpoch.attemptArrive();
+      if (epoch.attemptInstallSuccessor(newEpoch)) {
+        newEpoch.awaitActivated();
+        return newTicket;
+      }
+      succ=epoch.successorRef.get();
+    }
+    if (succ.mutationAllowed == mutation) {
+      final Epoch.Ticket ticket=succ.attemptArrive();
+      if (ticket != null) {
+        succ.awaitActivated();
+        return ticket;
+      }
+    }
+    epoch=succ;
+  }
+}
