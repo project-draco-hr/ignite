@@ -1,0 +1,56 @@
+{
+  K resultKey;
+  Object result;
+  if ((dir == Left && minCmp == null) || (dir == Right && maxCmp == null)) {
+    result=extreme(returnKey,dir);
+    if (result == null) {
+      return null;
+    }
+    resultKey=returnKey ? (K)result : ((SimpleImmutableEntry<K,V>)result).getKey();
+  }
+ else {
+    RootHolder holder=holderRef.availableFrozen();
+    final Epoch.Ticket ticket;
+    if (holder == null) {
+      ticket=holderRef.beginQuiescent();
+      holder=holderRef.read();
+    }
+ else {
+      ticket=null;
+    }
+    try {
+      final Node<K,V> node=(dir == Left) ? boundedMin(holder.right,minCmp,minIncl) : boundedMax(holder.right,maxCmp,maxIncl);
+      if (node == null) {
+        return null;
+      }
+      resultKey=node.key;
+      if (returnKey) {
+        result=node.key;
+      }
+ else       if (ticket == null) {
+        result=node;
+      }
+ else {
+        result=new SimpleImmutableEntry<K,V>(node.key,node.getValue());
+      }
+    }
+  finally {
+      if (ticket != null) {
+        ticket.leave(0);
+      }
+    }
+  }
+  if (dir == Left && maxCmp != null) {
+    final int c=maxCmp.compareTo(resultKey);
+    if (c < 0 || (c == 0 && !maxIncl)) {
+      return null;
+    }
+  }
+  if (dir == Right && minCmp != null) {
+    final int c=minCmp.compareTo(resultKey);
+    if (c > 0 || (c == 0 && !minIncl)) {
+      return null;
+    }
+  }
+  return result;
+}

@@ -1,0 +1,44 @@
+{
+  assert(nodeOVL != UnlinkedOVL);
+  while (true) {
+    final Node<K,V> child=node.unsharedChild(dir);
+    if (nodeOVL != node.shrinkOVL) {
+      return null;
+    }
+    if (child == null) {
+      final Object vo;
+      final Node<K,V> damaged;
+synchronized (parent) {
+        if (isUnlinked(parent.shrinkOVL) || node.parent != parent) {
+          return null;
+        }
+synchronized (node) {
+          vo=node.vOpt;
+          if (node.child(dir) != null || !attemptUnlink_nl(parent,node)) {
+            return null;
+          }
+        }
+        damaged=fixHeight_nl(parent);
+      }
+      fixHeightAndRebalance(damaged);
+      return new SimpleImmutableEntry<K,V>(node.key,decodeNull(vo));
+    }
+ else {
+      final long childOVL=child.shrinkOVL;
+      if (isShrinkingOrUnlinked(childOVL)) {
+        child.waitUntilShrinkCompleted(childOVL);
+      }
+ else       if (child != node.child(dir)) {
+      }
+ else {
+        if (node.shrinkOVL != nodeOVL) {
+          return null;
+        }
+        final Map.Entry<K,V> result=attemptRemoveExtreme(dir,node,child,childOVL);
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+  }
+}
