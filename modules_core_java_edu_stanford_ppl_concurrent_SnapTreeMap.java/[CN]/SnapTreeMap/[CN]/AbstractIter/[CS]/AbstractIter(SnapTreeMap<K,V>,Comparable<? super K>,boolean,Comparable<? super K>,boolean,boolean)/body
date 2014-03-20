@@ -1,0 +1,38 @@
+{
+  this.m=m;
+  this.descending=descending;
+  this.forward=!descending ? Right : Left;
+  this.reverse=!descending ? Left : Right;
+  final Comparable<? super K> fromCmp;
+  final boolean fromIncl=!descending ? minIncl : maxIncl;
+  final Comparable<? super K> toCmp;
+  final boolean toIncl=!descending ? maxIncl : minIncl;
+  if (!descending) {
+    fromCmp=minCmp;
+    toCmp=maxCmp;
+  }
+ else {
+    fromCmp=maxCmp;
+    toCmp=minCmp;
+  }
+  final Node<K,V> root=m.holderRef.frozen().right;
+  if (toCmp != null) {
+    this.endKey=(K)m.boundedExtreme(minCmp,minIncl,maxCmp,maxIncl,true,forward);
+    if (this.endKey == null) {
+      return;
+    }
+  }
+ else {
+    this.endKey=null;
+  }
+  this.path=(Node<K,V>[])new Node[1 + height(root)];
+  if (fromCmp == null) {
+    pushFirst(root);
+  }
+ else {
+    pushFirst(root,fromCmp,fromIncl);
+    if (depth > 0 && top().vOpt == null) {
+      advance();
+    }
+  }
+}
