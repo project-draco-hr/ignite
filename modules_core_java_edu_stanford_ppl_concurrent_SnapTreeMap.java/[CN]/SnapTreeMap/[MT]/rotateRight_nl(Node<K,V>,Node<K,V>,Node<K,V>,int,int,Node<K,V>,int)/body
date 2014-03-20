@@ -1,0 +1,37 @@
+{
+  final long nodeOVL=n.shrinkOVL;
+  final Node<K,V> nPL=nParent.left;
+  n.shrinkOVL=beginChange(nodeOVL);
+  n.left=nLR;
+  if (nLR != null) {
+    nLR.parent=n;
+  }
+  nL.right=n;
+  n.parent=nL;
+  if (nPL == n) {
+    nParent.left=nL;
+  }
+ else {
+    nParent.right=nL;
+  }
+  nL.parent=nParent;
+  final int hNRepl=1 + Math.max(hLR,hR);
+  n.height=hNRepl;
+  nL.height=1 + Math.max(hLL,hNRepl);
+  n.shrinkOVL=endChange(nodeOVL);
+  final int balN=hLR - hR;
+  if (balN < -1 || balN > 1) {
+    return n;
+  }
+  if ((nLR == null || hR == 0) && n.vOpt == null) {
+    return n;
+  }
+  final int balL=hLL - hNRepl;
+  if (balL < -1 || balL > 1) {
+    return nL;
+  }
+  if (hLL == 0 && nL.vOpt == null) {
+    return nL;
+  }
+  return fixHeight_nl(nParent);
+}
