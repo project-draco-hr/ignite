@@ -3,11 +3,10 @@
   if (F.isEmpty(keys))   return;
   validateCacheKeys(keys);
   Collection<K> unswap=new ArrayList<>(keys.size());
-  long topVer=ctx.affinity().affinityTopologyVersion();
   for (  K key : keys) {
     GridCacheEntryEx<K,V> entry=peekEx(key);
     try {
-      if (entry == null || entry.obsolete() || entry.isNewLocked(topVer))       unswap.add(key);
+      if (entry == null || entry.obsolete() || entry.isNewLocked())       unswap.add(key);
     }
  catch (    GridCacheEntryRemovedException ignored) {
     }
@@ -17,7 +16,7 @@
     K key=swapEntry.key();
     GridCacheEntryEx<K,V> entry=entryEx(key);
     try {
-      entry.initialValue(key,topVer,swapEntry);
+      entry.initialValue(key,swapEntry);
     }
  catch (    GridCacheEntryRemovedException ignored) {
       if (log.isDebugEnabled())       log.debug("Entry has been concurrently removed.");
