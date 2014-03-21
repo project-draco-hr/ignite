@@ -1,0 +1,32 @@
+{
+  Segment<K,V>[] segments=this.segments;
+  long sum=0;
+  long check=0;
+  int[] mc=new int[segments.length];
+  for (int k=0; k < RETRIES_BEFORE_LOCK; ++k) {
+    check=0;
+    sum=0;
+    int mcsum=0;
+    for (int i=0; i < segments.length; ++i) {
+      sum+=segments[i].cnt;
+      mcsum+=mc[i]=segments[i].modCnt;
+    }
+    if (mcsum != 0) {
+      for (int i=0; i < segments.length; ++i) {
+        check+=segments[i].cnt;
+        if (mc[i] != segments[i].modCnt) {
+          check=-1;
+          break;
+        }
+      }
+    }
+    if (check == sum)     break;
+  }
+  if (check != sum) {
+    sum=0;
+    for (    Segment<K,V> segment : segments)     segment.readLock().lock();
+    for (    Segment<K,V> segment : segments)     sum+=segment.cnt;
+    for (    Segment<K,V> segment : segments)     segment.readLock().unlock();
+  }
+  return sum > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)sum;
+}

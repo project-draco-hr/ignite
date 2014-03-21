@@ -1,0 +1,36 @@
+{
+  while (true) {
+    final Node<K,V> child=node.child(dir);
+    if (child == null) {
+      final Object vo=node.vOpt;
+      if (node.shrinkOVL != nodeOVL) {
+        return SpecialRetry;
+      }
+      assert(vo != null);
+      return returnKey ? node.key : new SimpleImmutableEntry<K,V>(node.key,decodeNull(vo));
+    }
+ else {
+      final long childOVL=child.shrinkOVL;
+      if (isShrinkingOrUnlinked(childOVL)) {
+        child.waitUntilShrinkCompleted(childOVL);
+        if (node.shrinkOVL != nodeOVL) {
+          return SpecialRetry;
+        }
+      }
+ else       if (child != node.child(dir)) {
+        if (node.shrinkOVL != nodeOVL) {
+          return SpecialRetry;
+        }
+      }
+ else {
+        if (node.shrinkOVL != nodeOVL) {
+          return SpecialRetry;
+        }
+        final Object vo=attemptExtreme(returnKey,dir,child,childOVL);
+        if (vo != SpecialRetry) {
+          return vo;
+        }
+      }
+    }
+  }
+}

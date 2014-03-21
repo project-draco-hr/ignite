@@ -1,0 +1,22 @@
+{
+  if (!(loadFactor > 0) || initCap < 0 || concurLvl <= 0)   throw new IllegalArgumentException();
+  if (concurLvl > MAX_SEGS)   concurLvl=MAX_SEGS;
+  this.maxCap=maxCap;
+  this.qPlc=qPlc;
+  entryQ=qPlc == SINGLE_Q ? new ConcurrentLinkedDeque8<HashEntry<K,V>>() : null;
+  int sshift=0;
+  int ssize=1;
+  while (ssize < concurLvl) {
+    ++sshift;
+    ssize<<=1;
+  }
+  segmentShift=32 - sshift;
+  segmentMask=ssize - 1;
+  segments=new Segment[ssize];
+  if (initCap > MAX_CAP_LIMIT)   initCap=MAX_CAP_LIMIT;
+  int c=initCap / ssize;
+  if (c * ssize < initCap)   ++c;
+  int cap=1;
+  while (cap < c)   cap<<=1;
+  for (int i=0; i < segments.length; ++i)   segments[i]=new Segment<>(cap,loadFactor);
+}
