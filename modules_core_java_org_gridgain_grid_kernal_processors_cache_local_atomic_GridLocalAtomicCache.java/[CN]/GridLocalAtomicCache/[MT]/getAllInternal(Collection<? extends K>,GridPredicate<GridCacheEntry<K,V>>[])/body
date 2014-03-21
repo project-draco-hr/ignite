@@ -1,0 +1,31 @@
+{
+  if (F.isEmpty(keys))   return Collections.emptyMap();
+  Map<K,V> vals=new HashMap<>(keys.size(),1.0f);
+  boolean swapOrOffheap=ctx.isSwapOrOffheapEnabled();
+  for (  K key : keys) {
+    if (key == null)     continue;
+    GridCacheEntryEx<K,V> entry=null;
+    while (true) {
+      try {
+        entry=swapOrOffheap ? entryEx(key) : peekEx(key);
+        if (entry != null) {
+          V v=entry.innerGet(null,swapOrOffheap,true,false,true,true,true,filter);
+          if (v != null)           vals.put(key,v);
+        }
+        break;
+      }
+ catch (      GridCacheEntryRemovedException ignored) {
+      }
+catch (      GridCacheFilterFailedException ignored) {
+        break;
+      }
+ finally {
+        if (entry != null)         ctx.evicts().touch(entry);
+      }
+    }
+  }
+  if (!ctx.hasFlag(CLONE))   return vals;
+  Map<K,V> map=new GridLeanMap<>();
+  for (  Map.Entry<K,V> e : vals.entrySet())   map.put(e.getKey(),ctx.cloneValue(e.getValue()));
+  return map;
+}
