@@ -12,8 +12,10 @@ synchronized (this) {
               update(e.value(),e.valueBytes(),e.expireTime(),e.ttl(),e.isNew() ? ver : e.version());
               if (cctx.deferredDelete()) {
                 boolean deleted=val == null && valBytes == null;
-                if (deleted != deletedUnlocked())                 deletedUnlocked(deleted);
-                if (deleted)                 enqueueVer=e.version();
+                if (deleted != deletedUnlocked()) {
+                  deletedUnlocked(deleted);
+                  if (deleted)                   enqueueVer=e.version();
+                }
               }
               recordNodeId(cctx.affinity().primary(key,topVer).id());
               dhtVer=e.isNew() || e.isDeleted() ? null : e.version();
