@@ -13,7 +13,7 @@
           V val=req.value(i);
           byte[] valBytes=req.valueBytes(i);
           GridCacheOperation op=(val != null || valBytes != null) ? UPDATE : DELETE;
-          GridCacheUpdateAtomicResult<K,V> updRes=entry.innerUpdate(ver,nodeId,nodeId,op,val,valBytes,false,false,req.ttl(),true,true,false,true,req.topologyVersion(),CU.<K,V>empty(),replicate ? DR_BACKUP : DR_NONE,req.drTtl(i),req.drExpireTime(i),req.drVersion(i),false);
+          GridCacheUpdateAtomicResult<K,V> updRes=entry.innerUpdate(ver,nodeId,nodeId,op,val,valBytes,false,false,req.ttl(),true,true,false,true,CU.<K,V>empty(),replicate ? DR_BACKUP : DR_NONE,req.drTtl(i),req.drExpireTime(i),req.drVersion(i),false);
           if (updRes.removeVersion() != null)           ctx.onDeferredDelete(entry,updRes.removeVersion());
           break;
         }
@@ -29,16 +29,14 @@
  catch (    GridDhtInvalidPartitionException ignored) {
     }
 catch (    GridException e) {
-      if (res != null)       res.addFailedKey(key,new GridException("Failed to update key on backup node: " + key,e));
- else       U.error(log,"Failed to update key on backup node: " + key,e);
+      res.addFailedKey(key,new GridException("Failed to update key on backup node: " + key,e));
     }
   }
+  if (isNearEnabled(cacheCfg))   ((GridNearAtomicCache<K,V>)near()).processDhtAtomicUpdateRequest(nodeId,req,res);
   try {
-    if (res != null) {
-      if (res.failedKeys() != null || req.writeSynchronizationMode() == FULL_SYNC)       ctx.io().send(nodeId,res);
+    if (res.failedKeys() != null || res.nearEvicted() != null || req.writeSynchronizationMode() == FULL_SYNC)     ctx.io().send(nodeId,res);
  else {
-        sendDeferredUpdateResponse(nodeId,req.futureVersion());
-      }
+      sendDeferredUpdateResponse(nodeId,req.futureVersion());
     }
   }
  catch (  GridTopologyException ignored) {
