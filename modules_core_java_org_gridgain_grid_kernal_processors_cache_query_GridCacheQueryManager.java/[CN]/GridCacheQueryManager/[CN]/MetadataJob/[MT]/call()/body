@@ -34,11 +34,11 @@
         Collection<GridCacheSqlIndexMetadata> indexesCol=new ArrayList<>(type.indexes().size());
         for (        Map.Entry<String,GridIndexDescriptor> e : type.indexes().entrySet()) {
           GridIndexDescriptor desc=e.getValue();
-          if (!desc.text()) {
+          if (desc.type() == GridIndexType.SORTED) {
             Collection<String> idxFields=e.getValue().fields();
             Collection<String> descendings=new LinkedList<>();
             for (            String idxField : idxFields)             if (desc.descending(idxField))             descendings.add(idxField);
-            indexesCol.add(new CacheSqlIndexMetadata(e.getKey().toUpperCase(),idxFields,descendings,desc.unique()));
+            indexesCol.add(new CacheSqlIndexMetadata(e.getKey().toUpperCase(),idxFields,descendings,false));
           }
         }
         indexes.put(type.name(),indexesCol);
