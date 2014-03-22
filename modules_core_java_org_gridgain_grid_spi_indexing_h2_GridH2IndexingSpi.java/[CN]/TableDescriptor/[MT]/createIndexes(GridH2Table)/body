@@ -1,7 +1,7 @@
 {
   this.tbl=tbl;
   ArrayList<Index> idxs=new ArrayList<>();
-  idxs.add(new GridH2Index("_key_PK",tbl,true,GridH2AbstractKeyValueRow.KEY_COL,GridH2AbstractKeyValueRow.VAL_COL,offheap,tbl.indexColumn(0,ASCENDING)));
+  idxs.add(new GridH2TreeIndex("_key_PK",tbl,true,GridH2AbstractKeyValueRow.KEY_COL,GridH2AbstractKeyValueRow.VAL_COL,offheap,tbl.indexColumn(0,ASCENDING)));
   if (type().valueClass() == String.class) {
     try {
       luceneIdx=new GridLuceneIndex(marshaller,offheap,spaceName,type,true);
@@ -26,9 +26,9 @@
       int i=0;
       for (      String field : idx.fields()) {
         Column col=tbl.getColumn(field.toUpperCase());
-        cols[i++]=tbl.indexColumn(col.getColumnId(),idx.descending(field) ? SortOrder.DESCENDING : ASCENDING);
+        cols[i++]=tbl.indexColumn(col.getColumnId(),idx.descending(field) ? DESCENDING : ASCENDING);
       }
-      idxs.add(new GridH2Index(name,tbl,idx.unique(),GridH2AbstractKeyValueRow.KEY_COL,GridH2AbstractKeyValueRow.VAL_COL,offheap,cols));
+      idxs.add(new GridH2TreeIndex(name,tbl,idx.unique(),GridH2AbstractKeyValueRow.KEY_COL,GridH2AbstractKeyValueRow.VAL_COL,offheap,cols));
     }
   }
   return idxs;
