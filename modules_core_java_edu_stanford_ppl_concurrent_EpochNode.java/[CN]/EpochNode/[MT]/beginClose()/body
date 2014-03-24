@@ -1,0 +1,54 @@
+{
+  int attempts=0;
+  long state;
+  while (true) {
+    ++attempts;
+    state=get();
+    if (isClosed(state)) {
+      return;
+    }
+    if (isMarked(state)) {
+      if (attempts < CLOSER_HEAD_START) {
+        continue;
+      }
+      break;
+    }
+    final long after=withMarked(state);
+    if (compareAndSet(state,after)) {
+      if (isAllChildrenClosed(after)) {
+        if (isClosed(after) && _parent == null) {
+          onClosed(dataSum(after));
+        }
+        return;
+      }
+      break;
+    }
+  }
+  for (int which=0; which < BF; ++which) {
+    final EpochNode child=getChild(state,which);
+    if (child != null) {
+      child.beginClose();
+    }
+  }
+  while (true) {
+    final long before=get();
+    long after=before;
+    for (int which=0; which < BF; ++which) {
+      if (!isChildClosed(before,which)) {
+        final long childState=getChildFromField(which).get();
+        if (isClosed(childState)) {
+          after=withChildClosed(after,which,childState);
+        }
+      }
+    }
+    if (before == after) {
+      return;
+    }
+    if (compareAndSet(before,after)) {
+      if (isClosed(after) && _parent == null) {
+        onClosed(dataSum(after));
+      }
+      return;
+    }
+  }
+}
