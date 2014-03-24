@@ -1,12 +1,11 @@
 {
-  return asyncOp(new CO<GridFuture>(){
-    @Override public GridFuture<Map<K,V>> apply(){
-      return ctx.closures().callLocalSafe(new Callable<Map<K,V>>(){
-        @Override public Map<K,V> call() throws Exception {
-          return getAllInternal(keys,filter);
-        }
-      }
-);
+  ctx.denyOnFlag(LOCAL);
+  final boolean swapOrOffheap=ctx.isSwapOrOffheapEnabled();
+  final boolean storeEnabled=ctx.isStoreEnabled();
+  final boolean clone=ctx.hasFlag(CLONE);
+  return asyncOp(new Callable<Map<K,V>>(){
+    @Override public Map<K,V> call() throws Exception {
+      return getAllInternal(keys,filter,swapOrOffheap,storeEnabled,clone);
     }
   }
 );
