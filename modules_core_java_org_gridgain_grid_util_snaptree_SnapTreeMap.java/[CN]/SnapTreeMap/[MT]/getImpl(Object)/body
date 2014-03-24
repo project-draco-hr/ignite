@@ -1,0 +1,25 @@
+{
+  final Comparable<? super K> k=comparable(key);
+  while (true) {
+    final Node<K,V> right=holderRef.read().right;
+    if (right == null) {
+      return null;
+    }
+ else {
+      final int rightCmp=k.compareTo(right.key);
+      if (rightCmp == 0) {
+        return right.vOpt;
+      }
+      final long ovl=right.shrinkOVL;
+      if (isShrinkingOrUnlinked(ovl)) {
+        right.waitUntilShrinkCompleted(ovl);
+      }
+ else       if (right == holderRef.read().right) {
+        final Object vo=attemptGet(k,right,(rightCmp < 0 ? Left : Right),ovl);
+        if (vo != SpecialRetry) {
+          return vo;
+        }
+      }
+    }
+  }
+}
