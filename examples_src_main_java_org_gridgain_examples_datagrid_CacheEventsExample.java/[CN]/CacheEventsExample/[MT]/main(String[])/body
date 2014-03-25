@@ -1,0 +1,26 @@
+{
+  try (Grid g=GridGain.start("examples/config/example-cache.xml")){
+    System.out.println();
+    System.out.println(">>> Cache events example started.");
+    final GridCache<Integer,String> cache=g.cache(CACHE_NAME);
+    GridBiPredicate<UUID,GridCacheEvent> locLsnr=new GridBiPredicate<UUID,GridCacheEvent>(){
+      @Override public boolean apply(      UUID uuid,      GridCacheEvent evt){
+        System.out.println("Received event [evt=" + evt.name() + ", key="+ evt.key()+ ", oldVal="+ evt.oldValue()+ ", newVal="+ evt.newValue());
+        return true;
+      }
+    }
+;
+    GridPredicate<GridCacheEvent> rmtLsnr=new GridPredicate<GridCacheEvent>(){
+      @Override public boolean apply(      GridCacheEvent evt){
+        System.out.println("Cache event [name=" + evt.name() + ", key="+ evt.key()+ ']');
+        int key=evt.key();
+        return key >= 10 && cache.affinity().isPrimary(g.localNode(),key);
+      }
+    }
+;
+    GridFuture<UUID> fut=g.forCache(CACHE_NAME).events().remoteListen(locLsnr,rmtLsnr,EVT_CACHE_OBJECT_PUT,EVT_CACHE_OBJECT_READ,EVT_CACHE_OBJECT_REMOVED);
+    fut.get();
+    for (int i=0; i < 20; i++)     cache.putx(i,Integer.toString(i));
+    Thread.sleep(2000);
+  }
+ }
