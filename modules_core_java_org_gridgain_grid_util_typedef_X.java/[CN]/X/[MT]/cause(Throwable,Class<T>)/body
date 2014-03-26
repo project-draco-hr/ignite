@@ -2,11 +2,9 @@
   if (t == null || cls == null)   return null;
   for (Throwable th=t; th != null; th=th.getCause()) {
     if (cls.isAssignableFrom(th.getClass()))     return (T)th;
-    if (th instanceof GridMultiException) {
-      for (      Throwable n : ((GridMultiException)th).nestedCauses()) {
-        T found=cause(n,cls);
-        if (found != null)         return found;
-      }
+    for (    Throwable n : th.getSuppressed()) {
+      T found=cause(n,cls);
+      if (found != null)       return found;
     }
     if (th.getCause() == th)     break;
   }
