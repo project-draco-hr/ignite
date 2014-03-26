@@ -3,15 +3,11 @@
   final GridCache<GridCacheAffinityKey<String>,String> cache=grid(0).cache(null);
   final GridCacheAffinityKey<String> key=new GridCacheAffinityKey<>("key1",UUID.randomUUID());
   cache.put(key,"val");
-  GridCacheTx tx=cache.txStartAffinity(affinityKey,concurrency,READ_COMMITTED,0,1);
-  try {
+  try (GridCacheTx tx=cache.txStartAffinity(affinityKey,concurrency,READ_COMMITTED,0,1)){
     cache.remove(key);
     fail("Exception should be thrown.");
   }
  catch (  GridException ignored) {
-  }
- finally {
-    tx.close();
   }
   assertNull(cache.tx());
 }

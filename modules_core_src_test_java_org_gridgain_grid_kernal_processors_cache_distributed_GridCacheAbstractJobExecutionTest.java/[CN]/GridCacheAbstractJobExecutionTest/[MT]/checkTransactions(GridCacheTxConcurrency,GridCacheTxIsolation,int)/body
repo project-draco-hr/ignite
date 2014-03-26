@@ -6,8 +6,7 @@
       @GridInstanceResource private Grid grid;
       @Override public Void applyx(      final Integer i) throws GridException {
         GridCache<String,int[]> cache=grid.cache(null);
-        GridCacheTx tx=cache.txStart(concur,isolation);
-        try {
+        try (GridCacheTx tx=cache.txStart(concur,isolation)){
           int[] arr=cache.get("TestKey");
           if (arr == null)           arr=new int[jobCnt];
           arr[i]=1;
@@ -16,10 +15,7 @@
           if (c % 50 == 0)           X.println("Executing transaction [i=" + i + ", c="+ c+ ']');
           tx.commit();
         }
-  finally {
-          tx.close();
-        }
-        return null;
+         return null;
       }
     }
 ,i);
@@ -28,16 +24,12 @@
   for (  GridFuture<?> fut : futs)   fut.get();
   for (int i=0; i < GRID_CNT; i++) {
     GridCacheProjection<String,int[]> c=grid(i).cache(null).projection(String.class,int[].class);
-    GridCacheTx tx=c.txStart(concur,isolation);
-    try {
+    try (GridCacheTx tx=c.txStart(concur,isolation)){
       int[] arr=c.get("TestKey");
       assertNotNull(arr);
       assertEquals(jobCnt,arr.length);
       for (      int j : arr)       assertEquals(1,j);
       tx.commit();
     }
-  finally {
-      tx.close();
-    }
-  }
+   }
 }

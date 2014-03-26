@@ -9,8 +9,7 @@
     assertEquals((Integer)expVal,cache0.get(TX_KEY));
     startGrid(i);
     GridCache<String,Integer> cache=cache(i);
-    GridCacheTx tx=cache.txStart(txConcurrency,GridCacheTxIsolation.READ_COMMITTED);
-    try {
+    try (GridCacheTx tx=cache.txStart(txConcurrency,GridCacheTxIsolation.READ_COMMITTED)){
       cache.transform(TX_KEY,new C1<Integer,Integer>(){
         @Override public Integer apply(        Integer val){
           if (val == null)           keyNotLoaded=true;
@@ -20,10 +19,7 @@
 );
       tx.commit();
     }
-  finally {
-      tx.close();
-    }
-    assertFalse(keyNotLoaded);
+     assertFalse(keyNotLoaded);
     expVal++;
     assertEquals((Integer)expVal,cache.get(TX_KEY));
   }

@@ -6,8 +6,7 @@
   nearStore.reset();
   for (  String key : keys)   cache.clear(key);
   info(">>> Starting transform transaction");
-  GridCacheTx tx=cache.txStart(concurrency,READ_COMMITTED);
-  try {
+  try (GridCacheTx tx=cache.txStart(concurrency,READ_COMMITTED)){
     if (op == OP_UPDATE) {
       for (      String key : keys)       cache.transform(key,INCR_CLOS);
     }
@@ -16,10 +15,7 @@
     }
     tx.commit();
   }
-  finally {
-    tx.close();
-  }
-  if (batchUpdate()) {
+   if (batchUpdate()) {
     assertEquals(0,nearStore.getPutCount());
     assertEquals(0,nearStore.getRemoveCount());
     if (op == OP_UPDATE)     assertEquals(1,nearStore.getPutAllCount());

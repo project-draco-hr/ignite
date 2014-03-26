@@ -5,31 +5,27 @@
   grid(0).events().localListen(unlocks,EVT_CACHE_OBJECT_UNLOCKED);
   UUID affinityKey=primaryKeyForCache(grid(0));
   GridCache<UUID,String> cache=grid(0).cache(null);
-  GridCacheTx tx=cache.txStartPartition(cache.affinity().partition(affinityKey),concurrency,READ_COMMITTED,0,2);
-  assertEquals("Unexpected number of lock events: " + locks.affectedKeys(),0,locks.affectedKeys().size());
-  assertEquals("Unexpected number of unlock events: " + unlocks.affectedKeys(),0,unlocks.affectedKeys().size());
-  GridCacheAdapter<Object,Object> cacheAdapter=((GridKernal)grid(0)).internalCache();
-  GridCacheAffinityManager<Object,Object> affMgr=cacheAdapter.context().affinity();
-  GridPartitionLockKey partAffKey=affMgr.partitionAffinityKey(cache.affinity().partition(affinityKey));
-  if (concurrency == PESSIMISTIC)   assertTrue(cacheAdapter.entryEx(partAffKey).lockedByThread());
   UUID key1;
-  do {
-    key1=UUID.randomUUID();
-  }
- while (cache.affinity().partition(key1) != cache.affinity().partition(affinityKey));
   UUID key2;
-  do {
-    key2=UUID.randomUUID();
-  }
+  try (GridCacheTx tx=cache.txStartPartition(cache.affinity().partition(affinityKey),concurrency,READ_COMMITTED,0,2)){
+    assertEquals("Unexpected number of lock events: " + locks.affectedKeys(),0,locks.affectedKeys().size());
+    assertEquals("Unexpected number of unlock events: " + unlocks.affectedKeys(),0,unlocks.affectedKeys().size());
+    GridCacheAdapter<Object,Object> cacheAdapter=((GridKernal)grid(0)).internalCache();
+    GridCacheAffinityManager<Object,Object> affMgr=cacheAdapter.context().affinity();
+    GridPartitionLockKey partAffKey=affMgr.partitionAffinityKey(cache.affinity().partition(affinityKey));
+    if (concurrency == PESSIMISTIC)     assertTrue(cacheAdapter.entryEx(partAffKey).lockedByThread());
+    do {
+      key1=UUID.randomUUID();
+    }
+ while (cache.affinity().partition(key1) != cache.affinity().partition(affinityKey));
+    do {
+      key2=UUID.randomUUID();
+    }
  while (cache.affinity().partition(key2) != cache.affinity().partition(affinityKey));
-  try {
     cache.putAll(F.asMap(key1,"val1",key2,"val2"));
     tx.commit();
   }
-  finally {
-    tx.close();
-  }
-  assertEquals("Unexpected number of lock events: " + locks.affectedKeys(),0,locks.affectedKeys().size());
+   assertEquals("Unexpected number of lock events: " + locks.affectedKeys(),0,locks.affectedKeys().size());
   assertEquals("Unexpected number of unlock events: " + unlocks.affectedKeys(),0,unlocks.affectedKeys().size());
   for (int i=0; i < gridCount(); i++) {
     Grid g=grid(i);

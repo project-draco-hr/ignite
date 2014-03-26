@@ -27,10 +27,9 @@
               Collections.sort(keys);
               int c=0;
               try {
-                GridCacheTx tx=cache.txStart(txConcurrency(),REPEATABLE_READ);
-                c=txCntr.incrementAndGet();
-                if (c % logFreq == 0)                 info(">>> Tx iteration started [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
-                try {
+                try (GridCacheTx tx=cache.txStart(txConcurrency(),REPEATABLE_READ)){
+                  c=txCntr.incrementAndGet();
+                  if (c % logFreq == 0)                   info(">>> Tx iteration started [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
                   for (                  int key : keys) {
                     int op=cacheOp();
                     if (op == 1)                     cache.put(key,Integer.toString(key));
@@ -40,9 +39,6 @@
                   tx.commit();
                 }
  catch (                GridTopologyException ignored) {
-                }
- finally {
-                  tx.close();
                 }
               }
  catch (              GridTopologyException ignored) {

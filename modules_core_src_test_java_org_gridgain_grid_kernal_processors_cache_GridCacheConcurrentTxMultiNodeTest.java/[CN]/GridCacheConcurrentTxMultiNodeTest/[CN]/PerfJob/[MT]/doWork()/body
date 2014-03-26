@@ -1,9 +1,8 @@
 {
   GridCache cache=grid.cache(null);
   Session ses=new Session(terminalId());
-  GridCacheTx tx=cache.txStart();
   try {
-    try {
+    try (GridCacheTx tx=cache.txStart()){
       Request req=new Request(getId());
       req.setMessageId(getId());
       String key=req.getCacheKey();
@@ -18,10 +17,7 @@
       tx.commit();
       stopTimer("commit");
     }
-  finally {
-      tx.close();
-    }
-  }
+   }
  catch (  GridException e) {
     e.printStackTrace();
   }

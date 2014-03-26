@@ -24,8 +24,7 @@
   }
   info("Starting tx [values=" + map + ", topVer="+ ((GridKernal)grid(1)).context().discovery().topologyVersion()+ ']');
   assertNotNull(cache);
-  GridCacheTx tx=cache.txStart();
-  try {
+  try (GridCacheTx tx=cache.txStart()){
     cache.getAll(keys);
     cache.putAll(map);
     info(">>> Stopping primary node " + primaryNode);
@@ -34,14 +33,11 @@
     if (commmit)     tx.commit();
  else     tx.rollback();
   }
-  finally {
-    tx.close();
-  }
-  boolean txFinished=GridTestUtils.waitForCondition(new GridAbsPredicate(){
+   boolean txFinished=GridTestUtils.waitForCondition(new GridAbsPredicate(){
     @Override public boolean apply(){
       for (      GridKernal g : grids) {
         GridCacheAdapter<?,?> cache=g.internalCache();
-        GridCacheTxManager txMgr=cache.isNear() ? ((GridNearCache)cache).dht().context().tm() : cache.context().tm();
+        GridCacheTxManager txMgr=cache.isNear() ? ((GridNearCacheAdapter)cache).dht().context().tm() : cache.context().tm();
         int txNum=txMgr.idMapSize();
         if (txNum != 0)         return false;
       }

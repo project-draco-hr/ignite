@@ -6,14 +6,16 @@
   assertEquals(val,dht(1).peek(key));
   assertNull(near(0).peekNearOnly(key));
   assertNull(near(1).peekNearOnly(key));
-  GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ);
-  try {
+  if (transactional()) {
+    try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+      assertEquals(val,cache.get(key));
+      assertTrue(cache.removex(key));
+      tx.commit();
+    }
+   }
+ else {
     assertEquals(val,cache.get(key));
     assertTrue(cache.removex(key));
-    tx.commit();
-  }
-  finally {
-    tx.close();
   }
   assertNull(dht(0).peek(key));
   assertNull(dht(1).peek(key));

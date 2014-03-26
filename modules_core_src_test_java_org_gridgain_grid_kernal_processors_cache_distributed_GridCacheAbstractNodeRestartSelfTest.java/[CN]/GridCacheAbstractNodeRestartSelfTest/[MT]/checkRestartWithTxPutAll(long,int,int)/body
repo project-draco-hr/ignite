@@ -23,19 +23,16 @@
               keys.clear();
               for (int i=0; i < txKeys; i++)               keys.add(RAND.nextInt(keyCnt));
               Collections.sort(keys);
-              GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ);
-              int c=txCntr.incrementAndGet();
-              if (c % logFreq == 0)               info(">>> Tx iteration started [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
-              Map<Integer,String> batch=new LinkedHashMap<>();
-              try {
+              int c=0;
+              try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+                c=txCntr.incrementAndGet();
+                if (c % logFreq == 0)                 info(">>> Tx iteration started [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
+                Map<Integer,String> batch=new LinkedHashMap<>();
                 for (                int key : keys)                 batch.put(key,String.valueOf(key));
                 cache.putAll(batch);
                 tx.commit();
               }
  catch (              GridTopologyException ignored) {
-              }
- finally {
-                tx.close();
               }
               if (c % logFreq == 0)               info(">>> Tx iteration finished [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
             }
