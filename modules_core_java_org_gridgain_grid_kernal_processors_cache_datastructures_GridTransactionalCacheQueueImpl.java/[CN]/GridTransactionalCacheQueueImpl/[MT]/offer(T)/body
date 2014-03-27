@@ -1,8 +1,9 @@
 {
   try {
     try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
-      Long idx=(Long)cache.transformCompute(queueKey,new AddClosure(1));
+      Long idx=(Long)cache.transformCompute(queueKey,new AddClosure(uuid,1));
       if (idx == null)       return false;
+      checkRemoved(idx);
       boolean putx=cache.putx(new ItemKey(uuid,idx,collocated()),item,null);
       assert putx;
       tx.commit();

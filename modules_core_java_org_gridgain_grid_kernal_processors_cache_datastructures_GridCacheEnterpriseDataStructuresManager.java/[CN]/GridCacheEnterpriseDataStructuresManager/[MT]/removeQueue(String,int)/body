@@ -1,12 +1,9 @@
 {
   waitInitialization();
-  checkAtomicity();
-  try {
-    GridCacheInternal key=new GridCacheInternalKeyImpl(name);
-    GridCacheQueueEx queue=cast(dsMap.get(key),GridCacheQueueEx.class);
-    return queue != null && queue.removeQueue(batchSize);
-  }
- catch (  Exception e) {
-    throw new GridException("Failed to remove queue by name :" + name,e);
-  }
+  GridCacheQueueKey key=new GridCacheQueueKey(name);
+  GridCacheQueueHeader2 header=queueView.remove(key);
+  if (header == null)   return false;
+  if (header.empty())   return true;
+  GridCacheQueueAdapter.removeKeys(cctx.cache(),header.uuid(),header.collocated(),header.head(),header.tail(),batchSize);
+  return true;
 }
