@@ -5,7 +5,7 @@
     return null;
   }
   Iterator<?> valsIter=vals != null ? vals.iterator() : null;
-  GridBiTuple<Boolean,V> res=null;
+  GridBiTuple<Boolean,?> res=null;
   GridCachePartialUpdateException err=null;
   for (  K key : keys) {
     Object val=valsIter != null ? valsIter.next() : null;
@@ -15,7 +15,14 @@
       try {
         entry=entryEx(key);
         GridBiTuple<Boolean,V> t=entry.innerUpdateLocal(ver,val == null ? DELETE : op,val,storeEnabled,retval,ttl,true,true,filter);
-        if (res == null)         res=t;
+        if (res == null) {
+          V retVal=t.get2();
+          if (op == TRANSFORM && val instanceof GridCacheTransformComputeClosure) {
+            assert retval;
+            res=new GridBiTuple<>(t.get1(),((GridCacheTransformComputeClosure<V,?>)val).compute(retVal));
+          }
+ else           res=t;
+        }
         break;
       }
  catch (      GridCacheEntryRemovedException ignored) {

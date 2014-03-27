@@ -1,8 +1,18 @@
 {
+  waitInitialization();
+  checkSupportsQueue();
   GridCacheQueueKey key=new GridCacheQueueKey(name);
-  GridCacheQueueHeader2 header=new GridCacheQueueHeader2(GridUuid.randomUuid(),cap,0,0);
-  GridCacheQueueHeader2 old=queueView.putIfAbsent(key,header);
-  if (old != null)   header=old;
+  GridCacheQueueHeader header;
+  if (create) {
+    header=new GridCacheQueueHeader(GridUuid.randomUuid(),cap,colloc,0,0,null);
+    GridCacheQueueHeader old=queueHdrView.putIfAbsent(key,header);
+    if (old != null) {
+      if (old.capacity() != cap || old.collocated() != colloc)       throw new GridException("Failed to create queue, queue with the same name but different " + "configuration already exists [name=" + name + ']');
+      header=old;
+    }
+  }
+ else   header=queueHdrView.get(key);
+  if (header == null)   return null;
   if (cctx.atomic())   return new GridAtomicCacheQueueImpl<>(name,header.uuid(),cap,colloc,cctx);
  else   return new GridTransactionalCacheQueueImpl<>(name,header.uuid(),cap,colloc,cctx);
 }

@@ -1,16 +1,9 @@
 {
   try {
-    GridBiTuple<Long,Long> t=(GridBiTuple<Long,Long>)cache.transformCompute(queueKey,new ClearClosure());
+    GridBiTuple<Long,Long> t=(GridBiTuple<Long,Long>)cache.transformCompute(queueKey,new ClearClosure(uuid));
     if (t == null)     return;
-    Collection<ItemKey> keys=new ArrayList<>(batchSize != 0 ? batchSize : 10);
-    for (long idx=t.get1(); idx < t.get2(); idx++) {
-      keys.add(new ItemKey(uuid,idx,collocated()));
-      if (batchSize > 0 && keys.size() == batchSize) {
-        cache.removeAll(keys);
-        keys.clear();
-      }
-    }
-    if (!keys.isEmpty())     cache.removeAll(keys);
+    checkRemoved(t.get1());
+    removeKeys(cache,uuid,collocated(),t.get1(),t.get2(),batchSize);
   }
  catch (  GridException e) {
     throw new GridRuntimeException(e);

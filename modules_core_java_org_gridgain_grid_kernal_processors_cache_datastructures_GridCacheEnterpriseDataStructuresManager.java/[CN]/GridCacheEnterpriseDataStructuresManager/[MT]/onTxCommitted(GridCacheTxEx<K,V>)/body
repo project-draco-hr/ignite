@@ -12,23 +12,7 @@
     for (    GridCacheTxEntry<K,V> entry : entries) {
       if ((entry.op() == CREATE || entry.op() == UPDATE) && entry.key() instanceof GridCacheInternalKey) {
         GridCacheInternal key=(GridCacheInternal)entry.key();
-        if (entry.value() instanceof GridCacheQueueHeader) {
-          if (queueBusyLock.enterBusy()) {
-            try {
-              GridCacheRemovable queue=dsMap.get(key);
-              if (queue instanceof GridCacheQueueEx) {
-                GridCacheQueueHeader hdr=(GridCacheQueueHeader)entry.value();
-                ((GridCacheQueueEx)queue).onHeaderChanged(hdr);
-              }
- else               if (queue != null)               U.error(log,"Failed to cast object [expected=" + GridCacheQueue.class.getSimpleName() + ", actual="+ queue.getClass()+ ", value="+ queue+ ']');
-            }
-  finally {
-              queueBusyLock.leaveBusy();
-            }
-          }
- else           U.warn(log,"Ignored queue update from TX because grid is stopping.");
-        }
- else         if (entry.value() instanceof GridCacheCountDownLatchValue) {
+        if (entry.value() instanceof GridCacheCountDownLatchValue) {
           GridCacheRemovable latch=dsMap.get(key);
           GridCacheCountDownLatchValue val=(GridCacheCountDownLatchValue)entry.value();
           if (latch instanceof GridCacheCountDownLatchEx) {

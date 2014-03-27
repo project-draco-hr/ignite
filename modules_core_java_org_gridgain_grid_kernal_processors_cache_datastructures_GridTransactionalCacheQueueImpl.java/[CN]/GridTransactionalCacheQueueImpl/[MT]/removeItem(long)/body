@@ -1,0 +1,15 @@
+{
+  try {
+    try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+      Long idx=(Long)cache.transformCompute(queueKey,new RemoveClosure(uuid,rmvIdx));
+      if (idx != null) {
+        boolean removex=cache.removex(new ItemKey(uuid,idx,collocated()));
+        assert removex;
+      }
+      tx.commit();
+    }
+   }
+ catch (  GridException e) {
+    throw new GridRuntimeException(e);
+  }
+}

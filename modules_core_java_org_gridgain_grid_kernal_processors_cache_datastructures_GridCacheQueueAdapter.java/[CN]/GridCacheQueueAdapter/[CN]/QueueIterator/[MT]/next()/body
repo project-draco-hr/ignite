@@ -1,10 +1,14 @@
 {
-  if (cur == null)   throw new NoSuchElementException();
+  if (next == null)   throw new NoSuchElementException();
   try {
-    T res=cur;
+    cur=next;
+    curIdx=idx;
     idx++;
-    cur=idx < endIdx ? (T)cache.get(new ItemKey(uuid,idx,collocated())) : null;
-    return res;
+    if (rmvIdxs != null) {
+      while (F.contains(rmvIdxs,idx) && idx < endIdx)       idx++;
+    }
+    next=idx < endIdx ? (T)cache.get(new ItemKey(uuid,idx,collocated())) : null;
+    return cur;
   }
  catch (  GridException e) {
     throw new GridRuntimeException(e);
