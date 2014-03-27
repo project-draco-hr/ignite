@@ -1,0 +1,19 @@
+{
+  try {
+    try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+      Long idx=(Long)cache.transformCompute(queueKey,new AddClosure(items.size()));
+      if (idx == null)       return false;
+      Map<ItemKey,T> putMap=new HashMap<>();
+      for (      T item : items) {
+        putMap.put(new ItemKey(uuid,idx,collocated()),item);
+        idx+=1;
+      }
+      cache.putAll(putMap,null);
+      tx.commit();
+      return true;
+    }
+   }
+ catch (  GridException e) {
+    throw new GridRuntimeException(e);
+  }
+}
