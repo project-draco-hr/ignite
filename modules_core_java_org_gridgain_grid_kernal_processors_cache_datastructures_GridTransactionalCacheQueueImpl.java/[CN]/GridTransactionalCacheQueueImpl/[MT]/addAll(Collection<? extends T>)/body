@@ -1,21 +1,39 @@
 {
+  A.notNull(items,"items");
   try {
-    boolean retVal=false;
-    try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
-      Long idx=(Long)cache.transformCompute(queueKey,new AddClosure(uuid,items.size()));
-      if (idx != null) {
-        checkRemoved(idx);
-        Map<ItemKey,T> putMap=new HashMap<>();
-        for (        T item : items) {
-          putMap.put(new ItemKey(uuid,idx,collocated()),item);
-          idx+=1;
+    return CU.outTx(new Callable<Boolean>(){
+      @Override public Boolean call() throws Exception {
+        boolean retVal;
+        int cnt=0;
+        while (true) {
+          try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+            Long idx=(Long)cache.transformCompute(queueKey,new AddClosure(uuid,items.size()));
+            if (idx != null) {
+              checkRemoved(idx);
+              Map<GridCacheQueueItemKey,T> putMap=new HashMap<>();
+              for (              T item : items) {
+                putMap.put(itemKey(idx),item);
+                idx++;
+              }
+              cache.putAll(putMap,null);
+              retVal=true;
+            }
+ else             retVal=false;
+            tx.commit();
+            break;
+          }
+ catch (          GridEmptyProjectionException e) {
+            throw e;
+          }
+catch (          GridTopologyException e) {
+            if (cnt++ == MAX_UPDATE_RETRIES)             throw e;
+ else             U.warn(log,"Failed to addAll, will retry [err=" + e + ']');
+          }
         }
-        cache.putAll(putMap,null);
-        retVal=true;
-        tx.commit();
+        return retVal;
       }
     }
-     return retVal;
+,cctx);
   }
  catch (  GridException e) {
     throw new GridRuntimeException(e);

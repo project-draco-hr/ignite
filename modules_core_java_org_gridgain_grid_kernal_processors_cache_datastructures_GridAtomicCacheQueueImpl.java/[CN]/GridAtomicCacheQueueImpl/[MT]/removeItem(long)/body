@@ -2,11 +2,21 @@
   Long idx=(Long)cache.transformCompute(queueKey,new RemoveClosure(uuid,rmvIdx));
   if (idx != null) {
     checkRemoved(idx);
-    ItemKey key=new ItemKey(uuid,idx,collocated());
-    if (cache.removex(key))     return;
-    long stop=U.currentTimeMillis() + RETRY_TIMEOUT;
-    while (U.currentTimeMillis() < stop) {
-      if (cache.removex(key))       return;
+    GridCacheQueueItemKey key=itemKey(idx);
+    int cnt=0;
+    while (true) {
+      try {
+        if (cache.removex(key))         return;
+        long stop=U.currentTimeMillis() + RETRY_TIMEOUT;
+        while (U.currentTimeMillis() < stop) {
+          if (cache.removex(key))           return;
+        }
+        break;
+      }
+ catch (      GridCachePartialUpdateException e) {
+        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
+ else         U.warn(log,"Failed to add items, will retry [err=" + e + ']');
+      }
     }
     U.warn(log,"Failed to remove item, [queue=" + queueName + ", idx="+ idx+ ']');
   }

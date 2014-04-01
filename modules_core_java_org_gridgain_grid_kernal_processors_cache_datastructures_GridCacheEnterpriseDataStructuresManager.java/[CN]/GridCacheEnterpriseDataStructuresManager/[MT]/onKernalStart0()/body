@@ -8,7 +8,11 @@
       atomicStampedView=cctx.cache().<GridCacheInternalKey,GridCacheAtomicStampedValue>projection(GridCacheInternalKey.class,GridCacheAtomicStampedValue.class).flagsOn(CLONE);
       seqView=cctx.cache().<GridCacheInternalKey,GridCacheAtomicSequenceValue>projection(GridCacheInternalKey.class,GridCacheAtomicSequenceValue.class).flagsOn(CLONE);
     }
-    if (supportsQueue())     queueHdrView=cctx.cache().<GridCacheQueueKey,GridCacheQueueHeader>projection(GridCacheQueueKey.class,GridCacheQueueHeader.class).flagsOn(CLONE);
+    if (supportsQueue()) {
+      queueHdrView=cctx.cache().<GridCacheQueueKey,GridCacheQueueHeader>projection(GridCacheQueueKey.class,GridCacheQueueHeader.class).flagsOn(CLONE);
+      queueCleanupWorker=new QueueCleanupWorker();
+      new GridThread(queueCleanupWorker).start();
+    }
     initFlag=true;
   }
   finally {
