@@ -1,18 +1,33 @@
 {
   try {
-    Long idx=(Long)cache.transformCompute(queueKey,new PollClosure(uuid));
-    if (idx == null)     return null;
-    checkRemoved(idx);
-    ItemKey key=new ItemKey(uuid,idx,collocated());
-    T data=(T)cache.remove(key,null);
-    if (data != null)     return data;
-    long stop=U.currentTimeMillis() + 2000;
-    while (U.currentTimeMillis() < stop) {
-      data=(T)cache.remove(key,null);
-      if (data != null)       return data;
+    T ret=null;
+    int cnt=0;
+    Long idx=null;
+    while (cnt < 100) {
+      try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+        idx=(Long)cache.transformCompute(queueKey,new PollClosure(uuid));
+        if (cnt > 0)         log.info("Computed tx poll after retry: " + idx);
+        if (idx != null) {
+          checkRemoved(idx);
+          ret=(T)cache.remove(new ItemKey(uuid,idx,collocated()),null);
+          if (ret == null) {
+            tx.rollback();
+            log.info("Got null for " + idx + " "+ cnt);
+          }
+ else           log.info("Got " + ret + " for "+ idx+ " "+ cnt);
+        }
+ else         tx.commit();
+        break;
+      }
+ catch (      GridTopologyException e) {
+        if (cnt++ == 100)         throw e;
+ else {
+          log.error("Poll tx",e);
+          U.warn(log,"Failed to poll, will retry [err=" + e + ']');
+        }
+      }
     }
-    U.warn(log,"Failed to get item, retrying poll [queue=" + queueName + ", idx="+ idx+ ']');
-    return poll();
+    return ret;
   }
  catch (  GridException e) {
     throw new GridRuntimeException(e);

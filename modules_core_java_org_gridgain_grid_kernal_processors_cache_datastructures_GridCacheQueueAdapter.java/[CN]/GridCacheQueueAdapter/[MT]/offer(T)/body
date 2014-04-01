@@ -1,0 +1,38 @@
+{
+  try {
+    int cnt=0;
+    Long idx=null;
+    boolean retry=false;
+    while (cnt < MAX_REPEAT_NUM) {
+      try {
+        idx=(Long)cache.transformCompute(queueKey,new AddClosure(uuid,1));
+        break;
+      }
+ catch (      GridCacheTxRollbackException|GridCachePartialUpdateException e) {
+        if (cnt++ == MAX_REPEAT_NUM)         throw e;
+ else         U.warn(log,"Failed to update queue header, will retry [err=" + e + ']');
+        retry=true;
+      }
+    }
+    if (retry)     log.info("Computed idx after retry: " + idx);
+    if (idx == null)     return false;
+    checkRemoved(idx);
+    cnt=0;
+    ItemKey key=new ItemKey(uuid,idx,collocated());
+    while (cnt < MAX_REPEAT_NUM) {
+      try {
+        boolean putx=cache.putx(key,item,null);
+        assert putx;
+        break;
+      }
+ catch (      GridCacheTxRollbackException|GridCachePartialUpdateException e) {
+        if (cnt++ == MAX_REPEAT_NUM)         throw e;
+ else         U.warn(log,"Failed to put queue item, will retry [err=" + e + ", idx="+ idx+ ']');
+      }
+    }
+    return true;
+  }
+ catch (  GridException e) {
+    throw new GridRuntimeException(e);
+  }
+}

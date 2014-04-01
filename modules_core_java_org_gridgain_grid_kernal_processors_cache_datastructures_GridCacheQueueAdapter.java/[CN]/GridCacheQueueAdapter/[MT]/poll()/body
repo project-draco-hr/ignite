@@ -1,0 +1,44 @@
+{
+  try {
+    int cnt=0;
+    Long idx=null;
+    boolean retry=false;
+    while (cnt < MAX_REPEAT_NUM) {
+      try {
+        idx=(Long)cache.transformCompute(queueKey,new PollClosure(uuid));
+        break;
+      }
+ catch (      GridCacheTxRollbackException|GridCachePartialUpdateException e) {
+        if (cnt++ == MAX_REPEAT_NUM)         throw e;
+ else         U.warn(log,"Failed to update queue header, will retry [err=" + e + ']');
+        retry=true;
+      }
+    }
+    if (retry)     log.info("Computed poll idx after retry: " + idx);
+    if (idx == null)     return null;
+    checkRemoved(idx);
+    ItemKey key=new ItemKey(uuid,idx,collocated());
+    cnt=0;
+    while (cnt < MAX_REPEAT_NUM) {
+      try {
+        T data=(T)cache.remove(key,null);
+        if (data != null)         return data;
+        long stop=U.currentTimeMillis() + 2000;
+        while (U.currentTimeMillis() < stop) {
+          data=(T)cache.remove(key,null);
+          if (data != null)           return data;
+        }
+        break;
+      }
+ catch (      GridCacheTxRollbackException|GridCachePartialUpdateException e) {
+        if (cnt++ == MAX_REPEAT_NUM)         throw e;
+ else         U.warn(log,"Failed to remove queue item, will retry [err=" + e + ']');
+      }
+    }
+    U.warn(log,"Failed to get item, retrying poll [queue=" + queueName + ", idx="+ idx+ ']');
+    return poll();
+  }
+ catch (  GridException e) {
+    throw new GridRuntimeException(e);
+  }
+}
