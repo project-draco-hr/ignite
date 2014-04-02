@@ -1,9 +1,11 @@
 {
   waitInitialization();
   checkSupportsQueue();
-  GridCacheQueueKey key=new GridCacheQueueKey(name);
-  GridCacheQueueHeader header=queueHdrView.remove(key);
-  if (header == null)   return false;
-  if (!header.empty())   GridCacheQueueAdapter.removeKeys(cctx.cache(),header.uuid(),name,header.collocated(),header.head(),header.tail(),batchSize);
-  return true;
+  if (cctx.atomic())   return removeQueue0(name,batchSize);
+  return CU.outTx(new Callable<Boolean>(){
+    @Override public Boolean call() throws Exception {
+      return removeQueue0(name,batchSize);
+    }
+  }
+,cctx);
 }
