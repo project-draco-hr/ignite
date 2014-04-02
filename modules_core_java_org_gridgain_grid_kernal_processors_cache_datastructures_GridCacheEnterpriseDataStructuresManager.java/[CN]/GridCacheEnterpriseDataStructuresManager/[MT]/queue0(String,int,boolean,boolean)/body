@@ -11,6 +11,12 @@
   }
  else   header=queueHdrView.get(key);
   if (header == null)   return null;
-  if (cctx.atomic())   return new GridAtomicCacheQueueImpl<>(name,header,cctx);
- else   return new GridTransactionalCacheQueueImpl<>(name,header,cctx);
+synchronized (queuesMap) {
+    GridCacheQueueAdapter queue=queuesMap.get(header.uuid());
+    if (queue == null) {
+      queue=cctx.atomic() ? new GridAtomicCacheQueueImpl<>(name,header,cctx) : new GridTransactionalCacheQueueImpl<>(name,header,cctx);
+      queuesMap.put(header.uuid(),queue);
+    }
+    return queue;
+  }
 }

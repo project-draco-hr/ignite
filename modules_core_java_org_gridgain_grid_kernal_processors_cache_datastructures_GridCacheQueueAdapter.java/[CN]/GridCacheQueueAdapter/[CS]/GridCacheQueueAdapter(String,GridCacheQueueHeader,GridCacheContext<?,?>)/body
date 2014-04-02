@@ -7,8 +7,6 @@
   queueKey=new GridCacheQueueKey(queueName);
   cache=cctx.cache();
   log=cctx.logger(getClass());
-  full=header.full();
-  empty=header.empty();
   GridCacheContinuousQueryAdapter qry=(GridCacheContinuousQueryAdapter)cache.queries().createContinuousQuery();
   qry.filter(new QueuePredicate(queueName));
   qry.callback(new GridBiPredicate<UUID,Collection<Map.Entry>>(){
@@ -18,6 +16,9 @@
         lock.lock();
         try {
           if (header == null) {
+            rmvd=true;
+            GridCacheQueueAdapter queue=GridCacheQueueAdapter.this;
+            queue.cctx.dataStructures().queueRemoved(queue.uuid);
             full=false;
             empty=false;
             addCond.signalAll();
