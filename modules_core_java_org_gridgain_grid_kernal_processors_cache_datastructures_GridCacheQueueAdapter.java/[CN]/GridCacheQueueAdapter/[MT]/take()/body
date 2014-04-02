@@ -1,8 +1,17 @@
 {
-  do {
+  while (true) {
+    lock.lock();
+    try {
+      while (empty)       pollCond.await();
+    }
+ catch (    InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new GridRuntimeException("Queue take interrupted.",e);
+    }
+ finally {
+      lock.unlock();
+    }
     T e=poll();
     if (e != null)     return e;
-    if (Thread.interrupted())     throw new GridRuntimeException("Queue take interrupted.");
   }
- while (true);
 }

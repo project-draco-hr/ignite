@@ -1,0 +1,43 @@
+{
+  this.cctx=cctx;
+  this.queueName=queueName;
+  uuid=header.uuid();
+  cap=header.capacity();
+  collocated=header.collocated();
+  queueKey=new GridCacheQueueKey(queueName);
+  cache=cctx.cache();
+  log=cctx.logger(getClass());
+  full=header.full();
+  empty=header.empty();
+  GridCacheContinuousQueryAdapter qry=(GridCacheContinuousQueryAdapter)cache.queries().createContinuousQuery();
+  qry.filter(new QueuePredicate(queueName));
+  qry.callback(new GridBiPredicate<UUID,Collection<Map.Entry>>(){
+    @Override public boolean apply(    UUID uuid,    Collection<Map.Entry> entries){
+      for (      Map.Entry e : entries) {
+        GridCacheQueueHeader header=(GridCacheQueueHeader)e.getValue();
+        lock.lock();
+        try {
+          if (header == null) {
+            full=false;
+            empty=false;
+            addCond.signalAll();
+            pollCond.signalAll();
+            return false;
+          }
+ else {
+            full=header.full();
+            empty=header.empty();
+            if (!full)             addCond.signalAll();
+            if (!empty)             pollCond.signalAll();
+          }
+        }
+  finally {
+          lock.unlock();
+        }
+      }
+      return true;
+    }
+  }
+);
+  qry.execute(cctx.isLocal() || cctx.isReplicated() ? cctx.grid().forLocal() : null,true);
+}

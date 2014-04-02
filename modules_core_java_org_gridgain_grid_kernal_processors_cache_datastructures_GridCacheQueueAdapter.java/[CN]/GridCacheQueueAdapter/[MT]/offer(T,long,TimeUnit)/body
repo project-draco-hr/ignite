@@ -1,10 +1,27 @@
 {
   A.notNull(item,"item");
   A.ensure(timeout >= 0,"Timeout cannot be negative: " + timeout);
+  if (!bounded()) {
+    boolean offer=offer(item);
+    assert offer;
+    return true;
+  }
   long end=U.currentTimeMillis() + MILLISECONDS.convert(timeout,unit);
   while (U.currentTimeMillis() < end) {
+    lock.lock();
+    try {
+      while (full) {
+        if (!addCond.await(end - U.currentTimeMillis(),MILLISECONDS))         return false;
+      }
+    }
+ catch (    InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new GridRuntimeException("Queue put interrupted.",e);
+    }
+ finally {
+      lock.unlock();
+    }
     if (offer(item))     return true;
-    if (Thread.interrupted())     throw new GridRuntimeException("Queue offer interrupted.");
   }
   return false;
 }

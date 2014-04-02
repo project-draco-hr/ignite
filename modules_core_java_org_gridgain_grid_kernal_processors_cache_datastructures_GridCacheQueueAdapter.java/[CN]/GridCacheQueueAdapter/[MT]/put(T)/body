@@ -1,8 +1,22 @@
 {
   A.notNull(item,"item");
-  do {
-    if (offer(item))     return;
-    if (Thread.interrupted())     throw new GridRuntimeException("Queue put interrupted.");
+  if (!bounded()) {
+    boolean offer=offer(item);
+    assert offer;
+    return;
   }
- while (true);
+  while (true) {
+    lock.lock();
+    try {
+      while (full)       addCond.await();
+    }
+ catch (    InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new GridRuntimeException("Queue put interrupted.",e);
+    }
+ finally {
+      lock.unlock();
+    }
+    if (offer(item))     return;
+  }
 }
