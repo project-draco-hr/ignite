@@ -5,11 +5,12 @@
     checkRemoved(idx);
     GridCacheQueueItemKey key=itemKey(idx);
     int cnt=0;
+    long stop=0;
     while (true) {
       try {
         T data=(T)cache.remove(key,null);
         if (data != null)         return data;
-        long stop=U.currentTimeMillis() + RETRY_TIMEOUT;
+        if (stop == 0)         stop=U.currentTimeMillis() + RETRY_TIMEOUT;
         while (U.currentTimeMillis() < stop) {
           data=(T)cache.remove(key,null);
           if (data != null)           return data;
