@@ -10,7 +10,7 @@
     Collection<GridCacheTxEntry<K,V>> entries=tx.writeEntries();
     if (log.isDebugEnabled())     log.debug("Committed entries: " + entries);
     for (    GridCacheTxEntry<K,V> entry : entries) {
-      if ((entry.op() == CREATE || entry.op() == UPDATE) && entry.key() instanceof GridCacheInternalKey) {
+      if ((entry.op() == CREATE || entry.op() == UPDATE) && entry.key() instanceof GridCacheInternal) {
         GridCacheInternal key=(GridCacheInternal)entry.key();
         if (entry.value() instanceof GridCacheQueueHeader) {
           if (queueBusyLock.enterBusy()) {
@@ -44,9 +44,11 @@
             U.error(log,"Failed to cast object " + "[expected=" + GridCacheCountDownLatch.class.getSimpleName() + ", actual="+ latch.getClass()+ ", value="+ latch+ ']');
           }
         }
+ else         if (key instanceof GridCacheSetItemKey)         onSetItemUpdated((GridCacheSetItemKey)key,false);
       }
       if (entry.op() == DELETE && entry.key() instanceof GridCacheInternal) {
         GridCacheInternal key=(GridCacheInternal)entry.key();
+        if (key instanceof GridCacheSetItemKey)         onSetItemUpdated((GridCacheSetItemKey)key,true);
         GridCacheRemovable obj=dsMap.remove(key);
         if (obj != null)         obj.onRemoved();
       }

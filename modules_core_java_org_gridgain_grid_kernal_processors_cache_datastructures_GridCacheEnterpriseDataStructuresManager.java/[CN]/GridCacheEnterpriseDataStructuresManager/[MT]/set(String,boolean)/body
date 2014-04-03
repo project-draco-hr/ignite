@@ -1,0 +1,14 @@
+{
+  waitInitialization();
+  GridCacheSetKey key=new GridCacheSetKey(name);
+  GridCacheSetHeader hdr;
+  GridCacheAdapter cache=cctx.cache();
+  if (create) {
+    hdr=new GridCacheSetHeader(GridUuid.randomUuid());
+    GridCacheSetHeader old=(GridCacheSetHeader)cache.putIfAbsent(key,hdr);
+    if (old != null)     hdr=old;
+  }
+ else   hdr=(GridCacheSetHeader)cache.get(key);
+  if (hdr == null)   return null;
+  return new GridCacheSet<>(cctx,name,hdr.setId());
+}

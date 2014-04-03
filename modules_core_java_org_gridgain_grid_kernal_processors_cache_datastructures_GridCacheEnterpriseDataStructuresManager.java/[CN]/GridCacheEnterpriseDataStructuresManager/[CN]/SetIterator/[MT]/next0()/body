@@ -1,0 +1,24 @@
+{
+  try {
+    while (it == null || !it.hasNext()) {
+      if (!init || rcvNodes.size() == nodes.size()) {
+        nodes.removeAll(doneNodes);
+        rcvNodes.clear();
+        log.info("Received all, left " + nodes);
+        if (nodes.isEmpty())         return null;
+        sendIteratorRequest(req,nodes);
+      }
+      GridCacheSetIteratorResponse res=q.take();
+      rcvNodes.add(res.nodeId());
+      if (res.last()) {
+        log.info("Last from " + res.nodeId());
+        doneNodes.add(res.nodeId());
+      }
+      it=res.data().iterator();
+    }
+    return it.next();
+  }
+ catch (  Exception e) {
+    throw new GridRuntimeException(e);
+  }
+}
