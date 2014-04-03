@@ -1,0 +1,35 @@
+{
+  log.info("Process request " + nodeId + " "+ req);
+  try {
+    IteratorKey key=new IteratorKey(req.id(),nodeId);
+    Iterator<GridCacheSetItemKey> it=locIterMap.get(key);
+    if (it == null) {
+      GridConcurrentHashSet<GridCacheSetItemKey> data=setData.get(req.setId());
+      if (data == null) {
+        if (log.isDebugEnabled())         log.debug("Received request for non-existing set");
+        sendResponse(nodeId,new GridCacheSetIteratorResponse<>(req.id(),Collections.emptyList(),true));
+      }
+      log.info("Created iter: " + data);
+      it=data.iterator();
+      locIterMap.put(key,it);
+    }
+    List<Object> data=new ArrayList<>(req.pageSize());
+    boolean last=false;
+    boolean filterBackup=cctx.config().getBackups() > 0 || CU.isNearEnabled(cctx);
+    GridCacheAffinityManager aff=cctx.affinity();
+    while (data.size() < req.pageSize()) {
+      GridCacheSetItemKey next=it.hasNext() ? it.next() : null;
+      if (next == null) {
+        last=true;
+        break;
+      }
+      if (filterBackup && !aff.primary(cctx.localNode(),next,req.topologyVersion()))       continue;
+      data.add(next.item());
+    }
+    if (last)     locIterMap.remove(key);
+    sendResponse(nodeId,new GridCacheSetIteratorResponse<>(req.id(),data,last));
+  }
+ catch (  Throwable e) {
+    e.printStackTrace();
+  }
+}
