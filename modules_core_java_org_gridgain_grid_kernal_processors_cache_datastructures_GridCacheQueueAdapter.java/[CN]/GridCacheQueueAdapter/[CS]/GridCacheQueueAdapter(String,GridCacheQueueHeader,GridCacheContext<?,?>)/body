@@ -7,38 +7,6 @@
   queueKey=new GridCacheQueueKey(queueName);
   cache=cctx.cache();
   log=cctx.logger(getClass());
-  GridCacheContinuousQueryAdapter qry=(GridCacheContinuousQueryAdapter)cache.queries().createContinuousQuery();
-  qry.filter(new QueuePredicate(queueName));
-  qry.callback(new GridBiPredicate<UUID,Collection<Map.Entry>>(){
-    @Override public boolean apply(    UUID uuid,    Collection<Map.Entry> entries){
-      for (      Map.Entry e : entries) {
-        GridCacheQueueHeader hdr=(GridCacheQueueHeader)e.getValue();
-        lock.lock();
-        try {
-          if (hdr == null) {
-            rmvd=true;
-            GridCacheQueueAdapter queue=GridCacheQueueAdapter.this;
-            queue.cctx.dataStructures().queueRemoved(queue.uuid);
-            full=false;
-            empty=false;
-            addCond.signalAll();
-            pollCond.signalAll();
-            return false;
-          }
- else {
-            full=hdr.full();
-            empty=hdr.empty();
-            if (!full)             addCond.signalAll();
-            if (!empty)             pollCond.signalAll();
-          }
-        }
-  finally {
-          lock.unlock();
-        }
-      }
-      return true;
-    }
-  }
-);
-  qry.execute(cctx.isLocal() || cctx.isReplicated() ? cctx.grid().forLocal() : null,true);
+  readSem=new Semaphore(hdr.size(),true);
+  writeSem=bounded() ? new Semaphore(hdr.capacity() - hdr.size(),true) : null;
 }

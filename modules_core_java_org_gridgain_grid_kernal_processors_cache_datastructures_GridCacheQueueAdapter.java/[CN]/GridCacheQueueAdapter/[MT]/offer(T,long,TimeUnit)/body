@@ -8,20 +8,15 @@
   }
   long end=U.currentTimeMillis() + MILLISECONDS.convert(timeout,unit);
   while (U.currentTimeMillis() < end) {
-    lock.lock();
+    boolean retVal=false;
     try {
-      while (full) {
-        if (!addCond.await(end - U.currentTimeMillis(),MILLISECONDS))         return false;
-      }
+      if (writeSem.tryAcquire(end - U.currentTimeMillis(),MILLISECONDS))       retVal=offer(item);
     }
  catch (    InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new GridRuntimeException("Queue put interrupted.",e);
     }
- finally {
-      lock.unlock();
-    }
-    if (offer(item))     return true;
+    if (retVal)     return true;
   }
   return false;
 }

@@ -2,21 +2,15 @@
   A.ensure(timeout >= 0,"Timeout cannot be negative: " + timeout);
   long end=U.currentTimeMillis() + MILLISECONDS.convert(timeout,unit);
   while (U.currentTimeMillis() < end) {
-    lock.lock();
+    T retVal=null;
     try {
-      while (empty) {
-        if (!pollCond.await(end - U.currentTimeMillis(),MILLISECONDS))         return null;
-      }
+      if (readSem.tryAcquire(end - U.currentTimeMillis(),MILLISECONDS))       retVal=poll();
     }
  catch (    InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new GridRuntimeException("Queue poll interrupted.",e);
     }
- finally {
-      lock.unlock();
-    }
-    T e=poll();
-    if (e != null)     return e;
+    if (retVal != null)     return retVal;
   }
   return null;
 }

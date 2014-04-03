@@ -1,5 +1,10 @@
 {
-  cctx.dataStructures().queueRemoved(uuid);
   rmvd=true;
+  if (bounded()) {
+    writeSem.drainPermits();
+    writeSem.release(Integer.MAX_VALUE);
+  }
+  readSem.drainPermits();
+  readSem.release(Integer.MAX_VALUE);
   throw new GridCacheDataStructureRemovedRuntimeException("Queue has been removed from cache: " + this);
 }
