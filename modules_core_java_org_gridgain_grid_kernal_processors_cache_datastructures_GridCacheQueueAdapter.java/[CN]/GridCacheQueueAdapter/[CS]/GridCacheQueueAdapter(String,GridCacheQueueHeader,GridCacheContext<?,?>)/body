@@ -1,9 +1,9 @@
 {
   this.cctx=cctx;
   this.queueName=queueName;
-  uuid=header.uuid();
-  cap=header.capacity();
-  collocated=header.collocated();
+  uuid=hdr.uuid();
+  cap=hdr.capacity();
+  collocated=hdr.collocated();
   queueKey=new GridCacheQueueKey(queueName);
   cache=cctx.cache();
   log=cctx.logger(getClass());
@@ -12,10 +12,10 @@
   qry.callback(new GridBiPredicate<UUID,Collection<Map.Entry>>(){
     @Override public boolean apply(    UUID uuid,    Collection<Map.Entry> entries){
       for (      Map.Entry e : entries) {
-        GridCacheQueueHeader header=(GridCacheQueueHeader)e.getValue();
+        GridCacheQueueHeader hdr=(GridCacheQueueHeader)e.getValue();
         lock.lock();
         try {
-          if (header == null) {
+          if (hdr == null) {
             rmvd=true;
             GridCacheQueueAdapter queue=GridCacheQueueAdapter.this;
             queue.cctx.dataStructures().queueRemoved(queue.uuid);
@@ -26,8 +26,8 @@
             return false;
           }
  else {
-            full=header.full();
-            empty=header.empty();
+            full=hdr.full();
+            empty=hdr.empty();
             if (!full)             addCond.signalAll();
             if (!empty)             pollCond.signalAll();
           }
