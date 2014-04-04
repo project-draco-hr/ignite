@@ -1,37 +1,32 @@
 {
   A.notNull(item,"item");
   try {
-    return CU.outTx(new Callable<Boolean>(){
-      @Override public Boolean call() throws Exception {
-        boolean retVal;
-        int cnt=0;
-        while (true) {
-          try {
-            try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
-              Long idx=(Long)cache.transformCompute(queueKey,new AddClosure(uuid,1));
-              if (idx != null) {
-                checkRemoved(idx);
-                boolean putx=cache.putx(itemKey(idx),item,null);
-                assert putx;
-                retVal=true;
-              }
- else               retVal=false;
-              tx.commit();
-              break;
-            }
-           }
- catch (          GridEmptyProjectionException e) {
-            throw e;
+    boolean retVal;
+    int cnt=0;
+    while (true) {
+      try {
+        try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+          Long idx=(Long)cache.transformCompute(queueKey,new AddClosure(id,1));
+          if (idx != null) {
+            checkRemoved(idx);
+            boolean putx=cache.putx(itemKey(idx),item,null);
+            assert putx;
+            retVal=true;
           }
-catch (          GridTopologyException e) {
-            if (cnt++ == MAX_UPDATE_RETRIES)             throw e;
- else             U.warn(log,"Failed to add item, will retry [err=" + e + ']');
-          }
+ else           retVal=false;
+          tx.commit();
+          break;
         }
-        return retVal;
+       }
+ catch (      GridEmptyProjectionException e) {
+        throw e;
+      }
+catch (      GridTopologyException e) {
+        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
+ else         U.warn(log,"Failed to add item, will retry [err=" + e + ']');
       }
     }
-,cctx);
+    return retVal;
   }
  catch (  GridException e) {
     throw new GridRuntimeException(e);

@@ -1,31 +1,25 @@
 {
   try {
-    CU.outTx(new Callable<Void>(){
-      @Override public Void call() throws Exception {
-        int cnt=0;
-        while (true) {
-          try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
-            Long idx=(Long)cache.transformCompute(queueKey,new RemoveClosure(uuid,rmvIdx));
-            if (idx != null) {
-              checkRemoved(idx);
-              boolean rmv=cache.removex(itemKey(idx));
-              assert rmv;
-            }
-            tx.commit();
-            break;
-          }
- catch (          GridEmptyProjectionException e) {
-            throw e;
-          }
-catch (          GridTopologyException e) {
-            if (cnt++ == MAX_UPDATE_RETRIES)             throw e;
- else             U.warn(log,"Failed to remove item, will retry [err=" + e + ", idx="+ rmvIdx+ ']');
-          }
+    int cnt=0;
+    while (true) {
+      try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+        Long idx=(Long)cache.transformCompute(queueKey,new RemoveClosure(id,rmvIdx));
+        if (idx != null) {
+          checkRemoved(idx);
+          boolean rmv=cache.removex(itemKey(idx));
+          assert rmv;
         }
-        return null;
+        tx.commit();
+        break;
+      }
+ catch (      GridEmptyProjectionException e) {
+        throw e;
+      }
+catch (      GridTopologyException e) {
+        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
+ else         U.warn(log,"Failed to remove item, will retry [err=" + e + ", idx="+ rmvIdx+ ']');
       }
     }
-,cctx);
   }
  catch (  GridException e) {
     throw new GridRuntimeException(e);

@@ -1,0 +1,58 @@
+{
+  final int BATCH_SIZE=10;
+  final long cleanupFreq=cctx.config().getCacheQueueCleanupFrequency();
+  while (!isCancelled()) {
+    try {
+synchronized (this) {
+        long endWait=U.currentTimeMillis() + cleanupFreq;
+        long waitTime;
+        while (!hasJob && (waitTime=endWait - U.currentTimeMillis()) > 0)         wait(waitTime);
+        hasJob=false;
+      }
+      GridCacheAdapter cache=cctx.cache();
+      Map<GridUuid,GridCacheQueueHeader> aliveQueues=new GridLeanMap<>();
+      Collection<GridUuid> deadQueues=new GridLeanSet<>();
+      Collection<GridCacheQueueItemKey> rmvKeys=null;
+      int cnt=0;
+      Set<GridCacheEntryEx<Object,Object>> entries=cache.map().allEntries0();
+      for (      GridCacheEntryEx<Object,Object> entry : entries) {
+        if (!processEntry(entry))         continue;
+        GridCacheQueueItemKey key=(GridCacheQueueItemKey)entry.key();
+        boolean rmv;
+        if (deadQueues.contains(key.queueId()))         rmv=true;
+ else         if (aliveQueues.containsKey(key.queueId()))         rmv=removeItem(aliveQueues.get(key.queueId()),key);
+ else {
+          GridCacheQueueHeader header=(GridCacheQueueHeader)cache.get(new GridCacheQueueHeaderKey(key.queueName()));
+          if (header == null || !header.id().equals(key.queueId())) {
+            deadQueues.add(key.queueId());
+            rmv=true;
+          }
+ else {
+            aliveQueues.put(header.id(),header);
+            rmv=removeItem(header,key);
+          }
+        }
+        if (rmv) {
+          if (log.isDebugEnabled())           log.debug("Found orphaned queue item [key=" + key + ", cache="+ cctx.name()+ ']');
+          if (rmvKeys == null)           rmvKeys=new ArrayList<>(BATCH_SIZE);
+          rmvKeys.add(key);
+          if (rmvKeys.size() == BATCH_SIZE) {
+            cache.removeAll(rmvKeys);
+            rmvKeys.clear();
+          }
+        }
+        if (++cnt % QUEUE_CLEANUP_THROTTLE_ITEMS == 0) {
+          if (isCancelled())           return;
+          U.sleep(QUEUE_CLEANUP_THROTTLE_DELAY);
+        }
+      }
+      if (!F.isEmpty(rmvKeys))       cache.removeAll(rmvKeys);
+    }
+ catch (    GridInterruptedException ignore) {
+      return;
+    }
+catch (    GridException e) {
+      U.error(log,"Failed to cleanup orphaned queue items [cache=" + cctx.name() + ']',e);
+    }
+  }
+}

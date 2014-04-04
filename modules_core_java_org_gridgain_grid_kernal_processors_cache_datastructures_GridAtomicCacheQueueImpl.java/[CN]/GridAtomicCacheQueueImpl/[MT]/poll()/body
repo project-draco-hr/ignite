@@ -1,29 +1,30 @@
 {
   try {
-    Long idx=transformHeader(new PollClosure(uuid));
-    if (idx == null)     return null;
-    checkRemoved(idx);
-    GridCacheQueueItemKey key=itemKey(idx);
-    int cnt=0;
-    long stop=0;
     while (true) {
-      try {
-        T data=(T)cache.remove(key,null);
-        if (data != null)         return data;
-        if (stop == 0)         stop=U.currentTimeMillis() + RETRY_TIMEOUT;
-        while (U.currentTimeMillis() < stop) {
-          data=(T)cache.remove(key,null);
+      Long idx=transformHeader(new PollClosure(id));
+      if (idx == null)       return null;
+      checkRemoved(idx);
+      GridCacheQueueItemKey key=itemKey(idx);
+      int cnt=0;
+      long stop=0;
+      while (true) {
+        try {
+          T data=(T)cache.remove(key,null);
           if (data != null)           return data;
+          if (stop == 0)           stop=U.currentTimeMillis() + RETRY_TIMEOUT;
+          while (U.currentTimeMillis() < stop) {
+            data=(T)cache.remove(key,null);
+            if (data != null)             return data;
+          }
+          break;
         }
-        break;
+ catch (        GridCachePartialUpdateException e) {
+          if (cnt++ == MAX_UPDATE_RETRIES)           throw e;
+ else           U.warn(log,"Failed to remove queue item, will retry [err=" + e + ']');
+        }
       }
- catch (      GridCachePartialUpdateException e) {
-        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
- else         U.warn(log,"Failed to remove queue item, will retry [err=" + e + ']');
-      }
+      U.warn(log,"Failed to get item, will retry poll [queue=" + queueName + ", idx="+ idx+ ']');
     }
-    U.warn(log,"Failed to get item, will retry poll [queue=" + queueName + ", idx="+ idx+ ']');
-    return poll();
   }
  catch (  GridException e) {
     throw new GridRuntimeException(e);
