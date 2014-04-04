@@ -1,0 +1,22 @@
+{
+  GridConfiguration cfg=super.getConfiguration(gridName);
+  GridTcpDiscoverySpi spi=new GridTcpDiscoverySpi();
+  spi.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(spi);
+  cfg.setIncludeProperties();
+  cfg.setRestEnabled(false);
+  cfg.setMarshaller(new GridOptimizedMarshaller(false));
+  if (useCache) {
+    GridCacheConfiguration cc=defaultCacheConfiguration();
+    cc.setCacheMode(mode);
+    cc.setAtomicityMode(TRANSACTIONAL);
+    cc.setDistributionMode(nearEnabled ? NEAR_PARTITIONED : PARTITIONED_ONLY);
+    cc.setWriteSynchronizationMode(FULL_SYNC);
+    cc.setEvictionPolicy(new GridCacheFifoEvictionPolicy(10000));
+    cc.setEvictSynchronized(false);
+    cc.setEvictNearSynchronized(false);
+    cfg.setCacheConfiguration(cc);
+  }
+ else   cfg.setCacheConfiguration();
+  return cfg;
+}

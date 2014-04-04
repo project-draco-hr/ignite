@@ -1,0 +1,22 @@
+{
+  GridTestThread thread=new GridTestThread(c,threadName + '-' + cnt.incrementAndGet()){
+    @Override protected void onError(    Throwable err){
+      errors.add(err);
+      if (interruptAll)       for (      Thread t : threads)       t.interrupt();
+    }
+    @Override protected void onFinished(){
+      super.onFinished();
+      startedThreads.remove(this);
+    }
+  }
+;
+  startedThreadsLock.enterBusy();
+  try {
+    startedThreads.add(thread);
+  }
+  finally {
+    startedThreadsLock.leaveBusy();
+  }
+  threads.add(thread);
+  return thread;
+}

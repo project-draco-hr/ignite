@@ -1,0 +1,52 @@
+{
+  final Iterator<Map.Entry<GridSwapKey,byte[]>> it=data.entrySet().iterator();
+  return new GridSpiCloseableIterator<Map.Entry<byte[],byte[]>>(){
+    /** 
+ * Next entry in this iterator. 
+ */
+    private Map.Entry<GridSwapKey,byte[]> next;
+    private Map.Entry<GridSwapKey,byte[]> cur;
+{
+      advance();
+    }
+    @Override public void close(){
+    }
+    @Override public boolean hasNext(){
+      return next != null;
+    }
+    @Override public Map.Entry<byte[],byte[]> next(){
+      if (next == null)       throw new NoSuchElementException();
+      final Map.Entry<GridSwapKey,byte[]> ret=next;
+      cur=ret;
+      advance();
+      return new Map.Entry<byte[],byte[]>(){
+        @Override public byte[] getKey(){
+          return ret.getKey().keyBytes();
+        }
+        @Override public byte[] getValue(){
+          return ret.getValue();
+        }
+        @Override public byte[] setValue(        byte[] val){
+          return data.put(ret.getKey(),val);
+        }
+      }
+;
+    }
+    @Override public void remove(){
+      if (cur == null)       throw new IllegalStateException();
+      data.remove(cur.getKey(),cur.getValue());
+    }
+    private void advance(){
+      while (it.hasNext()) {
+        Map.Entry<GridSwapKey,byte[]> entry=it.next();
+        if (entry.getKey().partition() == part) {
+          cur=next;
+          next=entry;
+          return;
+        }
+      }
+      next=null;
+    }
+  }
+;
+}

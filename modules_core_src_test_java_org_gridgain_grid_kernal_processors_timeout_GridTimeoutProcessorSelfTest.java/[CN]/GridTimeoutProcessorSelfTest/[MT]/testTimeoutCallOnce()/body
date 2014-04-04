@@ -1,0 +1,45 @@
+{
+  ctx.timeout().addTimeoutObject(new GridTimeoutObject(){
+    /** 
+ * Timeout ID. 
+ */
+    private final GridUuid id=GridUuid.randomUuid();
+    /** 
+ * End time. 
+ */
+    private final long endTime=System.currentTimeMillis() + RAND.nextInt(500) + 100;
+    /** 
+ * Number of calls. 
+ */
+    private int cnt;
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public GridUuid timeoutId(){
+      return id;
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public long endTime(){
+      return endTime;
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void onTimeout(){
+      info("Received timeout callback: " + this);
+      if (++cnt > 1) {
+        fail("Timeout should not be called more than once: " + this);
+      }
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public String toString(){
+      return "Timeout test object [endTime=" + endTime + ", id="+ id+ ']';
+    }
+  }
+);
+  Thread.sleep(2000);
+}

@@ -1,0 +1,112 @@
+{
+  nearEnabled=near;
+  backups=shutdownCnt;
+  Collection<Integer> testKeys=generateTestKeys();
+  Grid master=startGrid(MASTER);
+  List<Grid> workers=new ArrayList<>(workerCnt);
+  for (int i=1; i <= workerCnt; i++)   workers.add(startGrid("worker" + i));
+  info("Master: " + master.localNode().id());
+  List<Grid> runningWorkers=new ArrayList<>(workerCnt);
+  for (int i=1; i <= workerCnt; i++) {
+    UUID id=workers.get(i - 1).localNode().id();
+    info(String.format("Worker%d: %s",i,id));
+    runningWorkers.add(workers.get(i - 1));
+  }
+  try {
+    master.mapKeyToNode(CACHE_NAME,"Dummy");
+    Map<UUID,Collection<Integer>> dataChunks=new HashMap<>();
+    int chunkCntr=0;
+    final AtomicBoolean jobFailed=new AtomicBoolean(false);
+    int failoverPushGap=0;
+    final CountDownLatch emptyLatch=new CountDownLatch(1);
+    final AtomicBoolean inputExhausted=new AtomicBoolean();
+    for (    Integer key : testKeys) {
+      GridNode mappedNode=master.mapKeyToNode(CACHE_NAME,key);
+      UUID nodeId=mappedNode.id();
+      Collection<Integer> data=dataChunks.get(nodeId);
+      if (data == null) {
+        data=new ArrayList<>(DATA_CHUNK_SIZE);
+        dataChunks.put(nodeId,data);
+      }
+      data.add(key);
+      if (data.size() == DATA_CHUNK_SIZE) {
+        chunkCntr++;
+        log.info("Pushing data chunk [chunkNo=" + chunkCntr + "]");
+        GridComputeTaskFuture<Void> fut=master.forPredicate(workerNodesFilter).compute().execute(new GridCachePutAllTask(nodeId,CACHE_NAME),data);
+        resQueue.put(fut);
+        fut.listenAsync(new CI1<GridFuture<Void>>(){
+          @Override public void apply(          GridFuture<Void> f){
+            GridComputeTaskFuture<?> taskFut=(GridComputeTaskFuture<?>)f;
+            try {
+              taskFut.get();
+            }
+ catch (            GridException e) {
+              log.error("Job failed",e);
+              jobFailed.set(true);
+            }
+            resQueue.remove(taskFut);
+            if (inputExhausted.get() && resQueue.isEmpty())             emptyLatch.countDown();
+          }
+        }
+);
+        data=new ArrayList<>(DATA_CHUNK_SIZE);
+        dataChunks.put(nodeId,data);
+        if (chunkCntr >= FAIL_ON_CHUNK_NO) {
+          if (workerCnt - runningWorkers.size() < shutdownCnt) {
+            if (failoverPushGap > 0)             failoverPushGap--;
+ else {
+              Grid victim=runningWorkers.remove(0);
+              info("Shutting down node: " + victim.localNode().id());
+              stopGrid(victim.name());
+              failoverPushGap=FAILOVER_PUSH_GAP;
+            }
+          }
+        }
+      }
+    }
+    for (    Map.Entry<UUID,Collection<Integer>> entry : dataChunks.entrySet()) {
+      GridComputeTaskFuture<Void> fut=master.forPredicate(workerNodesFilter).compute().execute(new GridCachePutAllTask(entry.getKey(),CACHE_NAME),entry.getValue());
+      resQueue.put(fut);
+      fut.listenAsync(new CI1<GridFuture<Void>>(){
+        @Override public void apply(        GridFuture<Void> f){
+          GridComputeTaskFuture<?> taskFut=(GridComputeTaskFuture<?>)f;
+          try {
+            taskFut.get();
+          }
+ catch (          GridException e) {
+            log.error("Job failed",e);
+            jobFailed.set(true);
+          }
+          resQueue.remove(taskFut);
+          if (inputExhausted.get() && resQueue.isEmpty())           emptyLatch.countDown();
+        }
+      }
+);
+    }
+    inputExhausted.set(true);
+    if (resQueue.isEmpty())     emptyLatch.countDown();
+    log.info("Waiting for empty queue...");
+    boolean failedWait=false;
+    if (!emptyLatch.await(AWAIT_TIMEOUT_SEC,TimeUnit.SECONDS)) {
+      info(">>> Failed to wait for queue to empty.");
+      failedWait=true;
+    }
+    if (!failedWait)     assertFalse("One or more jobs have failed.",jobFailed.get());
+    Collection<Integer> absentKeys=findAbsentKeys(runningWorkers.get(0),testKeys);
+    if (!failedWait && !absentKeys.isEmpty()) {
+      U.sleep(15000);
+      absentKeys=findAbsentKeys(runningWorkers.get(0),testKeys);
+    }
+    info(">>> Absent keys: " + absentKeys);
+    assertTrue(absentKeys.isEmpty());
+    int primaryCacheSize=0;
+    for (    Grid g : runningWorkers) {
+      info(">>>>> " + g.cache(CACHE_NAME).size());
+      primaryCacheSize+=g.cache(CACHE_NAME).primarySize();
+    }
+    assertEquals(TEST_MAP_SIZE,primaryCacheSize);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

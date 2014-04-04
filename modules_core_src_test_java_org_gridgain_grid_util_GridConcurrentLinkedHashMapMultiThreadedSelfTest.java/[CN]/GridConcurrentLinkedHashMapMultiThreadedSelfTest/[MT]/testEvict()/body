@@ -1,0 +1,36 @@
+{
+  info(">>> Test grid concurrent linked hash map...");
+  final int maxSize=1000;
+  ConcurrentLinkedHashMap<Integer,String> linkedMap=new ConcurrentLinkedHashMap<>(32,0.75f,64,maxSize);
+  int keyCnt=1000000;
+  int diff=10;
+  Map<String,LinkedList<Integer>> map=putMultiThreaded(linkedMap,10,keyCnt,maxSize);
+  LinkedList<Integer> keys=new LinkedList<>(linkedMap.keySet());
+  assertTrue("Invalid key set size: " + keys.size(),U.safeAbs(maxSize - keys.size()) <= diff);
+  assertTrue("Invalid map size: " + linkedMap.size(),U.safeAbs(maxSize - linkedMap.size()) <= diff);
+  assertTrue("Invalid map sizex: " + linkedMap.sizex(),U.safeAbs(maxSize - linkedMap.sizex()) <= diff);
+  assertTrue("Invalid map queue size: " + linkedMap.queue().sizex(),U.safeAbs(maxSize - linkedMap.queue().sizex()) <= diff);
+  while (!keys.isEmpty()) {
+    boolean found=false;
+    int key=keys.removeLast();
+    for (    LinkedList<Integer> threadKeys : map.values()) {
+      if (threadKeys.getLast() == key) {
+        threadKeys.removeLast();
+        found=true;
+        break;
+      }
+    }
+    assertTrue("Key was not found on the top of any thread: " + key,found);
+  }
+  int min=Integer.MAX_VALUE;
+  int max=0;
+  int actKeyCnt=0;
+  for (  int key : linkedMap.keySet()) {
+    min=Math.min(min,key);
+    max=Math.max(max,key);
+    actKeyCnt++;
+  }
+  info("Max: " + max);
+  info("Min: " + min);
+  assertTrue("Invalid keys count: " + actKeyCnt,U.safeAbs(maxSize - actKeyCnt) <= diff);
+}

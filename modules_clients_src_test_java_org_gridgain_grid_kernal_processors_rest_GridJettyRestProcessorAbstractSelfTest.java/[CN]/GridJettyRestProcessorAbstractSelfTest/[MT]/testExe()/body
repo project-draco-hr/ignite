@@ -1,0 +1,29 @@
+{
+  String ret=content(F.asMap("cmd","exe"));
+  assertNotNull(ret);
+  assertTrue(!ret.isEmpty());
+  info("Exe command result: " + ret);
+  jsonEquals(ret,pattern("null",false));
+  ret=content(F.asMap("cmd","exe","name","UNKNOWN_TASK"));
+  assertNotNull(ret);
+  assertTrue(!ret.isEmpty());
+  info("Exe command result: " + ret);
+  jsonEquals(ret,pattern("null",false));
+  grid(0).compute().localDeployTask(TestTask1.class,TestTask1.class.getClassLoader());
+  grid(0).compute().localDeployTask(TestTask2.class,TestTask2.class.getClassLoader());
+  ret=content(F.asMap("cmd","exe","name",TestTask1.class.getName()));
+  assertNotNull(ret);
+  assertTrue(!ret.isEmpty());
+  info("Exe command result: " + ret);
+  jsonEquals(ret,pattern("\\{.+\\}",true));
+  ret=content(F.asMap("cmd","exe","name",TestTask2.class.getName()));
+  assertNotNull(ret);
+  assertTrue(!ret.isEmpty());
+  info("Exe command result: " + ret);
+  jsonEquals(ret,pattern("\\{.+" + TestTask2.RES + ".+\\}",true));
+  ret=content(F.asMap("cmd","res"));
+  assertNotNull(ret);
+  assertTrue(!ret.isEmpty());
+  info("Exe command result: " + ret);
+  jsonEquals(ret,pattern("null",false));
+}

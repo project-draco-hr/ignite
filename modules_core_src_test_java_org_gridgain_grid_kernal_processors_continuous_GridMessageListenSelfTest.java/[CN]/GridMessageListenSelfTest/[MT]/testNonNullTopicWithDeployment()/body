@@ -1,0 +1,14 @@
+{
+  Class<?> topicCls=getExternalClassLoader().loadClass(TOPIC_CLS_NAME);
+  Class<?> lsnrCls=getExternalClassLoader().loadClass(LSNR_CLS_NAME);
+  Object topic=topicCls.newInstance();
+  grid(0).message().remoteListen(topic,(GridBiPredicate<UUID,Object>)lsnrCls.newInstance()).get();
+  send(topic);
+  boolean s=GridTestUtils.waitForCondition(new PA(){
+    @Override public boolean apply(){
+      return checkDeployedListeners(GRID_CNT);
+    }
+  }
+,2000);
+  assertTrue(s);
+}
