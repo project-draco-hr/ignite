@@ -1,0 +1,60 @@
+{
+  try {
+    grid(0).events().stopRemoteListen(null);
+  }
+ catch (  NullPointerException ignored) {
+  }
+  grid(0).events().stopRemoteListen(UUID.randomUUID());
+  UUID consumeId=null;
+  try {
+    consumeId=grid(0).events().remoteListen(new P2<UUID,GridDiscoveryEvent>(){
+      @Override public boolean apply(      UUID uuid,      GridDiscoveryEvent evt){
+        return false;
+      }
+    }
+,new P1<GridDiscoveryEvent>(){
+      @Override public boolean apply(      GridDiscoveryEvent e){
+        return false;
+      }
+    }
+,EVTS_DISCOVERY).get();
+    assertNotNull(consumeId);
+  }
+  finally {
+    grid(0).events().stopRemoteListen(consumeId).get();
+  }
+  try {
+    consumeId=grid(0).events().remoteListen(new P2<UUID,GridDiscoveryEvent>(){
+      @Override public boolean apply(      UUID uuid,      GridDiscoveryEvent evt){
+        return false;
+      }
+    }
+,new P1<GridDiscoveryEvent>(){
+      @Override public boolean apply(      GridDiscoveryEvent e){
+        return false;
+      }
+    }
+).get();
+    assertNotNull(consumeId);
+  }
+  finally {
+    grid(0).events().stopRemoteListen(consumeId).get();
+  }
+  try {
+    consumeId=grid(0).events().remoteListen(new P2<UUID,GridEvent>(){
+      @Override public boolean apply(      UUID uuid,      GridEvent evt){
+        return false;
+      }
+    }
+,new P1<GridEvent>(){
+      @Override public boolean apply(      GridEvent e){
+        return false;
+      }
+    }
+).get();
+    assertNotNull(consumeId);
+  }
+  finally {
+    grid(0).events().stopRemoteListen(consumeId).get();
+  }
+}

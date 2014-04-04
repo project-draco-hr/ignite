@@ -1,0 +1,20 @@
+{
+  GridConfiguration c=super.getConfiguration(gridName);
+  GridTcpDiscoverySpi disco=new GridTcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  c.setDiscoverySpi(disco);
+  c.setDeploymentMode(CONTINUOUS);
+  GridCacheConfiguration cc=defaultCacheConfiguration();
+  cc.setName(CACHE_NAME);
+  cc.setCacheMode(PARTITIONED);
+  cc.setWriteSynchronizationMode(FULL_SYNC);
+  cc.setStartSize(20);
+  cc.setPreloadMode(preloadMode);
+  cc.setPreloadBatchSize(preloadBatchSize);
+  cc.setAffinity(new GridCacheConsistentHashAffinityFunction(false,partitions));
+  cc.setBackups(backups);
+  cc.setAtomicityMode(TRANSACTIONAL);
+  cc.setDistributionMode(nearEnabled() ? NEAR_PARTITIONED : PARTITIONED_ONLY);
+  c.setCacheConfiguration(cc);
+  return c;
+}

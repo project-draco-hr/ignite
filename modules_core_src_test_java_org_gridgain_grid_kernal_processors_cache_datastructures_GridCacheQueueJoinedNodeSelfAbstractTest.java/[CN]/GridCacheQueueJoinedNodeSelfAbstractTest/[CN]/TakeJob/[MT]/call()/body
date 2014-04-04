@@ -1,0 +1,21 @@
+{
+  assertNotNull(grid);
+  log.info("Running job [node=" + grid.localNode().id() + ", job="+ getClass().getSimpleName()+ "]");
+  Integer lastPolled=null;
+  try {
+    GridCacheQueue<Integer> queue=grid.cache(null).dataStructures().queue(queueName,0,true,true);
+    assertNotNull(queue);
+    for (int i=0; i < maxTakeCnt; i++) {
+      lastPolled=queue.take();
+      takeLatch.countDown();
+    }
+  }
+ catch (  GridInterruptedException e) {
+    log.info("Cancelling job due to interruption: " + e.getMessage());
+  }
+catch (  GridException e) {
+    error("Failed to get value from the queue",e);
+  }
+  log.info("TakeJob finished, last polled value: " + lastPolled);
+  return lastPolled;
+}
