@@ -1,0 +1,22 @@
+{
+  inclEvtTypes=new int[]{EVT_TASK_STARTED,EVT_TASK_FINISHED};
+  try {
+    Grid g=startGrid();
+    final AtomicInteger cnt=new AtomicInteger();
+    g.events().localListen(new GridPredicate<GridEvent>(){
+      @Override public boolean apply(      GridEvent evt){
+        cnt.incrementAndGet();
+        return true;
+      }
+    }
+,EVT_TASK_STARTED,EVT_TASK_FINISHED,EVT_JOB_STARTED);
+    g.compute().run(F.noop()).get();
+    assertEquals(2,cnt.get());
+    g.events().enableLocal(EVT_TASK_FINISHED,EVT_JOB_STARTED);
+    g.compute().run(F.noop()).get();
+    assertEquals(5,cnt.get());
+  }
+  finally {
+    stopAllGrids();
+  }
+}

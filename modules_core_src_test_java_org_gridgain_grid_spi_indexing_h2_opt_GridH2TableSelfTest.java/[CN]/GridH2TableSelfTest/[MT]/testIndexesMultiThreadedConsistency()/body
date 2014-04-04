@@ -1,0 +1,51 @@
+{
+  final int threads=19;
+  final int iterations=1500;
+  multithreaded(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      Random rnd=new Random();
+      PreparedStatement ps1=null;
+      for (int i=0; i < iterations; i++) {
+        UUID id=UUID.randomUUID();
+        int x=rnd.nextInt(50);
+        long t=System.currentTimeMillis();
+        GridH2Row row=row(id,t,rnd.nextBoolean() ? id.toString() : UUID.randomUUID().toString(),x);
+        assertTrue(tbl.doUpdate(row,false));
+        if (rnd.nextInt(100) == 0) {
+          tbl.lock(null,false,false);
+          long cnt=0;
+          try {
+            ArrayList<Index> idxs=tbl.getIndexes();
+            Set<Row> rowSet=checkIndexesConsistent(idxs,null);
+            checkOrdered(idxs);
+            checkIndexesConsistent(idxs,rowSet);
+            cnt=idxs.get(0).getRowCount(null);
+          }
+  finally {
+            tbl.unlock(null);
+          }
+          ResultSet rs=conn.createStatement().executeQuery("select count(*) from t");
+          assertTrue(rs.next());
+          int cnt2=rs.getInt(1);
+          rs.close();
+          assertTrue(cnt2 + " must be >= " + cnt,cnt2 >= cnt);
+          assertTrue(cnt2 <= threads * iterations);
+          rs=conn.createStatement().executeQuery("select * from t where id = '" + id.toString() + "'");
+          assertTrue(rs.next());
+          assertFalse(rs.next());
+          rs.close();
+          if (ps1 == null)           ps1=conn.prepareStatement("select id from t where x = ? order by t desc");
+          ps1.setInt(1,x);
+          rs=ps1.executeQuery();
+          for (; ; ) {
+            assertTrue(rs.next());
+            if (rs.getObject(1).equals(id))             break;
+          }
+          rs.close();
+        }
+      }
+      return null;
+    }
+  }
+,threads);
+}

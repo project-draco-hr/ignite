@@ -1,0 +1,29 @@
+{
+  final Iterator<Map.Entry<GridSwapKey,byte[]>> it=data.entrySet().iterator();
+  return new GridSpiCloseableIterator<Map.Entry<byte[],byte[]>>(){
+    @Override public void close(){
+    }
+    @Override public boolean hasNext(){
+      return it.hasNext();
+    }
+    @Override public Map.Entry<byte[],byte[]> next(){
+      final Map.Entry<GridSwapKey,byte[]> next=it.next();
+      return new Map.Entry<byte[],byte[]>(){
+        @Override public byte[] getKey(){
+          return next.getKey().keyBytes();
+        }
+        @Override public byte[] getValue(){
+          return next.getValue();
+        }
+        @Override public byte[] setValue(        byte[] val){
+          return data.put(next.getKey(),val);
+        }
+      }
+;
+    }
+    @Override public void remove(){
+      it.remove();
+    }
+  }
+;
+}

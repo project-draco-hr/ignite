@@ -1,0 +1,18 @@
+{
+  initStore(2);
+  Set<Integer> exp;
+  try {
+    exp=runPutGetRemoveMultithreaded(10,10);
+  }
+  finally {
+    shutdownStore();
+  }
+  Map<Integer,String> map=delegate.getMap();
+  Collection<Integer> extra=new HashSet<>(map.keySet());
+  extra.removeAll(exp);
+  assertTrue("The underlying store contains extra keys: " + extra,extra.isEmpty());
+  Collection<Integer> missing=new HashSet<>(exp);
+  missing.removeAll(map.keySet());
+  assertTrue("Missing keys in the underlying store: " + missing,missing.isEmpty());
+  for (  Integer key : exp)   assertEquals("Invalid value for key " + key,"val" + key,map.get(key));
+}

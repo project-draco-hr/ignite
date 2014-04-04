@@ -1,0 +1,15 @@
+{
+  if (!cctx.preloadEnabled())   return;
+  if (!cctx.isNear()) {
+    try {
+      GridDhtLocalPartition<K,V> part=cctx.dht().topology().localPartition(p,-1,false);
+      if (part != null) {
+        part.unlock();
+        part.release();
+      }
+    }
+ catch (    GridDhtInvalidPartitionException ignored) {
+      if (log.isDebugEnabled())       log.debug("Partition does not belong to local node [part=" + p + ", nodeId"+ cctx.localNode().id()+ ']');
+    }
+  }
+}

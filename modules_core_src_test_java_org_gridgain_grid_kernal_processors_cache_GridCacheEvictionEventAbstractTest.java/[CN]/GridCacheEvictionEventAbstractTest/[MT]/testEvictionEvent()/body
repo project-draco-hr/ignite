@@ -1,0 +1,19 @@
+{
+  Grid g=grid();
+  final CountDownLatch latch=new CountDownLatch(1);
+  final AtomicReference<String> oldVal=new AtomicReference<>();
+  g.events().localListen(new GridPredicate<GridEvent>(){
+    @Override public boolean apply(    GridEvent evt){
+      GridCacheEvent e=(GridCacheEvent)evt;
+      oldVal.set((String)e.oldValue());
+      latch.countDown();
+      return true;
+    }
+  }
+,GridEventType.EVT_CACHE_ENTRY_EVICTED);
+  GridCache<String,String> c=g.cache(null);
+  c.put("1","val1");
+  c.evict("1");
+  latch.await();
+  assertNotNull(oldVal.get());
+}

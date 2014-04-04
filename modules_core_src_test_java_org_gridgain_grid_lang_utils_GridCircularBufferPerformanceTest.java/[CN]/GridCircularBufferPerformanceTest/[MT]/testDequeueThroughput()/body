@@ -1,0 +1,28 @@
+{
+  final ConcurrentLinkedDeque8<Integer> buf=new ConcurrentLinkedDeque8<>();
+  final LongAdder cnt=new LongAdder();
+  final AtomicBoolean finished=new AtomicBoolean();
+  multithreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      while (!finished.get()) {
+        U.sleep(5000);
+        info("Ops/sec: " + cnt.sumThenReset() / 5);
+      }
+      return null;
+    }
+  }
+,1);
+  final int size=256 * 1024;
+  multithreaded(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      while (!finished.get()) {
+        buf.add(1);
+        if (buf.sizex() > size)         buf.poll();
+        cnt.increment();
+      }
+      return null;
+    }
+  }
+,8);
+  info("Buffer: " + buf);
+}

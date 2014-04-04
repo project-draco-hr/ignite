@@ -1,0 +1,19 @@
+{
+  Grid grid=grid(0);
+  final Collection<Integer> keys=nearKeys(grid);
+  GridFuture<?> fut=multithreadedAsync(new Runnable(){
+    @Override public void run(){
+      GridCache<Object,Object> c=cache(0);
+      try {
+        GridCacheTx tx=c.txStart(mode,REPEATABLE_READ);
+        for (        Integer key : keys)         c.put(key,"val" + key);
+        if (prepare)         U.<GridCacheTxEx>field(tx,"tx").prepare();
+      }
+ catch (      GridException e) {
+        info("Failed to put keys to cache: " + e.getMessage());
+      }
+    }
+  }
+,1);
+  fut.get();
+}

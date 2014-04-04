@@ -1,0 +1,16 @@
+{
+  AWSCredentials cred=new BasicAWSCredentials(GridTestProperties.getProperty("amazon.access.key"),GridTestProperties.getProperty("amazon.secret.key"));
+  AmazonS3 s3=new AmazonS3Client(cred);
+  String bucketName=GridS3CheckpointSpi.BUCKET_NAME_PREFIX + "test";
+  try {
+    ObjectListing list=s3.listObjects(bucketName);
+    while (true) {
+      for (      S3ObjectSummary sum : list.getObjectSummaries())       s3.deleteObject(bucketName,sum.getKey());
+      if (list.isTruncated())       list=s3.listNextBatchOfObjects(list);
+ else       break;
+    }
+  }
+ catch (  AmazonClientException e) {
+    throw new GridSpiException("Failed to read checkpoint bucket: " + bucketName,e);
+  }
+}

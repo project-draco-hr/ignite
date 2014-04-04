@@ -1,0 +1,18 @@
+{
+  if (!rw.tryReadLock())   return;
+  try {
+    timeSyncHist.put(snapshot.version(),snapshot);
+    for (    GridNode n : top.topologyNodes()) {
+      GridClockDeltaSnapshotMessage msg=new GridClockDeltaSnapshotMessage(snapshot.version(),snapshot.deltas());
+      try {
+        ctx.io().send(n.id(),TOPIC_TIME_SYNC,msg,SYSTEM_POOL);
+      }
+ catch (      GridException e) {
+        U.warn(log,"Failed to send time sync snapshot to remote node (did not leave grid?) " + "[nodeId=" + n.id() + ", msg="+ msg+ ", err="+ e.getMessage()+ ']');
+      }
+    }
+  }
+  finally {
+    rw.readUnlock();
+  }
+}
