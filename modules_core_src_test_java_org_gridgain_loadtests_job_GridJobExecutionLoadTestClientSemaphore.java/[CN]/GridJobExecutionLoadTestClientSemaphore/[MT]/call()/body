@@ -1,0 +1,16 @@
+{
+  final GridInClosure<GridFuture<?>> lsnr=new CI1<GridFuture<?>>(){
+    @Override public void apply(    GridFuture<?> t){
+      tasksSem.release();
+    }
+  }
+;
+  GridProjection rmts=g.forRemotes();
+  while (!finish) {
+    tasksSem.acquire();
+    GridComputeTaskFuture<Object> f=rmts.compute().execute(GridJobExecutionLoadTestTask.class,null);
+    f.listenAsync(lsnr);
+    txCnt.increment();
+  }
+  return null;
+}

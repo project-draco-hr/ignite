@@ -1,0 +1,16 @@
+{
+  if (result.getException() != null)   throw result.getException();
+  if (log.isInfoEnabled())   log.info("Set attribute 'testName'.");
+  taskSes.setAttribute("testName","testVal");
+  startSignal[taskNum].countDown();
+  if (received.size() == SPLIT_COUNT) {
+    try {
+      if (!stopSignal[taskNum].await(WAIT_TIME,TimeUnit.MILLISECONDS))       fail();
+    }
+ catch (    InterruptedException e) {
+      if (log.isInfoEnabled())       log.info("Task got interrupted: " + e);
+      return GridComputeJobResultPolicy.REDUCE;
+    }
+  }
+  return received.size() == SPLIT_COUNT ? GridComputeJobResultPolicy.REDUCE : GridComputeJobResultPolicy.WAIT;
+}

@@ -1,0 +1,64 @@
+{
+  reject=true;
+  final CyclicBarrier barrier=new CyclicBarrier(THREAD_CNT);
+  final Random rnd=new Random();
+  final GridNode from=randomNode(rnd);
+  GridNode tmp;
+  do {
+    tmp=randomNode(rnd);
+  }
+ while (tmp.id().equals(from.id()));
+  final GridNode to=tmp;
+  final int iterationCnt=1000;
+  final AtomicInteger threadId=new AtomicInteger();
+  final int interval=50;
+  GridFuture<?> fut=multithreadedAsync(new Runnable(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void run(){
+      try {
+        int id=threadId.getAndIncrement();
+        for (int i=0; i < iterationCnt; i++) {
+          if (id == 0 && (i % 50) == 0)           info(">>> Running iteration " + i);
+          try {
+            for (            GridNode node : nodes) {
+              GridTcpCommunicationMessageAdapter msg=new GridTestMessage(from.id(),msgId.getAndIncrement(),0);
+              spis.get(from.id()).sendMessage(node,msg);
+            }
+          }
+ catch (          GridException e) {
+            log.warning(">>> Oops, unable to send message (safe to ignore).",e);
+          }
+          barrier.await();
+        }
+      }
+ catch (      InterruptedException ignored) {
+        Thread.currentThread().interrupt();
+      }
+catch (      BrokenBarrierException e) {
+        info("Wait on barrier failed: " + e);
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+,THREAD_CNT,"message-sender");
+  final AtomicBoolean run=new AtomicBoolean(true);
+  GridFuture<?> fut2=multithreadedAsync(new Runnable(){
+    @Override public void run(){
+      try {
+        while (run.get() && !Thread.currentThread().isInterrupted()) {
+          U.sleep(interval * 3 / 2);
+          ((GridTcpCommunicationSpi)spis.get(from.id())).onNodeLeft(to.id());
+        }
+      }
+ catch (      GridInterruptedException ignored) {
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+,1);
+  fut.get();
+  run.set(false);
+  fut2.get();
+}

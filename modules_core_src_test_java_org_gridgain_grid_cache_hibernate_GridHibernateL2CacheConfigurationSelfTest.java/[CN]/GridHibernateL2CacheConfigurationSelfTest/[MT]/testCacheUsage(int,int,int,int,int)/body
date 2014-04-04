@@ -1,0 +1,51 @@
+{
+  SessionFactory sesFactory=startHibernate(getTestGridName(0));
+  try {
+    Session ses=sesFactory.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      ses.save(new Entity1());
+      ses.save(new Entity2());
+      ses.save(new Entity3());
+      ses.save(new Entity4());
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    ses=sesFactory.openSession();
+    try {
+      List<Entity1> list1=ses.createCriteria(ENTITY1_NAME).list();
+      assertEquals(1,list1.size());
+      for (      Entity1 e : list1) {
+        ses.load(ENTITY1_NAME,e.getId());
+        assertNotNull(e.getId());
+      }
+      List<Entity2> list2=ses.createCriteria(ENTITY2_NAME).list();
+      assertEquals(1,list2.size());
+      for (      Entity2 e : list2)       assertNotNull(e.getId());
+      List<Entity3> list3=ses.createCriteria(ENTITY3_NAME).list();
+      assertEquals(1,list3.size());
+      for (      Entity3 e : list3)       assertNotNull(e.getId());
+      List<Entity4> list4=ses.createCriteria(ENTITY4_NAME).list();
+      assertEquals(1,list4.size());
+      for (      Entity4 e : list4)       assertNotNull(e.getId());
+    }
+  finally {
+      ses.close();
+    }
+    GridCache<Object,Object> cache1=grid(0).cache("cache1");
+    GridCache<Object,Object> cache2=grid(0).cache("cache2");
+    GridCache<Object,Object> cache3=grid(0).cache("cache3");
+    GridCache<Object,Object> cacheE3=grid(0).cache(ENTITY3_NAME);
+    GridCache<Object,Object> cacheE4=grid(0).cache(ENTITY4_NAME);
+    assertEquals("Unexpected entries: " + cache1.entrySet(),expCache1,cache1.size());
+    assertEquals("Unexpected entries: " + cache2.entrySet(),expCache2,cache2.size());
+    assertEquals("Unexpected entries: " + cache3.entrySet(),expCache3,cache3.size());
+    assertEquals("Unexpected entries: " + cacheE3.entrySet(),expCacheE3,cacheE3.size());
+    assertEquals("Unexpected entries: " + cacheE4.entrySet(),expCacheE4,cacheE4.size());
+  }
+  finally {
+    sesFactory.close();
+  }
+}

@@ -1,0 +1,32 @@
+{
+  final Kryo kryo=new Kryo();
+  final ByteArrayOutputStream out=new ByteArrayOutputStream();
+  GridInClosure<TestObject> writer=new CI1<TestObject>(){
+    @Override public void apply(    TestObject obj){
+      out.reset();
+      Output kryoOut=null;
+      try {
+        kryoOut=new Output(out);
+        kryo.writeObject(kryoOut,obj);
+      }
+  finally {
+        U.close(kryoOut,log);
+      }
+    }
+  }
+;
+  GridOutClosure<TestObject> reader=new CO<TestObject>(){
+    @Override public TestObject apply(){
+      Input kryoIn=null;
+      try {
+        kryoIn=new Input(new ByteArrayInputStream(out.toByteArray()));
+        return kryo.readObject(kryoIn,TestObject.class);
+      }
+  finally {
+        U.close(kryoIn,log);
+      }
+    }
+  }
+;
+  runTest("Kryo",writer,reader);
+}
