@@ -1,0 +1,17 @@
+{
+  HttpServer httpSrv;
+  InetSocketAddress addrToBind=new InetSocketAddress(HOSTNAME_TO_BIND_SRV,getAvailablePort());
+  if (httpsMode) {
+    HttpsServer httpsSrv=HttpsServer.create(addrToBind,0);
+    httpsSrv.setHttpsConfigurator(new HttpsConfigurator(GridTestUtils.sslContext()));
+    httpSrv=httpsSrv;
+  }
+ else {
+    httpSrv=HttpServer.create(addrToBind,0);
+  }
+  GridEmbeddedHttpServer embeddedHttpSrv=new GridEmbeddedHttpServer();
+  embeddedHttpSrv.proto=httpsMode ? "https" : "http";
+  embeddedHttpSrv.httpSrv=httpSrv;
+  embeddedHttpSrv.httpSrv.start();
+  return embeddedHttpSrv;
+}

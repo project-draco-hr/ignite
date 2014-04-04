@@ -1,0 +1,16 @@
+{
+  AtomicInteger keyGen=U.staticField(GridNioSessionMetaKey.class,"keyGen");
+  int initVal=keyGen.get();
+  int key=GridNioSessionMetaKey.nextUniqueKey();
+  assertTrue(key >= GridNioSessionMetaKey.values().length);
+  for (int i=++key; i < GridNioSessionMetaKey.MAX_KEYS_CNT + 10; i++) {
+    if (i < GridNioSessionMetaKey.MAX_KEYS_CNT)     assertEquals(i,GridNioSessionMetaKey.nextUniqueKey());
+ else     GridTestUtils.assertThrows(log,new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        return GridNioSessionMetaKey.nextUniqueKey();
+      }
+    }
+,IllegalStateException.class,"Maximum count of NIO session keys in system is limited by");
+  }
+  keyGen.set(initVal);
+}

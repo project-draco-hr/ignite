@@ -1,0 +1,51 @@
+{
+  Random rnd=new Random();
+  final GridKernal grid1=(GridKernal)grid(rnd.nextInt(NODES_CNT));
+  GridKernal grid2=(GridKernal)grid(NODES_CNT + rnd.nextInt(NODES_CNT));
+  assertEquals(NODES_CNT * 2,grid1.nodes().size());
+  assertEquals(NODES_CNT * 2,grid2.nodes().size());
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      grid1.cache(CACHE_NAME);
+      return null;
+    }
+  }
+,IllegalArgumentException.class,null);
+  assertNotNull(grid2.cache(CACHE_NAME));
+  GridAffinityProcessor affPrc1=grid1.context().affinity();
+  GridAffinityProcessor affPrc2=grid2.context().affinity();
+  ConcurrentMap<String,GridFuture<GridAffinityCache>> affMap1=GridTestUtils.getFieldValue(affPrc1,"affMap");
+  ConcurrentMap<String,GridFuture<GridAffinityCache>> affMap2=GridTestUtils.getFieldValue(affPrc2,"affMap");
+  assertEquals("Validate initial state of affinity cache.",Collections.emptyMap(),affMap1);
+  assertEquals("Validate initial state of affinity cache.",Collections.emptyMap(),affMap1);
+  Collection<Integer> keys=new ArrayList<>(1000);
+  for (int i=0; i < 1000; i++)   keys.add(i);
+  affPrc1.mapKeysToNodes(CACHE_NAME,keys);
+  assertEquals(1,affMap1.size());
+  assertEquals(0,affMap2.size());
+  GridFuture<GridAffinityCache> t1=affMap1.get(CACHE_NAME);
+  assertNotNull(t1);
+  assertNotNull(t1.get());
+  assertTrue(t1.isDone());
+  affPrc2.mapKeysToNodes(CACHE_NAME,keys);
+  assertEquals(1,affMap1.size());
+  assertEquals(1,affMap2.size());
+  GridFuture<GridAffinityCache> t2=affMap2.get(CACHE_NAME);
+  assertNotNull(t2);
+  assertNotNull(t2.get());
+  assertTrue(t2.isDone());
+  ConcurrentMap<Long,Object> affCache1=GridTestUtils.getFieldValue(t1.get(),"affCache");
+  ConcurrentMap<Long,Object> affCache2=GridTestUtils.getFieldValue(t2.get(),"affCache");
+  long topVer=grid1.context().discovery().topologyVersion();
+  assertNotNull(affCache1.get(topVer));
+  assertNotNull(affCache2.get(topVer));
+  withCache=true;
+  Grid last=startGrid(NODES_CNT * 2);
+  assertEquals(NODES_CNT * 2 + 1,last.nodes().size());
+  assertNull("Expect cache cleaned up on topology update: " + affCache1,affCache1.get(topVer));
+  assertNull("Expect cache cleaned up on topology update: " + affCache2,affCache2.get(topVer));
+  for (int i=NODES_CNT; i < NODES_CNT * 2 + 1; i++)   stopGrid(i);
+  long cleanUpDelay=GridTestUtils.<Long>getFieldValue(GridAffinityProcessor.class,"AFFINITY_MAP_CLEAN_UP_DELAY");
+  Thread.sleep(cleanUpDelay * 6 / 5);
+  assertEquals("All cache nodes leave topology.",Collections.emptyMap(),affMap1);
+}

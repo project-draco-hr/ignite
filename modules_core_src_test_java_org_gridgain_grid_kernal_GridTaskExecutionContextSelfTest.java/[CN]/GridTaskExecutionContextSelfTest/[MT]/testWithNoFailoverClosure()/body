@@ -1,0 +1,18 @@
+{
+  final Runnable r=new GridAbsClosureX(){
+    @Override public void applyx() throws GridException {
+      CNT.incrementAndGet();
+      throw new GridComputeExecutionRejectedException("Expected error.");
+    }
+  }
+;
+  final Grid g=grid(0);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      g.compute().withNoFailover().run(r).get();
+      return null;
+    }
+  }
+,GridComputeExecutionRejectedException.class,"Expected error.");
+  assertEquals(1,CNT.get());
+}

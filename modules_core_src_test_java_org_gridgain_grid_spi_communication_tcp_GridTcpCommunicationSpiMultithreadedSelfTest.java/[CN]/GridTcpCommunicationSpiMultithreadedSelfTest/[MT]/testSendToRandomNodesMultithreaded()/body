@@ -1,0 +1,53 @@
+{
+  info(">>> Starting send to random nodes multithreaded test. <<<");
+  reject=false;
+  assertEquals("Invalid listener count",getSpiCount(),lsnrs.size());
+  final ConcurrentMap<UUID,ConcurrentLinkedDeque8<GridTestMessage>> msgs=new ConcurrentHashMap<>();
+  final int iterationCnt=5000;
+  long start=System.currentTimeMillis();
+  GridFuture<?> fut=multithreadedAsync(new Runnable(){
+    /** 
+ * Randomizer. 
+ */
+    private Random rnd=new Random();
+    @Override public void run(){
+      try {
+        for (int i=0; i < iterationCnt; i++) {
+          GridNode from=randomNode(rnd);
+          GridNode to=randomNode(rnd);
+          GridTestMessage msg=new GridTestMessage(from.id(),msgId.getAndIncrement(),0);
+          spis.get(from.id()).sendMessage(to,msg);
+          ConcurrentLinkedDeque8<GridTestMessage> queue=msgs.get(to.id());
+          if (queue == null) {
+            ConcurrentLinkedDeque8<GridTestMessage> old=msgs.putIfAbsent(to.id(),queue=new ConcurrentLinkedDeque8<>());
+            if (old != null)             queue=old;
+          }
+          queue.offer(msg);
+        }
+      }
+ catch (      GridException e) {
+        log().error("Unable to send message.",e);
+        fail("Unable to send message: " + e.getMessage());
+      }
+    }
+  }
+,getSpiCount() * 3,"message-sender");
+  fut.get();
+  info(">>> Sent all messages in " + (System.currentTimeMillis() - start) + " milliseconds");
+  assertEquals("Invalid count of messages was sent",iterationCnt * getSpiCount() * 3,msgId.get());
+  U.sleep(IDLE_CONN_TIMEOUT * 2);
+  for (  Entry<UUID,ConcurrentLinkedDeque8<GridTestMessage>> e : msgs.entrySet()) {
+    UUID to=e.getKey();
+    ConcurrentLinkedDeque8<GridTestMessage> sent=e.getValue();
+    MessageListener lsnr=lsnrs.get(to);
+    ConcurrentLinkedDeque8<GridTestMessage> rcvd=lsnr.receivedMsgs();
+    info(">>> Node " + to + " received "+ lsnr.remoteMessageCount()+ " remote messages of "+ rcvd.sizex()+ " total");
+    for (int i=0; i < 3 && sent.sizex() != rcvd.sizex(); i++) {
+      info("Check failed for node [node=" + to + ", sent="+ sent.sizex()+ ", rcvd="+ rcvd.sizex()+ ']');
+      U.sleep(2000);
+    }
+    assertEquals("Sent and received messages count mismatch.",sent.sizex(),rcvd.sizex());
+    assertTrue("Listener did not receive some messages: " + lsnr,rcvd.containsAll(sent));
+    assertTrue("Listener received extra messages: " + lsnr,sent.containsAll(rcvd));
+  }
+}
