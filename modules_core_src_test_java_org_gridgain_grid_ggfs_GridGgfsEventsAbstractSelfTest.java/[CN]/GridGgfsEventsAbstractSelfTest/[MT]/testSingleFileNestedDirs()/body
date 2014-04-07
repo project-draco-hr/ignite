@@ -1,0 +1,50 @@
+{
+  final List<GridEvent> evtList=new ArrayList<>();
+  final int evtsCnt=6 + 1 + 1;
+  final CountDownLatch latch=new CountDownLatch(evtsCnt);
+  grid(1).events().localListen(lsnr=new GridPredicate<GridEvent>(){
+    @Override public boolean apply(    GridEvent evt){
+      log.info("Received event [evt=" + evt + ']');
+      evtList.add(evt);
+      latch.countDown();
+      return true;
+    }
+  }
+,EVTS_GGFS);
+  GridGgfsPath dir=new GridGgfsPath("/dir1/dir2/dir3");
+  GridGgfsPath file=new GridGgfsPath(dir,"file1");
+  ggfs.create(file,true).close();
+  GridGgfsPath mvFile=new GridGgfsPath(dir,"mvFile1");
+  ggfs.rename(file,mvFile);
+  assertTrue(ggfs.delete(dir.parent(),true));
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+  assertEquals(evtsCnt,evtList.size());
+  GridGgfsEvent evt=(GridGgfsEvent)evtList.get(0);
+  assertEquals(EVT_GGFS_DIR_CREATED,evt.type());
+  assertEquals(new GridGgfsPath("/dir1"),evt.path());
+  assertTrue(evt.isDirectory());
+  evt=(GridGgfsEvent)evtList.get(1);
+  assertEquals(EVT_GGFS_DIR_CREATED,evt.type());
+  assertEquals(new GridGgfsPath("/dir1/dir2"),evt.path());
+  evt=(GridGgfsEvent)evtList.get(2);
+  assertEquals(EVT_GGFS_DIR_CREATED,evt.type());
+  assertEquals(new GridGgfsPath("/dir1/dir2/dir3"),evt.path());
+  evt=(GridGgfsEvent)evtList.get(3);
+  assertEquals(EVT_GGFS_FILE_CREATED,evt.type());
+  assertEquals(new GridGgfsPath("/dir1/dir2/dir3/file1"),evt.path());
+  assertFalse(evt.isDirectory());
+  evt=(GridGgfsEvent)evtList.get(4);
+  assertEquals(EVT_GGFS_FILE_OPENED_WRITE,evt.type());
+  assertEquals(new GridGgfsPath("/dir1/dir2/dir3/file1"),evt.path());
+  evt=(GridGgfsEvent)evtList.get(5);
+  assertEquals(EVT_GGFS_FILE_CLOSED_WRITE,evt.type());
+  assertEquals(new GridGgfsPath("/dir1/dir2/dir3/file1"),evt.path());
+  assertEquals(0,evt.dataSize());
+  evt=(GridGgfsEvent)evtList.get(6);
+  assertEquals(EVT_GGFS_FILE_RENAMED,evt.type());
+  assertEquals(new GridGgfsPath("/dir1/dir2/dir3/file1"),evt.path());
+  assertEquals(new GridGgfsPath("/dir1/dir2/dir3/mvFile1"),evt.newPath());
+  evt=(GridGgfsEvent)evtList.get(7);
+  assertEquals(EVT_GGFS_DIR_DELETED,evt.type());
+  assertEquals(new GridGgfsPath("/dir1/dir2"),evt.path());
+}

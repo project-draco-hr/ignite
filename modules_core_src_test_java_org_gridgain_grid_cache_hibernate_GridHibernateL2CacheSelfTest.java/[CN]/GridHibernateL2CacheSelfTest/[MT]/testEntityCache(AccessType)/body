@@ -1,0 +1,87 @@
+{
+  createSessionFactories(accessType);
+  Map<Integer,String> idToName=new HashMap<>();
+  try {
+    Session ses=sesFactory1.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      for (int i=0; i < 2; i++) {
+        String name="name-" + i;
+        ses.save(new Entity(i,name));
+        idToName.put(i,name);
+      }
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    assertEntityCache(ENTITY_NAME,sesFactory2,idToName,100);
+    assertEntityCache(ENTITY_NAME,sesFactory1,idToName,100);
+    if (accessType == AccessType.READ_ONLY)     return;
+    ses=sesFactory1.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      Entity e0=(Entity)ses.load(Entity.class,0);
+      e0.setName("name-0-changed1");
+      ses.update(e0);
+      idToName.put(0,e0.getName());
+      ses.save(new Entity(2,"name-2"));
+      idToName.put(2,"name-2");
+      Entity e1=(Entity)ses.load(Entity.class,1);
+      e1.setName("name-1-changed1");
+      ses.update(e1);
+      idToName.put(1,e1.getName());
+      ses.save(new Entity(3,"name-3"));
+      idToName.put(3,"name-3");
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    assertEntityCache(ENTITY_NAME,sesFactory2,idToName);
+    assertEntityCache(ENTITY_NAME,sesFactory1,idToName);
+    ses=sesFactory1.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      ses.save(new Entity(4,"name-4"));
+      idToName.put(4,"name-4");
+      Entity e0=(Entity)ses.load(Entity.class,0);
+      e0.setName("name-0-changed2");
+      ses.update(e0);
+      idToName.put(e0.getId(),e0.getName());
+      ses.delete(ses.load(Entity.class,1));
+      idToName.remove(1);
+      Entity e2=(Entity)ses.load(Entity.class,2);
+      e2.setName("name-2-changed1");
+      ses.update(e2);
+      idToName.put(e2.getId(),e2.getName());
+      ses.delete(ses.load(Entity.class,3));
+      idToName.remove(3);
+      ses.save(new Entity(5,"name-5"));
+      idToName.put(5,"name-5");
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    assertEntityCache(ENTITY_NAME,sesFactory2,idToName,1,3);
+    assertEntityCache(ENTITY_NAME,sesFactory1,idToName,1,3);
+    ses=sesFactory2.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      Entity e0=(Entity)ses.load(Entity.class,0);
+      e0.setName("name-0-changed3");
+      ses.update(e0);
+      idToName.put(e0.getId(),e0.getName());
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    assertEntityCache(ENTITY_NAME,sesFactory2,idToName);
+    assertEntityCache(ENTITY_NAME,sesFactory1,idToName);
+  }
+  finally {
+    cleanup();
+  }
+}

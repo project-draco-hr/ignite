@@ -1,0 +1,18 @@
+{
+  final GridTuple<byte[]> tuple=new GridTuple<>();
+  final GridOptimizedMarshaller marsh=new GridOptimizedMarshaller();
+  marsh.setClassNames(Arrays.asList(TestObject.class.getName()));
+  GridInClosure<TestObject> writer=new CIX1<TestObject>(){
+    @Override public void applyx(    TestObject obj) throws GridException {
+      tuple.set(marsh.marshal(obj));
+    }
+  }
+;
+  GridOutClosure<TestObject> reader=new COX<TestObject>(){
+    @Override public TestObject applyx() throws GridException {
+      return marsh.unmarshal(tuple.get(),null);
+    }
+  }
+;
+  runTest("GridMarshaller",writer,reader);
+}

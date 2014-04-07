@@ -1,0 +1,28 @@
+{
+  try {
+    GridCache<Object,Object> cache=grid(0).cache(null);
+    for (int i=0; i < ENTRY_CNT; i++)     cache.dataStructures().queue("queue" + i,Integer.MAX_VALUE,false,true);
+    startGrid(GRID_CNT);
+    for (int i=0; i < ENTRY_CNT; i++) {
+      GridCacheInternalKey internalKey=new GridCacheInternalKeyImpl("queue" + i);
+      Collection<GridNode> nodes=cache.affinity().mapKeyToPrimaryAndBackups(internalKey);
+      for (      GridNode n : nodes) {
+        Grid g=findGridForNodeId(n.id());
+        assertNotNull(g);
+        assertTrue("Affinity node doesn't contain internal key [key=" + internalKey + ", node="+ n+ ']',((GridNearCacheAdapter)((GridKernal)g).internalCache()).dht().containsKey(internalKey,null));
+      }
+    }
+    GridDhtCacheAdapter dht=((GridNearCacheAdapter)((GridKernal)grid(GRID_CNT)).internalCache()).dht();
+    int cacheSize=dht.map().size();
+    GridIndexingManager idxMgr=dht.context().kernalContext().indexing();
+    Collection<GridIndexingTypeDescriptor> types=idxMgr.types(null);
+    info("Types: " + types);
+    int idxSize=0;
+    for (    GridIndexingTypeDescriptor type : types)     idxSize+=idxMgr.size(null,null,type.valueClass());
+    info("Index size: " + idxSize);
+    assertTrue("Check failed [cacheSize=" + cacheSize + ", idxSize="+ idxSize+ ']',cacheSize == idxSize || cacheSize - 1 == idxSize);
+  }
+  finally {
+    stopGrid(GRID_CNT);
+  }
+}

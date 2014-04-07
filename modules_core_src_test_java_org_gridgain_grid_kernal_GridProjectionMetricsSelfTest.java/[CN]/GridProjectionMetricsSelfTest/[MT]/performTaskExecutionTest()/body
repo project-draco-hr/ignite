@@ -1,0 +1,18 @@
+{
+  Grid g=grid(0);
+  JobFinishLock jobFinishLock=new JobFinishLock();
+  MetricsUpdateLock metricsUpdLock=new MetricsUpdateLock();
+  try {
+    for (    Grid g0 : G.allGrids())     g0.events().localListen(jobFinishLock,EVT_JOB_FINISHED);
+    g.compute().execute(new GridTestTask(),"testArg").get();
+    jobFinishLock.await();
+    g.events().localListen(metricsUpdLock,EVT_NODE_METRICS_UPDATED);
+    metricsUpdLock.await();
+    GridProjectionMetrics m=g.metrics();
+    checkMetrics(m);
+  }
+  finally {
+    for (    Grid g0 : G.allGrids())     g0.events().stopLocalListen(jobFinishLock);
+    g.events().stopLocalListen(metricsUpdLock);
+  }
+}

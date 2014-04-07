@@ -1,0 +1,27 @@
+{
+  X.println("Collocating jobs...");
+  Grid g=G.grid();
+  final GridCache<GridTestKey,Long> cache=g.cache("partitioned");
+  final BlockingQueue<GridFuture> q=new ArrayBlockingQueue<>(400);
+  long start=System.currentTimeMillis();
+  for (long i=0; i < GridTestConstants.ENTRY_COUNT; i++) {
+    final long key=i;
+    final GridFuture<?> f=g.compute().affinityRun("partitioned",GridTestKey.affinityKey(key),new Runnable(){
+      @Override public void run(){
+        Long val=cache.peek(new GridTestKey(key));
+        if (val == null || val != key)         throw new RuntimeException("Invalid value found [key=" + key + ", val="+ val+ ']');
+      }
+    }
+);
+    q.put(f);
+    f.listenAsync(new CI1<GridFuture<?>>(){
+      @Override public void apply(      GridFuture<?> o){
+        q.poll();
+      }
+    }
+);
+    if (i % 10000 == 0)     X.println("Executed jobs: " + i);
+  }
+  long end=System.currentTimeMillis();
+  X.println("Executed " + GridTestConstants.ENTRY_COUNT + " computations in "+ (end - start)+ "ms.");
+}

@@ -1,0 +1,24 @@
+{
+  GridConfiguration c=super.getConfiguration(gridName);
+  GridCacheConfiguration cc=defaultCacheConfiguration();
+  cc.setCacheMode(REPLICATED);
+  cc.setSwapEnabled(false);
+  cc.setWriteSynchronizationMode(FULL_SYNC);
+  cc.setEvictionPolicy(plc);
+  cc.setDefaultTxConcurrency(PESSIMISTIC);
+  cc.setDefaultTxIsolation(REPEATABLE_READ);
+  cc.setStore(new GridCacheGenericTestStore<Object,Object>(){
+    @Override public Object load(    GridCacheTx tx,    Object key){
+      return key;
+    }
+    @Override public void loadAll(    GridCacheTx tx,    Collection<?> keys,    GridBiInClosure<Object,Object> c){
+      for (      Object key : keys)       c.apply(key,key);
+    }
+  }
+);
+  c.setCacheConfiguration(cc);
+  GridTcpDiscoverySpi disco=new GridTcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  c.setDiscoverySpi(disco);
+  return c;
+}
