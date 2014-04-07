@@ -1,0 +1,21 @@
+{
+  while (true) {
+    try {
+      long t0=System.currentTimeMillis();
+      long submitTime1=t0;
+      GridComputeTaskFuture<Void> f1=g.forPredicate(serverNode).compute().execute(RequestTask.class,new Message(terminalId,nodeId));
+      submitTime.setIfGreater(System.currentTimeMillis() - submitTime1);
+      f1.get();
+      submitTime1=System.currentTimeMillis();
+      GridComputeTaskFuture<Void> f2=g.forPredicate(serverNode).compute().execute(ResponseTask.class,new Message(terminalId,nodeId));
+      submitTime.setIfGreater(System.currentTimeMillis() - submitTime1);
+      f2.get();
+      long t1=System.currentTimeMillis();
+      txCnt.incrementAndGet();
+      latency.addAndGet(t1 - t0);
+    }
+ catch (    GridException e) {
+      e.printStackTrace();
+    }
+  }
+}

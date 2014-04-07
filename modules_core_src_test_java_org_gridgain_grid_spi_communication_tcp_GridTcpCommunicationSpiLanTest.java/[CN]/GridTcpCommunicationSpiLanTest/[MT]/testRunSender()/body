@@ -1,0 +1,26 @@
+{
+  reject=true;
+  info(">>> Starting send to remote node multithreaded test. <<<");
+  final AtomicInteger cntr=new AtomicInteger();
+  final int msgCnt=10000;
+  long start=System.currentTimeMillis();
+  GridFuture<?> fut=multithreadedAsync(new Runnable(){
+    @Override public void run(){
+      try {
+        while (cntr.getAndIncrement() < msgCnt) {
+          GridTestMessage msg=new GridTestMessage(locNode.id(),msgId.getAndIncrement(),0);
+          msg.payload(new byte[13 * 1024]);
+          spi.sendMessage(remoteNode,msg);
+        }
+      }
+ catch (      GridException e) {
+        fail("Unable to send message: " + e.getMessage());
+      }
+    }
+  }
+,THREAD_CNT,"message-sender");
+  fut.get();
+  info(">>> Sent all messages in " + (System.currentTimeMillis() - start) + " milliseconds");
+  assertEquals("Invalid count of messages was sent",msgCnt,msgId.get());
+  U.sleep(IDLE_CONN_TIMEOUT * 2);
+}
