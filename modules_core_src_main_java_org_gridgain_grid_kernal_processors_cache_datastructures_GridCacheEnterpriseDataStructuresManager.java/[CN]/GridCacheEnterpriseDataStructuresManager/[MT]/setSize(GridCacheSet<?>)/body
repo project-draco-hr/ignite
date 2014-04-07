@@ -1,0 +1,27 @@
+{
+  if (cctx.isLocal() || cctx.isReplicated()) {
+    SetDataHolder setData=setDataMap.get(set.id());
+    return new GridFinishedFuture<>(cctx.kernalContext(),setData != null ? setData.set().size() : 0);
+  }
+  long reqId=setReqId.incrementAndGet();
+  final GridCacheSizeFuture fut=new GridCacheSizeFuture(cctx);
+  setHndMap.put(reqId,new SetDataResponseHandler(){
+    @Override public boolean onResponse(    GridCacheSetDataResponse res){
+      fut.onResponse(res);
+      return fut.isDone();
+    }
+    @Override public boolean onNodeLeft(    UUID nodeId){
+      fut.onNodeLeft(nodeId);
+      return fut.isDone();
+    }
+  }
+);
+  try {
+    fut.init(reqId,set);
+  }
+ catch (  GridException e) {
+    setHndMap.remove(reqId);
+    return new GridFinishedFuture<>(cctx.kernalContext(),e);
+  }
+  return fut;
+}

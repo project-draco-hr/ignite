@@ -1,9 +1,10 @@
 {
-  GridConcurrentHashSet<GridCacheSetItemKey> set=setData.get(key.setId());
-  if (set == null) {
-    GridConcurrentHashSet<GridCacheSetItemKey> old=setData.putIfAbsent(key.setId(),set=new GridConcurrentHashSet<>());
-    if (old != null)     set=old;
+  SetDataHolder setData=setDataMap.get(key.setId());
+  if (setData == null) {
+    boolean collocated=!key.getClass().equals(GridCacheSetItemKey.class);
+    SetDataHolder old=setDataMap.putIfAbsent(key.setId(),setData=new SetDataHolder(collocated));
+    if (old != null)     setData=old;
   }
-  if (rmv)   set.remove(key);
- else   set.add(key);
+  if (rmv)   setData.set().remove(key);
+ else   setData.set().add(key);
 }
