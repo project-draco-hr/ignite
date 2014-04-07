@@ -1,0 +1,21 @@
+{
+  try {
+    depMode=CONTINUOUS;
+    Grid g1=startGrid(1);
+    Grid g2=startGrid(2);
+    Grid g0=startGrid(GRID_NAME);
+    ClassLoader ldr=getExternalClassLoader();
+    Class cls=ldr.loadClass(TEST_TASK_3);
+    String key="";
+    for (int i=0; i < 1000; i++) {
+      key="1" + i;
+      if (g1.mapKeyToNode(null,key).id().equals(g2.localNode().id()))       break;
+    }
+    g0.compute().execute(cls,new T2<>(g1.localNode(),key)).get();
+    cls=ldr.loadClass(TEST_TASK_2);
+    g0.compute().execute(cls,g2.localNode()).get();
+  }
+  finally {
+    stopAllGrids();
+  }
+}

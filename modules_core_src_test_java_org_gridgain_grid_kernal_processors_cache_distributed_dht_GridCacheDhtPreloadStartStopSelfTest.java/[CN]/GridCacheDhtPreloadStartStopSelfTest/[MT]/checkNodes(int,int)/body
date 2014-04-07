@@ -1,0 +1,29 @@
+{
+  try {
+    Grid g1=startGrid(0);
+    GridCache<Integer,String> c1=g1.cache(null);
+    putKeys(c1,keyCnt);
+    checkKeys(c1,keyCnt);
+    Collection<Grid> grids=new LinkedList<>();
+    startGrids(nodeCnt,1,grids);
+    for (    Grid g : grids) {
+      GridCache<Integer,String> c=g.cache(null);
+      checkKeys(c,keyCnt);
+    }
+    info(">>> Finished checking nodes [keyCnt=" + keyCnt + ", nodeCnt="+ nodeCnt+ ']');
+    stopGrids(grids);
+    GridDhtCacheAdapter<Integer,String> dht=dht(c1);
+    info(">>> Waiting for preload futures...");
+    for (    GridFuture<?> fut : ((GridDhtPreloader<Integer,String>)dht.preloader()).exchangeFutures())     fut.get();
+    GridCacheAffinity<Integer> aff=affinity(c1);
+    for (int i=0; i < keyCnt; i++) {
+      if (aff.mapPartitionToPrimaryAndBackups(aff.partition(i)).contains(g1.localNode())) {
+        GridDhtPartitionTopology<Integer,String> top=dht.topology();
+        for (        GridDhtLocalPartition<Integer,String> p : top.localPartitions())         assertEquals("Invalid partition state for partition: " + p,OWNING,p.state());
+      }
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

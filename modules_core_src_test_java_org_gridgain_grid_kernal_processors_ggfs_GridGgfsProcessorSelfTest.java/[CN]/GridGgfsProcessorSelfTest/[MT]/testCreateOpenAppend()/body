@@ -1,0 +1,28 @@
+{
+  assertCreateFails("/",false,"Failed to resolve parent directory");
+  ggfs.mkdirs(path("/A/B1/C1"));
+  for (  String path : Arrays.asList("/A","/A/B1","/A/B1/C1")) {
+    assertCreateFails(path,false,"Failed to create file (file already exists)");
+    assertCreateFails(path,true,"Failed to create file (path points to a directory)");
+    assertAppendFails(path,false,"Failed to open file (not a file)");
+    assertAppendFails(path,true,"Failed to open file (not a file)");
+    assertOpenFails(path,"Failed to open file (not a file)");
+  }
+  String text1="Test long number #1: " + rnd.nextLong();
+  String text2="Test long number #2: " + rnd.nextLong();
+  for (  String path : Arrays.asList("/A/a","/A/B1/a","/A/B1/C1/a")) {
+    assertOpenFails(path,"File not found");
+    assertAppendFails(path,false,"File not found");
+    assertEquals(text1,create(path,false,text1));
+    assertCreateFails(path,false,"Failed to create file (file already exists)");
+    assertEquals(text2,create(path,true,text2));
+    assertEquals(text2 + text1,append(path,false,text1));
+    assertEquals(text2 + text1 + text2,append(path,true,text2));
+    ggfs.delete(path(path),true);
+    assertOpenFails(path,"File not found");
+    assertAppendFails(path,false,"File not found");
+    assertEquals(text1,append(path,true,text1));
+    for (String full=text1, cur=""; full.length() < 10000; cur=", long=" + rnd.nextLong())     assertEquals(full+=cur,append(path,rnd.nextBoolean(),cur));
+    ggfs.delete(path(path),false);
+  }
+}

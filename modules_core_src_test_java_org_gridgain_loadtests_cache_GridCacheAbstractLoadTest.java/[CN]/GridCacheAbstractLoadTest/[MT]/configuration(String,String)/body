@@ -1,0 +1,33 @@
+{
+  File path=GridTestUtils.resolveGridGainPath(springCfgPath);
+  if (path == null)   throw new GridException("Spring XML configuration file path is invalid: " + new File(springCfgPath) + ". Note that this path should be either absolute path or a relative path to GRIDGAIN_HOME.");
+  if (!path.isFile())   throw new GridException("Provided file path is not a file: " + path);
+  Appender app=new NullAppender();
+  Logger.getRootLogger().addAppender(app);
+  ApplicationContext springCtx;
+  try {
+    springCtx=new FileSystemXmlApplicationContext(path.toURI().toURL().toString());
+  }
+ catch (  BeansException|MalformedURLException e) {
+    throw new GridException("Failed to instantiate Spring XML application context: " + e.getMessage(),e);
+  }
+  Map cfgMap;
+  try {
+    cfgMap=springCtx.getBeansOfType(GridConfiguration.class);
+  }
+ catch (  BeansException e) {
+    throw new GridException("Failed to instantiate bean [type=" + GridConfiguration.class + ", err="+ e.getMessage()+ ']',e);
+  }
+  if (cfgMap == null)   throw new GridException("Failed to find a single grid factory configuration in: " + path);
+  Logger.getRootLogger().removeAppender(app);
+  if (cfgMap.isEmpty())   throw new GridException("Can't find grid factory configuration in: " + path);
+ else   if (cfgMap.size() > 1)   throw new GridException("More than one configuration provided for cache load test: " + cfgMap.values());
+  GridConfiguration cfg=(GridConfiguration)cfgMap.values().iterator().next();
+  cfg.setGridLogger(initLogger(log));
+  GridCacheConfiguration[] cacheCfgs=cfg.getCacheConfiguration();
+  for (  GridCacheConfiguration cacheCfg : cacheCfgs) {
+    cacheCfg.setDefaultTxIsolation(isolation);
+    cacheCfg.setDefaultTxConcurrency(concurrency);
+  }
+  return cfg;
+}

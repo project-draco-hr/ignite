@@ -1,0 +1,17 @@
+{
+  final GridNioFutureImpl<Integer> origFut=new GridNioFutureImpl<>();
+  final GridNioEmbeddedFuture<Integer> embFut=new GridNioEmbeddedFuture<>();
+  embFut.onDone(origFut,null);
+  assertFalse("Expect original future is not complete.",origFut.isDone());
+  Thread t=new Thread(){
+    @Override public void run(){
+      origFut.onDone(100);
+    }
+  }
+;
+  t.start();
+  t.join();
+  assertTrue("Expect original future is complete.",origFut.isDone());
+  assertTrue("Expect embedded future is complete.",embFut.isDone());
+  assertEquals(new Integer(100),embFut.get(1,SECONDS));
+}

@@ -1,0 +1,16 @@
+{
+  ServiceRegistryBuilder builder=new ServiceRegistryBuilder();
+  DatasourceConnectionProviderImpl connProvider=new DatasourceConnectionProviderImpl();
+  BasicManagedDataSource dataSrc=new BasicManagedDataSource();
+  dataSrc.setTransactionManager(jotm.getTransactionManager());
+  dataSrc.setDefaultAutoCommit(false);
+  JdbcDataSource h2DataSrc=new JdbcDataSource();
+  h2DataSrc.setURL(CONNECTION_URL);
+  dataSrc.setXaDataSourceInstance(h2DataSrc);
+  connProvider.setDataSource(dataSrc);
+  connProvider.configure(Collections.emptyMap());
+  builder.addService(ConnectionProvider.class,connProvider);
+  builder.addService(JtaPlatform.class,new TestJtaPlatform());
+  builder.addService(TransactionFactory.class,new JtaTransactionFactory());
+  return builder;
+}

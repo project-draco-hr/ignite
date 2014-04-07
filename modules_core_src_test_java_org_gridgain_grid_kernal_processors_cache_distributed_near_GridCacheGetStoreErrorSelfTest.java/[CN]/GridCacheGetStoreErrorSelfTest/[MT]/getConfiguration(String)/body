@@ -1,0 +1,23 @@
+{
+  GridConfiguration c=super.getConfiguration(gridName);
+  GridTcpDiscoverySpi disco=new GridTcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  c.setDiscoverySpi(disco);
+  GridCacheConfiguration cc=defaultCacheConfiguration();
+  cc.setCacheMode(cacheMode);
+  cc.setDistributionMode(nearEnabled ? NEAR_PARTITIONED : PARTITIONED_ONLY);
+  cc.setAtomicityMode(TRANSACTIONAL);
+  cc.setStore(new GridCacheStoreAdapter<Object,Object>(){
+    @Override public Object load(    @Nullable GridCacheTx tx,    Object key) throws GridException {
+      throw new GridException("Failed to get key from store: " + key);
+    }
+    @Override public void put(    @Nullable GridCacheTx tx,    Object key,    @Nullable Object val){
+    }
+    @Override public void remove(    @Nullable GridCacheTx tx,    Object key){
+    }
+  }
+);
+  c.setCacheConfiguration(cc);
+  c.setIncludeEventTypes(EVT_TASK_FAILED,EVT_TASK_FINISHED,EVT_JOB_MAPPED);
+  return c;
+}

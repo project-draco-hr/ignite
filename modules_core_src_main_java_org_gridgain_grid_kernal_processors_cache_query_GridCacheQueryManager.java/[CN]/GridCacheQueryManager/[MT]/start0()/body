@@ -1,0 +1,34 @@
+{
+  idxMgr=cctx.kernalContext().indexing();
+  spi=cctx.config().getIndexingSpiName();
+  space=cctx.name();
+  maxIterCnt=cctx.config().getMaximumQueryIteratorCount();
+  cctx.events().addListener(new GridLocalEventListener(){
+    @Override public void onEvent(    GridEvent evt){
+      UUID nodeId=((GridDiscoveryEvent)evt).eventNode().id();
+      Map<Long,GridFutureAdapter<GridCloseableIterator<GridIndexingKeyValueRow<K,V>>>> futs=qryIters.remove(nodeId);
+      if (futs != null) {
+        for (        GridFutureAdapter<GridCloseableIterator<GridIndexingKeyValueRow<K,V>>> fut : futs.values()) {
+          fut.listenAsync(new CIX1<GridFuture<GridCloseableIterator<GridIndexingKeyValueRow<K,V>>>>(){
+            @Override public void applyx(            GridFuture<GridCloseableIterator<GridIndexingKeyValueRow<K,V>>> f) throws GridException {
+              f.get().close();
+            }
+          }
+);
+        }
+      }
+      Map<Long,GridFutureAdapter<GridIndexingFieldsResult>> fieldsFuts=fieldsQryRes.remove(nodeId);
+      if (fieldsFuts != null) {
+        for (        GridFutureAdapter<GridIndexingFieldsResult> fut : fieldsFuts.values()) {
+          fut.listenAsync(new CIX1<GridFuture<GridIndexingFieldsResult>>(){
+            @Override public void applyx(            GridFuture<GridIndexingFieldsResult> f) throws GridException {
+              f.get().iterator().close();
+            }
+          }
+);
+        }
+      }
+    }
+  }
+,EVT_NODE_LEFT,EVT_NODE_FAILED);
+}
