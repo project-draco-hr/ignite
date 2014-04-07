@@ -11,6 +11,43 @@
   }
  else   header=queueHdrView.get(key);
   if (header == null)   return null;
+  if (queueQryGuard.compareAndSet(false,true)) {
+    queueQry=(GridCacheContinuousQueryAdapter)cctx.cache().queries().createContinuousQuery();
+    queueQry.filter(new QueueHeaderPredicate());
+    queueQry.callback(new GridBiPredicate<UUID,Collection<Map.Entry>>(){
+      @Override public boolean apply(      UUID id,      Collection<Map.Entry> entries){
+        for (        Map.Entry e : entries) {
+          GridCacheQueueHeaderKey key=(GridCacheQueueHeaderKey)e.getKey();
+          GridCacheQueueHeader hdr=(GridCacheQueueHeader)e.getValue();
+          if (hdr == null) {
+            for (            QueueCleanupWorker worker : queueCleanupWorkers)             worker.wakeUp();
+          }
+          for (          final GridCacheQueueProxy queue : queuesMap.values()) {
+            if (queue.name().equals(key.queueName())) {
+              if (hdr == null) {
+                cctx.closures().callLocalSafe(new Callable<Void>(){
+                  @Override public Void call() throws Exception {
+                    try {
+                      queue.size();
+                    }
+ catch (                    GridCacheDataStructureRemovedRuntimeException ignore) {
+                      queuesMap.remove(queue.delegate().id());
+                    }
+                    return null;
+                  }
+                }
+,false);
+              }
+ else               queue.delegate().onHeaderChanged(hdr);
+            }
+          }
+        }
+        return true;
+      }
+    }
+);
+    queueQry.execute(cctx.isLocal() || cctx.isReplicated() ? cctx.grid().forLocal() : null,true);
+  }
   GridCacheQueueProxy queue=queuesMap.get(header.id());
   if (queue == null) {
     queue=new GridCacheQueueProxy(cctx,cctx.atomic() ? new GridAtomicCacheQueueImpl<>(name,header,cctx) : new GridTransactionalCacheQueueImpl<>(name,header,cctx));
