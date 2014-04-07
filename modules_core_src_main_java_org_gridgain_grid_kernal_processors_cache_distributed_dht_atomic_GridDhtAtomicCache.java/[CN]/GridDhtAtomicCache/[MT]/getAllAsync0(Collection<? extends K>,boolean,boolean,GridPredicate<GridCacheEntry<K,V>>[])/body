@@ -4,6 +4,7 @@
     Map<K,V> locVals=new HashMap<>(keys.size(),1.0f);
     GridCacheVersion obsoleteVer=null;
     boolean success=true;
+    long topVer=ctx.affinity().affinityTopologyVersion();
     for (    K key : keys) {
       GridCacheEntryEx<K,V> entry=null;
       while (true) {
@@ -35,7 +36,7 @@ catch (        GridException e) {
           return new GridFinishedFuture<>(ctx.kernalContext(),e);
         }
  finally {
-          if (entry != null)           ctx.evicts().touch(entry);
+          if (entry != null)           ctx.evicts().touch(entry,topVer);
         }
       }
       if (!success)       break;
