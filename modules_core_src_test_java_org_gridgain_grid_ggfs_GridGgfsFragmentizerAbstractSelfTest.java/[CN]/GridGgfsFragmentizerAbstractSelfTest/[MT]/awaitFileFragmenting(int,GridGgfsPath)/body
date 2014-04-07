@@ -1,0 +1,14 @@
+{
+  GridGgfsEx ggfs=(GridGgfsEx)grid(gridIdx).ggfs("ggfs");
+  GridGgfsMetaManager meta=ggfs.context().meta();
+  GridUuid fileId=meta.fileId(path);
+  if (fileId == null)   throw new GridGgfsFileNotFoundException("File not found: " + path);
+  GridGgfsFileInfo fileInfo=meta.info(fileId);
+  do {
+    if (fileInfo == null)     throw new GridGgfsFileNotFoundException("File not found: " + path);
+    if (fileInfo.fileMap().ranges().isEmpty())     return;
+    U.sleep(100);
+    fileInfo=meta.info(fileId);
+  }
+ while (true);
+}

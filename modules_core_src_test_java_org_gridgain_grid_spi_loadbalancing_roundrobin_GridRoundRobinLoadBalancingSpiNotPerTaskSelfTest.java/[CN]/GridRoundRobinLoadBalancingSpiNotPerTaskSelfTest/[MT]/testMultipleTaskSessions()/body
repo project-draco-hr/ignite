@@ -1,0 +1,10 @@
+{
+  GridComputeTaskSession ses1=new GridTestTaskSession(GridUuid.randomUuid());
+  GridComputeTaskSession ses2=new GridTestTaskSession(GridUuid.randomUuid());
+  List<GridNode> allNodes=(List<GridNode>)getSpiContext().nodes();
+  List<UUID> orderedNodes=getSpi().getNodeIds(ses1);
+  assertEquals("Balancer doesn't use all available nodes",orderedNodes.size(),allNodes.size());
+  checkCyclicBalancing(getSpi(),allNodes,orderedNodes,ses1,ses2);
+  getSpiContext().triggerEvent(new GridTaskEvent(null,null,EVT_TASK_FINISHED,ses1.getId(),null));
+  getSpiContext().triggerEvent(new GridTaskEvent(null,null,EVT_TASK_FAILED,ses2.getId(),null));
+}

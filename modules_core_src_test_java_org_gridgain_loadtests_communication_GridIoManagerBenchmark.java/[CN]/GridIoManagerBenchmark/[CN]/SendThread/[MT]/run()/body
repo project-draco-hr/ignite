@@ -1,0 +1,20 @@
+{
+  try {
+    GridNode dst=awaitOther(g.context().discovery());
+    GridIoManager io=g.context().io();
+    Random rnd=ThreadLocalRandom8.current();
+    GridUuid msgId=GridUuid.randomUuid();
+    while (!Thread.interrupted()) {
+      CountDownLatch latch=null;
+      if (testLatency)       latches.put(msgId,latch=new CountDownLatch(1));
+ else       sem.acquire();
+      io.send(dst,TEST_TOPIC,new GridTestMessage(msgId,testHeavyMsgs ? arrs[rnd.nextInt(arrs.length)] : null),PUBLIC_POOL);
+      if (testLatency && !latch.await(1000,MILLISECONDS))       throw new RuntimeException("Failed to await latch.");
+    }
+  }
+ catch (  GridException e) {
+    e.printStackTrace();
+  }
+catch (  InterruptedException ignored) {
+  }
+}

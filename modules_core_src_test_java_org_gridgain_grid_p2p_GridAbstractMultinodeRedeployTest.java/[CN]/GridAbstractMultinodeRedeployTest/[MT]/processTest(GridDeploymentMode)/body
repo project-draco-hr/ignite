@@ -1,0 +1,22 @@
+{
+  this.depMode=depMode;
+  try {
+    final Grid grid1=startGrid(1);
+    final Grid grid2=startGrid(2);
+    final Grid grid3=startGrid(3);
+    for (int i=0; i < ITERATIONS; i++) {
+      grid1.compute().localDeployTask(loadTaskClass(),loadTaskClass().getClassLoader());
+      grid2.compute().localDeployTask(loadTaskClass(),loadTaskClass().getClassLoader());
+      GridComputeTaskFuture<int[]> fut1=grid1.compute().execute(TASK_NAME,Arrays.<UUID>asList(grid1.localNode().id(),grid2.localNode().id(),grid3.localNode().id()));
+      GridComputeTaskFuture<int[]> fut2=grid2.compute().execute(TASK_NAME,Arrays.<UUID>asList(grid1.localNode().id(),grid2.localNode().id(),grid3.localNode().id()));
+      int[] result1=fut1.get();
+      int[] result2=fut2.get();
+      if (result1 == null || result2 == null || result1.length != 2 || result2.length != 2)       throw new GridException("Received wrong result.");
+    }
+  }
+  finally {
+    stopGrid(1);
+    stopGrid(2);
+    stopGrid(3);
+  }
+}

@@ -1,0 +1,29 @@
+{
+  File parent=new File(TMP_DIR,"testMultipleFilesCreation");
+  U.delete(parent);
+  U.mkdirs(parent);
+  int childCnt=4;
+  int subChildCnt=4;
+  for (int i=0; i < childCnt; i++) {
+    File f=new File(parent,String.valueOf(i));
+    U.mkdirs(f);
+    for (int j=0; j < subChildCnt; j++)     U.mkdirs(new File(f,String.valueOf(j)));
+  }
+  X.println("Parent: " + parent.getAbsolutePath());
+  X.println("Test started: " + U.format(System.currentTimeMillis()));
+  long start=System.currentTimeMillis();
+  byte[] data=new byte[4096];
+  for (int i=0; i < 50000; i++) {
+    int idx1=i % childCnt;
+    int idx2=(i / childCnt) % subChildCnt;
+    RandomAccessFile f=null;
+    try {
+      f=new RandomAccessFile(new File(parent,idx1 + File.separator + idx2+ File.separatorChar+ i),"rw");
+      f.write(data);
+    }
+  finally {
+      U.closeQuiet(f);
+    }
+  }
+  X.println("Test time: " + (System.currentTimeMillis() - start));
+}

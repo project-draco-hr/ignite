@@ -1,0 +1,28 @@
+{
+  final AtomicReference<Exception> err=new AtomicReference<>();
+  GridNioServerListener lsnr=new GridNioServerListenerAdapter(){
+    @Override public void onConnected(    GridNioSession ses){
+    }
+    @Override public void onDisconnected(    GridNioSession ses,    @Nullable Exception e){
+      if (e != null)       err.compareAndSet(null,e);
+    }
+    @Override public void onMessage(    GridNioSession ses,    Object msg){
+      ses.send(msg);
+    }
+  }
+;
+  GridNioServer<?> srvr=startServer(PORT,new GridPlainParser(),lsnr);
+  try {
+    Socket s=createSocket();
+    s.connect(new InetSocketAddress(U.getLocalHost(),PORT),1000);
+    if (!(s instanceof SSLSocket)) {
+      s.shutdownInput();
+      s.shutdownOutput();
+    }
+    s.close();
+  }
+  finally {
+    srvr.stop();
+  }
+  assertNull("Unexpected exception on socket close",err.get());
+}

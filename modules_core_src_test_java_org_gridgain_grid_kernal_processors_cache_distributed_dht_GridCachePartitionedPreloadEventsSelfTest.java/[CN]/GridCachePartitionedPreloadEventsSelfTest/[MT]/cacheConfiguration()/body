@@ -1,0 +1,37 @@
+{
+  GridCacheConfiguration cacheCfg=super.cacheConfiguration();
+  if (replicatedAffinity)   cacheCfg.setAffinity(new GridCacheAffinityFunction(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void reset(){
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public int partitions(){
+      return 1;
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public int partition(    Object key){
+      return 0;
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public List<List<GridNode>> assignPartitions(    GridCacheAffinityFunctionContext affCtx){
+      List<GridNode> nodes=new ArrayList<>(affCtx.currentTopologySnapshot());
+      return Collections.singletonList(nodes);
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void removeNode(    UUID nodeId){
+    }
+  }
+);
+  cacheCfg.setPreloadMode(preloadMode);
+  return cacheCfg;
+}
