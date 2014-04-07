@@ -2,8 +2,9 @@
   try {
     while (true) {
       GridCacheEntryEx<K,V> entry=null;
+      long topVer=ctx.affinity().affinityTopologyVersion();
       try {
-        entry=entryEx(key);
+        entry=entryEx(key,topVer);
         GridCacheOperation op=(val != null || valBytes != null) ? UPDATE : DELETE;
         GridCacheUpdateAtomicResult<K,V> updRes=entry.innerUpdate(ver,nodeId,nodeId,op,val,valBytes,false,false,ttl,true,true,false,true,CU.<K,V>empty(),DR_NONE,-1,-1,null,false);
         if (updRes.removeVersion() != null)         ctx.onDeferredDelete(entry,updRes.removeVersion());
@@ -14,7 +15,7 @@
         entry=null;
       }
  finally {
-        if (entry != null)         ctx.evicts().touch(entry);
+        if (entry != null)         ctx.evicts().touch(entry,topVer);
       }
     }
   }
