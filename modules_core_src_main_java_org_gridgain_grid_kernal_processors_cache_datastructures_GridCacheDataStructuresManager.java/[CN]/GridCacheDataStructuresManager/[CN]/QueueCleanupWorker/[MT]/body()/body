@@ -9,6 +9,7 @@ synchronized (this) {
         while (!hasJob && (waitTime=endWait - U.currentTimeMillis()) > 0)         wait(waitTime);
         hasJob=false;
       }
+      final long topVer=cctx.discovery().topologyVersion();
       GridCacheAdapter cache=cctx.cache();
       Map<GridUuid,GridCacheQueueHeader> aliveQueues=new GridLeanMap<>();
       Collection<GridUuid> deadQueues=new GridLeanSet<>();
@@ -16,7 +17,7 @@ synchronized (this) {
       int cnt=0;
       Set<GridCacheEntryEx<Object,Object>> entries=cache.map().allEntries0();
       for (      GridCacheEntryEx<Object,Object> entry : entries) {
-        if (!processEntry(entry))         continue;
+        if (!processEntry(entry,topVer))         continue;
         GridCacheQueueItemKey key=(GridCacheQueueItemKey)entry.key();
         boolean rmv;
         if (deadQueues.contains(key.queueId()))         rmv=true;
