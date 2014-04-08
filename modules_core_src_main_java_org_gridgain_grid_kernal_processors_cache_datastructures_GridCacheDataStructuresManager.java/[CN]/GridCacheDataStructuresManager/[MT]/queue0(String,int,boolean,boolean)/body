@@ -16,33 +16,43 @@
     queueQry.filter(new QueueHeaderPredicate());
     queueQry.callback(new GridBiPredicate<UUID,Collection<Map.Entry>>(){
       @Override public boolean apply(      UUID id,      Collection<Map.Entry> entries){
-        for (        Map.Entry e : entries) {
-          GridCacheQueueHeaderKey key=(GridCacheQueueHeaderKey)e.getKey();
-          GridCacheQueueHeader hdr=(GridCacheQueueHeader)e.getValue();
-          if (hdr == null) {
-            for (            QueueCleanupWorker worker : queueCleanupWorkers)             worker.wakeUp();
-          }
-          for (          final GridCacheQueueProxy queue : queuesMap.values()) {
-            if (queue.name().equals(key.queueName())) {
-              if (hdr == null) {
-                cctx.closures().callLocalSafe(new Callable<Void>(){
-                  @Override public Void call() throws Exception {
-                    try {
-                      queue.size();
+        if (!busyLock.enterBusy())         return false;
+        try {
+          for (          Map.Entry e : entries) {
+            GridCacheQueueHeaderKey key=(GridCacheQueueHeaderKey)e.getKey();
+            GridCacheQueueHeader hdr=(GridCacheQueueHeader)e.getValue();
+            if (hdr == null) {
+              for (              QueueCleanupWorker worker : queueCleanupWorkers)               worker.wakeUp();
+            }
+            for (            final GridCacheQueueProxy queue : queuesMap.values()) {
+              if (queue.name().equals(key.queueName())) {
+                if (hdr == null) {
+                  cctx.closures().callLocalSafe(new Callable<Void>(){
+                    @Override public Void call() throws Exception {
+                      if (!busyLock.enterBusy())                       return null;
+                      try {
+                        queue.size();
+                      }
+ catch (                      GridCacheDataStructureRemovedRuntimeException ignore) {
+                        queuesMap.remove(queue.delegate().id());
+                      }
+ finally {
+                        busyLock.leaveBusy();
+                      }
+                      return null;
                     }
- catch (                    GridCacheDataStructureRemovedRuntimeException ignore) {
-                      queuesMap.remove(queue.delegate().id());
-                    }
-                    return null;
                   }
-                }
 ,false);
+                }
+ else                 queue.delegate().onHeaderChanged(hdr);
               }
- else               queue.delegate().onHeaderChanged(hdr);
             }
           }
+          return true;
         }
-        return true;
+  finally {
+          busyLock.leaveBusy();
+        }
       }
     }
 );

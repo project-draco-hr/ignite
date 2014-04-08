@@ -10,13 +10,13 @@ synchronized (this) {
         hasJob=false;
       }
       final long topVer=cctx.discovery().topologyVersion();
-      GridCacheAdapter cache=cctx.cache();
+      GridCache cache=cctx.kernalContext().cache().publicCache(cctx.name());
       Map<GridUuid,GridCacheQueueHeader> aliveQueues=new GridLeanMap<>();
       Collection<GridUuid> deadQueues=new GridLeanSet<>();
       Collection<GridCacheQueueItemKey> rmvKeys=null;
       int cnt=0;
-      Set<GridCacheEntryEx<Object,Object>> entries=cache.map().allEntries0();
-      for (      GridCacheEntryEx<Object,Object> entry : entries) {
+      Set<GridCacheEntryEx<K,V>> entries=cctx.cache().map().allEntries0();
+      for (      GridCacheEntryEx<K,V> entry : entries) {
         if (!processEntry(entry,topVer))         continue;
         GridCacheQueueItemKey key=(GridCacheQueueItemKey)entry.key();
         boolean rmv;
