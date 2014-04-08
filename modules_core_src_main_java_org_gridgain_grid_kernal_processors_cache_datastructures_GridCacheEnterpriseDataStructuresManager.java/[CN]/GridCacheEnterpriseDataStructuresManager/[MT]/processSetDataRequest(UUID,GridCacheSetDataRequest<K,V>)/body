@@ -1,5 +1,13 @@
 {
   if (log.isDebugEnabled())   log.debug("Received set data request [req=" + req + ", nodeId="+ nodeId+ ']');
+  if (req.cancel()) {
+    SetIteratorKey key=new SetIteratorKey(req.id(),nodeId);
+    cancelIds.add(key);
+    if (locSetIterMap.remove(key) == null) {
+      if (log.isDebugEnabled())       log.debug("Received cancel request for unknown operation [req=" + req + ", nodeId="+ nodeId+ ']');
+    }
+    return;
+  }
   SetDataHolder setData=setDataMap.get(req.setId());
   if (setData == null) {
     if (log.isDebugEnabled())     log.debug("Received request for unknown set [req=" + req + ", nodeId="+ nodeId+ ']');
@@ -19,8 +27,8 @@
   }
  else {
     SetIteratorKey key=new SetIteratorKey(req.id(),nodeId);
-    if (req.cancel()) {
-      locSetIterMap.remove(key);
+    if (cancelIds.contains(key)) {
+      if (log.isDebugEnabled())       log.debug("Received request for cancelled operation [req=" + req + ", nodeId="+ nodeId+ ']');
       return;
     }
     Iterator<GridCacheSetItemKey> it=locSetIterMap.get(key);
