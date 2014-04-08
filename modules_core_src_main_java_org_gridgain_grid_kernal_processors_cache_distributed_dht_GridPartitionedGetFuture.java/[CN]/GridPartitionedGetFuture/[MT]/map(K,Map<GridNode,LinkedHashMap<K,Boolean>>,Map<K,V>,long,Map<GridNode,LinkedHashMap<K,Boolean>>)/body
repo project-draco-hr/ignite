@@ -11,7 +11,7 @@
           if (entry != null) {
             boolean isNew=entry.isNewLocked();
             V v=entry.innerGet(tx,true,false,true,true,true,true,filters);
-            if (tx == null || (!tx.implicit() && tx.isolation() == READ_COMMITTED))             colocated.context().evicts().touch(entry);
+            if (tx == null || (!tx.implicit() && tx.isolation() == READ_COMMITTED))             colocated.context().evicts().touch(entry,topVer);
             if (v == null) {
               if (isNew && entry.markObsoleteIfEmpty(ver))               colocated.removeIfObsolete(key);
             }
@@ -46,7 +46,7 @@ catch (    GridCacheEntryRemovedException ignored) {
     }
 catch (    GridCacheFilterFailedException e) {
       if (log.isDebugEnabled())       log.debug("Filter validation failed for entry: " + e);
-      if (tx == null || (!tx.implicit() && tx.isolation() == READ_COMMITTED))       colocated.context().evicts().touch(entry);
+      if (tx == null || (!tx.implicit() && tx.isolation() == READ_COMMITTED))       colocated.context().evicts().touch(entry,topVer);
       break;
     }
   }
