@@ -2,15 +2,14 @@
   ctx.denyOnFlags(F.asList(LOCAL,READ));
   A.notNull(key,"key");
   validateCacheKey(key);
+  long topVer=ctx.affinity().affinityTopologyVersion();
   while (true) {
     try {
-      if (ctx.isNear() && ctx.affinity().localNode(key))       return null;
+      if (ctx.isNear() && ctx.affinity().localNode(key,topVer))       return null;
       return ctx.cloneOnFlag(entryEx(key).innerReload(filter));
     }
  catch (    GridCacheEntryRemovedException ignored) {
-      if (log.isDebugEnabled()) {
-        log.debug("Attempted to reload a removed entry for key (will retry): " + key);
-      }
+      if (log.isDebugEnabled())       log.debug("Attempted to reload a removed entry for key (will retry): " + key);
     }
   }
 }
