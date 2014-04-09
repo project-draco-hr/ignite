@@ -1,0 +1,55 @@
+{
+  if (log.isDebugEnabled())   log.debug("Received set data request [req=" + req + ", nodeId="+ nodeId+ ']');
+  if (req.cancel()) {
+    SetRequestKey key=new SetRequestKey(req.id(),nodeId);
+    cancelSetReqIds.add(key);
+    if (setIterMap.remove(key) == null) {
+      if (log.isDebugEnabled())       log.debug("Received cancel request for unknown operation [req=" + req + ", nodeId="+ nodeId+ ']');
+    }
+    return;
+  }
+  SetDataHolder setData=setDataMap.get(req.setId());
+  if (setData == null) {
+    if (log.isDebugEnabled())     log.debug("Received request for unknown set [req=" + req + ", nodeId="+ nodeId+ ']');
+    sendSetDataResponse(nodeId,new GridCacheSetDataResponse<K,V>(req.id(),Collections.emptyList(),true));
+    return;
+  }
+  if (req.sizeOnly()) {
+    int size=0;
+    if (filerSetData(setData)) {
+      GridCacheAffinityManager aff=cctx.affinity();
+      for (      GridCacheSetItemKey key : setData.set()) {
+        if (aff.primary(cctx.localNode(),key,req.topologyVersion()))         size++;
+      }
+    }
+ else     size=setData.set().size();
+    sendSetDataResponse(nodeId,new GridCacheSetDataResponse<K,V>(req.id(),size));
+  }
+ else {
+    SetRequestKey key=new SetRequestKey(req.id(),nodeId);
+    if (cancelSetReqIds.contains(key)) {
+      if (log.isDebugEnabled())       log.debug("Received request for cancelled operation [req=" + req + ", nodeId="+ nodeId+ ']');
+      return;
+    }
+    Iterator<GridCacheSetItemKey> it=setIterMap.get(key);
+    if (it == null) {
+      it=setData.set().iterator();
+      setIterMap.put(key,it);
+    }
+    List<Object> data=new ArrayList<>(req.pageSize());
+    boolean last=false;
+    boolean filterPrimary=filerSetData(setData);
+    GridCacheAffinityManager aff=cctx.affinity();
+    while (data.size() < req.pageSize()) {
+      GridCacheSetItemKey next=it.hasNext() ? it.next() : null;
+      if (next == null) {
+        last=true;
+        break;
+      }
+      if (filterPrimary && !aff.primary(cctx.localNode(),next,req.topologyVersion()))       continue;
+      data.add(next.item());
+    }
+    if (last)     setIterMap.remove(key);
+    sendSetDataResponse(nodeId,new GridCacheSetDataResponse<K,V>(req.id(),data,last));
+  }
+}
