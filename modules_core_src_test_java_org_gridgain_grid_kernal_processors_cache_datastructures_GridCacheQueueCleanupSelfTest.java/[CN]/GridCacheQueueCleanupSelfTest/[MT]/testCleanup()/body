@@ -1,45 +1,7 @@
 {
   GridCacheQueue<Integer> queue=cache().dataStructures().queue(QUEUE_NAME1,0,false,true);
-  assertNotNull(queue);
-  for (int i=0; i < 500; i++)   queue.add(i);
-  for (int i=0; i < 10; i++)   queue.poll();
-  assertTrue(!queue.isEmpty());
   GridNode node=grid(0).cache(null).affinity().mapKeyToNode(new GridCacheQueueHeaderKey(QUEUE_NAME1));
   final Grid grid=grid(0).localNode().equals(node) ? grid(1) : grid(0);
-  final String killGridName=node.attribute(GridNodeAttributes.ATTR_GRID_NAME);
-  stopGrid(killGridName);
-  assertNull(grid.cache(null).dataStructures().queue(QUEUE_NAME1,0,false,false));
-  final AtomicBoolean stop=new AtomicBoolean(false);
-  GridFuture<?> fut1;
-  GridFuture<?> fut2;
-  try {
-    fut1=startAddPollThread(grid,stop,QUEUE_NAME1);
-    fut2=startAddPollThread(grid,stop,QUEUE_NAME2);
-    U.sleep(3000);
-  }
-  finally {
-    stop.set(true);
-  }
-  fut1.get();
-  fut2.get();
-  grid.cache(null).dataStructures().removeQueue(QUEUE_NAME1);
-  grid.cache(null).dataStructures().removeQueue(QUEUE_NAME2);
-  assertTrue(GridTestUtils.waitForCondition(new PAX(){
-    @Override public boolean applyx(){
-      for (int i=0; i < gridCount(); i++) {
-        if (getTestGridName(i).equals(killGridName))         continue;
-        Iterator<GridCacheEntryEx<Object,Object>> entries=((GridKernal)grid(i)).context().cache().internalCache().map().allEntries0().iterator();
-        if (entries.hasNext()) {
-          log.info("Found cache entries, will wait: " + entries.next());
-          return false;
-        }
-      }
-      return true;
-    }
-  }
-,5000));
-  startGrid(killGridName);
-  queue=grid.cache(null).dataStructures().queue(QUEUE_NAME1,0,false,true);
   assertEquals(0,queue.size());
   for (int i=0; i < 500; i++)   queue.add(i);
   assertEquals(500,queue.size());

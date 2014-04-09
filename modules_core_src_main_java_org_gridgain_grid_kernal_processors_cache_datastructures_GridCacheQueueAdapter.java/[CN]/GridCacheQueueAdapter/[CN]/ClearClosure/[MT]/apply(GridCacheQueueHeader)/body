@@ -1,4 +1,9 @@
 {
-  if (queueRemoved(hdr,id) || hdr.empty())   return hdr;
-  return new GridCacheQueueHeader(hdr.id(),hdr.capacity(),hdr.collocated(),hdr.tail(),hdr.tail(),null);
+  boolean rmvd=queueRemoved(hdr,id);
+  if (rmvd || hdr.empty()) {
+    long idx=rmvd ? QUEUE_REMOVED_IDX : null;
+    return new GridBiTuple<>(hdr,new GridBiTuple<>(idx,idx));
+  }
+  GridCacheQueueHeader newHdr=new GridCacheQueueHeader(hdr.id(),hdr.capacity(),hdr.collocated(),hdr.tail(),hdr.tail(),null);
+  return new GridBiTuple<>(newHdr,new GridBiTuple<>(hdr.head(),hdr.tail()));
 }
