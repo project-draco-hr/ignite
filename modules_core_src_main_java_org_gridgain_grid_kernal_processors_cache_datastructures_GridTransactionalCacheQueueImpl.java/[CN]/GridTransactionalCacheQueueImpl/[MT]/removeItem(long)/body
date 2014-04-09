@@ -1,0 +1,30 @@
+{
+  try {
+    int cnt=0;
+    while (true) {
+      try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+        Long idx=(Long)cache.transformAndCompute(queueKey,new RemoveClosure(id,rmvIdx));
+        if (idx != null) {
+          checkRemoved(idx);
+          boolean rmv=cache.removex(itemKey(idx));
+          assert rmv;
+        }
+        tx.commit();
+        break;
+      }
+ catch (      GridEmptyProjectionException e) {
+        throw e;
+      }
+catch (      GridTopologyException e) {
+        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
+ else {
+          U.warn(log,"Failed to remove item, will retry [err=" + e + ", idx="+ rmvIdx+ ']');
+          U.sleep(RETRY_DELAY);
+        }
+      }
+    }
+  }
+ catch (  GridException e) {
+    throw new GridRuntimeException(e);
+  }
+}
