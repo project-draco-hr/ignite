@@ -1,10 +1,21 @@
 {
   if (clsLdr == null)   clsLdr=getClass().getClassLoader();
+  String clsName=cls.getName();
+  String lambdaParent=U.lambdaEnclosingClassName(clsName);
+  if (lambdaParent != null) {
+    clsName=lambdaParent;
+    try {
+      cls=Class.forName(clsName,true,clsLdr);
+    }
+ catch (    ClassNotFoundException e) {
+      throw new GridException("Cannot deploy parent class for lambda: " + clsName,e);
+    }
+  }
   if (clsLdr instanceof GridDeploymentClassLoader) {
     GridDeploymentInfo ldr=(GridDeploymentInfo)clsLdr;
     if ((ldr.deployMode() == ISOLATED || ldr.deployMode() == PRIVATE) && (ctx.config().getDeploymentMode() == SHARED || ctx.config().getDeploymentMode() == CONTINUOUS) && !U.hasAnnotation(cls,GridInternal.class))     throw new GridException("Attempt to deploy class loaded in ISOLATED or PRIVATE mode on node with " + "SHARED or CONTINUOUS deployment mode [cls=" + cls + ", clsDeployMode="+ ldr.deployMode()+ ", localDeployMode="+ ctx.config().getDeploymentMode()+ ']');
     GridDeploymentMetadata meta=new GridDeploymentMetadata();
-    meta.alias(cls.getName());
+    meta.alias(clsName);
     meta.classLoader(clsLdr);
     GridDeployment dep=locStore.getDeployment(meta);
     if (dep == null) {
