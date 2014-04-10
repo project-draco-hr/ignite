@@ -1,21 +1,27 @@
 {
-  gate.enter();
+  enterBusy();
   try {
-    if (cctx.transactional()) {
-      CU.outTx(new Callable<Void>(){
-        @Override public Void call() throws Exception {
-          delegate.clear();
-          return null;
+    gate.enter();
+    try {
+      if (cctx.transactional()) {
+        CU.outTx(new Callable<Void>(){
+          @Override public Void call() throws Exception {
+            delegate.clear();
+            return null;
+          }
         }
-      }
 ,cctx);
+      }
+ else       delegate.clear();
     }
- else     delegate.clear();
-  }
- catch (  GridException e) {
-    throw new GridRuntimeException(e);
-  }
+ catch (    GridException e) {
+      throw new GridRuntimeException(e);
+    }
  finally {
-    gate.leave();
+      gate.leave();
+    }
+  }
+  finally {
+    leaveBusy();
   }
 }

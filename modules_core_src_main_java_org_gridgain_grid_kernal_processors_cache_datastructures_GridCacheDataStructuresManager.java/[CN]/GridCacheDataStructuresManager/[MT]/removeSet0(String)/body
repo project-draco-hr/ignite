@@ -9,12 +9,16 @@
       GridDhtTopologyFuture fut=cctx.topologyVersionFuture();
       long topVer=fut.topologySnapshot().topologyVersion();
       Collection<GridNode> nodes=CU.affinityNodes(cctx,topVer);
+      cctx.closures().callAsyncNoFailover(BROADCAST,new BlockSetCallable(cctx.name(),hdr.id()),nodes,true).get();
       cctx.closures().callAsyncNoFailover(BROADCAST,new RemoveSetCallable(cctx.name(),hdr.id(),topVer),nodes,true).get();
     }
   finally {
       cctx.topology().readUnlock();
     }
   }
- else   removeSet(hdr.id(),0);
+ else {
+    blockSet(hdr.id());
+    removeSet(hdr.id(),0);
+  }
   return true;
 }

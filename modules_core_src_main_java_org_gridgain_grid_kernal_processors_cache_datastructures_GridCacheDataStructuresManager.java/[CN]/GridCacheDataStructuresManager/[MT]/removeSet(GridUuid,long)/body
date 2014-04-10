@@ -1,20 +1,20 @@
 {
-  GridCacheSetProxy set=setsMap.remove(setId);
-  if (set != null)   set.delegate().removed(true);
-  GridConcurrentHashSet<GridCacheSetItemKey> setData=setDataMap.remove(setId);
-  if (setData != null) {
-    GridCache cache=cctx.cache();
-    final int BATCH_SIZE=100;
-    Collection<GridCacheSetItemKey> keys=new ArrayList<>();
-    GridCacheAffinityManager aff=cctx.affinity();
-    for (    GridCacheSetItemKey key : setData) {
-      if (!aff.primary(cctx.localNode(),key,topVer))       continue;
-      keys.add(key);
-      if (keys.size() == BATCH_SIZE) {
-        cache.removeAll(keys);
-        keys.clear();
-      }
+  GridConcurrentHashSet<GridCacheSetItemKey> set=setDataMap.get(setId);
+  if (set == null)   return;
+  GridCache cache=cctx.cache();
+  final int BATCH_SIZE=100;
+  Collection<GridCacheSetItemKey> keys=new ArrayList<>(BATCH_SIZE);
+  boolean local=cctx.isLocal();
+  GridCacheAffinityManager aff=cctx.affinity();
+  if (!local)   aff.affinityReadyFuture(topVer).get();
+  for (  GridCacheSetItemKey key : set) {
+    if (!local && !aff.primary(cctx.localNode(),key,topVer))     continue;
+    keys.add(key);
+    if (keys.size() == BATCH_SIZE) {
+      cache.removeAll(keys);
+      keys.clear();
     }
-    if (!keys.isEmpty())     cache.removeAll(keys);
   }
+  if (!keys.isEmpty())   cache.removeAll(keys);
+  setDataMap.remove(setId);
 }
