@@ -1,6 +1,10 @@
 {
   waitInitialization();
-  GridCacheSetHeaderKey key=new GridCacheSetHeaderKey(name);
-  GridCacheAdapter cache=cctx.cache();
-  return cache.removex(key);
+  if (cctx.atomic())   return removeSet0(name);
+  return CU.outTx(new Callable<Boolean>(){
+    @Override public Boolean call() throws Exception {
+      return removeSet0(name);
+    }
+  }
+,cctx);
 }

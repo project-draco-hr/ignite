@@ -1,0 +1,20 @@
+{
+  GridCacheSetHeaderKey key=new GridCacheSetHeaderKey(name);
+  GridCache cache=cctx.cache();
+  GridCacheSetHeader hdr=(GridCacheSetHeader)cache.remove(key);
+  if (hdr == null)   return false;
+  if (!cctx.isLocal()) {
+    cctx.topology().readLock();
+    try {
+      GridDhtTopologyFuture fut=cctx.topologyVersionFuture();
+      long topVer=fut.topologySnapshot().topologyVersion();
+      Collection<GridNode> nodes=CU.affinityNodes(cctx,topVer);
+      cctx.closures().callAsyncNoFailover(BROADCAST,new RemoveSetCallable(cctx.name(),hdr.id(),topVer),nodes,true).get();
+    }
+  finally {
+      cctx.topology().readUnlock();
+    }
+  }
+ else   removeSet(hdr.id(),0);
+  return true;
+}
