@@ -1,0 +1,37 @@
+{
+  A.notNull(item,"item");
+  try {
+    boolean retVal;
+    int cnt=0;
+    while (true) {
+      try {
+        try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+          Long idx=(Long)cache.transformAndCompute(queueKey,new AddClosure(id,1));
+          if (idx != null) {
+            checkRemoved(idx);
+            boolean putx=cache.putx(itemKey(idx),item,null);
+            assert putx;
+            retVal=true;
+          }
+ else           retVal=false;
+          tx.commit();
+          break;
+        }
+       }
+ catch (      GridEmptyProjectionException e) {
+        throw e;
+      }
+catch (      GridTopologyException e) {
+        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
+ else {
+          U.warn(log,"Failed to add item, will retry [err=" + e + ']');
+          U.sleep(RETRY_DELAY);
+        }
+      }
+    }
+    return retVal;
+  }
+ catch (  GridException e) {
+    throw new GridRuntimeException(e);
+  }
+}
