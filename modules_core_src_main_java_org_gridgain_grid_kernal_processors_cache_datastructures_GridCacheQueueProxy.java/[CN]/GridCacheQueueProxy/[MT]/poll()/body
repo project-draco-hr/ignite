@@ -1,0 +1,18 @@
+{
+  gate.enter();
+  try {
+    if (cctx.transactional())     return CU.outTx(new Callable<T>(){
+      @Override public T call() throws Exception {
+        return delegate.poll();
+      }
+    }
+,cctx);
+    return delegate.poll();
+  }
+ catch (  GridException e) {
+    throw new GridRuntimeException(e);
+  }
+ finally {
+    gate.leave();
+  }
+}
