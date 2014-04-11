@@ -1,5 +1,5 @@
 {
-  GridFuture<Void> fut=new GridFutureAdapter<>(ctx.kernalContext());
+  GridChainedFuture<?> res=new GridChainedFuture<>(ctx.kernalContext());
   ctx.kernalContext().closure().callLocalSafe(new GridPlainCallable<GridFuture<?>>(){
     @Override public GridFuture<?> call() throws Exception {
       try (GridHadoopTaskOutput out=createOutput(info);GridHadoopTaskInput in=createInput(info)){
@@ -9,10 +9,6 @@
       }
      }
   }
-,false).listenAsync(new CIX1<GridFuture<GridFuture<?>>>(){
-    @Override public void applyx(    GridFuture<GridFuture<?>> f) throws GridException {
-    }
-  }
-);
-  return null;
+,false).listenAsync(res);
+  return res;
 }
