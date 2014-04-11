@@ -1,4 +1,14 @@
 {
-  GridHadoopJobMetadata meta=new GridHadoopJobMetadata(jobId);
-  return null;
+  try {
+    Collection<GridHadoopBlock> blocks=blockRslvr.getInputBlocks(jobId,info);
+    initBlockNodes(blocks);
+    GridHadoopMapReducePlan mrPlan=mrPlanner.preparePlan(blocks,ctx.nodes(),info,null);
+    GridHadoopJobMetadata meta=new GridHadoopJobMetadata(jobId);
+    meta.mapReducePlan(mrPlan);
+    sysCache.put(jobId,meta);
+    return null;
+  }
+ catch (  GridException e) {
+    return new GridFinishedFutureEx<>(e);
+  }
 }
