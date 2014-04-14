@@ -1,0 +1,23 @@
+{
+  for (  Map.Entry<GridHadoopJobId,GridHadoopJobMetadata<Configuration>> entry : updated) {
+    GridHadoopJobId jobId=entry.getKey();
+    JobLocalState state=activeJobs.get(jobId);
+    if (state == null)     state=F.addIfAbsent(activeJobs,jobId,new JobLocalState());
+    GridHadoopJobMetadata<Configuration> meta=entry.getValue();
+    GridHadoopJob<Configuration> job=ctx.<Configuration>jobFactory().createJob(jobId,meta.jobInfo());
+    for (    GridHadoopBlock block : meta.mapReducePlan().mappers(ctx.localNodeId())) {
+      if (state.addMapper(block)) {
+        GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo();
+        GridHadoopTask task=job.createTask(taskInfo);
+        ctx.taskExecutor().run(taskInfo,task);
+      }
+    }
+    for (    int reducer : meta.mapReducePlan().reducers(ctx.localNodeId())) {
+      if (state.addReducer(reducer)) {
+        GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo();
+        GridHadoopTask task=job.createTask(taskInfo);
+        ctx.taskExecutor().run(taskInfo,task);
+      }
+    }
+  }
+}
