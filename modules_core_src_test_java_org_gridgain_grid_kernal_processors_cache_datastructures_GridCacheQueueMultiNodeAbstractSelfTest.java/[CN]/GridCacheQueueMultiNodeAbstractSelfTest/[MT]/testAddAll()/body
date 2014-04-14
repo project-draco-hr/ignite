@@ -7,11 +7,8 @@
     assertTrue(queue.isEmpty());
     grid(0).compute().call(new AddAllJob(queueName,RETRIES)).get();
     assertEquals(GRID_CNT * RETRIES,queue.size());
-    GridCacheQuery<Map.Entry<GridCacheAffinityKey<UUID>,Person>> qry=c.queries().createSqlQuery(GridCacheQueueItemImpl.class,"select * from GridCacheQueueItemImpl where qid=?");
-    assertEquals(GRID_CNT * RETRIES,REPLICATED == c.configuration().getCacheMode() ? qry.projection(grid(0).forLocal()).execute(queue.name()).get().size() : qry.execute(queue.name()).get().size());
     queue.clear(5);
     assertEquals(0,queue.size());
-    assertEquals(0,REPLICATED == c.configuration().getCacheMode() ? qry.projection(grid(0).forLocal()).execute(queue.name()).get().size() : qry.execute(queue.name()).get().size());
     c.dataStructures().removeQueue(queueName);
   }
  catch (  Throwable t) {

@@ -1,18 +1,24 @@
 {
-  gate.enter();
+  enterBusy();
   try {
-    if (cctx.transactional())     return CU.outTx(new Callable<Object[]>(){
-      @Override public Object[] call() throws Exception {
-        return delegate.toArray();
+    gate.enter();
+    try {
+      if (cctx.transactional())       return CU.outTx(new Callable<Object[]>(){
+        @Override public Object[] call() throws Exception {
+          return delegate.toArray();
+        }
       }
-    }
 ,cctx);
-    return delegate.toArray();
-  }
- catch (  GridException e) {
-    throw new GridRuntimeException(e);
-  }
+      return delegate.toArray();
+    }
+ catch (    GridException e) {
+      throw new GridRuntimeException(e);
+    }
  finally {
-    gate.leave();
+      gate.leave();
+    }
+  }
+  finally {
+    leaveBusy();
   }
 }
