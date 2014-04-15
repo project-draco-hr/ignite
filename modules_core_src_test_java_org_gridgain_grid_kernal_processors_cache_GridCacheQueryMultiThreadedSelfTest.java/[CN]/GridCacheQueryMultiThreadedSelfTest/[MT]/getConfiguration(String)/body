@@ -1,0 +1,34 @@
+{
+  GridConfiguration cfg=super.getConfiguration(gridName);
+  GridTcpDiscoverySpi disco=new GridTcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(disco);
+  cfg.setSwapSpaceSpi(new GridFileSwapSpaceSpi());
+  cfg.setMarshaller(new GridOptimizedMarshaller(false));
+  GridCacheConfiguration cacheCfg=defaultCacheConfiguration();
+  cacheCfg.setCacheMode(PARTITIONED);
+  cacheCfg.setAtomicityMode(TRANSACTIONAL);
+  cacheCfg.setDistributionMode(GridCacheDistributionMode.NEAR_PARTITIONED);
+  cacheCfg.setWriteSynchronizationMode(GridCacheWriteSynchronizationMode.FULL_SYNC);
+  cacheCfg.setSwapEnabled(true);
+  cacheCfg.setBackups(1);
+  cacheCfg.setEvictionPolicy(evictsEnabled() ? new GridCacheLruEvictionPolicy(100) : null);
+  if (offheapEnabled() && evictsEnabled())   cacheCfg.setOffHeapMaxMemory(1000);
+  cfg.setCacheConfiguration(cacheCfg);
+  GridH2IndexingSpi indexing=new GridH2IndexingSpi(){
+    @Override public <K>void onSwap(    @Nullable String spaceName,    String swapSpaceName,    K key) throws GridSpiException {
+      super.onSwap(spaceName,swapSpaceName,key);
+      idxSwapCnt.incrementAndGet();
+    }
+    @Override public <K,V>void onUnswap(    @Nullable String spaceName,    K key,    V val,    byte[] valBytes) throws GridSpiException {
+      super.onUnswap(spaceName,key,val,valBytes);
+      idxUnswapCnt.incrementAndGet();
+    }
+  }
+;
+  indexing.setDefaultIndexPrimitiveKey(true);
+  indexing.setMaxOffheapRowsCacheSize(128);
+  if (offheapEnabled())   indexing.setMaxOffHeapMemory(0);
+  cfg.setIndexingSpi(indexing);
+  return cfg;
+}

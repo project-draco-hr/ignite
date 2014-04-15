@@ -1,0 +1,18 @@
+{
+  aff=new GridAffinityAssignmentCache(cctx,cctx.namex(),cctx.config().getAffinity(),cctx.config().getAffinityMapper(),cctx.config().getBackups());
+  int partCnt=partitions();
+  partAffKeys=new GridPartitionLockKey[partCnt];
+  Collection<Integer> found=new HashSet<>();
+  long affKey=0;
+  while (true) {
+    GridPartitionLockKey key=new GridPartitionLockKey(affKey);
+    int part=aff.partition(key);
+    if (found.add(part)) {
+      key.partitionId(part);
+      partAffKeys[part]=key;
+      if (found.size() == partCnt)       break;
+    }
+    affKey++;
+    if (affKey > partCnt * MAX_PARTITION_KEY_ATTEMPT_RATIO)     throw new IllegalStateException("Failed to calculate partition affinity keys for given affinity " + "function [attemptCnt=" + affKey + ", found="+ found+ ", cacheName="+ cctx.name()+ ']');
+  }
+}

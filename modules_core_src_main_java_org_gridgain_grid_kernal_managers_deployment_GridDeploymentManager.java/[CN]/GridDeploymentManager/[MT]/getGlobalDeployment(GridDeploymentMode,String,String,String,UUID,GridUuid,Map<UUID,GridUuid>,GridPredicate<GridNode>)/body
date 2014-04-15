@@ -1,0 +1,61 @@
+{
+  if (locDep != null)   return locDep;
+  String lambdaEnclosingClsName=U.lambdaEnclosingClassName(clsName);
+  if (lambdaEnclosingClsName != null)   clsName=lambdaEnclosingClsName;
+  GridDeploymentMetadata meta=new GridDeploymentMetadata();
+  meta.deploymentMode(depMode);
+  meta.className(clsName);
+  meta.alias(rsrcName);
+  meta.userVersion(userVer);
+  meta.senderNodeId(sndNodeId);
+  meta.classLoaderId(clsLdrId);
+  meta.participants(participants);
+  meta.nodeFilter(nodeFilter);
+  if (!ctx.config().isPeerClassLoadingEnabled()) {
+    meta.record(true);
+    return locStore.getDeployment(meta);
+  }
+  if (isPerVersionMode(meta.deploymentMode())) {
+    meta.record(true);
+    boolean reuse=true;
+    if (!sndNodeId.equals(ctx.localNodeId())) {
+      String[] p2pExc=ctx.config().getPeerClassLoadingLocalClassPathExclude();
+      if (p2pExc != null) {
+        for (        String rsrc : p2pExc) {
+          if (rsrc.endsWith("*"))           rsrc=rsrc.substring(0,rsrc.length() - 1);
+          if (meta.alias().startsWith(rsrc) || meta.className().startsWith(rsrc)) {
+            if (log.isDebugEnabled())             log.debug("Will not reuse local deployment because resource is excluded [meta=" + meta + ']');
+            reuse=false;
+            break;
+          }
+        }
+      }
+    }
+    if (reuse) {
+      GridDeployment locDep=locStore.getDeployment(meta);
+      if (locDep == null && participants != null && participants.containsKey(ctx.localNodeId()))       locDep=locStore.getDeployment(participants.get(ctx.localNodeId()));
+      if (locDep != null) {
+        if (!isPerVersionMode(locDep.deployMode())) {
+          U.warn(log,"Failed to deploy class in SHARED or CONTINUOUS mode (class is locally deployed " + "in some other mode). Either change GridConfiguration.getDeploymentMode() property to " + "SHARED or CONTINUOUS or remove class from local classpath and any of "+ "the local GAR deployments that may have it [cls=" + meta.className() + ", depMode="+ locDep.deployMode()+ ']',"Failed to deploy class in SHARED or CONTINUOUS mode.");
+          return null;
+        }
+        if (!locDep.userVersion().equals(meta.userVersion())) {
+          U.warn(log,"Failed to deploy class in SHARED or CONTINUOUS mode for given user version " + "(class is locally deployed for a different user version) [cls=" + meta.className() + ", localVer="+ locDep.userVersion()+ ", otherVer="+ meta.userVersion()+ ']',"Failed to deploy class in SHARED or CONTINUOUS mode.");
+          return null;
+        }
+        if (log.isDebugEnabled())         log.debug("Reusing local deployment for SHARED or CONTINUOUS mode: " + locDep);
+        return locDep;
+      }
+    }
+    return verStore.getDeployment(meta);
+  }
+  meta.record(false);
+  GridDeployment dep=locStore.getDeployment(meta);
+  if (sndNodeId.equals(ctx.localNodeId())) {
+    if (dep == null)     U.warn(log,"Task got undeployed while deployment was in progress: " + meta);
+    return dep;
+  }
+  if (dep != null)   meta.parentLoader(dep.classLoader());
+  meta.record(true);
+  return ldrStore.getDeployment(meta);
+}

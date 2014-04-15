@@ -1,0 +1,12 @@
+{
+  if (log.isDebugEnabled())   log.debug("Received onComplete(..) callback [success=" + success + ", distribute="+ distribute+ ", fut="+ this+ ']');
+  if (!success)   undoLocks(distribute);
+  if (tx != null)   cctx.tm().txContext(tx);
+  if (super.onDone(success,err.get())) {
+    if (log.isDebugEnabled())     log.debug("Completing future: " + this);
+    cctx.mvcc().removeFuture(this);
+    if (timeoutObj != null)     cctx.time().removeTimeoutObject(timeoutObj);
+    return true;
+  }
+  return false;
+}

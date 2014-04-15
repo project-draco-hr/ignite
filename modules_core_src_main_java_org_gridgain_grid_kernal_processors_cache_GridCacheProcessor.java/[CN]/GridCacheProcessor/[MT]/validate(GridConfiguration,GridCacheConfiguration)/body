@@ -1,0 +1,95 @@
+{
+  if (cc.getCacheMode() == REPLICATED) {
+    if (!(cc.getAffinity() instanceof GridCacheConsistentHashAffinityFunction))     throw new GridException("REPLICATED cache can be started only with GridCacheConsistentHashAffinityFunction" + " [cacheName=" + cc.getName() + ", affinity="+ cc.getAffinity().getClass().getName()+ ']');
+    GridCacheConsistentHashAffinityFunction aff=(GridCacheConsistentHashAffinityFunction)cc.getAffinity();
+    if (cc.getBackups() != Integer.MAX_VALUE)     throw new GridException("For REPLICATED cache number of backups in GridCacheCconfiguration must " + "be set to Integer.MAX_VALUE [cacheName=" + cc.getName() + ", backups="+ cc.getBackups()+ ']');
+    if (aff.isExcludeNeighbors())     throw new GridException("For REPLICATED cache flag 'excludeNeighbors' in GridCacheConsistentHashAffinityFunction " + "cannot be set [cacheName=" + cc.getName() + ']');
+    if (cc.getWriteSynchronizationMode() == PRIMARY_SYNC)     throw new GridException("Cannot start REPLICATED cache with PRIMARY_SYNC write synchronization mode " + "(switch to FULL_SYNC or FULL_ASYNC mode instead) [cacheName=" + cc.getName() + ']');
+    if (cc.getDistributionMode() == NEAR_PARTITIONED) {
+      U.warn(log,"NEAR_PARTITIONED distribution mode cannot be used with REPLICATED cache, " + "will be changed to PARTITIONED_ONLY [cacheName=" + cc.getName() + ']');
+      cc.setDistributionMode(PARTITIONED_ONLY);
+    }
+  }
+  if (cc.getCacheMode() == LOCAL && !cc.getAffinity().getClass().equals(LocalAffinityFunction.class))   U.warn(log,"GridCacheAffinityFunction configuration parameter will be ignored for local cache [cacheName=" + cc.getName() + ']');
+  if (cc.getPreloadMode() != GridCachePreloadMode.NONE) {
+    assertParameter(cc.getPreloadThreadPoolSize() > 0,"preloadThreadPoolSize > 0");
+    assertParameter(cc.getPreloadBatchSize() > 0,"preloadBatchSize > 0");
+  }
+  if (cc.getCacheMode() == PARTITIONED || cc.getCacheMode() == REPLICATED) {
+    if (cc.getAtomicityMode() == ATOMIC && cc.getWriteSynchronizationMode() == FULL_ASYNC)     U.warn(log,"Cache write synchronization mode is set to FULL_ASYNC. All single-key 'put' and " + "'remove' operations will return 'null', all 'putx' and 'removex' operations will return" + " 'true'.");
+    if (cc.getAtomicityMode() == ATOMIC && cc.getWriteSynchronizationMode() != FULL_SYNC && cc.getAtomicWriteOrderMode() == GridCacheAtomicWriteOrderMode.CLOCK) {
+      cc.setAtomicWriteOrderMode(GridCacheAtomicWriteOrderMode.PRIMARY);
+      U.warn(log,"Automatically set write order mode to PRIMARY for write synchronization mode " + "[writeSynchronizationMode=" + cc.getWriteSynchronizationMode() + ", "+ "cacheName="+ cc.getName()+ ']');
+    }
+  }
+  if (ctx.config().getDeploymentMode() == PRIVATE || ctx.config().getDeploymentMode() == ISOLATED)   throw new GridException("Cannot start cache in PRIVATE or ISOLATED deployment mode: " + ctx.config().getDeploymentMode());
+  if (!cc.isTxSerializableEnabled() && cc.getDefaultTxIsolation() == SERIALIZABLE)   U.warn(log,"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "(most likely misconfiguration - either update 'isTxSerializableEnabled' or " + "'defaultTxIsolationLevel' properties) for cache: "+ cc.getName(),"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "for cache: " + cc.getName());
+  if (cc.isWriteBehindEnabled()) {
+    if (cc.getStore() == null)     throw new GridException("Cannot enable write-behind cache (cache store is not provided) for cache: " + cc.getName());
+    assertParameter(cc.getWriteBehindBatchSize() > 0,"writeBehindBatchSize > 0");
+    assertParameter(cc.getWriteBehindFlushSize() >= 0,"writeBehindFlushSize >= 0");
+    assertParameter(cc.getWriteBehindFlushFrequency() >= 0,"writeBehindFlushFrequency >= 0");
+    assertParameter(cc.getWriteBehindFlushThreadCount() > 0,"writeBehindFlushThreadCount > 0");
+    if (cc.getWriteBehindFlushSize() == 0 && cc.getWriteBehindFlushFrequency() == 0)     throw new GridException("Cannot set both 'writeBehindFlushFrequency' and " + "'writeBehindFlushSize' parameters to 0 for cache: " + cc.getName());
+  }
+  long delay=cc.getPreloadPartitionedDelay();
+  if (delay != 0) {
+    if (cc.getCacheMode() != PARTITIONED)     U.warn(log,"Preload delay is supported only for partitioned caches (will ignore): " + cc.getName(),"Will ignore preload delay for cache: " + cc.getName());
+ else     if (cc.getPreloadMode() == SYNC) {
+      if (delay < 0) {
+        U.warn(log,"Ignoring SYNC preload mode with manual preload start (node will not wait for " + "preloading to be finished): " + cc.getName(),"Node will not wait for preload in SYNC mode: " + cc.getName());
+      }
+ else {
+        U.warn(log,"Using SYNC preload mode with preload delay (node will wait until preloading is " + "initiated for " + delay + "ms) for cache: "+ cc.getName(),"Node will wait until preloading is initiated for " + delay + "ms for cache: "+ cc.getName());
+      }
+    }
+  }
+  if (!cc.isQueryIndexEnabled())   U.warn(log,"Query indexing is disabled (queries will not work) for cache: '" + cc.getName() + "'. "+ "To enable change GridCacheConfiguration.isQueryIndexEnabled() property.","Query indexing is disabled (queries will not work) for cache: " + cc.getName());
+  GridCacheEvictionPolicy evictPlc=cc.getEvictionPolicy();
+  if (evictPlc != null && evictPlc instanceof GridCacheGgfsPerBlockLruEvictionPolicy) {
+    GridCacheEvictionFilter evictFilter=cc.getEvictionFilter();
+    if (evictFilter != null && !(evictFilter instanceof GridCacheGgfsEvictionFilter))     throw new GridException("Eviction filter cannot be set explicitly when using " + "GridCacheGgfsPerBlockLruEvictionPolicy:" + cc.getName());
+  }
+switch (cc.getMemoryMode()) {
+case OFFHEAP_VALUES:
+{
+      if (cc.getOffHeapMaxMemory() < 0)       cc.setOffHeapMaxMemory(0);
+      break;
+    }
+case OFFHEAP_TIERED:
+{
+    if (cc.getOffHeapMaxMemory() < 0)     cc.setOffHeapMaxMemory(0);
+    break;
+  }
+case ONHEAP_TIERED:
+break;
+default :
+throw new IllegalStateException("Unknown memory mode: " + cc.getMemoryMode());
+}
+if (cc.getMemoryMode() == GridCacheMemoryMode.OFFHEAP_VALUES) {
+if (cc.isQueryIndexEnabled()) throw new GridException("Cannot have query indexing enabled while values are stored off-heap. " + "You must either disable query indexing or disable off-heap values only flag for cache: " + cc.getName());
+}
+boolean ggfsCache=CU.isGgfsCache(c,cc.getName());
+boolean mongoCache=false;
+GridDrSenderCacheConfiguration drSndCfg=cc.getDrSenderConfiguration();
+if (drSndCfg != null) {
+if (ggfsCache) throw new GridException("GGFS cache cannot be data center replication sender cache: " + cc.getName());
+if (mongoCache) throw new GridException("Mongo cache cannot be data center replication sender cache: " + cc.getName());
+assertParameter(drSndCfg.getMode() != null,"cfg.getDrSenderConfiguration().getMode() != null");
+if (cc.getCacheMode() == LOCAL) throw new GridException("Data center replication is not supported for LOCAL cache");
+assertParameter(drSndCfg.getBatchSendSize() > 0,"cfg.getDrSenderConfiguration().getBatchSendSize() > 0");
+if (drSndCfg.getBatchSendFrequency() < 0) drSndCfg.setBatchSendFrequency(0);
+assertParameter(drSndCfg.getMaxBatches() > 0,"cfg.getDrSenderConfiguration().getMaxBatches() > 0");
+assertParameter(drSndCfg.getSenderHubLoadBalancingMode() != null,"cfg.getDrSendConfiguration().getSenderHubLoadBalancingMode() != null");
+assertParameter(drSndCfg.getStateTransferThreadsCount() > 0,"cfg.getDrSenderConfiguration().getStateTransferThreadsCount() > 0");
+assertParameter(drSndCfg.getStateTransferThrottle() >= 0,"cfg.getDrSenderConfiguration().getStateTransferThrottle >= 0");
+}
+GridDrReceiverCacheConfiguration drRcvCfg=cc.getDrReceiverConfiguration();
+if (drRcvCfg != null) {
+if (ggfsCache) throw new GridException("GGFS cache cannot be data center replication receiver cache: " + cc.getName());
+if (mongoCache) throw new GridException("Mongo cache cannot be data center replication receiver cache: " + cc.getName());
+GridDrReceiverCacheConflictResolverMode rslvrMode=drRcvCfg.getConflictResolverMode();
+assertParameter(rslvrMode != null,"cfg.getDrReceiverConfiguration().getConflictResolverPolicy() != null");
+if (rslvrMode != DR_AUTO && drRcvCfg.getConflictResolver() == null) throw new GridException("Conflict resolver must be not null with " + rslvrMode + " resolving policy");
+}
+}

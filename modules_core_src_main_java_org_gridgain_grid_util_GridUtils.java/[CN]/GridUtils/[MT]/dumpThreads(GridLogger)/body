@@ -1,0 +1,15 @@
+{
+  ThreadMXBean mxBean=ManagementFactory.getThreadMXBean();
+  ThreadInfo[] threadInfos=mxBean.dumpAllThreads(mxBean.isObjectMonitorUsageSupported(),mxBean.isSynchronizerUsageSupported());
+  GridStringBuilder sb=new GridStringBuilder("Thread dump at ").a(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss z").format(new Date(U.currentTimeMillis()))).a(NL);
+  for (  ThreadInfo info : threadInfos) {
+    printThreadInfo(info,sb);
+    sb.a(NL);
+    if (info.getLockedSynchronizers() != null && info.getLockedSynchronizers().length > 0) {
+      printSynchronizersInfo(info.getLockedSynchronizers(),sb);
+      sb.a(NL);
+    }
+  }
+  sb.a(NL);
+  warn(log,sb.toString());
+}

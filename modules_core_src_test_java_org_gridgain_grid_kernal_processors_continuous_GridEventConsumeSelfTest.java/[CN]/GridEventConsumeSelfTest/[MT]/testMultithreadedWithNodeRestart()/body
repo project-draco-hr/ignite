@@ -1,0 +1,85 @@
+{
+  final AtomicBoolean stop=new AtomicBoolean();
+  final BlockingQueue<GridBiTuple<Integer,UUID>> queue=new LinkedBlockingQueue<>();
+  final Collection<UUID> started=new GridConcurrentHashSet<>();
+  final Collection<UUID> stopped=new GridConcurrentHashSet<>();
+  final Random rnd=new Random();
+  GridFuture<?> starterFut=multithreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      for (int i=0; i < CONSUME_CNT; i++) {
+        int idx=rnd.nextInt(GRID_CNT);
+        try {
+          UUID consumeId=grid(idx).events().remoteListen(new P2<UUID,GridEvent>(){
+            @Override public boolean apply(            UUID uuid,            GridEvent evt){
+              return true;
+            }
+          }
+,null,EVT_JOB_STARTED).get(3000);
+          started.add(consumeId);
+          queue.add(F.t(idx,consumeId));
+        }
+ catch (        GridTopologyException ignored) {
+        }
+        U.sleep(10);
+      }
+      stop.set(true);
+      return null;
+    }
+  }
+,8,"consume-starter");
+  GridFuture<?> stopperFut=multithreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      while (!stop.get()) {
+        GridBiTuple<Integer,UUID> t=queue.poll(1,SECONDS);
+        if (t == null)         continue;
+        int idx=t.get1();
+        UUID consumeId=t.get2();
+        try {
+          grid(idx).events().stopRemoteListen(consumeId).get(3000);
+          stopped.add(consumeId);
+        }
+ catch (        GridTopologyException ignored) {
+        }
+      }
+      return null;
+    }
+  }
+,4,"consume-stopper");
+  GridFuture<?> nodeRestarterFut=multithreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      while (!stop.get()) {
+        startGrid("anotherGrid");
+        stopGrid("anotherGrid");
+      }
+      return null;
+    }
+  }
+,1,"node-restarter");
+  GridFuture<?> jobRunnerFut=multithreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      while (!stop.get()) {
+        int idx=rnd.nextInt(GRID_CNT);
+        try {
+          grid(idx).compute().run(F.noop()).get(3000);
+        }
+ catch (        GridException ignored) {
+        }
+      }
+      return null;
+    }
+  }
+,1,"job-runner");
+  starterFut.get();
+  stopperFut.get();
+  nodeRestarterFut.get();
+  jobRunnerFut.get();
+  GridBiTuple<Integer,UUID> t;
+  while ((t=queue.poll()) != null) {
+    int idx=t.get1();
+    UUID consumeId=t.get2();
+    grid(idx).events().stopRemoteListen(consumeId).get(3000);
+    stopped.add(consumeId);
+  }
+  Collection<UUID> notStopped=F.lose(started,true,stopped);
+  assertEquals("Not stopped IDs: " + notStopped,0,notStopped.size());
+}

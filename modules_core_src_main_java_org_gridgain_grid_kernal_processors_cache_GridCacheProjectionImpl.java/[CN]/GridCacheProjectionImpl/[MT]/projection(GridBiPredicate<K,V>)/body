@@ -1,0 +1,15 @@
+{
+  if (p == null)   return this;
+  GridBiPredicate<K,V> kvFilter=p;
+  if (noNullKvFilter.kvFilter != null)   kvFilter=and(p,true);
+  if (cctx.deploymentEnabled()) {
+    try {
+      cctx.deploy().registerClasses(p);
+    }
+ catch (    GridException e) {
+      throw new GridRuntimeException(e);
+    }
+  }
+  GridCacheProjectionImpl<K,V> prj=new GridCacheProjectionImpl<>(this,cctx,kvFilter,noNullEntryFilter.entryFilter,flags);
+  return new GridCacheProxyImpl<>(cctx,prj,prj);
+}

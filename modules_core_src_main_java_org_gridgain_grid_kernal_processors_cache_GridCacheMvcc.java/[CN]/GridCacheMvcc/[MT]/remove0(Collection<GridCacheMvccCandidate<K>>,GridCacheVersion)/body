@@ -1,0 +1,16 @@
+{
+  if (col != null) {
+    for (Iterator<GridCacheMvccCandidate<K>> it=col.iterator(); it.hasNext(); ) {
+      GridCacheMvccCandidate<K> cand=it.next();
+      if (cand.version().equals(ver)) {
+        cand.setUsed();
+        cand.setRemoved();
+        it.remove();
+        reassign();
+        if (cand.local())         cctx.mvcc().removeLocal(cand);
+        return true;
+      }
+    }
+  }
+  return false;
+}

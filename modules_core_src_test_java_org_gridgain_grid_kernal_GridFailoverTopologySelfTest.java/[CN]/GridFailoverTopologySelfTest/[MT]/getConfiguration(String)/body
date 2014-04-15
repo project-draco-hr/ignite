@@ -1,0 +1,27 @@
+{
+  GridConfiguration cfg=super.getConfiguration(gridName);
+  cfg.setNodeId(null);
+  cfg.setFailoverSpi(new GridAlwaysFailoverSpi(){
+    /** 
+ */
+    @GridLocalNodeIdResource private UUID locNodeId;
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public GridNode failover(    GridFailoverContext ctx,    List<GridNode> grid){
+      if (grid.size() != 1) {
+        failed.set(true);
+        error("Unexpected grid size [expected=1, grid=" + grid + ']');
+      }
+      for (      GridNode node : grid) {
+        if (node.id().equals(locNodeId)) {
+          failed.set(true);
+          error("Grid shouldn't contain local node [localNodeId=" + locNodeId + ", grid="+ grid+ ']');
+        }
+      }
+      return super.failover(ctx,grid);
+    }
+  }
+);
+  return cfg;
+}

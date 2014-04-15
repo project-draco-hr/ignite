@@ -1,0 +1,18 @@
+{
+  GridClientConfiguration cfg=new GridClientConfiguration();
+  GridClientDataConfiguration nullCache=new GridClientDataConfiguration();
+  GridClientDataConfiguration cache=new GridClientDataConfiguration();
+  cache.setName(CACHE_NAME);
+  cfg.setDataConfigurations(Arrays.asList(nullCache,cache));
+  cfg.setProtocol(protocol());
+  cfg.setServers(Arrays.asList(serverAddress()));
+  cfg.setExecutorService(Executors.newCachedThreadPool(new ThreadFactory(){
+    private AtomicInteger cntr=new AtomicInteger();
+    @SuppressWarnings("NullableProblems") @Override public Thread newThread(    Runnable r){
+      return new Thread(r,"client-worker-thread-" + cntr.getAndIncrement());
+    }
+  }
+));
+  if (useSsl())   cfg.setSslContextFactory(sslContextFactory());
+  return cfg;
+}

@@ -1,0 +1,16 @@
+{
+  while (true) {
+    try {
+      GridCacheEntryEx<K,V> e=unwrapNoCreate();
+      if (e == null)       return false;
+      if (e.isDht() && isNearEnabled(ctx)) {
+        GridCache<K,V> near=ctx.isDht() ? ctx.dht().near() : ctx.near();
+        return near.isLockedByThread(key) || e.lockedByThread();
+      }
+      return e.lockedByThread();
+    }
+ catch (    GridCacheEntryRemovedException ignore) {
+      reset();
+    }
+  }
+}

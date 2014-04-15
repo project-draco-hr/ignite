@@ -1,0 +1,14 @@
+{
+  if (tx.local()) {
+    GridDhtTxLocalAdapter<K,V> dhtTx=(GridDhtTxLocalAdapter<K,V>)tx;
+    return addDhtLocal(dhtTx.nearNodeId(),dhtTx.nearXidVersion(),tx.topologyVersion(),tx.threadId(),tx.xidVersion(),timeout,false,true,tx.implicitSingle()) != null;
+  }
+  try {
+    addRemote(tx.nodeId(),tx.otherNodeId(),tx.threadId(),tx.xidVersion(),tx.timeout(),true,tx.implicit(),null);
+    return true;
+  }
+ catch (  GridDistributedLockCancelledException ignored) {
+    if (log.isDebugEnabled())     log.debug("Attempted to enter tx lock for cancelled ID (will ignore): " + tx);
+    return false;
+  }
+}
