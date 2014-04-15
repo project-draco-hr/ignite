@@ -1,0 +1,16 @@
+{
+  if (top.isEmpty())   throw new IllegalArgumentException("Topology is empty");
+  Iterator<GridNode> it=top.iterator();
+  Map<UUID,Collection<GridHadoopFileBlock>> mappers=new HashMap<>();
+  for (  GridHadoopFileBlock block : blocks) {
+    GridNode node=it.next();
+    Collection<GridHadoopFileBlock> nodeBlocks=mappers.get(node.id());
+    if (nodeBlocks == null) {
+      nodeBlocks=new ArrayList<>();
+      mappers.put(node.id(),nodeBlocks);
+    }
+    nodeBlocks.add(block);
+    if (!it.hasNext())     it=top.iterator();
+  }
+  return new GridHadoopDefaultMapReducePlan(mappers,Collections.singletonMap(it.next().id(),new int[1]));
+}
