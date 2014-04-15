@@ -5,18 +5,24 @@
     if (state == null)     state=F.addIfAbsent(activeJobs,jobId,new JobLocalState());
     GridHadoopJobMetadata meta=entry.getValue();
     GridHadoopJob job=ctx.jobFactory().createJob(jobId,meta.jobInfo());
-    for (    GridHadoopFileBlock block : meta.mapReducePlan().mappers(ctx.localNodeId())) {
-      if (state.addMapper(block)) {
-        GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo();
-        GridHadoopTask task=job.createTask(taskInfo);
-        ctx.taskExecutor().run(taskInfo,task);
+    Collection<GridHadoopFileBlock> mappers=meta.mapReducePlan().mappers(ctx.localNodeId());
+    if (mappers != null) {
+      for (      GridHadoopFileBlock block : mappers) {
+        if (state.addMapper(block)) {
+          GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo();
+          GridHadoopTask task=job.createTask(taskInfo);
+          ctx.taskExecutor().run(taskInfo,task);
+        }
       }
     }
-    for (    int reducer : meta.mapReducePlan().reducers(ctx.localNodeId())) {
-      if (state.addReducer(reducer)) {
-        GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo();
-        GridHadoopTask task=job.createTask(taskInfo);
-        ctx.taskExecutor().run(taskInfo,task);
+    int[] reducers=meta.mapReducePlan().reducers(ctx.localNodeId());
+    if (reducers != null) {
+      for (      int reducer : reducers) {
+        if (state.addReducer(reducer)) {
+          GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo();
+          GridHadoopTask task=job.createTask(taskInfo);
+          ctx.taskExecutor().run(taskInfo,task);
+        }
       }
     }
   }
