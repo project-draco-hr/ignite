@@ -1,6 +1,10 @@
 {
   super.start();
-  if (ctx.isDaemon() || ctx.config().getHadoopConfiguration() == null)   return;
-  hctx=new GridHadoopContext(ctx,new GridHadoopJobTracker(),new GridHadoopTaskExecutor(),new GridHadoopShuffle());
+  GridHadoopConfiguration cfg=ctx.config().getHadoopConfiguration();
+  if (ctx.isDaemon() || cfg == null)   return;
+  cfg=new GridHadoopConfiguration(cfg);
+  initializeDefaults(cfg);
+  validate(cfg);
+  hctx=new GridHadoopContext(ctx,cfg,new GridHadoopJobTracker(),new GridHadoopTaskExecutor(),new GridHadoopShuffle());
   for (  GridHadoopComponent c : hctx.components())   c.start(hctx);
 }
