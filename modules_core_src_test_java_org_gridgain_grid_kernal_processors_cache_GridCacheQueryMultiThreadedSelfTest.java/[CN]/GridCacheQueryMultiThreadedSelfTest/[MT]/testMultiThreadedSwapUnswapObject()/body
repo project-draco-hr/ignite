@@ -3,7 +3,7 @@
   final int keyCnt=10000;
   final int valCnt=10000;
   final Grid g=grid(0);
-  final GridCache<Integer,TestValue> c=g.cache(null);
+  final GridCache<Long,TestValue> c=g.cache(null);
   assertEquals(0,g.cache(null).size());
   assertEquals(0,c.queries().createSqlQuery(String.class,"1 = 1").execute().get().size());
   assertEquals(0,c.queries().createSqlQuery(Long.class,"1 = 1").execute().get().size());
@@ -13,7 +13,7 @@
     @Override public void applyx() throws GridException {
       Random rnd=new Random();
       while (!done.get()) {
-        int key=rnd.nextInt(keyCnt);
+        long key=(long)rnd.nextInt(keyCnt);
 switch (rnd.nextInt(3)) {
 case 0:
           c.putx(key,new TestValue(rnd.nextInt(valCnt)));
@@ -25,12 +25,6 @@ case 2:
   c.get(key);
 break;
 case 3:
-GridCacheQuery<Map.Entry<Integer,TestValue>> qry=c.queries().createSqlQuery(Long.class,"TestValue.val between ? and ?");
-int from=rnd.nextInt(valCnt);
-GridCacheQueryFuture<Map.Entry<Integer,TestValue>> f=qry.execute(from,from + 250);
-Collection<Map.Entry<Integer,TestValue>> res=f.get();
-for (Map.Entry<Integer,TestValue> ignored : res) {
-}
 break;
 case 4:
 if (evictsEnabled()) c.evict(key);
