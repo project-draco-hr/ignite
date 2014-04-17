@@ -14,8 +14,64 @@
     throw new GridSpiException("Unknown multicast group: " + mcastGrp,e);
   }
   if (!mcastAddr.isMulticastAddress())   throw new GridSpiException("Invalid multicast group address: " + mcastAddr);
-  addrSnd=new AddressSender(mcastAddr,addrs);
-  addrSnd.start();
-  Collection<InetSocketAddress> res=requestAddresses(mcastAddr);
-  if (!res.isEmpty())   registerAddresses(res);
+  Collection<String> locAddrs;
+  try {
+    locAddrs=U.resolveLocalAddresses(U.resolveLocalHost(locAddr)).get1();
+  }
+ catch (  IOException|GridException e) {
+    throw new GridSpiException("Failed to resolve local addresses [locHost=" + locAddr + ']',e);
+  }
+  addrSnds=new ArrayList<>(locAddrs.size());
+  Collection<InetAddress> reqAddrs=new ArrayList<>(locAddrs.size());
+  for (  String locAddr : locAddrs) {
+    InetAddress addr;
+    try {
+      addr=InetAddress.getByName(locAddr);
+    }
+ catch (    UnknownHostException e) {
+      if (log.isDebugEnabled())       log.debug("Failed to resolve local address [locAddr=" + locAddr + ", err="+ e+ ']');
+      continue;
+    }
+    if (!addr.isLoopbackAddress()) {
+      try {
+        addrSnds.add(new AddressSender(mcastAddr,addr,addrs));
+        reqAddrs.add(addr);
+      }
+ catch (      IOException e) {
+        if (log.isDebugEnabled())         log.debug("Failed to create multicast socket [mcastAddr=" + mcastAddr + ", mcastGrp="+ mcastGrp+ ", mcastPort="+ mcastPort+ ", locAddr="+ addr+ ", err="+ e+ ']');
+      }
+    }
+  }
+  if (addrSnds.isEmpty()) {
+    try {
+      addrSnds.add(new AddressSender(mcastAddr,null,addrs));
+    }
+ catch (    IOException e) {
+      throw new GridSpiException("Failed to create multicast socket [mcastAddr=" + mcastAddr + ", mcastGrp="+ mcastGrp+ ", mcastPort="+ mcastPort+ ']',e);
+    }
+  }
+  for (  AddressSender addrSnd : addrSnds)   addrSnd.start();
+  Collection<InetSocketAddress> ret;
+  if (reqAddrs.size() > 1) {
+    ret=new HashSet<>();
+    Collection<AddressReceiver> rcvrs=new ArrayList<>();
+    for (    InetAddress addr : reqAddrs) {
+      AddressReceiver rcvr=new AddressReceiver(mcastAddr,addr);
+      rcvr.start();
+      rcvrs.add(rcvr);
+    }
+    for (    AddressReceiver rcvr : rcvrs) {
+      try {
+        rcvr.join();
+        ret.addAll(rcvr.addresses());
+      }
+ catch (      InterruptedException ignore) {
+        U.warn(log,"Got interrupted while receiving address request.");
+        Thread.currentThread().interrupt();
+        break;
+      }
+    }
+  }
+ else   ret=requestAddresses(mcastAddr,F.first(reqAddrs));
+  if (!ret.isEmpty())   registerAddresses(ret);
 }
