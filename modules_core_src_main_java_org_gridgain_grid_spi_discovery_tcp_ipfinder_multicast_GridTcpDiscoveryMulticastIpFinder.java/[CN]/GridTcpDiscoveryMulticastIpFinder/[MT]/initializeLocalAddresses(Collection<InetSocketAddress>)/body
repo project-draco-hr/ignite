@@ -19,10 +19,10 @@
     locAddrs=U.resolveLocalAddresses(U.resolveLocalHost(locAddr)).get1();
   }
  catch (  IOException|GridException e) {
-    throw new GridSpiException("Failed to resolve local addresses [locHost=" + locAddr + ']',e);
+    throw new GridSpiException("Failed to resolve local addresses [locAddr=" + locAddr + ']',e);
   }
   addrSnds=new ArrayList<>(locAddrs.size());
-  Collection<InetAddress> reqAddrs=new ArrayList<>(locAddrs.size());
+  Collection<InetAddress> reqItfs=new ArrayList<>(locAddrs.size());
   for (  String locAddr : locAddrs) {
     InetAddress addr;
     try {
@@ -35,7 +35,7 @@
     if (!addr.isLoopbackAddress()) {
       try {
         addrSnds.add(new AddressSender(mcastAddr,addr,addrs));
-        reqAddrs.add(addr);
+        reqItfs.add(addr);
       }
  catch (      IOException e) {
         if (log.isDebugEnabled())         log.debug("Failed to create multicast socket [mcastAddr=" + mcastAddr + ", mcastGrp="+ mcastGrp+ ", mcastPort="+ mcastPort+ ", locAddr="+ addr+ ", err="+ e+ ']');
@@ -52,11 +52,11 @@
   }
   for (  AddressSender addrSnd : addrSnds)   addrSnd.start();
   Collection<InetSocketAddress> ret;
-  if (reqAddrs.size() > 1) {
+  if (reqItfs.size() > 1) {
     ret=new HashSet<>();
     Collection<AddressReceiver> rcvrs=new ArrayList<>();
-    for (    InetAddress addr : reqAddrs) {
-      AddressReceiver rcvr=new AddressReceiver(mcastAddr,addr);
+    for (    InetAddress itf : reqItfs) {
+      AddressReceiver rcvr=new AddressReceiver(mcastAddr,itf);
       rcvr.start();
       rcvrs.add(rcvr);
     }
@@ -72,6 +72,6 @@
       }
     }
   }
- else   ret=requestAddresses(mcastAddr,F.first(reqAddrs));
+ else   ret=requestAddresses(mcastAddr,F.first(reqItfs));
   if (!ret.isEmpty())   registerAddresses(ret);
 }
