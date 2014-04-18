@@ -8,8 +8,19 @@
   for (int g=0; g < gridCount(); g++)   futs.add(grid(g).events().waitForLocal(nodeEvent(grid(g).localNode().id()),EVT_CACHE_ENTRY_EVICTED));
   for (int i=0; i < KEYS; i++)   assertTrue(cache(0).evict(String.valueOf(i)));
   for (  GridFuture<GridEvent> fut : futs)   fut.get(3000);
-  Thread.sleep(3000);
-  for (int g=0; g < gridCount(); g++) {
-    for (int i=0; i < KEYS; i++)     assertNull(cache(g).peek(String.valueOf(i)));
+  boolean evicted=GridTestUtils.waitForCondition(new PA(){
+    @Override public boolean apply(){
+      for (int g=0; g < gridCount(); g++) {
+        for (int i=0; i < KEYS; i++) {
+          if (cache(g).peek(String.valueOf(i)) != null) {
+            log.info("Non-null value, will wait [grid=" + g + ", key="+ i+ ']');
+            return false;
+          }
+        }
+      }
+      return true;
+    }
   }
+,3000);
+  assertTrue(evicted);
 }
