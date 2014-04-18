@@ -4,9 +4,8 @@
   int size=0;
   int relSize=0;
   long relAddr=0;
-  long binAddr=binAddress(hash);
   try {
-    long first=Bin.first(binAddr,mem);
+    long first=mem.readLong(binAddr);
     long qAddr=0;
     if (first != 0) {
       long prev=0;
@@ -30,12 +29,12 @@
     size=Entry.HEADER + keyBytes.length + valBytes.length;
     poll=!mem.reserve(size);
     long addr=mem.allocate(size,false,true);
-    Bin.first(binAddr,addr,mem);
+    mem.writeLong(binAddr,addr);
     if (isNew) {
       totalCnt.increment();
-      qAddr=lru == null ? 0 : lru.offer(part,addr,hash);
+      qAddr=lru.offer(part,addr,hash);
     }
- else     if (lru != null)     lru.touch(qAddr,addr);
+    lru.touch(qAddr,addr);
     Entry.write(addr,hash,keyBytes,valBytes,qAddr,first,mem);
     return isNew;
   }

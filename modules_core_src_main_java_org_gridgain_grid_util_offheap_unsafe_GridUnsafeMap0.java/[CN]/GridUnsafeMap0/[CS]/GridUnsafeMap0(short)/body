@@ -1,10 +1,10 @@
 {
-  this.load=load;
   part=0;
   mem=new GridUnsafeMemory(10000);
   lru=new GridUnsafeLru(lruStripes,mem);
   totalCnt=new LongAdder();
-  seg=new Segment<>(100);
+  seg=new Segment<>();
+  binAddr=mem.allocateSystem(800,true);
   lruPoller=new GridUnsafeLruPoller(){
     @Override public void lruPoll(    int size){
       int left=size;
@@ -12,7 +12,7 @@
         long qAddr=lru.prePoll();
         if (qAddr == 0)         return;
         short order=lru.order(qAddr);
-        int released=freeSpace(order,qAddr);
+        int released=seg.freeSpace(order,qAddr);
         if (released == 0)         return;
         left-=released;
       }
