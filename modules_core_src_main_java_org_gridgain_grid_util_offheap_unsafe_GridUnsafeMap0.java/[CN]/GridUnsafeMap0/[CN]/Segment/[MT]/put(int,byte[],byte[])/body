@@ -4,7 +4,7 @@
   int size=0;
   int relSize=0;
   long relAddr=0;
-  long binAddr=writeLock(hash);
+  long binAddr=binAddress(hash);
   try {
     long first=Bin.first(binAddr,mem);
     long qAddr=0;
@@ -14,12 +14,6 @@
       while (true) {
         long next=Entry.nextAddress(cur,mem);
         if (Entry.keyEquals(cur,keyBytes,mem)) {
-          if (Entry.valueLength(cur,mem) == valBytes.length) {
-            Entry.writeValueBytes(cur,valBytes,mem);
-            isNew=false;
-            if (lru != null)             lru.touch(Entry.queueAddress(cur,mem),cur);
-            return false;
-          }
           if (prev != 0)           Entry.nextAddress(prev,next,mem);
  else           first=next;
           qAddr=Entry.queueAddress(cur,mem);
@@ -38,7 +32,6 @@
     long addr=mem.allocate(size,false,true);
     Bin.first(binAddr,addr,mem);
     if (isNew) {
-      cnt++;
       totalCnt.increment();
       qAddr=lru == null ? 0 : lru.offer(part,addr,hash);
     }
@@ -47,9 +40,7 @@
     return isNew;
   }
   finally {
-    writeUnlock();
     if (relAddr != 0)     mem.release(relAddr,relSize);
     if (poll)     lruPoller.lruPoll(size);
-    if (isNew && cnt > threshold)     rehash();
   }
 }

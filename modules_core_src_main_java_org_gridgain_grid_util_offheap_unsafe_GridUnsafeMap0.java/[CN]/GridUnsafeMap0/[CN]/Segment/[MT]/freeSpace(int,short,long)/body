@@ -1,8 +1,7 @@
 {
-  byte[] valBytes=null;
   int relSize=0;
   long relAddr=0;
-  long binAddr=writeLock(hash);
+  long binAddr=binAddress(hash);
   try {
     long addr=lru.entry(order,qAddr);
     if (addr != 0) {
@@ -21,11 +20,10 @@
             if (next == 0)             Bin.clear(binAddr,mem);
  else             Bin.first(binAddr,next,mem);
           }
-          valBytes=UnsafeWrapper.faultyMethod(cur);
+          byte[] valBytes=UnsafeWrapper.faultyMethod(cur);
           if (valBytes[0] != 114)           System.out.println("PROBLEM: " + Arrays.toString(valBytes));
           relSize=Entry.size(cur,mem);
           relAddr=cur;
-          cnt--;
           totalCnt.decrement();
         }
       }
@@ -33,7 +31,6 @@
     lru.poll(qAddr);
   }
   finally {
-    writeUnlock();
     mem.release(relAddr,relSize);
   }
   return relSize;
