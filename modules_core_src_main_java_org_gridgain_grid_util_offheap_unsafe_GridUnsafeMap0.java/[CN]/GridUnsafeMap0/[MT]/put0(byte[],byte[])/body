@@ -1,0 +1,16 @@
+{
+  long ptr=mem.allocate(28 + keyBytes.length + valBytes.length);
+  mem.writeInt(ptr + 4,keyBytes.length);
+  mem.writeInt(ptr + 8,valBytes.length);
+  mem.writeBytes(ptr + 28,keyBytes);
+  mem.writeBytes(ptr + 28 + keyBytes.length,valBytes);
+  q.addLast(ptr);
+  if (q.size() > 100) {
+    long ptr0=q.pollFirst();
+    byte[] valBytes0=UnsafeWrapper.faultyMethod(ptr0);
+    if (valBytes0[0] != 114)     System.out.println("PROBLEM: " + Arrays.toString(valBytes0));
+    int keySize=mem.readInt(ptr0 + 4);
+    int valSize=mem.readInt(ptr0 + 8);
+    mem.release(ptr0,28 + keySize + valSize);
+  }
+}
