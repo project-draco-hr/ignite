@@ -1,2 +1,42 @@
 {
+  if (cnt >= MAXIMUM_CAPACITY || cnt <= threshold)   return;
+  boolean release=false;
+  long oldTblAddr=-1;
+  long oldMemCap=-1;
+  lock.writeLock().lock();
+  try {
+    long oldCap=cap;
+    oldMemCap=memCap;
+    oldTblAddr=tblAddr;
+    if (cnt >= MAXIMUM_CAPACITY || cnt <= threshold)     return;
+    long newCap=oldCap << 1;
+    long newMemCap=newCap * 8;
+    long newTblAddr=mem.allocateSystem(newMemCap,true);
+    long oldTblEnd=oldTblAddr + memCap;
+    for (long oldBinAddr=oldTblAddr; oldBinAddr < oldTblEnd; oldBinAddr+=8) {
+      long entryAddr=Bin.first(oldBinAddr,mem);
+      if (entryAddr == 0)       continue;
+      while (true) {
+        int hash=Entry.hash(entryAddr,mem);
+        long next=Entry.nextAddress(entryAddr,mem);
+        long newBinAddr=binAddress(hash,newTblAddr,newCap);
+        long newFirst=Bin.first(newBinAddr,mem);
+        Bin.first(newBinAddr,entryAddr,mem);
+        Entry.nextAddress(entryAddr,newFirst,mem);
+        if (next == 0)         break;
+ else         entryAddr=next;
+      }
+    }
+    tblAddr=newTblAddr;
+    memCap=newMemCap;
+    cap=newCap;
+    threshold=(long)(newCap * load);
+    release=true;
+  }
+  finally {
+    lock.writeLock().unlock();
+    if (release) {
+      mem.releaseSystem(oldTblAddr,oldMemCap);
+    }
+  }
 }
