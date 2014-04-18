@@ -1,0 +1,18 @@
+{
+  GridOffHeapEvictListener evictLsnr=new GridOffHeapEvictListener(){
+    @Override public void onEvict(    int part,    int hash,    byte[] keyBytes,    byte[] valBytes){
+    }
+  }
+;
+  GridUnsafeMap map=new GridUnsafeMap(4,0.75f,1,10000,(short)512,evictLsnr);
+  GridOptimizedMarshaller marsh=new GridOptimizedMarshaller();
+  Random rnd=new Random();
+  byte[] val=new byte[160];
+  for (int i=0; i < 160; i++)   val[i]=(byte)(114 + i);
+  for (; ; ) {
+    Long key=rnd.nextLong();
+    byte[] keyBytes=marsh.marshal(key);
+    int keyHash=key.hashCode();
+    map.put(keyHash,keyBytes,val);
+  }
+}
