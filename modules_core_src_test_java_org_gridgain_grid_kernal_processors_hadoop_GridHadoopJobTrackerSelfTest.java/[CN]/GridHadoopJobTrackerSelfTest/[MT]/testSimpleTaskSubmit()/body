@@ -1,2 +1,36 @@
 {
+  try {
+    for (int i=0; i < gridCount(); i++) {
+      UUID nodeId=grid(i).localNode().id();
+      mapExecCnt.put(nodeId,new AtomicInteger());
+      reduceExecCnt.put(nodeId,new AtomicInteger());
+    }
+    GridKernal kernal=(GridKernal)grid(0);
+    GridHadoopProcessor hadoop=kernal.context().hadoop();
+    UUID globalId=UUID.randomUUID();
+    Configuration cfg=new Configuration();
+    int cnt=10;
+    cfg.setInt(BLOCK_CNT,cnt);
+    GridHadoopJobId jobId=new GridHadoopJobId(globalId,1);
+    hadoop.submit(jobId,new GridHadoopDefaultJobInfo(cfg));
+    checkStatus(jobId,false);
+    mapAwaitLatch.countDown();
+    checkStatus(jobId,false);
+    reduceAwaitLatch.countDown();
+    checkStatus(jobId,true);
+    int maps=0;
+    int reduces=0;
+    for (int i=0; i < gridCount(); i++) {
+      Grid g=grid(i);
+      UUID nodeId=g.localNode().id();
+      maps+=mapExecCnt.get(nodeId).get();
+      reduces+=reduceExecCnt.get(nodeId).get();
+    }
+    assertEquals(10,maps);
+    assertEquals(1,reduces);
+  }
+  finally {
+    mapAwaitLatch.countDown();
+    reduceAwaitLatch.countDown();
+  }
 }
