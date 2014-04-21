@@ -1,0 +1,17 @@
+{
+  long ptr=UNSAFE.allocateMemory(12 + keyBytes.length + valBytes.length);
+  UNSAFE.putInt(ptr + 4,keyBytes.length);
+  UNSAFE.putInt(ptr + 8,valBytes.length);
+  UNSAFE.copyMemory(keyBytes,BYTE_ARR_OFF,null,ptr + 12,keyBytes.length);
+  UNSAFE.copyMemory(valBytes,BYTE_ARR_OFF,null,ptr + 12 + keyBytes.length,valBytes.length);
+  ptrs.addLast(ptr);
+  if (ptrs.size() > 100) {
+    long ptr0=ptrs.pollFirst();
+    byte[] valBytes0=faultyMethod(ptr0);
+    if (valBytes0[0] != 0)     System.out.println(Arrays.toString(valBytes0));
+    int keySize=UNSAFE.getInt(ptr + 4);
+    int valSize=UNSAFE.getInt(ptr + 8);
+    UNSAFE.setMemory(ptr,12 + keySize + valSize,(byte)0xAB);
+    UNSAFE.freeMemory(ptr);
+  }
+}
