@@ -1,0 +1,28 @@
+{
+  GridHadoopV2JobImpl jobImpl=(GridHadoopV2JobImpl)taskCtx.job();
+  JobContext jobCtx=jobImpl.ctx;
+  Mapper mapper;
+  InputFormat inFormat;
+  try {
+    mapper=U.newInstance(jobCtx.getMapperClass());
+    inFormat=U.newInstance(jobCtx.getInputFormatClass());
+  }
+ catch (  ClassNotFoundException e) {
+    throw new GridException(e);
+  }
+  GridHadoopV2Context hadoopCtx=new GridHadoopV2Context(jobCtx.getConfiguration(),taskCtx,jobImpl.attemptId(info()));
+  GridHadoopFileBlock block=info().fileBlock();
+  FileSplit split=new FileSplit(new Path(block.file().toString()),block.start(),block.length(),null);
+  try {
+    RecordReader reader=inFormat.createRecordReader(split,hadoopCtx);
+    reader.initialize(split,hadoopCtx);
+    hadoopCtx.reader(reader);
+    mapper.run(new WrappedMapper().getMapContext(hadoopCtx));
+  }
+ catch (  IOException e) {
+    throw new GridException(e);
+  }
+catch (  InterruptedException e) {
+    throw new GridInterruptedException(e);
+  }
+}
