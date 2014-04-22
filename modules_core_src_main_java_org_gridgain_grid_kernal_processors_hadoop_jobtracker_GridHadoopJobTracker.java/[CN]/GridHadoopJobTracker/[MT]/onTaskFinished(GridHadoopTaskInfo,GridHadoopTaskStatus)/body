@@ -1,2 +1,20 @@
 {
+  GridHadoopJobId jobId=taskInfo.jobId();
+  if (log.isDebugEnabled())   log.debug("Received task finished callback [taskInfo=" + taskInfo + ", status="+ status+ ']');
+switch (taskInfo.type()) {
+case MAP:
+{
+      jobMetaPrj.transformAsync(jobId,new RemoveMapperClosure(taskInfo.fileBlock()));
+      break;
+    }
+case REDUCE:
+{
+    jobMetaPrj.transformAsync(jobId,new RemoveReducerClosure(taskInfo.taskNumber()));
+    break;
+  }
+case COMBINE:
+{
+  break;
+}
+}
 }
