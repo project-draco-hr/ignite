@@ -4,10 +4,10 @@
     GridStreamerEventRouter evtRouter=streamer.eventRouter();
     Map<GridNode,Collection<Object>> routeMap=evtRouter.route(streamer.context(),stageName,evts);
     if (log.isDebugEnabled())     log.debug("Mapped stage to nodes [futId=" + futId + ", stageName="+ stageName+ ", nodeIds="+ (routeMap != null ? U.nodeIds(routeMap.keySet()) : null)+ ']');
-    if (routeMap == null) {
+    if (F.isEmpty(routeMap)) {
       U.error(log,"Failed to route events to nodes (will fail pipeline execution) " + "[streamer=" + streamer.name() + ", stageName="+ stageName+ ", evts="+ evts+ ']');
       UUID locNodeId=streamer.kernalContext().localNodeId();
-      onFailed(locNodeId,new GridStreamerRouteFailedException("Failed to route " + "events to nodes (router returned null) [locNodeId=" + locNodeId + ", stageName="+ stageName+ ']'));
+      onFailed(locNodeId,new GridStreamerRouteFailedException("Failed to route " + "events to nodes (router returned null or empty route map) [locNodeId=" + locNodeId + ", "+ "stageName="+ stageName+ ']'));
     }
  else {
       execNodeIds.addAll(U.nodeIds(routeMap.keySet()));
