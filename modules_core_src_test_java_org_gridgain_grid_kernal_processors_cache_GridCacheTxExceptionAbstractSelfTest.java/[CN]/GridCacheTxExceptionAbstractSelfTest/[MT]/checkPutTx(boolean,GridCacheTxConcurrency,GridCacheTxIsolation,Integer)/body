@@ -1,0 +1,34 @@
+{
+  assertTrue(keys.length > 0);
+  info("Test transaction [concurrency=" + concurrency + ", isolation="+ isolation+ ']');
+  GridCache<Integer,Integer> cache=grid(0).cache(null);
+  if (putBefore) {
+    idxSpi.forceFail(false);
+    info("Start transaction.");
+    try (GridCacheTx tx=cache.txStart(concurrency,isolation)){
+      for (      Integer key : keys) {
+        info("Put " + key);
+        cache.put(key,1);
+      }
+      info("Commit.");
+      tx.commit();
+    }
+   }
+  idxSpi.forceFail(true);
+  try {
+    info("Start transaction.");
+    try (GridCacheTx tx=cache.txStart(concurrency,isolation)){
+      for (      Integer key : keys) {
+        info("Put " + key);
+        cache.put(key,2);
+      }
+      info("Commit.");
+      tx.commit();
+    }
+     fail("Transaction should fail.");
+  }
+ catch (  GridCacheTxHeuristicException e) {
+    log.info("Expected exception: " + e);
+  }
+  for (  Integer key : keys)   checkEmpty(key);
+}
