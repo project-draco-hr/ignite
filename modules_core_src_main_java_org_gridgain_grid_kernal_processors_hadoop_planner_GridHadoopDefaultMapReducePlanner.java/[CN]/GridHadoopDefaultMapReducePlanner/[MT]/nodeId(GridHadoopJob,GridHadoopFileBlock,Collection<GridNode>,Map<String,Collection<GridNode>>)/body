@@ -1,6 +1,8 @@
 {
+  if (log.isDebugEnabled())   log.debug("Mapping block to node: " + block);
   GridGgfs ggfs=ggfsForBlock(job,block);
   if (ggfs != null) {
+    if (log.isDebugEnabled())     log.debug("Mapping file block according to ggfs affinity: " + block);
     Collection<GridGgfsBlockLocation> aff=ggfs.affinity(new GridGgfsPath(block.file()),block.start(),block.length());
     long maxLen=Long.MIN_VALUE;
     UUID max=null;
@@ -17,6 +19,7 @@
       GridNode node=F.first(hostNodeMap.get(host));
       if (node != null)       return node.id();
     }
+    if (log.isDebugEnabled())     log.debug("Could not find node by hostname, returning random node: " + block);
     int idx=ThreadLocalRandom8.current().nextInt(top.size());
     Iterator<GridNode> it=top.iterator();
     int i=0;
