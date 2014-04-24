@@ -1,0 +1,13 @@
+{
+  GridHadoopJobId jobId=taskInfo.jobId();
+  GridHadoopShuffleJob res=jobs.get(jobId);
+  if (res == null) {
+    res=new GridHadoopShuffleJob(ctx.jobFactory().createJob(jobId,ctx.jobTracker().info(jobId)));
+    GridHadoopShuffleJob old=jobs.putIfAbsent(jobId,res);
+    if (old != null) {
+      res.close();
+      res=old;
+    }
+  }
+  return res;
+}
