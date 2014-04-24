@@ -1,0 +1,30 @@
+{
+  GridGgfs ggfs=ggfsForBlock(job,block);
+  if (ggfs != null) {
+    Collection<GridGgfsBlockLocation> aff=ggfs.affinity(new GridGgfsPath(block.file()),block.start(),block.length());
+    long maxLen=Long.MIN_VALUE;
+    UUID max=null;
+    for (    GridGgfsBlockLocation loc : aff) {
+      if (maxLen < loc.length()) {
+        maxLen=loc.length();
+        max=F.first(loc.nodeIds());
+      }
+    }
+    return max;
+  }
+ else {
+    for (    String host : block.hosts()) {
+      GridNode node=F.first(hostNodeMap.get(host));
+      if (node != null)       return node.id();
+    }
+    int idx=ThreadLocalRandom8.current().nextInt(top.size());
+    Iterator<GridNode> it=top.iterator();
+    int i=0;
+    while (it.hasNext()) {
+      GridNode node=it.next();
+      if (i == idx)       return node.id();
+      i++;
+    }
+    return null;
+  }
+}

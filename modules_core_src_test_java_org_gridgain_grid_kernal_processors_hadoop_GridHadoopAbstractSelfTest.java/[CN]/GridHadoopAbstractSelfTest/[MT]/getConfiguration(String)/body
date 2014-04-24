@@ -2,10 +2,13 @@
   GridConfiguration cfg=super.getConfiguration(gridName);
   cfg.setHadoopConfiguration(hadoopConfiguration(gridName));
   GridCacheConfiguration cacheCfg=new GridCacheConfiguration();
-  cacheCfg.setCacheMode(GridCacheMode.REPLICATED);
+  cacheCfg.setCacheMode(REPLICATED);
   cacheCfg.setAtomicWriteOrderMode(PRIMARY);
   cacheCfg.setWriteSynchronizationMode(FULL_SYNC);
   cacheCfg.setName(hadoopSysCacheName);
-  cfg.setCacheConfiguration(cacheCfg);
+  if (ggfsEnabled()) {
+    cfg.setCacheConfiguration(cacheCfg,metaCacheConfiguration(),dataCacheConfiguration());
+    cfg.setGgfsConfiguration(ggfsConfiguration());
+  }
   return cfg;
 }
