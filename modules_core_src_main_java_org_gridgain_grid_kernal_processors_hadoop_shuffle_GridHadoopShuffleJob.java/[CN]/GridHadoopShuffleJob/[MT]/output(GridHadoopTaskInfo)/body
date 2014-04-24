@@ -1,3 +1,14 @@
 {
+switch (taskInfo.type()) {
+case MAP:
+    if (job.hasCombiner()) {
+      if (combinerMap == null)       combinerMap=new GridHadoopMultimap(job,mem,get(job,COMBINER_HASHMAP_SIZE,1024));
+      return new MapOut(combinerMap.startAdding());
+    }
   return null;
+case COMBINE:
+default :
+throw new IllegalStateException("Illegal type: " + taskInfo.type());
+}
+return null;
 }
