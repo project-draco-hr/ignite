@@ -1,3 +1,30 @@
 {
-  execCnt.incrementAndGet();
+  try {
+    UUID nodeId=ctx.grid().localNode().id();
+    System.out.println("Running task: " + nodeId);
+switch (info().type()) {
+case MAP:
+{
+        mapAwaitLatch.await();
+        mapExecCnt.get(nodeId).incrementAndGet();
+        break;
+      }
+case REDUCE:
+{
+      reduceAwaitLatch.await();
+      reduceExecCnt.get(nodeId).incrementAndGet();
+      break;
+    }
+case COMBINE:
+{
+    combineAwaitLatch.await();
+    combineExecCnt.get(nodeId).incrementAndGet();
+    break;
+  }
+}
+System.out.println("Completed task on node: " + nodeId);
+}
+ catch (InterruptedException ignore) {
+Thread.currentThread().interrupt();
+}
 }
