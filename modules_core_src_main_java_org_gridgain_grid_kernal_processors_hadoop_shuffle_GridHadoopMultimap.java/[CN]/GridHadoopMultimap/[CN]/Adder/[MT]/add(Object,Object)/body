@@ -1,17 +1,41 @@
 {
   int keyHash=U.hash(key.hashCode());
-  long tblAddr=8 * (keyHash & (tblCap - 1));
+  AtomicLongArray tbl0=tbl;
+  int addr=keyHash & (tbl0.length() - 1);
+  long newMetaPtr=0;
+  write(val,valSer);
+  int valSize=out.offset();
+  long valPtr=copy(12);
+  valueSize(valPtr,valSize);
   for (; ; ) {
-    long metaPtr=mem.readLongVolatile(tblPtr + tblAddr);
-    if (metaPtr == 0) {
-      long valPtr=write(valOut,val,0);
-      long keyPtr=write(keyOut,key,valPtr);
-      metaPtr=writeMeta(keyPtr,0,0,keyHash,(int)(keyOut.buffer().pointer() - keyPtr - 8));
-      if (mem.casLong()) {
+    long metaPtr0=tbl0.get(addr);
+    if (metaPtr0 != 0) {
+      long metaPtr=metaPtr0;
+      do {
+        if (keyHash(metaPtr) == keyHash && key.equals(keyReader.readKey(metaPtr))) {
+          if (newMetaPtr != 0) {
+            mem.release(key(newMetaPtr),keySize(newMetaPtr));
+            mem.release(newMetaPtr,40);
+          }
+          long nextValPtr;
+          do {
+            nextValPtr=value(metaPtr);
+            nextValue(valPtr,nextValPtr);
+          }
+ while (!casValue(metaPtr,nextValPtr,valPtr));
+          return 0;
+        }
+        metaPtr=collision(metaPtr);
       }
+ while (metaPtr != 0);
     }
- else {
+    if (newMetaPtr == 0) {
+      write(key,keySer);
+      int keySize=out.offset();
+      long keyPtr=copy(0);
+      nextValue(valPtr,0);
+      newMetaPtr=createMeta(keyHash,keySize,keyPtr,valPtr,0,0);
     }
+    if (tbl0.compareAndSet(addr,metaPtr0,newMetaPtr))     return newMetaPtr;
   }
-  return 0;
 }

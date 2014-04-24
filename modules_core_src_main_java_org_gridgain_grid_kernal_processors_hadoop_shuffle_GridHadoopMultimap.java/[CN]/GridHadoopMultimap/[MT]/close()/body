@@ -1,2 +1,19 @@
 {
+  for (int i=0; i < tbl.length(); i++) {
+    long meta=tbl.get(i);
+    while (meta != 0) {
+      mem.release(key(meta),keySize(meta));
+      long valPtr=value(meta);
+      do {
+        long valPtr0=valPtr;
+        int valSize=valueSize(valPtr);
+        valPtr=nextValue(valPtr);
+        mem.release(valPtr0,valSize);
+      }
+ while (valPtr != 0);
+      long meta0=meta;
+      meta=collision(meta);
+      mem.release(meta0,40);
+    }
+  }
 }
