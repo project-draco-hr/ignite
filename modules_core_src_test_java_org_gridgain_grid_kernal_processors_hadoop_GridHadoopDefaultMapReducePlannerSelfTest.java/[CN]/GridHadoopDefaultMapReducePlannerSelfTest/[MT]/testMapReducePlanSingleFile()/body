@@ -19,11 +19,15 @@
   Collection<GridNode> nodes=grid.nodes();
   GridHadoopMapReducePlan plan=planner.preparePlan(blocks,nodes,job,null);
   int totalBlocks=0;
-  for (  GridNode n : nodes)   totalBlocks+=plan.mappers(n.id()).size();
+  for (  GridNode n : nodes) {
+    Collection<GridHadoopFileBlock> mappers=plan.mappers(n.id());
+    if (mappers != null)     totalBlocks+=mappers.size();
+  }
   assertEquals(aff.size(),totalBlocks);
   for (  GridGgfsBlockLocation loc : aff) {
     UUID primary=F.first(loc.nodeIds());
     Collection<GridHadoopFileBlock> mappers=plan.mappers(primary);
+    assertNotNull("Mappers is null for affinity [primary=" + primary + ", loc="+ loc+ ']',mappers);
     assertTrue("Failed to find affinity block location in plan [loc=" + loc + ", mappers="+ mappers+ ']',hasLocation(loc,fileName,mappers));
   }
 }
