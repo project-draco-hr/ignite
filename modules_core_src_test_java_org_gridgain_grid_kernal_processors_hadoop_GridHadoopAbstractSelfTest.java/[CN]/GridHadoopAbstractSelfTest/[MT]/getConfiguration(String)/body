@@ -1,11 +1,18 @@
 {
   GridConfiguration cfg=super.getConfiguration(gridName);
   cfg.setHadoopConfiguration(hadoopConfiguration(gridName));
+  GridTcpCommunicationSpi commSpi=new GridTcpCommunicationSpi();
+  commSpi.setSharedMemoryPort(-1);
+  cfg.setCommunicationSpi(commSpi);
   GridCacheConfiguration cacheCfg=new GridCacheConfiguration();
-  cacheCfg.setCacheMode(GridCacheMode.REPLICATED);
+  cacheCfg.setCacheMode(REPLICATED);
   cacheCfg.setAtomicWriteOrderMode(PRIMARY);
   cacheCfg.setWriteSynchronizationMode(FULL_SYNC);
   cacheCfg.setName(hadoopSysCacheName);
-  cfg.setCacheConfiguration(cacheCfg);
+  if (ggfsEnabled()) {
+    cfg.setCacheConfiguration(cacheCfg,metaCacheConfiguration(),dataCacheConfiguration());
+    cfg.setGgfsConfiguration(ggfsConfiguration());
+  }
+ else   cfg.setCacheConfiguration(cacheCfg);
   return cfg;
 }
