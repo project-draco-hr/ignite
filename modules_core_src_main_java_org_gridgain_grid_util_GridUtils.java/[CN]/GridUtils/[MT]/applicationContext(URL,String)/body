@@ -4,12 +4,14 @@
     @Override public void postProcessBeanFactory(    ConfigurableListableBeanFactory beanFactory) throws BeansException {
       for (      String beanName : beanFactory.getBeanDefinitionNames()) {
         BeanDefinition def=beanFactory.getBeanDefinition(beanName);
-        try {
-          Class.forName(def.getBeanClassName());
-        }
- catch (        ClassNotFoundException ignored) {
-          ((BeanDefinitionRegistry)beanFactory).removeBeanDefinition(beanName);
-          continue;
+        if (def.getBeanClassName() != null) {
+          try {
+            Class.forName(def.getBeanClassName());
+          }
+ catch (          ClassNotFoundException ignored) {
+            ((BeanDefinitionRegistry)beanFactory).removeBeanDefinition(beanName);
+            continue;
+          }
         }
         MutablePropertyValues vals=def.getPropertyValues();
         for (        PropertyValue val : new ArrayList<>(vals.getPropertyValueList())) {
