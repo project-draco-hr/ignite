@@ -1,7 +1,11 @@
 {
   grid.log().info("Received message [nodeId=" + nodeId + ", locNodeId="+ grid.localNode().id()+ ", msg="+ msg+ ']');
-  Integer cnt=grid.<String,Integer>nodeLocalMap().get("msgCnt");
-  if (cnt == null)   cnt=0;
-  grid.<String,Integer>nodeLocalMap().put("msgCnt",cnt + 1);
+  GridNodeLocalMap<String,AtomicInteger> map=grid.nodeLocalMap();
+  AtomicInteger cnt=map.get("msgCnt");
+  if (cnt == null) {
+    AtomicInteger old=map.putIfAbsent("msgCnt",cnt=new AtomicInteger(0));
+    if (old != null)     cnt=old;
+  }
+  cnt.incrementAndGet();
   return true;
 }
