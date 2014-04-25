@@ -1,2 +1,26 @@
 {
+  ctx.kernalContext().io().addMessageListener(GridTopic.TOPIC_HADOOP,new GridMessageListener(){
+    @Override public void onMessage(    UUID nodeId,    Object msg){
+      if (msg instanceof GridHadoopShuffleMessage) {
+        GridHadoopShuffleMessage m=((GridHadoopShuffleMessage)msg);
+        try {
+          job(m.jobId()).onShuffleMessage(nodeId,m);
+        }
+ catch (        GridException e) {
+          U.error(log,"Message handling failed.",e);
+        }
+      }
+ else       if (msg instanceof GridHadoopShuffleAck) {
+        GridHadoopShuffleAck m=(GridHadoopShuffleAck)msg;
+        try {
+          job(m.jobId()).onAckMessage(m);
+        }
+ catch (        GridException e) {
+          U.error(log,"Message handling failed.",e);
+        }
+      }
+ else       throw new IllegalStateException("Message unknown: " + msg);
+    }
+  }
+);
 }

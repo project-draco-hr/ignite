@@ -3,17 +3,19 @@ switch (taskInfo.type()) {
 case COMBINE:
     return combinerMap.input();
 case REDUCE:
-  GridHadoopMultimap m=inMaps.get(taskInfo.taskNumber());
+  int reducer=taskInfo.taskNumber();
+if (ctx.localNodeId().equals(outNodes[reducer])) return outMaps.get(reducer).input();
+GridHadoopMultimap m=inMaps.get(reducer);
 if (m != null) return m.input();
 return new GridHadoopTaskInput(){
 @Override public boolean next(){
-  return false;
+return false;
 }
 @Override public Object key(){
-  throw new IllegalStateException();
+throw new IllegalStateException();
 }
 @Override public Iterator<?> values(){
-  throw new IllegalStateException();
+throw new IllegalStateException();
 }
 @Override public void close() throws Exception {
 }

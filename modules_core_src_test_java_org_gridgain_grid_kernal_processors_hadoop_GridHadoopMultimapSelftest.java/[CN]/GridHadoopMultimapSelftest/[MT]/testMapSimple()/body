@@ -8,13 +8,14 @@
   GridHadoopMultimap m=new GridHadoopMultimap(new GridHadoopV2JobImpl(new GridHadoopJobId(UUID.randomUUID(),10),new GridHadoopDefaultJobInfo(job.getConfiguration())),mem,mapSize);
   GridHadoopMultimap.Adder a=m.startAdding();
   Multimap<Integer,Integer> mm=ArrayListMultimap.create();
+  Multimap<Integer,Integer> vis=ArrayListMultimap.create();
   for (int i=0, vals=4 * mapSize + rnd.nextInt(25); i < vals; i++) {
     int key=rnd.nextInt(mapSize);
     int val=rnd.nextInt();
     a.add(new IntWritable(key),new IntWritable(val));
     mm.put(key,val);
     X.println("k: " + key + " v: "+ val);
-    check(m,mm);
+    check(m,mm,vis);
   }
   a.close();
   X.println("Alloc: " + mem.allocatedSize());

@@ -1,5 +1,7 @@
 {
   int part=partitioner.partition(key,val,adders.length);
   if (part < 0 || part >= adders.length)   throw new IllegalStateException("Invalid partition: " + part);
-  adders[part].add(key,val);
+  GridHadoopMultimap.Adder adder=adders[part];
+  if (adder == null)   adders[part]=adder=getOrCreateMap(outMaps,part).startAdding();
+  adder.add(key,val);
 }
