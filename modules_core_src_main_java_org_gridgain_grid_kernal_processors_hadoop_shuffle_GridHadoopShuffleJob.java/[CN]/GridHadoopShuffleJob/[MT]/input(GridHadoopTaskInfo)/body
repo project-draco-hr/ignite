@@ -3,7 +3,23 @@ switch (taskInfo.type()) {
 case COMBINE:
     return combinerMap.input();
 case REDUCE:
+  GridHadoopMultimap m=inMaps.get(taskInfo.taskNumber());
+if (m != null) return m.input();
+return new GridHadoopTaskInput(){
+@Override public boolean next(){
+  return false;
+}
+@Override public Object key(){
+  throw new IllegalStateException();
+}
+@Override public Iterator<?> values(){
+  throw new IllegalStateException();
+}
+@Override public void close() throws Exception {
+}
+}
+;
 default :
-  throw new IllegalStateException("Illegal type: " + taskInfo.type());
+throw new IllegalStateException("Illegal type: " + taskInfo.type());
 }
 }
