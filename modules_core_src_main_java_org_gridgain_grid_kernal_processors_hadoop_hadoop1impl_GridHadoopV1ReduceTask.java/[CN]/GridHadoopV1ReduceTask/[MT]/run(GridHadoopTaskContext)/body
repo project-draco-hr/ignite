@@ -1,0 +1,26 @@
+{
+  GridHadoopV1JobImpl jobImpl=(GridHadoopV1JobImpl)taskCtx.job();
+  JobContext jobCtx=jobImpl.hadoopJobContext();
+  Reducer reducer=U.newInstance(jobCtx.getJobConf().getReducerClass());
+  Reporter reporter=Reporter.NULL;
+  OutputFormat outFormat=jobCtx.getJobConf().getOutputFormat();
+  String name="";
+  reducer.configure(jobCtx.getJobConf());
+  GridHadoopTaskInput input=taskCtx.input();
+  try {
+    final RecordWriter writer=outFormat.getRecordWriter(null,jobCtx.getJobConf(),name,reporter);
+    OutputCollector collector=new OutputCollector(){
+      @Override public void collect(      Object key,      Object val) throws IOException {
+        writer.write(key,val);
+      }
+    }
+;
+    while (input.next()) {
+      reducer.reduce(input.key(),input.values(),collector,reporter);
+    }
+    reducer.close();
+  }
+ catch (  IOException e) {
+    throw new GridException(e);
+  }
+}

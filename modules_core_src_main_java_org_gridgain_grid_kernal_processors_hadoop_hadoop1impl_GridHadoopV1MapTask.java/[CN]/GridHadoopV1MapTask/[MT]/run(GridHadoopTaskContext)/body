@@ -1,0 +1,28 @@
+{
+  GridHadoopV1JobImpl jobImpl=(GridHadoopV1JobImpl)taskCtx.job();
+  JobContext jobCtx=jobImpl.hadoopJobContext();
+  Mapper mapper=U.newInstance(jobCtx.getJobConf().getMapperClass());
+  InputFormat inFormat=jobCtx.getJobConf().getInputFormat();
+  GridHadoopFileBlock block=info().fileBlock();
+  InputSplit split=new FileSplit(new Path(block.file().toString()),block.start(),block.length(),block.hosts());
+  OutputCollector collector=new OutputCollector(){
+    @Override public void collect(    Object key,    Object val){
+      taskCtx.output().write(key,val);
+    }
+  }
+;
+  Reporter reporter=Reporter.NULL;
+  try {
+    RecordReader reader=inFormat.getRecordReader(split,jobCtx.getJobConf(),reporter);
+    Object key=reader.createKey();
+    Object val=reader.createValue();
+    mapper.configure(jobCtx.getJobConf());
+    while (reader.next(key,val)) {
+      mapper.map(key,val,collector,reporter);
+    }
+    mapper.close();
+  }
+ catch (  IOException e) {
+    throw new GridException(e);
+  }
+}
