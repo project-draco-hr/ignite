@@ -5,14 +5,9 @@
   int expMisses=0;
   for (int i=0; i < keyCnt; i++) {
     cache0.put(i,i);
-    if (cache0.affinity().isPrimary(grid(0).localNode(),i)) {
-      expReads++;
-      expMisses++;
-    }
- else {
-      expReads+=2;
-      expMisses+=2;
-    }
+    boolean isPrimary=cache0.affinity().isPrimary(grid(0).localNode(),i);
+    expReads+=expectedReadsPerPut(isPrimary);
+    expMisses+=expectedMissesPerPut(isPrimary);
     info("Writes: " + cache0.metrics().writes());
     for (int j=0; j < gridCount(); j++) {
       GridCache<Integer,Integer> cache=grid(j).cache(null);
@@ -33,8 +28,9 @@
     hits+=m.hits();
     misses+=m.misses();
   }
+  info("Stats [reads=" + reads + ", hits="+ hits+ ", misses="+ misses+ ']');
   assertEquals(keyCnt * gridCount(),writes);
-  assertEquals("Stats [reads=" + reads + ", hits="+ hits+ ", misses="+ misses+ ']',expReads,reads);
+  assertEquals(expReads,reads);
   assertEquals(keyCnt,hits);
   assertEquals(expMisses,misses);
 }
