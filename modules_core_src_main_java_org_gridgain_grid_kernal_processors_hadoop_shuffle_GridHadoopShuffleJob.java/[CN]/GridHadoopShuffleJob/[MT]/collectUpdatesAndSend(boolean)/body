@@ -1,8 +1,8 @@
 {
   for (int i=0; i < outMaps.length(); i++) {
     GridHadoopMultimap map=outMaps.get(i);
-    if (map == null || ctx.localNodeId().equals(outNodes[i]))     continue;
-    if (msgs[i] == null)     msgs[i]=new GridHadoopShuffleMessage(4 * 1024);
+    if (map == null || ctx.localNodeId().equals(reduceNodes[i]))     continue;
+    if (msgs[i] == null)     msgs[i]=new GridHadoopShuffleMessage(job.id(),i,4 * 1024);
     final int idx=i;
     map.visit(false,new GridHadoopMultimap.Visitor(){
       /** 
@@ -47,5 +47,6 @@
       }
     }
 );
+    if (flush && msgs[i].offset() != 0)     send(i,0);
   }
 }

@@ -1,4 +1,13 @@
 {
+  U.debug("___ Flush");
+  sender.cancel();
+  try {
+    sender.join();
+  }
+ catch (  InterruptedException e) {
+    throw new GridInterruptedException(e);
+  }
+  collectUpdatesAndSend(true);
   GridCompoundFuture fut=new GridCompoundFuture<>(ctx.kernalContext());
   for (  GridBiTuple<GridHadoopShuffleMessage,GridFutureAdapter<Object>> t : sentMsgs.values())   fut.add(t.get2());
   fut.markInitialized();

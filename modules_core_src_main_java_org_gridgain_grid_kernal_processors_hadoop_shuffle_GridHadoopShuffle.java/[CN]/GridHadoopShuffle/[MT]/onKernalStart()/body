@@ -1,6 +1,7 @@
 {
-  ctx.kernalContext().io().addMessageListener(GridTopic.TOPIC_HADOOP,new GridMessageListener(){
-    @Override public void onMessage(    UUID nodeId,    Object msg){
+  ctx.kernalContext().io().addUserMessageListener(GridTopic.TOPIC_HADOOP,new GridBiPredicate<UUID,Object>(){
+    @Override public boolean apply(    UUID nodeId,    Object msg){
+      U.debug("___ Rcvd msg from: " + nodeId + " "+ msg);
       if (msg instanceof GridHadoopShuffleMessage) {
         GridHadoopShuffleMessage m=((GridHadoopShuffleMessage)msg);
         try {
@@ -20,6 +21,7 @@
         }
       }
  else       throw new IllegalStateException("Message unknown: " + msg);
+      return false;
     }
   }
 );
