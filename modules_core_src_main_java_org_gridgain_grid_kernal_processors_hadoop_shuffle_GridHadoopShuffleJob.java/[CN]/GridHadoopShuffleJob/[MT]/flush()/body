@@ -11,5 +11,17 @@
   GridCompoundFuture fut=new GridCompoundFuture<>(ctx.kernalContext());
   for (  GridBiTuple<GridHadoopShuffleMessage,GridFutureAdapter<Object>> t : sentMsgs.values())   fut.add(t.get2());
   fut.markInitialized();
+  fut.listenAsync(new CI1<GridFuture>(){
+    @Override public void apply(    GridFuture f){
+      try {
+        f.get();
+      }
+ catch (      Exception e) {
+        e.printStackTrace();
+      }
+      U.debug("___Flush completed.");
+    }
+  }
+);
   return fut;
 }
