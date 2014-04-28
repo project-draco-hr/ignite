@@ -13,21 +13,29 @@
   }
   GridKernal kernal=(GridKernal)grid;
   GridHadoopMapReducePlanner planner=kernal.context().hadoop().context().planner();
-  Configuration cfg=jobConfiguration();
-  GridHadoopDefaultJobInfo info=new GridHadoopDefaultJobInfo(cfg);
-  GridHadoopJob job=new GridHadoopV2JobImpl(new GridHadoopJobId(UUID.randomUUID(),1),info);
-  Collection<GridNode> nodes=grid.nodes();
-  GridHadoopMapReducePlan plan=planner.preparePlan(blocks,nodes,job,null);
-  int totalBlocks=0;
-  for (  GridNode n : nodes) {
-    Collection<GridHadoopFileBlock> mappers=plan.mappers(n.id());
-    if (mappers != null)     totalBlocks+=mappers.size();
-  }
-  assertEquals(aff.size(),totalBlocks);
-  for (  GridGgfsBlockLocation loc : aff) {
-    UUID primary=F.first(loc.nodeIds());
-    Collection<GridHadoopFileBlock> mappers=plan.mappers(primary);
-    assertNotNull("Mappers is null for affinity [primary=" + primary + ", loc="+ loc+ ']',mappers);
-    assertTrue("Failed to find affinity block location in plan [loc=" + loc + ", mappers="+ mappers+ ']',hasLocation(loc,fileName,mappers));
+  for (int reducers=1; reducers < 12; reducers++) {
+    Configuration cfg=jobConfiguration(reducers);
+    GridHadoopDefaultJobInfo info=new GridHadoopDefaultJobInfo(cfg);
+    GridHadoopJob job=new GridHadoopV2JobImpl(new GridHadoopJobId(UUID.randomUUID(),1),info);
+    Collection<GridNode> nodes=grid.nodes();
+    GridHadoopMapReducePlan plan=planner.preparePlan(blocks,nodes,job,null);
+    int totalBlocks=0;
+    for (    GridNode n : nodes) {
+      Collection<GridHadoopFileBlock> mappers=plan.mappers(n.id());
+      if (mappers != null)       totalBlocks+=mappers.size();
+    }
+    assertEquals(aff.size(),totalBlocks);
+    for (    GridGgfsBlockLocation loc : aff) {
+      UUID primary=F.first(loc.nodeIds());
+      Collection<GridHadoopFileBlock> mappers=plan.mappers(primary);
+      assertNotNull("Mappers is null for affinity [primary=" + primary + ", loc="+ loc+ ']',mappers);
+      assertTrue("Failed to find affinity block location in plan [loc=" + loc + ", mappers="+ mappers+ ']',hasLocation(loc,fileName,mappers));
+    }
+    Collection<Integer> allRdc=new HashSet<>();
+    for (    GridNode n : nodes) {
+      int[] rdc=plan.reducers(n.id());
+      for (      int r : rdc)       assertTrue("Duplicate reducer found [r=" + r + ", total="+ reducers+ ']',allRdc.add(r));
+    }
+    for (int r=0; r < job.reducers(); r++)     assertTrue("Missing reducer [r=" + r + ", total="+ reducers+ ']',allRdc.contains(r));
   }
 }
