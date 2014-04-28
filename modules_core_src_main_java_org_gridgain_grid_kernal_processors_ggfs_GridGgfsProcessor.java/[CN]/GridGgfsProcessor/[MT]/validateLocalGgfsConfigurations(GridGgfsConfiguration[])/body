@@ -5,7 +5,10 @@
     if (cfgNames.contains(name))     throw new GridException("Duplicate GGFS name found (check configuration and " + "assign unique name to each): " + name);
     GridCacheAdapter<Object,Object> dataCache=ctx.cache().internalCache(cfg.getDataCacheName());
     if (dataCache == null)     throw new GridException("Data cache is not configured locally for GGFS: " + cfg);
-    if (ctx.cache().cache(cfg.getMetaCacheName()) == null)     throw new GridException("Metadata cache is not configured locally for GGFS: " + cfg);
+    if (dataCache.configuration().isQueryIndexEnabled())     throw new GridException("GGFS data cache cannot start with enabled query indexing.");
+    GridCache<Object,Object> metaCache=ctx.cache().cache(cfg.getMetaCacheName());
+    if (metaCache == null)     throw new GridException("Metadata cache is not configured locally for GGFS: " + cfg);
+    if (metaCache.configuration().isQueryIndexEnabled())     throw new GridException("GGFS metadata cache cannot start with enabled query indexing.");
     if (F.eq(cfg.getDataCacheName(),cfg.getMetaCacheName()))     throw new GridException("Cannot use same cache as both data and meta cache: " + cfg.getName());
     if (!(dataCache.configuration().getAffinityMapper() instanceof GridGgfsGroupDataBlocksKeyMapper))     throw new GridException("Invalid GGFS data cache configuration (key affinity mapper class should be " + GridGgfsGroupDataBlocksKeyMapper.class.getSimpleName() + "): "+ cfg);
     long maxSpaceSize=cfg.getMaxSpaceSize();
