@@ -2,23 +2,33 @@
   GridHadoopV1JobImpl jobImpl=(GridHadoopV1JobImpl)taskCtx.job();
   JobContext jobCtx=jobImpl.hadoopJobContext();
   Reducer reducer=U.newInstance(jobCtx.getJobConf().getReducerClass());
-  Reporter reporter=Reporter.NULL;
   OutputFormat outFormat=jobCtx.getJobConf().getOutputFormat();
-  String name="";
+  Reporter reporter=Reporter.NULL;
+  String fileName="part-" + NUMBER_FORMAT.format(info().taskNumber());
   reducer.configure(jobCtx.getJobConf());
   GridHadoopTaskInput input=taskCtx.input();
+  TaskAttemptID attempt=jobImpl.attemptId(info());
+  jobCtx.getJobConf().set("mapreduce.task.attempt.id",attempt.toString());
   try {
-    final RecordWriter writer=outFormat.getRecordWriter(null,jobCtx.getJobConf(),name,reporter);
+    final RecordWriter writer=outFormat.getRecordWriter(null,jobCtx.getJobConf(),fileName,reporter);
     OutputCollector collector=new OutputCollector(){
       @Override public void collect(      Object key,      Object val) throws IOException {
         writer.write(key,val);
       }
     }
 ;
-    while (input.next()) {
-      reducer.reduce(input.key(),input.values(),collector,reporter);
+    try {
+      while (input.next()) {
+        reducer.reduce(input.key(),input.values(),collector,reporter);
+      }
+      reducer.close();
     }
-    reducer.close();
+  finally {
+      writer.close(reporter);
+    }
+    OutputCommitter commiter=jobCtx.getJobConf().getOutputCommitter();
+    commiter.commitTask(new TaskAttemptContextImpl(jobCtx.getJobConf(),attempt));
+    commiter.commitJob(jobCtx);
   }
  catch (  IOException e) {
     throw new GridException(e);

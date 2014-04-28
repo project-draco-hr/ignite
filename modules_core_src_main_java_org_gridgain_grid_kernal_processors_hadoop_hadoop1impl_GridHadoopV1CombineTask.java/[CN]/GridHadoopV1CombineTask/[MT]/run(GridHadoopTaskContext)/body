@@ -1,2 +1,23 @@
 {
+  GridHadoopV1JobImpl jobImpl=(GridHadoopV1JobImpl)taskCtx.job();
+  JobContext jobCtx=jobImpl.hadoopJobContext();
+  Reducer combiner=U.newInstance(jobCtx.getJobConf().getCombinerClass());
+  combiner.configure(jobCtx.getJobConf());
+  GridHadoopTaskInput input=taskCtx.input();
+  Reporter reporter=Reporter.NULL;
+  OutputCollector collector=new OutputCollector(){
+    @Override public void collect(    Object key,    Object val){
+      taskCtx.output().write(key,val);
+    }
+  }
+;
+  try {
+    while (input.next()) {
+      combiner.reduce(input.key(),input.values(),collector,reporter);
+    }
+    combiner.close();
+  }
+ catch (  IOException e) {
+    throw new GridException(e);
+  }
 }
