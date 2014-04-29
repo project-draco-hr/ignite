@@ -8,12 +8,12 @@
       Collection<UUID> readers=cached.readers();
       Collection<GridNode> nearNodes=null;
       if (!F.isEmpty(readers)) {
-        nearNodes=cctx.discovery().nodes(readers,F0.<UUID>not(F.idForNodeId(tx.nearNodeId())));
+        nearNodes=cctx.discovery().nodes(readers,F0.not(F.idForNodeId(tx.nearNodeId())));
         if (log.isDebugEnabled())         log.debug("Mapping entry to near nodes [nodes=" + U.toShortString(nearNodes) + ", entry="+ entry+ ']');
       }
  else       if (log.isDebugEnabled())       log.debug("Entry has no near readers: " + entry);
       ret=map(entry,F.view(dhtNodes,F.remoteNodes(cctx.nodeId())),dhtMap,futDhtMap);
-      ret|=map(entry,F.view(nearNodes,F0.not(F.<GridNode>nodeForNodeIds(dhtMap.keySet()))),nearMap,futNearMap);
+      ret|=map(entry,F.view(nearNodes,F0.notIn(dhtNodes)),nearMap,futNearMap);
       break;
     }
  catch (    GridCacheEntryRemovedException ignore) {

@@ -1,0 +1,20 @@
+{
+  AtomicLongArray tbl0=tbl;
+  for (int i=0; i < tbl0.length(); i++) {
+    long meta=tbl0.get(i);
+    while (meta != 0) {
+      mem.release(key(meta),keySize(meta));
+      long valPtr=value(meta);
+      do {
+        long valPtr0=valPtr;
+        int valSize=valueSize(valPtr) + 12;
+        valPtr=nextValue(valPtr);
+        mem.release(valPtr0,valSize);
+      }
+ while (valPtr != 0);
+      long meta0=meta;
+      meta=collision(meta);
+      mem.release(meta0,40);
+    }
+  }
+}

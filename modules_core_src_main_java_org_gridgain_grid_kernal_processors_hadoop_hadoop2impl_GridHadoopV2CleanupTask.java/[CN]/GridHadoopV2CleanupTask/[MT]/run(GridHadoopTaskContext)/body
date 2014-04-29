@@ -1,0 +1,24 @@
+{
+  GridHadoopV2JobImpl jobImpl=(GridHadoopV2JobImpl)taskCtx.job();
+  JobContext jobCtx=jobImpl.hadoopJobContext();
+  OutputFormat outputFormat;
+  try {
+    outputFormat=U.newInstance(jobCtx.getOutputFormatClass());
+  }
+ catch (  ClassNotFoundException e) {
+    throw new GridException(e);
+  }
+  TaskAttemptContext hCtx=new GridHadoopV2Context(jobCtx.getConfiguration(),taskCtx,jobImpl.attemptId(info()));
+  try {
+    OutputCommitter committer=outputFormat.getOutputCommitter(hCtx);
+    if (abort)     committer.abortJob(jobCtx,JobStatus.State.FAILED);
+ else     committer.commitJob(jobCtx);
+  }
+ catch (  IOException e) {
+    throw new GridException(e);
+  }
+catch (  InterruptedException e) {
+    Thread.currentThread().interrupt();
+    throw new GridInterruptedException(e);
+  }
+}

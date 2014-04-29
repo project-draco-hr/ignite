@@ -1,0 +1,48 @@
+{
+  final Reader keyReader=new Reader(job.keySerialization());
+  final Reader valReader=new Reader(job.valueSerialization());
+  return new GridHadoopTaskInput(){
+    /** 
+ */
+    private int addr=-1;
+    /** 
+ */
+    private long metaPtr;
+    @Override public boolean next(){
+      if (metaPtr != 0) {
+        metaPtr=collision(metaPtr);
+        if (metaPtr != 0)         return true;
+      }
+      while (++addr < tbl.length()) {
+        metaPtr=tbl.get(addr);
+        if (metaPtr != 0)         return true;
+      }
+      return false;
+    }
+    @Override public Object key(){
+      return keyReader.readKey(metaPtr);
+    }
+    @Override public Iterator<?> values(){
+      return new Iterator<Object>(){
+        /** 
+ */
+        private long valPtr=value(metaPtr);
+        @Override public boolean hasNext(){
+          return valPtr != 0;
+        }
+        @Override public Object next(){
+          Object res=valReader.readValue(valPtr);
+          valPtr=nextValue(valPtr);
+          return res;
+        }
+        @Override public void remove(){
+          throw new UnsupportedOperationException();
+        }
+      }
+;
+    }
+    @Override public void close() throws Exception {
+    }
+  }
+;
+}
