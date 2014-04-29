@@ -4,7 +4,10 @@
   Reducer reducer=U.newInstance(jobCtx.getJobConf().getReducerClass());
   OutputFormat outFormat=jobCtx.getJobConf().getOutputFormat();
   Reporter reporter=Reporter.NULL;
-  String fileName="part-" + NUMBER_FORMAT.format(info().taskNumber());
+  NumberFormat numberFormat=NumberFormat.getInstance();
+  numberFormat.setMinimumIntegerDigits(5);
+  numberFormat.setGroupingUsed(false);
+  String fileName="part-" + numberFormat.format(info().taskNumber());
   reducer.configure(jobCtx.getJobConf());
   GridHadoopTaskInput input=taskCtx.input();
   TaskAttemptID attempt=jobImpl.attemptId(info());
@@ -28,7 +31,6 @@
     }
     OutputCommitter commiter=jobCtx.getJobConf().getOutputCommitter();
     commiter.commitTask(new TaskAttemptContextImpl(jobCtx.getJobConf(),attempt));
-    commiter.commitJob(jobCtx);
   }
  catch (  IOException e) {
     throw new GridException(e);
