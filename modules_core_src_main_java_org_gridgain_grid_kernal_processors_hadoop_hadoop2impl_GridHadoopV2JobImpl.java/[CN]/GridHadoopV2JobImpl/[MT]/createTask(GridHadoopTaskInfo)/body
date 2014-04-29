@@ -1,15 +1,27 @@
 {
+  boolean isAbort=taskInfo.type() == GridHadoopTaskType.ABORT;
 switch (taskInfo.type()) {
 case MAP:
-    return new GridHadoopV2MapTask(taskInfo);
+{
+      if (ctx.getJobConf().getUseNewMapper())       return new GridHadoopV2MapTask(taskInfo);
+ else       return new GridHadoopV1MapTask(taskInfo);
+    }
 case REDUCE:
-  return new GridHadoopV2ReduceTask(taskInfo);
+{
+    if (ctx.getJobConf().getUseNewReducer())     return new GridHadoopV2ReduceTask(taskInfo);
+ else     return new GridHadoopV1ReduceTask(taskInfo);
+  }
 case COMBINE:
-return new GridHadoopV2CombineTask(taskInfo);
+{
+  if (ctx.getJobConf().getCombinerClass() == null)   return new GridHadoopV2CombineTask(taskInfo);
+ else   return new GridHadoopV1CombineTask(taskInfo);
+}
 case COMMIT:
-return new GridHadoopV2CleanupTask(taskInfo,false);
 case ABORT:
-return new GridHadoopV2CleanupTask(taskInfo,true);
+{
+if (ctx.getJobConf().getUseNewReducer()) return new GridHadoopV2CleanupTask(taskInfo,isAbort);
+ else return new GridHadoopV1CleanupTask(taskInfo,isAbort);
+}
 default :
 return null;
 }

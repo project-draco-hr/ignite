@@ -1,19 +1,19 @@
 {
-  GridHadoopV1JobImpl jobImpl=(GridHadoopV1JobImpl)taskCtx.job();
-  JobContext jobCtx=jobImpl.hadoopJobContext();
-  Reducer reducer=U.newInstance(jobCtx.getJobConf().getReducerClass());
-  OutputFormat outFormat=jobCtx.getJobConf().getOutputFormat();
+  GridHadoopV2JobImpl jobImpl=(GridHadoopV2JobImpl)taskCtx.job();
+  JobConf jobConf=jobImpl.hadoopJobContext().getJobConf();
+  Reducer reducer=U.newInstance(jobConf.getReducerClass());
+  OutputFormat outFormat=jobConf.getOutputFormat();
   Reporter reporter=Reporter.NULL;
-  NumberFormat numberFormat=NumberFormat.getInstance();
-  numberFormat.setMinimumIntegerDigits(5);
-  numberFormat.setGroupingUsed(false);
-  String fileName="part-" + numberFormat.format(info().taskNumber());
-  reducer.configure(jobCtx.getJobConf());
+  NumberFormat numFormat=NumberFormat.getInstance();
+  numFormat.setMinimumIntegerDigits(5);
+  numFormat.setGroupingUsed(false);
+  String fileName="part-" + numFormat.format(info().taskNumber());
+  reducer.configure(jobConf);
   GridHadoopTaskInput input=taskCtx.input();
   TaskAttemptID attempt=jobImpl.attemptId(info());
-  jobCtx.getJobConf().set("mapreduce.task.attempt.id",attempt.toString());
+  jobConf.set("mapreduce.task.attempt.id",attempt.toString());
   try {
-    final RecordWriter writer=outFormat.getRecordWriter(null,jobCtx.getJobConf(),fileName,reporter);
+    final RecordWriter writer=outFormat.getRecordWriter(null,jobConf,fileName,reporter);
     OutputCollector collector=new OutputCollector(){
       @Override public void collect(      Object key,      Object val) throws IOException {
         writer.write(key,val);
@@ -29,8 +29,8 @@
   finally {
       writer.close(reporter);
     }
-    OutputCommitter commiter=jobCtx.getJobConf().getOutputCommitter();
-    commiter.commitTask(new TaskAttemptContextImpl(jobCtx.getJobConf(),attempt));
+    OutputCommitter commiter=jobConf.getOutputCommitter();
+    commiter.commitTask(new TaskAttemptContextImpl(jobConf,attempt));
   }
  catch (  IOException e) {
     throw new GridException(e);

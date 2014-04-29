@@ -1,8 +1,8 @@
 {
-  GridHadoopV1JobImpl jobImpl=(GridHadoopV1JobImpl)taskCtx.job();
-  JobContext jobCtx=jobImpl.hadoopJobContext();
-  Mapper mapper=U.newInstance(jobCtx.getJobConf().getMapperClass());
-  InputFormat inFormat=jobCtx.getJobConf().getInputFormat();
+  GridHadoopV2JobImpl jobImpl=(GridHadoopV2JobImpl)taskCtx.job();
+  JobConf jobConf=jobImpl.hadoopJobContext().getJobConf();
+  Mapper mapper=U.newInstance(jobConf.getMapperClass());
+  InputFormat inFormat=jobConf.getInputFormat();
   GridHadoopFileBlock block=info().fileBlock();
   InputSplit split=new FileSplit(new Path(block.file().toString()),block.start(),block.length(),block.hosts());
   OutputCollector collector=new OutputCollector(){
@@ -18,10 +18,10 @@
 ;
   Reporter reporter=Reporter.NULL;
   try {
-    RecordReader reader=inFormat.getRecordReader(split,jobCtx.getJobConf(),reporter);
+    RecordReader reader=inFormat.getRecordReader(split,jobConf,reporter);
     Object key=reader.createKey();
     Object val=reader.createValue();
-    mapper.configure(jobCtx.getJobConf());
+    mapper.configure(jobConf);
     while (reader.next(key,val)) {
       mapper.map(key,val,collector,reporter);
     }
