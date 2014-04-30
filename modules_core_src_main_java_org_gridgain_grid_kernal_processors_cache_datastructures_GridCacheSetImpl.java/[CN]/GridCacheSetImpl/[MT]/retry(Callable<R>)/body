@@ -1,0 +1,26 @@
+{
+  try {
+    int cnt=0;
+    while (true) {
+      try {
+        return call.call();
+      }
+ catch (      GridEmptyProjectionException e) {
+        throw new GridRuntimeException(e);
+      }
+catch (      GridCacheTxRollbackException|GridCachePartialUpdateException|GridTopologyException e) {
+        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
+ else {
+          U.warn(log,"Failed to execute set operation, will retry [err=" + e + ']');
+          U.sleep(RETRY_DELAY);
+        }
+      }
+    }
+  }
+ catch (  GridRuntimeException e) {
+    throw e;
+  }
+catch (  Exception e) {
+    throw new GridRuntimeException(e);
+  }
+}
