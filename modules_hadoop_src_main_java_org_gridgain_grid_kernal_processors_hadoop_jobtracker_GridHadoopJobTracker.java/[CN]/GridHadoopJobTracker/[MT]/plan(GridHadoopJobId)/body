@@ -1,5 +1,11 @@
 {
-  GridHadoopJobMetadata meta=jobMetaPrj.get(jobId);
-  if (meta != null)   return meta.mapReducePlan();
-  return null;
+  if (!busyLock.tryReadLock())   return null;
+  try {
+    GridHadoopJobMetadata meta=jobMetaPrj.get(jobId);
+    if (meta != null)     return meta.mapReducePlan();
+    return null;
+  }
+  finally {
+    busyLock.readUnlock();
+  }
 }
