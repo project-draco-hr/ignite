@@ -1,2 +1,34 @@
 {
+  final GridHadoopJobId jobId=taskInfo.jobId();
+  boolean lastMapperFinished=completedMappersCnt.incrementAndGet() == currentMappers.size();
+  if (status.state() == FAILED || status.state() == CRASHED) {
+    jobMetaPrj.transformAsync(jobId,new RemoveMappersClosure(taskInfo.fileBlock(),status.failCause()));
+    return;
+  }
+  if (job.hasCombiner()) {
+    if (lastMapperFinished) {
+      GridHadoopTaskInfo info=new GridHadoopTaskInfo(ctx.localNodeId(),COMBINE,jobId,meta.taskNumber(ctx.localNodeId()),taskInfo.attempt(),null);
+      GridHadoopTask task=job.createTask(info);
+      ctx.taskExecutor().run(job,Collections.singletonList(task));
+    }
+  }
+ else {
+    GridInClosure<GridFuture<?>> cacheUpdater=new CIX1<GridFuture<?>>(){
+      @Override public void applyx(      GridFuture<?> f){
+        Throwable err=null;
+        if (f != null) {
+          try {
+            f.get();
+          }
+ catch (          GridException e) {
+            err=e;
+          }
+        }
+        jobMetaPrj.transformAsync(jobId,new RemoveMappersClosure(taskInfo.fileBlock(),err));
+      }
+    }
+;
+    if (lastMapperFinished)     ctx.shuffle().flush(jobId).listenAsync(cacheUpdater);
+ else     cacheUpdater.apply(null);
+  }
 }
