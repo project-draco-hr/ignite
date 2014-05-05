@@ -1,9 +1,24 @@
 {
   try {
-    GridHadoopJobStatus jobStatus=cli.compute().execute(GridHadoopProtocolJobStatusTask.class.getName(),new GridHadoopProtocolTaskArguments(jobId.getJtIdentifier(),jobId.getId()));
-    return new JobStatus();
+    StatusFuture fut;
+    for (; ; ) {
+      StatusWorker worker=statusWorkerRef.get();
+      if (worker == null) {
+        StatusWorker newWorker=new StatusWorker(jobId);
+        if (statusWorkerRef.compareAndSet(null,newWorker)) {
+          fut=newWorker.fut;
+          new Thread(newWorker).start();
+          break;
+        }
+      }
+ else {
+        fut=worker.submit(jobId);
+        if (fut != null)         break;
+      }
+    }
+    return fut.get();
   }
- catch (  GridClientException e) {
+ catch (  GridException e) {
     throw new IOException("Failed to get job status: " + jobId,e);
   }
 }
