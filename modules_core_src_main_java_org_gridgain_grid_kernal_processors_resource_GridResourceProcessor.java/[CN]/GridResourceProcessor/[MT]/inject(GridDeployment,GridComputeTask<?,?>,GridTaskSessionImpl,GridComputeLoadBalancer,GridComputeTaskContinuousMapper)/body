@@ -1,2 +1,27 @@
 {
+  if (log.isDebugEnabled())   log.debug("Injecting resources: " + task);
+  Object obj=unwrapTarget(task);
+  Class<? extends Annotation>[] filtered=ioc.filter(dep,obj,taskInjections);
+  if (filtered.length == 0)   return;
+  Class<?> taskCls=obj.getClass();
+  for (  Class<? extends Annotation> annCls : filtered) {
+    if (annCls == GridTaskSessionResource.class)     injectBasicResource(obj,GridTaskSessionResource.class,ses,dep,taskCls);
+ else     if (annCls == GridLoadBalancerResource.class)     injectBasicResource(obj,GridLoadBalancerResource.class,balancer,dep,taskCls);
+ else     if (annCls == GridTaskContinuousMapperResource.class)     injectBasicResource(obj,GridTaskContinuousMapperResource.class,mapper,dep,taskCls);
+ else     if (annCls == GridInstanceResource.class)     ioc.inject(obj,GridInstanceResource.class,gridInjector,dep,taskCls);
+ else     if (annCls == GridExecutorServiceResource.class)     ioc.inject(obj,GridExecutorServiceResource.class,execInjector,dep,taskCls);
+ else     if (annCls == GridLocalNodeIdResource.class)     ioc.inject(obj,GridLocalNodeIdResource.class,nodeIdInjector,dep,taskCls);
+ else     if (annCls == GridLocalHostResource.class)     ioc.inject(obj,GridLocalHostResource.class,locHostInjector,dep,taskCls);
+ else     if (annCls == GridMBeanServerResource.class)     ioc.inject(obj,GridMBeanServerResource.class,mbeanSrvInjector,dep,taskCls);
+ else     if (annCls == GridHomeResource.class)     ioc.inject(obj,GridHomeResource.class,ggHomeInjector,dep,taskCls);
+ else     if (annCls == GridNameResource.class)     ioc.inject(obj,GridNameResource.class,ggNameInjector,dep,taskCls);
+ else     if (annCls == GridMarshallerResource.class)     ioc.inject(obj,GridMarshallerResource.class,marshInjector,dep,taskCls);
+ else     if (annCls == GridLoggerResource.class)     ioc.inject(obj,GridLoggerResource.class,logInjector,dep,taskCls);
+ else     if (annCls == GridUserResource.class)     ioc.inject(obj,GridUserResource.class,customInjector,dep,taskCls);
+ else {
+      for (      GridBiTuple<Class<? extends Annotation>,GridResourceInjector> t : rsrcCtx.injectors()) {
+        if (t.get1() == annCls)         ioc.inject(obj,t.get1(),t.get2(),dep,taskCls);
+      }
+    }
+  }
 }
