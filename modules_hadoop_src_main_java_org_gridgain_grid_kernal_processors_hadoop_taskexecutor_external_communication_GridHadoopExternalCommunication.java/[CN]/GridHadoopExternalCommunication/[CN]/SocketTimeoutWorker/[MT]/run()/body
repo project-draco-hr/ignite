@@ -1,0 +1,31 @@
+{
+  if (log.isDebugEnabled())   log.debug("Socket timeout worker has been started.");
+  try {
+    while (!isInterrupted()) {
+      long now=U.currentTimeMillis();
+      for (Iterator<TimeoutObject> iter=timeoutObjs.iterator(); iter.hasNext(); ) {
+        TimeoutObject timeoutObj=iter.next();
+        if (timeoutObj.endTime() <= now) {
+          iter.remove();
+          timeoutObj.onTimeout();
+        }
+ else         break;
+      }
+synchronized (mux0) {
+        while (true) {
+          TimeoutObject first=timeoutObjs.firstx();
+          if (first != null) {
+            long waitTime=first.endTime() - U.currentTimeMillis();
+            if (waitTime > 0)             mux0.wait(waitTime);
+ else             break;
+          }
+ else           mux0.wait(5000);
+        }
+      }
+    }
+  }
+ catch (  InterruptedException ignored) {
+    if (log.isDebugEnabled())     log.debug("Socket timeout worker was interrupted, exiting.");
+    Thread.currentThread().interrupt();
+  }
+}

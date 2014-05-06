@@ -1,0 +1,22 @@
+{
+  locIdMsg=new NodeIdMessage(locProcDesc);
+  filters=new GridNioFilter[]{new GridNioAsyncNotifyFilter(gridName,execSvc,log),new HandshakeAndBackpressureFilter(),new GridHadoopMarshallerFilter(marsh),new GridNioCodecFilter(new GridBufferedParser(directBuf,ByteOrder.nativeOrder()),log,false)};
+  try {
+    locHost=U.resolveLocalHost(locAddr);
+  }
+ catch (  IOException e) {
+    throw new GridException("Failed to initialize local address: " + locAddr,e);
+  }
+  try {
+    shmemSrv=resetShmemServer();
+  }
+ catch (  GridException e) {
+    U.warn(log,"Failed to start shared memory communication server.",e);
+  }
+  try {
+    nioSrvr=resetNioServer();
+  }
+ catch (  GridException e) {
+    throw new GridException("Failed to initialize TCP server: " + locHost,e);
+  }
+}
