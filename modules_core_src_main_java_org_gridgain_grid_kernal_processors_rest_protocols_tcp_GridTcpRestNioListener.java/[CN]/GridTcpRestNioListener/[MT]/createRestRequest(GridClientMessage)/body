@@ -2,123 +2,60 @@
   GridRestRequest restReq=null;
   if (msg instanceof GridClientAuthenticationRequest) {
     GridClientAuthenticationRequest req=(GridClientAuthenticationRequest)msg;
-    restReq=new GridRestRequest();
-    restReq.setCommand(NOOP);
-    restReq.setCredentials(req.credentials());
+    restReq=new GridRestTaskRequest();
+    restReq.command(NOOP);
+    restReq.credentials(req.credentials());
   }
  else   if (msg instanceof GridClientCacheRequest) {
     GridClientCacheRequest req=(GridClientCacheRequest)msg;
-    Map<?,?> vals=req.values();
-    restReq=new GridRestRequest();
-    Map<String,Object> params=new GridLeanMap<>(4);
-    params.put("cacheName",req.cacheName());
-    int i=1;
-switch (req.operation()) {
-case PUT:
-      restReq.setCommand(CACHE_PUT);
-    params.put("key",req.key());
-  params.put("val",req.value());
-break;
-case PUT_ALL:
-restReq.setCommand(CACHE_PUT_ALL);
-for (Map.Entry entry : vals.entrySet()) {
-params.put("k" + i,entry.getKey());
-params.put("v" + i,entry.getValue());
-i++;
-}
-break;
-case GET:
-restReq.setCommand(CACHE_GET);
-params.put("key",req.key());
-break;
-case GET_ALL:
-restReq.setCommand(CACHE_GET_ALL);
-for (Map.Entry entry : vals.entrySet()) {
-params.put("k" + i,entry.getKey());
-i++;
-}
-break;
-case RMV:
-restReq.setCommand(CACHE_REMOVE);
-params.put("key",req.key());
-break;
-case RMV_ALL:
-restReq.setCommand(CACHE_REMOVE_ALL);
-for (Map.Entry entry : vals.entrySet()) {
-params.put("k" + i,entry.getKey());
-i++;
-}
-break;
-case REPLACE:
-restReq.setCommand(CACHE_REPLACE);
-params.put("key",req.key());
-params.put("val",req.value());
-break;
-case CAS:
-restReq.setCommand(CACHE_CAS);
-params.put("key",req.key());
-params.put("val1",req.value());
-params.put("val2",req.value2());
-break;
-case METRICS:
-restReq.setCommand(CACHE_METRICS);
-params.put("key",req.key());
-break;
-case APPEND:
-restReq.setCommand(CACHE_APPEND);
-params.put("key",req.key());
-params.put("val",req.value());
-break;
-case PREPEND:
-restReq.setCommand(CACHE_PREPEND);
-params.put("key",req.key());
-params.put("val",req.value());
-break;
-}
-if (req.cacheFlagsOn() != 0) params.put("cacheFlags",Integer.toString(req.cacheFlagsOn()));
-restReq.setParameters(params);
-}
- else if (msg instanceof GridClientTaskRequest) {
-GridClientTaskRequest req=(GridClientTaskRequest)msg;
-restReq=new GridRestRequest();
-restReq.setCommand(EXE);
-Map<String,Object> params=new GridLeanMap<>(1);
-params.put("name",req.taskName());
-params.put("p1",req.argument());
-restReq.setParameters(params);
-}
- else if (msg instanceof GridClientTopologyRequest) {
-GridClientTopologyRequest req=(GridClientTopologyRequest)msg;
-restReq=new GridRestRequest();
-restReq.setCommand(TOPOLOGY);
-Map<String,Object> params=new GridLeanMap<>(2);
-params.put("mtr",req.includeMetrics());
-params.put("attr",req.includeAttributes());
-if (req.nodeId() != null) {
-restReq.setCommand(NODE);
-params.put("id",req.nodeId().toString());
-}
- else if (req.nodeIp() != null) {
-restReq.setCommand(NODE);
-params.put("ip",req.nodeIp());
-}
- else restReq.setCommand(TOPOLOGY);
-restReq.setParameters(params);
-}
- else if (msg instanceof GridClientLogRequest) {
-GridClientLogRequest req=(GridClientLogRequest)msg;
-restReq=new GridRestRequest();
-restReq.setCommand(LOG);
-Map<String,Object> params=new GridLeanMap<>(3);
-params.put("path",req.path());
-params.put("from",req.from());
-params.put("to",req.to());
-restReq.setParameters(params);
-}
-if (restReq != null) {
-restReq.setDestId(msg.destinationId());
-restReq.setClientId(msg.clientId());
-restReq.setSessionToken(msg.sessionToken());
-}
-return restReq;
+    GridRestCacheRequest restCacheReq=new GridRestCacheRequest();
+    restCacheReq.cacheName(req.cacheName());
+    restCacheReq.cacheFlags(req.cacheFlagsOn());
+    restCacheReq.key(req.key());
+    restCacheReq.value(req.value());
+    restCacheReq.value2(req.value2());
+    Map vals=req.values();
+    if (vals != null)     restCacheReq.values(new HashMap<Object,Object>(vals));
+    restCacheReq.command(cacheCmdMap.get(req.operation()));
+    restReq=restCacheReq;
+  }
+ else   if (msg instanceof GridClientTaskRequest) {
+    GridClientTaskRequest req=(GridClientTaskRequest)msg;
+    GridRestTaskRequest restTaskReq=new GridRestTaskRequest();
+    restTaskReq.command(EXE);
+    restTaskReq.taskName(req.taskName());
+    restTaskReq.params(Arrays.asList(req.argument()));
+    restReq=restTaskReq;
+  }
+ else   if (msg instanceof GridClientTopologyRequest) {
+    GridClientTopologyRequest req=(GridClientTopologyRequest)msg;
+    GridRestTopologyRequest restTopReq=new GridRestTopologyRequest();
+    restTopReq.includeMetrics(req.includeMetrics());
+    restTopReq.includeAttributes(req.includeAttributes());
+    if (req.nodeId() != null) {
+      restTopReq.command(NODE);
+      restTopReq.nodeId(req.nodeId());
+    }
+ else     if (req.nodeIp() != null) {
+      restTopReq.command(NODE);
+      restTopReq.nodeIp(req.nodeIp());
+    }
+ else     restTopReq.command(TOPOLOGY);
+    restReq=restTopReq;
+  }
+ else   if (msg instanceof GridClientLogRequest) {
+    GridClientLogRequest req=(GridClientLogRequest)msg;
+    GridRestLogRequest restLogReq=new GridRestLogRequest();
+    restLogReq.command(LOG);
+    restLogReq.path(req.path());
+    restLogReq.from(req.from());
+    restLogReq.to(req.to());
+    restReq=restLogReq;
+  }
+  if (restReq != null) {
+    restReq.destinationId(msg.destinationId());
+    restReq.clientId(msg.clientId());
+    restReq.sessionToken(msg.sessionToken());
+  }
+  return restReq;
 }
