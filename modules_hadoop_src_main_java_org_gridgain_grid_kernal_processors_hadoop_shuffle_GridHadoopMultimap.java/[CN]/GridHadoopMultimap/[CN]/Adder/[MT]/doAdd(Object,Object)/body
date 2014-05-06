@@ -1,7 +1,6 @@
 {
+  AtomicLongArray tbl=oldTbl;
   int keyHash=U.hash(key.hashCode());
-  AtomicLongArray tbl0=tbl;
-  int addr=keyHash & (tbl0.length() - 1);
   long newMetaPtr=0;
   long valPtr=0;
   if (val != null) {
@@ -11,7 +10,13 @@
     valueSize(valPtr,valSize);
   }
   for (; ; ) {
-    long metaPtrRoot=tbl0.get(addr);
+    int addr=keyHash & (tbl.length() - 1);
+    long metaPtrRoot=tbl.get(addr);
+    if (metaPtrRoot == -1) {
+      tbl=newTbl;
+      if (tbl == null)       tbl=oldTbl;
+      continue;
+    }
     if (metaPtrRoot != 0) {
       long metaPtr=metaPtrRoot;
       do {
@@ -42,6 +47,9 @@
       newMetaPtr=createMeta(keyHash,keySize,keyPtr,valPtr,metaPtrRoot,0);
     }
  else     collision(newMetaPtr,metaPtrRoot);
-    if (tbl0.compareAndSet(addr,metaPtrRoot,newMetaPtr))     return newMetaPtr;
+    if (tbl.compareAndSet(addr,metaPtrRoot,newMetaPtr)) {
+      incrementKeys(tbl);
+      return newMetaPtr;
+    }
   }
 }
