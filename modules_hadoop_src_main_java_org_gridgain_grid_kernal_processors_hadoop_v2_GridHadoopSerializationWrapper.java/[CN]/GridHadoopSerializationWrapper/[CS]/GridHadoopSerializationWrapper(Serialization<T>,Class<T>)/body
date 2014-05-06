@@ -1,4 +1,35 @@
 {
   serializer=serialization.getSerializer(cls);
   deserializer=serialization.getDeserializer(cls);
+  try {
+    OutputStream outStream=new OutputStream(){
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public void write(      int b) throws IOException {
+        currOut.write(b);
+      }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public void write(      byte[] b,      int off,      int len) throws IOException {
+        currOut.write(b,off,len);
+      }
+    }
+;
+    serializer.open(outStream);
+    InputStream inStream=new InputStream(){
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public int read() throws IOException {
+        return currIn.readUnsignedByte();
+      }
+    }
+;
+    deserializer.open(inStream);
+  }
+ catch (  IOException e) {
+    throw new GridException(e);
+  }
 }
