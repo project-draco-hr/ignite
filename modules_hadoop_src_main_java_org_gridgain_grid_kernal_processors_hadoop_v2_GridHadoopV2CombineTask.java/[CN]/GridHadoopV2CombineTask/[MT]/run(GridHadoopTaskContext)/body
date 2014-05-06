@@ -1,0 +1,15 @@
+{
+  GridHadoopV2Job jobImpl=(GridHadoopV2Job)taskCtx.job();
+  JobContext jobCtx=jobImpl.hadoopJobContext();
+  try {
+    Reducer combiner=U.newInstance(jobCtx.getCombinerClass());
+    ReduceContext hadoopCtx=new GridHadoopV2Context(jobCtx.getConfiguration(),taskCtx,jobImpl.attemptId(info()));
+    combiner.run(new WrappedReducer().getReducerContext(hadoopCtx));
+  }
+ catch (  InterruptedException e) {
+    throw new GridInterruptedException(e);
+  }
+catch (  Exception e) {
+    throw new GridException(e);
+  }
+}

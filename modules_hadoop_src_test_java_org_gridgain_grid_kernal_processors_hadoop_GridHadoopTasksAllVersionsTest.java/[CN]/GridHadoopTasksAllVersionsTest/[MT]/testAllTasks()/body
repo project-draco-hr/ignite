@@ -1,8 +1,8 @@
 {
-  Path outputDir=Files.createTempDirectory(GridGainWordCount2.class.getSimpleName() + "-output");
+  Path outputDir=Files.createTempDirectory(GridHadoopWordCount2.class.getSimpleName() + "-output");
   try {
     URI testOutputDirURI=URI.create(outputDir.toString());
-    File testInputFile=File.createTempFile(GridGainWordCount2.class.getSimpleName(),"-input");
+    File testInputFile=File.createTempFile(GridHadoopWordCount2.class.getSimpleName(),"-input");
     testInputFile.deleteOnExit();
     URI testInputFileURI=URI.create(testInputFile.getAbsolutePath());
     generateTestFile(testInputFile,"red",100,"blue",200,"green",150,"yellow",70);
@@ -21,7 +21,7 @@
     taskInfo=new GridHadoopTaskInfo(null,GridHadoopTaskType.COMMIT,gridJob.id(),0,0,null);
     task=gridJob.createTask(taskInfo);
     task.run(reduceCtx);
-    assertEquals("blue\t200\n" + "green\t150\n" + "red\t100\n"+ "yellow\t70\n",readFile(outputDir + "/part-r-00000"));
+    assertEquals("blue\t200\n" + "green\t150\n" + "red\t100\n"+ "yellow\t70\n",readFile(outputDir + "/" + getOutputFileNamePrefix()+ "00000"));
   }
   finally {
     FileUtils.deleteDirectory(outputDir.toFile());
