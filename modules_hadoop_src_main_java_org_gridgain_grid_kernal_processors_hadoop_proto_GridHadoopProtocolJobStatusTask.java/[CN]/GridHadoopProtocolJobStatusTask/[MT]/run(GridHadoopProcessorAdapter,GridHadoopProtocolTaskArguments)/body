@@ -1,6 +1,19 @@
 {
   UUID nodeId=UUID.fromString(args.<String>get(0));
   int id=args.get(1);
-  GridHadoopJobStatus status=proc.status(new GridHadoopJobId(nodeId,id),100);
-  return null;
+  Long pollDelay=args.get(2);
+  GridHadoopJobId jobId=new GridHadoopJobId(nodeId,id);
+  if (pollDelay == null)   pollDelay=proc.config().getJobStatusPollDelay();
+  if (pollDelay > 0) {
+    GridFuture<?> fut=proc.finishFuture(jobId);
+    if (fut == null)     return null;
+ else {
+      try {
+        fut.get(pollDelay);
+      }
+ catch (      GridException ignore) {
+      }
+    }
+  }
+  return proc.status(jobId);
 }
