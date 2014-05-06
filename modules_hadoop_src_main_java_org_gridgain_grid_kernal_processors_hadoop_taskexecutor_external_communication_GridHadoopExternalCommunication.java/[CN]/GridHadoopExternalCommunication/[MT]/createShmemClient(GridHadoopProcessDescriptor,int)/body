@@ -18,12 +18,15 @@
     try {
       ShmemWorker worker=new ShmemWorker(clientEndpoint);
       shmemWorkers.add(worker);
-      client=new GridHadoopTcpNioCommunicationClient(worker.session(),false);
+      GridNioSession ses=worker.session();
+      HandshakeFinish fin=new HandshakeFinish();
+      ses.addMeta(HANDSHAKE_FINISH_META,fin);
+      client=new GridHadoopTcpNioCommunicationClient(ses);
       new GridThread(worker).start();
-      client.awaitHandshake(connTimeout0);
+      fin.await(connTimeout0);
     }
  catch (    GridHadoopHandshakeTimeoutException e) {
-      if (log.isDebugEnabled())       log.debug("Handshake timedout (will retry with increased timeout) [timeout=" + connTimeout0 + ", err="+ e.getMessage()+ ", client="+ client+ ']');
+      if (log.isDebugEnabled())       log.debug("Handshake timed out (will retry with increased timeout) [timeout=" + connTimeout0 + ", err="+ e.getMessage()+ ", client="+ client+ ']');
       if (client != null)       client.forceClose();
       if (attempt == reconCnt || connTimeout0 > maxConnTimeout) {
         if (log.isDebugEnabled())         log.debug("Handshake timedout (will stop attempts to perform the handshake) " + "[timeout=" + connTimeout0 + ", maxConnTimeout="+ maxConnTimeout+ ", attempt="+ attempt+ ", reconCnt="+ reconCnt+ ", err="+ e.getMessage()+ ", client="+ client+ ']');
@@ -35,7 +38,7 @@
         continue;
       }
     }
-catch (    GridException|RuntimeException|Error e) {
+catch (    RuntimeException|Error e) {
       if (log.isDebugEnabled())       log.debug("Caught exception (will close client) [err=" + e.getMessage() + ", client="+ client+ ']');
       if (client != null)       client.forceClose();
       throw e;
