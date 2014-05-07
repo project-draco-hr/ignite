@@ -10,7 +10,14 @@
       try {
         in=conn.getInputStream();
         if (in == null)         return;
-        dom=tidy.parseDOM(in,null);
+        BufferedReader reader=new BufferedReader(new InputStreamReader(in,"UTF-8"));
+        StringBuilder xml=new StringBuilder();
+        String line;
+        while ((line=reader.readLine()) != null) {
+          if (line.contains("<meta") && !line.contains("/>"))           line=line.replace(">","/>");
+          xml.append(line).append('\n');
+        }
+        dom=documentBuilder.parse(new ByteArrayInputStream(xml.toString().getBytes("UTF-8")));
       }
  catch (      IOException e) {
         if (log.isDebugEnabled())         log.debug("Failed to connect to GridGain update server. " + e.getMessage());
