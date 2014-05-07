@@ -3,8 +3,13 @@
   JobConf jobConf=new JobConf(jobImpl.hadoopJobContext().getJobConf());
   Mapper mapper=U.newInstance(jobConf.getMapperClass());
   InputFormat inFormat=jobConf.getInputFormat();
-  GridHadoopFileBlock block=info().fileBlock();
-  InputSplit split=new FileSplit(new Path(block.file().toString()),block.start(),block.length(),block.hosts());
+  GridHadoopInputSplit split=info().inputSplit();
+  InputSplit nativeSplit;
+  if (split instanceof GridHadoopFileBlock) {
+    GridHadoopFileBlock block=(GridHadoopFileBlock)split;
+    nativeSplit=new FileSplit(new Path(block.file().toString()),block.start(),block.length(),block.hosts());
+  }
+ else   nativeSplit=(InputSplit)split.innerSplit();
   OutputCollector collector=new OutputCollector(){
     @Override public void collect(    Object key,    Object val) throws IOException {
       try {
@@ -18,7 +23,7 @@
 ;
   Reporter reporter=Reporter.NULL;
   try {
-    RecordReader reader=inFormat.getRecordReader(split,jobConf,reporter);
+    RecordReader reader=inFormat.getRecordReader(nativeSplit,jobConf,reporter);
     Object key=reader.createKey();
     Object val=reader.createValue();
     mapper.configure(jobConf);

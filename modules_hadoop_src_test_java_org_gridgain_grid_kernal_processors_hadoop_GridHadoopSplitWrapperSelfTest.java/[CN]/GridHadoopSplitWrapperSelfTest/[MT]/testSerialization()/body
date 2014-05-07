@@ -1,0 +1,13 @@
+{
+  FileSplit nativeSplit=new FileSplit(new Path("/path/to/file"),100,500,new String[]{"host1","host2"});
+  assertEquals("/path/to/file:100+500",nativeSplit.toString());
+  GridHadoopInputSplit split=new GridHadoopSplitWrapper(nativeSplit,nativeSplit.getLocations());
+  assertEquals("[host1, host2]",Arrays.toString(split.hosts()));
+  ByteArrayOutputStream buf=new ByteArrayOutputStream();
+  ObjectOutput out=new ObjectOutputStream(buf);
+  out.writeObject(split);
+  ObjectInput in=new ObjectInputStream(new ByteArrayInputStream(buf.toByteArray()));
+  GridHadoopInputSplit res=(GridHadoopInputSplit)in.readObject();
+  assertEquals("/path/to/file:100+500",res.innerSplit().toString());
+  assertEquals("[host1, host2]",Arrays.toString(res.hosts()));
+}

@@ -11,11 +11,16 @@
     throw new GridException(e);
   }
   GridHadoopV2Context hadoopCtx=new GridHadoopV2Context(jobCtx.getConfiguration(),taskCtx,jobImpl.attemptId(info()));
-  GridHadoopFileBlock block=info().fileBlock();
-  InputSplit split=new FileSplit(new Path(block.file().toString()),block.start(),block.length(),block.hosts());
+  GridHadoopInputSplit split=info().inputSplit();
+  InputSplit nativeSplit;
+  if (split instanceof GridHadoopFileBlock) {
+    GridHadoopFileBlock block=(GridHadoopFileBlock)split;
+    nativeSplit=new FileSplit(new Path(block.file().toString()),block.start(),block.length(),block.hosts());
+  }
+ else   nativeSplit=(InputSplit)split.innerSplit();
   try {
-    RecordReader reader=inFormat.createRecordReader(split,hadoopCtx);
-    reader.initialize(split,hadoopCtx);
+    RecordReader reader=inFormat.createRecordReader(nativeSplit,hadoopCtx);
+    reader.initialize(nativeSplit,hadoopCtx);
     hadoopCtx.reader(reader);
     mapper.run(new WrappedMapper().getMapContext(hadoopCtx));
   }
