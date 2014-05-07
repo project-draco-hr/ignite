@@ -1,0 +1,13 @@
+{
+  JobConf cfg=new JobConf();
+  cfg.setMapOutputKeyClass(IntWritable.class);
+  cfg.setMapOutputValueClass(Text.class);
+  cfg.set(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY,CustomSerialization.class.getName());
+  GridHadoopJob job=new GridHadoopV2Job(new GridHadoopJobId(UUID.randomUUID(),1),new GridHadoopDefaultJobInfo(cfg));
+  GridHadoopSerialization ser=job.keySerialization();
+  assertEquals(GridHadoopSerializationWrapper.class,ser.getClass());
+  assertEquals(TEST_SERIALIZED_VALUE,ser.read(null,null).toString());
+  ser=job.valueSerialization();
+  assertEquals(GridHadoopSerializationWrapper.class,ser.getClass());
+  assertEquals(TEST_SERIALIZED_VALUE,ser.read(null,null).toString());
+}
