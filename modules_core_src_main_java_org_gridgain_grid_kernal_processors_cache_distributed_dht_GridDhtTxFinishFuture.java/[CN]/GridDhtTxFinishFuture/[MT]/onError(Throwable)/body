@@ -1,12 +1,25 @@
 {
   if (err.compareAndSet(null,e)) {
     boolean marked=tx.setRollbackOnly();
-    if (e instanceof GridCacheTxRollbackException)     if (marked) {
-      try {
-        tx.rollback();
+    if (e instanceof GridCacheTxRollbackException) {
+      if (marked) {
+        try {
+          tx.rollback();
+        }
+ catch (        GridException ex) {
+          U.error(log,"Failed to automatically rollback transaction: " + tx,ex);
+        }
       }
- catch (      GridException ex) {
-        U.error(log,"Failed to automatically rollback transaction: " + tx,ex);
+    }
+ else     if (tx.isSystemInvalidate()) {
+      finish();
+      try {
+        get();
+      }
+ catch (      GridCacheTxHeuristicException ignore) {
+      }
+catch (      GridException err) {
+        U.error(log,"Failed to invalidate transaction: " + tx,err);
       }
     }
     onComplete();
