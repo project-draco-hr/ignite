@@ -1,9 +1,13 @@
 {
   try {
-    GridHadoopChildProcessBase process=createProcess(args);
-    GridHadoopExternalCommunication comm;
-    comm=new GridHadoopExternalCommunication(UUID.randomUUID(),new GridOptimizedMarshaller(),new GridLog4jLogger(),Executors.newFixedThreadPool(1),"test");
+    Args args=arguments(cmdArgs);
+    GridHadoopExternalCommunication comm=new GridHadoopExternalCommunication(args.nodeId,args.childProcId,new GridOptimizedMarshaller(),new GridLog4jLogger(),Executors.newFixedThreadPool(1),"test");
     comm.start();
+    GridHadoopProcessDescriptor nodeDesc=new GridHadoopProcessDescriptor(args.nodeId,args.parentProcId);
+    nodeDesc.address(args.addr);
+    nodeDesc.tcpPort(args.tcpPort);
+    nodeDesc.sharedMemoryPort(args.shmemPort);
+    comm.sendMessage(nodeDesc,new GridHadoopProcessStartedReply());
   }
  catch (  Exception e) {
     e.printStackTrace();
