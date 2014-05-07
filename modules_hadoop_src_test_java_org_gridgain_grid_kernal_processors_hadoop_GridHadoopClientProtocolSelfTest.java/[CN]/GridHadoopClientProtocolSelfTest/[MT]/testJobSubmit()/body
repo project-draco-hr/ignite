@@ -1,0 +1,29 @@
+{
+  GridGgfs ggfs=grid(0).ggfs(ggfsName);
+  ggfs.mkdirs(new GridGgfsPath(PATH_INPUT));
+  try (BufferedWriter bw=new BufferedWriter(new OutputStreamWriter(ggfs.create(new GridGgfsPath(PATH_INPUT + "/test.file"),true)))){
+    bw.write("word");
+  }
+   Configuration conf=config(REST_PORT);
+  Job job=Job.getInstance(conf);
+  job.setUser(USR);
+  job.setJobName(JOB_NAME);
+  job.setOutputKeyClass(Text.class);
+  job.setOutputValueClass(IntWritable.class);
+  job.setMapperClass(TestMapper.class);
+  job.setCombinerClass(TestReducer.class);
+  job.setReducerClass(TestReducer.class);
+  job.setInputFormatClass(TextInputFormat.class);
+  job.setOutputFormatClass(TextOutputFormat.class);
+  FileInputFormat.setInputPaths(job,new Path(PATH_INPUT));
+  FileOutputFormat.setOutputPath(job,new Path(PATH_OUTPUT));
+  job.submit();
+  JobID jobId=job.getJobID();
+  checkJobStatus(job.getStatus(),jobId,JOB_NAME,USR,JobStatus.State.RUNNING,1.0f,0.0f,0.0f,0.0f);
+  mapLatch.countDown();
+  U.sleep(200);
+  checkJobStatus(job.getStatus(),jobId,JOB_NAME,USR,JobStatus.State.RUNNING,1.0f,1.0f,0.0f,0.0f);
+  reduceLatch.countDown();
+  U.sleep(200);
+  checkJobStatus(job.getStatus(),jobId,JOB_NAME,USR,JobStatus.State.SUCCEEDED,1.0f,1.0f,1.0f,1.0f);
+}
