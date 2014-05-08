@@ -10,29 +10,11 @@
     res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     return;
   }
-  GridRestRequest cmdReq=new GridRestRequest(cmd,act,parameters(req));
-  String clientId=cmdReq.parameter("clientId");
-  try {
-    if (clientId != null)     cmdReq.setClientId(UUID.fromString(clientId));
-  }
- catch (  Exception ignored) {
-  }
-  String destId=cmdReq.parameter("destId");
-  try {
-    if (destId != null)     cmdReq.setDestId(UUID.fromString(destId));
-  }
- catch (  IllegalArgumentException ignored) {
-  }
-  cmdReq.setCredentials(cmdReq.parameter("cred"));
-  try {
-    String sesTokStr=cmdReq.parameter("sessionToken");
-    if (sesTokStr != null)     cmdReq.setSessionToken(U.hexString2ByteArray(sesTokStr));
-  }
- catch (  IllegalArgumentException ignored) {
-  }
-  if (log.isDebugEnabled())   log.debug("Initialized command request: " + cmdReq);
   GridRestResponse cmdRes;
+  Map<String,Object> params=parameters(req);
   try {
+    GridRestRequest cmdReq=createRequest(cmd,params);
+    if (log.isDebugEnabled())     log.debug("Initialized command request: " + cmdReq);
     cmdRes=hnd.handle(cmdReq);
     if (cmdRes == null)     throw new IllegalStateException("Received null result from handler: " + hnd);
     byte[] sesTok=cmdRes.sessionTokenBytes();
@@ -56,7 +38,7 @@
   try {
     if (log.isDebugEnabled())     log.debug("Parsed command response into JSON object: " + json.toString(2));
     res.getWriter().write(json.toString());
-    if (log.isDebugEnabled())     log.debug("Processed HTTP request [action=" + act + ", jsonRes="+ cmdRes+ ", req="+ cmdReq+ ']');
+    if (log.isDebugEnabled())     log.debug("Processed HTTP request [action=" + act + ", jsonRes="+ cmdRes+ ", req="+ req+ ']');
   }
  catch (  IOException e) {
     U.error(log,"Failed to send HTTP response: " + json.toString(2),e);
