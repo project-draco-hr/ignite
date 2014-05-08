@@ -1,0 +1,15 @@
+{
+  Map<UUID,Collection<GridHadoopInputSplit>> mappersMap=new HashMap<>();
+  Map<String,Collection<GridNode>> nodes=groupByHost(top);
+  for (  GridHadoopInputSplit split : splits) {
+    UUID nodeId=nodeId(job,split,top,nodes);
+    if (log.isDebugEnabled())     log.debug("Mapped split to node [split=" + split + ", nodeId="+ nodeId+ ']');
+    Collection<GridHadoopInputSplit> nodeSplits=mappersMap.get(nodeId);
+    if (nodeSplits == null) {
+      nodeSplits=new ArrayList<>();
+      mappersMap.put(nodeId,nodeSplits);
+    }
+    nodeSplits.add(split);
+  }
+  return mappersMap;
+}
