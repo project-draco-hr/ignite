@@ -5,11 +5,11 @@
   long fileSize=256 * 1024;
   prepareFile(ggfs,fileName,fileSize);
   Collection<GridGgfsBlockLocation> aff=ggfs.affinity(new GridGgfsPath(fileName),0,fileSize);
-  Collection<GridHadoopFileBlock> blocks=new ArrayList<>(aff.size());
+  Collection<GridHadoopInputSplit> blocks=new ArrayList<>(aff.size());
   String[] hosts=new String[]{F.first(grid.localNode().hostNames())};
   for (  GridGgfsBlockLocation loc : aff) {
-    GridHadoopFileBlock block=new GridHadoopFileBlock(hosts,new URI("ggfs://ipc" + fileName),loc.start(),loc.length());
-    blocks.add(block);
+    GridHadoopInputSplit split=new GridHadoopFileBlock(hosts,new URI("ggfs://ipc" + fileName),loc.start(),loc.length());
+    blocks.add(split);
   }
   GridKernal kernal=(GridKernal)grid;
   GridHadoopProcessor hadoopProc=(GridHadoopProcessor)kernal.context().hadoop();
@@ -22,13 +22,13 @@
     GridHadoopMapReducePlan plan=planner.preparePlan(blocks,nodes,job,null);
     int totalBlocks=0;
     for (    GridNode n : nodes) {
-      Collection<GridHadoopFileBlock> mappers=plan.mappers(n.id());
+      Collection<GridHadoopInputSplit> mappers=plan.mappers(n.id());
       if (mappers != null)       totalBlocks+=mappers.size();
     }
     assertEquals(aff.size(),totalBlocks);
     for (    GridGgfsBlockLocation loc : aff) {
       UUID primary=F.first(loc.nodeIds());
-      Collection<GridHadoopFileBlock> mappers=plan.mappers(primary);
+      Collection<GridHadoopInputSplit> mappers=plan.mappers(primary);
       assertNotNull("Mappers is null for affinity [primary=" + primary + ", loc="+ loc+ ']',mappers);
       assertTrue("Failed to find affinity block location in plan [loc=" + loc + ", mappers="+ mappers+ ']',hasLocation(loc,fileName,mappers));
     }
