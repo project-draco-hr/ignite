@@ -1,0 +1,17 @@
+{
+  if (F.isEmpty(args)) {
+    ClassLoader clsLdr=Thread.currentThread().getContextClassLoader();
+    URL hibernateCfg=clsLdr.getResource(HIBERNATE_DFLT_CFG);
+    if (hibernateCfg == null)     throw new RuntimeException("Cannot find hibernate configuration file in CLASSPATH: " + HIBERNATE_DFLT_CFG);
+    return hibernateCfg;
+  }
+  File cfgFile=new File(args[0]);
+  if (!cfgFile.isAbsolute())   throw new IllegalArgumentException("Specified hibernate configuration file should have absolute path: " + cfgFile.getPath());
+  if (!cfgFile.exists())   throw new RuntimeException("Specified path to hibernate configuration file does not exist: " + cfgFile.getAbsolutePath());
+  try {
+    return cfgFile.toURI().toURL();
+  }
+ catch (  MalformedURLException e) {
+    throw new RuntimeException(e);
+  }
+}
