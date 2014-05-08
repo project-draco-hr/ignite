@@ -1,6 +1,16 @@
 {
-  GridHadoopShuffleMessage msg=msgs[idx];
-  sentMsgs.putIfAbsent(msg.id(),F.t(msg,new GridFutureAdapter<>(ctx.kernalContext())));
-  doSend(reduceNodes[idx],msg);
+  GridFuture<?> fut=io.apply(reduceNodes[idx],msgs[idx]);
+  fut.listenAsync(new GridInClosure<GridFuture<?>>(){
+    @Override public void apply(    GridFuture<?> f){
+      try {
+        f.get();
+      }
+ catch (      GridException e) {
+        log.error("Failed to send message.",e);
+      }
+    }
+  }
+);
+  ioFuts.add(fut);
   msgs[idx]=newBufMinSize == 0 ? null : new GridHadoopShuffleMessage(job.id(),idx,Math.max(4 * 1024,newBufMinSize));
 }
