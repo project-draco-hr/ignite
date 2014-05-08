@@ -7,7 +7,13 @@
   ObjectOutput out=new ObjectOutputStream(buf);
   out.writeObject(split);
   ObjectInput in=new ObjectInputStream(new ByteArrayInputStream(buf.toByteArray()));
-  GridHadoopInputSplit res=(GridHadoopInputSplit)in.readObject();
+  final GridHadoopInputSplit res=(GridHadoopInputSplit)in.readObject();
   assertEquals("/path/to/file:100+500",res.innerSplit().toString());
-  assertEquals("[host1, host2]",Arrays.toString(res.hosts()));
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      res.hosts();
+      return null;
+    }
+  }
+,AssertionError.class,null);
 }
