@@ -12,8 +12,9 @@
           entry=entryExx(key);
           V val=req.value(i);
           byte[] valBytes=req.valueBytes(i);
-          GridCacheOperation op=(val != null || valBytes != null) ? UPDATE : DELETE;
-          GridCacheUpdateAtomicResult<K,V> updRes=entry.innerUpdate(ver,nodeId,nodeId,op,val,valBytes,false,false,req.ttl(),true,true,false,true,CU.<K,V>empty(),replicate ? DR_BACKUP : DR_NONE,req.drTtl(i),req.drExpireTime(i),req.drVersion(i),false);
+          GridClosure<V,V> transform=req.transformClosure(i);
+          GridCacheOperation op=transform != null ? TRANSFORM : (val != null || valBytes != null) ? UPDATE : DELETE;
+          GridCacheUpdateAtomicResult<K,V> updRes=entry.innerUpdate(ver,nodeId,nodeId,op,op == TRANSFORM ? transform : val,valBytes,false,false,req.ttl(),true,true,false,!req.skipVersionCheck(),CU.<K,V>empty(),replicate ? DR_BACKUP : DR_NONE,req.drTtl(i),req.drExpireTime(i),req.drVersion(i),false);
           if (updRes.removeVersion() != null)           ctx.onDeferredDelete(entry,updRes.removeVersion());
           entry.onUnlock();
           break;
