@@ -1,0 +1,31 @@
+{
+  int numReduces=cfg.getNumReduceTasks();
+  cfg.setBooleanIfUnset("mapred.mapper.new-api",cfg.get(OLD_MAP_CLASS_ATTR) == null);
+  if (cfg.getUseNewMapper()) {
+    String mode="new map API";
+    ensureNotSet("mapred.input.format.class",mode);
+    ensureNotSet(OLD_MAP_CLASS_ATTR,mode);
+    if (numReduces != 0)     ensureNotSet("mapred.partitioner.class",mode);
+ else     ensureNotSet("mapred.output.format.class",mode);
+  }
+ else {
+    String mode="map compatibility";
+    ensureNotSet(MRJobConfig.INPUT_FORMAT_CLASS_ATTR,mode);
+    ensureNotSet(MRJobConfig.MAP_CLASS_ATTR,mode);
+    if (numReduces != 0)     ensureNotSet(MRJobConfig.PARTITIONER_CLASS_ATTR,mode);
+ else     ensureNotSet(MRJobConfig.OUTPUT_FORMAT_CLASS_ATTR,mode);
+  }
+  if (numReduces != 0) {
+    cfg.setBooleanIfUnset("mapred.reducer.new-api",cfg.get(OLD_REDUCE_CLASS_ATTR) == null);
+    if (cfg.getUseNewReducer()) {
+      String mode="new reduce API";
+      ensureNotSet("mapred.output.format.class",mode);
+      ensureNotSet(OLD_REDUCE_CLASS_ATTR,mode);
+    }
+ else {
+      String mode="reduce compatibility";
+      ensureNotSet(MRJobConfig.OUTPUT_FORMAT_CLASS_ATTR,mode);
+      ensureNotSet(MRJobConfig.REDUCE_CLASS_ATTR,mode);
+    }
+  }
+}
