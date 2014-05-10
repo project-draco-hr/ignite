@@ -1,2 +1,20 @@
 {
+  try {
+    comm.sendMessage(nodeDesc,new GridHadoopTaskFinishedMessage(taskInfo,state,err));
+    if (taskInfo.type() == GridHadoopTaskType.MAP) {
+      int mappers=pendingMappers.decrementAndGet();
+      if (mappers == 0) {
+        if (job.hasCombiner()) {
+          GridHadoopTask c=job.createTask(new GridHadoopTaskInfo(comm.localProcessDescriptor().parentNodeId(),GridHadoopTaskType.COMBINE,job.id(),0,0,null));
+          reducerExecSvc.submit(new TaskRunnable(new GridHadoopTaskContext(null,job,null,null),c));
+        }
+      }
+    }
+    checkFinished();
+  }
+ catch (  GridException e) {
+    log.warning("Failed to send task finish notification to parent node (will abort process execution).",e);
+    shutdown();
+    terminate();
+  }
 }

@@ -1,0 +1,13 @@
+{
+  if (!busyLock.tryReadLock())   return;
+  try {
+    if (msg instanceof GridHadoopProcessStartedReply) {
+      GridHadoopProcessFuture fut=startingProcs.get(desc.processId());
+      if (fut != null)       fut.onReplyReceived(desc);
+ else       log.warning("Failed to find process start future (will ignore): " + desc);
+    }
+  }
+  finally {
+    busyLock.readUnlock();
+  }
+}

@@ -2,9 +2,7 @@
   try {
     if (initGuard.compareAndSet(false,true)) {
       log.info("Initializing external hadoop task: " + req);
-      GridHadoopJob job=jobFactory.createJob(req.jobId(),req.jobInfo());
-      Collection<GridHadoopTask> mappers=null;
-      Collection<GridHadoopTask> reducers=null;
+      job=jobFactory.createJob(req.jobId(),req.jobInfo());
       for (      GridHadoopTaskInfo taskInfo : req.tasks()) {
         GridHadoopTask task=job.createTask(taskInfo);
 switch (taskInfo.type()) {
@@ -25,22 +23,13 @@ default :
   }
 }
 initializeExecutors(req,job,mappers,reducers);
-if (mappers != null) {
-  for (  GridHadoopTask m : mappers)   mapperExecSvc.submit(new TaskRunnable(new GridHadoopTaskContext(null,job,null,null),m));
-  if (job.hasCombiner()) {
-    GridHadoopTask c=job.createTask(new GridHadoopTaskInfo(comm.localProcessDescriptor().parentNodeId(),GridHadoopTaskType.COMBINE,job.id(),0,0,null));
-    reducerExecSvc.submit(new TaskRunnable(new GridHadoopTaskContext(null,job,null,null),c));
-  }
-}
-if (reducers != null) {
-  for (  GridHadoopTask r : reducers)   reducerExecSvc.submit(new TaskRunnable(new GridHadoopTaskContext(null,job,null,null),r));
-}
+phase(GridHadoopJobPhase.PHASE_MAP);
 }
  else log.warning("Received duplicate task execution request for the same process (will ignore): " + req);
 }
  catch (GridException e) {
-log.warning("Unexpected exception caught during task initialization. Will shutdown process runner.",e);
-abortExecution();
-e.printStackTrace();
+log.warning("Unexpected exception caught during task initialization (will abort process execution).",e);
+shutdown();
+terminate();
 }
 }
