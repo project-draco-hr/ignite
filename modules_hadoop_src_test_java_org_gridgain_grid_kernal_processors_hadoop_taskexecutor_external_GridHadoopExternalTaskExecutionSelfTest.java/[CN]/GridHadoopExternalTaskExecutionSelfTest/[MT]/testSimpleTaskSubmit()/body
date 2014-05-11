@@ -1,0 +1,15 @@
+{
+  String testInputFile="/test";
+  prepareTestFile(testInputFile);
+  Configuration cfg=new Configuration();
+  cfg.set("fs.ggfs.impl",GridGgfsHadoopFileSystem.class.getName());
+  cfg.setBoolean("gridgain.hadoop.external_execution",true);
+  Job job=Job.getInstance(cfg);
+  job.setMapperClass(TestMapper.class);
+  job.setNumReduceTasks(0);
+  FileInputFormat.setInputPaths(job,new Path("ggfs://ipc/" + testInputFile));
+  job.setJarByClass(getClass());
+  GridHadoopProcessorAdapter hadoop=((GridKernal)grid(0)).context().hadoop();
+  GridFuture<?> fut=hadoop.submit(new GridHadoopJobId(UUID.randomUUID(),1),new GridHadoopDefaultJobInfo(job.getConfiguration()));
+  fut.get();
+}
