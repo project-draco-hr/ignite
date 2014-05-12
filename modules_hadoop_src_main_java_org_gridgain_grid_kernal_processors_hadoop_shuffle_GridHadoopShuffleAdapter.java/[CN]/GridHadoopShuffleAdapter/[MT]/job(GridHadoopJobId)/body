@@ -1,0 +1,25 @@
+{
+  GridHadoopShuffleJob<T> res=jobs.get(jobId);
+  if (res == null) {
+    res=newJob(jobId);
+    GridHadoopShuffleJob<T> old=jobs.putIfAbsent(jobId,res);
+    if (old != null) {
+      res.close();
+      res=old;
+    }
+ else {
+      if (res.reducersInitialized()) {
+        res.startSending(gridName(),new GridBiClosure<T,GridHadoopShuffleMessage,GridFuture<?>>(){
+          @Override public GridFuture<?> apply(          T dest,          GridHadoopShuffleMessage msg){
+            GridFutureAdapterEx<?> f=new GridFutureAdapterEx<>();
+            sentMsgs.putIfAbsent(msg.id(),new GridBiTuple<GridHadoopShuffleMessage,GridFutureAdapterEx<?>>(msg,f));
+            send0(dest,msg);
+            return f;
+          }
+        }
+);
+      }
+    }
+  }
+  return res;
+}
