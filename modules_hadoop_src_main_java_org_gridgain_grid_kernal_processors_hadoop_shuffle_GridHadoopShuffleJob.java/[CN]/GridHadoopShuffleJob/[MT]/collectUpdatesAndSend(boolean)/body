@@ -1,19 +1,19 @@
 {
   for (int i=0; i < maps.length(); i++) {
     GridHadoopMultimap map=maps.get(i);
-    if (map == null || localNodeId.equals(reduceNodes[i]))     continue;
+    if (map == null || locReduceAddr.equals(reduceAddrs[i]))     continue;
     if (msgs[i] == null)     msgs[i]=new GridHadoopShuffleMessage(job.id(),i,4 * 1024);
     final int idx=i;
     map.visit(false,new GridHadoopMultimap.Visitor(){
       /** 
  */
-      long keyPtr;
+      private long keyPtr;
       /** 
  */
-      int keySize;
+      private int keySize;
       /** 
  */
-      boolean keyAdded;
+      private boolean keyAdded;
       /** 
  * {@inheritDoc} 
  */
@@ -39,7 +39,7 @@
       /** 
  * {@inheritDoc} 
  */
-      @Override public void onValue(      long valPtr,      int valSize) throws GridException {
+      @Override public void onValue(      long valPtr,      int valSize){
         if (tryAdd(valPtr,valSize))         return;
         send(idx,keySize + valSize);
         keyAdded=false;
