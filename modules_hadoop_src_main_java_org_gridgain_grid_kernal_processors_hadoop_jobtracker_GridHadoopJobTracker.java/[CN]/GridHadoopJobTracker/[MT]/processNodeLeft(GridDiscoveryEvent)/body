@@ -6,12 +6,12 @@
         GridHadoopMapReducePlan plan=meta.mapReducePlan();
         GridHadoopJobPhase phase=meta.phase();
         if (phase == PHASE_MAP || phase == PHASE_REDUCE) {
-          Collection<GridHadoopFileBlock> cancelBlocks=null;
+          Collection<GridHadoopInputSplit> cancelSplits=null;
           for (          UUID nodeId : plan.mapperNodeIds()) {
             if (ctx.kernalContext().discovery().node(nodeId) == null) {
-              Collection<GridHadoopFileBlock> mappers=plan.mappers(nodeId);
-              if (cancelBlocks == null)               cancelBlocks=new HashSet<>();
-              cancelBlocks.addAll(mappers);
+              Collection<GridHadoopInputSplit> mappers=plan.mappers(nodeId);
+              if (cancelSplits == null)               cancelSplits=new HashSet<>();
+              cancelSplits.addAll(mappers);
             }
           }
           Collection<Integer> cancelReducers=null;
@@ -22,7 +22,7 @@
               for (              int rdc : reducers)               cancelReducers.add(rdc);
             }
           }
-          if (cancelBlocks != null || cancelReducers != null)           jobMetaPrj.transform(meta.jobId(),new CancelJobClosure(new GridException("One or more nodes " + "participating in map-reduce job execution failed."),cancelBlocks,cancelReducers));
+          if (cancelSplits != null || cancelReducers != null)           jobMetaPrj.transform(meta.jobId(),new CancelJobClosure(new GridException("One or more nodes " + "participating in map-reduce job execution failed."),cancelSplits,cancelReducers));
         }
       }
  catch (      GridException e) {
