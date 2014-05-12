@@ -1,3 +1,11 @@
 {
-  return proc.status(jobId);
+  if (busyLock.enterBusy()) {
+    try {
+      return proc.status(jobId);
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get job status (grid is stopping).");
 }

@@ -1,3 +1,11 @@
 {
-  return proc.submit(jobId,jobInfo);
+  if (busyLock.enterBusy()) {
+    try {
+      return proc.submit(jobId,jobInfo);
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to submit job (grid is stopping).");
 }

@@ -1,0 +1,24 @@
+{
+  UUID nodeId=UUID.fromString(args.<String>get(0));
+  int id=args.get(1);
+  Long pollDelay=args.get(2);
+  GridHadoopJobId jobId=new GridHadoopJobId(nodeId,id);
+  if (pollDelay == null)   pollDelay=hadoop.configuration().getJobStatusPollDelay();
+  if (pollDelay > 0) {
+    GridFuture<?> fut=hadoop.finishFuture(jobId);
+    if (fut != null) {
+      if (fut.isDone() || jobCtx.heldcc())       return hadoop.status(jobId);
+ else {
+        fut.listenAsync(new GridInClosure<GridFuture<?>>(){
+          @Override public void apply(          GridFuture<?> fut0){
+            jobCtx.callcc();
+          }
+        }
+);
+        return jobCtx.holdcc(pollDelay);
+      }
+    }
+ else     return null;
+  }
+ else   return hadoop.status(jobId);
+}

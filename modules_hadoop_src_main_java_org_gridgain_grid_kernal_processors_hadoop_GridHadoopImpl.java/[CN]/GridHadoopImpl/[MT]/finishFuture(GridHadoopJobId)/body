@@ -1,3 +1,11 @@
 {
-  return proc.finishFuture(jobId);
+  if (busyLock.enterBusy()) {
+    try {
+      return proc.finishFuture(jobId);
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get job finish future (grid is stopping).");
 }
