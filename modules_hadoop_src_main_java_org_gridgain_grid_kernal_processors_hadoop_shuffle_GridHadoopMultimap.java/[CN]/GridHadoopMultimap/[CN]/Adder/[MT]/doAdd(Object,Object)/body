@@ -13,8 +13,9 @@
     int addr=keyHash & (tbl.length() - 1);
     long metaPtrRoot=tbl.get(addr);
     if (metaPtrRoot == -1) {
-      tbl=newTbl;
-      if (tbl == null)       tbl=oldTbl;
+      AtomicLongArray n=newTbl;
+      AtomicLongArray o=oldTbl;
+      tbl=tbl == o ? n : o;
       continue;
     }
     if (metaPtrRoot != 0) {
@@ -33,6 +34,7 @@
             }
  while (!casValue(metaPtr,nextValPtr,valPtr));
           }
+          newKey=false;
           return metaPtr;
         }
         metaPtr=collision(metaPtr);
