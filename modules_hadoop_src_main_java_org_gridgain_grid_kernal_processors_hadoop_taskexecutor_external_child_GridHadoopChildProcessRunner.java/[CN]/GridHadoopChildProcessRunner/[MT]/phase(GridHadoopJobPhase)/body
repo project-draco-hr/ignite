@@ -1,2 +1,48 @@
 {
+  boolean change=false;
+  GridHadoopJobPhase oldPhase=null;
+synchronized (this) {
+    if (locPhase != phase) {
+      oldPhase=locPhase;
+      log.info("Changing process state [old=" + locPhase + ", new="+ phase+ ']');
+      change=true;
+      locPhase=phase;
+    }
+  }
+  try {
+    if (change) {
+      if (phase == GridHadoopJobPhase.PHASE_MAP) {
+        if (mappers != null) {
+          for (          GridHadoopTask m : mappers)           mapperExecSvc.submit(new TaskRunnable(taskContext(m.info()),m));
+          log.debug("Submitted tasks to map executor service: " + mappers.size());
+        }
+      }
+ else       if (phase == GridHadoopJobPhase.PHASE_REDUCE) {
+        if (reducers != null) {
+          for (          GridHadoopTask r : reducers)           reducerExecSvc.submit(new TaskRunnable(taskContext(r.info()),r));
+          log.debug("Submitted tasks to reduce executor service: " + reducers.size());
+        }
+      }
+ else       if (phase == GridHadoopJobPhase.PHASE_CANCELLING) {
+        if (log.isDebugEnabled())         log.debug("Received cancellation request (will terminate all ongoing tasks).");
+        if (mapperExecSvc != null) {
+          List<Runnable> incomplete=mapperExecSvc.shutdownNow();
+        }
+        if (reducerExecSvc != null) {
+          List<Runnable> incomplete=reducerExecSvc.shutdownNow();
+        }
+        if (oldPhase == GridHadoopJobPhase.PHASE_MAP && reducers != null) {
+          for (          GridHadoopTask reduceTask : reducers) {
+            onTaskFinished(reduceTask.info(),GridHadoopTaskState.CANCELED,null);
+          }
+        }
+      }
+      checkFinished();
+    }
+  }
+ catch (  GridException e) {
+    log.error("Failed to change job phase (will terminate).",e);
+    shutdown();
+    terminate();
+  }
 }

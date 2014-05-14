@@ -1,14 +1,25 @@
 {
-  sender.cancel();
-  try {
-    sender.join();
+  if (log.isDebugEnabled())   log.debug("Waiting for remote addresses initialization.");
+  U.await(ioInitLatch);
+synchronized (this) {
+    flushed=true;
   }
- catch (  InterruptedException e) {
-    throw new GridInterruptedException(e);
+  GridWorker sender0=sender;
+  if (sender0 != null) {
+    if (log.isDebugEnabled())     log.debug("Cancelling sender thread.");
+    sender0.cancel();
+    try {
+      sender0.join();
+      if (log.isDebugEnabled())       log.debug("Finished waiting for sending thread to complete on shuffle job flush: " + job.id());
+    }
+ catch (    InterruptedException e) {
+      throw new GridInterruptedException(e);
+    }
   }
   collectUpdatesAndSend(true);
   GridCompoundFuture fut=new GridCompoundFuture<>();
   for (  GridFuture<?> f : ioFuts)   fut.add(f);
   fut.markInitialized();
+  if (log.isDebugEnabled())   log.debug("Collected futures to compound futures for flush: " + ioFuts.size());
   return fut;
 }
