@@ -4,7 +4,6 @@
     GridCacheConsistentHashAffinityFunction aff=(GridCacheConsistentHashAffinityFunction)cc.getAffinity();
     if (cc.getBackups() != Integer.MAX_VALUE)     throw new GridException("For REPLICATED cache number of backups in GridCacheCconfiguration must " + "be set to Integer.MAX_VALUE [cacheName=" + cc.getName() + ", backups="+ cc.getBackups()+ ']');
     if (aff.isExcludeNeighbors())     throw new GridException("For REPLICATED cache flag 'excludeNeighbors' in GridCacheConsistentHashAffinityFunction " + "cannot be set [cacheName=" + cc.getName() + ']');
-    if (cc.getWriteSynchronizationMode() == PRIMARY_SYNC)     throw new GridException("Cannot start REPLICATED cache with PRIMARY_SYNC write synchronization mode " + "(switch to FULL_SYNC or FULL_ASYNC mode instead) [cacheName=" + cc.getName() + ']');
     if (cc.getDistributionMode() == NEAR_PARTITIONED) {
       U.warn(log,"NEAR_PARTITIONED distribution mode cannot be used with REPLICATED cache, " + "will be changed to PARTITIONED_ONLY [cacheName=" + cc.getName() + ']');
       cc.setDistributionMode(PARTITIONED_ONLY);
@@ -16,11 +15,7 @@
     assertParameter(cc.getPreloadBatchSize() > 0,"preloadBatchSize > 0");
   }
   if (cc.getCacheMode() == PARTITIONED || cc.getCacheMode() == REPLICATED) {
-    if (cc.getAtomicityMode() == ATOMIC && cc.getWriteSynchronizationMode() == FULL_ASYNC)     U.warn(log,"Cache write synchronization mode is set to FULL_ASYNC. All single-key 'put' and " + "'remove' operations will return 'null', all 'putx' and 'removex' operations will return" + " 'true'.");
-    if (cc.getAtomicityMode() == ATOMIC && cc.getWriteSynchronizationMode() != FULL_SYNC && cc.getAtomicWriteOrderMode() == GridCacheAtomicWriteOrderMode.CLOCK) {
-      cc.setAtomicWriteOrderMode(GridCacheAtomicWriteOrderMode.PRIMARY);
-      U.warn(log,"Automatically set write order mode to PRIMARY for write synchronization mode " + "[writeSynchronizationMode=" + cc.getWriteSynchronizationMode() + ", "+ "cacheName="+ cc.getName()+ ']');
-    }
+    if (cc.getAtomicityMode() == ATOMIC && cc.getWriteSynchronizationMode() == FULL_ASYNC)     U.warn(log,"Cache write synchronization mode is set to FULL_ASYNC. All single-key 'put' and " + "'remove' operations will return 'null', all 'putx' and 'removex' operations will return" + " 'true' [cacheName=" + cc.getName() + ']');
   }
   if (ctx.config().getDeploymentMode() == PRIVATE || ctx.config().getDeploymentMode() == ISOLATED)   throw new GridException("Cannot start cache in PRIVATE or ISOLATED deployment mode: " + ctx.config().getDeploymentMode());
   if (!cc.isTxSerializableEnabled() && cc.getDefaultTxIsolation() == SERIALIZABLE)   U.warn(log,"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "(most likely misconfiguration - either update 'isTxSerializableEnabled' or " + "'defaultTxIsolationLevel' properties) for cache: "+ cc.getName(),"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "for cache: " + cc.getName());
@@ -44,11 +39,7 @@
       }
     }
   }
-  GridCacheEvictionPolicy evictPlc=cc.getEvictionPolicy();
-  if (evictPlc != null && evictPlc instanceof GridCacheGgfsPerBlockLruEvictionPolicy) {
-    GridCacheEvictionFilter evictFilter=cc.getEvictionFilter();
-    if (evictFilter != null && !(evictFilter instanceof GridCacheGgfsEvictionFilter))     throw new GridException("Eviction filter cannot be set explicitly when using " + "GridCacheGgfsPerBlockLruEvictionPolicy:" + cc.getName());
-  }
+  ctx.ggfs().validateCacheConfiguration(cc);
 switch (cc.getMemoryMode()) {
 case OFFHEAP_VALUES:
 {
