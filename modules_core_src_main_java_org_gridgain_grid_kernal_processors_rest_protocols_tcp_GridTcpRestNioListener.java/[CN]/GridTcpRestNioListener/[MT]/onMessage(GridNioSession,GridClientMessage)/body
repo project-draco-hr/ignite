@@ -5,16 +5,7 @@
  else     if (msg instanceof GridClientHandshakeRequest) {
       GridClientHandshakeRequest hs=(GridClientHandshakeRequest)msg;
       byte[] verBytes=hs.versionBytes();
-      if (!Arrays.equals(VER_BYTES,verBytes)) {
-        log.error("Client version check failed [ses=" + ses + ", expected="+ Arrays.toString(VER_BYTES)+ ", actual="+ Arrays.toString(verBytes)+ ']');
-        ses.send(GridClientHandshakeResponse.ERR_VERSION_CHECK_FAILED).listenAsync(new CI1<GridNioFuture<?>>(){
-          @Override public void apply(          GridNioFuture<?> fut){
-            ses.close();
-          }
-        }
-);
-        return;
-      }
+      if (!Arrays.equals(VER_BYTES,verBytes))       U.warn(log,"Client version check failed [ses=" + ses + ", expected="+ Arrays.toString(VER_BYTES)+ ", actual="+ Arrays.toString(verBytes)+ ']');
       GridClientMarshaller marsh=suppMarshMap.get(hs.protocolId());
       if (marsh == null) {
         log.error("No marshaller found with given protocol ID [protocolId=" + hs.protocolId() + ']');
@@ -46,7 +37,7 @@
             res.result(o);
           }
  catch (          GridException e) {
-            U.error(log,"Failed to process client request: " + req,e);
+            U.error(log,"Failed to process client request: " + msg,e);
             res.successStatus(GridClientResponse.STATUS_FAILED);
             res.errorMessage("Failed to process client request: " + e.getMessage());
           }
