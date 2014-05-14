@@ -1,7 +1,8 @@
 {
   try {
-    Long delay=conf.getLong(PROP_STATUS_POLL_DELAY,0);
-    GridHadoopJobStatus status=cli.compute().execute(GridHadoopProtocolJobStatusTask.class.getName(),new GridHadoopProtocolTaskArguments(jobId.getJtIdentifier(),jobId.getId(),delay));
+    Long delay=conf.getLong(PROP_STATUS_POLL_DELAY,-1);
+    GridHadoopProtocolTaskArguments args=delay >= 0 ? new GridHadoopProtocolTaskArguments(jobId.getJtIdentifier(),jobId.getId(),delay) : new GridHadoopProtocolTaskArguments(jobId.getJtIdentifier(),jobId.getId());
+    GridHadoopJobStatus status=cli.compute().execute(GridHadoopProtocolJobStatusTask.class.getName(),args);
     if (status == null)     throw new IOException("Job tracker doesn't have any information about the job: " + jobId);
     return processStatus(status);
   }
