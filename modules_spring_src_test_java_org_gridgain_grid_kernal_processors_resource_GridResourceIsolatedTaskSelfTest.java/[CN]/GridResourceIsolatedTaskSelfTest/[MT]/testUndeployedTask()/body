@@ -1,0 +1,22 @@
+{
+  Grid grid1=null;
+  Grid grid2=null;
+  try {
+    grid1=startGrid(1,new GridSpringResourceContextImpl(new GenericApplicationContext()));
+    grid2=startGrid(2,new GridSpringResourceContextImpl(new GenericApplicationContext()));
+    grid1.compute().execute(SharedResourceTask1.class,null).get();
+    grid1.compute().undeployTask(SharedResourceTask1.class.getName());
+    Thread.sleep(3000);
+    checkUsageCount(createClss,UserResource1.class,4);
+    checkUsageCount(deployClss,UserResource1.class,4);
+    checkUsageCount(undeployClss,UserResource1.class,4);
+    grid1.compute().execute(SharedResourceTask1.class,null).get();
+    checkUsageCount(createClss,UserResource1.class,8);
+    checkUsageCount(deployClss,UserResource1.class,8);
+  }
+  finally {
+    GridTestUtils.close(grid1,log());
+    GridTestUtils.close(grid2,log());
+  }
+  checkUsageCount(undeployClss,UserResource1.class,8);
+}

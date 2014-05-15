@@ -1,0 +1,51 @@
+{
+  if (msg instanceof GridMemcachedMessage)   memcachedLsnr.onMessage(ses,(GridMemcachedMessage)msg);
+ else {
+    if (msg == GridClientPingPacket.PING_MESSAGE)     ses.send(GridClientPingPacket.PING_MESSAGE);
+ else     if (msg instanceof GridClientHandshakeRequest) {
+      GridClientHandshakeRequest hs=(GridClientHandshakeRequest)msg;
+      byte[] verBytes=hs.versionBytes();
+      if (!Arrays.equals(VER_BYTES,verBytes))       U.warn(log,"Client version check failed [ses=" + ses + ", expected="+ Arrays.toString(VER_BYTES)+ ", actual="+ Arrays.toString(verBytes)+ ']');
+      GridClientMarshaller marsh=suppMarshMap.get(hs.protocolId());
+      if (marsh == null) {
+        log.error("No marshaller found with given protocol ID [protocolId=" + hs.protocolId() + ']');
+        ses.send(GridClientHandshakeResponse.ERR_UNKNOWN_PROTO_ID).listenAsync(new CI1<GridNioFuture<?>>(){
+          @Override public void apply(          GridNioFuture<?> fut){
+            ses.close();
+          }
+        }
+);
+        return;
+      }
+      ses.addMeta(GridNioSessionMetaKey.MARSHALLER.ordinal(),marsh);
+      ses.send(GridClientHandshakeResponse.OK);
+    }
+ else {
+      final GridRestRequest req=createRestRequest(msg);
+      if (req != null)       hnd.handleAsync(req).listenAsync(new CI1<GridFuture<GridRestResponse>>(){
+        @Override public void apply(        GridFuture<GridRestResponse> fut){
+          GridClientResponse res=new GridClientResponse();
+          res.requestId(msg.requestId());
+          res.clientId(msg.clientId());
+          try {
+            GridRestResponse restRes=fut.get();
+            res.sessionToken(restRes.sessionTokenBytes());
+            res.successStatus(restRes.getSuccessStatus());
+            res.errorMessage(restRes.getError());
+            Object o=restRes.getResponse();
+            if (o instanceof GridCacheRestMetrics)             o=((GridCacheRestMetrics)o).map();
+            res.result(o);
+          }
+ catch (          GridException e) {
+            U.error(log,"Failed to process client request: " + msg,e);
+            res.successStatus(GridClientResponse.STATUS_FAILED);
+            res.errorMessage("Failed to process client request: " + e.getMessage());
+          }
+          ses.send(res);
+        }
+      }
+);
+ else       U.error(log,"Failed to process client request (unknown packet type) [ses=" + ses + ", msg="+ msg+ ']');
+    }
+  }
+}
