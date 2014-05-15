@@ -3,6 +3,7 @@
   String rev=REV_HASH.length() > 8 ? REV_HASH.substring(0,8) : REV_HASH;
   String ver="ver. " + VER + '#'+ buildDate+ "-sha1:"+ rev;
   X.println("  _____     _     _______      _         "," / ___/____(_)___/ / ___/___ _(_)___     ","/ (_ // __/ // _  / (_ // _ `/ // _ \\   ","\\___//_/ /_/ \\_,_/\\___/ \\_,_/_//_//_/"," ","GridGain Router Command Line Loader",ver,COPYRIGHT," ");
+  GridSpringProcessor spring=SPRING.create(false);
   if (args.length < 1) {
     X.error("Missing XML configuration path.");
     System.exit(1);
@@ -16,25 +17,19 @@
   boolean isLog4jUsed=U.gridClassLoader().getResource("org/apache/log4j/Appender.class") != null;
   GridBiTuple<Object,Object> t=null;
   if (isLog4jUsed)   t=U.addLog4jNoOpLogger();
-  ApplicationContext ctx=null;
+  Map<Class<?>,Object> beans;
   try {
-    ctx=loadCfg(cfgUrl);
+    beans=spring.loadBeans(cfgUrl,GridLogger.class,GridTcpRouterConfiguration.class,GridHttpRouterConfiguration.class);
   }
   finally {
     if (isLog4jUsed && t != null)     U.removeLog4jNoOpLogger(t);
   }
-  final GridRouterCommandLineStartup routerLdr=new GridRouterCommandLineStartup();
-  if (ctx != null) {
-    routerLdr.start(ctx);
-    Runtime.getRuntime().addShutdownHook(new Thread(){
-      @Override public void run(){
-        routerLdr.stop();
-      }
+  final GridRouterCommandLineStartup routerStartup=new GridRouterCommandLineStartup();
+  routerStartup.start(beans);
+  Runtime.getRuntime().addShutdownHook(new Thread(){
+    @Override public void run(){
+      routerStartup.stop();
     }
+  }
 );
-  }
- else {
-    X.error("Failed to start router with given configuration. Url: ",cfgUrl);
-    System.exit(1);
-  }
 }
