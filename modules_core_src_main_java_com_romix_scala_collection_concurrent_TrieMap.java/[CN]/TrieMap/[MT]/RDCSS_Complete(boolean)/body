@@ -1,0 +1,37 @@
+{
+  while (true) {
+    Object v=root;
+    if (v instanceof INode)     return (INode<K,V>)v;
+ else     if (v instanceof RDCSS_Descriptor) {
+      RDCSS_Descriptor<K,V> desc=(RDCSS_Descriptor<K,V>)v;
+      INode<K,V> ov=desc.old;
+      MainNode<K,V> exp=desc.expectedmain;
+      INode<K,V> nv=desc.nv;
+      if (abort) {
+        if (CAS_ROOT(desc,ov))         return ov;
+ else {
+          continue;
+        }
+      }
+ else {
+        MainNode<K,V> oldmain=ov.gcasRead(this);
+        if (oldmain == exp) {
+          if (CAS_ROOT(desc,nv)) {
+            desc.committed=true;
+            return nv;
+          }
+ else {
+            continue;
+          }
+        }
+ else {
+          if (CAS_ROOT(desc,ov))           return ov;
+ else {
+            continue;
+          }
+        }
+      }
+    }
+    throw new RuntimeException("Should not happen");
+  }
+}
