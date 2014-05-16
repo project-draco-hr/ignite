@@ -1,0 +1,21 @@
+{
+  if (!initFut.isDone() && log.isDebugEnabled())   log.debug("Will wait for process initialization future completion.");
+  initFut.listenAsync(new CI1<GridFuture<?>>(){
+    @Override public void apply(    GridFuture<?> f){
+      try {
+        f.get();
+        boolean set=pendingTasks.compareAndSet(0,req.tasks().size());
+        assert set;
+        for (        GridHadoopTaskInfo taskInfo : req.tasks()) {
+          GridHadoopTask task=job.createTask(taskInfo);
+          if (log.isDebugEnabled())           log.debug("Submitted task for external execution: " + task);
+          execSvc.submit(new TaskRunnable(task));
+        }
+      }
+ catch (      GridException e) {
+        for (        GridHadoopTaskInfo info : req.tasks())         notifyTaskFinished(info,GridHadoopTaskState.FAILED,e,false);
+      }
+    }
+  }
+);
+}

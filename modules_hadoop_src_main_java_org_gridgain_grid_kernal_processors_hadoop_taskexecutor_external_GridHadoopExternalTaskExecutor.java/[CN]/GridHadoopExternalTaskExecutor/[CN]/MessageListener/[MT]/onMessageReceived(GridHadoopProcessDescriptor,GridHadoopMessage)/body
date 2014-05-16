@@ -1,22 +1,2 @@
 {
-  if (!busyLock.tryReadLock())   return;
-  try {
-    if (msg instanceof GridHadoopProcessStartedAck) {
-      GridHadoopProcessFuture fut=startingProcs.get(desc.processId());
-      if (fut != null)       fut.onReplyReceived(desc);
- else       log.warning("Failed to find process start future (will ignore): " + desc);
-    }
- else     if (msg instanceof GridHadoopTaskFinishedMessage) {
-      GridHadoopTaskFinishedMessage taskMsg=(GridHadoopTaskFinishedMessage)msg;
-      processTaskFinishedMessage(desc,taskMsg);
-    }
- else     if (msg instanceof GridHadoopTaskExecutionResponse) {
-      GridHadoopTaskExecutionResponse res=(GridHadoopTaskExecutionResponse)msg;
-      if (!F.isEmpty(res.reducers()))       jobTracker.onExternalMappersInitialized(res.jobId(),res.reducers(),desc);
-    }
- else     log.warning("Unexpected message received by node [desc=" + desc + ", msg="+ msg+ ']');
-  }
-  finally {
-    busyLock.readUnlock();
-  }
 }
