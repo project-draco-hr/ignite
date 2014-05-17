@@ -1,11 +1,11 @@
 {
   if (initGuard.compareAndSet(false,true)) {
     try {
-      log.info("Initializing external hadoop task: " + req);
+      if (log.isDebugEnabled())       log.debug("Initializing external hadoop task: " + req);
       job=jobFactory.createJob(req.jobId(),req.jobInfo());
       shuffleJob=new GridHadoopShuffleJob<>(comm.localProcessDescriptor(),log,job,mem,job.reducers(),req.hasMappers());
       initializeExecutors(req);
-      if (log.isDebugEnabled())       log.debug("Completing initialization future.");
+      if (log.isDebugEnabled())       log.debug("External process initialized [initWaitTime=" + (System.currentTimeMillis() - startTime) + ']');
       initFut.onDone(null,null);
     }
  catch (    GridException e) {
