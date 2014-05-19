@@ -10,6 +10,7 @@
   ggfsCfg.setSecondaryHadoopFileSystemConfigPath(secondaryFsCfgPath);
   ggfsCfg.setPrefetchBlocks(PREFETCH_BLOCKS);
   ggfsCfg.setSequentialReadsBeforePrefetch(SEQ_READS_BEFORE_PREFETCH);
+  ggfsCfg.setFragmentizerEnabled(true);
   GridCacheConfiguration dataCacheCfg=defaultCacheConfiguration();
   dataCacheCfg.setName("dataCache");
   dataCacheCfg.setCacheMode(PARTITIONED);
@@ -19,6 +20,8 @@
   dataCacheCfg.setBackups(0);
   dataCacheCfg.setQueryIndexEnabled(false);
   dataCacheCfg.setAtomicityMode(TRANSACTIONAL);
+  dataCacheCfg.setMemoryMode(GridCacheMemoryMode.OFFHEAP_TIERED);
+  dataCacheCfg.setOffHeapMaxMemory(0);
   GridCacheConfiguration metaCacheCfg=defaultCacheConfiguration();
   metaCacheCfg.setName("metaCache");
   metaCacheCfg.setCacheMode(REPLICATED);
@@ -32,5 +35,7 @@
   cfg.setDiscoverySpi(discoSpi);
   cfg.setCacheConfiguration(dataCacheCfg,metaCacheCfg);
   cfg.setGgfsConfiguration(ggfsCfg);
+  cfg.setLocalHost("127.0.0.1");
+  cfg.setRestEnabled(false);
   return G.start(cfg);
 }

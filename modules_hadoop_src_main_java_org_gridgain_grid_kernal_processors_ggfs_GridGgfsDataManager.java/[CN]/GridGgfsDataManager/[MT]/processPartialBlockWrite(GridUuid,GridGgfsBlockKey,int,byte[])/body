@@ -1,4 +1,5 @@
 {
+  U.debug("Start partial write [colKey=" + colocatedKey + ", startOff="+ startOff+ ']');
   if (dataCachePrj.ggfsDataSpaceUsed() >= dataCachePrj.ggfsDataSpaceMax()) {
     try {
       ggfs.awaitDeletesAsync().get(trashPurgeTimeout);
@@ -20,6 +21,7 @@
     return;
   }
   if (startOff == 0) {
+    U.debug("Begginig [colKey=" + colocatedKey + ", startOff="+ startOff+ ']');
     dataCachePrj.putx(colocatedKey,data);
     return;
   }
@@ -27,6 +29,7 @@
   GridCacheTx tx=dataCachePrj.txStart(PESSIMISTIC,REPEATABLE_READ);
   try {
     Map<GridGgfsBlockKey,byte[]> vals=dataCachePrj.getAll(F.asList(colocatedKey,key));
+    U.debug("VALS: " + vals);
     boolean hasVal=false;
     UpdateClosure transformClos=new UpdateClosure(startOff,data);
     if (vals.get(colocatedKey) != null) {
