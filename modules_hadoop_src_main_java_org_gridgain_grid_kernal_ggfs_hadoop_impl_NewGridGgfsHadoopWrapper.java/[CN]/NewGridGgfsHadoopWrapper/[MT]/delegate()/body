@@ -1,5 +1,6 @@
 {
-  NewGridGgfsHadoopEx curDelegate=delegate.get();
+  GridException err=null;
+  NewGridGgfsHadoopEx curDelegate=delegateRef.get();
   if (curDelegate != null)   return curDelegate;
   GridGgfsEx ggfs=null;
   if (endpoint.grid() == null) {
@@ -20,9 +21,50 @@
       }
     }
   }
-  if (ggfs != null)   return new NewGridGgfsHadoopInProc(ggfs,log);
-  if (!U.isWindows()) {
+  if (ggfs != null) {
+    try {
+      NewGridGgfsHadoopEx res=new NewGridGgfsHadoopInProc(ggfs,log);
+      res.handshake(logDir);
+      curDelegate=res;
+    }
+ catch (    GridException e) {
+      log.debug("Failed to connect to in-proc GGFS, fallback to IPC mode.",e);
+      err=e;
+    }
   }
-  new NewGridGgfsHadoopOutProc(log,"");
-  throw new IOException("Failed to connect: " + endpoint);
+  if (curDelegate == null && !U.isWindows()) {
+    try {
+      NewGridGgfsHadoopEx res=new NewGridGgfsHadoopOutProc(log);
+      res.handshake(logDir);
+      curDelegate=res;
+    }
+ catch (    GridException e) {
+      log.debug("Failed to connect to out-proc local GGFS using shmem.",e);
+      err=e;
+    }
+  }
+  if (curDelegate == null) {
+    try {
+      NewGridGgfsHadoopEx res=new NewGridGgfsHadoopOutProc(LOCALHOST,endpoint.port(),log);
+      res.handshake(logDir);
+      curDelegate=res;
+    }
+ catch (    GridException e) {
+      log.debug("Failed to connect to out-proc local GGFS using TCP.",e);
+      err=e;
+    }
+  }
+  if (curDelegate == null && !F.eq(LOCALHOST,endpoint.host())) {
+    try {
+      NewGridGgfsHadoopEx res=new NewGridGgfsHadoopOutProc(LOCALHOST,endpoint.port(),log);
+      res.handshake(logDir);
+      curDelegate=res;
+    }
+ catch (    GridException e) {
+      log.debug("Failed to connect to out-proc remote GGFS using TCP.",e);
+      err=e;
+    }
+  }
+  if (curDelegate != null)   return curDelegate;
+ else   throw new IOException("Failed to connect to GGFS: " + endpoint,err);
 }
