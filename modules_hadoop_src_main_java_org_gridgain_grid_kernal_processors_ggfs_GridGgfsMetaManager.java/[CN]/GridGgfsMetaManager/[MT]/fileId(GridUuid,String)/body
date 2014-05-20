@@ -1,3 +1,11 @@
 {
-  return fileId(parentId,fileName,false);
+  if (busyLock.enterBusy()) {
+    try {
+      return fileId(parentId,fileName,false);
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get file ID because Grid is stopping [parentId=" + parentId + ", fileName="+ fileName+ ']');
 }
