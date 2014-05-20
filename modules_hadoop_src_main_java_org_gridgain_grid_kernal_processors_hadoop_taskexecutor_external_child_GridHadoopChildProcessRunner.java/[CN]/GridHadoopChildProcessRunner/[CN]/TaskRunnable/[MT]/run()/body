@@ -1,0 +1,17 @@
+{
+  execStartTs=System.currentTimeMillis();
+  GridHadoopTaskState state=GridHadoopTaskState.COMPLETED;
+  Throwable err=null;
+  try (GridHadoopTaskOutput out=createOutput(task.info());GridHadoopTaskInput in=createInput(task.info())){
+    GridHadoopTaskContext ctx=new GridHadoopTaskContext(job,in,out);
+    task.run(ctx);
+  }
+ catch (  Throwable e) {
+    state=GridHadoopTaskState.FAILED;
+    err=e;
+  }
+ finally {
+    execEndTs=System.currentTimeMillis();
+    onTaskFinished(this,state,err);
+  }
+}

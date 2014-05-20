@@ -1,14 +1,23 @@
 {
-  sender.cancel();
-  try {
-    sender.join();
-  }
- catch (  InterruptedException e) {
-    throw new GridInterruptedException(e);
+  if (log.isDebugEnabled())   log.debug("Waiting for remote addresses initialization.");
+  flushed=true;
+  U.await(ioInitLatch);
+  GridWorker sender0=sender;
+  if (sender0 != null) {
+    if (log.isDebugEnabled())     log.debug("Cancelling sender thread.");
+    sender0.cancel();
+    try {
+      sender0.join();
+      if (log.isDebugEnabled())       log.debug("Finished waiting for sending thread to complete on shuffle job flush: " + job.id());
+    }
+ catch (    InterruptedException e) {
+      throw new GridInterruptedException(e);
+    }
   }
   collectUpdatesAndSend(true);
   GridCompoundFuture fut=new GridCompoundFuture<>();
-  for (  GridFuture<?> f : ioFuts)   fut.add(f);
+  for (  GridBiTuple<GridHadoopShuffleMessage,GridFutureAdapterEx<?>> tup : sentMsgs.values())   fut.add(tup.get2());
   fut.markInitialized();
+  if (log.isDebugEnabled())   log.debug("Collected futures to compound futures for flush: " + sentMsgs.size());
   return fut;
 }
