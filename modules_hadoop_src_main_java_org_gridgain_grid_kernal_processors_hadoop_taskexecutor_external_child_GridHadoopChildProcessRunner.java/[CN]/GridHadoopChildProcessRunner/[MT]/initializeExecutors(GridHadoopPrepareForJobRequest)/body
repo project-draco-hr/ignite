@@ -1,13 +1,12 @@
 {
-  int poolSize=Runtime.getRuntime().availableProcessors();
+  concMappers=Runtime.getRuntime().availableProcessors();
+  concReducers=Runtime.getRuntime().availableProcessors();
   GridHadoopJobInfo info=req.jobInfo();
   if (info instanceof GridHadoopDefaultJobInfo) {
     GridHadoopDefaultJobInfo dfltInfo=(GridHadoopDefaultJobInfo)info;
     JobConf cfg=dfltInfo.configuration();
-    int concMappers=cfg.getInt(EXTERNAL_CONCURRENT_MAPPERS.propertyName(),poolSize);
-    int concReducers=cfg.getInt(EXTERNAL_CONCURRENT_REDUCERS.propertyName(),poolSize);
-    poolSize=Math.max(poolSize,Math.max(concMappers,concReducers));
+    concMappers=cfg.getInt(EXTERNAL_CONCURRENT_MAPPERS.propertyName(),concMappers);
+    concReducers=cfg.getInt(EXTERNAL_CONCURRENT_REDUCERS.propertyName(),concReducers);
   }
-  log.info("Initializing executor pool [poolSize=" + poolSize + ']');
-  execSvc=Executors.newFixedThreadPool(poolSize);
+  execSvc=new ThreadPoolExecutor(concMappers,concMappers,1,TimeUnit.MINUTES,new LinkedBlockingQueue<Runnable>());
 }
