@@ -1,10 +1,14 @@
 {
-  Class<Writable> cls=(Class<Writable>)in.readObject();
-  try {
-    innerSplit=U.newInstance(cls);
-    innerSplit.readFields(in);
-  }
- catch (  GridException e) {
-    throw new IOException(e);
+  String clsName=in.readUTF();
+  if (clsName == null)   innerSplit=in.readObject();
+ else {
+    Class<Writable> cls=(Class<Writable>)Class.forName(clsName);
+    try {
+      innerSplit=U.newInstance(cls);
+    }
+ catch (    GridException e) {
+      throw new IOException(e);
+    }
+    ((Writable)innerSplit).readFields(in);
   }
 }
