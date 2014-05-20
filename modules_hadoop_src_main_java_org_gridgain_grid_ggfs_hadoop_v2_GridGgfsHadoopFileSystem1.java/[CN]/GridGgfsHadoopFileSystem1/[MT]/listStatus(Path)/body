@@ -20,18 +20,23 @@
       return arr;
     }
  else {
-      List<GridGgfsFile> files=new ArrayList<>(rmtClient.listFiles(path));
+      List<GridGgfsFile> files=new ArrayList<>(rmtClient.listFiles(path).get());
       FileStatus[] arr=new FileStatus[files.size()];
       for (int i=0; i < arr.length; i++)       arr[i]=convert(files.get(i));
       if (clientLog.isLogEnabled()) {
         String[] fileArr=new String[arr.length];
-        for (int i=0; i < arr.length; i++)         fileArr[i]=arr[i].getPath().toString();
+        if (arr != null) {
+          for (int i=0; i < arr.length; i++)           fileArr[i]=arr[i].getPath().toString();
+        }
         clientLog.logListDirectory(path,mode,fileArr);
       }
       return arr;
     }
   }
-  finally {
+ catch (  GridException e) {
+    throw cast(e);
+  }
+ finally {
     leaveBusy();
   }
 }
