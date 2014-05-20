@@ -1,23 +1,13 @@
 {
-  GridHadoopShuffleJob res=jobs.get(jobId);
+  GridHadoopShuffleJob<UUID> res=jobs.get(jobId);
   if (res == null) {
-    res=new GridHadoopShuffleJob(ctx.localNodeId(),log,ctx.jobTracker().job(jobId),mem,ctx.jobTracker().plan(jobId));
-    GridHadoopShuffleJob old=jobs.putIfAbsent(jobId,res);
+    res=newJob(jobId);
+    GridHadoopShuffleJob<UUID> old=jobs.putIfAbsent(jobId,res);
     if (old != null) {
       res.close();
       res=old;
     }
- else {
-      res.startSending(ctx.kernalContext().gridName(),new GridBiClosure<UUID,GridHadoopShuffleMessage,GridFuture<?>>(){
-        @Override public GridFuture<?> apply(        UUID nodeId,        GridHadoopShuffleMessage msg){
-          GridFutureAdapter<?> f=new GridFutureAdapter<>(ctx.kernalContext());
-          sentMsgs.putIfAbsent(msg.id(),new GridBiTuple<GridHadoopShuffleMessage,GridFutureAdapter<?>>(msg,f));
-          send0(nodeId,msg);
-          return f;
-        }
-      }
-);
-    }
+ else     if (res.reducersInitialized())     startSending(res);
   }
   return res;
 }
