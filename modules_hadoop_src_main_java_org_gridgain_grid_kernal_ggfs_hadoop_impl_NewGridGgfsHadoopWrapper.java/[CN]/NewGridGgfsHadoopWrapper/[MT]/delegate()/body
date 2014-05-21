@@ -1,5 +1,5 @@
 {
-  GridException err=null;
+  Exception err=null;
   Delegate curDelegate=delegateRef.get();
   if (curDelegate != null)   return curDelegate;
   GridGgfsEx ggfs=null;
@@ -8,7 +8,8 @@
       Grid grid=G.grid();
       ggfs=(GridGgfsEx)grid.ggfs(endpoint.ggfs());
     }
- catch (    Exception ignore) {
+ catch (    Exception e) {
+      err=e;
     }
   }
  else {
@@ -17,7 +18,8 @@
         ggfs=(GridGgfsEx)grid.ggfs(endpoint.ggfs());
         break;
       }
- catch (      Exception ignore) {
+ catch (      Exception e) {
+        err=e;
       }
     }
   }
@@ -26,8 +28,8 @@
       NewGridGgfsHadoopEx hadoop=new NewGridGgfsHadoopInProc(ggfs,log);
       curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
     }
- catch (    GridException e) {
-      log.debug("Failed to connect to in-proc GGFS, fallback to IPC mode.",e);
+ catch (    IOException|GridException e) {
+      if (log.isDebugEnabled())       log.debug("Failed to connect to in-proc GGFS, fallback to IPC mode.",e);
       err=e;
     }
   }
@@ -36,8 +38,8 @@
       NewGridGgfsHadoopEx hadoop=new NewGridGgfsHadoopOutProc(log);
       curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
     }
- catch (    GridException e) {
-      log.debug("Failed to connect to out-proc local GGFS using shmem.",e);
+ catch (    IOException|GridException e) {
+      if (log.isDebugEnabled())       log.debug("Failed to connect to out-proc local GGFS using shmem.",e);
       err=e;
     }
   }
@@ -46,8 +48,8 @@
       NewGridGgfsHadoopEx hadoop=new NewGridGgfsHadoopOutProc(LOCALHOST,endpoint.port(),log);
       curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
     }
- catch (    GridException e) {
-      log.debug("Failed to connect to out-proc local GGFS using TCP.",e);
+ catch (    IOException|GridException e) {
+      if (log.isDebugEnabled())       log.debug("Failed to connect to out-proc local GGFS using TCP.",e);
       err=e;
     }
   }
@@ -56,11 +58,14 @@
       NewGridGgfsHadoopEx hadoop=new NewGridGgfsHadoopOutProc(LOCALHOST,endpoint.port(),log);
       curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
     }
- catch (    GridException e) {
-      log.debug("Failed to connect to out-proc remote GGFS using TCP.",e);
+ catch (    IOException|GridException e) {
+      if (log.isDebugEnabled())       log.debug("Failed to connect to out-proc remote GGFS using TCP.",e);
       err=e;
     }
   }
-  if (curDelegate != null)   return curDelegate;
- else   throw new IOException("Failed to connect to GGFS: " + endpoint,err);
+  if (curDelegate != null) {
+    if (!delegateRef.compareAndSet(null,curDelegate))     curDelegate.doomed=true;
+    return curDelegate;
+  }
+ else   throw new GridGgfsHadoopCommunicationException("Failed to connect to GGFS: " + endpoint,err);
 }

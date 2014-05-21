@@ -1,20 +1,3 @@
 {
-  Exception err=null;
-  for (int i=0; i < 2; i++) {
-    Delegate curDelegate=null;
-    try {
-      curDelegate=delegate();
-      return clo.apply(curDelegate.hadoop,curDelegate.hndResp);
-    }
- catch (    GridGgfsHadoopCommunicationException e) {
-      curDelegate.hadoop.close();
-      if (!delegateRef.compareAndSet(curDelegate,null))       curDelegate.hadoop.close();
-      if (log.isDebugEnabled())       log.debug("Failed to send message to a server: " + e);
-      err=e;
-    }
-catch (    GridException e) {
-      throw cast(e);
-    }
-  }
-  throw new IOException("Failed to establish connection with GGFS.",err);
+  return withReconnectHandling(clo,null);
 }
