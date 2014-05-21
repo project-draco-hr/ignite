@@ -1,0 +1,32 @@
+{
+  if (inited) {
+    if (initImpl != null)     impl=initImpl;
+    return;
+  }
+synchronized (mux) {
+    if (inited) {
+      if (initImpl != null)       impl=initImpl;
+      return;
+    }
+    if (initImpl != null)     impl=initImpl;
+    boolean quiet=Boolean.valueOf(System.getProperty(GG_QUIET,"true"));
+    if (System.getProperty("java.util.logging.config.file") != null) {
+      quiet0=quiet;
+      inited=true;
+      return;
+    }
+    Handler[] handlers=impl.getHandlers();
+    if (Boolean.valueOf(System.getProperty(GG_CONSOLE_APPENDER,"true"))) {
+      if (!F.isEmpty(handlers))       for (      Handler h : handlers)       if (h instanceof ConsoleHandler)       impl.removeHandler(h);
+      try {
+        addHandlers(impl);
+      }
+ catch (      GridException e) {
+        throw new RuntimeException("Failed to create logger",e);
+      }
+      if (logLevel != null)       impl.setLevel(logLevel);
+    }
+    quiet0=quiet;
+    inited=true;
+  }
+}
