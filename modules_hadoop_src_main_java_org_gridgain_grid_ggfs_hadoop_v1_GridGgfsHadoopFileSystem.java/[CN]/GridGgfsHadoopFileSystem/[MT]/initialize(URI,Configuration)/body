@@ -7,13 +7,8 @@
     super.initialize(name,cfg);
     mgmt=cfg.getBoolean(GGFS_MANAGEMENT,false);
     if (!GGFS_SCHEME.equals(name.getScheme()))     throw new IOException("Illegal file system URI [expected=" + GGFS_SCHEME + "://[name]/[optional_path], actual="+ name+ ']');
-    try {
-      uri=name;
-    }
- catch (    IllegalArgumentException e) {
-      throw new IOException("Failed to create URI for name: " + name,e);
-    }
-    uriAuthority=name.getAuthority();
+    uri=name;
+    uriAuthority=uri.getAuthority();
     seqReadsBeforePrefetch=parameter(cfg,PARAM_GGFS_SEQ_READS_BEFORE_PREFETCH,uriAuthority,0);
     if (seqReadsBeforePrefetch > 0)     seqReadsBeforePrefetchOverride=true;
     dfltReplication=(short)cfg.getInt("dfs.replication",3);
@@ -21,7 +16,7 @@
     String logDirCfg=parameter(cfg,PARAM_GGFS_LOG_DIR,uriAuthority,DFLT_GGFS_LOG_DIR);
     File logDirFile=U.resolveGridGainPath(logDirCfg);
     String logDir=logDirFile != null ? logDirFile.getAbsolutePath() : null;
-    rmtClient=new NewGridGgfsHadoopWrapper(uriAuthority,logDir,LOG);
+    rmtClient=new NewGridGgfsHadoopWrapper(uriAuthority,logDir,cfg,LOG);
     GridGgfsHandshakeResponse handshake=rmtClient.handshake(logDir);
     ggfsGrpBlockSize=handshake.blockSize();
     GridGgfsPaths paths=handshake.secondaryPaths();
