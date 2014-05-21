@@ -1,13 +1,14 @@
 {
-  VisorClearCachesTaskResult res=new VisorClearCachesTaskResult();
+  VisorCachesTaskResult res=new VisorCachesTaskResult();
   for (  GridCache cache : g.cachesx(null)) {
     String escapedName=escapeName(cache.name());
     if (arg.cacheNames().contains(escapedName)) {
-      int cleared=0;
-      for (      Object key : cache.keySet()) {
-        if (cache.clear(key))         cleared++;
+      Set keys=cache.keySet();
+      long before=keys.size(), after=before;
+      for (      Object key : keys) {
+        if (cache.clear(key))         after--;
       }
-      res.put(escapedName,new VisorClearCachesTaskResultItem(cleared,cache.size()));
+      res.put(escapedName,new VisorBeforeAfterResult(before,after));
     }
   }
   return res;
