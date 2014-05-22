@@ -10,15 +10,29 @@ synchronized (mux) {
     }
     if (initImpl != null)     impl=initImpl;
     boolean quiet=Boolean.valueOf(System.getProperty(GG_QUIET,"true"));
-    if (System.getProperty("java.util.logging.config.file") != null) {
-      quiet0=quiet;
+    if (isConfigured()) {
+      boolean consoleHandlerFound=false;
+      Handler[] handlers=impl.getHandlers();
+      if (!F.isEmpty(handlers)) {
+        for (        Handler h : handlers) {
+          if (h instanceof ConsoleHandler) {
+            consoleHandlerFound=true;
+            break;
+          }
+        }
+      }
+      quiet0=!consoleHandlerFound;
       inited=true;
       return;
     }
     if (Boolean.valueOf(System.getProperty(GG_CONSOLE_APPENDER,"true"))) {
       Handler[] handlers=impl.getHandlers();
-      if (!F.isEmpty(handlers))       for (      Handler h : handlers)       if (h instanceof ConsoleHandler)       impl.removeHandler(h);
-      addDefaultConsoleHandler(impl);
+      if (!F.isEmpty(handlers)) {
+        for (        Handler h : handlers) {
+          if (h instanceof ConsoleHandler)           impl.removeHandler(h);
+        }
+      }
+      addDefaultConsoleHandler(impl,quiet ? SEVERE : INFO);
       if (logLevel != null)       impl.setLevel(logLevel);
     }
     quiet0=quiet;
