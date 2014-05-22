@@ -1,9 +1,11 @@
 {
   execStartTs=System.currentTimeMillis();
+  ClassLoader old=GridHadoopJobClassLoadingContext.prepareClassLoader(sharedTaskCtx,job.info());
   GridHadoopTaskState state=GridHadoopTaskState.COMPLETED;
   Throwable err=null;
-  try (GridHadoopTaskOutput out=createOutput(task.info());GridHadoopTaskInput in=createInput(task.info())){
+  try (GridHadoopTaskOutput out=createOutput(info);GridHadoopTaskInput in=createInput(info)){
     GridHadoopTaskContext ctx=new GridHadoopTaskContext(job,in,out);
+    GridHadoopTask task=job.createTask(info);
     task.run(ctx);
   }
  catch (  Throwable e) {
@@ -13,5 +15,6 @@
  finally {
     execEndTs=System.currentTimeMillis();
     onTaskFinished(this,state,err);
+    Thread.currentThread().setContextClassLoader(old);
   }
 }

@@ -9,7 +9,10 @@
       proc.terminate();
       return;
     }
-    if (proc.initFut.isDone())     sendJobInfoUpdate(proc,meta);
+    if (proc.initFut.isDone()) {
+      if (!proc.initFut.isFailed())       sendJobInfoUpdate(proc,meta);
+ else       if (log.isDebugEnabled())       log.debug("Failed to initialize child process (will skip job state notification) " + "[jobId=" + job.id() + ", meta="+ meta+ ']');
+    }
  else {
       proc.initFut.listenAsync(new CI1<GridFuture<GridBiTuple<Process,GridHadoopProcessDescriptor>>>(){
         @Override public void apply(        GridFuture<GridBiTuple<Process,GridHadoopProcessDescriptor>> f){
