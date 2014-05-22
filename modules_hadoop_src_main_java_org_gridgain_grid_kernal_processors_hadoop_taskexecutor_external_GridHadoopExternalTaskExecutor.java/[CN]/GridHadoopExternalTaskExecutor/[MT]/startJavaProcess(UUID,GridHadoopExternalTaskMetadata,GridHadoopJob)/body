@@ -2,6 +2,7 @@
   String outFldr=jobWorkFolder(job.id()) + File.separator + childProcId;
   if (log.isDebugEnabled())   log.debug("Will write process log output to: " + outFldr);
   List<String> cmd=new ArrayList<>();
+  File workDir=U.resolveWorkDirectory("",false);
   cmd.add(javaCmd);
   cmd.addAll(startMeta.jvmOptions());
   cmd.add("-cp");
@@ -22,6 +23,6 @@
   cmd.add("-out");
   cmd.add(outFldr);
   cmd.add("-wd");
-  cmd.add(U.resolveWorkDirectory("",false).getAbsolutePath());
-  return new ProcessBuilder(cmd).redirectErrorStream(true).start();
+  cmd.add(workDir.getAbsolutePath());
+  return new ProcessBuilder(cmd).redirectErrorStream(true).directory(workDir).start();
 }
