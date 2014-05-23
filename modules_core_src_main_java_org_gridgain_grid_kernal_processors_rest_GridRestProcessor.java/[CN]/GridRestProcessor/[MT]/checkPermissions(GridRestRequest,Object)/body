@@ -1,0 +1,44 @@
+{
+  if (securityInterceptor != null) {
+    GridSecurityOperation op=null;
+    String cacheName=null;
+switch (req.command()) {
+case CACHE_GET:
+case CACHE_GET_ALL:
+      op=GridSecurityOperation.READ;
+    cacheName=((GridRestCacheRequest)req).cacheName();
+  break;
+case CACHE_PUT:
+case CACHE_ADD:
+case CACHE_PUT_ALL:
+case CACHE_REPLACE:
+case CACHE_INCREMENT:
+case CACHE_DECREMENT:
+case CACHE_CAS:
+case CACHE_APPEND:
+case CACHE_PREPEND:
+op=GridSecurityOperation.PUT;
+cacheName=((GridRestCacheRequest)req).cacheName();
+break;
+case CACHE_REMOVE:
+case CACHE_REMOVE_ALL:
+op=GridSecurityOperation.REMOVE;
+cacheName=((GridRestCacheRequest)req).cacheName();
+break;
+case EXE:
+case RESULT:
+op=GridSecurityOperation.EXECUTE;
+break;
+case VERSION:
+case LOG:
+case NOOP:
+case QUIT:
+case CACHE_METRICS:
+case TOPOLOGY:
+case NODE:
+return;
+}
+GridSecurityContext sCtx=new GridSecurityContextImpl(Collections.singletonList(op),cacheName,securitySubjCtx);
+securityInterceptor.authorize(sCtx);
+}
+}
