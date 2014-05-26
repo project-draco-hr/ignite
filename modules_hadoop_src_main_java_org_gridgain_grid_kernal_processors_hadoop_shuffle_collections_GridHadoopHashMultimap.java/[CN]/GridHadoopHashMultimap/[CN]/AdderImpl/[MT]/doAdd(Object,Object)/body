@@ -1,0 +1,70 @@
+{
+  AtomicLongArray tbl=oldTbl;
+  int keyHash=U.hash(key.hashCode());
+  long newMetaPtr=0;
+  long valPtr=0;
+  if (val != null) {
+    write(val,valSer);
+    int valSize=out.offset();
+    valPtr=copy(12);
+    valueSize(valPtr,valSize);
+  }
+  for (AtomicLongArray old=null; ; ) {
+    int addr=keyHash & (tbl.length() - 1);
+    long metaPtrRoot=tbl.get(addr);
+    if (metaPtrRoot == -1) {
+      AtomicLongArray n=newTbl;
+      AtomicLongArray o=oldTbl;
+      tbl=tbl == o ? n : o;
+      old=null;
+      continue;
+    }
+    if (metaPtrRoot != 0) {
+      long metaPtr=metaPtrRoot;
+      do {
+        if (keyHash(metaPtr) == keyHash && key.equals(keyReader.readKey(metaPtr))) {
+          if (newMetaPtr != 0) {
+            mem.release(key(newMetaPtr),keySize(newMetaPtr));
+            mem.release(newMetaPtr,40);
+          }
+          if (valPtr != 0) {
+            long nextValPtr;
+            do {
+              nextValPtr=value(metaPtr);
+              nextValue(valPtr,nextValPtr);
+            }
+ while (!casValue(metaPtr,nextValPtr,valPtr));
+          }
+          return metaPtr;
+        }
+        metaPtr=collision(metaPtr);
+      }
+ while (metaPtr != 0);
+      if (old == null) {
+        AtomicLongArray n=newTbl;
+        if (n != tbl) {
+          old=tbl;
+          tbl=n;
+          continue;
+        }
+      }
+    }
+    if (old != null) {
+      tbl=old;
+      addr=keyHash & (tbl.length() - 1);
+      old=null;
+    }
+    if (newMetaPtr == 0) {
+      write(key,keySer);
+      int keySize=out.offset();
+      long keyPtr=copy(0);
+      if (valPtr != 0)       nextValue(valPtr,0);
+      newMetaPtr=createMeta(keyHash,keySize,keyPtr,valPtr,metaPtrRoot,0);
+    }
+ else     collision(newMetaPtr,metaPtrRoot);
+    if (tbl.compareAndSet(addr,metaPtrRoot,newMetaPtr)) {
+      incrementKeys(tbl);
+      return newMetaPtr;
+    }
+  }
+}
