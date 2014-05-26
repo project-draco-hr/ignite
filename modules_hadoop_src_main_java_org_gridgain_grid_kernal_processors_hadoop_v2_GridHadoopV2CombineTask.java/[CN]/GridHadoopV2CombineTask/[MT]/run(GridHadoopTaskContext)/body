@@ -4,20 +4,13 @@
   try {
     Reducer combiner=U.newInstance(jobCtx.getCombinerClass());
     GridHadoopV2Context hadoopCtx=new GridHadoopV2Context(jobCtx.getConfiguration(),taskCtx,jobImpl.attemptId(info()));
-    if (jobImpl.reducers() == 0) {
-      OutputFormat outputFormat=U.newInstance(jobCtx.getOutputFormatClass());
-      RecordWriter writer=outputFormat.getRecordWriter(hadoopCtx);
-      hadoopCtx.writer(writer);
-      try {
-        combiner.run(new WrappedReducer().getReducerContext(hadoopCtx));
-      }
-  finally {
-        writer.close(hadoopCtx);
-      }
-      OutputCommitter outputCommitter=outputFormat.getOutputCommitter(hadoopCtx);
-      outputCommitter.commitTask(hadoopCtx);
+    OutputFormat outputFormat=jobImpl.reducers() == 0 ? putWriter(hadoopCtx,jobCtx) : null;
+    try {
+      combiner.run(new WrappedReducer().getReducerContext(hadoopCtx));
     }
- else     combiner.run(new WrappedReducer().getReducerContext(hadoopCtx));
+  finally {
+      commit(hadoopCtx,outputFormat);
+    }
   }
  catch (  InterruptedException e) {
     throw new GridInterruptedException(e);
