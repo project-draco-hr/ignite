@@ -47,11 +47,19 @@
   }
   final List<VisorStreamerConfig> streamers=new ArrayList<>();
   if (c.getStreamerConfiguration() != null)   for (  GridStreamerConfiguration streamer : c.getStreamerConfiguration())   streamers.add(new VisorStreamerConfig(streamer.getName(),compactClass(streamer.getRouter()),streamer.isAtLeastOnce(),streamer.getMaximumFailoverAttempts(),streamer.getMaximumConcurrentSessions(),streamer.isExecutorServiceShutdown()));
-  final VisorDrSenderHubConfig senderHub=null;
+  VisorDrSenderHubConfig senderHub=null;
   if (c.getDrSenderHubConfiguration() != null) {
+    GridDrSenderHubConfiguration hCfg=c.getDrSenderHubConfiguration();
+    List<VisorDrSenderHubConnectionConfig> hubConnections=new ArrayList<>();
+    for (    GridDrSenderHubConnectionConfiguration cCfg : hCfg.getConnectionConfiguration()) {
+      hubConnections.add(new VisorDrSenderHubConnectionConfig(c.getDataCenterId(),cCfg.getReceiverHubAddresses(),cCfg.getLocalOutboundHost(),cCfg.getReceiverHubLoadBalancingMode(),cCfg.getIgnoredDataCenterIds()));
+    }
+    senderHub=new VisorDrSenderHubConfig(hubConnections,hCfg.getMaxFailedConnectAttempts(),hCfg.getMaxErrors(),hCfg.getHealthCheckFrequency(),hCfg.getSystemRequestTimeout(),hCfg.getReadTimeout(),hCfg.getMaxQueueSize(),hCfg.getReconnectOnFailureTimeout(),hCfg.getCacheNames());
   }
-  final VisorDrReceiverHubConfig receiverHub=null;
+  VisorDrReceiverHubConfig receiverHub=null;
   if (c.getDrReceiverHubConfiguration() != null) {
+    GridDrReceiverHubConfiguration hCfg=c.getDrReceiverHubConfiguration();
+    receiverHub=new VisorDrReceiverHubConfig(hCfg.getLocalInboundHost(),hCfg.getLocalInboundPort(),hCfg.getSelectorCount(),hCfg.getWorkerThreads(),hCfg.getMessageQueueLimit(),hCfg.isTcpNodelay(),hCfg.isDirectBuffer(),hCfg.getIdleTimeout(),hCfg.getWriteTimeout(),hCfg.getFlushFrequency(),hCfg.getPerNodeBufferSize(),hCfg.getPerNodeParallelLoadOperations());
   }
   return new VisorGridConfig(lic,basic,metrics,spis,p2p,email,lifecycle,execSvc,seg,compactArray(c.getIncludeProperties()),c.getIncludeEventTypes(),rest,c.getUserAttributes(),caches,ggfss,streamers,senderHub,receiverHub,new HashMap<>(getenv()),getProperties());
 }
