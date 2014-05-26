@@ -1,0 +1,17 @@
+{
+  GridClientFutureAdapter<?> handshakeFut=ses.meta(GridClientNioTcpConnection.SES_META_HANDSHAKE);
+  if (handshakeFut != null) {
+    byte code=buf.get();
+    return new GridClientHandshakeResponse(code);
+  }
+  ParserState state=ses.removeMeta(PARSER_STATE.ordinal());
+  if (state == null)   state=new ParserState();
+  if (state.packetType() == null) {
+    byte hdr=buf.get();
+    if (hdr != REQ_HEADER)     throw new GridException("Unexpected message header: " + Integer.toHexString(hdr));
+    state.packetType(GRIDGAIN);
+  }
+  Object msg=parseCustomPacket(ses,buf,state);
+  if (msg == null)   ses.addMeta(PARSER_STATE.ordinal(),state);
+  return msg;
+}

@@ -1,0 +1,22 @@
+{
+  if (msg instanceof GridClientPingPacket)   return ByteBuffer.wrap(GridClientPingPacket.PING_PACKET);
+ else   if (msg instanceof GridClientHandshakeRequest)   return ByteBuffer.wrap(((GridClientHandshakeRequest)msg).rawBytes());
+  GridClientMessage clientMsg=(GridClientMessage)msg;
+  byte[] msgBytes=clientMsg instanceof GridRouterRequest ? ((GridRouterRequest)clientMsg).body() : cfg.getMarshaller().marshal(clientMsg);
+  ByteBuffer res=ByteBuffer.allocate(msgBytes.length + 45);
+  res.put(REQ_HEADER);
+  res.put(U.intToBytes(msgBytes.length + 40));
+  res.put(U.longToBytes(clientMsg.requestId()));
+  res.put(U.uuidToBytes(clientMsg.clientId()));
+  if (clientMsg.destinationId() != null) {
+    res.put(U.longToBytes(clientMsg.destinationId().getMostSignificantBits()));
+    res.put(U.longToBytes(clientMsg.destinationId().getLeastSignificantBits()));
+  }
+ else {
+    res.put(U.longToBytes(0));
+    res.put(U.longToBytes(0));
+  }
+  res.put(msgBytes);
+  res.flip();
+  return res;
+}
