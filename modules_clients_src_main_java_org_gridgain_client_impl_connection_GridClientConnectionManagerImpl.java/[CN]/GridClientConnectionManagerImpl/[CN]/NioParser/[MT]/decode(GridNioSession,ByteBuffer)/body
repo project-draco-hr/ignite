@@ -4,14 +4,17 @@
     byte code=buf.get();
     return new GridClientHandshakeResponse(code);
   }
-  ParserState state=ses.removeMeta(PARSER_STATE.ordinal());
-  if (state == null)   state=new ParserState();
-  if (state.packetType() == null) {
-    byte hdr=buf.get();
-    if (hdr != REQ_HEADER)     throw new GridException("Unexpected message header: " + Integer.toHexString(hdr));
-    state.packetType(GRIDGAIN);
+  GridTcpCommunicationMessageAdapter msg=ses.removeMeta(MSG_META_KEY);
+  UUID nodeId=ses.meta(GridNioServer.DIFF_VER_NODE_ID_META_KEY);
+  if (msg == null && buf.hasRemaining()) {
+    byte type=buf.get();
+    if (type == GridClientMessageWrapper.REQ_HEADER)     msg=new GridClientMessageWrapper();
   }
-  Object msg=parseCustomPacket(ses,buf,state);
-  if (msg == null)   ses.addMeta(PARSER_STATE.ordinal(),state);
-  return msg;
+  boolean finished=false;
+  if (buf.hasRemaining())   finished=msgReader.read(nodeId,msg,buf);
+  if (finished)   return msg;
+ else {
+    ses.addMeta(MSG_META_KEY,msg);
+    return null;
+  }
 }

@@ -18,7 +18,7 @@
         return;
       }
       ses.addMeta(GridNioSessionMetaKey.MARSHALLER.ordinal(),marsh);
-      ses.send(GridClientHandshakeResponse.OK);
+      ses.send(new GridClientHandshakeResponseWrapper((byte)0));
     }
  else {
       final GridRestRequest req=createRestRequest(msg);
@@ -41,7 +41,18 @@
             res.successStatus(GridClientResponse.STATUS_FAILED);
             res.errorMessage("Failed to process client request: " + e.getMessage());
           }
-          ses.send(res);
+          GridClientMessageWrapper wrapper=new GridClientMessageWrapper();
+          wrapper.setReqId(msg.requestId());
+          wrapper.setClientId(msg.clientId());
+          try {
+            byte[] bytes=marshaller(ses).marshal(res);
+            wrapper.setMsg(bytes);
+            wrapper.setMsgSize(bytes.length + 40);
+          }
+ catch (          IOException e) {
+            e.printStackTrace();
+          }
+          ses.send(wrapper);
         }
       }
 );
