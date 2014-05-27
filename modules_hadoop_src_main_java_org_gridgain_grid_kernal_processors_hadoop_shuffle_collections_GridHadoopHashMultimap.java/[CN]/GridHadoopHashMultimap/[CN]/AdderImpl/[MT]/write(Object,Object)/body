@@ -1,0 +1,23 @@
+{
+  int keyHash=U.hash(key.hashCode());
+  write(val,valSer);
+  int valSize=out.offset();
+  long valPtr=copy(12);
+  valueSize(valPtr,valSize);
+  int idx=keyHash & (tbl.length - 1);
+  long meta=tbl[idx];
+  while (meta != 0) {
+    if (keyHash(meta) == keyHash && key.equals(keyReader.readKey(meta))) {
+      nextValue(valPtr,value(meta));
+      value(meta,valPtr);
+      return;
+    }
+    meta=collision(meta);
+  }
+  write(key,keySer);
+  int keySize=out.offset();
+  long keyPtr=copy(0);
+  nextValue(valPtr,0);
+  tbl[idx]=createMeta0(keyHash,keySize,keyPtr,valPtr,tbl[idx]);
+  if (++keys > (tbl.length >>> 2) * 3)   rehash();
+}
