@@ -1,36 +1,32 @@
 {
   int deleted=0;
-  int failed=0;
+  int notDeleted=0;
   try {
     GridGgfs ggfs=g.ggfs(arg.ggfsName);
     Path logsDir=resolveGgfsProfilerLogsDir(ggfs);
     if (logsDir != null) {
       PathMatcher matcher=FileSystems.getDefault().getPathMatcher("glob:ggfs-log-" + arg.ggfsName + "-*.csv");
-      DirectoryStream<Path> dirStream=Files.newDirectoryStream(logsDir);
-      try {
-        Iterator<Path> itr=dirStream.iterator();
-        while (itr.hasNext()) {
-          Path p=itr.next();
-          if (matcher.matches(p.getFileName()))           try {
-            Files.delete(p);
-            if (Files.exists(p))             failed++;
- else             deleted++;
-          }
- catch (          NoSuchFileException nsfe) {
-          }
-catch (          IOException io) {
-            failed++;
-            g.log().warning("Profiler log file was not deleted: " + p,io);
+      try (DirectoryStream<Path> dirStream=Files.newDirectoryStream(logsDir)){
+        for (        Path p : dirStream) {
+          if (matcher.matches(p.getFileName())) {
+            try {
+              Files.delete(p);
+              if (Files.exists(p))               notDeleted++;
+ else               deleted++;
+            }
+ catch (            NoSuchFileException ignored) {
+            }
+catch (            IOException io) {
+              notDeleted++;
+              g.log().warning("Profiler log file was not deleted: " + p,io);
+            }
           }
         }
       }
-  finally {
-        dirStream.close();
-      }
-    }
+     }
   }
  catch (  IOException|IllegalArgumentException ioe) {
     throw new GridException("Failed to clear profiler logs for GGFS: " + arg.ggfsName,ioe);
   }
-  return new VisorGgfsProfilerClearTaskResult(deleted,failed);
+  return new VisorGgfsProfilerClearTaskResult(deleted,notDeleted);
 }
