@@ -1,9 +1,9 @@
 {
   final HadoopProcess proc=runningProcsByJobId.get(job.id());
   if (proc != null) {
-    log.info("Updating job information for remote task process [proc=" + proc + ", meta="+ meta+ ']');
+    if (log.isDebugEnabled())     log.debug("Updating job information for remote task process [proc=" + proc + ", meta="+ meta+ ']');
     if (meta.phase() == GridHadoopJobPhase.PHASE_COMPLETE) {
-      log.info("Completed job execution, will terminate child process [jobId=" + job.id() + ", proc="+ proc+ ']');
+      if (log.isDebugEnabled())       log.debug("Completed job execution, will terminate child process [jobId=" + job.id() + ", proc="+ proc+ ']');
       runningProcsByJobId.remove(job.id());
       runningProcsByProcId.remove(proc.descriptor().processId());
       proc.terminate();
@@ -11,7 +11,7 @@
     }
     if (proc.initFut.isDone()) {
       if (!proc.initFut.isFailed())       sendJobInfoUpdate(proc,meta);
- else       log.info("Failed to initialize child process (will skip job state notification) " + "[jobId=" + job.id() + ", meta="+ meta+ ']');
+ else       if (log.isDebugEnabled())       log.debug("Failed to initialize child process (will skip job state notification) " + "[jobId=" + job.id() + ", meta="+ meta+ ']');
     }
  else {
       proc.initFut.listenAsync(new CI1<GridFuture<GridBiTuple<Process,GridHadoopProcessDescriptor>>>(){
@@ -21,7 +21,7 @@
             sendJobInfoUpdate(proc,meta);
           }
  catch (          GridException e) {
-            log.info("Failed to initialize child process (will skip job state notification) " + "[jobId=" + job.id() + ", meta="+ meta+ ", err="+ e+ ']');
+            if (log.isDebugEnabled())             log.debug("Failed to initialize child process (will skip job state notification) " + "[jobId=" + job.id() + ", meta="+ meta+ ", err="+ e+ ']');
           }
         }
       }
