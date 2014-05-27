@@ -1,0 +1,16 @@
+{
+  g.scheduler().scheduleLocal(new CAX(){
+    @Override public void applyx(){
+      GridNodeLocalMap<String,VisorScanStorageValType> storage=g.nodeLocalMap();
+      VisorScanStorageValType t=storage.get(id);
+      if (t != null) {
+        if (t.accessed()) {
+          storage.put(id,new VisorScanStorageValType(t.future(),t.next(),false));
+          scheduleScanQueryRemoval(id);
+        }
+ else         storage.remove(id);
+      }
+    }
+  }
+,"{" + RMV_DELAY + ", 1} * * * * *");
+}
