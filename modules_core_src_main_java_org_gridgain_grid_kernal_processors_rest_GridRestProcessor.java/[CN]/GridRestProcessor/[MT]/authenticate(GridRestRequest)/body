@@ -1,12 +1,21 @@
 {
   UUID clientId=req.clientId();
-  byte[] clientIdBytes=clientId != null ? U.uuidToBytes(clientId) : EMPTY_ID;
   byte[] sesTok=req.sessionToken();
   if (sesTok != null) {
     GridSecureSession ses=ctx.secureSession().validateSession(REMOTE_CLIENT,clientId,sesTok,null);
     if (ses != null)     return ses.authenticationSubjectContext();
   }
-  Object subjCtx=ctx.auth().authenticate(REMOTE_CLIENT,clientIdBytes,req.credentials());
+  GridAuthenticationContextAdapter authCtx=new GridAuthenticationContextAdapter();
+  authCtx.subjectType(REMOTE_CLIENT);
+  authCtx.subjectId(req.clientId());
+  GridSecurityCredentials cred;
+  if (req.credentials() instanceof GridSecurityCredentials)   cred=(GridSecurityCredentials)req.credentials();
+ else {
+    cred=new GridSecurityCredentials();
+    cred.setUserObject(req.credentials());
+  }
+  authCtx.credentials(cred);
+  GridSecurityContext subjCtx=ctx.auth().authenticate(authCtx);
   if (subjCtx == null) {
     if (req.credentials() == null)     throw new GridException("Failed to authenticate remote client (secure session SPI not set?): " + req);
  else     throw new GridException("Failed to authenticate remote client (invalid credentials?): " + req);
