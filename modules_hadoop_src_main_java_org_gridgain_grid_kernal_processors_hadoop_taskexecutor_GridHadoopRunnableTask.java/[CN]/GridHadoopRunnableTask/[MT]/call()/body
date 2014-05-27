@@ -1,0 +1,22 @@
+{
+  execStartTs=System.currentTimeMillis();
+  boolean runCombiner=info.type() == MAP && job.hasCombiner() && !get(job,SINGLE_COMBINER_FOR_ALL_MAPPERS,false);
+  ClassLoader old=GridHadoopJobClassLoadingContext.prepareClassLoader(clsLdrCtx,job.info());
+  GridHadoopTaskState state=GridHadoopTaskState.COMPLETED;
+  Throwable err=null;
+  try {
+    runTask(info,runCombiner);
+    if (runCombiner)     runTask(new GridHadoopTaskInfo(info.nodeId(),COMBINE,info.jobId(),info.taskNumber(),info.attempt(),null),runCombiner);
+  }
+ catch (  Throwable e) {
+    state=GridHadoopTaskState.FAILED;
+    err=e;
+  }
+ finally {
+    execEndTs=System.currentTimeMillis();
+    onTaskFinished(state,err);
+    Thread.currentThread().setContextClassLoader(old);
+    if (runCombiner)     local.close();
+  }
+  return null;
+}
