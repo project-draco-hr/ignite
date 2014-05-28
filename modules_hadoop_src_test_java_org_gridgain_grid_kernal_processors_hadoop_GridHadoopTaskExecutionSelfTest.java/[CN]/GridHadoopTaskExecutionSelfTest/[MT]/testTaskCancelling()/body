@@ -6,21 +6,20 @@
   cancelledTasks.set(0);
   failMapperId=0;
   Configuration cfg=new Configuration();
-  cfg.setStrings("fs.ggfs.impl",GridGgfsHadoopFileSystem.class.getName());
+  cfg.set("fs.ggfs.impl",GridGgfsHadoopFileSystem.class.getName());
   Job job=Job.getInstance(cfg);
   job.setOutputKeyClass(Text.class);
   job.setOutputValueClass(IntWritable.class);
   job.setMapperClass(CancellingTestMapper.class);
   job.setNumReduceTasks(0);
   job.setInputFormatClass(TextInputFormat.class);
-  FileInputFormat.setInputPaths(job,new Path("ggfs://ipc/"));
+  FileInputFormat.setInputPaths(job,new Path("ggfs:///"));
+  FileOutputFormat.setOutputPath(job,new Path("ggfs:///output/"));
   job.setJarByClass(getClass());
   GridHadoopProcessorAdapter hadoop=((GridKernal)grid(0)).context().hadoop();
   GridHadoopJobId jobId=new GridHadoopJobId(UUID.randomUUID(),1);
   final GridFuture<?> fut=hadoop.submit(jobId,new GridHadoopDefaultJobInfo(job.getConfiguration()));
-  while (executedTasks.get() != 32) {
-    Thread.sleep(100);
-  }
+  U.sleep(2000);
   failMapperId=1;
   GridTestUtils.assertThrows(log,new Callable<Object>(){
     @Override public Object call() throws Exception {

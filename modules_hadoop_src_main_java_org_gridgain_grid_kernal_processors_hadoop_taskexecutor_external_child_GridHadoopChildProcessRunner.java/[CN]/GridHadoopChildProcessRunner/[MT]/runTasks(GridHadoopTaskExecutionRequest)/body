@@ -13,7 +13,18 @@
         if (log.isDebugEnabled())         log.debug("Set executor service size for task type [type=" + info.type() + ", size="+ size+ ']');
         for (        GridHadoopTaskInfo taskInfo : req.tasks()) {
           if (log.isDebugEnabled())           log.debug("Submitted task for external execution: " + taskInfo);
-          execSvc.submit(new TaskRunnable(taskInfo));
+          execSvc.submit(new GridHadoopRunnableTask(job,mem,taskInfo,clsLdrCtx){
+            @Override protected void onTaskFinished(            GridHadoopTaskState state,            Throwable err){
+              onTaskFinished0(this,state,err);
+            }
+            @Override protected GridHadoopTaskInput createInput(            GridHadoopTaskInfo info) throws GridException {
+              return shuffleJob.input(info);
+            }
+            @Override protected GridHadoopTaskOutput createOutput(            GridHadoopTaskInfo info) throws GridException {
+              return shuffleJob.output(info);
+            }
+          }
+);
         }
       }
  catch (      GridException e) {
