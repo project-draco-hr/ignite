@@ -4,9 +4,8 @@
   long newMetaPtr=0;
   long valPtr=0;
   if (val != null) {
-    write(val,valSer);
-    int valSize=out.offset();
-    valPtr=copy(12);
+    valPtr=write(12,val,valSer);
+    int valSize=writtenSize() - 12;
     valueSize(valPtr,valSize);
   }
   for (AtomicLongArray old=null; ; ) {
@@ -23,10 +22,7 @@
       long metaPtr=metaPtrRoot;
       do {
         if (keyHash(metaPtr) == keyHash && key.equals(keyReader.readKey(metaPtr))) {
-          if (newMetaPtr != 0) {
-            mem.release(key(newMetaPtr),keySize(newMetaPtr));
-            mem.release(newMetaPtr,40);
-          }
+          if (newMetaPtr != 0)           localDeallocate(key(newMetaPtr));
           if (valPtr != 0) {
             long nextValPtr;
             do {
@@ -55,9 +51,8 @@
       old=null;
     }
     if (newMetaPtr == 0) {
-      write(key,keySer);
-      int keySize=out.offset();
-      long keyPtr=copy(0);
+      long keyPtr=write(0,key,keySer);
+      int keySize=writtenSize();
       if (valPtr != 0)       nextValue(valPtr,0);
       newMetaPtr=createMeta(keyHash,keySize,keyPtr,valPtr,metaPtrRoot,0);
     }
