@@ -7,6 +7,7 @@
     int cnt=10;
     cfg.setInt(BLOCK_CNT,cnt);
     cfg.setClass(MRJobConfig.COMBINE_CLASS_ATTR,TestCombiner.class,Reducer.class);
+    cfg.setBoolean(GridHadoopJobProperty.SINGLE_COMBINER_FOR_ALL_MAPPERS.propertyName(),singleCombiner);
     GridHadoopJobId jobId=new GridHadoopJobId(globalId,1);
     hadoop.submit(jobId,new GridHadoopDefaultJobInfo(cfg));
     checkStatus(jobId,false);
@@ -36,7 +37,7 @@
       reduces+=reduceExecCnt.get(nodeId).get();
     }
     assertEquals(10,maps);
-    assertEquals(3,combines);
+    assertEquals(singleCombiner ? 3 : 10,combines);
     assertEquals(1,reduces);
   }
   finally {
