@@ -1,16 +1,10 @@
 {
   GridHadoopV2Job jobImpl=(GridHadoopV2Job)taskCtx.job();
   JobContext jobCtx=jobImpl.hadoopJobContext();
-  Reducer reducer;
   try {
-    reducer=U.newInstance(jobCtx.getReducerClass());
-  }
- catch (  ClassNotFoundException e) {
-    throw new GridException(e);
-  }
-  GridHadoopV2Context hadoopCtx=new GridHadoopV2Context(jobCtx.getConfiguration(),taskCtx,jobImpl.attemptId(info()));
-  try {
-    OutputFormat outputFormat=prepareWriter(hadoopCtx,jobCtx);
+    Reducer reducer=U.newInstance(reduce ? jobCtx.getReducerClass() : jobCtx.getCombinerClass());
+    GridHadoopV2Context hadoopCtx=new GridHadoopV2Context(jobCtx.getConfiguration(),taskCtx,jobImpl.attemptId(info()));
+    OutputFormat outputFormat=reduce || !jobImpl.hasReducer() ? prepareWriter(hadoopCtx,jobCtx) : null;
     try {
       reducer.run(new WrappedReducer().getReducerContext(hadoopCtx));
     }
@@ -19,7 +13,7 @@
     }
     commit(hadoopCtx,outputFormat);
   }
- catch (  IOException e) {
+ catch (  ClassNotFoundException|IOException e) {
     throw new GridException(e);
   }
 catch (  InterruptedException e) {
