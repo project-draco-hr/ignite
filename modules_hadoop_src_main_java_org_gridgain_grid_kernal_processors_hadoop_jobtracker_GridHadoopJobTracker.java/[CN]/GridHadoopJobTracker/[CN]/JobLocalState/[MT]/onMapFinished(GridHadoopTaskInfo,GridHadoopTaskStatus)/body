@@ -2,7 +2,7 @@
   final GridHadoopJobId jobId=taskInfo.jobId();
   boolean lastMapperFinished=completedMappersCnt.incrementAndGet() == currMappers.size();
   if (status.state() == FAILED || status.state() == CRASHED) {
-    jobMetaPrj.transformAsync(jobId,new RemoveMappersClosure(taskInfo.inputSplit(),status.failCause()));
+    transform(jobId,new RemoveMappersClosure(taskInfo.inputSplit(),status.failCause()));
     return;
   }
   if (job.hasCombiner() && get(job,SINGLE_COMBINER_FOR_ALL_MAPPERS,false) && status.state() != CANCELED) {
@@ -23,7 +23,7 @@
             err=e;
           }
         }
-        jobMetaPrj.transformAsync(jobId,new RemoveMappersClosure(taskInfo.inputSplit(),err));
+        transform(jobId,new RemoveMappersClosure(taskInfo.inputSplit(),err));
       }
     }
 ;

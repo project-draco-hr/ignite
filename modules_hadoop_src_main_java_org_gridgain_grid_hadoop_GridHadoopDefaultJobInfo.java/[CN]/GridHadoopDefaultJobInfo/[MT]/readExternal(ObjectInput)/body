@@ -1,4 +1,10 @@
 {
   cfg=new JobConf();
-  cfg.readFields(in);
+  int size=WritableUtils.readVInt(in);
+  for (int i=0; i < size; ++i) {
+    String key=org.apache.hadoop.io.Text.readString(in);
+    String value=org.apache.hadoop.io.Text.readString(in);
+    if (!cfg.isDeprecated(key))     cfg.set(key,value);
+    String sources[]=WritableUtils.readCompressedStringArray(in);
+  }
 }
