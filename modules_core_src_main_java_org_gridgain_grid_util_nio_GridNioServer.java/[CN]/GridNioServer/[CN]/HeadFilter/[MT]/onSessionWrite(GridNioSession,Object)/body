@@ -1,3 +1,14 @@
 {
-  return directMode ? send(ses,(GridTcpCommunicationMessageAdapter)msg) : send(ses,(ByteBuffer)msg);
+  if (directMode) {
+    boolean sslSystem=sslFilter != null && msg instanceof ByteBuffer;
+    if (sslSystem) {
+      ConcurrentLinkedDeque8<ByteBuffer> queue=ses.meta(BUF_SSL_SYSTEM_META_KEY);
+      queue.offer((ByteBuffer)msg);
+      SelectionKey key=((GridSelectorNioSessionImpl)ses).key();
+      if (key.isValid())       key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+      return null;
+    }
+ else     return send(ses,(GridTcpCommunicationMessageAdapter)msg);
+  }
+ else   return send(ses,(ByteBuffer)msg);
 }
