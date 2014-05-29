@@ -1,8 +1,16 @@
 {
-  A.notNull(path,"path");
-  GridUuid nextId=meta.fileId(path);
-  if (nextId == null)   return 0;
-  GridGgfsPathSummary sum=new GridGgfsPathSummary(path);
-  summary0(nextId,sum);
-  return sum.totalLength();
+  if (busyLock.enterBusy()) {
+    try {
+      A.notNull(path,"path");
+      GridUuid nextId=meta.fileId(path);
+      if (nextId == null)       return 0;
+      GridGgfsPathSummary sum=new GridGgfsPathSummary(path);
+      summary0(nextId,sum);
+      return sum.totalLength();
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get path size because Grid is stopping.");
 }
