@@ -1,0 +1,16 @@
+{
+  GridClientTopologyRequest msg=new GridClientTopologyRequest();
+  TcpClientFuture fut=new TcpClientFuture(){
+    @Override public void onDone(    Object res){
+      Collection<GridClientNodeBean> beans=(Collection<GridClientNodeBean>)res;
+      Collection<GridClientNodeImpl> nodes=new ArrayList<>(beans.size());
+      for (      GridClientNodeBean bean : beans)       nodes.add(nodeBeanToNode(bean));
+      super.onDone(top.updateTopology(nodes));
+    }
+  }
+;
+  msg.includeAttributes(inclAttrs);
+  msg.includeMetrics(inclMetrics);
+  msg.destinationId(destNodeId);
+  return makeRequest(msg,fut);
+}
