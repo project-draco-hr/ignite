@@ -5,31 +5,31 @@
     GridCache<Object,Object> c=g.cachex(arg.cacheName());
     if (scan) {
       GridCacheQueryFuture<Map.Entry<Object,Object>> fut=c.queries().createScanQuery(null).pageSize(arg.pageSize()).projection(g.forNodeIds(arg.proj())).execute();
-      GridBiTuple<List<Object[]>,Map.Entry<Object,Object>> rows=fetchScanQueryRows(fut,null,arg.pageSize());
+      T2<List<Object[]>,Map.Entry<Object,Object>> rows=fetchScanQueryRows(fut,null,arg.pageSize());
       Map.Entry<Object,Object> next=rows.get2();
       g.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,next,false));
       scheduleQueryRemoval(qryId);
-      return new GridBiTuple<>(null,new VisorFieldsQueryResultEx(g.localNode().id(),qryId,SCAN_COL_NAMES,rows.get1(),next != null));
+      return new T2<>(null,new VisorFieldsQueryResultEx(g.localNode().id(),qryId,SCAN_COL_NAMES,rows.get1(),next != null));
     }
  else {
       GridCacheQueryFuture<List<?>> fut=((GridCacheQueriesEx<?,?>)c.queries()).createSqlFieldsQuery(arg.queryTxt(),true).pageSize(arg.pageSize()).projection(g.forNodeIds(arg.proj())).execute();
       List<Object> firstRow=(List<Object>)fut.next();
       List<GridIndexingFieldMetadata> meta=((GridCacheQueryMetadataAware)fut).metadata().get();
-      if (meta == null)       return new GridBiTuple<Exception,VisorFieldsQueryResultEx>(new SQLException("Fail to execute query. No metadata available."),null);
+      if (meta == null)       return new T2<Exception,VisorFieldsQueryResultEx>(new SQLException("Fail to execute query. No metadata available."),null);
  else {
         VisorFieldsQueryColumn[] names=new VisorFieldsQueryColumn[meta.size()];
         for (int i=0; i < meta.size(); i++) {
           GridIndexingFieldMetadata col=meta.get(i);
           names[i]=new VisorFieldsQueryColumn(col.typeName(),col.fieldName());
         }
-        GridBiTuple<List<Object[]>,List<?>> nextRows=fetchSqlQueryRows(fut,firstRow,arg.pageSize());
+        T2<List<Object[]>,List<?>> nextRows=fetchSqlQueryRows(fut,firstRow,arg.pageSize());
         g.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,nextRows.get2(),false));
         scheduleQueryRemoval(qryId);
-        return new GridBiTuple<>(null,new VisorFieldsQueryResultEx(g.localNode().id(),qryId,names,nextRows.get1(),nextRows.get2() != null));
+        return new T2<>(null,new VisorFieldsQueryResultEx(g.localNode().id(),qryId,names,nextRows.get1(),nextRows.get2() != null));
       }
     }
   }
  catch (  Exception e) {
-    return new GridBiTuple<>(e,null);
+    return new T2<>(e,null);
   }
 }
