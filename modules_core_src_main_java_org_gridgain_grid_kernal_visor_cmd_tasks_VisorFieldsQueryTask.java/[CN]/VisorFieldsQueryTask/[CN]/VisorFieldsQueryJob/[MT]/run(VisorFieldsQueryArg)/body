@@ -7,8 +7,8 @@
       GridCacheQueryFuture<Map.Entry<Object,Object>> fut=c.queries().createScanQuery(null).pageSize(arg.pageSize()).projection(g.forNodeIds(arg.proj())).execute();
       GridBiTuple<List<Object[]>,Map.Entry<Object,Object>> rows=fetchScanQueryRows(fut,null,arg.pageSize());
       Map.Entry<Object,Object> next=rows.get2();
-      g.<String,VisorScanStorageValType>nodeLocalMap().put(qryId,new VisorScanStorageValType(fut,next,false));
-      scheduleScanQueryRemoval(qryId);
+      g.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,next,false));
+      scheduleQueryRemoval(qryId);
       return new GridBiTuple<>(null,new VisorFieldsQueryResultEx(g.localNode().id(),qryId,SCAN_COL_NAMES,rows.get1(),next != null));
     }
  else {
@@ -23,8 +23,8 @@
           names[i]=new VisorFieldsQueryColumn(col.typeName(),col.fieldName());
         }
         GridBiTuple<List<Object[]>,List<?>> nextRows=fetchSqlQueryRows(fut,firstRow,arg.pageSize());
-        g.<String,VisorSqlStorageValType>nodeLocalMap().put(qryId,new VisorSqlStorageValType(fut,nextRows.get2(),false));
-        scheduleSqlQueryRemoval(qryId);
+        g.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,nextRows.get2(),false));
+        scheduleQueryRemoval(qryId);
         return new GridBiTuple<>(null,new VisorFieldsQueryResultEx(g.localNode().id(),qryId,names,nextRows.get1(),nextRows.get2() != null));
       }
     }
