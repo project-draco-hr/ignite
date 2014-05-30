@@ -1,8 +1,13 @@
 {
+  hctx.jobTracker().cancelJob(jobId);
   GridFuture<?> fut=finishFuture(jobId);
   if (fut != null) {
-    fut.cancel();
-    return true;
+    try {
+      fut.get();
+    }
+ catch (    Throwable e) {
+      if (e.getCause() instanceof GridHadoopTaskCancelledException)       return true;
+    }
   }
- else   return false;
+  return false;
 }
