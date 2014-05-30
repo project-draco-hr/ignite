@@ -1,31 +1,32 @@
 {
   GridCacheInterceptor retInterceptor=new InterceptorAdapter(){
     @Nullable @Override public Object onBeforePut(    Object key,    @Nullable Object oldVal,    Object newVal){
-      return (Integer)newVal + 1;
+      return null;
     }
   }
 ;
   interceptor.retInterceptor=retInterceptor;
   log.info("Update 1 " + op);
   update(0,op,key,1,null);
-  checkCacheValue(key,2);
+  checkCacheValue(key,null);
   assertEquals(1,interceptor.beforePutMap.size());
   GridBiTuple t=interceptor.beforePutMap.get(key);
   assertEquals(null,t.get1());
   assertEquals(1,t.get2());
-  assertEquals(1,interceptor.afterPutMap.size());
-  assertEquals(2,interceptor.afterPutMap.get(key));
-  assertInvokeCount(op);
+  assertCancelInvokeCount(op);
   interceptor.reset();
+  interceptor.disabled=true;
+  clearCaches();
+  cache(0).put(key,1);
+  checkCacheValue(key,1);
+  interceptor.disabled=false;
   interceptor.retInterceptor=retInterceptor;
   log.info("Update 2 " + op);
-  update(0,op,key,3,2);
-  checkCacheValue(key,4);
+  update(0,op,key,2,1);
+  checkCacheValue(key,1);
   assertEquals(1,interceptor.beforePutMap.size());
   t=interceptor.beforePutMap.get(key);
-  assertEquals(2,t.get1());
-  assertEquals(3,t.get2());
-  assertEquals(1,interceptor.afterPutMap.size());
-  assertEquals(4,interceptor.afterPutMap.get(key));
-  assertInvokeCount(op);
+  assertEquals(1,t.get1());
+  assertEquals(2,t.get2());
+  assertCancelInvokeCount(op);
 }
