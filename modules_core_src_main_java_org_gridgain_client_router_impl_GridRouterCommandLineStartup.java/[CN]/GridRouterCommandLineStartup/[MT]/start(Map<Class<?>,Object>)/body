@@ -7,13 +7,15 @@
   GridTcpRouterConfiguration tcpCfg=(GridTcpRouterConfiguration)beans.get(GridTcpRouterConfiguration.class);
   if (tcpCfg == null)   U.warn(log,"TCP router startup skipped (configuration not found).");
  else {
-    tcpRouter=new GridTcpRouterImpl(tcpCfg);
-    try {
-      tcpRouter.start();
-    }
- catch (    GridException e) {
-      U.error(log,"Failed to start TCP router on port " + tcpCfg.getPort() + ": "+ e.getMessage(),e);
-      tcpRouter=null;
+    tcpRouter=createRouter(tcpCfg);
+    if (tcpRouter != null) {
+      try {
+        tcpRouter.start();
+      }
+ catch (      GridException e) {
+        U.error(log,"Failed to start TCP router on port " + tcpCfg.getPort() + ": "+ e.getMessage(),e);
+        tcpRouter=null;
+      }
     }
   }
 }
