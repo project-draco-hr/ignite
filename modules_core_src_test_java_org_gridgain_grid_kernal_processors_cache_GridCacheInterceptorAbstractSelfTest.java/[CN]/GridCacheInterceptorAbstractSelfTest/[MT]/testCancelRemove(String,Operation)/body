@@ -1,0 +1,55 @@
+{
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public GridBiTuple onBeforeRemove(    Object key,    @Nullable Object val){
+      return new GridBiTuple(true,null);
+    }
+  }
+;
+  log.info("Remove 1 " + op);
+  remove(0,op,key,null,null);
+  checkCacheValue(key,null);
+  assertEquals(0,interceptor.beforeRemoveMap.size());
+  assertEquals(null,interceptor.beforeRemoveMap.get(key));
+  log.info("Remove 2 " + op);
+  interceptor.reset();
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public GridBiTuple onBeforeRemove(    Object key,    @Nullable Object val){
+      return new GridBiTuple(true,900);
+    }
+  }
+;
+  remove(0,op,key,null,900);
+  checkCacheValue(key,null);
+  assertEquals(0,interceptor.beforeRemoveMap.size());
+  assertEquals(null,interceptor.beforeRemoveMap.get(key));
+  interceptor.reset();
+  interceptor.disabled=true;
+  clearCaches();
+  cache(0).put(key,1);
+  checkCacheValue(key,1);
+  interceptor.reset();
+  interceptor.disabled=false;
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public GridBiTuple onBeforeRemove(    Object key,    @Nullable Object val){
+      return new GridBiTuple(true,null);
+    }
+  }
+;
+  log.info("Remove 3 " + op);
+  remove(0,op,key,1,null);
+  checkCacheValue(key,1);
+  assertEquals(1,interceptor.beforeRemoveMap.size());
+  assertEquals(1,interceptor.beforeRemoveMap.get(key));
+  interceptor.reset();
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public GridBiTuple onBeforeRemove(    Object key,    @Nullable Object val){
+      return new GridBiTuple(true,1000);
+    }
+  }
+;
+  log.info("Remove 4 " + op);
+  remove(0,op,key,1,1000);
+  checkCacheValue(key,1);
+  assertEquals(1,interceptor.beforeRemoveMap.size());
+  assertEquals(1,interceptor.beforeRemoveMap.get(key));
+}
