@@ -3,6 +3,15 @@
   for (  InetSocketAddress addr : ipFinder.getRegisteredAddresses()) {
     if (addr.getPort() == 0)     addr=addr.isUnresolved() ? new InetSocketAddress(addr.getHostName(),DFLT_PORT) : new InetSocketAddress(addr.getAddress(),DFLT_PORT);
     res.add(addr);
+    if (addrRslvr != null) {
+      try {
+        Collection<InetSocketAddress> extAddrs=addrRslvr.getExternalAddresses(addr);
+        if (extAddrs != null)         res.addAll(extAddrs);
+      }
+ catch (      GridException e) {
+        throw new GridSpiException("Failed to resolve internal address to external addresses: " + addr,e);
+      }
+    }
   }
   return res;
 }
