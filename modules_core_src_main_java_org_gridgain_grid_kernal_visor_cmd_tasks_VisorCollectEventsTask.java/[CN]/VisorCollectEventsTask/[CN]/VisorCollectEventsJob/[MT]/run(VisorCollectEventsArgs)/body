@@ -1,10 +1,15 @@
 {
   final long startEvtTime=arg.timeArgument() == null ? 0L : System.currentTimeMillis() - arg.timeArgument();
-  Collection<GridEvent> evt=g.events().localQuery(new GridPredicate<GridEvent>(){
+  Collection<GridEvent> evts=g.events().localQuery(new GridPredicate<GridEvent>(){
     @Override public boolean apply(    GridEvent event){
-      return (arg.typeArgument() == null || F.contains(arg.typeArgument(),event.type())) && event.timestamp() >= startEvtTime;
+      return (arg.typeArgument() == null || F.contains(arg.typeArgument(),event.type())) && event.timestamp() >= startEvtTime && filterVisor(event);
     }
   }
 );
-  return null;
+  Collection<VisorEventData> res=new ArrayList<>(evts.size());
+  for (  GridEvent e : evts) {
+    String m=mnemonic(e);
+    if (m != null)     res.add(new VisorEventData(e.name(),e.shortDisplay(),m,e.type(),e.timestamp()));
+  }
+  return res;
 }
