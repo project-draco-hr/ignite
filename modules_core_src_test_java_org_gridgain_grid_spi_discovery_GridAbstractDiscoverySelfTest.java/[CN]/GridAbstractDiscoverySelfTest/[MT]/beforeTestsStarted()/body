@@ -22,6 +22,14 @@ synchronized (mux) {
         }
       }
 );
+      spi.setAuthenticator(new GridDiscoverySpiNodeAuthenticator(){
+        @Override public GridSecurityContext authenticateNode(        GridNode n,        GridSecurityCredentials cred){
+          GridSecuritySubjectAdapter subj=new GridSecuritySubjectAdapter(GridSecuritySubjectType.REMOTE_NODE,n.id());
+          subj.permissions(new Allow());
+          return new GridSecurityContext(subj);
+        }
+      }
+);
       spi.spiStart(getTestGridName() + i);
       spis.add(spi);
       spiRsrcs.add(rsrcMgr);
