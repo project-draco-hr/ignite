@@ -1,0 +1,20 @@
+{
+  if (!busyLock.tryReadLock())   return false;
+  try {
+    GridHadoopJobMetadata meta=jobMetaPrj.get(jobId);
+    if (meta == null || meta.phase() == PHASE_COMPLETE || meta.phase() == PHASE_CANCELLING)     return false;
+    GridHadoopTaskCancelledException err=new GridHadoopTaskCancelledException("Job cancelled.");
+    jobMetaPrj.transform(jobId,new CancelJobClosure(err));
+  }
+  finally {
+    busyLock.readUnlock();
+  }
+  GridFuture<?> fut=finishFuture(jobId);
+  try {
+    fut.get();
+  }
+ catch (  Throwable e) {
+    if (e.getCause() instanceof GridHadoopTaskCancelledException)     return true;
+  }
+  return false;
+}

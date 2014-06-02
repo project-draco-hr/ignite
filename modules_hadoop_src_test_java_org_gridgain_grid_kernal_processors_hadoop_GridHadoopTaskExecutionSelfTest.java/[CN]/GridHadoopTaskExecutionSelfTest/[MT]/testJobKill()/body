@@ -1,14 +1,16 @@
 {
   Configuration cfg=prepareJobForCancelling();
-  GridHadoopProcessorAdapter hadoop=((GridKernal)grid(0)).context().hadoop();
+  GridHadoop hadoop=grid(0).hadoop();
   GridHadoopJobId jobId=new GridHadoopJobId(UUID.randomUUID(),1);
+  boolean killRes=hadoop.kill(jobId);
+  assertFalse(killRes);
   final GridFuture<?> fut=hadoop.submit(jobId,new GridHadoopDefaultJobInfo(cfg));
   int time=0;
   while (executedTasks.get() != 32) {
     Thread.sleep(100);
     assertTrue(time++ < 100);
   }
-  boolean killRes=hadoop.kill(jobId);
+  killRes=hadoop.kill(jobId);
   assertTrue(killRes);
   GridTestUtils.assertThrows(log,new Callable<Object>(){
     @Override public Object call() throws Exception {
@@ -18,4 +20,6 @@
   }
 ,GridException.class,null);
   assertEquals(executedTasks.get(),cancelledTasks.get());
+  killRes=hadoop.kill(jobId);
+  assertFalse(killRes);
 }
