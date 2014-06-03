@@ -1,0 +1,16 @@
+{
+  if (!(obj instanceof GridPortableObject))   throw new IllegalArgumentException();
+  GridPortableObject portable=(GridPortableObject)obj;
+  GridPortableClassMetadata metadata=metadataMap.get(portable.typeId());
+  if (metadata == null) {
+    Class<? extends GridPortableObject> cls=typesMap.get(portable.typeId());
+    if (cls == null)     throw new IllegalArgumentException("No Java class for portable type " + portable.typeId());
+    MetadataCollectingWriter writer=new MetadataCollectingWriter();
+    portable.writePortable(writer);
+    metadata=new GridPortableClassMetadata(portable.typeId(),cls,writer.fields());
+    metadataMap.put(portable.typeId(),metadata);
+  }
+  Writer writer=new Writer();
+  writer.writePortable(portable);
+  return writer.end();
+}
