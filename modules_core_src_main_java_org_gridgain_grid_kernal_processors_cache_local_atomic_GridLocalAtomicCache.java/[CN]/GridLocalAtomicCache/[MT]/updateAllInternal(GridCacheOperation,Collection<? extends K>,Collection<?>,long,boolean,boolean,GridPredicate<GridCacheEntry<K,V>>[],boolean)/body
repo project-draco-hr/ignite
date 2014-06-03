@@ -7,6 +7,7 @@
   Iterator<?> valsIter=vals != null ? vals.iterator() : null;
   GridBiTuple<Boolean,?> res=null;
   GridCachePartialUpdateException err=null;
+  boolean intercept=ctx.config().getInterceptor() != null;
   for (  K key : keys) {
     Object val=valsIter != null ? valsIter.next() : null;
     if (key == null)     continue;
@@ -14,7 +15,7 @@
       GridCacheEntryEx<K,V> entry=null;
       try {
         entry=entryEx(key);
-        GridBiTuple<Boolean,V> t=entry.innerUpdateLocal(ver,val == null ? DELETE : op,val,storeEnabled,retval,ttl,true,true,filter);
+        GridBiTuple<Boolean,V> t=entry.innerUpdateLocal(ver,val == null ? DELETE : op,val,storeEnabled,retval,ttl,true,true,filter,intercept);
         if (res == null) {
           if (op == TRANSFORM && val instanceof GridCacheTransformComputeClosure) {
             assert retval;

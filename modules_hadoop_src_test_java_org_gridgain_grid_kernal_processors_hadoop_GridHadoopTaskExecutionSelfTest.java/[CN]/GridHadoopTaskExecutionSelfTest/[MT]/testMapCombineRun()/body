@@ -17,10 +17,9 @@
   FileInputFormat.setInputPaths(job,new Path("ggfs:///"));
   FileOutputFormat.setOutputPath(job,new Path("ggfs:///output"));
   job.setJarByClass(getClass());
-  GridHadoopProcessorAdapter hadoop=((GridKernal)grid(0)).context().hadoop();
   GridHadoopJobId jobId=new GridHadoopJobId(UUID.randomUUID(),2);
-  GridFuture<?> fut=hadoop.submit(jobId,new GridHadoopDefaultJobInfo(job.getConfiguration()));
+  GridFuture<?> fut=grid(0).hadoop().submit(jobId,new GridHadoopDefaultJobInfo(job.getConfiguration()));
   fut.get();
   assertEquals(lineCnt,totalLineCnt.get());
-  for (int g=0; g < gridCount(); g++)   ((GridKernal)grid(g)).context().hadoop().finishFuture(jobId).get();
+  for (int g=0; g < gridCount(); g++)   grid(g).hadoop().finishFuture(jobId).get();
 }

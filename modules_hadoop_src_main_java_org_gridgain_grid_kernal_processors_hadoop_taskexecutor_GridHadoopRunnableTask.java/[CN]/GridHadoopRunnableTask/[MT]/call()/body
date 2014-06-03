@@ -8,7 +8,10 @@
     runTask(info,runCombiner);
     if (runCombiner)     runTask(new GridHadoopTaskInfo(info.nodeId(),COMBINE,info.jobId(),info.taskNumber(),info.attempt(),null),runCombiner);
   }
- catch (  Throwable e) {
+ catch (  GridHadoopTaskCancelledException e) {
+    state=GridHadoopTaskState.CANCELED;
+  }
+catch (  Throwable e) {
     state=GridHadoopTaskState.FAILED;
     err=e;
   }
@@ -17,10 +20,6 @@
     onTaskFinished(state,err);
     Thread.currentThread().setContextClassLoader(old);
     if (runCombiner)     local.close();
-  }
-  if (err != null) {
-    if (err instanceof GridException)     throw (GridException)err;
- else     throw new GridException("Task execution failed.",err);
   }
   return null;
 }
