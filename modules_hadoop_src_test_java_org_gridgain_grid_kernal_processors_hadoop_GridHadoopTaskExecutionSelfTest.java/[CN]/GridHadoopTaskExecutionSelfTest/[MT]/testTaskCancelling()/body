@@ -2,10 +2,14 @@
   Configuration cfg=prepareJobForCancelling();
   GridHadoopJobId jobId=new GridHadoopJobId(UUID.randomUUID(),1);
   final GridFuture<?> fut=grid(0).hadoop().submit(jobId,new GridHadoopDefaultJobInfo(cfg));
-  int time=0;
-  while (executedTasks.get() != 32) {
-    Thread.sleep(100);
-    assertTrue(time++ < 100);
+  if (!GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return executedTasks.get() == 32;
+    }
+  }
+,20000)) {
+    U.dumpThreads(log);
+    assertTrue(false);
   }
   failMapperId=1;
   GridTestUtils.assertThrows(log,new Callable<Object>(){

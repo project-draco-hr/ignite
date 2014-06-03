@@ -5,10 +5,14 @@
   boolean killRes=hadoop.kill(jobId);
   assertFalse(killRes);
   final GridFuture<?> fut=hadoop.submit(jobId,new GridHadoopDefaultJobInfo(cfg));
-  int time=0;
-  while (executedTasks.get() != 32) {
-    Thread.sleep(100);
-    assertTrue(time++ < 100);
+  if (!GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return executedTasks.get() == 32;
+    }
+  }
+,20000)) {
+    U.dumpThreads(log);
+    assertTrue(false);
   }
   killRes=hadoop.kill(jobId);
   assertTrue(killRes);
