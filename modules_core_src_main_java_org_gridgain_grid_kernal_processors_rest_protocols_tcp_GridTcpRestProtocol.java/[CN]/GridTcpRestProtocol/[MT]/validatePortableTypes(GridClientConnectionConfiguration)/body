@@ -1,0 +1,21 @@
+{
+  if (cfg.getPortableTypesMap() == null)   return;
+  for (  Map.Entry<Integer,Class<? extends GridPortableObject>> entry : cfg.getPortableTypesMap().entrySet()) {
+    Integer typeId=entry.getKey();
+    Class<? extends GridPortableObject> cls=entry.getValue();
+    if (typeId < 0)     throw new GridException("Negative portable types identifiers reserved for system use " + "[typeId=" + typeId + ", cls="+ cls+ ']');
+    Constructor<?> ctor;
+    try {
+      ctor=cls.getConstructor();
+    }
+ catch (    NoSuchMethodException e) {
+      throw new GridException("Portable object class must define public no-arg constructor " + "[typeId=" + typeId + ", cls="+ cls+ ']',e);
+    }
+    try {
+      ctor.newInstance();
+    }
+ catch (    Exception e) {
+      throw new GridException("Can not instantiate portable object instance using public no-arg constructor " + "[typeId=" + typeId + ", cls="+ cls+ ']',e);
+    }
+  }
+}
