@@ -1,4 +1,15 @@
 {
-  out.writeInt(portable.typeId());
-  portable.writePortable(this);
+  if (portable != null) {
+    int handle=handles.lookup(portable);
+    if (handle >= 0) {
+      out.writeByte(OBJECT_TYPE_REF);
+      out.writeInt(handle);
+    }
+ else {
+      out.writeByte(OBJECT_TYPE_OBJECT);
+      out.writeInt(portable.typeId());
+      portable.writePortable(this);
+    }
+  }
+ else   out.writeByte(OBJECT_TYPE_NULL);
 }
