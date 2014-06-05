@@ -2,5 +2,12 @@
   InetAddress locHost=InetAddress.getByName("127.0.0.1");
   try (GridTcpForwardServer tcpForwardSrv1=new GridTcpForwardServer(locHost,extPort1,locHost,localPort1);GridTcpForwardServer tcpForwardSrv2=new GridTcpForwardServer(locHost,extPort2,locHost,localPort2);Grid g1=startGrid(0);Grid g2=startGrid(1)){
     assertEquals(2,getTopologySize(2));
+    Collection<Integer> t=g1.compute().broadcast(new Callable<Integer>(){
+      @Override public Integer call() throws Exception {
+        return 13;
+      }
+    }
+).get();
+    assertEquals(F.asList(13,13),t);
   }
  }
