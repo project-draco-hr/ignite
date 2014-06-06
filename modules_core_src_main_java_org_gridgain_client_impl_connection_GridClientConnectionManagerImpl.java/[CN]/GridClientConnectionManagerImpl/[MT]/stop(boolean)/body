@@ -1,0 +1,12 @@
+{
+  Collection<GridClientConnection> closeConns;
+  if (closed)   return;
+  closed=true;
+  closeConns=new ArrayList<>(conns.values());
+  conns.clear();
+  nodeConns.clear();
+  for (  GridClientConnection conn : closeConns)   conn.close(CLIENT_CLOSED,waitCompletion);
+  if (pingExecutor != null)   GridClientUtils.shutdownNow(GridClientConnectionManager.class,pingExecutor,log);
+  GridClientUtils.shutdownNow(GridClientConnectionManager.class,executor,log);
+  if (srv != null)   srv.stop();
+}

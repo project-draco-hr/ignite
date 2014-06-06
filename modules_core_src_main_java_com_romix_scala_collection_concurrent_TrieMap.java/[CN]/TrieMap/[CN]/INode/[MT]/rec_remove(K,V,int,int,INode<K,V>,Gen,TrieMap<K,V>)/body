@@ -1,0 +1,65 @@
+{
+  MainNode<K,V> m=GCAS_READ(ct);
+  if (m instanceof CNode) {
+    CNode<K,V> cn=(CNode<K,V>)m;
+    int idx=(hc >>> lev) & 0x1f;
+    int bmp=cn.bitmap;
+    int flag=1 << idx;
+    if ((bmp & flag) == 0)     return Option.makeOption();
+ else {
+      int pos=Integer.bitCount(bmp & (flag - 1));
+      BasicNode sub=cn.array[pos];
+      Option<V> res=null;
+      if (sub instanceof INode) {
+        INode<K,V> in=(INode<K,V>)sub;
+        if (startgen == in.gen)         res=in.rec_remove(k,v,hc,lev + 5,this,startgen,ct);
+ else {
+          if (GCAS(cn,cn.renewed(startgen,ct),ct))           res=rec_remove(k,v,hc,lev,parent,startgen,ct);
+ else           res=null;
+        }
+      }
+ else       if (sub instanceof SNode) {
+        SNode<K,V> sn=(SNode<K,V>)sub;
+        if (sn.hc == hc && equal(sn.k,k,ct) && (v == null || v.equals(sn.v))) {
+          MainNode<K,V> ncn=cn.removedAt(pos,flag,gen).toContracted(lev);
+          if (GCAS(cn,ncn,ct))           res=Option.makeOption(sn.v);
+ else           res=null;
+        }
+ else         res=Option.makeOption();
+      }
+      if (res instanceof None || (res == null))       return res;
+ else {
+        if (parent != null) {
+          MainNode<K,V> n=GCAS_READ(ct);
+          if (n instanceof TNode)           cleanParent(n,parent,ct,hc,lev,startgen);
+        }
+        return res;
+      }
+    }
+  }
+ else   if (m instanceof TNode) {
+    clean(parent,ct,lev - 5);
+    return null;
+  }
+ else   if (m instanceof LNode) {
+    LNode<K,V> ln=(LNode<K,V>)m;
+    if (v == null) {
+      Option<V> optv=ln.get(k);
+      MainNode<K,V> nn=ln.removed(k,ct);
+      if (GCAS(ln,nn,ct))       return optv;
+ else       return null;
+    }
+ else {
+      Option<V> tmp=ln.get(k);
+      if (tmp instanceof Some) {
+        Some<V> tmp1=(Some<V>)tmp;
+        if (tmp1.get() == v) {
+          MainNode<K,V> nn=ln.removed(k,ct);
+          if (GCAS(ln,nn,ct))           return tmp;
+ else           return null;
+        }
+      }
+    }
+  }
+  throw new RuntimeException("Should not happen");
+}

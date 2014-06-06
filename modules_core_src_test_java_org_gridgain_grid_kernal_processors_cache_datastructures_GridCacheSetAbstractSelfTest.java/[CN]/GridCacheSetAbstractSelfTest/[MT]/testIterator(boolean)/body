@@ -1,15 +1,8 @@
 {
   final GridCacheSet<Integer> set0=cache().dataStructures().set(SET_NAME,collocated,true);
-  GridTestUtils.assertThrows(log,new Callable<Void>(){
-    @Override public Void call() throws Exception {
-      set0.iterator();
-      return null;
-    }
-  }
-,UnsupportedOperationException.class,null);
   for (int i=0; i < gridCount(); i++) {
     GridCacheSet<Integer> set=cache(i).dataStructures().set(SET_NAME,collocated,false);
-    assertFalse(set.iteratorEx().hasNext());
+    assertFalse(set.iterator().hasNext());
   }
   int cnt=0;
   for (int i=0; i < gridCount(); i++) {
@@ -21,7 +14,7 @@
     assertSetContent(set,cnt);
   }
   Collection<Integer> data=new HashSet<>(cnt);
-  GridCloseableIterator<Integer> iter=set0.iteratorEx();
+  Iterator<Integer> iter=set0.iterator();
   for (int i=0; i < cnt; i++)   assertTrue(data.add(iter.next()));
   assertFalse(iter.hasNext());
   assertEquals(cnt,data.size());
@@ -29,10 +22,10 @@
   set0.clear();
   for (int i=0; i < gridCount(); i++) {
     GridCacheSet<Integer> set=cache(i).dataStructures().set(SET_NAME,collocated,false);
-    assertFalse(set.iteratorEx().hasNext());
+    assertFalse(set.iterator().hasNext());
   }
   for (int i=0; i < 10; i++)   assertTrue(set0.add(i));
-  iter=set0.iteratorEx();
+  iter=set0.iterator();
   while (iter.hasNext()) {
     Integer val=iter.next();
     if (val % 2 == 0)     iter.remove();

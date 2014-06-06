@@ -1,0 +1,31 @@
+{
+  while (true) {
+    if (m == null)     return null;
+ else {
+      MainNode<K,V> prev=m.prev;
+      INode<K,V> ctr=ct.readRoot(true);
+      if (prev == null)       return m;
+      if (prev instanceof FailedNode) {
+        FailedNode<K,V> fn=(FailedNode<K,V>)prev;
+        if (CAS(m,fn.prev))         return fn.prev;
+ else {
+          m=mainnode;
+          continue;
+        }
+      }
+ else       if (prev instanceof MainNode) {
+        if ((ctr.gen == gen) && ct.nonReadOnly()) {
+          if (m.CAS_PREV(prev,null))           return m;
+ else {
+            continue;
+          }
+        }
+ else {
+          m.CAS_PREV(prev,new FailedNode<K,V>(prev));
+          return GCAS_Complete(mainnode,ct);
+        }
+      }
+    }
+    throw new RuntimeException("Should not happen");
+  }
+}
