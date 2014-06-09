@@ -1,0 +1,19 @@
+{
+  if (initGuard.compareAndSet(false,true)) {
+    try {
+      if (log.isDebugEnabled())       log.debug("Initializing external hadoop task: " + req);
+      job=jobFactory.createJob(req.jobId(),req.jobInfo());
+      clsLdrCtx=new GridHadoopJobClassLoadingContext(nodeDesc.parentNodeId(),job,log);
+      clsLdrCtx.initializeClassLoader();
+      shuffleJob=new GridHadoopShuffleJob<>(comm.localProcessDescriptor(),log,job,mem,job.reducers(),req.hasMappers());
+      initializeExecutors(req);
+      if (log.isDebugEnabled())       log.debug("External process initialized [initWaitTime=" + (System.currentTimeMillis() - startTime) + ']');
+      initFut.onDone(null,null);
+    }
+ catch (    GridException e) {
+      log.error("Failed to initialize process: " + req,e);
+      initFut.onDone(e);
+    }
+  }
+ else   log.warning("Duplicate initialize process request received (will ignore): " + req);
+}
