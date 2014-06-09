@@ -1,0 +1,33 @@
+{
+  Class<? extends GridSpi> spiCls=spi.getClass();
+  HashMap<String,Object> res=new HashMap<>();
+  res.put("Class Name",compactClass(spi));
+  for (  Method mtd : spiCls.getDeclaredMethods()) {
+    if (mtd.isAnnotationPresent(GridSpiConfiguration.class) && !mtd.isAnnotationPresent(Deprecated.class)) {
+      String mtdName=mtd.getName();
+      if (mtdName.startsWith("set")) {
+        String propName=Character.toLowerCase(mtdName.charAt(3)) + mtdName.substring(4);
+        String[] getterNames=new String[]{"get" + mtdName.substring(3),"is" + mtdName.substring(3),"get" + mtdName.substring(3) + "Formatted"};
+        try {
+          for (          String getterName : getterNames) {
+            try {
+              Method getter=spiCls.getDeclaredMethod(getterName);
+              Object getRes=getter.invoke(spi);
+              res.put(propName,compactObject(getRes));
+              break;
+            }
+ catch (            NoSuchMethodException ignored) {
+            }
+          }
+        }
+ catch (        IllegalAccessException ignored) {
+          res.put(propName,"Error: Method Cannot Be Accessed");
+        }
+catch (        InvocationTargetException ite) {
+          res.put(propName,("Error: Method Threw An Exception: " + ite));
+        }
+      }
+    }
+  }
+  return new GridBiTuple<String,Map<String,Object>>(spi.getName(),res);
+}
