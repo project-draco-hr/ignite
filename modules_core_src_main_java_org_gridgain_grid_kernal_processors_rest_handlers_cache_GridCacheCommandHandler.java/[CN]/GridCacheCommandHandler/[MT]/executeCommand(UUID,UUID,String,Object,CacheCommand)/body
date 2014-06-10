@@ -1,0 +1,10 @@
+{
+  final boolean locExec=destId == null || destId.equals(ctx.localNodeId()) || ctx.cache().cache(cacheName) != null;
+  if (locExec) {
+    final GridCacheProjection<Object,Object> cache=localCache(cacheName).forSubjectId(clientId);
+    return op.apply(cache,ctx).chain(resultWrapper(cache,key));
+  }
+ else {
+    return ctx.grid().forPredicate(F.nodeForNodeId(destId)).compute().withNoFailover().call(new CacheOperationCallable(clientId,cacheName,op,key));
+  }
+}
