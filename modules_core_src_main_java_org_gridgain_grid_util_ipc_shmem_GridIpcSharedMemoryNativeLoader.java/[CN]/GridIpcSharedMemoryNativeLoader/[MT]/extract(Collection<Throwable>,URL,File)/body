@@ -1,9 +1,8 @@
 {
   FileOutputStream os=null;
   InputStream is=null;
-  boolean err=true;
   try {
-    if (!target.exists() || isStale(src,target)) {
+    if (!target.exists()) {
       is=src.openStream();
       if (is != null) {
         os=new FileOutputStream(target);
@@ -14,7 +13,7 @@
     }
     if (!U.isWindows())     Runtime.getRuntime().exec(new String[]{"chmod","775",target.getCanonicalPath()}).waitFor();
     System.load(target.getPath());
-    err=false;
+    return true;
   }
  catch (  IOException|UnsatisfiedLinkError|InterruptedException e) {
     errs.add(e);
@@ -22,7 +21,6 @@
  finally {
     U.closeQuiet(os);
     U.closeQuiet(is);
-    if (err && target.exists())     target.delete();
   }
-  return !err;
+  return false;
 }
