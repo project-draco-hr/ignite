@@ -7,7 +7,9 @@
   job.setNumReduceTasks(0);
   setupFileSytems(job.getConfiguration());
   FileOutputFormat.setOutputPath(job,new Path(ggfsScheme() + PATH_INPUT));
-  grid(0).hadoop().submit(new GridHadoopJobId(UUID.randomUUID(),1),new GridHadoopDefaultJobInfo(job.getConfiguration())).get(60000);
+  X.printerrln("Data generation started.");
+  grid(0).hadoop().submit(new GridHadoopJobId(UUID.randomUUID(),1),new GridHadoopDefaultJobInfo(job.getConfiguration())).get(180000);
+  X.printerrln("Data generation complete.");
   job=Job.getInstance();
   setupFileSytems(job.getConfiguration());
   job.getConfiguration().set(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY,JavaSerialization.class.getName() + "," + WritableSerialization.class);
@@ -19,7 +21,9 @@
   job.setMapOutputValueClass(NullWritable.class);
   job.setOutputKeyClass(Text.class);
   job.setOutputValueClass(NullWritable.class);
-  grid(0).hadoop().submit(new GridHadoopJobId(UUID.randomUUID(),2),new GridHadoopDefaultJobInfo(job.getConfiguration())).get(60000);
+  X.printerrln("Job started.");
+  grid(0).hadoop().submit(new GridHadoopJobId(UUID.randomUUID(),2),new GridHadoopDefaultJobInfo(job.getConfiguration())).get(180000);
+  X.printerrln("Job complete.");
   Path outDir=new Path(ggfsScheme() + PATH_OUTPUT);
   AbstractFileSystem fs=AbstractFileSystem.get(outDir.toUri(),job.getConfiguration());
   for (  FileStatus file : fs.listStatus(outDir)) {
