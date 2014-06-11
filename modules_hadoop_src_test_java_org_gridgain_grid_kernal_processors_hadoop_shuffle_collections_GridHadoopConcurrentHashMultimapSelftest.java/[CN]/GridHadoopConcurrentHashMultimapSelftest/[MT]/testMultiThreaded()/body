@@ -1,6 +1,7 @@
 {
   GridUnsafeMemory mem=new GridUnsafeMemory(0);
   X.println("___ Started");
+  Random rnd=new GridRandom();
   for (int i=0; i < 20; i++) {
     Job job=Job.getInstance();
     job.setMapOutputKeyClass(IntWritable.class);
@@ -11,10 +12,10 @@
     multithreaded(new Callable<Object>(){
       @Override public Object call() throws Exception {
         X.println("___ TH in");
-        Random rnd=ThreadLocalRandom.current();
+        Random rnd=new GridRandom();
         IntWritable key=new IntWritable();
         IntWritable val=new IntWritable();
-        GridHadoopConcurrentHashMultimap.Adder a=m.startAdding();
+        GridHadoopMultimap.Adder a=m.startAdding();
         for (int i=0; i < 50000; i++) {
           int k=rnd.nextInt(32000);
           int v=rnd.nextInt();
@@ -34,11 +35,11 @@
         return null;
       }
     }
-,17);
+,3 + rnd.nextInt(27));
     X.println("___ Check: " + m.capacity());
     assertEquals(mm.size(),m.keys());
     assertTrue(m.capacity() > 32000);
-    GridHadoopTaskInput in=m.input();
+    GridHadoopTaskInput in=m.input(null);
     while (in.next()) {
       IntWritable key=(IntWritable)in.key();
       Iterator<?> valsIter=in.values();
