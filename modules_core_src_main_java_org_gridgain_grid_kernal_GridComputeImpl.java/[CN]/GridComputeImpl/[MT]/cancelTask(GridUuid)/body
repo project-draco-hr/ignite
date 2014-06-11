@@ -3,11 +3,8 @@
   guard();
   try {
     GridComputeTaskFuture<Object> task=ctx.task().taskFuture(sesId);
-    if (task != null) {
-      boolean loc=F.nodeIds(prj.nodes()).contains(ctx.localNodeId());
-      if (loc)       task.cancel();
-    }
- else     ctx.io().send(prj.forRemotes().nodes(),TOPIC_TASK_CANCEL,new GridTaskCancelRequest(sesId),SYSTEM_POOL);
+    if (task != null)     task.cancel();
+ else     if (prj.node(sesId.globalId()) != null)     ctx.io().send(sesId.globalId(),TOPIC_TASK_CANCEL,new GridTaskCancelRequest(sesId),SYSTEM_POOL);
   }
   finally {
     unguard();
