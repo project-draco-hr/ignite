@@ -1,7 +1,10 @@
 {
+  if (op == DELETE)   ctx.checkSecurity(GridSecurityPermission.CACHE_REMOVE);
+ else   ctx.checkSecurity(GridSecurityPermission.CACHE_PUT);
   GridCacheVersion ver=ctx.versions().next();
+  UUID subjId=ctx.subjectIdPerCall(null);
   if (storeEnabled && keys.size() > 1) {
-    updateWithBatch(op,keys,vals,ver,filter);
+    updateWithBatch(op,keys,vals,ver,filter,subjId);
     return null;
   }
   Iterator<?> valsIter=vals != null ? vals.iterator() : null;
@@ -15,7 +18,7 @@
       GridCacheEntryEx<K,V> entry=null;
       try {
         entry=entryEx(key);
-        GridBiTuple<Boolean,V> t=entry.innerUpdateLocal(ver,val == null ? DELETE : op,val,storeEnabled,retval,ttl,true,true,filter,intercept);
+        GridBiTuple<Boolean,V> t=entry.innerUpdateLocal(ver,val == null ? DELETE : op,val,storeEnabled,retval,ttl,true,true,filter,intercept,subjId);
         if (res == null) {
           if (op == TRANSFORM && val instanceof GridCacheTransformComputeClosure) {
             assert retval;
