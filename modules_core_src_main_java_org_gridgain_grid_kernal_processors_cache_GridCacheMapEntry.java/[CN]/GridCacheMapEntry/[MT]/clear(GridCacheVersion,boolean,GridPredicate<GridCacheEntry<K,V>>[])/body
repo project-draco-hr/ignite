@@ -1,0 +1,49 @@
+{
+  cctx.denyOnFlag(GridCacheFlag.READ);
+  boolean ret;
+  boolean rmv;
+  boolean marked;
+  while (true) {
+    ret=false;
+    rmv=false;
+    marked=false;
+    GridCacheVersion startVer=null;
+    if (!F.isEmptyOrNulls(filter)) {
+synchronized (this) {
+        startVer=this.ver;
+      }
+      if (!cctx.isAll(this,filter))       return false;
+    }
+synchronized (this) {
+      if (startVer != null && !startVer.equals(this.ver))       continue;
+      V val=saveValueForIndexUnlocked();
+      try {
+        if ((!hasReaders() || readers)) {
+          if (!(marked=markObsolete0(ver,true))) {
+            if (log.isDebugEnabled())             log.debug("Entry could not be marked obsolete (it is still used): " + this);
+            break;
+          }
+          clearReaders();
+        }
+ else {
+          if (log.isDebugEnabled())           log.debug("Entry could not be marked obsolete (it still has readers): " + this);
+          break;
+        }
+      }
+ catch (      GridCacheEntryRemovedException ignore) {
+        if (log.isDebugEnabled())         log.debug("Got removed entry when clearing (will simply return): " + this);
+        ret=true;
+        break;
+      }
+      if (log.isDebugEnabled())       log.debug("Entry has been marked obsolete: " + this);
+      clearIndex(val);
+      releaseSwap();
+      ret=true;
+      rmv=true;
+      break;
+    }
+  }
+  if (marked)   onMarkedObsolete();
+  if (rmv)   cctx.cache().removeEntry(this);
+  return ret;
+}

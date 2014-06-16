@@ -4,9 +4,9 @@
     final String queueName="queue-name-" + UUID.randomUUID();
     System.out.println(StringUtils.repeat("\n",20));
     final CountDownLatch latch1=new CountDownLatch(1);
-    GridFuture<?> fut1=grid(0).scheduler().runLocal(new CAX(){
-      @GridInstanceResource private Grid grid;
-      @Override public void applyx() throws GridException {
+    GridFuture<?> fut1=GridTestUtils.runAsync(new Callable<Void>(){
+      @Override public Void call() throws GridException {
+        Grid grid=grid(0);
         GridCacheQueue<Integer> queue=grid.cache(null).dataStructures().queue(queueName,QUEUE_CAP,true,true);
         for (int i=0; i < QUEUE_CAP * 2; i++) {
           if (i == QUEUE_CAP) {
@@ -22,15 +22,16 @@
             throw e;
           }
         }
+        return null;
       }
     }
 );
     latch1.await();
     startAdditionalNodes(BACKUP_CNT + 2,queueName);
     System.out.println(StringUtils.repeat("\n",20));
-    GridFuture<?> fut2=grid(GRID_CNT).scheduler().runLocal(new CAX(){
-      @GridInstanceResource private Grid grid;
-      @Override public void applyx() throws GridException {
+    GridFuture<?> fut2=GridTestUtils.runAsync(new Callable<Void>(){
+      @Override public Void call() throws GridException {
+        Grid grid=grid(GRID_CNT);
         GridCacheQueue<Integer> queue=grid.cache(null).dataStructures().queue(queueName,Integer.MAX_VALUE,true,true);
         int cnt=0;
         do {
@@ -51,6 +52,7 @@
           }
         }
  while (cnt < QUEUE_CAP * 2);
+        return null;
       }
     }
 );

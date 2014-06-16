@@ -1,0 +1,11 @@
+{
+  for (Iterator<Map.Entry<UUID,GridClientConnection>> it=nodeConns.entrySet().iterator(); it.hasNext(); ) {
+    Map.Entry<UUID,GridClientConnection> entry=it.next();
+    GridClientConnection conn=entry.getValue();
+    if (conn.closeIfIdle(cfg.getMaxConnectionIdleTime())) {
+      conns.remove(conn.serverAddress(),conn);
+      nodeConns.remove(entry.getKey(),conn);
+    }
+  }
+  for (  GridClientConnection conn : conns.values())   if (conn.closeIfIdle(cfg.getMaxConnectionIdleTime()))   conns.remove(conn.serverAddress(),conn);
+}
