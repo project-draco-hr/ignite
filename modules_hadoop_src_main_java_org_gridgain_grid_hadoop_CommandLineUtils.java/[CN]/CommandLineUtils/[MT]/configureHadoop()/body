@@ -1,0 +1,55 @@
+{
+  String hadoopHome=System.getenv("HADOOP_HOME");
+  if (hadoopHome == null || hadoopHome.isEmpty()) {
+    System.out.println("ERROR: HADOOP_HOME variable is not set.");
+    return;
+  }
+  hadoopHome=hadoopHome.replaceAll("\"","");
+  System.out.println("\nFound Hadoop in " + hadoopHome + "\n");
+  String hadoopCommonHome=System.getenv("HADOOP_COMMON_HOME");
+  File hadoopDir=new File(hadoopHome);
+  File hadoopCommonDir;
+  if (hadoopCommonHome == null || hadoopCommonHome.isEmpty())   hadoopCommonDir=new File(hadoopDir,"share/hadoop/common");
+ else   hadoopCommonDir=new File(hadoopCommonHome);
+  File hadoopCommonLibDir=new File(hadoopCommonDir,"lib");
+  if (U.isWindows()) {
+    File hadoopBinDir=new File(hadoopDir,"bin");
+    if (!hadoopBinDir.exists()) {
+      System.out.println("Invalid hadoop home directory. 'bin' subdirectory was not found.");
+      return;
+    }
+    File winutilsFile=new File(hadoopBinDir,WINUTILS_EXE);
+    if (!winutilsFile.exists() && getAnswer(WINUTILS_EXE + " doesn't exist. It may be replaced by a stub. Create it ?"))     winutilsFile.createNewFile();
+    processCmdFiles(hadoopDir,"bin","sbin","libexec");
+  }
+  String gridgainHome=U.getGridGainHome();
+  System.out.println("GRIDGAIN_HOME=" + gridgainHome);
+  File gridGainLibs=new File(new File(gridgainHome),"libs");
+  File[] jarFiles=gridGainLibs.listFiles(new FilenameFilter(){
+    @Override public boolean accept(    File dir,    String name){
+      return name.endsWith(".jar");
+    }
+  }
+);
+  boolean jarsExist=true;
+  for (  File file : jarFiles) {
+    File targetFile=new File(hadoopCommonLibDir,file.getName());
+    if (!targetFile.exists())     jarsExist=false;
+  }
+  if (!jarsExist && getAnswer("Current GridGain JAR files are not found in Hadoop libs directory. " + "Create appropriate symbolic links ?")) {
+    File[] oldGridGainJarFiles=hadoopCommonLibDir.listFiles(new FilenameFilter(){
+      @Override public boolean accept(      File dir,      String name){
+        return name.startsWith("gridgain-");
+      }
+    }
+);
+    if (oldGridGainJarFiles.length > 0) {
+      if (!getAnswer("The Hadoop libs directory contains JARs from other GridGain installation. " + "It needs to be deleted to continue. Continue ?"))       return;
+      for (      File file : oldGridGainJarFiles)       file.delete();
+    }
+    for (    File file : jarFiles) {
+      File targetFile=new File(hadoopCommonLibDir,file.getName());
+      Files.createSymbolicLink(targetFile.toPath(),file.toPath());
+    }
+  }
+}
