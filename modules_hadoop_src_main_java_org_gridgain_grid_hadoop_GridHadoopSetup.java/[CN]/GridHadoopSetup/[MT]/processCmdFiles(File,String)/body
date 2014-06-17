@@ -9,11 +9,14 @@
     }
 );
     for (    File file : cmdFiles) {
-      String content;
+      String content=null;
       try (Scanner scanner=new Scanner(file)){
         content=scanner.useDelimiter("\\Z").next();
       }
-       boolean invalid=false;
+ catch (      FileNotFoundException e) {
+        exit("Failed to read file '" + file + "'.");
+      }
+      boolean invalid=false;
       for (int i=0; i < content.length(); i++) {
         if (content.charAt(i) == '\n' && (i == 0 || content.charAt(i - 1) != '\r')) {
           invalid=true;
@@ -23,14 +26,17 @@
       if (invalid) {
         answer=answer || getAnswer("One or more *.CMD files has invalid new line character. Replace them?");
         if (!answer)         return;
-        file.renameTo(new File(file.getAbsolutePath() + ".bak"));
+        if (!file.renameTo(new File(file.getAbsolutePath() + ".bak")))         exit("Failed to rename file '" + file.getPath() + "'.");
         try (BufferedWriter writer=new BufferedWriter(new FileWriter(file))){
           for (int i=0; i < content.length(); i++) {
             if (content.charAt(i) == '\n' && (i == 0 || content.charAt(i - 1) != '\r'))             writer.write("\r");
             writer.write(content.charAt(i));
           }
         }
-       }
+ catch (        IOException e) {
+          exit("Failed to write file '" + file.getPath() + "'. "+ e.getMessage());
+        }
+      }
     }
   }
 }
