@@ -1,0 +1,19 @@
+{
+  if (wrapper == null)   throw new GridException("Failed to find query future (query has been expired).");
+  GridCacheQueryFuture<?> fut=wrapper.future();
+  Collection<Object> col=new ArrayList<>(num);
+  int cnt=0;
+  GridCacheQueryRestResponse res=new GridCacheQueryRestResponse();
+  while (cnt < num) {
+    Object obj=fut.next();
+    if (obj == null) {
+      res.last(true);
+      locMap.remove(new QueryExecutionKey(queryId),wrapper);
+      break;
+    }
+    col.add(obj);
+  }
+  res.setResponse(col);
+  res.queryId(queryId);
+  return res;
+}
