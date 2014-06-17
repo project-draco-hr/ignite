@@ -1,7 +1,7 @@
 {
   String hadoopHome=System.getenv("HADOOP_HOME");
   if (hadoopHome == null || hadoopHome.isEmpty()) {
-    System.out.println("ERROR: HADOOP_HOME variable is not set.");
+    System.out.println("ERROR: HADOOP_HOME variable is not set. Please set HADOOP_HOME to valid Hadoop " + "installation folder and run setup tool again.");
     return;
   }
   hadoopHome=hadoopHome.replaceAll("\"","");
@@ -15,11 +15,11 @@
   if (U.isWindows()) {
     File hadoopBinDir=new File(hadoopDir,"bin");
     if (!hadoopBinDir.exists()) {
-      System.out.println("Invalid hadoop home directory. 'bin' subdirectory was not found.");
+      System.out.println("Invalid Hadoop home directory. 'bin' subdirectory was not found.");
       return;
     }
     File winutilsFile=new File(hadoopBinDir,WINUTILS_EXE);
-    if (!winutilsFile.exists() && getAnswer(WINUTILS_EXE + " doesn't exist. It may be replaced by a stub. Create it ?"))     winutilsFile.createNewFile();
+    if (!winutilsFile.exists() && getAnswer("File " + WINUTILS_EXE + " doesn't exist. "+ "It may be replaced by a stub. Create it?"))     winutilsFile.createNewFile();
     processCmdFiles(hadoopDir,"bin","sbin","libexec");
   }
   String gridgainHome=U.getGridGainHome();
@@ -36,7 +36,7 @@
     File targetFile=new File(hadoopCommonLibDir,file.getName());
     if (!targetFile.exists())     jarsExist=false;
   }
-  if (!jarsExist && getAnswer("Current GridGain JAR files are not found in Hadoop libs directory. " + "Create appropriate symbolic links ?")) {
+  if (!jarsExist && getAnswer("GridGain JAR files are not found in Hadoop libs directory. " + "Create appropriate symbolic links?")) {
     File[] oldGridGainJarFiles=hadoopCommonLibDir.listFiles(new FilenameFilter(){
       @Override public boolean accept(      File dir,      String name){
         return name.startsWith("gridgain-");
@@ -44,7 +44,7 @@
     }
 );
     if (oldGridGainJarFiles.length > 0) {
-      if (!getAnswer("The Hadoop libs directory contains JARs from other GridGain installation. " + "It needs to be deleted to continue. Continue ?"))       return;
+      if (!getAnswer("The Hadoop libs directory contains JARs from other GridGain installation. " + "It needs to be deleted to continue. Continue?"))       return;
       for (      File file : oldGridGainJarFiles)       file.delete();
     }
     for (    File file : jarFiles) {
@@ -52,4 +52,5 @@
       Files.createSymbolicLink(targetFile.toPath(),file.toPath());
     }
   }
+  System.out.println("Hadoop setting is completed.");
 }
