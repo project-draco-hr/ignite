@@ -1,11 +1,13 @@
 {
   if (!allNames.add(name))   throw new GridPortableException("Duplicate field name: " + name);
-  if (hashCodes.add(name.hashCode()))   hdrLen+=4;
- else {
+  if (useNames) {
     byte[] nameArr=name.getBytes(UTF_8);
-    if (names == null)     names=new ArrayList<>();
     names.add(nameArr);
     hdrLen+=nameArr.length;
+  }
+ else {
+    if (hashCodes.add(name.hashCode()))     hdrLen+=4;
+ else     throw new GridPortableException("Hash code collision for field: " + name);
   }
   int offPos=hdrLen;
   hdrLen+=4;
