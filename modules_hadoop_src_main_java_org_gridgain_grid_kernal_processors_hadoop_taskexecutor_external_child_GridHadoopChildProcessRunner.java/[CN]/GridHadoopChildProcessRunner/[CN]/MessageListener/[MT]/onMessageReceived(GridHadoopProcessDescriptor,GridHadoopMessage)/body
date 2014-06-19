@@ -9,15 +9,20 @@
     if (validateNodeMessage(desc,msg))     prepareProcess((GridHadoopPrepareForJobRequest)msg);
   }
  else   if (msg instanceof GridHadoopShuffleMessage) {
-    try {
-      if (log.isTraceEnabled())       log.trace("Received shuffle message [desc=" + desc + ", msg="+ msg+ ']');
-      GridHadoopShuffleMessage m=(GridHadoopShuffleMessage)msg;
-      shuffleJob.onShuffleMessage(m);
-      comm.sendMessage(desc,new GridHadoopShuffleAck(m.id(),m.jobId()));
+    if (log.isTraceEnabled())     log.trace("Received shuffle message [desc=" + desc + ", msg="+ msg+ ']');
+    initFut.listenAsync(new CI1<GridFuture<?>>(){
+      @Override public void apply(      GridFuture<?> f){
+        try {
+          GridHadoopShuffleMessage m=(GridHadoopShuffleMessage)msg;
+          shuffleJob.onShuffleMessage(m);
+          comm.sendMessage(desc,new GridHadoopShuffleAck(m.id(),m.jobId()));
+        }
+ catch (        GridException e) {
+          U.error(log,"Failed to process hadoop shuffle message [desc=" + desc + ", msg="+ msg+ ']',e);
+        }
+      }
     }
- catch (    GridException e) {
-      U.error(log,"Failed to process hadoop shuffle message [desc=" + desc + ", msg="+ msg+ ']',e);
-    }
+);
   }
  else   if (msg instanceof GridHadoopShuffleAck) {
     if (log.isTraceEnabled())     log.trace("Received shuffle ack [desc=" + desc + ", msg="+ msg+ ']');

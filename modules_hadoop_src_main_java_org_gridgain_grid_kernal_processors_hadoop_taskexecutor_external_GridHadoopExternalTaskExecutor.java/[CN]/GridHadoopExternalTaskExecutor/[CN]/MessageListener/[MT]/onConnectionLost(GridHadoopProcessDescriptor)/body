@@ -1,6 +1,10 @@
 {
-  if (desc == null || !busyLock.tryReadLock())   return;
+  if (!busyLock.tryReadLock())   return;
   try {
+    if (desc == null) {
+      U.warn(log,"Handshake failed.");
+      return;
+    }
     HadoopProcess proc=runningProcsByProcId.get(desc.processId());
     if (proc != null) {
       Collection<GridHadoopTaskInfo> tasks=proc.tasks();
