@@ -1,0 +1,18 @@
+{
+  Map<String,List<VisorMongoRange>> total=new HashMap<>();
+  GridMongo mongo=null;
+  if (mongo == null)   throw new GridException("Failed to collect Mongo ranges: Mongo not found");
+  Set<String> namespaces=new HashSet<String>();
+  for (  GridMongoDatabaseMetrics dbm : mongo.metrics().databaseMetrics())   for (  GridMongoCollectionMetrics cm : dbm.collectionMetrics())   namespaces.add(dbm.name() + '.' + cm.name());
+  for (  String namespace : namespaces) {
+    Collection<GridMongoRange> ranges=mongo.ranges(namespace);
+    ArrayList<VisorMongoRange> resRanges=new ArrayList<>();
+    for (    GridMongoRange r : ranges) {
+      ArrayList<UUID> nids=new ArrayList<>();
+      for (      GridNode n : mongo.mapRangeToNodes(r))       nids.add(n.id());
+      resRanges.add(new VisorMongoRange(r.database(),r.collection(),r.id(),r.size(),nids));
+    }
+    total.put(namespace,resRanges);
+  }
+  return total;
+}
