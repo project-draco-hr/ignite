@@ -1,3 +1,21 @@
 {
-  return new String[0];
+  int fieldOff=fieldOffset(fieldName);
+  if (fieldOff >= 0) {
+    int len=PRIM.readInt(arr,fieldOff);
+    fieldOff+=4;
+    if (len < 0)     return null;
+    String[] strs=new String[len];
+    for (int i=0; i < len; i++) {
+      int strLen=PRIM.readInt(arr,fieldOff);
+      fieldOff+=4;
+      if (strLen >= 0) {
+        byte[] arr=new byte[strLen];
+        UNSAFE.copyMemory(this.arr,BYTE_ARR_OFF + fieldOff,arr,BYTE_ARR_OFF,strLen);
+        fieldOff+=strLen;
+        strs[i]=new String(arr,UTF_8);
+      }
+    }
+    return strs;
+  }
+ else   return null;
 }
