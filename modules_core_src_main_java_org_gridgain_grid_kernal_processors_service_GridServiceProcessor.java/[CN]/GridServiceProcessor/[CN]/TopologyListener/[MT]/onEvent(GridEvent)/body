@@ -1,0 +1,38 @@
+{
+  long topVer=((GridDiscoveryEvent)evt).topologyVersion();
+  GridNode oldest=U.oldest(ctx.discovery().nodes(topVer));
+  if (oldest.isLocal()) {
+    List<GridServiceConfiguration> retries=new ArrayList<>();
+    for (    GridServiceConfiguration cfg : cfgCache.values()) {
+      try {
+        reassign(cfg,topVer);
+      }
+ catch (      GridException e) {
+        if (!(e instanceof GridTopologyException))         LT.error(log,e,"Failed to do service reassignment (will retry): " + cfg.getName());
+        retries.add(cfg);
+      }
+    }
+    long newTopVer=ctx.discovery().topologyVersion();
+    if (newTopVer == topVer) {
+      while (!retries.isEmpty()) {
+        try {
+          U.sleep(RETRY_TIMEOUT);
+        }
+ catch (        GridInterruptedException ignore) {
+          if (log.isDebugEnabled())           log.debug("Got interrupted during service reassignment (will halt).");
+          break;
+        }
+      }
+      for (Iterator<GridServiceConfiguration> it=retries.iterator(); it.hasNext(); ) {
+        GridServiceConfiguration cfg=it.next();
+        try {
+          reassign(cfg,topVer);
+          it.remove();
+        }
+ catch (        GridException e) {
+          if (!(e instanceof GridTopologyException))           LT.error(log,e,"Failed to do service reassignment (will retry): " + cfg.getName());
+        }
+      }
+    }
+  }
+}
