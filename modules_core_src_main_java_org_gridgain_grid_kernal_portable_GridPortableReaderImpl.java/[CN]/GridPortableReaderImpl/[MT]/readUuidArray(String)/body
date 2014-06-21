@@ -1,18 +1,20 @@
 {
   int fieldOff=fieldOffset(fieldName);
+  byte flag=readByte(fieldOff++);
+  if (flag != UUID_ARR)   throw new GridPortableException("Invalid flag value: " + flag);
   if (fieldOff >= 0) {
-    int len=PRIM.readInt(arr,fieldOff);
-    fieldOff+=4;
-    if (len < 0)     return null;
-    UUID[] uuids=new UUID[len];
-    for (int i=0; i < len; i++) {
-      if (PRIM.readBoolean(arr,fieldOff)) {
-        long most=PRIM.readLong(arr,fieldOff + 1);
-        long least=PRIM.readLong(arr,fieldOff + 9);
-        uuids[i]=new UUID(most,least);
+    int len=readInt(fieldOff);
+    if (len >= 0) {
+      UUID[] uuids=new UUID[len];
+      fieldOff+=4;
+      for (int i=0; i < len; i++) {
+        UUID uuid=readUuid(fieldOff);
+        fieldOff+=(uuid != null ? 17 : 1);
+        uuids[i]=uuid;
       }
+      return uuids;
     }
-    return uuids;
+ else     return null;
   }
  else   return null;
 }

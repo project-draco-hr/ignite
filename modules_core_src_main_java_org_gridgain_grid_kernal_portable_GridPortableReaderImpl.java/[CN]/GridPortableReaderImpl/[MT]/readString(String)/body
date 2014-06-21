@@ -1,11 +1,6 @@
 {
   int fieldOff=fieldOffset(fieldName);
-  if (fieldOff >= 0) {
-    int len=PRIM.readInt(arr,fieldOff);
-    if (len < 0)     return null;
-    byte[] arr=new byte[len];
-    UNSAFE.copyMemory(this.arr,BYTE_ARR_OFF + fieldOff,arr,BYTE_ARR_OFF,len);
-    return new String(arr,UTF_8);
-  }
- else   return null;
+  byte flag=readByte(fieldOff++);
+  if (flag != STRING)   throw new GridPortableException("Invalid flag value: " + flag);
+  return fieldOff >= 0 ? readString(fieldOff) : null;
 }

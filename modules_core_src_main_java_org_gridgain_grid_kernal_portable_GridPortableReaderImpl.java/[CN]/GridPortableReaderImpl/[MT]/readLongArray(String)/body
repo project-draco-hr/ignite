@@ -1,10 +1,6 @@
 {
   int fieldOff=fieldOffset(fieldName);
-  if (fieldOff >= 0) {
-    int len=PRIM.readInt(arr,fieldOff);
-    long[] arr=new long[len];
-    UNSAFE.copyMemory(this.arr,BYTE_ARR_OFF + fieldOff + 4,arr,LONG_ARR_OFF,len << 3);
-    return arr;
-  }
- else   return null;
+  byte flag=readByte(fieldOff++);
+  if (flag != LONG_ARR)   throw new GridPortableException("Invalid flag value: " + flag);
+  return fieldOff >= 0 ? readLongArray(fieldOff) : null;
 }

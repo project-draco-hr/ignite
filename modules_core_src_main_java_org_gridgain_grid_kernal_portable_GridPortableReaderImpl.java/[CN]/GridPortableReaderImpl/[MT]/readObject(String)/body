@@ -1,3 +1,23 @@
 {
+  int fieldOff=fieldOffset(fieldName);
+  if (fieldOff < 0)   return null;
+  byte flag=readByte(fieldOff++);
+switch (flag) {
+case NULL:
+    return null;
+case HANDLE:
   return null;
+case OBJ:
+int typeId=readInt(fieldOff);
+fieldOff+=4;
+Class<?> cls=null;
+if (cls == null) throw new GridPortableInvalidClassException("");
+GridPortableClassDescriptor desc=GridPortableClassDescriptor.get(cls);
+fieldOff+=8;
+int rawOff=readInt(fieldOff);
+fieldOff+=4;
+return desc.read(new GridPortableReaderImpl(arr,fieldOff,rawOff));
+default :
+throw new GridPortableException("Invalid flag value: " + flag);
+}
 }
