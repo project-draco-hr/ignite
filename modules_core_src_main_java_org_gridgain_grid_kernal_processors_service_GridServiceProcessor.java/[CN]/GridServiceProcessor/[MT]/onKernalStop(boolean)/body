@@ -1,3 +1,12 @@
 {
-  super.onKernalStop(cancel);
+  Map<String,Collection<GridServiceContextImpl>> locSvcs;
+synchronized (this.locSvcs) {
+    locSvcs=new HashMap<>(this.locSvcs);
+  }
+  for (  Collection<GridServiceContextImpl> ctxs : locSvcs.values()) {
+synchronized (ctxs) {
+      cancel(ctxs,ctxs.size());
+    }
+  }
+  if (log.isDebugEnabled())   log.debug("Stopped service processor.");
 }
