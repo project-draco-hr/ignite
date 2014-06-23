@@ -1,10 +1,10 @@
 {
   if (!busyLock.tryReadLock())   return false;
   try {
-    GridHadoopJobMetadata meta=jobMetaPrj.get(jobId);
+    GridHadoopJobMetadata meta=jobMetaCache().get(jobId);
     if (meta != null && meta.phase() != PHASE_COMPLETE && meta.phase() != PHASE_CANCELLING) {
       GridHadoopTaskCancelledException err=new GridHadoopTaskCancelledException("Job cancelled.");
-      jobMetaPrj.transform(jobId,new CancelJobClosure(err));
+      jobMetaCache().transform(jobId,new CancelJobClosure(err));
     }
   }
   finally {
