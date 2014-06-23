@@ -1,23 +1,4 @@
 {
-  int fieldOff=fieldOffset(fieldName);
-  if (fieldOff < 0)   return null;
-  int off=fieldOff;
-  byte flag=readByte(off++);
-switch (flag) {
-case NULL:
-    return null;
-case HANDLE:
-  return null;
-case OBJ:
-boolean userType=readBoolean(off++);
-int typeId=readInt(off);
-off+=4;
-GridPortableClassDescriptor desc=ctx.descriptorForTypeId(userType,typeId);
-if (desc == null) throw new GridPortableInvalidClassException("Unknown type ID: " + typeId);
-off+=8;
-int rawDataOff=fieldOff + readInt(off);
-return desc.read(new GridPortableReaderImpl(ctx,arr,fieldOff,rawDataOff));
-default :
-throw new GridPortableException("Invalid flag value: " + flag);
-}
+  off=fieldOffset(fieldName);
+  return off >= 0 ? doReadObject(false) : null;
 }

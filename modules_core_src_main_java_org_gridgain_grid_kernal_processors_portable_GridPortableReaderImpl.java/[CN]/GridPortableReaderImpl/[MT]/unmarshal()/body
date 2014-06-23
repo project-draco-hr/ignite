@@ -1,0 +1,82 @@
+{
+  byte flag=doReadByte(false);
+switch (flag) {
+case NULL:
+    return null;
+case HANDLE:
+  return null;
+case OBJ:
+boolean userType=doReadBoolean(false);
+int typeId=doReadInt(false);
+int hashCode=doReadInt(false);
+off+=4;
+rawOff=doReadInt(false);
+return new GridPortableObjectImpl(ctx,this,userType,typeId,hashCode);
+case BYTE:
+return doReadByte(false);
+case SHORT:
+return doReadShort(false);
+case INT:
+return doReadInt(false);
+case LONG:
+return doReadLong(false);
+case FLOAT:
+return doReadFloat(false);
+case DOUBLE:
+return doReadDouble(false);
+case CHAR:
+return doReadChar(false);
+case BOOLEAN:
+return doReadBoolean(false);
+case STRING:
+return doReadString(false);
+case UUID:
+return doReadUuid(false);
+case BYTE_ARR:
+return doReadByteArray(false);
+case SHORT_ARR:
+return doReadShortArray(false);
+case INT_ARR:
+return doReadIntArray(false);
+case LONG_ARR:
+return doReadLongArray(false);
+case FLOAT_ARR:
+return doReadFloatArray(false);
+case DOUBLE_ARR:
+return doReadDoubleArray(false);
+case CHAR_ARR:
+return doReadCharArray(false);
+case BOOLEAN_ARR:
+return doReadBooleanArray(false);
+case STRING_ARR:
+return doReadStringArray(false);
+case UUID_ARR:
+return doReadUuidArray(false);
+case OBJ_ARR:
+int len=doReadInt(false);
+if (len >= 0) {
+Object[] arr=new Object[len];
+for (int i=0; i < len; i++) arr[i]=unmarshal();
+return arr;
+}
+ else return null;
+case COL:
+int colSize=doReadInt(false);
+if (colSize >= 0) {
+Collection<Object> col=new ArrayList<>(colSize);
+for (int i=0; i < colSize; i++) col.add(unmarshal());
+return col;
+}
+ else return null;
+case MAP:
+int mapSize=doReadInt(false);
+if (mapSize >= 0) {
+Map<Object,Object> map=new HashMap<>(mapSize);
+for (int i=0; i < mapSize; i++) map.put(unmarshal(),unmarshal());
+return map;
+}
+ else return null;
+default :
+throw new GridPortableException("Invalid flag value: " + flag);
+}
+}

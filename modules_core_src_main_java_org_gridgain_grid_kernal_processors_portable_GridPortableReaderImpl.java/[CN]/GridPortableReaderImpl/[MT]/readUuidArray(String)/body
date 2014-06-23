@@ -1,20 +1,9 @@
 {
-  int fieldOff=fieldOffset(fieldName);
-  byte flag=readByte(fieldOff++);
-  if (flag != UUID_ARR)   throw new GridPortableException("Invalid flag value: " + flag);
-  if (fieldOff >= 0) {
-    int len=readInt(fieldOff);
-    if (len >= 0) {
-      UUID[] uuids=new UUID[len];
-      fieldOff+=4;
-      for (int i=0; i < len; i++) {
-        UUID uuid=readUuid(fieldOff);
-        fieldOff+=(uuid != null ? 17 : 1);
-        uuids[i]=uuid;
-      }
-      return uuids;
-    }
- else     return null;
+  off=fieldOffset(fieldName);
+  if (off >= 0) {
+    byte flag=doReadByte(false);
+    if (flag != UUID_ARR)     throw new GridPortableException("Invalid flag value: " + flag);
+    return doReadUuidArray(false);
   }
  else   return null;
 }

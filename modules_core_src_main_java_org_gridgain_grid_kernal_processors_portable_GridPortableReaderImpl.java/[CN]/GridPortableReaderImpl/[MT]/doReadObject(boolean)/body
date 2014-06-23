@@ -1,0 +1,25 @@
+{
+  int start=raw ? rawOff : off;
+  byte flag=doReadByte(true);
+switch (flag) {
+case NULL:
+    return null;
+case HANDLE:
+  return null;
+case OBJ:
+boolean userType=doReadBoolean(raw);
+int typeId=doReadInt(raw);
+GridPortableClassDescriptor desc=ctx.descriptorForTypeId(userType,typeId);
+if (desc == null) throw new GridPortableInvalidClassException("Unknown type ID: " + typeId);
+if (raw) rawOff+=4;
+ else off+=4;
+int dataLen=doReadInt(raw) - HDR_LEN;
+int rawOff0=start + doReadInt(raw);
+Object obj=desc.read(new GridPortableReaderImpl(ctx,arr,start,rawOff0));
+if (raw) rawOff+=dataLen;
+ else off+=dataLen;
+return obj;
+default :
+throw new GridPortableException("Invalid flag value: " + flag);
+}
+}
