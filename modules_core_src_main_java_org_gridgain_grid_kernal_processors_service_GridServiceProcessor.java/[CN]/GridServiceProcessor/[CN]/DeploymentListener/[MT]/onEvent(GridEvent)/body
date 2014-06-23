@@ -1,2 +1,35 @@
 {
+  if (!busyLock.enterBusy())   return;
+  try {
+    if (evt.type() == EVT_CACHE_OBJECT_PUT) {
+      Object val=((GridCacheEvent)evt).newValue();
+      if (val instanceof GridServiceConfiguration) {
+        GridServiceConfiguration cfg=(GridServiceConfiguration)val;
+        long topVer=ctx.discovery().topologyVersion();
+        GridNode oldest=U.oldest(ctx.discovery().nodes(topVer),null);
+        if (oldest.isLocal())         onDeployment(cfg,topVer);
+      }
+    }
+ else     if (evt.type() == EVT_CACHE_OBJECT_REMOVED) {
+      Object val=((GridCacheEvent)evt).oldValue();
+      if (val instanceof GridServiceConfiguration) {
+        GridServiceConfiguration cfg=(GridServiceConfiguration)val;
+        String svcName=cfg.getName();
+        Collection<GridServiceContextImpl> ctxs;
+synchronized (locSvcs) {
+          ctxs=locSvcs.remove(svcName);
+        }
+        if (ctx != null) {
+synchronized (ctxs) {
+            cancel(ctxs,ctxs.size());
+          }
+        }
+        GridFutureAdapter<?> fut=futs.get(cfg.getName());
+        if (fut != null)         fut.onDone();
+      }
+    }
+  }
+  finally {
+    busyLock.leaveBusy();
+  }
 }

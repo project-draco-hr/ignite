@@ -1,62 +1,30 @@
 {
-  if (evt.type() == EVT_CACHE_OBJECT_PUT) {
-    Object val=((GridCacheEvent)evt).newValue();
-    if (val instanceof GridServiceAssignments) {
-      GridServiceAssignments assigns=(GridServiceAssignments)val;
-      String svcName=assigns.name();
-      int assignCnt=assigns.assigns().get(ctx.localNodeId());
-      GridService svc=assigns.service();
-      Collection<GridServiceContextImpl> ctxs;
+  if (!busyLock.enterBusy())   return;
+  try {
+    if (evt.type() == EVT_CACHE_OBJECT_PUT) {
+      Object val=((GridCacheEvent)evt).newValue();
+      if (val instanceof GridServiceAssignments)       redeploy((GridServiceAssignments)val);
+    }
+ else     if (evt.type() == EVT_CACHE_OBJECT_REMOVED) {
+      Object val=((GridCacheEvent)evt).oldValue();
+      if (val instanceof GridServiceAssignments) {
+        GridServiceAssignments assigns=(GridServiceAssignments)val;
+        String svcName=assigns.name();
+        Collection<GridServiceContextImpl> ctxs;
 synchronized (locSvcs) {
-        ctxs=locSvcs.get(svcName);
-        if (ctxs == null)         locSvcs.put(svcName,ctxs=new ArrayList<>());
-      }
-synchronized (ctxs) {
-        if (ctxs.size() > assignCnt) {
-          int cancelCnt=ctxs.size() - assignCnt;
-          cancel(ctxs,cancelCnt);
+          ctxs=locSvcs.remove(svcName);
         }
- else         if (ctxs.size() < assignCnt) {
-          int createCnt=assignCnt - ctxs.size();
-          for (int i=0; i < createCnt; i++) {
-            final GridService copy=copy(svc);
-            final ExecutorService exe=Executors.newSingleThreadExecutor(threadFactory);
-            final GridServiceContextImpl ctx=new GridServiceContextImpl(assigns.name(),UUID.randomUUID(),assigns.cacheName(),assigns.affinityKey(),copy,exe);
-            ctxs.add(ctx);
-            if (log.isInfoEnabled())             log.info("Starting service instance [name=" + ctx.name() + ", execId="+ ctx.executionId()+ ']');
-            exe.submit(new Runnable(){
-              @Override public void run(){
-                try {
-                  copy.execute(ctx);
-                }
- catch (                Throwable e) {
-                  log.error("Service execution stopped with error [name=" + ctx.name() + ", execId="+ ctx.executionId()+ ']',e);
-                }
- finally {
-                  exe.shutdownNow();
-                }
-              }
-            }
-);
+        if (ctx != null) {
+synchronized (ctxs) {
+            cancel(ctxs,ctxs.size());
           }
         }
+        GridFutureAdapter<?> fut=futs.get(assigns.name());
+        if (fut != null)         fut.onDone();
       }
     }
   }
- else   if (evt.type() == EVT_CACHE_OBJECT_REMOVED) {
-    Object val=((GridCacheEvent)evt).oldValue();
-    if (val instanceof GridServiceAssignments) {
-      GridServiceAssignments assigns=(GridServiceAssignments)val;
-      String svcName=assigns.name();
-      Collection<GridServiceContextImpl> ctxs;
-synchronized (locSvcs) {
-        ctxs=locSvcs.remove(svcName);
-      }
-      if (ctx != null) {
-synchronized (ctxs) {
-          cancel(ctxs,ctxs.size());
-        }
-      }
-    }
+  finally {
+    busyLock.leaveBusy();
   }
 }

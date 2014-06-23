@@ -1,12 +1,17 @@
 {
   validate(cfg);
   try {
-    if (cfgCache.putxIfAbsent(new GridServiceConfigurationKey(cfg.getName()),cfg)) {
+    GridFutureAdapter<?> fut=new GridFutureAdapter<>(ctx);
+    GridFutureAdapter<?> old;
+    if ((old=futs.putIfAbsent(cfg.getName(),fut)) != null) {
+      fut=old;
+      return fut;
     }
+    if (!cfgCache.putxIfAbsent(new GridServiceConfigurationKey(cfg.getName()),cfg))     fut.onDone();
+    return fut;
   }
  catch (  GridException e) {
     log.error("Failed to deploy service: " + cfg.getName(),e);
     return new GridFinishedFuture<>(ctx,e);
   }
-  return null;
 }
