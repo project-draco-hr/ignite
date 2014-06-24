@@ -1,0 +1,24 @@
+{
+  validate(cfg);
+  try {
+    GridFutureAdapter<?> fut=new GridFutureAdapter<>(ctx);
+    GridFutureAdapter<?> old;
+    if ((old=futs.putIfAbsent(cfg.getName(),fut)) != null) {
+      if (failDups) {
+        fut.onDone(new GridException("Failed to deploy service " + "(service already exists and must be undeployed first): " + cfg.getName()));
+        return fut;
+      }
+      fut=old;
+      return fut;
+    }
+    if (!cfgCache.putxIfAbsent(new GridServiceConfigurationKey(cfg.getName()),cfg)) {
+      if (failDups)       fut.onDone(new GridException("Failed to deploy service " + "(service already exists and must be undeployed first): " + cfg.getName()));
+ else       fut.onDone();
+    }
+    return fut;
+  }
+ catch (  GridException e) {
+    log.error("Failed to deploy service: " + cfg.getName(),e);
+    return new GridFinishedFuture<>(ctx,e);
+  }
+}

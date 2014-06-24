@@ -1,6 +1,7 @@
 {
   Collection<GridServiceDescriptor> descs=new ArrayList<>();
-  for (  GridServiceConfiguration cfg : cfgCache.values()) {
+  for (  GridCacheEntry<GridServiceConfigurationKey,GridServiceConfiguration> e : cfgCache.entrySetx()) {
+    GridServiceConfiguration cfg=e.getValue();
     GridServiceDescriptorImpl desc=new GridServiceDescriptorImpl(cfg);
     try {
       GridServiceAssignments assigns=assignCache.get(new GridServiceAssignmentsKey(cfg.getName()));
@@ -9,8 +10,8 @@
         descs.add(desc);
       }
     }
- catch (    GridException e) {
-      log.error("Failed to get assignments from replicated cache for service: " + cfg.getName(),e);
+ catch (    GridException ex) {
+      log.error("Failed to get assignments from replicated cache for service: " + cfg.getName(),ex);
     }
   }
   return descs;

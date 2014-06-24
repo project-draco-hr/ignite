@@ -3,6 +3,8 @@
   try {
     for (    Entry<GridServiceAssignmentsKey,GridServiceAssignments> e : assignCol) {
       GridServiceAssignments assigns=e.getValue();
+      GridFutureAdapter<?> fut=futs.get(assigns.name());
+      if (fut != null)       fut.onDone();
       if (assigns != null)       redeploy(assigns);
  else {
         String svcName=e.getKey().name();
@@ -15,8 +17,6 @@ synchronized (ctxs) {
             cancel(ctxs,ctxs.size());
           }
         }
-        GridFutureAdapter<?> fut=futs.get(assigns.name());
-        if (fut != null)         fut.onDone();
       }
     }
   }
