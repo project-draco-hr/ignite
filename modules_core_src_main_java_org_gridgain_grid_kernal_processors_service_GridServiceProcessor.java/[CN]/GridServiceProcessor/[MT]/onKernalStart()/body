@@ -2,11 +2,17 @@
   cfgCache=ctx.cache().utilityCache(GridServiceConfigurationKey.class,GridServiceConfiguration.class);
   assignCache=ctx.cache().utilityCache(GridServiceAssignmentsKey.class,GridServiceAssignments.class);
   ctx.event().addLocalEventListener(topLsnr,EVTS_DISCOVERY);
-  ctx.event().addLocalEventListener(depLsnr,EVT_CACHE_OBJECT_PUT);
-  ctx.event().addLocalEventListener(assignLsnr,EVT_CACHE_OBJECT_PUT);
-  Collection<GridFuture<?>> futs=new ArrayList<>();
-  for (  GridServiceConfiguration c : ctx.config().getServiceConfiguration())   futs.add(deploy(c));
-  for (  GridFuture<?> f : futs)   f.get();
-  for (  GridServiceAssignments assigns : assignCache.values())   redeploy(assigns);
+  cfgQry=(GridCacheContinuousQueryAdapter<GridServiceConfigurationKey,GridServiceConfiguration>)cfgCache.queries().createContinuousQuery();
+  cfgQry.callback(new DeploymentListener());
+  cfgQry.execute(ctx.grid().forLocal(),true);
+  assignQry=(GridCacheContinuousQueryAdapter<GridServiceAssignmentsKey,GridServiceAssignments>)assignCache.queries().createContinuousQuery();
+  assignQry.callback(new AssignmentListener());
+  assignQry.execute(ctx.grid().forLocal(),true);
+  GridServiceConfiguration[] cfgs=ctx.config().getServiceConfiguration();
+  if (cfgs != null) {
+    Collection<GridFuture<?>> futs=new ArrayList<>();
+    for (    GridServiceConfiguration c : ctx.config().getServiceConfiguration())     futs.add(deploy(c));
+    for (    GridFuture<?> f : futs)     f.get();
+  }
   if (log.isDebugEnabled())   log.debug("Started service processor.");
 }

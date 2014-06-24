@@ -1,0 +1,27 @@
+{
+  if (!busyLock.enterBusy())   return true;
+  try {
+    for (    Entry<GridServiceAssignmentsKey,GridServiceAssignments> e : assignCol) {
+      GridServiceAssignments assigns=e.getValue();
+      if (assigns != null)       redeploy(assigns);
+ else {
+        String svcName=e.getKey().name();
+        Collection<GridServiceContextImpl> ctxs;
+synchronized (locSvcs) {
+          ctxs=locSvcs.remove(svcName);
+        }
+        if (ctx != null) {
+synchronized (ctxs) {
+            cancel(ctxs,ctxs.size());
+          }
+        }
+        GridFutureAdapter<?> fut=futs.get(assigns.name());
+        if (fut != null)         fut.onDone();
+      }
+    }
+  }
+  finally {
+    busyLock.leaveBusy();
+  }
+  return true;
+}

@@ -1,20 +1,15 @@
 {
-  if (!busyLock.enterBusy())   return;
+  if (!busyLock.enterBusy())   return true;
   try {
-    if (evt.type() == EVT_CACHE_OBJECT_PUT) {
-      Object val=((GridCacheEvent)evt).newValue();
-      if (val instanceof GridServiceConfiguration) {
-        GridServiceConfiguration cfg=(GridServiceConfiguration)val;
+    for (    Entry<GridServiceConfigurationKey,GridServiceConfiguration> e : cfgs) {
+      GridServiceConfiguration cfg=e.getValue();
+      if (cfg != null) {
         long topVer=ctx.discovery().topologyVersion();
         GridNode oldest=U.oldest(ctx.discovery().nodes(topVer),null);
         if (oldest.isLocal())         onDeployment(cfg,topVer);
       }
-    }
- else     if (evt.type() == EVT_CACHE_OBJECT_REMOVED) {
-      Object val=((GridCacheEvent)evt).oldValue();
-      if (val instanceof GridServiceConfiguration) {
-        GridServiceConfiguration cfg=(GridServiceConfiguration)val;
-        String svcName=cfg.getName();
+ else {
+        String svcName=e.getKey().name();
         Collection<GridServiceContextImpl> ctxs;
 synchronized (locSvcs) {
           ctxs=locSvcs.remove(svcName);
@@ -32,4 +27,5 @@ synchronized (ctxs) {
   finally {
     busyLock.leaveBusy();
   }
+  return true;
 }

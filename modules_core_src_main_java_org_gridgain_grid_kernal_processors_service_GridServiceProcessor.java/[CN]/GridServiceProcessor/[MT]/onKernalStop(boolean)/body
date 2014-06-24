@@ -1,8 +1,18 @@
 {
   busyLock.block();
   ctx.event().removeLocalEventListener(topLsnr);
-  ctx.event().removeLocalEventListener(depLsnr);
-  ctx.event().removeLocalEventListener(assignLsnr);
+  try {
+    cfgQry.close();
+  }
+ catch (  GridException e) {
+    log.error("Failed to unsubscribe service configuration notifications.",e);
+  }
+  try {
+    assignQry.close();
+  }
+ catch (  GridException e) {
+    log.error("Failed to unsubscribe service assignment notifications.",e);
+  }
   Map<String,Collection<GridServiceContextImpl>> locSvcs;
 synchronized (this.locSvcs) {
     locSvcs=new HashMap<>(this.locSvcs);
