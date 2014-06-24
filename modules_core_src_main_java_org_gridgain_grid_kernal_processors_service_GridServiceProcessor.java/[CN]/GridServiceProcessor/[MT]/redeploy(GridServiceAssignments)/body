@@ -1,6 +1,7 @@
 {
   String svcName=assigns.name();
-  int assignCnt=assigns.assigns().get(ctx.localNodeId());
+  Integer assignCnt=assigns.assigns().get(ctx.localNodeId());
+  if (assignCnt == null)   assignCnt=0;
   GridService svc=assigns.service();
   Collection<GridServiceContextImpl> ctxs;
 synchronized (locSvcs) {
@@ -15,21 +16,27 @@ synchronized (ctxs) {
  else     if (ctxs.size() < assignCnt) {
       int createCnt=assignCnt - ctxs.size();
       for (int i=0; i < createCnt; i++) {
-        final GridService copy=copy(svc);
+        final GridService copy=copyAndInject(svc);
         final ExecutorService exe=Executors.newSingleThreadExecutor(threadFactory);
-        final GridServiceContextImpl ctx=new GridServiceContextImpl(assigns.name(),UUID.randomUUID(),assigns.cacheName(),assigns.affinityKey(),copy,exe);
-        ctxs.add(ctx);
-        if (log.isInfoEnabled())         log.info("Starting service instance [name=" + ctx.name() + ", execId="+ ctx.executionId()+ ']');
+        final GridServiceContextImpl svcCtx=new GridServiceContextImpl(assigns.name(),UUID.randomUUID(),assigns.cacheName(),assigns.affinityKey(),copy,exe);
+        ctxs.add(svcCtx);
+        if (log.isInfoEnabled())         log.info("Starting service instance [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']');
         exe.submit(new Runnable(){
           @Override public void run(){
             try {
-              copy.execute(ctx);
+              copy.execute(svcCtx);
             }
  catch (            Throwable e) {
-              log.error("Service execution stopped with error [name=" + ctx.name() + ", execId="+ ctx.executionId()+ ']',e);
+              log.error("Service execution stopped with error [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']',e);
             }
  finally {
               exe.shutdownNow();
+              try {
+                ctx.resource().cleanup(copy);
+              }
+ catch (              GridException e) {
+                log.error("Failed to clean up service (will ignore): " + svcCtx.name(),e);
+              }
             }
           }
         }

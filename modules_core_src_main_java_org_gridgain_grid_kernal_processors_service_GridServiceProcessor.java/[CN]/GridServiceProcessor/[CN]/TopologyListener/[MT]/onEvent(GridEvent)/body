@@ -5,12 +5,13 @@
     GridNode oldest=U.oldest(ctx.discovery().nodes(topVer),null);
     if (oldest.isLocal()) {
       final Collection<GridServiceConfiguration> retries=new ConcurrentLinkedQueue<>();
-      for (      GridServiceConfiguration cfg : cfgCache.values()) {
+      for (      GridCacheEntry<GridServiceConfigurationKey,GridServiceConfiguration> e : cfgCache.entrySetx()) {
+        GridServiceConfiguration cfg=e.getValue();
         try {
           reassign(cfg,topVer);
         }
- catch (        GridException e) {
-          if (!(e instanceof GridTopologyException))           LT.error(log,e,"Failed to do service reassignment (will retry): " + cfg.getName());
+ catch (        GridException ex) {
+          if (!(e instanceof GridTopologyException))           LT.error(log,ex,"Failed to do service reassignment (will retry): " + cfg.getName());
           retries.add(cfg);
         }
       }
