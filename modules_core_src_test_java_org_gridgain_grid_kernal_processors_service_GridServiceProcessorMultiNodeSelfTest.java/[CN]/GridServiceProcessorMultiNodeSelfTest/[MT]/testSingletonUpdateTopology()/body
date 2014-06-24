@@ -1,0 +1,18 @@
+{
+  Grid g=randomGrid();
+  String name="serviceSingletonUpdateTopology";
+  CountDownLatch latch=new CountDownLatch(1);
+  DummyService.latch(latch);
+  GridFuture<?> fut=g.services().deploySingleton(name,new DummyService());
+  info("Deployed service: " + name);
+  fut.get();
+  info("Finished waiting for service future: " + name);
+  latch.await();
+  assertEquals(1,DummyService.started());
+  assertFalse(DummyService.isCancelled());
+  int newNodes=2;
+  for (int i=0; i < newNodes; i++)   startGrid(nodeCount() + i);
+  assertEquals(1,DummyService.started());
+  assertFalse(DummyService.isCancelled());
+  checkCount(name,g.services().deployedServices(),1);
+}
