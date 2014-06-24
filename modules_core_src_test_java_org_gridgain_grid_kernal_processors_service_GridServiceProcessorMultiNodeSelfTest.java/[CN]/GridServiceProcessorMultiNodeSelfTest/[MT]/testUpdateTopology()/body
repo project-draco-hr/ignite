@@ -1,0 +1,14 @@
+{
+  Grid g=randomGrid();
+  String name="serviceSingleton";
+  CountDownLatch latch=new CountDownLatch(1);
+  DummyService.latch(latch);
+  GridFuture<?> fut=g.services().deploySingleton(name,new DummyService());
+  info("Deployed service: " + name);
+  fut.get();
+  info("Finished waiting for service future: " + name);
+  latch.await();
+  assertEquals(1,DummyService.started());
+  assertFalse(DummyService.isCancelled());
+  checkCount(name,g.services().deployedServices(),1);
+}
