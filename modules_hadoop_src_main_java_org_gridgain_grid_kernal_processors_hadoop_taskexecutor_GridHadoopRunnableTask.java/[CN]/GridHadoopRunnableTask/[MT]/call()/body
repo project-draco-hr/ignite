@@ -1,7 +1,6 @@
 {
   execStartTs=System.currentTimeMillis();
-  boolean runCombiner=info.type() == MAP && job.hasCombiner() && !get(job,SINGLE_COMBINER_FOR_ALL_MAPPERS,false);
-  ClassLoader old=GridHadoopJobClassLoadingContext.prepareClassLoader(clsLdrCtx,job.info());
+  boolean runCombiner=info.type() == MAP && job.info().hasCombiner() && !get(job.info(),SINGLE_COMBINER_FOR_ALL_MAPPERS,false);
   GridHadoopTaskState state=GridHadoopTaskState.COMPLETED;
   Throwable err=null;
   try {
@@ -19,7 +18,6 @@ catch (  Throwable e) {
  finally {
     execEndTs=System.currentTimeMillis();
     onTaskFinished(state,err);
-    Thread.currentThread().setContextClassLoader(old);
     if (runCombiner)     local.close();
   }
   return null;
