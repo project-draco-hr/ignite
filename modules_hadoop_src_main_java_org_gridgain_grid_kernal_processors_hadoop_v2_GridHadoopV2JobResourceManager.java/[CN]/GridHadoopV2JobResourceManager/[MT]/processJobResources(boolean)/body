@@ -1,0 +1,22 @@
+{
+  try {
+    String mrDir=cfg.get("mapreduce.job.dir");
+    if (mrDir != null) {
+      if (download) {
+        Path path=new Path(new URI(mrDir));
+        FileSystem fs=FileSystem.get(path.toUri(),cfg);
+        if (!fs.exists(path))         throw new GridException("Failed to find map-reduce submission directory (does not exist): " + path);
+        if (jobLocDir.exists())         throw new GridException("Local job directory already exists: " + jobLocDir.getAbsolutePath());
+        if (!FileUtil.copy(fs,path,jobLocDir,false,cfg))         throw new GridException("Failed to copy job submission directory contents to local file system " + "[path=" + path + ", locDir="+ jobLocDir.getAbsolutePath()+ ", jobId="+ jobId+ ']');
+      }
+      clsPath.add(new File(new File(jobLocDir,"job.jar"),"job.jar").toURI().toURL());
+      processFiles(DistributedCache.getCacheFiles(cfg),download,false,false);
+      processFiles(DistributedCache.getCacheArchives(cfg),download,true,false);
+      processFiles(DistributedCache.getFileClassPaths(cfg),download,false,true);
+      processFiles(DistributedCache.getArchiveClassPaths(cfg),download,true,true);
+    }
+  }
+ catch (  URISyntaxException|IOException e) {
+    throw new GridException(e);
+  }
+}
