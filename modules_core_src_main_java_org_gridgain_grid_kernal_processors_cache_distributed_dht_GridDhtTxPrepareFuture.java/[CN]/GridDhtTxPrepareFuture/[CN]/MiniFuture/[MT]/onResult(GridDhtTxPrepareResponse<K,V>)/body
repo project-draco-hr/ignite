@@ -33,6 +33,24 @@
         if (log.isDebugEnabled())         log.debug("Removed mapping for node entirely because all partitions are invalid [nodeId=" + nodeId + ", tx="+ tx+ ']');
       }
     }
+    long topVer=cctx.topology().topologyVersion();
+    GridDrType drType=cctx.isDrEnabled() ? GridDrType.DR_PRELOAD : GridDrType.DR_NONE;
+    for (    GridCacheEntryInfo<K,V> info : res.preloadEntries()) {
+      while (true) {
+        GridCacheEntryEx<K,V> entry=cctx.cache().entryEx(info.key());
+        try {
+          entry.initialValue(info.value(),info.valueBytes(),info.version(),info.ttl(),info.expireTime(),true,topVer,drType);
+          break;
+        }
+ catch (        GridException e) {
+          onDone(e);
+          return;
+        }
+catch (        GridCacheEntryRemovedException ignore) {
+          if (log.isDebugEnabled())           log.debug("Failed to set entry initial value (entry is obsolete, " + "will retry): " + entry);
+        }
+      }
+    }
     onDone(tx);
   }
 }
