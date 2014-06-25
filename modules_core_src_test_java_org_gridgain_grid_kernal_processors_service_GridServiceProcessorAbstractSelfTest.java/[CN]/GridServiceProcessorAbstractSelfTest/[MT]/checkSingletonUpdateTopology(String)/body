@@ -1,6 +1,5 @@
 {
   Grid g=randomGrid();
-  String name="serviceSingleton";
   CountDownLatch latch=new CountDownLatch(1);
   DummyService.latch(latch);
   GridFuture<?> fut=g.services().deploySingleton(name,new DummyService());
@@ -10,5 +9,14 @@
   latch.await();
   assertEquals(1,DummyService.started());
   assertFalse(DummyService.isCancelled());
-  checkCount(name,g.services().deployedServices(),1);
+  int nodeCnt=2;
+  startExtraNodes(nodeCnt);
+  try {
+    assertEquals(1,DummyService.started());
+    assertFalse(DummyService.isCancelled());
+    checkCount(name,g.services().deployedServices(),1);
+  }
+  finally {
+    stopExtraNodes(nodeCnt);
+  }
 }

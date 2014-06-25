@@ -1,26 +1,3 @@
 {
-  Grid g=randomGrid();
-  String name="serviceOnEachNodeUpdateTopology";
-  CountDownLatch latch=new CountDownLatch(nodeCount());
-  DummyService.latch(latch);
-  GridFuture<?> fut=g.services().deployOnEachNode(name,new DummyService());
-  info("Deployed service: " + name);
-  fut.get();
-  info("Finished waiting for service future: " + name);
-  latch.await();
-  assertEquals(nodeCount(),DummyService.started());
-  assertFalse(DummyService.isCancelled());
-  int newNodes=1;
-  latch=new CountDownLatch(newNodes);
-  DummyService.latch(latch);
-  startExtraNodes(newNodes);
-  try {
-    latch.await();
-    assertEquals(nodeCount() + newNodes,DummyService.started());
-    assertFalse(DummyService.isCancelled());
-    checkCount(name,g.services().deployedServices(),nodeCount() + newNodes);
-  }
-  finally {
-    stopExtraNodes(newNodes);
-  }
+  checkDeployOnEachNodeUpdateTopology("serviceOnEachNodeUpdateTopology");
 }
