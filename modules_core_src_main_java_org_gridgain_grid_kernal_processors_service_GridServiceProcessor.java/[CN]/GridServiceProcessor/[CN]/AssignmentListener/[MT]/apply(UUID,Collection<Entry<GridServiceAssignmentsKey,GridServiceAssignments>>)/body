@@ -3,8 +3,10 @@
     @Override public void run0(){
       for (      Entry<GridServiceAssignmentsKey,GridServiceAssignments> e : assignCol) {
         GridServiceAssignments assigns=e.getValue();
-        GridFutureAdapter<?> fut=futs.get(assigns.name());
-        if (fut != null)         fut.onDone();
+        if (assigns.nodeId().equals(ctx.localNodeId())) {
+          GridFutureAdapter<?> fut=futs.remove(assigns.name());
+          if (fut != null)           fut.onDone();
+        }
         if (assigns != null)         redeploy(assigns);
  else {
           String svcName=e.getKey().name();
