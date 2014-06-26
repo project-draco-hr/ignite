@@ -6,18 +6,6 @@
       GridClientHandshakeRequest hs=(GridClientHandshakeRequest)msg;
       byte[] verBytes=hs.versionBytes();
       if (!Arrays.equals(VER_BYTES,verBytes))       U.warn(log,"Client version check failed [ses=" + ses + ", expected="+ Arrays.toString(VER_BYTES)+ ", actual="+ Arrays.toString(verBytes)+ ']');
-      GridClientMarshaller marsh=suppMarshMap.get(hs.protocolId());
-      if (marsh == null) {
-        log.error("No marshaller found with given protocol ID [protocolId=" + hs.protocolId() + ']');
-        ses.send(new GridClientHandshakeResponseWrapper(CODE_UNKNOWN_PROTO_ID)).listenAsync(new CI1<GridNioFuture<?>>(){
-          @Override public void apply(          GridNioFuture<?> fut){
-            ses.close();
-          }
-        }
-);
-        return;
-      }
-      ses.addMeta(GridNioSessionMetaKey.MARSHALLER.ordinal(),marsh);
       ses.send(new GridClientHandshakeResponseWrapper(CODE_OK));
     }
  else {
@@ -45,11 +33,11 @@
           wrapper.requestId(msg.requestId());
           wrapper.clientId(msg.clientId());
           try {
-            ByteBuffer bytes=proto.marshaller(ses).marshal(res,0);
+            ByteBuffer bytes=proto.marshaller().marshal(res,0);
             wrapper.message(bytes);
             wrapper.messageSize(bytes.remaining() + 40);
           }
- catch (          IOException|GridException e) {
+ catch (          IOException e) {
             U.error(log,"Failed to marshal response: " + res,e);
             ses.close();
             return;
