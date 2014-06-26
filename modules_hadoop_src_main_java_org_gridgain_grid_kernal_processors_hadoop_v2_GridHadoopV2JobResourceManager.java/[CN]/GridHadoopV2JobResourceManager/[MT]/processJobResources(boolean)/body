@@ -1,5 +1,6 @@
 {
   try {
+    JobConf cfg=ctx.getJobConf();
     String mrDir=cfg.get("mapreduce.job.dir");
     if (mrDir != null) {
       if (download) {
@@ -10,10 +11,10 @@
         if (!FileUtil.copy(fs,path,jobLocDir,false,cfg))         throw new GridException("Failed to copy job submission directory contents to local file system " + "[path=" + path + ", locDir="+ jobLocDir.getAbsolutePath()+ ", jobId="+ jobId+ ']');
       }
       clsPath.add(new File(jobLocDir,"job.jar").toURI().toURL());
-      processFiles(DistributedCache.getCacheFiles(cfg),download,false,false);
-      processFiles(DistributedCache.getCacheArchives(cfg),download,true,false);
-      processFiles(DistributedCache.getFileClassPaths(cfg),download,false,true);
-      processFiles(DistributedCache.getArchiveClassPaths(cfg),download,true,true);
+      processFiles(ctx.getCacheFiles(),download,false,false);
+      processFiles(ctx.getCacheArchives(),download,true,false);
+      processFiles(ctx.getFileClassPaths(),download,false,true);
+      processFiles(ctx.getArchiveClassPaths(),download,true,true);
     }
   }
  catch (  URISyntaxException|IOException e) {
