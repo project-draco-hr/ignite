@@ -3,16 +3,21 @@
     @Override public void run0(){
       for (      Entry<GridServiceAssignmentsKey,GridServiceAssignments> e : assignCol) {
         GridServiceAssignments assigns=e.getValue();
-        if (assigns.nodeId().equals(ctx.localNodeId())) {
-          GridFutureAdapter<?> fut=futs.remove(assigns.name());
-          if (fut != null)           fut.onDone();
+        if (assigns != null) {
+          svcName.set(assigns.name());
+          if (assigns.nodeId().equals(ctx.localNodeId())) {
+            GridFutureAdapter<?> fut=depFuts.remove(assigns.name());
+            if (fut != null)             fut.onDone();
+          }
+          redeploy(assigns);
         }
-        if (assigns != null)         redeploy(assigns);
- else {
-          String svcName=e.getKey().name();
+ else         if (((GridCacheContinuousQueryEntry)e).keyAssignableFrom(GridServiceAssignmentsKey.class)) {
+          GridCacheContinuousQueryEntry e1=(GridCacheContinuousQueryEntry)e;
+          String name=e.getKey().name();
+          svcName.set(name);
           Collection<GridServiceContextImpl> ctxs;
 synchronized (locSvcs) {
-            ctxs=locSvcs.remove(svcName);
+            ctxs=locSvcs.remove(name);
           }
           if (ctx != null) {
 synchronized (ctxs) {

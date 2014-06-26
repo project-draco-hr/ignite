@@ -4,7 +4,7 @@
     try {
       GridFutureAdapter<?> fut=new GridFutureAdapter<>(ctx);
       GridFutureAdapter<?> old;
-      if ((old=futs.putIfAbsent(cfg.getName(),fut)) != null) {
+      if ((old=depFuts.putIfAbsent(cfg.getName(),fut)) != null) {
         if (failDups) {
           fut.onDone(new GridException("Failed to deploy service " + "(service exists and must be undeployed first): " + cfg.getName()));
           return fut;
@@ -15,7 +15,7 @@
         GridServiceDeploymentKey key=new GridServiceDeploymentKey(cfg.getName());
         GridServiceDeployment dep;
         if ((dep=depCache.putIfAbsent(key,new GridServiceDeployment(ctx.localNodeId(),cfg))) != null) {
-          futs.remove(cfg.getName());
+          depFuts.remove(cfg.getName());
           if (failDups)           fut.onDone(new GridException("Failed to deploy service " + "(service already exists and must be undeployed first): " + cfg.getName()));
  else {
             fut.onDone();
