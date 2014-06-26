@@ -1,0 +1,76 @@
+{
+  addDescriptor(Byte.class,BYTE);
+  addDescriptor(Short.class,SHORT);
+  addDescriptor(Integer.class,INT);
+  addDescriptor(Long.class,LONG);
+  addDescriptor(Float.class,FLOAT);
+  addDescriptor(Double.class,DOUBLE);
+  addDescriptor(Character.class,CHAR);
+  addDescriptor(Boolean.class,BOOLEAN);
+  addDescriptor(String.class,STRING);
+  addDescriptor(UUID.class,UUID);
+  addDescriptor(Date.class,DATE);
+  addDescriptor(byte[].class,BYTE_ARR);
+  addDescriptor(short[].class,SHORT_ARR);
+  addDescriptor(int[].class,INT_ARR);
+  addDescriptor(long[].class,LONG_ARR);
+  addDescriptor(float[].class,FLOAT_ARR);
+  addDescriptor(double[].class,DOUBLE_ARR);
+  addDescriptor(char[].class,CHAR_ARR);
+  addDescriptor(boolean[].class,BOOLEAN_ARR);
+  addDescriptor(String[].class,STRING_ARR);
+  addDescriptor(UUID[].class,UUID_ARR);
+  addDescriptor(Date[].class,DATE_ARR);
+  addDescriptor(Object[].class,OBJ_ARR);
+  addDescriptor(ArrayList.class,COL);
+  addDescriptor(LinkedList.class,COL);
+  addDescriptor(HashSet.class,COL);
+  addDescriptor(LinkedHashSet.class,COL);
+  addDescriptor(TreeSet.class,COL);
+  addDescriptor(ConcurrentSkipListSet.class,COL);
+  addDescriptor(HashMap.class,MAP);
+  addDescriptor(LinkedHashMap.class,MAP);
+  addDescriptor(TreeMap.class,MAP);
+  addDescriptor(ConcurrentHashMap.class,MAP);
+  addDescriptor(GridPortableObjectImpl.class,0x50);
+  colTypes.put(ArrayList.class,ARR_LIST);
+  colTypes.put(LinkedList.class,LINKED_LIST);
+  colTypes.put(HashSet.class,HASH_SET);
+  colTypes.put(LinkedHashSet.class,LINKED_HASH_SET);
+  colTypes.put(TreeSet.class,TREE_SET);
+  colTypes.put(ConcurrentSkipListSet.class,CONC_SKIP_LIST_SET);
+  mapTypes.put(HashMap.class,HASH_MAP);
+  mapTypes.put(LinkedHashMap.class,LINKED_HASH_MAP);
+  mapTypes.put(TreeMap.class,TREE_MAP);
+  mapTypes.put(ConcurrentHashMap.class,CONC_HASH_MAP);
+  addDescriptor(GridClientAuthenticationRequest.class,0x100);
+  addDescriptor(GridClientCacheRequest.class,0x101);
+  addDescriptor(GridClientLogRequest.class,0x102);
+  addDescriptor(GridClientNodeBean.class,0x103);
+  addDescriptor(GridClientNodeMetricsBean.class,0x104);
+  addDescriptor(GridClientResponse.class,0x105);
+  addDescriptor(GridClientTaskRequest.class,0x106);
+  addDescriptor(GridClientTaskResultBean.class,0x107);
+  addDescriptor(GridClientTopologyRequest.class,0x108);
+  if (portableCfg != null) {
+    GridPortableIdMapper globalIdMapper=portableCfg.getIdMapper();
+    GridPortableSerializer globalSerializer=portableCfg.getSerializer();
+    for (    GridPortableTypeConfiguration typeCfg : portableCfg.getTypeConfigurations()) {
+      String clsName=typeCfg.getClassName();
+      if (clsName == null)       throw new GridPortableException("Class name is required for portable type configuration.");
+      Class<?> cls;
+      try {
+        cls=Class.forName(clsName);
+      }
+ catch (      ClassNotFoundException e) {
+        throw new GridPortableException("Portable class doesn't exist: " + clsName,e);
+      }
+      GridPortableIdMapper idMapper=globalIdMapper;
+      GridPortableSerializer serializer=globalSerializer;
+      if (typeCfg.getIdMapper() != null)       idMapper=typeCfg.getIdMapper();
+      if (typeCfg.getSerializer() != null)       serializer=typeCfg.getSerializer();
+      addUserTypeDescriptor(cls,idMapper,serializer);
+    }
+  }
+  return new Context(gridName);
+}

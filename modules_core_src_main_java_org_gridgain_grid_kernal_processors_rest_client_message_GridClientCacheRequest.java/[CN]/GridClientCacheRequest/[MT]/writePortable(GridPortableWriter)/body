@@ -1,10 +1,17 @@
 {
   super.writePortable(writer);
-  writer.writeInt("op",op.ordinal());
-  writer.writeString("cacheName",cacheName);
-  writer.writeObject("key",key);
-  writer.writeObject("val",val);
-  writer.writeObject("val2",val2);
-  writer.writeMap("vals",vals);
-  writer.writeInt("flags",cacheFlagsOn);
+  GridPortableRawWriter raw=writer.rawWriter();
+  raw.writeInt(op.ordinal());
+  raw.writeString(cacheName);
+  raw.writeInt(cacheFlagsOn);
+  raw.writeObject(key);
+  raw.writeObject(val);
+  raw.writeObject(val2);
+  raw.writeInt(vals != null ? vals.size() : -1);
+  if (vals != null) {
+    for (    Map.Entry<Object,Object> e : vals.entrySet()) {
+      raw.writeObject(e.getKey());
+      raw.writeObject(e.getValue());
+    }
+  }
 }
