@@ -4,7 +4,26 @@
   K key=GridClientUtils.first(keys);
   return withReconnectHandling(new ClientProjectionClosure<Map<K,V>>(){
     @Override public GridClientFuture<Map<K,V>> apply(    GridClientConnection conn,    UUID destNodeId) throws GridClientConnectionResetException, GridClientClosedException {
-      return conn.cacheGetAll(cacheName,keys,flags,destNodeId);
+      return conn.cacheGetAll(cacheName,keys,flags,destNodeId).chain(new GridClientFutureCallback<Map<K,Object>,Map<K,V>>(){
+        @Override public Map<K,V> onComplete(        GridClientFuture<Map<K,Object>> fut) throws GridClientException {
+          Map<K,Object> map=fut.get();
+          if (map != null) {
+            for (            Map.Entry<K,Object> e : map.entrySet()) {
+              Object val=e.getValue();
+              if (val != null && val instanceof GridPortableObject) {
+                try {
+                  e.setValue(((GridPortableObject)val).deserialize());
+                }
+ catch (                GridPortableException ex) {
+                  throw new GridClientException("Failed to deserialize portable object.",ex);
+                }
+              }
+            }
+          }
+          return (Map<K,V>)map;
+        }
+      }
+);
     }
   }
 ,cacheName,key);
