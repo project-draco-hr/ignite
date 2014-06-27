@@ -3,13 +3,13 @@
   println("GRIDGAIN_HOME is set to '" + gridgainHome + "'.");
   checkGridGainHome(gridgainHome);
   String hadoopHome=System.getenv("HADOOP_HOME");
-  if (hadoopHome == null || hadoopHome.isEmpty())   exit("HADOOP_HOME environment variable is not set. Please set HADOOP_HOME to " + "valid Hadoop installation folder and run setup tool again.");
+  if (hadoopHome == null || hadoopHome.isEmpty())   exit("HADOOP_HOME environment variable is not set. Please set HADOOP_HOME to " + "valid Hadoop installation folder and run setup tool again.",null);
   hadoopHome=hadoopHome.replaceAll("\"","");
   println("HADOOP_HOME is set to '" + hadoopHome + "'.");
   File hadoopDir=new File(hadoopHome);
-  if (!hadoopDir.exists())   exit("Hadoop installation folder does not exist.");
-  if (!hadoopDir.isDirectory())   exit("HADOOP_HOME must point to a directory.");
-  if (!hadoopDir.canRead())   exit("Hadoop installation folder can not be read. Please check permissions.");
+  if (!hadoopDir.exists())   exit("Hadoop installation folder does not exist.",null);
+  if (!hadoopDir.isDirectory())   exit("HADOOP_HOME must point to a directory.",null);
+  if (!hadoopDir.canRead())   exit("Hadoop installation folder can not be read. Please check permissions.",null);
   File hadoopCommonDir;
   String hadoopCommonHome=System.getenv("HADOOP_COMMON_HOME");
   if (F.isEmpty(hadoopCommonHome)) {
@@ -20,12 +20,12 @@
     println("HADOOP_COMMON_HOME is set to '" + hadoopCommonHome + "'.");
     hadoopCommonDir=new File(hadoopCommonHome);
   }
-  if (!hadoopCommonDir.canRead())   exit("Failed to read Hadoop common dir in '" + hadoopCommonHome + "'.");
+  if (!hadoopCommonDir.canRead())   exit("Failed to read Hadoop common dir in '" + hadoopCommonHome + "'.",null);
   File hadoopCommonLibDir=new File(hadoopCommonDir,"lib");
-  if (!hadoopCommonLibDir.canRead())   exit("Failed to read Hadoop 'lib' folder in '" + hadoopCommonLibDir.getPath() + "'.");
+  if (!hadoopCommonLibDir.canRead())   exit("Failed to read Hadoop 'lib' folder in '" + hadoopCommonLibDir.getPath() + "'.",null);
   if (U.isWindows()) {
     File hadoopBinDir=new File(hadoopDir,"bin");
-    if (!hadoopBinDir.canRead())     exit("Failed to read subdirectory 'bin' in HADOOP_HOME.");
+    if (!hadoopBinDir.canRead())     exit("Failed to read subdirectory 'bin' in HADOOP_HOME.",null);
     File winutilsFile=new File(hadoopBinDir,WINUTILS_EXE);
     if (!winutilsFile.exists()) {
       if (ask("File '" + WINUTILS_EXE + "' does not exist. "+ "It may be replaced by a stub. Create it?")) {
@@ -36,14 +36,14 @@
         }
  catch (        IOException ignore) {
         }
-        if (!ok)         exit("Failed to create '" + WINUTILS_EXE + "' file. Please check permissions.");
+        if (!ok)         exit("Failed to create '" + WINUTILS_EXE + "' file. Please check permissions.",null);
       }
  else       println("Ok. But Hadoop client probably will not work on Windows this way...");
     }
     processCmdFiles(hadoopDir,"bin","sbin","libexec");
   }
   File gridgainLibs=new File(new File(gridgainHome),"libs");
-  if (!gridgainLibs.exists())   exit("GridGain 'libs' folder is not found.");
+  if (!gridgainLibs.exists())   exit("GridGain 'libs' folder is not found.",null);
   File[] jarFiles=gridgainLibs.listFiles(new FilenameFilter(){
     @Override public boolean accept(    File dir,    String name){
       return name.endsWith(".jar");
@@ -66,17 +66,24 @@
       if (oldGridGainJarFiles.length > 0 && ask("The Hadoop 'lib' directory contains JARs from other GridGain " + "installation. They must be deleted to continue. Continue?")) {
         for (        File file : oldGridGainJarFiles) {
           println("Deleting file '" + file.getAbsolutePath() + "'.");
-          if (!file.delete())           exit("Failed to delete file '" + file.getPath() + "'.");
+          if (!file.delete())           exit("Failed to delete file '" + file.getPath() + "'.",null);
         }
       }
       for (      File file : jarFiles) {
         File targetFile=new File(hadoopCommonLibDir,file.getName());
-        println("Creating symbolic link '" + targetFile.getAbsolutePath() + "'.");
         try {
+          println("Creating symbolic link '" + targetFile.getAbsolutePath() + "'.");
           Files.createSymbolicLink(targetFile.toPath(),file.toPath());
         }
  catch (        IOException e) {
-          exit("Failed to create symbolic link '" + targetFile.getPath() + "'. Please check permissions.");
+          warn("Creating symbolic link failed! (Windows NTFS requires Admin rights to create symlinks.)");
+          println("Copying file to '" + targetFile.getAbsolutePath() + "'.");
+          try {
+            U.copy(file,targetFile,false);
+          }
+ catch (          IOException e1) {
+            exit("Failed to copy file to '" + targetFile + "'. Check permissions.",e1);
+          }
         }
       }
     }
@@ -86,7 +93,7 @@
   if (hadoopEtc.canWrite()) {
     if (ask("Replace 'core-site.xml' and 'mapred-site.xml' files with preconfigured templates?")) {
       File gridgainDocs=new File(gridgainHome,"docs");
-      if (!gridgainDocs.canRead())       exit("Failed to read GridGain 'docs' folder at '" + gridgainDocs.getAbsolutePath() + "'.");
+      if (!gridgainDocs.canRead())       exit("Failed to read GridGain 'docs' folder at '" + gridgainDocs.getAbsolutePath() + "'.",null);
       replace(new File(gridgainDocs,"core-site.xml.gridgain"),renameToBak(new File(hadoopEtc,"core-site.xml")));
       replace(new File(gridgainDocs,"mapred-site.xml.gridgain"),renameToBak(new File(hadoopEtc,"mapred-site.xml")));
     }
