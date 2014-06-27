@@ -2,7 +2,21 @@
   A.notNull(key,"key");
   return withReconnectHandling(new ClientProjectionClosure<V>(){
     @Override public GridClientFuture<V> apply(    GridClientConnection conn,    UUID destNodeId) throws GridClientConnectionResetException, GridClientClosedException {
-      return conn.cacheGet(cacheName,key,flags,destNodeId);
+      return conn.cacheGet(cacheName,key,flags,destNodeId).chain(new GridClientFutureCallback<Object,V>(){
+        @Override public V onComplete(        GridClientFuture<Object> fut) throws GridClientException {
+          Object obj=fut.get();
+          if (obj != null && obj instanceof GridPortableObject) {
+            try {
+              obj=((GridPortableObject)obj).deserialize();
+            }
+ catch (            GridPortableException e) {
+              throw new GridClientException("Failed to deserialize portable object.",e);
+            }
+          }
+          return (V)obj;
+        }
+      }
+);
     }
   }
 ,cacheName,key);
