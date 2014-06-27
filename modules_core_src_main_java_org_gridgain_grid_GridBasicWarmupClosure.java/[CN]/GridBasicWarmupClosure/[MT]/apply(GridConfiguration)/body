@@ -1,0 +1,25 @@
+{
+  GridConfiguration cfg=prepareConfiguration(gridCfg);
+  if (cfg == null)   return;
+  Collection<Grid> grids=new LinkedList<>();
+  try {
+    GridTcpDiscoveryIpFinder ipFinder=new GridTcpDiscoveryVmIpFinder(true);
+    for (int i=0; i < gridCnt; i++) {
+      GridConfiguration cfg0=new GridConfiguration(cfg);
+      GridTcpDiscoverySpi discoSpi=new GridTcpDiscoverySpi();
+      discoSpi.setIpFinder(ipFinder);
+      cfg0.setDiscoverySpi(discoSpi);
+      cfg0.setGridName("gridgain-warmup-grid-" + i);
+      grids.add(GridGain.start(cfg0));
+    }
+    doWarmup(grids);
+  }
+ catch (  Exception e) {
+    throw new GridRuntimeException(e);
+  }
+ finally {
+    for (    Grid grid : grids) {
+      GridGain.stop(grid.name(),false);
+    }
+  }
+}
