@@ -20,7 +20,16 @@ catch (      GridException e) {
         onDone(e);
         return Collections.emptyMap();
       }
-      map.put(info.key(),info.value());
+      V val=info.value();
+      if (deserializePortable && val instanceof GridPortableObject) {
+        try {
+          val=((GridPortableObject)val).deserialize();
+        }
+ catch (        GridPortableException e) {
+          throw new GridRuntimeException(e);
+        }
+      }
+      map.put(info.key(),val);
     }
   }
   return map;
