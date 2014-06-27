@@ -4,7 +4,12 @@
   try {
     Class<?> logCls=Class.forName("org.apache.log4j.Logger");
     rootLog=logCls.getMethod("getRootLogger").invoke(logCls);
-    nullApp=Class.forName("org.apache.log4j.varia.NullAppender").newInstance();
+    try {
+      nullApp=Class.forName("org.apache.log4j.varia.NullAppender").newInstance();
+    }
+ catch (    ClassNotFoundException ignore) {
+      return new GridBiTuple<>(rootLog,null);
+    }
     Class appCls=Class.forName("org.apache.log4j.Appender");
     rootLog.getClass().getMethod("addAppender",appCls).invoke(rootLog,nullApp);
   }
