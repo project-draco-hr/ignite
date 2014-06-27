@@ -12,6 +12,9 @@
           GridCacheVersion saved=savedVers.get(info.key());
           entry.loadedValue(tx,nodeId,info.value(),info.valueBytes(),atomic ? info.version() : ver,info.version(),saved,info.ttl(),info.expireTime(),true,topVer,subjId);
         }
+        V val=info.value();
+        if (deserializePortable && val instanceof GridPortableObject)         val=((GridPortableObject)val).deserialize();
+        map.put(info.key(),val);
       }
  catch (      GridCacheEntryRemovedException ignore) {
         if (log.isDebugEnabled())         log.debug("Got removed entry while processing get response (will not retry).");
@@ -20,16 +23,6 @@ catch (      GridException e) {
         onDone(e);
         return Collections.emptyMap();
       }
-      V val=info.value();
-      if (deserializePortable && val instanceof GridPortableObject) {
-        try {
-          val=((GridPortableObject)val).deserialize();
-        }
- catch (        GridPortableException e) {
-          throw new GridRuntimeException(e);
-        }
-      }
-      map.put(info.key(),val);
     }
   }
   return map;
