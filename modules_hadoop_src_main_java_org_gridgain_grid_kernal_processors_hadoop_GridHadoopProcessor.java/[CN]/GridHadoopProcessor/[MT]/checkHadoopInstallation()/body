@@ -1,11 +1,13 @@
 {
   String hadoopHome=System.getenv("HADOOP_HOME");
-  if (F.isEmpty(hadoopHome))   throw new GridException("HADOOP_HOME environment variable is not set.");
- else {
-    U.quietAndInfo(log,"Apache Hadoop is found at " + hadoopHome);
-    File dir=new File(hadoopHome);
-    if (!dir.exists())     throw new GridException("Apache Hadoop installation directory does not exist!");
- else     if (!dir.isDirectory())     throw new GridException("Apache Hadoop installation path is not a directory!");
- else     if (!dir.canRead())     throw new GridException("Apache Hadoop installation directory can not be read! Check permissions.");
+  if (F.isEmpty(hadoopHome))   U.quietAndWarn(log,"HADOOP_HOME environment variable is not set.");
+ else   U.quietAndInfo(log,"Apache Hadoop is found at " + hadoopHome);
+  URL location;
+  try {
+    location=Class.forName("org.apache.hadoop.conf.Configuration").getProtectionDomain().getCodeSource().getLocation();
   }
+ catch (  ClassNotFoundException|NoClassDefFoundError e) {
+    throw new GridException("Apache Hadoop is not in classpath. Check if HADOOP_HOME environment variable " + "points to Apache Hadoop installation directory.",e);
+  }
+  if (log.isDebugEnabled())   log.debug("Hadoop classes are loaded from " + location);
 }
