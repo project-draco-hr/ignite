@@ -1,0 +1,21 @@
+{
+  for (  Map.Entry<String,Class<?>> entry : meta.getAscendingFields().entrySet()) {
+    ClassProperty prop=buildClassProperty(cls,entry.getKey(),entry.getValue());
+    d.addProperty(key,prop);
+    String idxName=prop.name() + "_idx";
+    d.addIndex(idxName,isGeometryClass(prop.type()) ? GEO_SPATIAL : SORTED);
+    d.addFieldToIndex(idxName,prop.name(),0,false);
+  }
+  for (  Map.Entry<String,Class<?>> entry : meta.getDescendingFields().entrySet()) {
+    ClassProperty prop=buildClassProperty(cls,entry.getKey(),entry.getValue());
+    d.addProperty(key,prop);
+    String idxName=prop.name() + "_idx";
+    d.addIndex(idxName,isGeometryClass(prop.type()) ? GEO_SPATIAL : SORTED);
+    d.addFieldToIndex(idxName,prop.name(),0,true);
+  }
+  for (  String txtIdx : meta.getTextFields())   d.addFieldToTextIndex(txtIdx);
+  for (  Map.Entry<String,Class<?>> entry : meta.getQueryFields().entrySet()) {
+    ClassProperty prop=buildClassProperty(cls,entry.getKey(),entry.getValue());
+    d.addProperty(key,prop);
+  }
+}
