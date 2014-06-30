@@ -1,7 +1,18 @@
 {
-  jobLocDir=new File(new File(U.resolveWorkDirectory("hadoop",false),"node-" + locNodeId),"job_" + jobId);
-  GridHadoopV2JobResourceManager rsrcMgr=new GridHadoopV2JobResourceManager(jobId,ctx,jobLocDir);
-  rsrcMgr.processJobResources(!external);
+  rsrcMgr=new GridHadoopV2JobResourceManager(jobId,ctx,locNodeId);
+  rsrcMgr.prepareJobEnvironment(!external);
   initializeClassLoader(rsrcMgr.getClassPath());
   if (jobLdr != null)   ctx.getJobConf().setClassLoader(jobLdr);
+  prepareTaskEnvironment(null);
+  Class<?> partClsOld=ctx.getConfiguration().getClass("mapred.partitioner.class",null);
+  if (partClsOld != null)   part=new GridHadoopV1Partitioner(ctx.getJobConf().getPartitionerClass(),ctx.getConfiguration());
+  try {
+    part=new GridHadoopV2Partitioner(ctx.getPartitionerClass(),ctx.getConfiguration());
+  }
+ catch (  ClassNotFoundException e) {
+    throw new GridException(e);
+  }
+  sortComp=ctx.getSortComparator();
+  combineGrpComp=COMBINE_KEY_GROUPING_SUPPORTED ? ctx.getCombinerKeyGroupingComparator() : null;
+  reduceGrpComp=ctx.getGroupingComparator();
 }
