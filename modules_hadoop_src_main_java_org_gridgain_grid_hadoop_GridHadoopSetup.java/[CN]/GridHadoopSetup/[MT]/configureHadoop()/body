@@ -51,12 +51,13 @@
     }
   }
 );
-  boolean jarsExist=true;
+  boolean jarsLinksCorrect=true;
   for (  File file : jarFiles) {
-    File targetFile=new File(hadoopCommonLibDir,file.getName());
-    if (!linkTargetExists(targetFile) || !targetFile.exists())     jarsExist=false;
+    File link=new File(hadoopCommonLibDir,file.getName());
+    jarsLinksCorrect&=isJarLinkCorrect(link,file);
+    if (!jarsLinksCorrect)     break;
   }
-  if (!jarsExist) {
+  if (!jarsLinksCorrect) {
     if (ask("GridGain JAR files are not found in Hadoop 'lib' directory. " + "Create appropriate symbolic links?")) {
       File[] oldGridGainJarFiles=hadoopCommonLibDir.listFiles(new FilenameFilter(){
         @Override public boolean accept(        File dir,        String name){
@@ -77,14 +78,12 @@
           Files.createSymbolicLink(targetFile.toPath(),file.toPath());
         }
  catch (        IOException e) {
-          warn("Creating symbolic link failed! (Windows NTFS requires Admin rights to create symlinks.)");
-          println("Copying file to '" + targetFile.getAbsolutePath() + "'.");
-          try {
-            U.copy(file,targetFile,false);
+          if (U.isWindows()) {
+            warn("Ability to create symbolic links is required!");
+            warn("On Windows platform you have to grant permission 'Create symbolic links'");
+            warn("to your user or run the Accelerator as Administrator.");
           }
- catch (          IOException e1) {
-            exit("Failed to copy file to '" + targetFile + "'. Check permissions.",e1);
-          }
+          exit("Creating symbolic link failed! Check permissions.",e);
         }
       }
     }
