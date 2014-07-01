@@ -1,7 +1,16 @@
 {
-  GridClientCacheRequest<K,Object> req=new GridClientCacheRequest<>(RMV);
+  Object key0=key;
+  if (marsh instanceof GridClientPortableMarshaller) {
+    try {
+      key0=((GridClientPortableMarshaller)marsh).convertToPortable(key);
+    }
+ catch (    IOException e) {
+      return new GridClientFutureAdapter<>(e);
+    }
+  }
+  GridClientCacheRequest req=new GridClientCacheRequest(RMV);
   req.cacheName(cacheName);
-  req.key(key);
+  req.key(key0);
   req.cacheFlagsOn(encodeCacheFlags(flags));
   return makeRequest(req,destNodeId);
 }
