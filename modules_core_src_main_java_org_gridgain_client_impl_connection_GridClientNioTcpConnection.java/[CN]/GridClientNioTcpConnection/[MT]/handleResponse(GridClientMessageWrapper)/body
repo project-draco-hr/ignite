@@ -12,12 +12,16 @@
   }
  else {
     GridClientMessage msg;
+    if (keepPortablesMode != null && fut.keepPortables())     keepPortablesMode.set(true);
     try {
       msg=marsh.unmarshal(req.messageArray());
     }
  catch (    IOException e) {
       fut.onDone(new GridClientException("Failed to unmarshal message.",e));
       return;
+    }
+ finally {
+      if (keepPortablesMode != null && fut.keepPortables())       keepPortablesMode.set(false);
     }
     msg.requestId(req.requestId());
     msg.clientId(req.clientId());
