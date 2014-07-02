@@ -3,6 +3,7 @@
   String fileName="/testFile";
   prepareFile(fileName,lineCnt);
   totalLineCnt.set(0);
+  taskWorkDirs.clear();
   Configuration cfg=new Configuration();
   cfg.setStrings("fs.ggfs.impl",GridGgfsHadoopFileSystem.class.getName());
   cfg.setBoolean(MAP_WRITE,true);
@@ -21,5 +22,6 @@
   GridFuture<?> fut=grid(0).hadoop().submit(jobId,new GridHadoopDefaultJobInfo(job.getConfiguration()));
   fut.get();
   assertEquals(lineCnt,totalLineCnt.get());
+  assertEquals(34,taskWorkDirs.size());
   for (int g=0; g < gridCount(); g++)   grid(g).hadoop().finishFuture(jobId).get();
 }
