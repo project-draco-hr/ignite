@@ -4,9 +4,12 @@
     if (msg == GridClientPingPacket.PING_MESSAGE)     ses.send(new GridClientPingPacketWrapper());
  else     if (msg instanceof GridClientHandshakeRequest) {
       GridClientHandshakeRequest hs=(GridClientHandshakeRequest)msg;
-      byte[] verBytes=hs.versionBytes();
-      if (!Arrays.equals(VER_BYTES,verBytes))       U.warn(log,"Client version check failed [ses=" + ses + ", expected="+ Arrays.toString(VER_BYTES)+ ", actual="+ Arrays.toString(verBytes)+ ']');
-      ses.send(new GridClientHandshakeResponseWrapper(CODE_OK));
+      short ver=U.bytesToShort(hs.versionBytes(),0);
+      if (!SUPP_VERS.contains(ver)) {
+        U.error(log,"Client protocol version is not supported [ses=" + ses + ", ver="+ ver+ ", supported="+ SUPP_VERS+ ']');
+        ses.close();
+      }
+ else       ses.send(new GridClientHandshakeResponseWrapper(CODE_OK));
     }
  else {
       final GridRestRequest req=createRestRequest(ses,msg);

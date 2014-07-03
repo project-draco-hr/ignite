@@ -28,9 +28,12 @@ catch (    InterruptedException e) {
   }
  else   if (msg instanceof GridClientHandshakeRequest) {
     GridClientHandshakeRequest hs=(GridClientHandshakeRequest)msg;
-    byte[] verBytes=hs.versionBytes();
-    if (!Arrays.equals(VER_BYTES,verBytes))     U.warn(log,"Client version check failed [ses=" + ses + ", expected="+ Arrays.toString(VER_BYTES)+ ", actual="+ Arrays.toString(verBytes)+ ']');
-    ses.send(GridClientHandshakeResponse.OK);
+    short ver=U.bytesToShort(hs.versionBytes(),0);
+    if (!SUPP_VERS.contains(ver)) {
+      U.error(log,"Client protocol version is not supported [ses=" + ses + ", ver="+ ver+ ", supported="+ SUPP_VERS+ ']');
+      ses.close();
+    }
+ else     ses.send(GridClientHandshakeResponse.OK);
   }
  else   if (msg instanceof GridClientPingPacket)   ses.send(GridClientPingPacket.PING_MESSAGE);
  else   throw new IllegalArgumentException("Unsupported input message: " + msg);
