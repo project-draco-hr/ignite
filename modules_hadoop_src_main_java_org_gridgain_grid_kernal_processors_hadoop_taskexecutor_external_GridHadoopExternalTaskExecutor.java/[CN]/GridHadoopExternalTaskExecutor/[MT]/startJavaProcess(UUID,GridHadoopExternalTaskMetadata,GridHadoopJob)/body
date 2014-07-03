@@ -1,0 +1,28 @@
+{
+  String outFldr=jobWorkFolder(job.id()) + File.separator + childProcId;
+  if (log.isDebugEnabled())   log.debug("Will write process log output to: " + outFldr);
+  List<String> cmd=new ArrayList<>();
+  File workDir=U.resolveWorkDirectory("",false);
+  cmd.add(javaCmd);
+  cmd.addAll(startMeta.jvmOptions());
+  cmd.add("-cp");
+  cmd.add(buildClasspath(startMeta.classpath()));
+  cmd.add(GridHadoopExternalProcessStarter.class.getName());
+  cmd.add("-cpid");
+  cmd.add(String.valueOf(childProcId));
+  cmd.add("-ppid");
+  cmd.add(String.valueOf(nodeDesc.processId()));
+  cmd.add("-nid");
+  cmd.add(String.valueOf(nodeDesc.parentNodeId()));
+  cmd.add("-addr");
+  cmd.add(nodeDesc.address());
+  cmd.add("-tport");
+  cmd.add(String.valueOf(nodeDesc.tcpPort()));
+  cmd.add("-sport");
+  cmd.add(String.valueOf(nodeDesc.sharedMemoryPort()));
+  cmd.add("-out");
+  cmd.add(outFldr);
+  cmd.add("-wd");
+  cmd.add(workDir.getAbsolutePath());
+  return new ProcessBuilder(cmd).redirectErrorStream(true).directory(workDir).start();
+}
