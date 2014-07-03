@@ -1,0 +1,13 @@
+{
+  GridHadoopShuffleJob<UUID> res=jobs.get(jobId);
+  if (res == null) {
+    res=newJob(jobId);
+    GridHadoopShuffleJob<UUID> old=jobs.putIfAbsent(jobId,res);
+    if (old != null) {
+      res.close();
+      res=old;
+    }
+ else     if (res.reducersInitialized())     startSending(res);
+  }
+  return res;
+}
