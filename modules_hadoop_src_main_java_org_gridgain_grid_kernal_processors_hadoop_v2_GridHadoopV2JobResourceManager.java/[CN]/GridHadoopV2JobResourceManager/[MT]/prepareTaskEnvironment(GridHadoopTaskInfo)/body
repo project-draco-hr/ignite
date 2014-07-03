@@ -1,5 +1,6 @@
 {
   try {
+    JobConf cfg=ctx.getJobConf();
 switch (info.type()) {
 case MAP:
 case REDUCE:
@@ -17,11 +18,14 @@ for (File resource : rsrcList) {
     throw new IOException(msg,e);
   }
 }
-FileSystem.getLocal(ctx.getJobConf()).setWorkingDirectory(new Path(locDir.getAbsolutePath()));
+cfg.set(GridHadoopFileSystemsUtils.LOCAL_FS_WORKDIR_PROPERTY,locDir.getAbsolutePath());
+FileSystem.getLocal(cfg).setWorkingDirectory(new Path(locDir.getAbsolutePath()));
 break;
 default :
 setJobWorkingDirectory();
 }
+FileSystem fs=FileSystem.get(cfg);
+GridHadoopFileSystemsUtils.setUser(fs,cfg.getUser());
 }
  catch (IOException e) {
 throw new GridException("Unable to prepare local working directory for the task " + "[jobId=" + jobId + ", task="+ info+ ']',e);
