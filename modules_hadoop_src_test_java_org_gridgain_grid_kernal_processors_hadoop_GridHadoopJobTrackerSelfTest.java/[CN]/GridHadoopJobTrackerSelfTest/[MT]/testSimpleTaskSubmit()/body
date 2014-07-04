@@ -1,0 +1,35 @@
+{
+  try {
+    UUID globalId=UUID.randomUUID();
+    Configuration cfg=new Configuration();
+    int cnt=10;
+    cfg.setInt(BLOCK_CNT,cnt);
+    GridHadoopJobId jobId=new GridHadoopJobId(globalId,1);
+    grid(0).hadoop().submit(jobId,new GridHadoopTestJobInfo(cfg));
+    checkStatus(jobId,false);
+    info("Releasing map latch.");
+    mapAwaitLatch.countDown();
+    checkStatus(jobId,false);
+    info("Releasing reduce latch.");
+    reduceAwaitLatch.countDown();
+    checkStatus(jobId,true);
+    int maps=0;
+    int reduces=0;
+    int combines=0;
+    for (int i=0; i < gridCount(); i++) {
+      Grid g=grid(i);
+      UUID nodeId=g.localNode().id();
+      maps+=mapExecCnt.get(nodeId).get();
+      combines+=combineExecCnt.get(nodeId).get();
+      reduces+=reduceExecCnt.get(nodeId).get();
+    }
+    assertEquals(10,maps);
+    assertEquals(0,combines);
+    assertEquals(1,reduces);
+  }
+  finally {
+    mapAwaitLatch.countDown();
+    combineAwaitLatch.countDown();
+    reduceAwaitLatch.countDown();
+  }
+}

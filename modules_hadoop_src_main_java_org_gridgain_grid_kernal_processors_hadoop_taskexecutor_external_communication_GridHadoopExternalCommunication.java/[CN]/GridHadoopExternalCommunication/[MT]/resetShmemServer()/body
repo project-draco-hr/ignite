@@ -1,0 +1,21 @@
+{
+  if (boundTcpShmemPort >= 0)   throw new GridException("Shared memory server was already created on port " + boundTcpShmemPort);
+  if (shmemPort == -1 || U.isWindows())   return null;
+  GridException lastEx=null;
+  for (int port=shmemPort; port < shmemPort + locPortRange; port++) {
+    try {
+      GridIpcSharedMemoryServerEndpoint srv=new GridIpcSharedMemoryServerEndpoint(log.getLogger(GridIpcSharedMemoryServerEndpoint.class),locProcDesc.processId(),gridName);
+      srv.setPort(port);
+      srv.omitOutOfResourcesWarning(true);
+      srv.start();
+      boundTcpShmemPort=port;
+      if (log.isInfoEnabled())       log.info("Successfully bound shared memory communication to TCP port [port=" + boundTcpShmemPort + ", locHost="+ locHost+ ']');
+      return srv;
+    }
+ catch (    GridException e) {
+      lastEx=e;
+      if (log.isDebugEnabled())       log.debug("Failed to bind to local port (will try next port within range) [port=" + port + ", locHost="+ locHost+ ']');
+    }
+  }
+  throw new GridException("Failed to bind shared memory communication to any port within range [startPort=" + locPort + ", portRange="+ locPortRange+ ", locHost="+ locHost+ ']',lastEx);
+}

@@ -8,14 +8,13 @@
     total+=read;
     if (read != len) {
       int readAmt=len - read;
-      GridPlainFuture<byte[]> fut=rmtClient.readData(streamId,position + read,readAmt,buf,off + read,readAmt);
-      fut.get();
+      delegate.hadoop().readData(delegate,position + read,readAmt,buf,off + read,readAmt).get();
       total+=readAmt;
     }
     if (clientLog.isLogEnabled())     clientLog.logRandomRead(logStreamId,position,len);
   }
  catch (  GridException e) {
-    throw new IOException(e);
+    throw GridGgfsHadoopUtils.cast(e);
   }
  finally {
     readEnd();
