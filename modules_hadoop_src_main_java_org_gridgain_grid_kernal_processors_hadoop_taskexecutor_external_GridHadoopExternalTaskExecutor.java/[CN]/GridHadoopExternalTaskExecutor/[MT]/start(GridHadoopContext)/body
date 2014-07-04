@@ -1,0 +1,14 @@
+{
+  this.ctx=ctx;
+  log=ctx.kernalContext().log(GridHadoopExternalTaskExecutor.class);
+  outputBase=U.resolveWorkDirectory("hadoop",false);
+  pathSep=System.getProperty("path.separator",U.isWindows() ? ";" : ":");
+  initJavaCommand();
+  comm=new GridHadoopExternalCommunication(ctx.localNodeId(),UUID.randomUUID(),ctx.kernalContext().config().getMarshaller(),log,ctx.kernalContext().config().getSystemExecutorService(),ctx.kernalContext().gridName());
+  comm.setListener(new MessageListener());
+  comm.start();
+  nodeDesc=comm.localProcessDescriptor();
+  ctx.kernalContext().ports().registerPort(nodeDesc.tcpPort(),GridPortProtocol.TCP,GridHadoopExternalTaskExecutor.class);
+  if (nodeDesc.sharedMemoryPort() != -1)   ctx.kernalContext().ports().registerPort(nodeDesc.sharedMemoryPort(),GridPortProtocol.TCP,GridHadoopExternalTaskExecutor.class);
+  jobTracker=ctx.jobTracker();
+}
