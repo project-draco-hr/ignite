@@ -1,0 +1,17 @@
+{
+  if (ses.accepted()) {
+    if (log.isDebugEnabled())     log.debug("Accepted connection, initiating handshake: " + ses);
+    ses.send(locIdMsg).listenAsync(new CI1<GridNioFuture<?>>(){
+      @Override public void apply(      GridNioFuture<?> fut){
+        try {
+          fut.get();
+        }
+ catch (        GridException|IOException e) {
+          log.warning("Failed to send handshake message, will close session: " + ses,e);
+          ses.close();
+        }
+      }
+    }
+);
+  }
+}
