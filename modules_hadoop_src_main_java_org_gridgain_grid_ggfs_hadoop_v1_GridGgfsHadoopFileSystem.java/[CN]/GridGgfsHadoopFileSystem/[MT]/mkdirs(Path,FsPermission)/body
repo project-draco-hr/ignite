@@ -13,13 +13,14 @@
       return secondaryFs.mkdirs(toSecondary(f),perm);
     }
  else {
-      boolean mkdirRes=rmtClient.mkdirs(path,permission(perm)).get();
+      boolean mkdirRes=rmtClient.mkdirs(path,permission(perm));
       if (clientLog.isLogEnabled())       clientLog.logMakeDirectory(path,mode);
       return mkdirRes;
     }
   }
- catch (  GridException e) {
-    throw new IOException("Failed to create a directory [path=" + f + ", permission="+ perm.toString()+ ']',e);
+ catch (  IOException e) {
+    if (F.eq(IOException.class,e.getClass()) && (e.getCause() == null || !GridGgfsException.class.isAssignableFrom(e.getCause().getClass())))     throw e;
+ else     return false;
   }
  finally {
     leaveBusy();
