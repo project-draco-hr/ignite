@@ -1,10 +1,13 @@
 {
-  if (LOG.isDebugEnabled())   LOG.debug("File system closed [uri=" + uri + ", endpoint="+ uriAuthority+ ']');
-  if (rmtClient == null)   return;
-  super.close();
-  rmtClient.close(false);
-  if (clientLog.isLogEnabled())   clientLog.close();
-  if (secondaryFs != null)   U.closeQuiet(secondaryFs);
-  uri=null;
-  rmtClient=null;
+  if (closeGuard.compareAndSet(false,true)) {
+    if (LOG.isDebugEnabled())     LOG.debug("File system closed [uri=" + uri + ", endpoint="+ uriAuthority+ ']');
+    busyLock.block();
+    if (rmtClient == null)     return;
+    super.close();
+    rmtClient.close(false);
+    if (clientLog.isLogEnabled())     clientLog.close();
+    if (secondaryFs != null)     U.closeQuiet(secondaryFs);
+    uri=null;
+    rmtClient=null;
+  }
 }
