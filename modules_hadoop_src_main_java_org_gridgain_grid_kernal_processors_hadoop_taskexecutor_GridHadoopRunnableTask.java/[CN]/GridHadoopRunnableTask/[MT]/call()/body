@@ -1,0 +1,26 @@
+{
+  execStartTs=System.currentTimeMillis();
+  boolean runCombiner=info.type() == MAP && job.info().hasCombiner() && !get(job.info(),SINGLE_COMBINER_FOR_ALL_MAPPERS,false);
+  GridHadoopTaskState state=GridHadoopTaskState.COMPLETED;
+  Throwable err=null;
+  try {
+    job.prepareTaskEnvironment(info);
+    runTask(info,runCombiner);
+    if (runCombiner)     runTask(new GridHadoopTaskInfo(info.nodeId(),COMBINE,info.jobId(),info.taskNumber(),info.attempt(),null),runCombiner);
+  }
+ catch (  GridHadoopTaskCancelledException ignored) {
+    state=GridHadoopTaskState.CANCELED;
+  }
+catch (  Throwable e) {
+    state=GridHadoopTaskState.FAILED;
+    err=e;
+    U.error(log,"Task execution failed.",e);
+  }
+ finally {
+    execEndTs=System.currentTimeMillis();
+    onTaskFinished(state,err);
+    if (runCombiner)     local.close();
+    job.cleanupTaskEnvironment(info);
+  }
+  return null;
+}
