@@ -1,0 +1,19 @@
+{
+  if (ctx.isDaemon())   return;
+  busyLock.block();
+  ctx.event().removeLocalEventListener(topLsnr);
+  try {
+    if (cfgQry != null)     cfgQry.close();
+  }
+ catch (  GridException e) {
+    log.error("Failed to unsubscribe service configuration notifications.",e);
+  }
+  try {
+    if (assignQry != null)     assignQry.close();
+  }
+ catch (  GridException e) {
+    log.error("Failed to unsubscribe service assignment notifications.",e);
+  }
+  U.shutdownNow(GridServiceProcessor.class,depExe,log);
+  if (log.isDebugEnabled())   log.debug("Stopped service processor.");
+}
