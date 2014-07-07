@@ -1,0 +1,18 @@
+{
+  Grid g=randomGrid();
+  String name="serviceCancel";
+  CountDownLatch latch=new CountDownLatch(1);
+  DummyService.exeLatch(name,latch);
+  g.services().deployClusterSingleton(name,new DummyService()).get();
+  info("Deployed service: " + name);
+  latch.await();
+  assertEquals(name,1,DummyService.started(name));
+  assertEquals(name,0,DummyService.cancelled(name));
+  latch=new CountDownLatch(1);
+  DummyService.cancelLatch(name,latch);
+  g.services().cancel(name).get();
+  info("Cancelled service: " + name);
+  latch.await();
+  assertEquals(name,1,DummyService.started(name));
+  assertEquals(name,1,DummyService.cancelled(name));
+}
