@@ -1,0 +1,23 @@
+{
+  try {
+    Collection<GridNode> nodes=ctx.grid().forCache(name()).forRemotes().nodes();
+    GridFuture<Collection<Integer>> fut=null;
+    if (!nodes.isEmpty()) {
+      ctx.kernalContext().task().setThreadContext(TC_TIMEOUT,gridCfg.getNetworkTimeout());
+      fut=ctx.closures().broadcastNoFailover(new GlobalSizeCallable(name(),primaryOnly),null,nodes);
+    }
+    int globalSize=primaryOnly ? primarySize() : size();
+    if (fut != null) {
+      for (      Integer i : fut.get())       globalSize+=i;
+    }
+    return globalSize;
+  }
+ catch (  GridEmptyProjectionException ignore) {
+    if (log.isDebugEnabled())     log.debug("All remote nodes left while cache clear [cacheName=" + name() + "]");
+    return primaryOnly ? primarySize() : size();
+  }
+catch (  GridComputeTaskTimeoutException e) {
+    U.warn(log,"Timed out waiting for remote nodes to finish cache clear (consider increasing " + "'networkTimeout' configuration property) [cacheName=" + name() + "]");
+    throw e;
+  }
+}
