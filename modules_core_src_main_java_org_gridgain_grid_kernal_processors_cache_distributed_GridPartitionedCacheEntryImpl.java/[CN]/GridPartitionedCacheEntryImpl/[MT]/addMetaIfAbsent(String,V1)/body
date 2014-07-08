@@ -2,10 +2,12 @@
   V1 v=null;
   GridDhtCacheEntry<K,V> de=dht().peekExx(key);
   if (de != null)   v=de.addMetaIfAbsent(name,val);
-  GridNearCacheEntry<K,V> ne=de != null ? near().peekExx(key) : near().entryExx(key,ctx.affinity().affinityTopologyVersion());
-  if (ne != null) {
-    V1 v1=ne.addMetaIfAbsent(name,val);
-    if (v == null)     v=v1;
+  if (ctx.isNear()) {
+    GridNearCacheEntry<K,V> ne=de != null ? near().peekExx(key) : near().entryExx(key,ctx.affinity().affinityTopologyVersion());
+    if (ne != null) {
+      V1 v1=ne.addMetaIfAbsent(name,val);
+      if (v == null)       v=v1;
+    }
   }
   return v;
 }
