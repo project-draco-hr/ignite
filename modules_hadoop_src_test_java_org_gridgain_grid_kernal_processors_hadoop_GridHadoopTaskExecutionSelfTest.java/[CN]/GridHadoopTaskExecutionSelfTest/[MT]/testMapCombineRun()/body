@@ -1,0 +1,27 @@
+{
+  int lineCnt=10001;
+  String fileName="/testFile";
+  prepareFile(fileName,lineCnt);
+  totalLineCnt.set(0);
+  taskWorkDirs.clear();
+  Configuration cfg=new Configuration();
+  cfg.setStrings("fs.ggfs.impl",GridGgfsHadoopFileSystem.class.getName());
+  cfg.setBoolean(MAP_WRITE,true);
+  Job job=Job.getInstance(cfg);
+  job.setOutputKeyClass(Text.class);
+  job.setOutputValueClass(IntWritable.class);
+  job.setMapperClass(TestMapper.class);
+  job.setCombinerClass(TestCombiner.class);
+  job.setReducerClass(TestReducer.class);
+  job.setNumReduceTasks(2);
+  job.setInputFormatClass(TextInputFormat.class);
+  FileInputFormat.setInputPaths(job,new Path("ggfs://:" + getTestGridName(0) + "@/"));
+  FileOutputFormat.setOutputPath(job,new Path("ggfs://:" + getTestGridName(0) + "@/output"));
+  job.setJarByClass(getClass());
+  GridHadoopJobId jobId=new GridHadoopJobId(UUID.randomUUID(),2);
+  GridFuture<?> fut=grid(0).hadoop().submit(jobId,new GridHadoopDefaultJobInfo(job.getConfiguration()));
+  fut.get();
+  assertEquals(lineCnt,totalLineCnt.get());
+  assertEquals(34,taskWorkDirs.size());
+  for (int g=0; g < gridCount(); g++)   grid(g).hadoop().finishFuture(jobId).get();
+}
