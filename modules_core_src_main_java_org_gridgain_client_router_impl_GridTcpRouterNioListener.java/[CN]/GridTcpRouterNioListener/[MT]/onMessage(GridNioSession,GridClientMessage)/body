@@ -28,12 +28,23 @@ catch (    InterruptedException e) {
   }
  else   if (msg instanceof GridClientHandshakeRequest) {
     GridClientHandshakeRequest hs=(GridClientHandshakeRequest)msg;
-    short ver=U.bytesToShort(hs.versionBytes(),0);
+    short ver=hs.version();
     if (!SUPP_VERS.contains(ver)) {
       U.error(log,"Client protocol version is not supported [ses=" + ses + ", ver="+ ver+ ", supported="+ SUPP_VERS+ ']');
       ses.close();
     }
- else     ses.send(GridClientHandshakeResponse.OK);
+ else {
+      byte marshId=hs.marshallerId();
+      GridClientMarshaller marsh=marshMap.get(marshId);
+      if (marsh == null) {
+        U.error(log,"Client marshaller ID is invalid. Note that .NET and C++ clients " + "are supported only in enterprise edition [ses=" + ses + ", marshId="+ marshId+ ']');
+        ses.close();
+      }
+ else {
+        ses.addMeta(MARSHALLER.ordinal(),marsh);
+        ses.send(GridClientHandshakeResponse.OK);
+      }
+    }
   }
  else   if (msg instanceof GridClientPingPacket)   ses.send(GridClientPingPacket.PING_MESSAGE);
  else   throw new IllegalArgumentException("Unsupported input message: " + msg);
