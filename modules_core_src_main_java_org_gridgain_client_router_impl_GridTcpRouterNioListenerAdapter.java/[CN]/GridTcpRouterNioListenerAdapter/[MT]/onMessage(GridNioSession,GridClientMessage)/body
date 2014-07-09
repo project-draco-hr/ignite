@@ -4,7 +4,7 @@
     final UUID clientId=routerMsg.clientId();
     final long reqId=routerMsg.requestId();
     try {
-      client.forwardMessage(routerMsg,routerMsg.destinationId()).listenAsync(new GridClientFutureListener(){
+      client.forwardMessage(routerMsg,routerMsg.destinationId(),ses.<Byte>meta(MARSHALLER_ID.ordinal())).listenAsync(new GridClientFutureListener(){
         @Override public void onDone(        GridClientFuture fut){
           try {
             GridRouterResponse res=(GridRouterResponse)fut.get();
@@ -34,8 +34,17 @@ catch (    InterruptedException e) {
       ses.close();
     }
  else {
-      ses.addMeta(MARSHALLER.ordinal(),marshMap.get(hs.marshallerId()));
-      ses.send(GridClientHandshakeResponse.OK);
+      byte marshId=hs.marshallerId();
+      GridClientMarshaller marsh=marshMap.get(marshId);
+      if (marsh == null) {
+        U.error(log,"Client marshaller ID is invalid. Note that .NET and C++ clients " + "are supported only in enterprise edition [ses=" + ses + ", marshId="+ marshId+ ']');
+        ses.close();
+      }
+ else {
+        ses.addMeta(MARSHALLER_ID.ordinal(),marshId);
+        ses.addMeta(MARSHALLER.ordinal(),marsh);
+        ses.send(GridClientHandshakeResponse.OK);
+      }
     }
   }
  else   if (msg instanceof GridClientPingPacket)   ses.send(GridClientPingPacket.PING_MESSAGE);
