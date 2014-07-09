@@ -5,8 +5,7 @@
  else     return GridHadoopV1Splitter.splitJob(ctx.getJobConf());
   }
   Path jobDir=new Path(jobDirPath);
-  try {
-    FileSystem fs=FileSystem.get(jobDir.toUri(),ctx.getConfiguration());
+  try (FileSystem fs=FileSystem.get(jobDir.toUri(),ctx.getConfiguration())){
     JobSplit.TaskSplitMetaInfo[] metaInfos=SplitMetaInfoReader.readSplitMetaInfo(hadoopJobID,fs,ctx.getConfiguration(),jobDir);
     if (F.isEmpty(metaInfos))     throw new GridException("No input splits found.");
     Path splitsFile=JobSubmissionFiles.getJobSplitFile(jobDir);
