@@ -5,7 +5,18 @@
  catch (  GridClientException e) {
     throw new GridException("Failed to initialise embedded client.",e);
   }
-  final GridNioServerListener<GridClientMessage> lsnr=new GridTcpRouterNioListener(log,client);
+  GridNioServerListener<GridClientMessage> lsnr;
+  try {
+    Class<?> cls=Class.forName(ENT_NIO_LSNR_CLS);
+    Constructor<?> cons=cls.getConstructor(GridLogger.class,GridRouterClientImpl.class);
+    lsnr=(GridNioServerListener<GridClientMessage>)cons.newInstance(log,client);
+  }
+ catch (  ClassNotFoundException ignored) {
+    lsnr=new GridTcpRouterNioListenerOsImpl(log,client);
+  }
+catch (  NoSuchMethodException|IllegalAccessException|InstantiationException|InvocationTargetException e) {
+    throw new GridException("Failed to create NIO listener.",e);
+  }
   parser=new GridTcpRouterNioParser();
   final InetAddress hostAddr;
   try {
