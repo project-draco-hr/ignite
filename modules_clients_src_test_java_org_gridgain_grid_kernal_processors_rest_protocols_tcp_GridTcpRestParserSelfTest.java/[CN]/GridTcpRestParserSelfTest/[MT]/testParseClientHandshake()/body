@@ -4,7 +4,8 @@
     ByteBuffer tmp=clientHandshakePacket();
     ByteBuffer[] split=split(tmp,splitPos);
     GridNioSession ses=new GridMockNioSession();
-    GridTcpRestParser parser=new GridTcpRestParser(new GridClientOptimizedMarshaller());
+    ses.addMeta(MARSHALLER.ordinal(),new GridClientOptimizedMarshaller());
+    GridTcpRestParser parser=new GridTcpRestParser();
     Collection<GridClientMessage> lst=new ArrayList<>(1);
     for (    ByteBuffer buf : split) {
       GridClientMessage r;
@@ -14,6 +15,6 @@
     assertEquals(1,lst.size());
     GridClientHandshakeRequest req=(GridClientHandshakeRequest)F.first(lst);
     assertNotNull(req);
-    assertTrue(Arrays.equals(new byte[]{5,0,0,0},req.versionBytes()));
+    assertEquals(U.bytesToShort(new byte[]{5,0},0),req.version());
   }
 }
