@@ -1,5 +1,6 @@
 {
   if (F.isEmptyOrNulls(files))   return;
+  Collection<String> res=new ArrayList<>();
   for (  Object pathObj : files) {
     String locName=null;
     Path srcPath;
@@ -11,9 +12,10 @@
  else     srcPath=(Path)pathObj;
     if (locName == null)     locName=srcPath.getName();
     File dstPath=new File(jobLocDir.getAbsolutePath(),locName);
+    res.add(locName);
     rsrcList.add(dstPath);
     if (addToClsPath)     clsPath.add(dstPath.toURI().toURL());
-    if (!download)     return;
+    if (!download)     continue;
     JobConf cfg=ctx.getJobConf();
     FileSystem dstFs=FileSystem.getLocal(cfg);
     FileSystem srcFs=srcPath.getFileSystem(cfg);
@@ -38,4 +40,5 @@
     }
  else     FileUtil.copy(srcFs,srcPath,dstFs,new Path(dstPath.toString()),false,cfg);
   }
+  if (!res.isEmpty() && rsrcNameProp != null)   ctx.getJobConf().setStrings(rsrcNameProp,res.toArray(new String[res.size()]));
 }
