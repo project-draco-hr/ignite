@@ -1,0 +1,11 @@
+{
+  final boolean locExec=destId == null || destId.equals(ctx.localNodeId()) || replicatedCacheAvailable(cacheName);
+  if (locExec) {
+    GridCacheProjectionEx<?,?> prj=(GridCacheProjectionEx<?,?>)localCache(cacheName).forSubjectId(clientId).flagsOn(flags);
+    if (portable)     prj=prj.forPortables();
+    return op.apply((GridCacheProjection<Object,Object>)prj,ctx).chain(resultWrapper((GridCacheProjection<Object,Object>)prj,key));
+  }
+ else {
+    return ctx.grid().forPredicate(F.nodeForNodeId(destId)).compute().withNoFailover().call(new FlaggedCacheOperationCallable(clientId,cacheName,flags,op,key,portable));
+  }
+}
