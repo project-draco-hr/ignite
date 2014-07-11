@@ -5,10 +5,14 @@
     A.notNull(name,"name");
     A.notNull(cfg,"cfg");
     super.initialize(name,cfg);
+    setConf(cfg);
+    String disableCacheName=String.format("fs.%s.impl.disable.cache",name.getScheme());
+    cacheEnabled=!cfg.getBoolean(disableCacheName,false);
     mgmt=cfg.getBoolean(GGFS_MANAGEMENT,false);
     if (!GGFS_SCHEME.equals(name.getScheme()))     throw new IOException("Illegal file system URI [expected=" + GGFS_SCHEME + "://[name]/[optional_path], actual="+ name+ ']');
     uri=name;
     uriAuthority=uri.getAuthority();
+    setUser(cfg.get(MRJobConfig.USER_NAME,DFLT_USER_NAME));
     seqReadsBeforePrefetch=parameter(cfg,PARAM_GGFS_SEQ_READS_BEFORE_PREFETCH,uriAuthority,0);
     if (seqReadsBeforePrefetch > 0)     seqReadsBeforePrefetchOverride=true;
     dfltReplication=(short)cfg.getInt("dfs.replication",3);
