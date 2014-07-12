@@ -2,10 +2,18 @@
   try {
     GridGgfsDataInputStream dis=new GridGgfsDataInputStream(endpoint.inputStream());
     byte[] hdr=new byte[GridGgfsMarshaller.HEADER_SIZE];
+    boolean first=true;
     while (!Thread.currentThread().isInterrupted()) {
       dis.readFully(hdr);
       final long reqId=U.bytesToLong(hdr,0);
       int ordinal=U.bytesToInt(hdr,8);
+      if (first) {
+        if (reqId != 0 || ordinal != GridGgfsIpcCommand.HANDSHAKE.ordinal()) {
+          U.warn(log,"Handshake failed.");
+          return;
+        }
+        first=false;
+      }
       final GridGgfsIpcCommand cmd=GridGgfsIpcCommand.valueOf(ordinal);
       GridGgfsMessage msg=marsh.unmarshall(cmd,hdr,dis);
       GridFuture<GridGgfsMessage> fut=hnd.handleAsync(ses,msg,dis);
