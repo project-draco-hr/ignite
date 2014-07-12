@@ -1,9 +1,10 @@
 {
   if (F.isEmpty(gridCfg.getCacheConfiguration()))   return null;
   GridConfiguration cp=new GridConfiguration();
-  cp.setRestEnabled(false);
+  cp.setClientConnectionConfiguration(null);
   Collection<GridCacheConfiguration> reduced=new ArrayList<>();
   for (  GridCacheConfiguration ccfg : gridCfg.getCacheConfiguration()) {
+    if (CU.isSystemCache(ccfg.getName()))     continue;
     if (!matches(reduced,ccfg)) {
       GridCacheConfiguration ccfgCp=new GridCacheConfiguration(ccfg);
       if (ccfgCp.getDistributionMode() == GridCacheDistributionMode.CLIENT_ONLY)       ccfgCp.setDistributionMode(GridCacheDistributionMode.PARTITIONED_ONLY);
@@ -13,6 +14,7 @@
       reduced.add(ccfgCp);
     }
   }
+  if (F.isEmpty(reduced))   return null;
   GridCacheConfiguration[] res=new GridCacheConfiguration[reduced.size()];
   reduced.toArray(res);
   cp.setCacheConfiguration(res);

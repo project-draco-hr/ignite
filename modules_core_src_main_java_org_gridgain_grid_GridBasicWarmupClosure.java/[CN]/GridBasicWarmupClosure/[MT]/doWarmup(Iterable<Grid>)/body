@@ -34,12 +34,24 @@ case "removex":
       call=new RemovexCallable(cache0);
       break;
     }
+case "putIfAbsent":
+{
+    call=new PutIfAbsentCallable(cache0);
+    break;
+  }
+case "replace":
+{
+  call=new ReplaceCallable(cache0);
+  break;
+}
 default :
-  throw new GridException("Unsupported warmup method: " + warmupMethod);
+throw new GridException("Unsupported warmup method: " + warmupMethod);
 }
 futs.add(svc.submit(call));
 }
+out("Running warmup [cacheName=" + cache.name() + ", method="+ warmupMethod+ ']');
 for (Future fut : futs) fut.get();
+for (int key=0; key < keyRange; key++) cache0.remove(key);
 }
 }
 }
