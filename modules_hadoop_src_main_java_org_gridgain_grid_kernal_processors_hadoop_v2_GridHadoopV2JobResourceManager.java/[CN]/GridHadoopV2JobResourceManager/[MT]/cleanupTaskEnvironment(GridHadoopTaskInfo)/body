@@ -1,5 +1,10 @@
 {
-  Thread.currentThread().setContextClassLoader(prevClsLdr.get());
+  ClassLoader clsLdr=prevClsLdr.get();
+  if (clsLdr != null) {
+    ClassLoaderWrapper taskClsLdr=(ClassLoaderWrapper)Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(clsLdr);
+    taskClsLdr.destroy();
+  }
   GridHadoopRawLocalFileSystem fs;
   File locDir=taskLocalDir(info);
   try {
