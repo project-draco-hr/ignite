@@ -2,10 +2,11 @@
   final byte[] data="test".getBytes();
   try {
     switchHandlerErrorFlag(true);
-    GridGgfsHadoop client=new GridGgfsHadoop(LOG,ENDPOINT);
-    GridGgfsPath path=new GridGgfsPath("/test.file");
-    Long streamId=client.create(path,true,false,1,1024,null).get();
-    final GridGgfsHadoopOutputStream ggfsOut=new GridGgfsHadoopOutputStream(client,streamId,LOG,GridGgfsHadoopLogger.disabledLogger(),0);
+    GridGgfsHadoop client=new GridGgfsHadoopOutProc("127.0.0.1",10500,getTestGridName(0),"ggfs",LOG);
+    client.handshake(null);
+    GridGgfsPath path=new GridGgfsPath("/test1.file");
+    GridGgfsHadoopStreamDelegate delegate=client.create(path,true,false,1,1024,null);
+    final GridGgfsHadoopOutputStream ggfsOut=new GridGgfsHadoopOutputStream(delegate,LOG,GridGgfsHadoopLogger.disabledLogger(),0);
     ggfsOut.write(data);
     U.sleep(500);
     GridTestUtils.assertThrows(null,new Callable<Object>(){

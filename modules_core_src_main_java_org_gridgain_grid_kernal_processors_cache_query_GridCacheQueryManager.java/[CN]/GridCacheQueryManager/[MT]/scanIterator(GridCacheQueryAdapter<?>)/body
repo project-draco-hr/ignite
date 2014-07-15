@@ -21,7 +21,13 @@
   }
 ,true,new P1<Map.Entry<K,V>>(){
     @Override public boolean apply(    Map.Entry<K,V> e){
-      return keyValFilter == null || keyValFilter.apply(e.getKey(),e.getValue());
+      try {
+        e=(Map.Entry<K,V>)cctx.unwrapPortableIfNeeded(e,qry.portableKeys(),qry.portableValues());
+        return keyValFilter == null || keyValFilter.apply(e.getKey(),e.getValue());
+      }
+ catch (      GridException ex) {
+        throw new GridRuntimeException(ex);
+      }
     }
   }
 );

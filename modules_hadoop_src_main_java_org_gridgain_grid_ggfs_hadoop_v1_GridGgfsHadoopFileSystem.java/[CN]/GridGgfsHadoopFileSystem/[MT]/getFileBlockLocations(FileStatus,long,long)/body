@@ -1,8 +1,8 @@
 {
   A.notNull(status,"status");
-  GridGgfsPath path=convert(status.getPath());
   enterBusy();
   try {
+    GridGgfsPath path=convert(status.getPath());
     if (mode(status.getPath()) == PROXY) {
       if (secondaryFs == null) {
         assert mgmt;
@@ -13,7 +13,7 @@
     }
  else {
       long now=System.currentTimeMillis();
-      List<GridGgfsBlockLocation> affinity=new ArrayList<>(rmtClient.affinity(path,start,len).get());
+      List<GridGgfsBlockLocation> affinity=new ArrayList<>(rmtClient.affinity(path,start,len));
       BlockLocation[] arr=new BlockLocation[affinity.size()];
       for (int i=0; i < arr.length; i++)       arr[i]=convert(affinity.get(i));
       if (LOG.isDebugEnabled())       LOG.debug("Fetched file locations [path=" + path + ", fetchTime="+ (System.currentTimeMillis() - now)+ ", locations="+ Arrays.asList(arr)+ ']');
@@ -22,12 +22,6 @@
   }
  catch (  FileNotFoundException ignored) {
     return EMPTY_BLOCK_LOCATIONS;
-  }
-catch (  GridGgfsFileNotFoundException ignored) {
-    return EMPTY_BLOCK_LOCATIONS;
-  }
-catch (  GridException e) {
-    throw new IOException("Failed to get file block locations [path=" + path + ", start="+ start+ ", len="+ len+ ']',e);
   }
  finally {
     leaveBusy();
