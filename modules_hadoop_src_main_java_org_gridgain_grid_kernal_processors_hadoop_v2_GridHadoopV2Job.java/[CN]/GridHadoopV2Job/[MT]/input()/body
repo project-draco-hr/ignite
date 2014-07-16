@@ -1,13 +1,12 @@
 {
-  JobConf cfg=ctx.getJobConf();
-  String jobDirPath=cfg.get(MRJobConfig.MAPREDUCE_JOB_DIR);
+  String jobDirPath=jobConf.get(MRJobConfig.MAPREDUCE_JOB_DIR);
   if (jobDirPath == null) {
-    if (useNewMapper)     return GridHadoopV2Splitter.splitJob(ctx);
- else     return GridHadoopV1Splitter.splitJob(cfg);
+    if (useNewMapper)     return GridHadoopV2Splitter.splitJob(jobContext);
+ else     return GridHadoopV1Splitter.splitJob(jobConf);
   }
   Path jobDir=new Path(jobDirPath);
-  try (FileSystem fs=FileSystem.get(jobDir.toUri(),cfg)){
-    JobSplit.TaskSplitMetaInfo[] metaInfos=SplitMetaInfoReader.readSplitMetaInfo(hadoopJobID,fs,cfg,jobDir);
+  try (FileSystem fs=FileSystem.get(jobDir.toUri(),jobConf)){
+    JobSplit.TaskSplitMetaInfo[] metaInfos=SplitMetaInfoReader.readSplitMetaInfo(hadoopJobID,fs,jobConf,jobDir);
     if (F.isEmpty(metaInfos))     throw new GridException("No input splits found.");
     Path splitsFile=JobSubmissionFiles.getJobSplitFile(jobDir);
     try (FSDataInputStream in=fs.open(splitsFile)){
