@@ -1,0 +1,32 @@
+{
+  if (inited) {
+    if (initImpl != null)     impl=initImpl;
+    return;
+  }
+synchronized (mux) {
+    if (inited) {
+      if (initImpl != null)       impl=initImpl;
+      return;
+    }
+    if (initImpl != null)     impl=initImpl;
+    if (isConfigured()) {
+      boolean consoleHndFound=findHandler(impl,ConsoleHandler.class) != null;
+      quiet0=!consoleHndFound;
+      inited=true;
+      return;
+    }
+    defaultConfiguration();
+    boolean quiet=Boolean.valueOf(System.getProperty(GG_QUIET,"true"));
+    boolean useConsoleAppender=Boolean.valueOf(System.getProperty(GG_CONSOLE_APPENDER,"true"));
+    ConsoleHandler consoleHnd=findHandler(impl,ConsoleHandler.class);
+    if (useConsoleAppender) {
+      if (consoleHnd != null)       consoleHnd.setLevel(quiet ? SEVERE : INFO);
+ else       System.err.println("Console logging handler is not configured.");
+    }
+ else {
+      impl.removeHandler(consoleHnd);
+    }
+    quiet0=quiet;
+    inited=true;
+  }
+}
