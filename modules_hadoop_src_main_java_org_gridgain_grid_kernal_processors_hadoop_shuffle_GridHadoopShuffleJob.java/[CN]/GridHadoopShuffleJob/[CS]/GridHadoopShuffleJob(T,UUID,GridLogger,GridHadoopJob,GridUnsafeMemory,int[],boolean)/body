@@ -1,0 +1,18 @@
+{
+  this.locReduceAddr=locReduceAddr;
+  this.job=job;
+  this.mem=mem;
+  this.log=log;
+  int reducerCnt=0;
+  if (!F.isEmpty(reducers)) {
+    for (    int rdc : reducers) {
+      GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo(locNodeId,GridHadoopTaskType.REDUCE,job.id(),rdc,0,null);
+      reducersCtx.put(rdc,job.getTaskContext(taskInfo));
+    }
+    reducerCnt=reducers.length;
+  }
+  needPartitioner=reducerCnt > 1;
+  needCombinerMap=job.info().hasCombiner() && hasLocMappers;
+  maps=new AtomicReferenceArray<>(reducerCnt);
+  msgs=new GridHadoopShuffleMessage[reducerCnt];
+}

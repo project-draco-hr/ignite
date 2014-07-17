@@ -6,7 +6,9 @@
     Job job=Job.getInstance();
     job.setMapOutputKeyClass(IntWritable.class);
     job.setMapOutputValueClass(IntWritable.class);
-    final GridHadoopMultimap m=new GridHadoopSkipList(new GridHadoopV2Job(new GridHadoopJobId(UUID.randomUUID(),10),new GridHadoopDefaultJobInfo(job.getConfiguration()),log),mem,ComparableComparator.getInstance());
+    GridHadoopV2Job v2Job=new GridHadoopV2Job(new GridHadoopJobId(UUID.randomUUID(),10),new GridHadoopDefaultJobInfo(job.getConfiguration()),log);
+    final GridHadoopTaskContext taskCtx=v2Job.getTaskContext(new GridHadoopTaskInfo());
+    final GridHadoopMultimap m=new GridHadoopSkipList(v2Job,mem,ComparableComparator.getInstance());
     final ConcurrentMap<Integer,Collection<Integer>> mm=new ConcurrentHashMap<>();
     X.println("___ MT");
     multithreaded(new Callable<Object>(){
@@ -15,7 +17,7 @@
         Random rnd=new GridRandom();
         IntWritable key=new IntWritable();
         IntWritable val=new IntWritable();
-        GridHadoopMultimap.Adder a=m.startAdding();
+        GridHadoopMultimap.Adder a=m.startAdding(taskCtx);
         for (int i=0; i < 50000; i++) {
           int k=rnd.nextInt(32000);
           int v=rnd.nextInt();
@@ -36,7 +38,7 @@
       }
     }
 ,3 + rnd.nextInt(27));
-    GridHadoopTaskInput in=m.input(null);
+    GridHadoopTaskInput in=m.input(taskCtx,null);
     int prevKey=Integer.MIN_VALUE;
     while (in.next()) {
       IntWritable key=(IntWritable)in.key();
