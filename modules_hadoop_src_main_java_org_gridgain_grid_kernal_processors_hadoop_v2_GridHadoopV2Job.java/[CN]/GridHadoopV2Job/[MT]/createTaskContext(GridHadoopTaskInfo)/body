@@ -1,0 +1,13 @@
+{
+  JobConf taskJobConf=new JobConf(jobInfo.configuration());
+  Collection<URL> clsPath=rsrcMgr.classPath();
+  if (!clsPath.isEmpty()) {
+    URL[] urls=new URL[clsPath.size()];
+    clsPath.toArray(urls);
+    taskJobConf.setClassLoader(new ClassLoaderWrapper(new URLClassLoader(urls),getClass().getClassLoader()));
+  }
+  JobContextImpl taskJobCtx=new JobContextImpl(taskJobConf,hadoopJobID);
+  combineGrpComp=COMBINE_KEY_GROUPING_SUPPORTED ? taskJobCtx.getCombinerKeyGroupingComparator() : null;
+  reduceGrpComp=taskJobCtx.getGroupingComparator();
+  return new GridHadoopV2TaskContext(info,this,taskJobCtx);
+}

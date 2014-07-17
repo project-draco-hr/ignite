@@ -1,7 +1,9 @@
 {
   if (cancelled)   throw new GridHadoopTaskCancelledException("Task cancelled.");
-  try (GridHadoopTaskOutput out=createOutput(info,locCombiner);GridHadoopTaskInput in=createInput(info,locCombiner)){
-    GridHadoopTaskContext ctx=job.createTaskContext(info,in,out);
+  GridHadoopTaskContext ctx=job.createTaskContext(info);
+  try (GridHadoopTaskOutput out=createOutput(ctx,locCombiner);GridHadoopTaskInput in=createInput(ctx,locCombiner)){
+    ctx.input(in);
+    ctx.output(out);
     task=job.createTask(info);
     if (cancelled)     throw new GridHadoopTaskCancelledException("Task cancelled.");
     task.run(ctx);
