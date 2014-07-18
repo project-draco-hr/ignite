@@ -3,12 +3,9 @@
   X.println("___ Started");
   Random rnd=new GridRandom();
   for (int i=0; i < 20; i++) {
-    Job job=Job.getInstance();
-    job.setMapOutputKeyClass(IntWritable.class);
-    job.setMapOutputValueClass(IntWritable.class);
-    GridHadoopV2Job v2Job=new GridHadoopV2Job(new GridHadoopJobId(UUID.randomUUID(),10),new GridHadoopDefaultJobInfo(job.getConfiguration()),log);
-    final GridHadoopTaskContext taskCtx=v2Job.getTaskContext(new GridHadoopTaskInfo());
-    final GridHadoopConcurrentHashMultimap m=new GridHadoopConcurrentHashMultimap(v2Job,mem,16);
+    GridHadoopJob job=mockJob();
+    final GridHadoopTaskContext taskCtx=mockTaskContext(job);
+    final GridHadoopConcurrentHashMultimap m=new GridHadoopConcurrentHashMultimap(job,mem,16);
     final ConcurrentMap<Integer,Collection<Integer>> mm=new ConcurrentHashMap<>();
     X.println("___ MT");
     multithreaded(new Callable<Object>(){

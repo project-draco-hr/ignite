@@ -2,12 +2,9 @@
   GridUnsafeMemory mem=new GridUnsafeMemory(0);
   Random rnd=new Random();
   int mapSize=16 << rnd.nextInt(6);
-  Job job=Job.getInstance();
-  job.setMapOutputKeyClass(IntWritable.class);
-  job.setMapOutputValueClass(IntWritable.class);
-  GridHadoopV2Job v2Job=new GridHadoopV2Job(new GridHadoopJobId(UUID.randomUUID(),10),new GridHadoopDefaultJobInfo(job.getConfiguration()),log);
-  GridHadoopTaskContext taskCtx=v2Job.getTaskContext(new GridHadoopTaskInfo());
-  GridHadoopMultimap m=new GridHadoopSkipList(v2Job,mem,ComparableComparator.getInstance());
+  GridHadoopJob job=mockJob();
+  GridHadoopTaskContext taskCtx=mockTaskContext(job);
+  GridHadoopMultimap m=new GridHadoopSkipList(job,mem,ComparableComparator.getInstance());
   GridHadoopConcurrentHashMultimap.Adder a=m.startAdding(taskCtx);
   Multimap<Integer,Integer> mm=ArrayListMultimap.create();
   Multimap<Integer,Integer> vis=ArrayListMultimap.create();
