@@ -1,12 +1,13 @@
 {
   execStartTs=System.currentTimeMillis();
+  final GridHadoopCounters counters=new GridHadoopCountersImpl();
   boolean runCombiner=info.type() == MAP && job.info().hasCombiner() && !get(job.info(),SINGLE_COMBINER_FOR_ALL_MAPPERS,false);
   GridHadoopTaskState state=GridHadoopTaskState.COMPLETED;
   Throwable err=null;
   try {
     job.prepareTaskEnvironment(info);
-    runTask(info,runCombiner);
-    if (runCombiner)     runTask(new GridHadoopTaskInfo(info.nodeId(),COMBINE,info.jobId(),info.taskNumber(),info.attempt(),null),runCombiner);
+    runTask(info,runCombiner,counters);
+    if (runCombiner)     runTask(new GridHadoopTaskInfo(info.nodeId(),COMBINE,info.jobId(),info.taskNumber(),info.attempt(),null),runCombiner,counters);
   }
  catch (  GridHadoopTaskCancelledException ignored) {
     state=GridHadoopTaskState.CANCELED;
@@ -25,7 +26,7 @@ catch (  Throwable e) {
       U.error(log,"Error on cleanup task environment.",e);
     }
     execEndTs=System.currentTimeMillis();
-    onTaskFinished(state,err);
+    onTaskFinished(new GridHadoopTaskStatus(state,err,counters));
     if (runCombiner)     local.close();
   }
   return null;
