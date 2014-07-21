@@ -7,6 +7,14 @@
     ctx.counters(counters);
     task=job.createTask(info);
     if (cancelled)     throw new GridHadoopTaskCancelledException("Task cancelled.");
-    task.run(ctx,log);
+    ClassLoader prevClsLdr=null;
+    try {
+      prevClsLdr=Thread.currentThread().getContextClassLoader();
+      Thread.currentThread().setContextClassLoader(((GridHadoopV2TaskContext)ctx).jobConf().getClassLoader());
+      task.run(ctx,log);
+    }
+  finally {
+      Thread.currentThread().setContextClassLoader(prevClsLdr);
+    }
   }
  }
