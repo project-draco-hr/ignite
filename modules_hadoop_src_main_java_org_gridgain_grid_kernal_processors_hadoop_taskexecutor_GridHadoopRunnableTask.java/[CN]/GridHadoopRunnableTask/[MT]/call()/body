@@ -1,13 +1,22 @@
 {
   execStartTs=System.currentTimeMillis();
   final GridHadoopCounters counters=new GridHadoopCountersImpl();
-  boolean runCombiner=info.type() == MAP && job.info().hasCombiner() && !get(job.info(),SINGLE_COMBINER_FOR_ALL_MAPPERS,false);
   GridHadoopTaskState state=GridHadoopTaskState.COMPLETED;
   Throwable err=null;
+  GridHadoopTaskContext ctx=job.getTaskContext(info);
   try {
-    job.prepareTaskEnvironment(info);
-    runTask(info,runCombiner,counters);
-    if (runCombiner)     runTask(new GridHadoopTaskInfo(info.nodeId(),COMBINE,info.jobId(),info.taskNumber(),info.attempt(),null),runCombiner,counters);
+    ctx.prepareTaskEnvironment();
+    try {
+      runTask(ctx,counters);
+      if (info.type() == MAP && job.info().hasCombiner()) {
+        ctx.taskInfo(new GridHadoopTaskInfo(info.nodeId(),COMBINE,info.jobId(),info.taskNumber(),info.attempt(),null));
+        runTask(ctx,counters);
+      }
+    }
+  finally {
+      ctx.taskInfo(info);
+      ctx.cleanupTaskEnvironment();
+    }
   }
  catch (  GridHadoopTaskCancelledException ignored) {
     state=GridHadoopTaskState.CANCELED;
@@ -18,16 +27,9 @@ catch (  Throwable e) {
     U.error(log,"Task execution failed.",e);
   }
  finally {
-    try {
-      job.cleanupTaskEnvironment(info);
-    }
- catch (    Throwable e) {
-      if (err == null)       err=e;
-      U.error(log,"Error on cleanup task environment.",e);
-    }
     execEndTs=System.currentTimeMillis();
     onTaskFinished(new GridHadoopTaskStatus(state,err,counters));
-    if (runCombiner)     local.close();
+    if (local != null)     local.close();
   }
   return null;
 }

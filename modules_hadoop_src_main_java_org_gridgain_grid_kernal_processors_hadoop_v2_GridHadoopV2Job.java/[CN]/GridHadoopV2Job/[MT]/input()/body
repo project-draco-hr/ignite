@@ -14,11 +14,12 @@
       for (      JobSplit.TaskSplitMetaInfo metaInfo : metaInfos) {
         long off=metaInfo.getStartOffset();
         String[] hosts=metaInfo.getLocations();
-        Class<?> cls=GridHadoopExternalSplit.readSplitClass(in,off,jobConf);
+        in.seek(off);
+        String clsName=Text.readString(in);
         GridHadoopFileBlock block=null;
-        if (cls != null) {
-          block=GridHadoopV1Splitter.readFileBlock(cls,in,hosts);
-          if (block == null)           block=GridHadoopV2Splitter.readFileBlock(cls,in,hosts);
+        if (F.isEmpty(clsName)) {
+          block=GridHadoopV1Splitter.readFileBlock(clsName,in,hosts);
+          if (block == null)           block=GridHadoopV2Splitter.readFileBlock(clsName,in,hosts);
         }
         res.add(block != null ? block : new GridHadoopExternalSplit(hosts,off));
       }
