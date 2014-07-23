@@ -1,16 +1,17 @@
 {
   execStartTs=System.currentTimeMillis();
   final GridHadoopCounters counters=new GridHadoopCountersImpl();
+  GridHadoopTaskContext ctx=job.getTaskContext(info);
+  ctx.counters(counters);
   GridHadoopTaskState state=GridHadoopTaskState.COMPLETED;
   Throwable err=null;
-  GridHadoopTaskContext ctx=job.getTaskContext(info);
   try {
     ctx.prepareTaskEnvironment();
     try {
-      runTask(ctx,counters);
+      runTask(ctx);
       if (info.type() == MAP && job.info().hasCombiner()) {
         ctx.taskInfo(new GridHadoopTaskInfo(info.nodeId(),COMBINE,info.jobId(),info.taskNumber(),info.attempt(),null));
-        runTask(ctx,counters);
+        runTask(ctx);
       }
     }
   finally {
