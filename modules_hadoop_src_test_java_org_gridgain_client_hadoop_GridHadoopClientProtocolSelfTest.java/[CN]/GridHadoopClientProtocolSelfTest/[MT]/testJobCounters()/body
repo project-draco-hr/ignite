@@ -1,0 +1,31 @@
+{
+  GridGgfs ggfs=grid(0).ggfs(GridHadoopAbstractSelfTest.ggfsName);
+  ggfs.mkdirs(new GridGgfsPath(PATH_INPUT));
+  try (BufferedWriter bw=new BufferedWriter(new OutputStreamWriter(ggfs.create(new GridGgfsPath(PATH_INPUT + "/test.file"),true)))){
+    bw.write("alpha\n" + "beta\n" + "gamma\n"+ "alpha\n"+ "beta\n"+ "gamma\n"+ "alpha\n"+ "beta\n"+ "gamma\n");
+  }
+   Configuration conf=config(GridHadoopAbstractSelfTest.REST_PORT);
+  final Job job=Job.getInstance(conf);
+  job.setOutputKeyClass(Text.class);
+  job.setOutputValueClass(IntWritable.class);
+  job.setMapperClass(TestCountingMapper.class);
+  job.setReducerClass(TestCountingReducer.class);
+  job.setCombinerClass(TestCountingCombiner.class);
+  FileInputFormat.setInputPaths(job,new Path(PATH_INPUT));
+  FileOutputFormat.setOutputPath(job,new Path(PATH_OUTPUT));
+  job.submit();
+  final Counter counter=job.getCounters().findCounter(TestCounter.COUNTER1);
+  assertEquals(0,counter.getValue());
+  counter.increment(10);
+  assertEquals(10,counter.getValue());
+  setupLockFile.delete();
+  mapLockFile.delete();
+  job.waitForCompletion(false);
+  assertEquals("job must end successfully",JobStatus.State.SUCCEEDED,job.getStatus().getState());
+  final Counters counters=job.getCounters();
+  assertNotNull("counters cannot be null",counters);
+  assertEquals("wrong counters count",3,counters.countCounters());
+  assertEquals("wrong counter value",15,counters.findCounter(TestCounter.COUNTER1).getValue());
+  assertEquals("wrong counter value",3,counters.findCounter(TestCounter.COUNTER2).getValue());
+  assertEquals("wrong counter value",3,counters.findCounter(TestCounter.COUNTER3).getValue());
+}
