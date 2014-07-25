@@ -1,0 +1,26 @@
+{
+  String[] path=pathStr.split("\\.");
+  ClassProperty res=null;
+  for (  String prop : path) {
+    ClassProperty tmp;
+    try {
+      StringBuilder bld=new StringBuilder("get");
+      bld.append(prop);
+      bld.setCharAt(3,Character.toUpperCase(bld.charAt(3)));
+      tmp=new ClassProperty(cls.getMethod(bld.toString()));
+    }
+ catch (    NoSuchMethodException ignore) {
+      try {
+        tmp=new ClassProperty(cls.getDeclaredField(prop));
+      }
+ catch (      NoSuchFieldException ignored) {
+        throw new GridException("Failed to find getter method or field for property named " + "'" + prop + "': "+ cls.getName());
+      }
+    }
+    tmp.parent(res);
+    cls=tmp.type();
+    res=tmp;
+  }
+  if (!U.box(resType).isAssignableFrom(U.box(res.type())))   throw new GridException("Failed to create property for given path (actual property type is not assignable" + " to declared type [path=" + pathStr + ", actualType="+ res.type().getName()+ ", declaredType="+ resType.getName()+ ']');
+  return res;
+}

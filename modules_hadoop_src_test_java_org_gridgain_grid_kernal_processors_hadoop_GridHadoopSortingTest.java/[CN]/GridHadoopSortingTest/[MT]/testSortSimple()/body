@@ -1,0 +1,43 @@
+{
+  Job job=Job.getInstance();
+  job.setInputFormatClass(InFormat.class);
+  job.setOutputKeyClass(Text.class);
+  job.setOutputValueClass(NullWritable.class);
+  job.setMapperClass(Mapper.class);
+  job.setNumReduceTasks(0);
+  setupFileSystems(job.getConfiguration());
+  FileOutputFormat.setOutputPath(job,new Path(ggfsScheme() + PATH_INPUT));
+  X.printerrln("Data generation started.");
+  grid(0).hadoop().submit(new GridHadoopJobId(UUID.randomUUID(),1),new GridHadoopDefaultJobInfo(job.getConfiguration())).get(180000);
+  X.printerrln("Data generation complete.");
+  job=Job.getInstance();
+  setupFileSystems(job.getConfiguration());
+  job.getConfiguration().set(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY,JavaSerialization.class.getName() + "," + WritableSerialization.class.getName());
+  FileInputFormat.setInputPaths(job,new Path(ggfsScheme() + PATH_INPUT));
+  FileOutputFormat.setOutputPath(job,new Path(ggfsScheme() + PATH_OUTPUT));
+  job.setSortComparatorClass(JavaSerializationComparator.class);
+  job.setMapperClass(MyMapper.class);
+  job.setReducerClass(MyReducer.class);
+  job.setNumReduceTasks(2);
+  job.setMapOutputKeyClass(UUID.class);
+  job.setMapOutputValueClass(NullWritable.class);
+  job.setOutputKeyClass(Text.class);
+  job.setOutputValueClass(NullWritable.class);
+  X.printerrln("Job started.");
+  grid(0).hadoop().submit(new GridHadoopJobId(UUID.randomUUID(),2),new GridHadoopDefaultJobInfo(job.getConfiguration())).get(180000);
+  X.printerrln("Job complete.");
+  Path outDir=new Path(ggfsScheme() + PATH_OUTPUT);
+  AbstractFileSystem fs=AbstractFileSystem.get(new URI(ggfsScheme()),job.getConfiguration());
+  for (  FileStatus file : fs.listStatus(outDir)) {
+    X.printerrln("__ file: " + file);
+    if (file.getLen() == 0)     continue;
+    FSDataInputStream in=fs.open(file.getPath());
+    Scanner sc=new Scanner(in);
+    UUID prev=null;
+    while (sc.hasNextLine()) {
+      UUID next=UUID.fromString(sc.nextLine());
+      if (prev != null)       assertTrue(prev.compareTo(next) < 0);
+      prev=next;
+    }
+  }
+}

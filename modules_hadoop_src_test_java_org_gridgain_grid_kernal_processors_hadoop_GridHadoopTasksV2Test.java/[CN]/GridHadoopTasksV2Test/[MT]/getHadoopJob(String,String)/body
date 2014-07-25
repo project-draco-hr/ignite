@@ -1,0 +1,15 @@
+{
+  Job job=Job.getInstance();
+  job.setOutputKeyClass(Text.class);
+  job.setOutputValueClass(IntWritable.class);
+  GridHadoopWordCount2.setTasksClasses(job,true,true,true);
+  Configuration conf=job.getConfiguration();
+  setupFileSystems(conf);
+  FileInputFormat.setInputPaths(job,new Path(inFile));
+  FileOutputFormat.setOutputPath(job,new Path(outFile));
+  job.setJarByClass(GridHadoopWordCount2.class);
+  Job hadoopJob=GridHadoopWordCount2.getJob(inFile,outFile);
+  GridHadoopDefaultJobInfo jobInfo=new GridHadoopDefaultJobInfo(hadoopJob.getConfiguration());
+  GridHadoopJobId jobId=new GridHadoopJobId(new UUID(0,0),0);
+  return new GridHadoopV2Job(jobId,jobInfo,log);
+}

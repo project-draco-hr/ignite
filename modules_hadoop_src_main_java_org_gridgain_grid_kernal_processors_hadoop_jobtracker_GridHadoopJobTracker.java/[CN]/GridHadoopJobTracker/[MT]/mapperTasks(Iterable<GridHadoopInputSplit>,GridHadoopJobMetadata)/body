@@ -1,0 +1,18 @@
+{
+  UUID locNodeId=ctx.localNodeId();
+  GridHadoopJobId jobId=meta.jobId();
+  JobLocalState state=activeJobs.get(jobId);
+  Collection<GridHadoopTaskInfo> tasks=null;
+  if (mappers != null) {
+    if (state == null)     state=initState(jobId);
+    for (    GridHadoopInputSplit split : mappers) {
+      if (state.addMapper(split)) {
+        if (log.isDebugEnabled())         log.debug("Submitting MAP task for execution [locNodeId=" + locNodeId + ", split="+ split+ ']');
+        GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo(locNodeId,MAP,jobId,meta.taskNumber(split),0,split);
+        if (tasks == null)         tasks=new ArrayList<>();
+        tasks.add(taskInfo);
+      }
+    }
+  }
+  return tasks;
+}

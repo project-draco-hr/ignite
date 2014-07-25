@@ -1,0 +1,23 @@
+{
+  if (!busyLock.tryReadLock())   return;
+  try {
+    if (desc == null) {
+      U.warn(log,"Handshake failed.");
+      return;
+    }
+    HadoopProcess proc=runningProcsByProcId.get(desc.processId());
+    if (proc != null) {
+      Collection<GridHadoopTaskInfo> tasks=proc.tasks();
+      if (!F.isEmpty(tasks)) {
+        log.warning("Lost connection with alive process (will terminate): " + desc);
+        GridHadoopTaskStatus status=new GridHadoopTaskStatus(CRASHED,new GridException("Failed to run tasks (external process finished unexpectedly): " + desc));
+        for (        GridHadoopTaskInfo info : tasks)         jobTracker.onTaskFinished(info,status);
+        runningProcsByJobId.remove(proc.jobId(),proc);
+      }
+      proc.terminate();
+    }
+  }
+  finally {
+    busyLock.readUnlock();
+  }
+}
