@@ -1,0 +1,24 @@
+{
+switch (taskCtx.taskInfo().type()) {
+case REDUCE:
+    int reducer=taskCtx.taskInfo().taskNumber();
+  GridHadoopMultimap m=maps.get(reducer);
+if (m != null) return m.input(taskCtx);
+return new GridHadoopTaskInput(){
+@Override public boolean next(){
+  return false;
+}
+@Override public Object key(){
+  throw new IllegalStateException();
+}
+@Override public Iterator<?> values(){
+  throw new IllegalStateException();
+}
+@Override public void close(){
+}
+}
+;
+default :
+throw new IllegalStateException("Illegal type: " + taskCtx.taskInfo().type());
+}
+}

@@ -1,0 +1,21 @@
+{
+  final GridHadoopJobId jobId=taskInfo.jobId();
+  if (status.state() == FAILED || status.state() == CRASHED)   transform(jobId,new RemoveMappersClosure(prev,currMappers,status.failCause()));
+ else {
+    ctx.shuffle().flush(jobId).listenAsync(new CIX1<GridFuture<?>>(){
+      @Override public void applyx(      GridFuture<?> f){
+        Throwable err=null;
+        if (f != null) {
+          try {
+            f.get();
+          }
+ catch (          GridException e) {
+            err=e;
+          }
+        }
+        transform(jobId,new RemoveMappersClosure(prev,currMappers,err));
+      }
+    }
+);
+  }
+}
