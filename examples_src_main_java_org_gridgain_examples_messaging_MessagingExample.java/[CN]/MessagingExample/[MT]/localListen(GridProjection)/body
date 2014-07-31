@@ -1,0 +1,21 @@
+{
+  int nodesNum=prj.nodes().size() * MESSAGES_NUM;
+  final CountDownLatch ordLatch=new CountDownLatch(nodesNum);
+  prj.message().localListen(TOPIC.ORDERED,new GridBiPredicate<UUID,String>(){
+    @Override public boolean apply(    UUID nodeId,    String msg){
+      ordLatch.countDown();
+      return true;
+    }
+  }
+);
+  final CountDownLatch unOrdLatch=new CountDownLatch(nodesNum);
+  prj.message().localListen(TOPIC.UNORDERED,new GridBiPredicate<UUID,String>(){
+    @Override public boolean apply(    UUID nodeId,    String msg){
+      unOrdLatch.countDown();
+      return true;
+    }
+  }
+);
+  ordLatch.await();
+  unOrdLatch.await();
+}
