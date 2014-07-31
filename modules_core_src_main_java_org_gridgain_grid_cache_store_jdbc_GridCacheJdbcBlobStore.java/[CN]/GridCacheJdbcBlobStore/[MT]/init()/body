@@ -2,6 +2,10 @@
   if (initGuard.compareAndSet(false,true)) {
     if (log.isDebugEnabled())     log.debug("Initializing cache store.");
     if (F.isEmpty(connUrl))     throw new GridException("Failed to initialize cache store (connection URL is not provided).");
+    if (!initSchema) {
+      initLatch.countDown();
+      return;
+    }
     if (F.isEmpty(createTblQry))     throw new GridException("Failed to initialize cache store (create table query is not provided).");
     Connection conn=null;
     Statement stmt=null;
