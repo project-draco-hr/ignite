@@ -4,16 +4,12 @@
   job.setOutputValueClass(IntWritable.class);
   GridHadoopWordCount2.setTasksClasses(job,true,true,true);
   Configuration conf=job.getConfiguration();
-  conf.set("fs.default.name",ggfsScheme());
-  conf.set("fs.ggfs.impl","org.gridgain.grid.ggfs.hadoop.v1.GridGgfsHadoopFileSystem");
-  conf.set("fs.AbstractFileSystem.ggfs.impl","org.gridgain.grid.ggfs.hadoop.v2.GridGgfsHadoopFileSystem");
+  setupFileSystems(conf);
   FileInputFormat.setInputPaths(job,new Path(inFile));
   FileOutputFormat.setOutputPath(job,new Path(outFile));
   job.setJarByClass(GridHadoopWordCount2.class);
   Job hadoopJob=GridHadoopWordCount2.getJob(inFile,outFile);
   GridHadoopDefaultJobInfo jobInfo=new GridHadoopDefaultJobInfo(hadoopJob.getConfiguration());
   GridHadoopJobId jobId=new GridHadoopJobId(new UUID(0,0),0);
-  GridHadoopV2Job gridHadoopJob=new GridHadoopV2Job(jobId,jobInfo,log);
-  hadoopJob.setJobID(gridHadoopJob.hadoopJobContext().getJobID());
-  return gridHadoopJob;
+  return new GridHadoopV2Job(jobId,jobInfo,log);
 }
