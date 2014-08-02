@@ -8,17 +8,15 @@
   Long l=fileLen / 2;
   GridHadoopFileBlock fileBlock1=new GridHadoopFileBlock(HOSTS,inFileUri,0,l);
   GridHadoopFileBlock fileBlock2=new GridHadoopFileBlock(HOSTS,inFileUri,l,fileLen - l);
-  GridHadoopJob gridJob=getHadoopJob(inFileUri.toString(),ggfsScheme() + PATH_OUTPUT);
+  GridHadoopV2Job gridJob=getHadoopJob(inFileUri.toString(),ggfsScheme() + PATH_OUTPUT);
   GridHadoopTestTaskContext combine1Ctx=runMapCombineTask(fileBlock1,gridJob);
   GridHadoopTestTaskContext combine2Ctx=runMapCombineTask(fileBlock2,gridJob);
   GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo(null,GridHadoopTaskType.REDUCE,gridJob.id(),0,0,null);
   GridHadoopTestTaskContext reduceCtx=new GridHadoopTestTaskContext(taskInfo,gridJob);
   reduceCtx.makeTreeOfWritables(combine1Ctx.mockOutput());
   reduceCtx.makeTreeOfWritables(combine2Ctx.mockOutput());
-  GridHadoopTask task=gridJob.createTask(taskInfo);
-  task.run(reduceCtx);
+  createAndExecuteTask(gridJob,taskInfo,reduceCtx);
   taskInfo=new GridHadoopTaskInfo(null,GridHadoopTaskType.COMMIT,gridJob.id(),0,0,null);
-  task=gridJob.createTask(taskInfo);
-  task.run(reduceCtx);
+  createAndExecuteTask(gridJob,taskInfo,reduceCtx);
   assertEquals("blue\t200\n" + "green\t150\n" + "red\t100\n"+ "yellow\t70\n",readAndSortFile(PATH_OUTPUT + "/" + getOutputFileNamePrefix()+ "00000"));
 }
