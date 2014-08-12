@@ -1,8 +1,9 @@
 {
   depExe.submit(new BusyRunnable(){
     @Override public void run0(){
-      for (      Entry<GridServiceDeploymentKey,GridServiceDeployment> e : deps) {
-        GridServiceDeployment dep=e.getValue();
+      for (      Entry<Object,Object> e : deps) {
+        if (!(e.getKey() instanceof GridServiceDeploymentKey))         continue;
+        GridServiceDeployment dep=(GridServiceDeployment)e.getValue();
         if (dep != null) {
           svcName.set(dep.configuration().getName());
           long topVer=ctx.discovery().topologyVersion();
@@ -10,7 +11,7 @@
           if (oldest.isLocal())           onDeployment(dep,topVer);
         }
  else {
-          String name=e.getKey().name();
+          String name=((GridServiceDeploymentKey)e.getKey()).name();
           svcName.set(name);
           Collection<GridServiceContextImpl> ctxs;
 synchronized (locSvcs) {
@@ -21,9 +22,9 @@ synchronized (ctxs) {
               cancel(ctxs,ctxs.size());
             }
           }
-          GridFutureAdapter<?> fut=depFuts.remove(e.getKey().name());
+          GridFutureAdapter<?> fut=depFuts.remove(name);
           if (fut != null)           fut.onDone();
-          fut=undepFuts.remove(e.getKey().name());
+          fut=undepFuts.remove(name);
           if (fut != null)           fut.onDone();
         }
       }

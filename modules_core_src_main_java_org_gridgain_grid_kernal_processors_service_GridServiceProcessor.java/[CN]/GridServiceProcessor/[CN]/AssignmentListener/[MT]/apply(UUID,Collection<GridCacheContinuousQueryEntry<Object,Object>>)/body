@@ -1,8 +1,9 @@
 {
   depExe.submit(new BusyRunnable(){
     @Override public void run0(){
-      for (      Entry<GridServiceAssignmentsKey,GridServiceAssignments> e : assignCol) {
-        GridServiceAssignments assigns=e.getValue();
+      for (      Entry<Object,Object> e : assignCol) {
+        if (!(e.getKey() instanceof GridServiceAssignmentsKey))         continue;
+        GridServiceAssignments assigns=(GridServiceAssignments)e.getValue();
         if (assigns != null) {
           svcName.set(assigns.name());
           if (assigns.nodeId().equals(ctx.localNodeId())) {
@@ -12,7 +13,7 @@
           redeploy(assigns);
         }
  else {
-          String name=e.getKey().name();
+          String name=((GridServiceAssignmentsKey)e.getKey()).name();
           svcName.set(name);
           Collection<GridServiceContextImpl> ctxs;
 synchronized (locSvcs) {
