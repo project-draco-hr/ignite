@@ -1,5 +1,13 @@
 {
   nodeId=U.readUuid(in);
   updateSeq=in.readLong();
-  putAll(U.<Integer,GridDhtPartitionState>readMap(in));
+  long bitsLen=in.readLong();
+  byte[] data=U.readByteArray(in);
+  GridBitByteArrayInputStream bitIn=new GridBitByteArrayInputStream(data,bitsLen);
+  while (bitIn.available() > 0) {
+    boolean extended=bitIn.readBit();
+    int part=bitIn.readBits(extended ? 15 : 7);
+    GridDhtPartitionState state=GridDhtPartitionState.fromOrdinal(bitIn.readBits(2));
+    put(part,state);
+  }
 }

@@ -1,11 +1,5 @@
 {
   top.onEvicted(part,updateSeq);
   if (cctx.events().isRecordable(EVT_CACHE_PRELOAD_PART_UNLOADED))   cctx.events().addUnloadEvent(part.id());
-  if (updateSeq) {
-    ResendTimeoutObject timeout=pendingResend.get();
-    if (timeout == null || timeout.started()) {
-      ResendTimeoutObject update=new ResendTimeoutObject();
-      if (pendingResend.compareAndSet(timeout,update))       cctx.time().addTimeoutObject(update);
-    }
-  }
+  if (updateSeq)   demandPool.scheduleResendPartitions();
 }
