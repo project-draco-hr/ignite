@@ -1,14 +1,28 @@
 {
   prj.message().remoteListen(TOPIC.ORDERED,new GridBiPredicate<UUID,String>(){
+    @GridInstanceResource private Grid g;
     @Override public boolean apply(    UUID nodeId,    String msg){
       System.out.println("Received ordered message [msg=" + msg + ", fromNodeId="+ nodeId+ ']');
+      try {
+        g.forNodeId(nodeId).message().send(TOPIC.ORDERED,msg);
+      }
+ catch (      GridException e) {
+        e.printStackTrace();
+      }
       return true;
     }
   }
 ).get();
   prj.message().remoteListen(TOPIC.UNORDERED,new GridBiPredicate<UUID,String>(){
+    @GridInstanceResource private Grid g;
     @Override public boolean apply(    UUID nodeId,    String msg){
       System.out.println("Received unordered message [msg=" + msg + ", fromNodeId="+ nodeId+ ']');
+      try {
+        g.forNodeId(nodeId).message().send(TOPIC.UNORDERED,msg);
+      }
+ catch (      GridException e) {
+        e.printStackTrace();
+      }
       return true;
     }
   }
