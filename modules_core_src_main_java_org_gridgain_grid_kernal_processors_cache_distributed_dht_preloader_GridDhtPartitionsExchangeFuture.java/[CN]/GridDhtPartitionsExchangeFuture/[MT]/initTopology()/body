@@ -1,7 +1,10 @@
 {
   rmtNodes=new ConcurrentLinkedQueue<>(CU.aliveRemoteNodes(cctx,exchId.topologyVersion()));
   rmtIds=Collections.unmodifiableSet(new HashSet<>(F.nodeIds(rmtNodes)));
-  for (  Map.Entry<UUID,GridDhtPartitionsSingleMessage<K,V>> m : new HashMap<>(msgs).entrySet()) {
+  for (  Map.Entry<UUID,GridDhtPartitionsSingleMessage<K,V>> m : singleMsgs.entrySet()) {
+    onReceive(m.getKey(),m.getValue());
+  }
+  for (  Map.Entry<UUID,GridDhtPartitionsFullMessage<K,V>> m : fullMsgs.entrySet()) {
     onReceive(m.getKey(),m.getValue());
   }
   if (canCalculateAffinity()) {
