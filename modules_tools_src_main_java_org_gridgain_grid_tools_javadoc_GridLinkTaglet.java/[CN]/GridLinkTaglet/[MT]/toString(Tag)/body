@@ -1,0 +1,17 @@
+{
+  if (tag.text() == null || tag.text().isEmpty())   return "";
+  File f=tag.position().file();
+  String curClass=f == null ? "" : f.getAbsolutePath().replace(File.separator,".");
+  String packPref="src.main.java.";
+  int idx=curClass.indexOf(packPref);
+  StringBuilder path=new StringBuilder();
+  if (idx != -1) {
+    curClass=curClass.substring(idx + packPref.length());
+    for (int i=0, n=curClass.split("\\.").length - 2; i < n; i++)     path.append("../");
+  }
+  String[] tokens=tag.text().split("#");
+  int lastIdx=tokens[0].lastIndexOf('.');
+  String simpleClsName=lastIdx != -1 && lastIdx + 1 < tokens[0].length() ? tokens[0].substring(lastIdx + 1) : tokens[0];
+  String fullyQClsName=tokens[0].replace(".","/");
+  return "<a href=\"" + path.toString() + fullyQClsName+ ".html"+ (tokens.length > 1 ? ("#" + tokens[1].replace("[]","...")) : "")+ "\"><code>"+ simpleClsName+ (tokens.length > 1 ? ("." + tokens[1]) : "")+ "</code></a>";
+}
