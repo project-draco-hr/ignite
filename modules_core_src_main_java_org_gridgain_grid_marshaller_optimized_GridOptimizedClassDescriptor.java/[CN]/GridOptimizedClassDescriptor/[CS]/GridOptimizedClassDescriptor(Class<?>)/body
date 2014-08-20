@@ -124,7 +124,7 @@
         if (writeReplaceMtd == null) {
           try {
             writeReplaceMtd=c.getDeclaredMethod("writeReplace");
-            if (!isStatic(writeReplaceMtd.getModifiers()) && writeReplaceMtd.getReturnType().equals(Object.class))             writeReplaceMtd.setAccessible(true);
+            if (!isStatic(writeReplaceMtd.getModifiers()) && !(isPrivate(writeReplaceMtd.getModifiers()) && c != cls) && writeReplaceMtd.getReturnType().equals(Object.class))             writeReplaceMtd.setAccessible(true);
  else             writeReplaceMtd=null;
           }
  catch (          NoSuchMethodException ignored) {
@@ -133,7 +133,7 @@
         if (readResolveMtd == null) {
           try {
             readResolveMtd=c.getDeclaredMethod("readResolve");
-            if (!isStatic(readResolveMtd.getModifiers()) && readResolveMtd.getReturnType().equals(Object.class))             readResolveMtd.setAccessible(true);
+            if (!isStatic(readResolveMtd.getModifiers()) && !(isPrivate(readResolveMtd.getModifiers()) && c != cls) && readResolveMtd.getReturnType().equals(Object.class))             readResolveMtd.setAccessible(true);
  else             readResolveMtd=null;
           }
  catch (          NoSuchMethodException ignored) {
@@ -156,8 +156,10 @@
         isSerial=Serializable.class.isAssignableFrom(cls);
         writeObjMtds=new ArrayList<>();
         readObjMtds=new ArrayList<>();
-        fields=new ArrayList<>();
-        fieldOffs=new ArrayList<>();
+        List<List<Field>> fields=new ArrayList<>();
+        List<List<T2<GridOptimizedFieldType,Long>>> fieldOffs=new ArrayList<>();
+        List<Map<String,GridBiTuple<Integer,GridOptimizedFieldType>>> fieldInfoMaps=new ArrayList<>();
+        List<List<GridBiTuple<Integer,GridOptimizedFieldType>>> fieldInfoLists=new ArrayList<>();
         for (c=cls; c != null && !c.equals(Object.class); c=c.getSuperclass()) {
           Method mtd;
           try {
@@ -200,48 +202,51 @@
           }
           fields.add(clsFields);
           fieldOffs.add(clsFieldOffs);
+          Map<String,GridBiTuple<Integer,GridOptimizedFieldType>> fieldInfoMap=null;
+          try {
+            Field serFieldsDesc=c.getDeclaredField("serialPersistentFields");
+            int mod=serFieldsDesc.getModifiers();
+            if (serFieldsDesc.getType() == ObjectStreamField[].class && isPrivate(mod) && isStatic(mod) && isFinal(mod)) {
+              serFieldsDesc.setAccessible(true);
+              ObjectStreamField[] serFields=(ObjectStreamField[])serFieldsDesc.get(null);
+              fieldInfoMap=new HashMap<>();
+              for (int i=0; i < serFields.length; i++) {
+                ObjectStreamField serField=serFields[i];
+                fieldInfoMap.put(serField.getName(),F.t(i,fieldType(serField.getType())));
+              }
+            }
+          }
+ catch (          NoSuchFieldException ignored) {
+          }
+catch (          IllegalAccessException e) {
+            throw new IOException("Failed to get value of 'serialPersistentFields' field in class: " + cls.getName(),e);
+          }
+          if (fieldInfoMap == null) {
+            fieldInfoMap=new HashMap<>();
+            for (int i=0; i < clsFields.size(); i++) {
+              Field f=clsFields.get(i);
+              fieldInfoMap.put(f.getName(),F.t(i,fieldType(f.getType())));
+            }
+          }
+          fieldInfoMaps.add(fieldInfoMap);
+          List<GridBiTuple<Integer,GridOptimizedFieldType>> fieldInfoList=new ArrayList<>(fieldInfoMap.values());
+          Collections.sort(fieldInfoList,new Comparator<GridBiTuple<Integer,GridOptimizedFieldType>>(){
+            @Override public int compare(            GridBiTuple<Integer,GridOptimizedFieldType> t1,            GridBiTuple<Integer,GridOptimizedFieldType> t2){
+              return t1.get1().compareTo(t2.get1());
+            }
+          }
+);
+          fieldInfoLists.add(fieldInfoList);
         }
         Collections.reverse(writeObjMtds);
         Collections.reverse(readObjMtds);
         Collections.reverse(fields);
         Collections.reverse(fieldOffs);
-        try {
-          Field serFieldsDesc=cls.getDeclaredField("serialPersistentFields");
-          int mod=serFieldsDesc.getModifiers();
-          if (serFieldsDesc.getType() == ObjectStreamField[].class && isPrivate(mod) && isStatic(mod) && isFinal(mod)) {
-            serFieldsDesc.setAccessible(true);
-            ObjectStreamField[] serFields=(ObjectStreamField[])serFieldsDesc.get(null);
-            fieldInfoMap=new HashMap<>();
-            for (int i=0; i < serFields.length; i++) {
-              ObjectStreamField serField=serFields[i];
-              fieldInfoMap.put(serField.getName(),F.t(i,fieldType(serField.getType())));
-            }
-          }
-        }
- catch (        NoSuchFieldException ignored) {
-        }
-catch (        IllegalAccessException e) {
-          throw new IOException("Failed to get value of 'serialPersistentFields' field in class: " + cls.getName(),e);
-        }
-        if (fieldInfoMap == null) {
-          fieldInfoMap=new HashMap<>();
-          if (!fields.isEmpty()) {
-            List<Field> ownFields=fields.get(fields.size() - 1);
-            for (int i=0; i < ownFields.size(); i++) {
-              Field f=ownFields.get(i);
-              fieldInfoMap.put(f.getName(),F.t(i,fieldType(f.getType())));
-            }
-          }
-        }
-        fieldInfoList=new ArrayList<>(fieldInfoMap.values());
-        Collections.sort(fieldInfoList,new Comparator<GridBiTuple<Integer,GridOptimizedFieldType>>(){
-          @Override public int compare(          GridBiTuple<Integer,GridOptimizedFieldType> t1,          GridBiTuple<Integer,GridOptimizedFieldType> t2){
-            return t1.get1().compareTo(t2.get1());
-          }
-        }
-);
+        Collections.reverse(fieldInfoMaps);
+        Collections.reverse(fieldInfoLists);
+        this.fields=new Fields(fields,fieldOffs,fieldInfoLists,fieldInfoMaps);
       }
     }
   }
-  shortId=computeSerialVersionUid(cls,!F.isEmpty(fields) ? fields.get(fields.size() - 1) : null).shortValue();
+  shortId=computeSerialVersionUid(cls,fields != null ? fields.ownFields() : null).shortValue();
 }

@@ -1,0 +1,21 @@
+{
+  vals.clear();
+  Job job=Job.getInstance();
+  job.setInputFormatClass(InFormat.class);
+  job.setOutputFormatClass(OutFormat.class);
+  job.setOutputKeyClass(YearTemperature.class);
+  job.setOutputValueClass(Text.class);
+  job.setMapperClass(Mapper.class);
+  if (combiner) {
+    job.setCombinerClass(MyReducer.class);
+    job.setNumReduceTasks(0);
+    job.setCombinerKeyGroupingComparatorClass(YearComparator.class);
+  }
+ else {
+    job.setReducerClass(MyReducer.class);
+    job.setNumReduceTasks(4);
+    job.setGroupingComparatorClass(YearComparator.class);
+  }
+  grid(0).hadoop().submit(new GridHadoopJobId(UUID.randomUUID(),2),new GridHadoopDefaultJobInfo(job.getConfiguration())).get(30000);
+  assertTrue(vals.isEmpty());
+}

@@ -1,9 +1,14 @@
 {
   if (cc.getCacheMode() == REPLICATED) {
-    if (!(cc.getAffinity() instanceof GridCacheConsistentHashAffinityFunction))     throw new GridException("REPLICATED cache can be started only with GridCacheConsistentHashAffinityFunction" + " [cacheName=" + cc.getName() + ", affinity="+ cc.getAffinity().getClass().getName()+ ']');
-    GridCacheConsistentHashAffinityFunction aff=(GridCacheConsistentHashAffinityFunction)cc.getAffinity();
-    if (cc.getBackups() != Integer.MAX_VALUE)     throw new GridException("For REPLICATED cache number of backups in GridCacheCconfiguration must " + "be set to Integer.MAX_VALUE [cacheName=" + cc.getName() + ", backups="+ cc.getBackups()+ ']');
-    if (aff.isExcludeNeighbors())     throw new GridException("For REPLICATED cache flag 'excludeNeighbors' in GridCacheConsistentHashAffinityFunction " + "cannot be set [cacheName=" + cc.getName() + ']');
+    if (cc.getAffinity() instanceof GridCachePartitionFairAffinity)     throw new GridException("REPLICATED cache can not be started with GridCachePartitionFairAffinity" + " [cacheName=" + cc.getName() + ']');
+    if (cc.getAffinity() instanceof GridCacheConsistentHashAffinityFunction) {
+      GridCacheConsistentHashAffinityFunction aff=(GridCacheConsistentHashAffinityFunction)cc.getAffinity();
+      if (aff.isExcludeNeighbors())       throw new GridException("For REPLICATED cache flag 'excludeNeighbors' in " + "GridCacheConsistentHashAffinityFunction cannot be set [cacheName=" + cc.getName() + ']');
+    }
+    if (cc.getAffinity() instanceof GridCacheRendezvousAffinityFunction) {
+      GridCacheRendezvousAffinityFunction aff=(GridCacheRendezvousAffinityFunction)cc.getAffinity();
+      if (aff.isExcludeNeighbors())       throw new GridException("For REPLICATED cache flag 'excludeNeighbors' in " + "GridCacheRendezvousAffinityFunction cannot be set [cacheName=" + cc.getName() + ']');
+    }
     if (cc.getDistributionMode() == NEAR_PARTITIONED) {
       U.warn(log,"NEAR_PARTITIONED distribution mode cannot be used with REPLICATED cache, " + "will be changed to PARTITIONED_ONLY [cacheName=" + cc.getName() + ']');
       cc.setDistributionMode(PARTITIONED_ONLY);
@@ -17,7 +22,9 @@
   if (cc.getCacheMode() == PARTITIONED || cc.getCacheMode() == REPLICATED) {
     if (cc.getAtomicityMode() == ATOMIC && cc.getWriteSynchronizationMode() == FULL_ASYNC)     U.warn(log,"Cache write synchronization mode is set to FULL_ASYNC. All single-key 'put' and " + "'remove' operations will return 'null', all 'putx' and 'removex' operations will return" + " 'true' [cacheName=" + cc.getName() + ']');
   }
-  if (ctx.config().getDeploymentMode() == PRIVATE || ctx.config().getDeploymentMode() == ISOLATED)   throw new GridException("Cannot start cache in PRIVATE or ISOLATED deployment mode: " + ctx.config().getDeploymentMode());
+  GridConfiguration cfg=ctx.config();
+  GridDeploymentMode depMode=cfg.getDeploymentMode();
+  if (cfg.isPeerClassLoadingEnabled() && (depMode == PRIVATE || depMode == ISOLATED) && !CU.isSystemCache(cc.getName()))   throw new GridException("Cannot start cache in PRIVATE or ISOLATED deployment mode: " + ctx.config().getDeploymentMode());
   if (!cc.isTxSerializableEnabled() && cc.getDefaultTxIsolation() == SERIALIZABLE)   U.warn(log,"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "(most likely misconfiguration - either update 'isTxSerializableEnabled' or " + "'defaultTxIsolationLevel' properties) for cache: "+ cc.getName(),"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "for cache: " + cc.getName());
   if (cc.isWriteBehindEnabled()) {
     if (cc.getStore() == null)     throw new GridException("Cannot enable write-behind cache (cache store is not provided) for cache: " + cc.getName());
@@ -52,6 +59,7 @@ case OFFHEAP_TIERED:
     break;
   }
 case ONHEAP_TIERED:
+if (!systemCache(cc.getName()) && cc.getEvictionPolicy() == null) U.quietAndWarn(log,"Eviction policy not enabled with ONHEAP_TIERED mode for cache " + "(entries will not be moved to off-heap store): " + cc.getName());
 break;
 default :
 throw new IllegalStateException("Unknown memory mode: " + cc.getMemoryMode());
@@ -60,7 +68,8 @@ if (cc.getMemoryMode() == GridCacheMemoryMode.OFFHEAP_VALUES) {
 if (cc.isQueryIndexEnabled()) throw new GridException("Cannot have query indexing enabled while values are stored off-heap. " + "You must either disable query indexing or disable off-heap values only flag for cache: " + cc.getName());
 }
 boolean ggfsCache=CU.isGgfsCache(c,cc.getName());
-if (!ggfsCache && !cc.isQueryIndexEnabled()) U.warn(log,"Query indexing is disabled (queries will not work) for cache: '" + cc.getName() + "'. "+ "To enable change GridCacheConfiguration.isQueryIndexEnabled() property.","Query indexing is disabled (queries will not work) for cache: " + cc.getName());
+boolean utilityCache=CU.isUtilityCache(cc.getName());
+if (!ggfsCache && !utilityCache && !cc.isQueryIndexEnabled()) U.warn(log,"Query indexing is disabled (queries will not work) for cache: '" + cc.getName() + "'. "+ "To enable change GridCacheConfiguration.isQueryIndexEnabled() property.","Query indexing is disabled (queries will not work) for cache: " + cc.getName());
 boolean mongoCache=false;
 GridDrSenderCacheConfiguration drSndCfg=cc.getDrSenderConfiguration();
 if (drSndCfg != null) {
@@ -83,4 +92,5 @@ GridDrReceiverCacheConflictResolverMode rslvrMode=drRcvCfg.getConflictResolverMo
 assertParameter(rslvrMode != null,"cfg.getDrReceiverConfiguration().getConflictResolverPolicy() != null");
 if (rslvrMode != DR_AUTO && drRcvCfg.getConflictResolver() == null) throw new GridException("Conflict resolver must be not null with " + rslvrMode + " resolving policy");
 }
+if (cc.getAtomicityMode() == ATOMIC) assertParameter(cc.getTransactionManagerLookupClassName() == null,"transaction manager can not be used with ATOMIC cache");
 }

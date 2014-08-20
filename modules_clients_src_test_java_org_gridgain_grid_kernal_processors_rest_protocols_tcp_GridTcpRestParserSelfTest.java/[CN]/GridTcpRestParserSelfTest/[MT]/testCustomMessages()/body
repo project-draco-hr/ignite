@@ -1,12 +1,13 @@
 {
-  GridClientCacheRequest<String,Integer> req=new GridClientCacheRequest<>(CAS);
+  GridClientCacheRequest req=new GridClientCacheRequest(CAS);
   req.key("key");
   req.value(1);
   req.value2(2);
   req.clientId(UUID.randomUUID());
   ByteBuffer raw=clientRequestPacket(req);
   GridNioSession ses=new GridMockNioSession();
-  GridTcpRestParser parser=new GridTcpRestParser(log);
+  ses.addMeta(MARSHALLER.ordinal(),new GridClientOptimizedMarshaller());
+  GridTcpRestParser parser=new GridTcpRestParser();
   GridClientMessage msg=parser.decode(ses,raw);
   assertNotNull(msg);
   assertEquals("Parser leaved unparsed bytes",0,raw.remaining());

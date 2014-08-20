@@ -1,0 +1,74 @@
+{
+  while (prefix.endsWith("."))   prefix=prefix.substring(0,prefix.length() - 1);
+  if (!prefix.isEmpty())   prefix+=".";
+  String balancer=in.getProperty(prefix + "balancer");
+  String connectTimeout=in.getProperty(prefix + "connectTimeout");
+  String cred=in.getProperty(prefix + "credentials");
+  String autoFetchMetrics=in.getProperty(prefix + "autoFetchMetrics");
+  String autoFetchAttrs=in.getProperty(prefix + "autoFetchAttributes");
+  String maxConnIdleTime=in.getProperty(prefix + "idleTimeout");
+  String proto=in.getProperty(prefix + "protocol");
+  String srvrs=in.getProperty(prefix + "servers");
+  String tcpNoDelay=in.getProperty(prefix + "tcp.noDelay");
+  String topRefreshFreq=in.getProperty(prefix + "topology.refresh");
+  String sslEnabled=in.getProperty(prefix + "ssl.enabled");
+  String sslProto=in.getProperty(prefix + "ssl.protocol","TLS");
+  String sslKeyAlg=in.getProperty(prefix + "ssl.key.algorithm","SunX509");
+  String keyStorePath=in.getProperty(prefix + "ssl.keystore.location");
+  String keyStorePwd=in.getProperty(prefix + "ssl.keystore.password");
+  String keyStoreType=in.getProperty(prefix + "ssl.keystore.type");
+  String trustStorePath=in.getProperty(prefix + "ssl.truststore.location");
+  String trustStorePwd=in.getProperty(prefix + "ssl.truststore.password");
+  String trustStoreType=in.getProperty(prefix + "ssl.truststore.type");
+  String dataCfgs=in.getProperty(prefix + "data.configurations");
+  setBalancer(resolveBalancer(balancer));
+  if (!F.isEmpty(connectTimeout))   setConnectTimeout(Integer.parseInt(connectTimeout));
+  if (!F.isEmpty(cred)) {
+    int idx=cred.indexOf(':');
+    if (idx >= 0 && idx < cred.length() - 1) {
+      setSecurityCredentialsProvider(new GridSecurityCredentialsBasicProvider(new GridSecurityCredentials(cred.substring(0,idx),cred.substring(idx + 1))));
+    }
+ else {
+      setSecurityCredentialsProvider(new GridSecurityCredentialsBasicProvider(new GridSecurityCredentials(null,null,cred)));
+    }
+  }
+  if (!F.isEmpty(autoFetchMetrics))   setAutoFetchMetrics(Boolean.parseBoolean(autoFetchMetrics));
+  if (!F.isEmpty(autoFetchAttrs))   setAutoFetchAttributes(Boolean.parseBoolean(autoFetchAttrs));
+  if (!F.isEmpty(maxConnIdleTime))   setMaxConnectionIdleTime(Integer.parseInt(maxConnIdleTime));
+  if (!F.isEmpty(proto))   setProtocol(GridClientProtocol.valueOf(proto));
+  if (!F.isEmpty(srvrs))   setServers(Arrays.asList(srvrs.replaceAll("\\s+","").split(",")));
+  if (!F.isEmpty(tcpNoDelay))   setTcpNoDelay(Boolean.parseBoolean(tcpNoDelay));
+  if (!F.isEmpty(topRefreshFreq))   setTopologyRefreshFrequency(Long.parseLong(topRefreshFreq));
+  if (!F.isEmpty(sslEnabled) && Boolean.parseBoolean(sslEnabled)) {
+    GridSslBasicContextFactory factory=new GridSslBasicContextFactory();
+    factory.setProtocol(F.isEmpty(sslProto) ? "TLS" : sslProto);
+    factory.setKeyAlgorithm(F.isEmpty(sslKeyAlg) ? "SunX509" : sslKeyAlg);
+    if (F.isEmpty(keyStorePath))     throw new IllegalArgumentException("SSL key store location is not specified.");
+    factory.setKeyStoreFilePath(keyStorePath);
+    if (keyStorePwd != null)     factory.setKeyStorePassword(keyStorePwd.toCharArray());
+    factory.setKeyStoreType(F.isEmpty(keyStoreType) ? "jks" : keyStoreType);
+    if (F.isEmpty(trustStorePath))     factory.setTrustManagers(GridSslBasicContextFactory.getDisabledTrustManager());
+ else {
+      factory.setTrustStoreFilePath(trustStorePath);
+      if (trustStorePwd != null)       factory.setTrustStorePassword(trustStorePwd.toCharArray());
+      factory.setTrustStoreType(F.isEmpty(trustStoreType) ? "jks" : trustStoreType);
+    }
+    setSslContextFactory(factory);
+  }
+  if (!F.isEmpty(dataCfgs)) {
+    String[] names=dataCfgs.replaceAll("\\s+","").split(",");
+    Collection<GridClientDataConfiguration> list=new ArrayList<>();
+    for (    String cfgName : names) {
+      if (F.isEmpty(cfgName))       continue;
+      String name=in.getProperty(prefix + "data." + cfgName+ ".name");
+      String bal=in.getProperty(prefix + "data." + cfgName+ ".balancer");
+      String aff=in.getProperty(prefix + "data." + cfgName+ ".affinity");
+      GridClientDataConfiguration dataCfg=new GridClientDataConfiguration();
+      dataCfg.setName(F.isEmpty(name) ? null : name);
+      dataCfg.setBalancer(resolveBalancer(bal));
+      dataCfg.setAffinity(resolveAffinity(aff));
+      list.add(dataCfg);
+    }
+    setDataConfigurations(list);
+  }
+}

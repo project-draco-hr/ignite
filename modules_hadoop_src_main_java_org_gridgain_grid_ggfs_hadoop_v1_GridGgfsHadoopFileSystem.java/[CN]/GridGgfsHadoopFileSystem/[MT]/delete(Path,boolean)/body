@@ -13,16 +13,14 @@
       return secondaryFs.delete(toSecondary(f),recursive);
     }
  else {
-      boolean res=rmtClient.delete(path,recursive).get();
+      boolean res=rmtClient.delete(path,recursive);
       if (clientLog.isLogEnabled())       clientLog.logDelete(path,mode,recursive);
       return res;
     }
   }
- catch (  GridGgfsException ignored) {
-    return false;
-  }
-catch (  GridException e) {
-    throw new IOException("Failed to delete a file [path=" + f + ", recursive="+ recursive+ ']',e);
+ catch (  IOException e) {
+    if (F.eq(IOException.class,e.getClass()) && (e.getCause() == null || !GridGgfsException.class.isAssignableFrom(e.getCause().getClass())))     throw e;
+ else     return false;
   }
  finally {
     leaveBusy();

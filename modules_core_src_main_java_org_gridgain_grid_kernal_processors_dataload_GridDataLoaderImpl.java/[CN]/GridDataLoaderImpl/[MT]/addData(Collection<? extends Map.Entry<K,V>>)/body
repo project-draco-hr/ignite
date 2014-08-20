@@ -6,11 +6,17 @@
     activeFuts.add(resFut);
     resFut.listenAsync(rmvActiveFut);
     Collection<K> keys=new GridConcurrentHashSet<>(entries.size(),1.0f,16);
-    for (    Map.Entry<K,V> entry : entries)     keys.add(entry.getKey());
+    for (    Map.Entry<K,V> entry : entries) {
+      keys.add(entry.getKey());
+      if (portableEnabled)       entry.setValue((V)ctx.portable().marshalToPortable(entry.getValue()));
+    }
     load0(entries,resFut,keys,0);
     return resFut;
   }
-  finally {
+ catch (  GridException e) {
+    return new GridFinishedFuture<>(ctx,e);
+  }
+ finally {
     leaveBusy();
   }
 }

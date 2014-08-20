@@ -10,8 +10,7 @@
     remaining-=read;
     if (remaining > 0 && read != len) {
       int readAmt=(int)Math.min(remaining,len - read);
-      GridPlainFuture<byte[]> readFut=rmtClient.readData(streamId,pos,readAmt,b,off + read,len - read);
-      readFut.get();
+      delegate.hadoop().readData(delegate,pos,readAmt,b,off + read,len - read).get();
       read+=readAmt;
       pos+=readAmt;
       total+=readAmt;
@@ -20,7 +19,7 @@
     return read;
   }
  catch (  GridException e) {
-    throw new IOException(e);
+    throw GridGgfsHadoopUtils.cast(e);
   }
  finally {
     readEnd();

@@ -6,11 +6,6 @@
     A.notNull(cfg,"cfg");
     if (!GGFS_SCHEME.equals(name.getScheme()))     throw new IOException("Illegal file system URI [expected=" + GGFS_SCHEME + "://[name]/[optional_path], actual="+ name+ ']');
     uriAuthority=name.getAuthority();
-    String type=parameter(cfg,PARAM_GGFS_ENDPOINT_TYPE,uriAuthority,U.isWindows() ? IPC_TCP : IPC_SHMEM);
-    String host=IPC_SHMEM.equals(type) ? IPC_SHMEM : parameter(cfg,PARAM_GGFS_ENDPOINT_HOST,uriAuthority,"127.0.0.1");
-    int port=parameter(cfg,PARAM_GGFS_ENDPOINT_PORT,uriAuthority,DFLT_IPC_PORT);
-    String endpoint=host + ':' + port;
-    rmtClient=new GridGgfsHadoop(LOG,endpoint);
     seqReadsBeforePrefetch=parameter(cfg,PARAM_GGFS_SEQ_READS_BEFORE_PREFETCH,uriAuthority,0);
     if (seqReadsBeforePrefetch > 0)     seqReadsBeforePrefetchOverride=true;
     dfltReplication=(short)cfg.getInt("dfs.replication",3);
@@ -18,21 +13,15 @@
     String logDirCfg=parameter(cfg,PARAM_GGFS_LOG_DIR,uriAuthority,DFLT_GGFS_LOG_DIR);
     File logDirFile=U.resolveGridGainPath(logDirCfg);
     String logDir=logDirFile != null ? logDirFile.getAbsolutePath() : null;
-    GridGgfsHandshakeResponse handshake;
-    GridGgfsPaths paths;
-    try {
-      handshake=rmtClient.handshake(logDir).get();
-      grpBlockSize=handshake.blockSize();
-      paths=handshake.secondaryPaths();
-    }
- catch (    GridException e) {
-      throw new IOException("Failed to perform handshake with GGFS.",e);
-    }
+    rmtClient=new GridGgfsHadoopWrapper(uriAuthority,logDir,cfg,LOG);
+    GridGgfsHandshakeResponse handshake=rmtClient.handshake(logDir);
+    grpBlockSize=handshake.blockSize();
+    GridGgfsPaths paths=handshake.secondaryPaths();
     Boolean logEnabled=parameter(cfg,PARAM_GGFS_LOG_ENABLED,uriAuthority,false);
     if (handshake.sampling() != null ? handshake.sampling() : logEnabled) {
       if (logDir == null)       throw new IOException("Failed to resolve log directory: " + logDirCfg);
       Integer batchSize=parameter(cfg,PARAM_GGFS_LOG_BATCH_SIZE,uriAuthority,DFLT_GGFS_LOG_BATCH_SIZE);
-      clientLog=GridGgfsHadoopLogger.logger(endpoint,handshake.ggfsName(),logDir,batchSize);
+      clientLog=GridGgfsHadoopLogger.logger(uriAuthority,handshake.ggfsName(),logDir,batchSize);
     }
  else     clientLog=GridGgfsHadoopLogger.disabledLogger();
     modeRslvr=new GridGgfsModeResolver(paths.defaultMode(),paths.pathModes());

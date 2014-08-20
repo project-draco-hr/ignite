@@ -20,22 +20,19 @@
  else       return is;
     }
  else {
-      GridGgfsInputStreamDescriptor desc=seqReadsBeforePrefetchOverride ? rmtClient.open(path,seqReadsBeforePrefetch).get() : rmtClient.open(path).get();
+      GridGgfsHadoopStreamDelegate stream=seqReadsBeforePrefetchOverride ? rmtClient.open(path,seqReadsBeforePrefetch) : rmtClient.open(path);
       long logId=-1;
       if (clientLog.isLogEnabled()) {
         logId=GridGgfsHadoopLogger.nextId();
-        clientLog.logOpen(logId,path,mode,bufSize,desc.length());
+        clientLog.logOpen(logId,path,mode,bufSize,stream.length());
       }
       if (LOG.isDebugEnabled())       LOG.debug("Opening input stream [thread=" + Thread.currentThread().getName() + ", path="+ path+ ", bufSize="+ bufSize+ ']');
-      GridGgfsHadoopInputStream ggfsIn=new GridGgfsHadoopInputStream(rmtClient,desc.streamId(),desc.length(),bufSize,LOG,clientLog,logId);
-      if (LOG.isDebugEnabled())       LOG.debug("Opened input stream [path=" + path + ", streamId="+ desc.streamId()+ ']');
+      GridGgfsHadoopInputStream ggfsIn=new GridGgfsHadoopInputStream(stream,stream.length(),bufSize,LOG,clientLog,logId);
+      if (LOG.isDebugEnabled())       LOG.debug("Opened input stream [path=" + path + ", delegate="+ stream+ ']');
       return new FSDataInputStream(ggfsIn);
     }
   }
- catch (  GridException e) {
-    throw new IOException("Failed to open a file [path=" + f + ", bufferSize="+ bufSize+ ']',e);
-  }
- finally {
+  finally {
     leaveBusy();
   }
 }

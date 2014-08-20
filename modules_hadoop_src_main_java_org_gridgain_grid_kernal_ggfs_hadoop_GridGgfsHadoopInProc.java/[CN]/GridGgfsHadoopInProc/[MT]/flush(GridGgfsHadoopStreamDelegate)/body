@@ -1,0 +1,12 @@
+{
+  try {
+    GridGgfsOutputStream stream=delegate.target();
+    stream.flush();
+  }
+ catch (  IllegalStateException|IOException e) {
+    GridGgfsHadoopStreamEventListener lsnr=lsnrs.get(delegate);
+    if (lsnr != null)     lsnr.onError(e.getMessage());
+    if (e instanceof IllegalStateException)     throw new IOException("Failed to flush data to GGFS stream because Grid is stopping.",e);
+ else     throw e;
+  }
+}
