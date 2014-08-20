@@ -7,8 +7,9 @@
         final Collection<GridServiceDeployment> retries=new ConcurrentLinkedQueue<>();
         if (ctx.deploy().enabled())         ctx.cache().internalCache(UTILITY_CACHE_NAME).context().deploy().ignoreOwnership(true);
         try {
-          for (          GridCacheEntry<GridServiceDeploymentKey,GridServiceDeployment> e : depCache.entrySetx()) {
-            GridServiceDeployment dep=e.getValue();
+          for (          GridCacheEntry<Object,Object> e : depCache.entrySetx()) {
+            if (!(e.getKey() instanceof GridServiceDeploymentKey))             continue;
+            GridServiceDeployment dep=(GridServiceDeployment)e.getValue();
             try {
               svcName.set(dep.configuration().getName());
               ctx.cache().internalCache(UTILITY_CACHE_NAME).context().affinity().affinityReadyFuture(topVer).get();
