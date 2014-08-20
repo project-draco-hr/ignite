@@ -1,2 +1,42 @@
 {
+  GridCache<UUID,Person> c=grid.cache(null);
+  Person p1=new Person("Bob White",1000);
+  Person p2=new Person("Tom White",2000);
+  Person p3=new Person("Mike Green",20000);
+  c.put(p1.id(),p1);
+  c.put(p2.id(),p2);
+  c.put(p3.id(),p3);
+  GridCacheQuery<Map.Entry<UUID,Person>> q=c.queries().createScanQuery(new P2<UUID,Person>(){
+    @Override public boolean apply(    UUID k,    Person p){
+      return p.salary() < 20000;
+    }
+  }
+);
+  R1<GridPair<Integer>,Double> locRdc=new R1<GridPair<Integer>,Double>(){
+    private double sum;
+    private int cnt;
+    @Override public boolean collect(    GridPair<Integer> p){
+      sum+=p.get1();
+      cnt+=p.get2();
+      return true;
+    }
+    @Override public Double reduce(){
+      return sum / cnt;
+    }
+  }
+;
+  Collection<GridPair<Integer>> res=q.execute(new R1<Map.Entry<UUID,Person>,GridPair<Integer>>(){
+    private int sum;
+    private int cnt;
+    @Override public boolean collect(    Map.Entry<UUID,Person> e){
+      sum+=e.getValue().salary();
+      cnt++;
+      return true;
+    }
+    @Override public GridPair<Integer> reduce(){
+      return new GridPair<>(sum,cnt);
+    }
+  }
+).get();
+  assertEquals(1500.,F.reduce(res,locRdc));
 }

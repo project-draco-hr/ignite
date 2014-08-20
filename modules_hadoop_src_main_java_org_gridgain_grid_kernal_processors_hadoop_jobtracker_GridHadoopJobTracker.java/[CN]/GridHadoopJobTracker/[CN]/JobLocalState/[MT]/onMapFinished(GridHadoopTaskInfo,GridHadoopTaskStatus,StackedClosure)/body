@@ -1,0 +1,25 @@
+{
+  final GridHadoopJobId jobId=taskInfo.jobId();
+  boolean lastMapperFinished=completedMappersCnt.incrementAndGet() == currMappers.size();
+  if (status.state() == FAILED || status.state() == CRASHED) {
+    transform(jobId,new RemoveMappersClosure(prev,taskInfo.inputSplit(),status.failCause()));
+    return;
+  }
+  GridInClosure<GridFuture<?>> cacheUpdater=new CIX1<GridFuture<?>>(){
+    @Override public void applyx(    GridFuture<?> f){
+      Throwable err=null;
+      if (f != null) {
+        try {
+          f.get();
+        }
+ catch (        GridException e) {
+          err=e;
+        }
+      }
+      transform(jobId,new RemoveMappersClosure(prev,taskInfo.inputSplit(),err));
+    }
+  }
+;
+  if (lastMapperFinished)   ctx.shuffle().flush(jobId).listenAsync(cacheUpdater);
+ else   cacheUpdater.apply(null);
+}

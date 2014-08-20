@@ -1,0 +1,15 @@
+{
+  ctx.denyOnFlag(LOCAL);
+  try {
+    checkJta();
+  }
+ catch (  GridException e) {
+    return new GridFinishedFuture<>(ctx.kernalContext(),e);
+  }
+  return getAllAsync(Collections.singletonList(key),deserializePortable,filter).chain(new CX1<GridFuture<Map<K,V>>,V>(){
+    @Override public V applyx(    GridFuture<Map<K,V>> e) throws GridException {
+      return e.get().get(key);
+    }
+  }
+);
+}

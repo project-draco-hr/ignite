@@ -1,0 +1,22 @@
+{
+  if (delegate != null)   return;
+  String className=getClass().getName();
+  String pattern=manager.getProperty(className + ".pattern");
+  if (pattern == null)   pattern="gridgain-%{id8}.%g.log";
+  pattern=new File(logDirectory(),pattern.replace("%{id8}",U.id8(nodeId))).getAbsolutePath();
+  int limit=getIntProperty(className + ".limit",0);
+  if (limit < 0)   limit=0;
+  int count=getIntProperty(className + ".count",1);
+  if (count <= 0)   count=1;
+  boolean append=getBooleanProperty(className + ".append",false);
+  FileHandler delegate0;
+synchronized (this) {
+    if (delegate != null)     return;
+    delegate=delegate0=new FileHandler(pattern,limit,count,append);
+  }
+  delegate0.setLevel(getLevel());
+  delegate0.setFormatter(getFormatter());
+  delegate0.setEncoding(getEncoding());
+  delegate0.setFilter(getFilter());
+  delegate0.setErrorManager(getErrorManager());
+}

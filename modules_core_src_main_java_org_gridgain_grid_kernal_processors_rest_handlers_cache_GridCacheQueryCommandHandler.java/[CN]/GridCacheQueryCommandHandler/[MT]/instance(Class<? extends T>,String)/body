@@ -1,0 +1,23 @@
+{
+  try {
+    Class<?> implCls=Class.forName(clsName);
+    if (!cls.isAssignableFrom(implCls))     throw new GridException("Failed to create instance (target class does not extend or implement " + "required class or interface) [cls=" + cls.getName() + ", clsName="+ clsName+ ']');
+    Constructor<?> ctor=implCls.getConstructor();
+    return (T)ctor.newInstance();
+  }
+ catch (  ClassNotFoundException e) {
+    throw new GridException("Failed to find target class: " + clsName,e);
+  }
+catch (  NoSuchMethodException e) {
+    throw new GridException("Failed to find constructor for provided arguments " + "[clsName=" + clsName + ']',e);
+  }
+catch (  InstantiationException e) {
+    throw new GridException("Failed to instantiate target class " + "[clsName=" + clsName + ']',e);
+  }
+catch (  IllegalAccessException e) {
+    throw new GridException("Failed to instantiate class (constructor is not available) " + "[clsName=" + clsName + ']',e);
+  }
+catch (  InvocationTargetException e) {
+    throw new GridException("Failed to instantiate class (constructor threw an exception) " + "[clsName=" + clsName + ']',e.getCause());
+  }
+}

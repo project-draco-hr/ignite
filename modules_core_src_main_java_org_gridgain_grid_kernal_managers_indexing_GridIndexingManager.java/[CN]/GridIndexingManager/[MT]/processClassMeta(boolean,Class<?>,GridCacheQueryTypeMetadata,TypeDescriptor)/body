@@ -1,0 +1,40 @@
+{
+  for (  Map.Entry<String,Class<?>> entry : meta.getAscendingFields().entrySet()) {
+    ClassProperty prop=buildClassProperty(cls,entry.getKey(),entry.getValue());
+    d.addProperty(key,prop,false);
+    String idxName=prop.name() + "_idx";
+    d.addIndex(idxName,isGeometryClass(prop.type()) ? GEO_SPATIAL : SORTED);
+    d.addFieldToIndex(idxName,prop.name(),0,false);
+  }
+  for (  Map.Entry<String,Class<?>> entry : meta.getDescendingFields().entrySet()) {
+    ClassProperty prop=buildClassProperty(cls,entry.getKey(),entry.getValue());
+    d.addProperty(key,prop,false);
+    String idxName=prop.name() + "_idx";
+    d.addIndex(idxName,isGeometryClass(prop.type()) ? GEO_SPATIAL : SORTED);
+    d.addFieldToIndex(idxName,prop.name(),0,true);
+  }
+  for (  String txtIdx : meta.getTextFields()) {
+    ClassProperty prop=buildClassProperty(cls,txtIdx,String.class);
+    d.addProperty(key,prop,false);
+    d.addFieldToTextIndex(prop.name());
+  }
+  Map<String,LinkedHashMap<String,GridBiTuple<Class<?>,Boolean>>> grps=meta.getGroups();
+  if (grps != null) {
+    for (    Map.Entry<String,LinkedHashMap<String,GridBiTuple<Class<?>,Boolean>>> entry : grps.entrySet()) {
+      String idxName=entry.getKey();
+      LinkedHashMap<String,GridBiTuple<Class<?>,Boolean>> idxFields=entry.getValue();
+      int order=0;
+      for (      Map.Entry<String,GridBiTuple<Class<?>,Boolean>> idxField : idxFields.entrySet()) {
+        ClassProperty prop=buildClassProperty(cls,idxField.getKey(),idxField.getValue().get1());
+        d.addProperty(key,prop,false);
+        Boolean descending=idxField.getValue().get2();
+        d.addFieldToIndex(idxName,prop.name(),order,descending != null && descending);
+        order++;
+      }
+    }
+  }
+  for (  Map.Entry<String,Class<?>> entry : meta.getQueryFields().entrySet()) {
+    ClassProperty prop=buildClassProperty(cls,entry.getKey(),entry.getValue());
+    d.addProperty(key,prop,false);
+  }
+}

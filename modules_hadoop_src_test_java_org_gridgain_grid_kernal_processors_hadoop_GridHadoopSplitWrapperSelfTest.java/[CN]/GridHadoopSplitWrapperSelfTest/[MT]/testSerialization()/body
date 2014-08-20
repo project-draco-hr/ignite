@@ -1,0 +1,19 @@
+{
+  FileSplit nativeSplit=new FileSplit(new Path("/path/to/file"),100,500,new String[]{"host1","host2"});
+  assertEquals("/path/to/file:100+500",nativeSplit.toString());
+  GridHadoopSplitWrapper split=new GridHadoopSplitWrapper(10,nativeSplit,nativeSplit.getLocations());
+  assertEquals("[host1, host2]",Arrays.toString(split.hosts()));
+  ByteArrayOutputStream buf=new ByteArrayOutputStream();
+  ObjectOutput out=new ObjectOutputStream(buf);
+  out.writeObject(split);
+  ObjectInput in=new ObjectInputStream(new ByteArrayInputStream(buf.toByteArray()));
+  final GridHadoopSplitWrapper res=(GridHadoopSplitWrapper)in.readObject();
+  assertEquals("/path/to/file:100+500",res.innerSplit().toString());
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      res.hosts();
+      return null;
+    }
+  }
+,AssertionError.class,null);
+}

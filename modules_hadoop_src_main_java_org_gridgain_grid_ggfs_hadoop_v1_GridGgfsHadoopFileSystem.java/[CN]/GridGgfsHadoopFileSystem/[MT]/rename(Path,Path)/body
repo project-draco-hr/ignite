@@ -15,16 +15,14 @@
       return secondaryFs.rename(toSecondary(src),toSecondary(dst));
     }
  else {
-      rmtClient.rename(srcPath,dstPath).get();
+      rmtClient.rename(srcPath,dstPath);
       if (clientLog.isLogEnabled())       clientLog.logRename(srcPath,mode,dstPath);
       return true;
     }
   }
- catch (  GridGgfsException ignored) {
-    return false;
-  }
-catch (  GridException e) {
-    throw new IOException("Failed to rename a file [sourcePath=" + src + ", destinationPath="+ dst+ ']',e);
+ catch (  IOException e) {
+    if (F.eq(IOException.class,e.getClass()) && (e.getCause() == null || !GridGgfsException.class.isAssignableFrom(e.getCause().getClass())))     throw e;
+ else     return false;
   }
  finally {
     leaveBusy();

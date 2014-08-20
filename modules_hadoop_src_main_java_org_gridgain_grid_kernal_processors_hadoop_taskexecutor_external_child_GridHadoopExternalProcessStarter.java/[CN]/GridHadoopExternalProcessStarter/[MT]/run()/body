@@ -1,0 +1,19 @@
+{
+  U.setWorkDirectory(args.workDir,U.getGridGainHome());
+  File outputDir=outputDirectory();
+  initializeStreams(outputDir);
+  ExecutorService msgExecSvc=Executors.newFixedThreadPool(Integer.getInteger("MSG_THREAD_POOL_SIZE",Runtime.getRuntime().availableProcessors() * 2));
+  GridLogger log=logger(outputDir);
+  GridHadoopExternalCommunication comm=new GridHadoopExternalCommunication(args.nodeId,args.childProcId,new GridOptimizedMarshaller(),log,msgExecSvc,"external");
+  comm.start();
+  GridHadoopProcessDescriptor nodeDesc=new GridHadoopProcessDescriptor(args.nodeId,args.parentProcId);
+  nodeDesc.address(args.addr);
+  nodeDesc.tcpPort(args.tcpPort);
+  nodeDesc.sharedMemoryPort(args.shmemPort);
+  GridHadoopChildProcessRunner runner=new GridHadoopChildProcessRunner();
+  runner.start(comm,nodeDesc,msgExecSvc,log);
+  System.err.println("Started");
+  System.err.flush();
+  System.setOut(new PrintStream(out));
+  System.setErr(new PrintStream(err));
+}

@@ -1,0 +1,15 @@
+{
+  try (Grid grid=GridGain.start("examples/config/example-compute.xml")){
+    GridProjection rmts=grid.forRemotes();
+    if (rmts.nodes().isEmpty()) {
+      System.err.println(">>>");
+      System.err.println(">>> Must start at least one remote node using " + ComputeNodeStartup.class.getSimpleName() + '.');
+      System.err.println(">>>");
+      return;
+    }
+    GridServices svcs=rmts.services();
+    svcs.deployClusterSingleton("myClusterSingletonService",new SimpleService()).get();
+    svcs.deployNodeSingleton("myNodeSingletonService",new SimpleService()).get();
+    svcs.deployMultiple("myMultiService",new SimpleService(),2,0).get();
+  }
+ }

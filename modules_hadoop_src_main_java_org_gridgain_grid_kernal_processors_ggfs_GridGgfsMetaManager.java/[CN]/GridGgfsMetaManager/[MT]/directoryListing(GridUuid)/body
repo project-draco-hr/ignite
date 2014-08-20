@@ -1,3 +1,11 @@
 {
-  return directoryListing(fileId,false);
+  if (busyLock.enterBusy()) {
+    try {
+      return directoryListing(fileId,false);
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get directory listing because Grid is stopping: " + fileId);
 }
