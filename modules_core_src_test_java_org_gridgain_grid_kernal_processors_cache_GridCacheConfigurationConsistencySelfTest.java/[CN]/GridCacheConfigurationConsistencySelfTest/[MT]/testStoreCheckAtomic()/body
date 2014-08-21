@@ -1,0 +1,30 @@
+{
+  cacheEnabled=true;
+  cacheMode=PARTITIONED;
+  initCache=new C1<GridCacheConfiguration,Void>(){
+    @Override public Void apply(    GridCacheConfiguration cc){
+      cc.setAtomicityMode(ATOMIC);
+      cc.setDistributionMode(PARTITIONED_ONLY);
+      cc.setStore(new TestStore());
+      return null;
+    }
+  }
+;
+  startGrid(1);
+  initCache=new C1<GridCacheConfiguration,Void>(){
+    @Override public Void apply(    GridCacheConfiguration cc){
+      cc.setAtomicityMode(ATOMIC);
+      cc.setDistributionMode(PARTITIONED_ONLY);
+      cc.setStore(null);
+      return null;
+    }
+  }
+;
+  GridTestUtils.assertThrows(log,new GridCallable<Object>(){
+    @Override public Object call() throws Exception {
+      startGrid(2);
+      return null;
+    }
+  }
+,GridException.class,null);
+}
