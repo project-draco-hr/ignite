@@ -16,15 +16,15 @@ synchronized (ctxs) {
  else     if (ctxs.size() < assignCnt) {
       int createCnt=assignCnt - ctxs.size();
       for (int i=0; i < createCnt; i++) {
-        final GridService copy=copyAndInject(svc);
+        final GridService cp=copyAndInject(svc);
         final ExecutorService exe=Executors.newSingleThreadExecutor(threadFactory);
-        final GridServiceContextImpl svcCtx=new GridServiceContextImpl(assigns.name(),UUID.randomUUID(),assigns.cacheName(),assigns.affinityKey(),copy,exe);
+        final GridServiceContextImpl svcCtx=new GridServiceContextImpl(assigns.name(),UUID.randomUUID(),assigns.cacheName(),assigns.affinityKey(),cp,exe);
         ctxs.add(svcCtx);
         if (log.isInfoEnabled())         log.info("Starting service instance [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']');
         exe.submit(new Runnable(){
           @Override public void run(){
             try {
-              copy.execute(svcCtx);
+              cp.execute(svcCtx);
             }
  catch (            InterruptedException|GridInterruptedException ignore) {
               if (log.isDebugEnabled())               log.debug("Service thread was interrupted [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']');
@@ -43,7 +43,7 @@ catch (            Throwable e) {
  finally {
               exe.shutdownNow();
               try {
-                ctx.resource().cleanup(copy);
+                ctx.resource().cleanup(cp);
               }
  catch (              GridException e) {
                 log.error("Failed to clean up service (will ignore): " + svcCtx.name(),e);

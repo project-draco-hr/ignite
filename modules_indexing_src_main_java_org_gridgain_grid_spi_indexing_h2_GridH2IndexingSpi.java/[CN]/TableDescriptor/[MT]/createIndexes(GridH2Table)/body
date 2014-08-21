@@ -25,7 +25,8 @@
       IndexColumn[] cols=new IndexColumn[idx.fields().size()];
       int i=0;
       for (      String field : idx.fields()) {
-        Column col=tbl.getColumn(field.toUpperCase());
+        String fieldName=CU.h2Escape(field).startsWith("\"") ? field : field.toUpperCase();
+        Column col=tbl.getColumn(fieldName);
         cols[i++]=tbl.indexColumn(col.getColumnId(),idx.descending(field) ? DESCENDING : ASCENDING);
       }
       if (idx.type() == SORTED)       idxs.add(new GridH2TreeIndex(name,tbl,false,KEY_COL,VAL_COL,offheap,cols));
