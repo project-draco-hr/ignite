@@ -3,13 +3,14 @@
     Boolean scan=arg.queryTxt().toUpperCase().startsWith("SCAN");
     String qryId=(scan ? SCAN_QRY_NAME : SQL_QRY_NAME) + "-" + UUID.randomUUID();
     GridCache<Object,Object> c=g.cachex(arg.cacheName());
+    if (c == null)     return new GridBiTuple<>(new GridException("Cache not found: " + escapeName(arg.cacheName())),null);
     if (scan) {
       GridCacheQueryFuture<Map.Entry<Object,Object>> fut=c.queries().createScanQuery(null).pageSize(arg.pageSize()).projection(g.forNodeIds(arg.proj())).execute();
       GridBiTuple<List<Object[]>,Map.Entry<Object,Object>> rows=fetchScanQueryRows(fut,null,arg.pageSize());
       Map.Entry<Object,Object> next=rows.get2();
       g.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,next,false));
       scheduleResultSetHolderRemoval(qryId);
-      return new GridBiTuple<>(null,new VisorQueryResultEx(g.localNode().id(),qryId,SCAN_COL_NAMES,rows.get1(),next != null));
+      return new GridBiTuple<>(null,(VisorQueryResultEx)new VisorQueryResultEx2(g.localNode().id(),qryId,SCAN_COL_NAMES,rows.get1(),next != null,fut.duration()));
     }
  else {
       GridCacheQueryFuture<List<?>> fut=((GridCacheQueriesEx<?,?>)c.queries()).createSqlFieldsQuery(arg.queryTxt(),true).pageSize(arg.pageSize()).projection(g.forNodeIds(arg.proj())).execute();
@@ -25,7 +26,7 @@
         GridBiTuple<List<Object[]>,List<?>> rows=fetchSqlQueryRows(fut,firstRow,arg.pageSize());
         g.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,rows.get2(),false));
         scheduleResultSetHolderRemoval(qryId);
-        return new GridBiTuple<>(null,new VisorQueryResultEx(g.localNode().id(),qryId,names,rows.get1(),rows.get2() != null));
+        return new GridBiTuple<>(null,(VisorQueryResultEx)new VisorQueryResultEx2(g.localNode().id(),qryId,names,rows.get1(),rows.get2() != null,fut.duration()));
       }
     }
   }
