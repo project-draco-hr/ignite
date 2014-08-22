@@ -7,12 +7,17 @@
  else {
     if (store != null) {
       if (log.isDebugEnabled())       log.debug("Storing values in cache store [map=" + map + ']');
-      store.putAll(tx,locStore ? map : F.viewReadOnly(map,new C1<GridBiTuple<V,GridCacheVersion>,Object>(){
-        @Override public Object apply(        GridBiTuple<V,GridCacheVersion> t){
-          return t.get1();
+      try {
+        store.putAll(tx,locStore ? map : F.viewReadOnly(map,new C1<GridBiTuple<V,GridCacheVersion>,Object>(){
+          @Override public Object apply(          GridBiTuple<V,GridCacheVersion> t){
+            return t.get1();
+          }
         }
-      }
 ));
+      }
+ catch (      ClassCastException e) {
+        handleClassCastException(e);
+      }
       if (log.isDebugEnabled())       log.debug("Stored value in cache store [map=" + map + ']');
       return true;
     }
