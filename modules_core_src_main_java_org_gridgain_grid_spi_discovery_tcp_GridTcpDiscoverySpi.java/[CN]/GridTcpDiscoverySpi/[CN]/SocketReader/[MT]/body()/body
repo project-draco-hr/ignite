@@ -48,6 +48,7 @@
 catch (    GridException e) {
       if (log.isDebugEnabled())       U.error(log,"Caught exception on handshake [err=" + e + ", sock="+ sock+ ']',e);
       if (e.hasCause(SocketTimeoutException.class))       LT.warn(log,null,"Socket operation timed out on handshake " + "(consider increasing 'networkTimeout' configuration property) " + "[netTimeout=" + netTimeout + ']');
+ else       if (e.hasCause(ClassNotFoundException.class))       LT.warn(log,null,"Failed to read message due to ClassNotFoundException " + "(make sure same versions of all classes are available on all nodes) " + "[rmtAddr=" + sock.getRemoteSocketAddress() + ", err="+ X.cause(e,ClassNotFoundException.class).getMessage()+ ']');
  else       if (e.hasCause(ObjectStreamException.class) || (!sock.isClosed() && !e.hasCause(IOException.class)))       LT.error(log,e,"Failed to initialize connection [sock=" + sock + ']');
       return;
     }
@@ -143,6 +144,7 @@ synchronized (mux) {
  catch (      GridException e) {
         if (log.isDebugEnabled())         U.error(log,"Caught exception on message read [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']',e);
         if (isInterrupted() || sock.isClosed())         return;
+        if (e.hasCause(ClassNotFoundException.class))         LT.warn(log,null,"Failed to read message due to ClassNotFoundException " + "(make sure same versions of all classes are available on all nodes) " + "[rmtNodeId=" + nodeId + ", err="+ X.cause(e,ClassNotFoundException.class).getMessage()+ ']');
         boolean err=e.hasCause(ObjectStreamException.class) || (nodeAlive(nodeId) && spiStateCopy() == CONNECTED && !X.hasCause(e,IOException.class));
         if (err)         LT.error(log,e,"Failed to read message [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']');
         return;
