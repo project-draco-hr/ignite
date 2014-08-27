@@ -1,0 +1,15 @@
+{
+  Collection<GridGgfsPath> res=new ArrayList<>();
+  try {
+    FileStatus[] statuses=fileSys.listStatus(convert(path));
+    if (statuses == null)     throw new GridGgfsFileNotFoundException("Failed to list files (path not found): " + path);
+    for (    FileStatus status : statuses)     res.add(new GridGgfsPath(path,status.getPath().getName()));
+  }
+ catch (  FileNotFoundException ignored) {
+    throw new GridGgfsFileNotFoundException("Failed to list files (path not found): " + path);
+  }
+catch (  IOException e) {
+    throw handleSecondaryFsError(e,"Failed to list statuses due to secondary file system exception: " + path);
+  }
+  return res;
+}
