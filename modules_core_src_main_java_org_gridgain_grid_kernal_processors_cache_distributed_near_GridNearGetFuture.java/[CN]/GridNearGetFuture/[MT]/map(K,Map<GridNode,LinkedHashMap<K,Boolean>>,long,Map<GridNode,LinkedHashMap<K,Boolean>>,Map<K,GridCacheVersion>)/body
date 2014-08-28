@@ -6,7 +6,7 @@
     try {
       V v=null;
       boolean isNear=entry != null;
-      if (isNear)       v=entry.innerGet(tx,false,false,true,true,true,true,subjId,filters);
+      if (isNear)       v=entry.innerGet(tx,false,false,true,true,true,true,subjId,null,filters);
       GridNode primary=null;
       if (v == null && allowLocRead) {
         GridDhtCacheAdapter<K,V> dht=cache().dht();
@@ -14,7 +14,7 @@
           entry=dht.context().isSwapOrOffheapEnabled() ? dht.entryEx(key) : dht.peekEx(key);
           if (entry != null) {
             boolean isNew=entry.isNewLocked() || !entry.valid(topVer);
-            v=entry.innerGet(tx,true,false,true,true,false,!isNear,subjId,filters);
+            v=entry.innerGet(tx,true,false,true,true,false,!isNear,subjId,null,filters);
             if (v == null && isNew && entry.markObsoleteIfEmpty(ver))             dht.removeIfObsolete(key);
           }
           if (v != null)           near.metrics0().onRead(true);
