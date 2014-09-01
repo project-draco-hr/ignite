@@ -1,11 +1,11 @@
 {
   ctx.checkSecurity(GridSecurityPermission.CACHE_READ);
   if (F.isEmpty(keys))   return new GridFinishedFuture<>(ctx.kernalContext(),Collections.<K,V>emptyMap());
+  long topVer=ctx.affinity().affinityTopologyVersion();
   if (!reload && !forcePrimary) {
     Map<K,V> locVals=new HashMap<>(keys.size(),1.0f);
     GridCacheVersion obsoleteVer=null;
     boolean success=true;
-    long topVer=ctx.affinity().affinityTopologyVersion();
     for (    K key : keys) {
       GridCacheEntryEx<K,V> entry=null;
       while (true) {
@@ -20,7 +20,7 @@
               success=false;
             }
  else {
-              if (ctx.portableEnabled() && deserializePortable && v instanceof GridPortableObject)               v=((GridPortableObject<V>)v).deserialize();
+              if (ctx.portableEnabled() && deserializePortable && v instanceof GridPortableObject)               v=((GridPortableObject)v).deserialize();
               locVals.put(key,v);
             }
           }
@@ -47,7 +47,7 @@ catch (        GridException e) {
     }
     if (success)     return ctx.wrapCloneMap(new GridFinishedFuture<>(ctx.kernalContext(),locVals));
   }
-  GridPartitionedGetFuture<K,V> fut=new GridPartitionedGetFuture<>(ctx,keys,reload,forcePrimary,filter,subjId,deserializePortable);
+  GridPartitionedGetFuture<K,V> fut=new GridPartitionedGetFuture<>(ctx,keys,topVer,reload,forcePrimary,filter,subjId,deserializePortable);
   fut.init();
   return ctx.wrapCloneMap(fut);
 }
