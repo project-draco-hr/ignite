@@ -5,15 +5,15 @@
  else {
     assertEquals(ids.length,evts.size());
     for (    UUID id : ids) {
-      boolean found=false;
+      GridCacheEvent foundEvt=null;
       for (      GridCacheEvent evt : evts) {
-        if (F.eq(id,evt.eventNode().id())) {
+        if (F.eq(id,evt.node().id())) {
           assertEquals(CLO_NAME,evt.closureClassName());
-          found=true;
+          foundEvt=evt;
           break;
         }
       }
-      if (!found) {
+      if (foundEvt == null) {
         GridCache<Integer,Integer> affectedCache=null;
         for (int i=0; i < GRID_CNT; i++) {
           if (F.eq(this.ids[i],id)) {
@@ -21,9 +21,11 @@
             break;
           }
         }
-        GridCacheEntry<Integer,Integer> entry=affectedCache.entry(KEY);
-        fail("Expected transform event was not triggered on the node [nodeId=" + id + ", primary="+ entry.primary()+ ", backup="+ entry.backup()+ ']');
+        GridCacheEntry<Integer,Integer> entry1=affectedCache.entry(key1);
+        GridCacheEntry<Integer,Integer> entry2=affectedCache.entry(key2);
+        fail("Expected transform event was not triggered on the node [nodeId=" + id + ", key1Primary="+ entry1.primary()+ ", key1Backup="+ entry1.backup()+ ", key2Primary="+ entry2.primary()+ ", key2Backup="+ entry2.backup()+ ']');
       }
+ else       evts.remove(foundEvt);
     }
   }
 }
