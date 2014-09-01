@@ -27,15 +27,14 @@
       GridTcpDiscoveryHandshakeRequest req=readMessage(sock,in,netTimeout);
       UUID nodeId=req.creatorNodeId();
       this.nodeId=nodeId;
-      if (debugMode)       onMessageReceived(nodeId,getId(),req);
       GridTcpDiscoveryHandshakeResponse res=new GridTcpDiscoveryHandshakeResponse(locNodeId,locNode.internalOrder());
       writeToSocket(sock,res);
-      if (debugMode)       onMessageSent(nodeId,res);
       if (locNodeId.equals(nodeId)) {
         if (log.isDebugEnabled())         log.debug("Handshake request from local node: " + req);
         return;
       }
       if (log.isDebugEnabled())       log.debug("Initialized connection with remote node: " + nodeId);
+      if (debugMode)       debugLog("Initialized connection with remote node: " + nodeId);
     }
  catch (    IOException e) {
       if (log.isDebugEnabled())       U.error(log,"Caught exception on handshake [err=" + e + ", sock="+ sock+ ']',e);
@@ -58,7 +57,7 @@ catch (    GridException e) {
         msg.senderNodeId(nodeId);
         if (log.isDebugEnabled())         log.debug("Message has been received: " + msg);
         stats.onMessageReceived(msg);
-        if (debugMode)         onMessageReceived(nodeId,getId(),msg);
+        if (debugMode && recordable(msg))         debugLog("Message has been received: " + msg);
         if (msg instanceof GridTcpDiscoveryJoinRequestMessage) {
           GridTcpDiscoveryJoinRequestMessage req=(GridTcpDiscoveryJoinRequestMessage)msg;
           if (!req.responded()) {
