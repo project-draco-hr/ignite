@@ -2,7 +2,14 @@
   if (store != null) {
     if (log.isDebugEnabled())     log.debug("Removing value from cache store [key=" + key + ']');
     if (key instanceof GridCacheInternal)     return false;
- else     store.remove(tx,key);
+ else {
+      try {
+        store.remove(tx,key);
+      }
+ catch (      ClassCastException e) {
+        handleClassCastException(e);
+      }
+    }
     if (log.isDebugEnabled())     log.debug("Removed value from cache store [key=" + key + ']');
     return true;
   }

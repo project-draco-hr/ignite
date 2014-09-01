@@ -1,0 +1,17 @@
+{
+  if (!config().isPortableEnabled())   return o;
+  if (o instanceof Map.Entry) {
+    Map.Entry entry=(Map.Entry)o;
+    Object key=entry.getKey();
+    if (key instanceof GridPortableObject && !keepPortable)     key=((GridPortableObject)key).deserialize();
+    Object val=entry.getValue();
+    if (val instanceof GridPortableObject && !keepPortable)     val=((GridPortableObject)val).deserialize();
+    return F.t(key,val);
+  }
+ else   if (!keepPortable) {
+    if (o instanceof Collection)     return unwrapPortablesIfNeeded((Collection<Object>)o,keepPortable);
+ else     if (o instanceof GridPortableObject)     return ((GridPortableObject)o).deserialize();
+ else     return o;
+  }
+ else   return o;
+}
