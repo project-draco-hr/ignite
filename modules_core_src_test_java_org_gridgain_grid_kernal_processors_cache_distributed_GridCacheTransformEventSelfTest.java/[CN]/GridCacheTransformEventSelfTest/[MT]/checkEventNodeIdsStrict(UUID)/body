@@ -1,0 +1,29 @@
+{
+  if (ids == null) {
+    assertTrue(evts.isEmpty());
+  }
+ else {
+    assertEquals(ids.length,evts.size());
+    for (    UUID id : ids) {
+      boolean found=false;
+      for (      GridCacheEvent evt : evts) {
+        if (F.eq(id,evt.eventNode().id())) {
+          assertEquals(CLO_NAME,evt.closureClassName());
+          found=true;
+          break;
+        }
+      }
+      if (!found) {
+        GridCache<Integer,Integer> affectedCache=null;
+        for (int i=0; i < GRID_CNT; i++) {
+          if (F.eq(this.ids[i],id)) {
+            affectedCache=caches[i];
+            break;
+          }
+        }
+        GridCacheEntry<Integer,Integer> entry=affectedCache.entry(KEY);
+        fail("Expected transform event was not triggered on the node [nodeId=" + id + ", primary="+ entry.primary()+ ", backup="+ entry.backup()+ ']');
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  this.cacheMode=cacheMode;
+  this.atomicityMode=atomicityMode;
+  this.txConcurrency=txConcurrency;
+  this.txIsolation=txIsolation;
+  evts=new ConcurrentHashSet<>();
+  startGrids(GRID_CNT);
+  grids=new Grid[GRID_CNT];
+  ids=new UUID[GRID_CNT];
+  caches=new GridCache[GRID_CNT];
+  for (int i=0; i < GRID_CNT; i++) {
+    grids[i]=grid(i);
+    ids[i]=grids[i].localNode().id();
+    caches[i]=grids[i].cache(CACHE_NAME);
+    caches[i].put(KEY,1);
+    grids[i].events().localListen(new GridPredicate<GridEvent>(){
+      @Override public boolean apply(      GridEvent evt){
+        evts.add((GridCacheEvent)evt);
+        return true;
+      }
+    }
+,EVT_CACHE_OBJECT_READ);
+  }
+}
