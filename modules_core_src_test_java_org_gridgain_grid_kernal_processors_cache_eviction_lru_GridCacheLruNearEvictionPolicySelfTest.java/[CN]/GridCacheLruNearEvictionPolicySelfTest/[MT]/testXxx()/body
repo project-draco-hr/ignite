@@ -1,0 +1,27 @@
+{
+  final int gridCnt=3;
+  startGridsMultiThreaded(gridCnt);
+  try {
+    Random rand=new Random();
+    int cnt=10000;
+    for (int i=0; i < cnt; i++) {
+      GridCache<Integer,String> cache=grid(rand.nextInt(gridCnt)).cache(null);
+      int key=rand.nextInt(5000);
+      String val=Integer.toString(key);
+      cache.put(key,val);
+      if (i % 1000 == 0)       info("Stored cache object for key [key=" + key + ", idx="+ i+ ']');
+    }
+    for (int i=0; i < cnt; i++) {
+      GridCache<Integer,String> cache=grid(rand.nextInt(gridCnt)).cache(null);
+      int key=rand.nextInt(5000);
+      String val=cache.get(key);
+      assertTrue(val == null || val.equals(Integer.toString(key)));
+      if (i % 1000 == 0)       info("Got cache object for key [key=" + key + ", idx="+ i+ ']');
+    }
+    for (int i=0; i < gridCnt; i++)     X.println(" --> Near cache size for grid #" + i + ": "+ near(i).nearSize());
+    for (int i=0; i < gridCnt; i++)     assertTrue("Near cache size " + near(i).nearSize() + ", but eviction maximum size "+ EVICTION_MAX_SIZE,near(i).nearSize() <= EVICTION_MAX_SIZE);
+  }
+  finally {
+    stopAllGrids();
+  }
+}
