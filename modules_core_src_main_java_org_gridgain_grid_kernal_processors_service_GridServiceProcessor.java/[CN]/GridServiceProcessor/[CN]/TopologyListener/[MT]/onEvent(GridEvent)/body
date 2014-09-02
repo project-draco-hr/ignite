@@ -5,17 +5,24 @@
       GridNode oldest=U.oldest(ctx.discovery().nodes(topVer),null);
       if (oldest.isLocal()) {
         final Collection<GridServiceDeployment> retries=new ConcurrentLinkedQueue<>();
-        for (        GridCacheEntry<GridServiceDeploymentKey,GridServiceDeployment> e : depCache.entrySetx()) {
-          GridServiceDeployment dep=e.getValue();
-          try {
-            svcName.set(dep.configuration().getName());
-            ctx.cache().internalCache(CU.UTILITY_CACHE_NAME).context().affinity().affinityReadyFuture(topVer).get();
-            reassign(dep,topVer);
+        if (ctx.deploy().enabled())         ctx.cache().internalCache(UTILITY_CACHE_NAME).context().deploy().ignoreOwnership(true);
+        try {
+          for (          GridCacheEntry<Object,Object> e : depCache.entrySetx()) {
+            if (!(e.getKey() instanceof GridServiceDeploymentKey))             continue;
+            GridServiceDeployment dep=(GridServiceDeployment)e.getValue();
+            try {
+              svcName.set(dep.configuration().getName());
+              ctx.cache().internalCache(UTILITY_CACHE_NAME).context().affinity().affinityReadyFuture(topVer).get();
+              reassign(dep,topVer);
+            }
+ catch (            GridException ex) {
+              if (!(e instanceof GridTopologyException))               LT.error(log,ex,"Failed to do service reassignment (will retry): " + dep.configuration().getName());
+              retries.add(dep);
+            }
           }
- catch (          GridException ex) {
-            if (!(e instanceof GridTopologyException))             LT.error(log,ex,"Failed to do service reassignment (will retry): " + dep.configuration().getName());
-            retries.add(dep);
-          }
+        }
+  finally {
+          if (ctx.deploy().enabled())           ctx.cache().internalCache(UTILITY_CACHE_NAME).context().deploy().ignoreOwnership(false);
         }
         if (!retries.isEmpty())         onReassignmentFailed(topVer,retries);
       }
