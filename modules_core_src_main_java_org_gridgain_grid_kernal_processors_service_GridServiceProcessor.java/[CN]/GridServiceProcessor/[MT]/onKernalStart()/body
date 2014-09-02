@@ -1,14 +1,14 @@
 {
   if (ctx.isDaemon())   return;
-  depCache=ctx.cache().utilityCache(GridServiceDeploymentKey.class,GridServiceDeployment.class);
-  assignCache=ctx.cache().utilityCache(GridServiceAssignmentsKey.class,GridServiceAssignments.class);
+  depCache=(GridCacheProjectionEx<Object,Object>)ctx.cache().utilityCache();
+  assignCache=(GridCacheProjectionEx<Object,Object>)ctx.cache().utilityCache();
   ctx.event().addLocalEventListener(topLsnr,EVTS_DISCOVERY);
   try {
     if (ctx.deploy().enabled())     ctx.cache().internalCache(UTILITY_CACHE_NAME).context().deploy().ignoreOwnership(true);
-    cfgQry=(GridCacheContinuousQueryAdapter<GridServiceDeploymentKey,GridServiceDeployment>)depCache.queries().createContinuousQuery();
+    cfgQry=(GridCacheContinuousQueryAdapter<Object,Object>)depCache.queries().createContinuousQuery();
     cfgQry.localCallback(new DeploymentListener());
     cfgQry.execute(ctx.grid().forLocal(),true);
-    assignQry=(GridCacheContinuousQueryAdapter<GridServiceAssignmentsKey,GridServiceAssignments>)assignCache.queries().createContinuousQuery();
+    assignQry=(GridCacheContinuousQueryAdapter<Object,Object>)assignCache.queries().createContinuousQuery();
     assignQry.localCallback(new AssignmentListener());
     assignQry.execute(ctx.grid().forLocal(),true);
   }
