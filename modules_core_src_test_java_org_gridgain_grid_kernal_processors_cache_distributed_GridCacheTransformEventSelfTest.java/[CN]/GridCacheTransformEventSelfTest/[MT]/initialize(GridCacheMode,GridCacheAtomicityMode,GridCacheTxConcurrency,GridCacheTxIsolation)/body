@@ -1,0 +1,57 @@
+{
+  this.cacheMode=cacheMode;
+  this.atomicityMode=atomicityMode;
+  this.txConcurrency=txConcurrency;
+  this.txIsolation=txIsolation;
+  evts=new ConcurrentHashSet<>();
+  startGrids(GRID_CNT);
+  grids=new Grid[GRID_CNT];
+  ids=new UUID[GRID_CNT];
+  caches=new GridCache[GRID_CNT];
+  for (int i=0; i < GRID_CNT; i++) {
+    grids[i]=grid(i);
+    ids[i]=grids[i].localNode().id();
+    caches[i]=grids[i].cache(CACHE_NAME);
+    grids[i].events().localListen(new GridPredicate<GridEvent>(){
+      @Override public boolean apply(      GridEvent evt){
+        GridCacheEvent evt0=(GridCacheEvent)evt;
+        if (evt0.closureClassName() != null) {
+          System.out.println("ADDED: [nodeId=" + evt0.node() + ", evt="+ evt0+ ']');
+          evts.add(evt0);
+        }
+        return true;
+      }
+    }
+,EVT_CACHE_OBJECT_READ);
+  }
+  int key=0;
+  while (true) {
+    if (cacheMode != PARTITIONED || (caches[0].entry(key).primary() && caches[1].entry(key).backup())) {
+      key1=key++;
+      break;
+    }
+ else     key++;
+  }
+  while (true) {
+    if (cacheMode != PARTITIONED || (caches[0].entry(key).primary() && caches[1].entry(key).backup())) {
+      key2=key;
+      break;
+    }
+ else     key++;
+  }
+  keys=new HashSet<>();
+  keys.add(key1);
+  keys.add(key2);
+  caches[0].put(key1,1);
+  caches[0].put(key2,2);
+  for (int i=0; i < GRID_CNT; i++) {
+    grids[i].events().localListen(new GridPredicate<GridEvent>(){
+      @Override public boolean apply(      GridEvent evt){
+        GridCacheEvent evt0=(GridCacheEvent)evt;
+        if (evt0.closureClassName() != null)         evts.add(evt0);
+        return true;
+      }
+    }
+,EVT_CACHE_OBJECT_READ);
+  }
+}
