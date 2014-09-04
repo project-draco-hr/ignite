@@ -1,14 +1,14 @@
 {
   if (sndId == null)   return;
-  Map<Long,GridFutureAdapter<GridCloseableIterator<GridIndexingKeyValueRow<K,V>>>> futs=qryIters.get(sndId);
+  Map<Long,GridFutureAdapter<QueryResult<K,V>>> futs=qryIters.get(sndId);
   if (futs != null) {
-    GridFuture<GridCloseableIterator<GridIndexingKeyValueRow<K,V>>> fut;
+    GridFuture<QueryResult<K,V>> fut;
 synchronized (futs) {
       fut=futs.remove(reqId);
     }
     if (fut != null) {
       try {
-        fut.get().close();
+        fut.get().iter.close();
       }
  catch (      GridException e) {
         U.error(log,"Failed to close iterator.",e);
