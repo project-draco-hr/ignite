@@ -1,0 +1,33 @@
+{
+  depExe.submit(new BusyRunnable(){
+    @Override public void run0(){
+      for (      Entry<Object,Object> e : assignCol) {
+        if (!(e.getKey() instanceof GridServiceAssignmentsKey))         continue;
+        GridServiceAssignments assigns=(GridServiceAssignments)e.getValue();
+        if (assigns != null) {
+          svcName.set(assigns.name());
+          if (assigns.nodeId().equals(ctx.localNodeId())) {
+            GridFutureAdapter<?> fut=depFuts.remove(assigns.name());
+            if (fut != null)             fut.onDone();
+          }
+          redeploy(assigns);
+        }
+ else {
+          String name=((GridServiceAssignmentsKey)e.getKey()).name();
+          svcName.set(name);
+          Collection<GridServiceContextImpl> ctxs;
+synchronized (locSvcs) {
+            ctxs=locSvcs.remove(name);
+          }
+          if (ctx != null) {
+synchronized (ctxs) {
+              cancel(ctxs,ctxs.size());
+            }
+          }
+        }
+      }
+    }
+  }
+);
+  return true;
+}
