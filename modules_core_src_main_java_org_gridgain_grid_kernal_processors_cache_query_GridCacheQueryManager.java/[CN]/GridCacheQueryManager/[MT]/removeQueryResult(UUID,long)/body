@@ -1,0 +1,18 @@
+{
+  if (sndId == null)   return;
+  Map<Long,GridFutureAdapter<QueryResult<K,V>>> futs=qryIters.get(sndId);
+  if (futs != null) {
+    GridFuture<QueryResult<K,V>> fut;
+synchronized (futs) {
+      fut=futs.remove(reqId);
+    }
+    if (fut != null) {
+      try {
+        fut.get().iter.close();
+      }
+ catch (      GridException e) {
+        U.error(log,"Failed to close iterator.",e);
+      }
+    }
+  }
+}
