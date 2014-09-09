@@ -1,2 +1,23 @@
 {
+  if (F.isEmpty(keys))   return Collections.emptyMap();
+  validateCacheKeys(keys);
+  ctx.checkSecurity(GridSecurityPermission.CACHE_READ);
+  Map<K,V> ret=new HashMap<>(keys.size(),1.0f);
+  for (  K k : keys) {
+    GridCacheEntryEx<K,V> e=peekEx(k);
+    if (e != null)     try {
+      ret.put(k,ctx.cloneOnFlag(e.peekFailFast(SMART,filter)));
+    }
+ catch (    GridCacheEntryRemovedException ignore) {
+      if (log.isDebugEnabled())       log.debug("Got removed entry during 'peek' (will skip): " + e);
+    }
+catch (    GridCacheFilterFailedException ignore) {
+      if (log.isDebugEnabled())       log.debug("Filter failed during peek (will skip): " + e);
+      if (skipped != null)       skipped.add(k);
+    }
+catch (    GridException ex) {
+      throw new GridRuntimeException(ex);
+    }
+  }
+  return ret;
 }
