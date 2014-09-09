@@ -1,7 +1,9 @@
 {
   if (ctx.config().isDaemon())   return;
   super.onKernalStart();
-  for (  GridNode n : ctx.discovery().remoteNodes())   checkStreamer(n);
+  if (!Boolean.getBoolean(GridSystemProperties.GG_SKIP_CONFIGURATION_CONSISTENCY_CHECK)) {
+    for (    GridNode n : ctx.discovery().remoteNodes())     checkStreamer(n);
+  }
   for (  GridStreamerImpl s : map.values()) {
     try {
       mBeans.add(U.registerMBean(mBeanSrv,ctx.gridName(),U.maskName(s.name()),"Streamer",new GridStreamerMBeanAdapter(s),GridStreamerMBean.class));
