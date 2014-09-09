@@ -1,0 +1,17 @@
+{
+  final GridHadoopTaskInfo i=task.taskInfo();
+  GridWorker w=new GridWorker(gridName,"Hadoop-task-" + i.jobId() + "-"+ i.type()+ "-"+ i.taskNumber()+ "-"+ i.attempt(),log,lsnr){
+    @Override protected void body() throws InterruptedException, GridInterruptedException {
+      try {
+        task.call();
+      }
+ catch (      GridException e) {
+        log.error("Failed to execute task: " + i,e);
+      }
+    }
+  }
+;
+  workers.add(w);
+  if (shutdown)   return;
+  new GridThread(w).start();
+}
