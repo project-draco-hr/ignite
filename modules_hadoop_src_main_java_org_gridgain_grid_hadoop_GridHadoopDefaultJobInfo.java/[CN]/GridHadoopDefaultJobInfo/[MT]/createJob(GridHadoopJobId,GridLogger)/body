@@ -1,9 +1,9 @@
 {
-  ByteArrayOutputStream buf=new ByteArrayOutputStream();
   try {
-    cfg.write(new DataOutputStream(buf));
-    DataInput cfgSrc=new DataInputStream(new ByteArrayInputStream(buf.toByteArray()));
-    return new GridHadoopV2Job(jobId,this,cfgSrc,log);
+    GridHadoopClassLoader ldr=new GridHadoopClassLoader(null);
+    Class<?> jobCls=ldr.loadClassExplicitly(GridHadoopV2Job.class.getName());
+    Constructor<?> constructor=jobCls.getConstructor(GridHadoopJobId.class,GridHadoopDefaultJobInfo.class,GridLogger.class);
+    return (GridHadoopJob)constructor.newInstance(jobId,this,log);
   }
  catch (  Exception e) {
     throw new GridException(e);

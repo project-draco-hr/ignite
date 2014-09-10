@@ -1,0 +1,36 @@
+{
+  JobConf jobConf=new JobConf(cfg);
+  boolean hasCombiner=jobConf.get("mapred.combiner.class") != null || jobConf.get(MRJobConfig.COMBINE_CLASS_ATTR) != null;
+  int numReduces=jobConf.getNumReduceTasks();
+  jobConf.setBooleanIfUnset("mapred.mapper.new-api",jobConf.get(OLD_MAP_CLASS_ATTR) == null);
+  if (jobConf.getUseNewMapper()) {
+    String mode="new map API";
+    ensureNotSet(jobConf,"mapred.input.format.class",mode);
+    ensureNotSet(jobConf,OLD_MAP_CLASS_ATTR,mode);
+    if (numReduces != 0)     ensureNotSet(jobConf,"mapred.partitioner.class",mode);
+ else     ensureNotSet(jobConf,"mapred.output.format.class",mode);
+  }
+ else {
+    String mode="map compatibility";
+    ensureNotSet(jobConf,MRJobConfig.INPUT_FORMAT_CLASS_ATTR,mode);
+    ensureNotSet(jobConf,MRJobConfig.MAP_CLASS_ATTR,mode);
+    if (numReduces != 0)     ensureNotSet(jobConf,MRJobConfig.PARTITIONER_CLASS_ATTR,mode);
+ else     ensureNotSet(jobConf,MRJobConfig.OUTPUT_FORMAT_CLASS_ATTR,mode);
+  }
+  if (numReduces != 0) {
+    jobConf.setBooleanIfUnset("mapred.reducer.new-api",jobConf.get(OLD_REDUCE_CLASS_ATTR) == null);
+    if (jobConf.getUseNewReducer()) {
+      String mode="new reduce API";
+      ensureNotSet(jobConf,"mapred.output.format.class",mode);
+      ensureNotSet(jobConf,OLD_REDUCE_CLASS_ATTR,mode);
+    }
+ else {
+      String mode="reduce compatibility";
+      ensureNotSet(jobConf,MRJobConfig.OUTPUT_FORMAT_CLASS_ATTR,mode);
+      ensureNotSet(jobConf,MRJobConfig.REDUCE_CLASS_ATTR,mode);
+    }
+  }
+  Map<String,String> props=new HashMap<>();
+  for (  Map.Entry<String,String> entry : jobConf)   props.put(entry.getKey(),entry.getValue());
+  return new GridHadoopDefaultJobInfo(hasCombiner,numReduces,props);
+}
