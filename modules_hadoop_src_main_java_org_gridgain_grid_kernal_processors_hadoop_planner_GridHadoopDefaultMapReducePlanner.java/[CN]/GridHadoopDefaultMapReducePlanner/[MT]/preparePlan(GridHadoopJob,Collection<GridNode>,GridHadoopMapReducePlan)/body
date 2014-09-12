@@ -2,11 +2,8 @@
   Collection<UUID> topIds=new HashSet<>(top.size(),1.0f);
   for (  GridNode topNode : top)   topIds.add(topNode.id());
   Map<UUID,Collection<GridHadoopInputSplit>> mappers=mappers(top,topIds,job.input());
-  int rdcCnt=0;
-  if (job.info().hasReducer()) {
-    rdcCnt=job.info().reducers();
-    if (rdcCnt < 1)     throw new GridException("Number of reducers must be positive, actual: " + rdcCnt);
-  }
+  int rdcCnt=job.info().reducers();
+  if (rdcCnt < 1)   throw new GridException("Number of reducers must be positive, actual: " + rdcCnt);
   Map<UUID,int[]> reducers=reducers(top,mappers,rdcCnt);
   return new GridHadoopDefaultMapReducePlan(mappers,reducers);
 }
