@@ -1,12 +1,8 @@
 {
   super(taskInfo,job);
   Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-  JobConf jobConf=new JobConf(){
-{
-      getProps().putAll(((GridHadoopDefaultJobInfo)job.info()).properties());
-    }
-  }
-;
+  JobConf jobConf=new JobConf();
+  for (  Map.Entry<String,String> e : ((GridHadoopDefaultJobInfo)job.info()).properties().entrySet())   jobConf.set(e.getKey(),e.getValue());
   jobCtx=new JobContextImpl(jobConf,new JobID(jobId.globalId().toString(),jobId.localId()));
   useNewMapper=jobConf.getUseNewMapper();
   useNewReducer=jobConf.getUseNewReducer();
