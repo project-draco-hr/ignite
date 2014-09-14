@@ -4,7 +4,8 @@
   if (fut != null)   return fut.get();
   GridFutureAdapter<GridHadoopTaskContext> old=ctxs.putIfAbsent(locTaskId,fut=new GridFutureAdapter<>());
   if (old != null)   return old.get();
-  GridHadoopClassLoader ldr=new GridHadoopClassLoader(rsrcMgr.classPath());
+  GridHadoopClassLoader ldr=clsLdrPool.poll();
+  if (ldr == null)   ldr=new GridHadoopClassLoader(rsrcMgr.classPath());
   try {
     Class<?> cls=ldr.loadClass(GridHadoopV2TaskContext.class.getName());
     Constructor<?> ctr=cls.getConstructor(GridHadoopTaskInfo.class,GridHadoopJob.class,GridHadoopJobId.class);
