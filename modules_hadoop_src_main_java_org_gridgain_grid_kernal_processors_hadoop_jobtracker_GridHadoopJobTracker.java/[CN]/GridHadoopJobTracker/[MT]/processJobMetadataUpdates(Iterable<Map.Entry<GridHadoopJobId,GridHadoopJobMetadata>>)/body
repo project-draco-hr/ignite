@@ -1,0 +1,20 @@
+{
+  UUID locNodeId=ctx.localNodeId();
+  boolean jobComplete=false;
+  for (  Map.Entry<GridHadoopJobId,GridHadoopJobMetadata> entry : updated) {
+    GridHadoopJobId jobId=entry.getKey();
+    GridHadoopJobMetadata meta=entry.getValue();
+    if (meta == null || !ctx.isParticipating(meta))     continue;
+    if (log.isDebugEnabled())     log.debug("Processing job metadata update callback [locNodeId=" + locNodeId + ", meta="+ meta+ ']');
+    try {
+      ctx.taskExecutor().onJobStateChanged(meta);
+      processJobMetaUpdate(jobId,meta,locNodeId);
+      jobComplete|=meta.phase() == PHASE_COMPLETE;
+    }
+ catch (    Throwable e) {
+      U.error(log,"Failed to process job state changed callback (will fail the job) " + "[locNodeId=" + locNodeId + ", jobId="+ jobId+ ", meta="+ meta+ ']',e);
+      transform(jobId,new CancelJobClosure(null,e));
+    }
+  }
+  if (jobComplete)   System.gc();
+}
