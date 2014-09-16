@@ -1,13 +1,5 @@
 {
   GridFuture<Object> keyFut=F.isEmpty(req.keys()) ? null : ctx.dht().dhtPreloader().request(req.keys(),req.topologyVersion());
-  if (beforePessimisticLock != null) {
-    keyFut=keyFut == null ? beforePessimisticLock.apply(req.keys(),req.inTx()) : new GridEmbeddedFuture<>(true,keyFut,new C2<Object,Exception,GridFuture<Object>>(){
-      @Override public GridFuture<Object> apply(      Object o,      Exception e){
-        return beforePessimisticLock.apply(req.keys(),req.inTx());
-      }
-    }
-,ctx.kernalContext());
-  }
   if (keyFut == null || keyFut.isDone())   processDhtLockRequest0(nodeId,req);
  else {
     keyFut.listenAsync(new CI1<GridFuture<Object>>(){

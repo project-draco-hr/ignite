@@ -6,12 +6,12 @@
   cctx.events().addListener(new GridLocalEventListener(){
     @Override public void onEvent(    GridEvent evt){
       UUID nodeId=((GridDiscoveryEvent)evt).eventNode().id();
-      Map<Long,GridFutureAdapter<GridCloseableIterator<GridIndexingKeyValueRow<K,V>>>> futs=qryIters.remove(nodeId);
+      Map<Long,GridFutureAdapter<QueryResult<K,V>>> futs=qryIters.remove(nodeId);
       if (futs != null) {
-        for (        GridFutureAdapter<GridCloseableIterator<GridIndexingKeyValueRow<K,V>>> fut : futs.values()) {
-          fut.listenAsync(new CIX1<GridFuture<GridCloseableIterator<GridIndexingKeyValueRow<K,V>>>>(){
-            @Override public void applyx(            GridFuture<GridCloseableIterator<GridIndexingKeyValueRow<K,V>>> f) throws GridException {
-              f.get().close();
+        for (        GridFutureAdapter<QueryResult<K,V>> fut : futs.values()) {
+          fut.listenAsync(new CIX1<GridFuture<QueryResult<K,V>>>(){
+            @Override public void applyx(            GridFuture<QueryResult<K,V>> f) throws GridException {
+              f.get().iter.close();
             }
           }
 );

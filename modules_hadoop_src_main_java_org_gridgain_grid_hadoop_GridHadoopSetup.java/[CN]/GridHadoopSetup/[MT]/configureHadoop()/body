@@ -45,12 +45,15 @@
   }
   File gridgainLibs=new File(new File(gridgainHome),"libs");
   if (!gridgainLibs.exists())   exit("GridGain 'libs' folder is not found.",null);
-  File[] jarFiles=gridgainLibs.listFiles(new FilenameFilter(){
+  Collection<File> jarFiles=new ArrayList<>();
+  jarFiles.addAll(Arrays.asList(gridgainLibs.listFiles(new FilenameFilter(){
     @Override public boolean accept(    File dir,    String name){
       return name.endsWith(".jar");
     }
   }
-);
+)));
+  addJarsInFolder(jarFiles,new File(gridgainLibs,"gridgain-ggfs"));
+  addJarsInFolder(jarFiles,new File(gridgainLibs,"gridgain-hadoop"));
   boolean jarsLinksCorrect=true;
   for (  File file : jarFiles) {
     File link=new File(hadoopCommonLibDir,file.getName());

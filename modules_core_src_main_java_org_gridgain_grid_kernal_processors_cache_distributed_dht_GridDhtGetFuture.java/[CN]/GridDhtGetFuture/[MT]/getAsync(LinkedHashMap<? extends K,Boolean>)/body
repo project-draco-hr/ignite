@@ -1,6 +1,9 @@
 {
   if (F.isEmpty(keys))   return new GridFinishedFuture<Collection<GridCacheEntryInfo<K,V>>>(cctx.kernalContext(),Collections.<GridCacheEntryInfo<K,V>>emptyList());
   final Collection<GridCacheEntryInfo<K,V>> infos=new LinkedList<>();
+  String taskName0=ctx.job().currentTaskName();
+  if (taskName0 == null)   taskName0=ctx.task().resolveTaskName(taskNameHash);
+  final String taskName=taskName0;
   GridCompoundFuture<Boolean,Boolean> txFut=null;
   for (  Map.Entry<? extends K,Boolean> k : keys.entrySet()) {
     while (true) {
@@ -27,15 +30,15 @@
   if (txFut != null)   txFut.markInitialized();
   GridFuture<Map<K,V>> fut;
   if (txFut == null || txFut.isDone()) {
-    if (reload && cctx.isStoreEnabled() && cctx.store().configured())     fut=cache().reloadAllAsync(keys.keySet(),true,subjId,filters);
- else     fut=tx == null ? cache().getDhtAllAsync(keys.keySet(),subjId,deserializePortable,filters) : tx.getAllAsync(keys.keySet(),null,filters);
+    if (reload && cctx.isStoreEnabled() && cctx.store().configured())     fut=cache().reloadAllAsync(keys.keySet(),true,subjId,taskName,filters);
+ else     fut=tx == null ? cache().getDhtAllAsync(keys.keySet(),subjId,taskName,deserializePortable,filters) : tx.getAllAsync(keys.keySet(),null,deserializePortable,filters);
   }
  else {
     fut=new GridEmbeddedFuture<>(txFut,new C2<Boolean,Exception,GridFuture<Map<K,V>>>(){
       @Override public GridFuture<Map<K,V>> apply(      Boolean b,      Exception e){
         if (e != null)         throw new GridClosureException(e);
-        if (reload)         return cache().reloadAllAsync(keys.keySet(),true,subjId,filters);
- else         return tx == null ? cache().getDhtAllAsync(keys.keySet(),subjId,deserializePortable,filters) : tx.getAllAsync(keys.keySet(),null,filters);
+        if (reload)         return cache().reloadAllAsync(keys.keySet(),true,subjId,taskName,filters);
+ else         return tx == null ? cache().getDhtAllAsync(keys.keySet(),subjId,taskName,deserializePortable,filters) : tx.getAllAsync(keys.keySet(),null,deserializePortable,filters);
       }
     }
 ,cctx.kernalContext());

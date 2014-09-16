@@ -1,0 +1,11 @@
+{
+  T2<GridHadoopTaskType,Integer> locTaskId=new T2<>(info.type(),info.taskNumber());
+  GridHadoopTaskContext res=ctxs.get(locTaskId);
+  if (res != null)   return res;
+  JobConf taskJobConf=new JobConf(jobConf);
+  configureClassLoader(taskJobConf);
+  JobContextImpl taskJobCtx=new JobContextImpl(taskJobConf,hadoopJobID);
+  res=new GridHadoopV2TaskContext(info,this,taskJobCtx);
+  GridHadoopTaskContext old=ctxs.putIfAbsent(locTaskId,res);
+  return old == null ? res : old;
+}

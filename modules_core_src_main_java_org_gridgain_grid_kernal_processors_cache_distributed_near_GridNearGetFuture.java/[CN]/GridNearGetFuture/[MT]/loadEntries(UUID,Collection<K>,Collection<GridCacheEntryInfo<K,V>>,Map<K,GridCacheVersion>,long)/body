@@ -11,9 +11,10 @@
           GridNearCacheEntry<K,V> entry=cache().entryExx(info.key(),topVer);
           GridCacheVersion saved=savedVers.get(info.key());
           entry.loadedValue(tx,nodeId,info.value(),info.valueBytes(),atomic ? info.version() : ver,info.version(),saved,info.ttl(),info.expireTime(),true,topVer,subjId);
+          cctx.evicts().touch(entry,topVer);
         }
         V val=info.value();
-        if (cctx.portableEnabled() && deserializePortable && val instanceof GridPortableObject)         val=((GridPortableObject<V>)val).deserialize();
+        if (cctx.portableEnabled() && deserializePortable && val instanceof GridPortableObject)         val=((GridPortableObject)val).deserialize();
         map.put(info.key(),val);
       }
  catch (      GridCacheEntryRemovedException ignore) {

@@ -7,6 +7,12 @@ case CACHE_GET_ALL:
     perm=GridSecurityPermission.CACHE_READ;
   name=((GridRestCacheRequest)req).cacheName();
 break;
+case CACHE_QUERY_EXECUTE:
+case CACHE_QUERY_FETCH:
+case CACHE_QUERY_REBUILD_INDEXES:
+perm=GridSecurityPermission.CACHE_READ;
+name=((GridRestCacheQueryRequest)req).cacheName();
+break;
 case CACHE_PUT:
 case CACHE_ADD:
 case CACHE_PUT_ALL:
@@ -36,7 +42,11 @@ case VERSION:
 case LOG:
 case NOOP:
 case QUIT:
+case GET_PORTABLE_METADATA:
+case PUT_PORTABLE_METADATA:
 break;
+default :
+throw new AssertionError("Unexpected command: " + req.command());
 }
 if (perm != null) ctx.security().authorize(name,perm,sCtx);
 }
