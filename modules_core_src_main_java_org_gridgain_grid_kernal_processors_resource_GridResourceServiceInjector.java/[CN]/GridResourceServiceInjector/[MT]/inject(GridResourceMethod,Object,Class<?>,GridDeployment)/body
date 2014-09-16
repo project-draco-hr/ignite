@@ -1,0 +1,11 @@
+{
+  GridServiceResource ann=(GridServiceResource)mtd.getAnnotation();
+  Collection<GridService> srvcs=grid.services().services(ann.serviceName());
+  Class<?>[] types=mtd.getMethod().getParameterTypes();
+  if (types.length != 1)   throw new GridException("Setter does not have single parameter of required type [type=" + srvcs.getClass().getName() + ", setter="+ mtd+ ']');
+  if (Collection.class.equals(types[0]))   GridResourceUtils.inject(mtd.getMethod(),target,srvcs);
+ else {
+    if (Collection.class.isAssignableFrom(types[0]))     throw new GridException("Failed to inject resource because target parameter should have " + "'Collection' type (no descendant classes are allowed).");
+    GridResourceUtils.inject(mtd.getMethod(),target,F.isEmpty(srvcs) ? null : srvcs.iterator().next());
+  }
+}
