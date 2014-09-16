@@ -1,0 +1,115 @@
+{
+  if (isHadoop(clsName))   return true;
+  InputStream in=loadClassBytes(getParent(),clsName);
+  if (in == null)   return true;
+  if (!isGgfsOrGgHadoop(clsName))   return false;
+  ClassReader rdr;
+  try {
+    rdr=new ClassReader(in);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException("Failed to read class: " + clsName,e);
+  }
+  visited.add(clsName);
+  final AtomicBoolean hasDeps=new AtomicBoolean();
+  rdr.accept(new ClassVisitor(Opcodes.ASM4){
+    AnnotationVisitor av=new AnnotationVisitor(Opcodes.ASM4){
+    }
+;
+    FieldVisitor fv=new FieldVisitor(Opcodes.ASM4){
+      @Override public AnnotationVisitor visitAnnotation(      String desc,      boolean b){
+        onType(desc,true);
+        return av;
+      }
+    }
+;
+    MethodVisitor mv=new MethodVisitor(Opcodes.ASM4){
+      @Override public AnnotationVisitor visitAnnotation(      String desc,      boolean b){
+        onType(desc,true);
+        return av;
+      }
+      @Override public AnnotationVisitor visitParameterAnnotation(      int i,      String desc,      boolean b){
+        onType(desc,true);
+        return av;
+      }
+      @Override public AnnotationVisitor visitAnnotationDefault(){
+        return av;
+      }
+      @Override public void visitFieldInsn(      int i,      String owner,      String name,      String desc){
+        onType(owner,false);
+        onType(desc,true);
+      }
+      @Override public void visitFrame(      int i,      int i2,      Object[] localTypes,      int i3,      Object[] stackTypes){
+        for (        Object o : localTypes) {
+          if (o instanceof String)           onType((String)o,false);
+        }
+        for (        Object o : stackTypes) {
+          if (o instanceof String)           onType((String)o,false);
+        }
+      }
+      @Override public void visitLocalVariable(      String name,      String desc,      String signature,      Label label,      Label label2,      int i){
+        onType(desc,true);
+      }
+      @Override public void visitMethodInsn(      int i,      String owner,      String name,      String desc){
+        onType(owner,false);
+      }
+      @Override public void visitMultiANewArrayInsn(      String desc,      int dim){
+        onType(desc,true);
+      }
+      @Override public void visitTryCatchBlock(      Label label,      Label label2,      Label label3,      String exception){
+        onType(exception,false);
+      }
+    }
+;
+    void onClass(    String depCls){
+      if (depCls.startsWith("java."))       return;
+      if (visited.contains(depCls))       return;
+      Boolean res=cache.get(depCls);
+      if (res == Boolean.TRUE || (res == null && hasExternalDependencies(depCls,visited)))       hasDeps.set(true);
+    }
+    void onType(    String type,    boolean internal){
+      if (type == null)       return;
+      if (!internal && type.charAt(0) == '[')       internal=true;
+      if (internal) {
+        int off=0;
+        while (type.charAt(off) == '[')         off++;
+        if (type.charAt(off) != 'L')         return;
+        type=type.substring(off + 1,type.length() - 1);
+      }
+      type=type.replace('/','.');
+      onClass(type);
+    }
+    @Override public void visit(    int i,    int i2,    String name,    String signature,    String superName,    String[] ifaces){
+      onType(superName,true);
+      if (ifaces != null) {
+        for (        String iface : ifaces)         onType(iface,true);
+      }
+    }
+    @Override public AnnotationVisitor visitAnnotation(    String desc,    boolean visible){
+      onType(desc,true);
+      return av;
+    }
+    @Override public void visitInnerClass(    String name,    String outerName,    String innerName,    int i){
+      onType(name,false);
+    }
+    @Override public FieldVisitor visitField(    int i,    String name,    String desc,    String signature,    Object val){
+      onType(desc,true);
+      return fv;
+    }
+    @Override public MethodVisitor visitMethod(    int i,    String name,    String desc,    String signature,    String[] exceptions){
+      if (exceptions != null) {
+        for (        String e : exceptions)         onType(e,false);
+      }
+      return mv;
+    }
+  }
+,0);
+  if (hasDeps.get())   return true;
+  int idx=clsName.lastIndexOf('$');
+  if (idx == -1)   return false;
+  String parentCls=clsName.substring(0,idx);
+  if (visited.contains(parentCls))   return false;
+  Boolean res=cache.get(parentCls);
+  if (res == null)   res=hasExternalDependencies(parentCls,visited);
+  return res;
+}

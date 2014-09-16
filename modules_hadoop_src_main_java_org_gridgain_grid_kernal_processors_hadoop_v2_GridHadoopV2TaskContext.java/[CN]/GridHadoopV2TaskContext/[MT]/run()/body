@@ -1,6 +1,22 @@
 {
-  Thread.currentThread().setContextClassLoader(jobConf().getClassLoader());
-  GridHadoopTask task=createTask();
-  if (cancelled)   throw new GridHadoopTaskCancelledException("Task cancelled.");
-  task.run(this);
+  try {
+    Thread.currentThread().setContextClassLoader(jobConf().getClassLoader());
+    try {
+      task=createTask();
+    }
+ catch (    Throwable e) {
+      throw transformException(e);
+    }
+    if (cancelled)     throw new GridHadoopTaskCancelledException("Task cancelled.");
+    try {
+      task.run(this);
+    }
+ catch (    Throwable e) {
+      throw transformException(e);
+    }
+  }
+  finally {
+    task=null;
+    Thread.currentThread().setContextClassLoader(null);
+  }
 }
