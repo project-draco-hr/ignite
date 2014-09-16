@@ -1,0 +1,10 @@
+{
+  GridServiceResource ann=(GridServiceResource)field.getAnnotation();
+  Collection<GridService> srvcs=grid.services().services(ann.serviceName());
+  Field f=field.getField();
+  if (Collection.class.equals(f.getType()))   GridResourceUtils.inject(f,target,srvcs);
+ else {
+    if (Collection.class.isAssignableFrom(f.getType()))     throw new GridException("Failed to inject resource because target field should have " + "'Collection' type (no descendant classes are allowed).");
+    GridResourceUtils.inject(f,target,F.isEmpty(srvcs) ? null : srvcs.iterator().next());
+  }
+}
