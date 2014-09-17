@@ -1,15 +1,20 @@
 {
-  if (isHadoop(name)) {
-    if (name.endsWith(".util.ShutdownHookManager"))     return loadFromBytes(name,GridHadoopShutdownHookManager.class.getName());
-    return loadClassExplicitly(name,resolve);
-  }
-  if (isGgfsOrGgHadoop(name)) {
-    Boolean hasDeps=cache.get(name);
-    if (hasDeps == null) {
-      hasDeps=hasExternalDependencies(name,new HashSet<String>());
-      cache.put(name,hasDeps);
+  try {
+    if (isHadoop(name)) {
+      if (name.endsWith(".util.ShutdownHookManager"))       return loadFromBytes(name,GridHadoopShutdownHookManager.class.getName());
+      return loadClassExplicitly(name,resolve);
     }
-    if (hasDeps)     return loadClassExplicitly(name,resolve);
+    if (isGgfsOrGgHadoop(name)) {
+      Boolean hasDeps=cache.get(name);
+      if (hasDeps == null) {
+        hasDeps=hasExternalDependencies(name,new HashSet<String>());
+        cache.put(name,hasDeps);
+      }
+      if (hasDeps)       return loadClassExplicitly(name,resolve);
+    }
+    return super.loadClass(name,resolve);
   }
-  return super.loadClass(name,resolve);
+ catch (  NoClassDefFoundError|ClassNotFoundException e) {
+    throw new ClassNotFoundException("Failed to load class: " + name,e);
+  }
 }
