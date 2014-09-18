@@ -1,0 +1,32 @@
+{
+  GridCacheSetHeaderKey key=new GridCacheSetHeaderKey(name);
+  GridCache cache=cctx.cache();
+  GridCacheSetHeader hdr=(GridCacheSetHeader)cache.remove(key);
+  if (hdr == null)   return false;
+  if (!cctx.isLocal()) {
+    while (true) {
+      long topVer=cctx.topologyVersionFuture().get();
+      Collection<GridNode> nodes=CU.affinityNodes(cctx,topVer);
+      try {
+        cctx.closures().callAsyncNoFailover(BROADCAST,new BlockSetCallable(cctx.name(),hdr.id()),nodes,true).get();
+      }
+ catch (      GridTopologyException e) {
+        if (log.isDebugEnabled())         log.debug("BlockSet job failed, will retry: " + e);
+        continue;
+      }
+      try {
+        cctx.closures().callAsyncNoFailover(BROADCAST,new RemoveSetDataCallable(cctx.name(),hdr.id(),topVer),nodes,true).get();
+      }
+ catch (      GridTopologyException e) {
+        if (log.isDebugEnabled())         log.debug("RemoveSetData job failed, will retry: " + e);
+        continue;
+      }
+      if (cctx.topologyVersionFuture().get() == topVer)       break;
+    }
+  }
+ else {
+    blockSet(hdr.id());
+    removeSetData(hdr.id(),0);
+  }
+  return true;
+}

@@ -40,11 +40,10 @@
   add(attrs,ATTR_IPS,(ips.isEmpty() ? "" : ips));
   add(attrs,ATTR_MACS,(macs.isEmpty() ? "" : macs));
   add(attrs,ATTR_JIT_NAME,U.getCompilerMx() == null ? "" : U.getCompilerMx().getName());
-  add(attrs,ATTR_BUILD_VER,COMPOUND_VERSION);
+  add(attrs,ATTR_BUILD_VER,COMPOUND_VER);
   add(attrs,ATTR_BUILD_DATE,build);
   add(attrs,ATTR_COMPATIBLE_VERS,(Serializable)compatibleVersions());
   add(attrs,ATTR_MARSHALLER,cfg.getMarshaller().getClass().getName());
-  add(attrs,ATTR_LIBRARIES,GridLibraryConsistencyCheck.libraries());
   add(attrs,ATTR_USER_NAME,System.getProperty("user.name"));
   add(attrs,ATTR_GRID_NAME,gridName);
   add(attrs,ATTR_PEER_CLASSLOADING,cfg.isPeerClassLoadingEnabled());
@@ -68,8 +67,21 @@
     }
   }
   add(attrs,ATTR_RESTART_ENABLED,Boolean.toString(isRestartEnabled()));
-  add(attrs,ATTR_REST_PORT_RANGE,cfg.getRestPortRange());
+  if (cfg.getClientConnectionConfiguration() != null)   add(attrs,ATTR_REST_PORT_RANGE,cfg.getClientConnectionConfiguration().getRestPortRange());
   add(attrs,ATTR_DATA_CENTER_ID,cfg.getDataCenterId());
+  try {
+    boolean securityEnabled=U.securityEnabled(cfg);
+    GridSecurityCredentialsProvider provider=cfg.getSecurityCredentialsProvider();
+    if (provider != null) {
+      GridSecurityCredentials cred=provider.credentials();
+      if (cred != null)       add(attrs,ATTR_SECURITY_CREDENTIALS,cred);
+ else       if (securityEnabled)       throw new GridException("Failed to start node (authentication SPI is configured, " + "by security credentials provider returned null).");
+    }
+ else     if (securityEnabled)     throw new GridException("Failed to start node (authentication SPI is configured, " + "but security credentials provider is not set. Fix the configuration and restart the node).");
+  }
+ catch (  GridException e) {
+    throw new GridException("Failed to create node security credentials",e);
+  }
   addAttributes(attrs,cfg.getCollisionSpi());
   addAttributes(attrs,cfg.getSwapSpaceSpi());
   addAttributes(attrs,cfg.getDiscoverySpi());
@@ -81,7 +93,6 @@
   addAttributes(attrs,cfg.getAuthenticationSpi());
   addAttributes(attrs,cfg.getSecureSessionSpi());
   addAttributes(attrs,cfg.getDeploymentSpi());
-  addGgfsAttributes(cfg,attrs);
   if (cfg.getUserAttributes() != null) {
     for (    Map.Entry<String,?> e : cfg.getUserAttributes().entrySet()) {
       if (attrs.containsKey(e.getKey()))       U.warn(log,"User or internal attribute has the same name as environment or system " + "property and will take precedence: " + e.getKey());

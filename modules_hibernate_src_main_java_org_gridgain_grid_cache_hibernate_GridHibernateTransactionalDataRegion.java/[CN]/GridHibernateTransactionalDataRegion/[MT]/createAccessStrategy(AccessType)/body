@@ -1,0 +1,17 @@
+{
+switch (accessType) {
+case READ_ONLY:
+    return new GridHibernateReadOnlyAccessStrategy(grid,cache);
+case NONSTRICT_READ_WRITE:
+  return new GridHibernateNonStrictAccessStrategy(grid,cache,factory.threadLocalForCache(cache.name()));
+case READ_WRITE:
+if (cache.configuration().getAtomicityMode() != TRANSACTIONAL) throw new CacheException("Hibernate READ-WRITE access strategy must have GridGain cache with " + "'TRANSACTIONAL' atomicity mode: " + cache.name());
+return new GridHibernateReadWriteAccessStrategy(grid,cache,factory.threadLocalForCache(cache.name()));
+case TRANSACTIONAL:
+if (cache.configuration().getAtomicityMode() != TRANSACTIONAL) throw new CacheException("Hibernate TRANSACTIONAL access strategy must have GridGain cache with " + "'TRANSACTIONAL' atomicity mode: " + cache.name());
+if (cache.configuration().getTransactionManagerLookupClassName() == null) throw new CacheException("Hibernate TRANSACTIONAL access strategy must have GridGain cache with " + "TransactionManagerLookup configured: " + cache.name());
+return new GridHibernateTransactionalAccessStrategy(grid,cache);
+default :
+throw new IllegalArgumentException("Unknown Hibernate access type: " + accessType);
+}
+}

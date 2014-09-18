@@ -1,0 +1,39 @@
+{
+  while (true) {
+    MainNode<K,V> m=GCAS_READ(ct);
+    if (m instanceof CNode) {
+      final CNode<K,V> cn=(CNode<K,V>)m;
+      int idx=(hc >>> lev) & 0x1f;
+      int flag=1 << idx;
+      int bmp=cn.bitmap;
+      if ((bmp & flag) == 0)       return null;
+ else {
+        int pos=(bmp == 0xffffffff) ? idx : Integer.bitCount(bmp & (flag - 1));
+        final BasicNode sub=cn.array[pos];
+        if (sub instanceof INode) {
+          INode<K,V> in=(INode<K,V>)sub;
+          if (ct.isReadOnly() || (startgen == ((INodeBase<K,V>)sub).gen))           return in.rec_lookup(k,hc,lev + 5,this,startgen,ct);
+ else {
+            if (GCAS(cn,cn.renewed(startgen,ct),ct)) {
+              continue;
+            }
+ else             return RESTART;
+          }
+        }
+ else         if (sub instanceof SNode) {
+          SNode<K,V> sn=(SNode<K,V>)sub;
+          if (((SNode)sub).hc == hc && equal(sn.k,k,ct))           return sn.v;
+ else           return null;
+        }
+      }
+    }
+ else     if (m instanceof TNode) {
+      return cleanReadOnly((TNode<K,V>)m,lev,parent,ct,k,hc);
+    }
+ else     if (m instanceof LNode) {
+      Option<V> tmp=((LNode<K,V>)m).get(k);
+      return (tmp instanceof Option) ? ((Option<V>)tmp) : null;
+    }
+    throw new RuntimeException("Should not happen");
+  }
+}

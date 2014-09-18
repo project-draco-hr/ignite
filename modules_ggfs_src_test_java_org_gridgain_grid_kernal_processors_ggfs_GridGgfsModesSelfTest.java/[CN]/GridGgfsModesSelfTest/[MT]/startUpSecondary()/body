@@ -1,0 +1,34 @@
+{
+  GridGgfsConfiguration ggfsCfg=new GridGgfsConfiguration();
+  ggfsCfg.setDataCacheName("partitioned");
+  ggfsCfg.setMetaCacheName("replicated");
+  ggfsCfg.setName("ggfs-secondary");
+  ggfsCfg.setBlockSize(512 * 1024);
+  ggfsCfg.setDefaultMode(PRIMARY);
+  ggfsCfg.setIpcEndpointConfiguration(GridHadoopTestUtils.jsonToMap("{type:'tcp', port:11500}"));
+  GridCacheConfiguration cacheCfg=defaultCacheConfiguration();
+  cacheCfg.setName("partitioned");
+  cacheCfg.setCacheMode(PARTITIONED);
+  cacheCfg.setDistributionMode(GridCacheDistributionMode.PARTITIONED_ONLY);
+  cacheCfg.setWriteSynchronizationMode(GridCacheWriteSynchronizationMode.FULL_SYNC);
+  cacheCfg.setAffinityMapper(new GridGgfsGroupDataBlocksKeyMapper(128));
+  cacheCfg.setBackups(0);
+  cacheCfg.setQueryIndexEnabled(false);
+  cacheCfg.setAtomicityMode(TRANSACTIONAL);
+  GridCacheConfiguration metaCacheCfg=defaultCacheConfiguration();
+  metaCacheCfg.setName("replicated");
+  metaCacheCfg.setCacheMode(REPLICATED);
+  metaCacheCfg.setWriteSynchronizationMode(GridCacheWriteSynchronizationMode.FULL_SYNC);
+  metaCacheCfg.setQueryIndexEnabled(false);
+  metaCacheCfg.setAtomicityMode(TRANSACTIONAL);
+  GridConfiguration cfg=new GridConfiguration();
+  cfg.setGridName("ggfs-grid-secondary");
+  GridTcpDiscoverySpi discoSpi=new GridTcpDiscoverySpi();
+  discoSpi.setIpFinder(new GridTcpDiscoveryVmIpFinder(true));
+  cfg.setDiscoverySpi(discoSpi);
+  cfg.setCacheConfiguration(metaCacheCfg,cacheCfg);
+  cfg.setGgfsConfiguration(ggfsCfg);
+  cfg.setLocalHost("127.0.0.1");
+  cfg.setRestEnabled(false);
+  ggfsSecondary=(GridGgfsImpl)G.start(cfg).ggfs("ggfs-secondary");
+}

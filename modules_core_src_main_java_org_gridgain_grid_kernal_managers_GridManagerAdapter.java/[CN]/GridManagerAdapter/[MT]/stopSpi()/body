@@ -1,2 +1,19 @@
 {
+  for (  T spi : spis) {
+    if (log.isDebugEnabled())     log.debug("Stopping SPI: " + spi);
+    try {
+      spi.spiStop();
+      if (log.isDebugEnabled())       log.debug("SPI module stopped OK: " + spi.getClass().getName());
+    }
+ catch (    GridSpiException e) {
+      throw new GridException("Failed to stop SPI: " + spi,e);
+    }
+    try {
+      cleanup(spi);
+      ctx.resource().cleanup(spi);
+    }
+ catch (    GridException e) {
+      U.error(log,"Failed to remove injected resources from SPI (ignoring): " + spi,e);
+    }
+  }
 }

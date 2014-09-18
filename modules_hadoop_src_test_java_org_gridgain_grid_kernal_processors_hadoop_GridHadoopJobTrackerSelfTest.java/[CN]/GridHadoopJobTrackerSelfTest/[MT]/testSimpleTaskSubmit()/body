@@ -1,0 +1,28 @@
+{
+  try {
+    UUID globalId=UUID.randomUUID();
+    Job job=Job.getInstance();
+    setupFileSystems(job.getConfiguration());
+    job.setMapperClass(TestMapper.class);
+    job.setReducerClass(TestReducer.class);
+    job.setInputFormatClass(InFormat.class);
+    FileOutputFormat.setOutputPath(job,new Path(ggfsScheme() + PATH_OUTPUT + "1"));
+    GridHadoopJobId jobId=new GridHadoopJobId(globalId,1);
+    grid(0).hadoop().submit(jobId,createJobInfo(job.getConfiguration()));
+    checkStatus(jobId,false);
+    info("Releasing map latch.");
+    latch.get("mapAwaitLatch").countDown();
+    checkStatus(jobId,false);
+    info("Releasing reduce latch.");
+    latch.get("reduceAwaitLatch").countDown();
+    checkStatus(jobId,true);
+    assertEquals(10,mapExecCnt.get());
+    assertEquals(0,combineExecCnt.get());
+    assertEquals(1,reduceExecCnt.get());
+  }
+  finally {
+    latch.get("mapAwaitLatch").countDown();
+    latch.get("combineAwaitLatch").countDown();
+    latch.get("reduceAwaitLatch").countDown();
+  }
+}

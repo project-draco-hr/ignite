@@ -7,15 +7,16 @@
     try {
       if (!reload && allowLocRead) {
         try {
-          entry=colocated.context().isSwapEnabled() ? colocated.entryEx(key) : colocated.peekEx(key);
+          entry=colocated.context().isSwapOrOffheapEnabled() ? colocated.entryEx(key) : colocated.peekEx(key);
           if (entry != null) {
             boolean isNew=entry.isNewLocked();
-            V v=entry.innerGet(tx,true,false,true,true,true,true,filters);
-            if (tx == null || (!tx.implicit() && tx.isolation() == READ_COMMITTED))             colocated.context().evicts().touch(entry,topVer);
+            V v=entry.innerGet(null,true,false,true,true,true,true,subjId,null,taskName,filters);
+            colocated.context().evicts().touch(entry,topVer);
             if (v == null) {
               if (isNew && entry.markObsoleteIfEmpty(ver))               colocated.removeIfObsolete(key);
             }
  else {
+              if (cctx.portableEnabled() && deserializePortable && v instanceof GridPortableObject)               v=((GridPortableObject)v).deserialize();
               locVals.put(key,v);
               return false;
             }
@@ -46,7 +47,7 @@ catch (    GridCacheEntryRemovedException ignored) {
     }
 catch (    GridCacheFilterFailedException e) {
       if (log.isDebugEnabled())       log.debug("Filter validation failed for entry: " + e);
-      if (tx == null || (!tx.implicit() && tx.isolation() == READ_COMMITTED))       colocated.context().evicts().touch(entry,topVer);
+      colocated.context().evicts().touch(entry,topVer);
       break;
     }
   }

@@ -1,0 +1,28 @@
+{
+  A.notNull(f,"f");
+  enterBusy();
+  try {
+    GridGgfsPath path=convert(f);
+    GridGgfsMode mode=mode(path);
+    if (mode == PROXY) {
+      if (secondaryFs == null) {
+        assert mgmt;
+        return false;
+      }
+      if (clientLog.isLogEnabled())       clientLog.logDelete(path,PROXY,recursive);
+      return secondaryFs.delete(toSecondary(f),recursive);
+    }
+ else {
+      boolean res=rmtClient.delete(path,recursive);
+      if (clientLog.isLogEnabled())       clientLog.logDelete(path,mode,recursive);
+      return res;
+    }
+  }
+ catch (  IOException e) {
+    if (F.eq(IOException.class,e.getClass()) && (e.getCause() == null || !GridGgfsException.class.isAssignableFrom(e.getCause().getClass())))     throw e;
+ else     return false;
+  }
+ finally {
+    leaveBusy();
+  }
+}

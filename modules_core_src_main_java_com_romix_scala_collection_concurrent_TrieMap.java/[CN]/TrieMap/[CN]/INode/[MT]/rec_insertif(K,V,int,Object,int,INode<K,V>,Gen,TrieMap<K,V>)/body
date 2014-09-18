@@ -1,0 +1,112 @@
+{
+  while (true) {
+    MainNode<K,V> m=GCAS_READ(ct);
+    if (m instanceof CNode) {
+      CNode<K,V> cn=(CNode<K,V>)m;
+      int idx=(hc >>> lev) & 0x1f;
+      int flag=1 << idx;
+      int bmp=cn.bitmap;
+      int mask=flag - 1;
+      int pos=Integer.bitCount(bmp & mask);
+      if ((bmp & flag) != 0) {
+        BasicNode cnAtPos=cn.array[pos];
+        if (cnAtPos instanceof INode) {
+          INode<K,V> in=(INode<K,V>)cnAtPos;
+          if (startgen == in.gen)           return in.rec_insertif(k,v,hc,cond,lev + 5,this,startgen,ct);
+ else {
+            if (GCAS(cn,cn.renewed(startgen,ct),ct)) {
+              continue;
+            }
+ else             return null;
+          }
+        }
+ else         if (cnAtPos instanceof SNode) {
+          SNode<K,V> sn=(SNode<K,V>)cnAtPos;
+          if (cond == null) {
+            if (sn.hc == hc && equal(sn.k,k,ct)) {
+              if (GCAS(cn,cn.updatedAt(pos,new SNode<K,V>(k,v,hc),gen),ct))               return Option.makeOption(sn.v);
+ else               return null;
+            }
+ else {
+              CNode<K,V> rn=(cn.gen == gen) ? cn : cn.renewed(gen,ct);
+              MainNode<K,V> nn=rn.updatedAt(pos,inode(CNode.dual(sn,sn.hc,new SNode(k,v,hc),hc,lev + 5,gen)),gen);
+              if (GCAS(cn,nn,ct))               return Option.makeOption();
+ else               return null;
+            }
+          }
+ else           if (cond == INode.KEY_ABSENT) {
+            if (sn.hc == hc && equal(sn.k,k,ct))             return Option.makeOption(sn.v);
+ else {
+              CNode<K,V> rn=(cn.gen == gen) ? cn : cn.renewed(gen,ct);
+              MainNode<K,V> nn=rn.updatedAt(pos,inode(CNode.dual(sn,sn.hc,new SNode(k,v,hc),hc,lev + 5,gen)),gen);
+              if (GCAS(cn,nn,ct))               return Option.makeOption();
+ else               return null;
+            }
+          }
+ else           if (cond == INode.KEY_PRESENT) {
+            if (sn.hc == hc && equal(sn.k,k,ct)) {
+              if (GCAS(cn,cn.updatedAt(pos,new SNode<K,V>(k,v,hc),gen),ct))               return Option.makeOption(sn.v);
+ else               return null;
+            }
+ else             return Option.makeOption();
+          }
+ else {
+            if (sn.hc == hc && equal(sn.k,k,ct) && sn.v == cond) {
+              if (GCAS(cn,cn.updatedAt(pos,new SNode<K,V>(k,v,hc),gen),ct))               return Option.makeOption(sn.v);
+ else               return null;
+            }
+ else             return Option.makeOption();
+          }
+        }
+      }
+ else       if (cond == null || cond == INode.KEY_ABSENT) {
+        CNode<K,V> rn=(cn.gen == gen) ? cn : cn.renewed(gen,ct);
+        CNode<K,V> ncnode=rn.insertedAt(pos,flag,new SNode<K,V>(k,v,hc),gen);
+        if (GCAS(cn,ncnode,ct))         return Option.makeOption();
+ else         return null;
+      }
+ else       if (cond == INode.KEY_PRESENT) {
+        return Option.makeOption();
+      }
+ else       return Option.makeOption();
+    }
+ else     if (m instanceof TNode) {
+      clean(parent,ct,lev - 5);
+      return null;
+    }
+ else     if (m instanceof LNode) {
+      LNode<K,V> ln=(LNode<K,V>)m;
+      if (cond == null) {
+        Option<V> optv=ln.get(k);
+        if (insertln(ln,k,v,ct))         return optv;
+ else         return null;
+      }
+ else       if (cond == INode.KEY_ABSENT) {
+        Option<V> t=ln.get(k);
+        if (t == null) {
+          if (insertln(ln,k,v,ct))           return Option.makeOption();
+ else           return null;
+        }
+ else         return t;
+      }
+ else       if (cond == INode.KEY_PRESENT) {
+        Option<V> t=ln.get(k);
+        if (t != null) {
+          if (insertln(ln,k,v,ct))           return t;
+ else           return null;
+        }
+ else         return null;
+      }
+ else {
+        Option<V> t=ln.get(k);
+        if (t != null) {
+          if (((Some<V>)t).get() == cond) {
+            if (insertln(ln,k,v,ct))             return new Some<V>((V)cond);
+ else             return null;
+          }
+ else           return Option.makeOption();
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  if (inputSplit == null) {
+    GridHadoopInputSplit split=ctx.taskInfo().inputSplit();
+    if (split == null)     return null;
+    if (split instanceof GridHadoopFileBlock) {
+      GridHadoopFileBlock fileBlock=(GridHadoopFileBlock)split;
+      inputSplit=new FileSplit(new Path(fileBlock.file()),fileBlock.start(),fileBlock.length(),null);
+    }
+ else     if (split instanceof GridHadoopExternalSplit) {
+      throw new UnsupportedOperationException();
+    }
+ else     if (split instanceof GridHadoopSplitWrapper) {
+      inputSplit=(InputSplit)GridHadoopUtils.unwrapSplit((GridHadoopSplitWrapper)split);
+    }
+ else     throw new IllegalStateException();
+  }
+  return inputSplit;
+}

@@ -8,18 +8,20 @@ synchronized (this) {
     startVer=ver;
     wasNew=isNew();
   }
+  String taskName=cctx.kernalContext().job().currentTaskName();
   if (cctx.isAll(this,filter)) {
-    V ret=readThrough(null,key,true,filter);
+    V ret=readThrough(null,key,true,filter,cctx.localNodeId(),taskName);
     boolean touch=false;
     try {
 synchronized (this) {
         long ttl=ttlExtras();
-        GridCacheVersion nextVer=nextVersion();
+        GridCacheVersion nextVer=cctx.versions().nextForLoad(ver);
         if (wasNew && !isNew())         return ret;
         if (startVer.equals(ver)) {
           releaseSwap();
           V old=rawGetOrUnmarshalUnlocked();
           long expTime=toExpireTime(ttl);
+          if (cctx.portableEnabled())           ret=(V)cctx.kernalContext().portable().detachPortable(ret);
           if (ret != null) {
             updateIndex(ret,null,expTime,nextVer,old);
             if (cctx.deferredDelete() && !isInternal() && !detached()&& deletedUnlocked())             deletedUnlocked(false);

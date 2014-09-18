@@ -1,0 +1,19 @@
+{
+  A.notNull(f,"f");
+  enterBusy();
+  try {
+    GridGgfsPath path=convert(f);
+    GridGgfsMode mode=modeRslvr.resolveMode(path);
+    Set<GridGgfsMode> childrenModes=modeRslvr.resolveChildrenModes(path);
+    if (childrenModes.contains(PROXY)) {
+      if (clientLog.isLogEnabled())       clientLog.logDelete(path,PROXY,recursive);
+      return secondaryFs.delete(toSecondary(f),recursive);
+    }
+    boolean res=rmtClient.delete(path,recursive);
+    if (clientLog.isLogEnabled())     clientLog.logDelete(path,mode,recursive);
+    return res;
+  }
+  finally {
+    leaveBusy();
+  }
+}

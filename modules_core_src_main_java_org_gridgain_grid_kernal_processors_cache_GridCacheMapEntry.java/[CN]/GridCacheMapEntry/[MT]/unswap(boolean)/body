@@ -9,8 +9,10 @@ synchronized (this) {
       if (e != null) {
         long delta=e.expireTime() == 0 ? 0 : e.expireTime() - U.currentTimeMillis();
         if (delta >= 0) {
-          update(e.value(),e.valueBytes(),e.expireTime(),e.ttl(),e.version());
-          return e.value();
+          V val=e.value();
+          if (cctx.portableEnabled())           val=(V)cctx.kernalContext().portable().detachPortable(val);
+          update(val,e.valueBytes(),e.expireTime(),e.ttl(),e.version());
+          return val;
         }
  else         clearIndex(e.value());
       }

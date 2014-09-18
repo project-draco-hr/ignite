@@ -15,9 +15,9 @@ synchronized (this) {
           }
         }
  else {
-          if (markObsolete(obsoleteVer))           obsolete=true;
+          if (markObsolete0(obsoleteVer,true))           obsolete=true;
         }
-        if (cctx.events().isRecordable(EVT_CACHE_OBJECT_EXPIRED))         cctx.events().addEvent(partition(),key,cctx.localNodeId(),null,EVT_CACHE_OBJECT_EXPIRED,null,false,expiredVal,expiredVal != null || hasOldBytes);
+        if (cctx.events().isRecordable(EVT_CACHE_OBJECT_EXPIRED))         cctx.events().addEvent(partition(),key,cctx.localNodeId(),null,EVT_CACHE_OBJECT_EXPIRED,null,false,expiredVal,expiredVal != null || hasOldBytes,null,null,null);
       }
     }
   }
@@ -25,6 +25,7 @@ synchronized (this) {
     U.error(log,"Failed to clean up expired cache entry: " + this,e);
   }
  finally {
+    if (obsolete)     onMarkedObsolete();
     if (deferred)     cctx.onDeferredDelete(this,obsoleteVer);
   }
   return obsolete;

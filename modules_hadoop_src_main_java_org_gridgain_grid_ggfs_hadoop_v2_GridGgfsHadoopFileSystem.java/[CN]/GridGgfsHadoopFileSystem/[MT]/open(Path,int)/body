@@ -1,0 +1,34 @@
+{
+  A.notNull(f,"f");
+  enterBusy();
+  try {
+    GridGgfsPath path=convert(f);
+    GridGgfsMode mode=modeRslvr.resolveMode(path);
+    if (mode == PROXY) {
+      FSDataInputStream is=secondaryFs.open(toSecondary(f),bufSize);
+      if (clientLog.isLogEnabled()) {
+        FileStatus status=secondaryFs.getFileStatus(toSecondary(f));
+        long size=status != null ? status.getLen() : -1;
+        long logId=GridGgfsHadoopLogger.nextId();
+        clientLog.logOpen(logId,path,PROXY,bufSize,size);
+        return new FSDataInputStream(new GridGgfsHadoopProxyInputStream(is,clientLog,logId));
+      }
+ else       return is;
+    }
+ else {
+      GridGgfsHadoopStreamDelegate stream=seqReadsBeforePrefetchOverride ? rmtClient.open(path,seqReadsBeforePrefetch) : rmtClient.open(path);
+      long logId=-1;
+      if (clientLog.isLogEnabled()) {
+        logId=GridGgfsHadoopLogger.nextId();
+        clientLog.logOpen(logId,path,mode,bufSize,stream.length());
+      }
+      if (LOG.isDebugEnabled())       LOG.debug("Opening input stream [thread=" + Thread.currentThread().getName() + ", path="+ path+ ", bufSize="+ bufSize+ ']');
+      GridGgfsHadoopInputStream ggfsIn=new GridGgfsHadoopInputStream(stream,stream.length(),bufSize,LOG,clientLog,logId);
+      if (LOG.isDebugEnabled())       LOG.debug("Opened input stream [path=" + path + ", delegate="+ stream+ ']');
+      return new FSDataInputStream(ggfsIn);
+    }
+  }
+  finally {
+    leaveBusy();
+  }
+}

@@ -1,0 +1,24 @@
+{
+  String name="serviceSingletonUpdateTopology";
+  Grid g=randomGrid();
+  CountDownLatch latch=new CountDownLatch(1);
+  DummyService.exeLatch(name,latch);
+  GridFuture<?> fut=g.services().deployClusterSingleton(name,new DummyService());
+  info("Deployed service: " + name);
+  fut.get();
+  info("Finished waiting for service future: " + name);
+  latch.await();
+  assertEquals(name,1,DummyService.started(name));
+  assertEquals(name,0,DummyService.cancelled(name));
+  int nodeCnt=2;
+  startExtraNodes(nodeCnt);
+  try {
+    assertEquals(name,1,DummyService.started(name));
+    assertEquals(name,0,DummyService.cancelled(name));
+    info(">>> Passed checks.");
+    checkCount(name,g.services().deployedServices(),1);
+  }
+  finally {
+    stopExtraNodes(nodeCnt);
+  }
+}

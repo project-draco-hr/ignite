@@ -1,0 +1,20 @@
+{
+  A.notNull(f,"f");
+  enterBusy();
+  try {
+    if (mode(f) == PROXY) {
+      if (secondaryFs == null) {
+        assert mgmt;
+        throw new IOException("Failed to get content summary (secondary file system is not initialized): " + f);
+      }
+      return secondaryFs.getContentSummary(toSecondary(f));
+    }
+ else {
+      GridGgfsPathSummary sum=rmtClient.contentSummary(convert(f));
+      return new ContentSummary(sum.totalLength(),sum.filesCount(),sum.directoriesCount(),-1,sum.totalLength(),rmtClient.fsStatus().spaceTotal());
+    }
+  }
+  finally {
+    leaveBusy();
+  }
+}

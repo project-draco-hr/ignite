@@ -1,0 +1,24 @@
+{
+  Grid grid=startGrid(0,new GridSpringResourceContextImpl(new GenericApplicationContext()));
+  try {
+    grid.compute().execute(SharedResourceTask1.class,null).get();
+    checkUsageCount(createClss,UserResource1.class,2);
+    checkUsageCount(createClss,UserResource2.class,2);
+    checkUsageCount(deployClss,UserResource1.class,2);
+    checkUsageCount(deployClss,UserResource2.class,2);
+    GridTestClassLoader ldr=new GridTestClassLoader(null,getClass().getClassLoader(),SharedResourceTask1.class.getName(),GridResourceIsolatedClassLoaderSelfTest.SharedResourceTask1.GridSharedJob1.class.getName(),GridResourceIsolatedClassLoaderSelfTest.class.getName());
+    Class<? extends GridComputeTask<Object,Object>> taskCls=(Class<? extends GridComputeTask<Object,Object>>)ldr.loadClass(SharedResourceTask1.class.getName());
+    grid.compute().execute(taskCls,null).get();
+    checkUsageCount(undeployClss,UserResource1.class,2);
+    checkUsageCount(undeployClss,UserResource2.class,2);
+    checkUsageCount(createClss,UserResource1.class,4);
+    checkUsageCount(createClss,UserResource2.class,4);
+    checkUsageCount(deployClss,UserResource1.class,4);
+    checkUsageCount(deployClss,UserResource2.class,4);
+  }
+  finally {
+    GridTestUtils.close(grid,log());
+  }
+  checkUsageCount(undeployClss,UserResource1.class,4);
+  checkUsageCount(undeployClss,UserResource2.class,4);
+}

@@ -1,16 +1,16 @@
 {
   try {
-    UUID nodeId;
     InputStream in;
     try {
       sock.setKeepAlive(true);
       sock.setTcpNoDelay(true);
       int timeout=sock.getSoTimeout();
       sock.setSoTimeout((int)netTimeout);
+      in=new BufferedInputStream(sock.getInputStream());
       byte[] buf=new byte[4];
       int read=0;
       while (read < buf.length) {
-        int r=sock.getInputStream().read(buf,read,buf.length - read);
+        int r=in.read(buf,read,buf.length - read);
         if (r >= 0)         read+=r;
  else {
           if (log.isDebugEnabled())           log.debug("Failed to read magic header (too few bytes received) " + "[rmtAddr=" + sock.getRemoteSocketAddress() + ", locAddr="+ sock.getLocalSocketAddress()+ ']');
@@ -24,15 +24,17 @@
         return;
       }
       sock.setSoTimeout(timeout);
-      GridTcpDiscoveryHandshakeRequest req=readMessage(sock,netTimeout);
-      nodeId=req.creatorNodeId();
-      writeToSocket(sock,new GridTcpDiscoveryHandshakeResponse(locNodeId,locNode.internalOrder()));
+      GridTcpDiscoveryHandshakeRequest req=readMessage(sock,in,netTimeout);
+      UUID nodeId=req.creatorNodeId();
+      this.nodeId=nodeId;
+      GridTcpDiscoveryHandshakeResponse res=new GridTcpDiscoveryHandshakeResponse(locNodeId,locNode.internalOrder());
+      writeToSocket(sock,res);
       if (locNodeId.equals(nodeId)) {
         if (log.isDebugEnabled())         log.debug("Handshake request from local node: " + req);
         return;
       }
-      in=sock.getInputStream();
       if (log.isDebugEnabled())       log.debug("Initialized connection with remote node: " + nodeId);
+      if (debugMode)       debugLog("Initialized connection with remote node: " + nodeId);
     }
  catch (    IOException e) {
       if (log.isDebugEnabled())       U.error(log,"Caught exception on handshake [err=" + e + ", sock="+ sock+ ']',e);
@@ -45,6 +47,7 @@
 catch (    GridException e) {
       if (log.isDebugEnabled())       U.error(log,"Caught exception on handshake [err=" + e + ", sock="+ sock+ ']',e);
       if (e.hasCause(SocketTimeoutException.class))       LT.warn(log,null,"Socket operation timed out on handshake " + "(consider increasing 'networkTimeout' configuration property) " + "[netTimeout=" + netTimeout + ']');
+ else       if (e.hasCause(ClassNotFoundException.class))       LT.warn(log,null,"Failed to read message due to ClassNotFoundException " + "(make sure same versions of all classes are available on all nodes) " + "[rmtAddr=" + sock.getRemoteSocketAddress() + ", err="+ X.cause(e,ClassNotFoundException.class).getMessage()+ ']');
  else       if (e.hasCause(ObjectStreamException.class) || (!sock.isClosed() && !e.hasCause(IOException.class)))       LT.error(log,e,"Failed to initialize connection [sock=" + sock + ']');
       return;
     }
@@ -54,6 +57,7 @@ catch (    GridException e) {
         msg.senderNodeId(nodeId);
         if (log.isDebugEnabled())         log.debug("Message has been received: " + msg);
         stats.onMessageReceived(msg);
+        if (debugMode && recordable(msg))         debugLog("Message has been received: " + msg);
         if (msg instanceof GridTcpDiscoveryJoinRequestMessage) {
           GridTcpDiscoveryJoinRequestMessage req=(GridTcpDiscoveryJoinRequestMessage)msg;
           if (!req.responded()) {
@@ -139,6 +143,7 @@ synchronized (mux) {
  catch (      GridException e) {
         if (log.isDebugEnabled())         U.error(log,"Caught exception on message read [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']',e);
         if (isInterrupted() || sock.isClosed())         return;
+        if (e.hasCause(ClassNotFoundException.class))         LT.warn(log,null,"Failed to read message due to ClassNotFoundException " + "(make sure same versions of all classes are available on all nodes) " + "[rmtNodeId=" + nodeId + ", err="+ X.cause(e,ClassNotFoundException.class).getMessage()+ ']');
         boolean err=e.hasCause(ObjectStreamException.class) || (nodeAlive(nodeId) && spiStateCopy() == CONNECTED && !X.hasCause(e,IOException.class));
         if (err)         LT.error(log,e,"Failed to read message [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']');
         return;

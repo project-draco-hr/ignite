@@ -1,0 +1,32 @@
+{
+  final GridSetQueryPredicate filter=(GridSetQueryPredicate)qry.scanFilter();
+  filter.init(cctx);
+  GridUuid id=filter.setId();
+  Collection<GridCacheSetItemKey> data=cctx.dataStructures().setData(id);
+  if (data == null)   data=Collections.emptyList();
+  final GridIterator<GridIndexingKeyValueRow<K,V>> it=F.iterator(data,new C1<GridCacheSetItemKey,GridIndexingKeyValueRow<K,V>>(){
+    @Override public GridIndexingKeyValueRow<K,V> apply(    GridCacheSetItemKey e){
+      return new GridIndexingKeyValueRowAdapter<>((K)e.item(),(V)Boolean.TRUE);
+    }
+  }
+,true,new P1<GridCacheSetItemKey>(){
+    @Override public boolean apply(    GridCacheSetItemKey e){
+      return filter.apply(e,null);
+    }
+  }
+);
+  return new GridCloseableIteratorAdapter<GridIndexingKeyValueRow<K,V>>(){
+    @Override protected boolean onHasNext(){
+      return it.hasNext();
+    }
+    @Override protected GridIndexingKeyValueRow<K,V> onNext(){
+      return it.next();
+    }
+    @Override protected void onRemove(){
+      it.remove();
+    }
+    @Override protected void onClose(){
+    }
+  }
+;
+}

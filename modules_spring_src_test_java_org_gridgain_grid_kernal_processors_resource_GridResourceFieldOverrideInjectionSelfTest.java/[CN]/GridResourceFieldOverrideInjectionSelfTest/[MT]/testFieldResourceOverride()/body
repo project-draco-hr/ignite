@@ -1,0 +1,20 @@
+{
+  Grid grid1=null;
+  Grid grid2=null;
+  try {
+    GenericApplicationContext ctx=new GenericApplicationContext();
+    RootBeanDefinition bf=new RootBeanDefinition();
+    bf.setBeanClass(UserSpringBean.class);
+    ctx.registerBeanDefinition(SPRING_BEAN_RSRC_NAME,bf);
+    grid1=startGrid(1,new GridSpringResourceContextImpl(ctx));
+    grid2=startGrid(2,new GridSpringResourceContextImpl(ctx));
+    grid1.compute().execute(ResourceOverrideTask.class,null).get();
+    checkUsageCount(createClss,UserResource.class,2);
+    checkUsageCount(deployClss,UserResource.class,2);
+  }
+  finally {
+    GridTestUtils.close(grid1,log());
+    GridTestUtils.close(grid2,log());
+  }
+  checkUsageCount(undeployClss,UserResource.class,2);
+}

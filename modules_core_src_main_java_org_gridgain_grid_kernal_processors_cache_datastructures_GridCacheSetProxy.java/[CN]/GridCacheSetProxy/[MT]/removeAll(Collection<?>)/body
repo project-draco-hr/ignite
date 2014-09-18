@@ -1,0 +1,24 @@
+{
+  enterBusy();
+  try {
+    gate.enter();
+    try {
+      if (cctx.transactional())       return CU.outTx(new Callable<Boolean>(){
+        @Override public Boolean call() throws Exception {
+          return delegate.removeAll(c);
+        }
+      }
+,cctx);
+      return delegate.removeAll(c);
+    }
+ catch (    GridException e) {
+      throw new GridRuntimeException(e);
+    }
+ finally {
+      gate.leave();
+    }
+  }
+  finally {
+    leaveBusy();
+  }
+}

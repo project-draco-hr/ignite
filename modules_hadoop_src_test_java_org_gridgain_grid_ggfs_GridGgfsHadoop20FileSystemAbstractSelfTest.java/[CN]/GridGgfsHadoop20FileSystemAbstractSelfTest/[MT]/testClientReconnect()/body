@@ -1,0 +1,28 @@
+{
+  final Path ggfsHome=new Path(primaryFsUri);
+  final Path filePath=new Path(ggfsHome,"someFile");
+  final FSDataOutputStream s=fs.create(filePath,EnumSet.noneOf(CreateFlag.class),Options.CreateOpts.perms(FsPermission.getDefault()));
+  try {
+    G.stopAll(true);
+    startNodes();
+    fs.mkdir(new Path("ggfs:///dir1/dir2"),FsPermission.getDefault(),true);
+    GridTestUtils.assertThrows(log,new Callable<Object>(){
+      @Nullable @Override public Object call() throws Exception {
+        s.write("test".getBytes());
+        s.flush();
+        return null;
+      }
+    }
+,IOException.class,null);
+    GridTestUtils.assertThrows(log,new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        fs.getFileStatus(filePath);
+        return null;
+      }
+    }
+,FileNotFoundException.class,null);
+  }
+  finally {
+    U.closeQuiet(s);
+  }
+}

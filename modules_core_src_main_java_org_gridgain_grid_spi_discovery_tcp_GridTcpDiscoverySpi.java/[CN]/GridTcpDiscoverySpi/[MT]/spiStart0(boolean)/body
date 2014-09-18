@@ -3,6 +3,11 @@
 synchronized (mux) {
     spiState=DISCONNECTED;
   }
+  if (debugMode) {
+    if (!log.isInfoEnabled())     throw new GridSpiException("Info log level should be enabled for TCP discovery to work " + "in debug mode.");
+    debugLog=new ConcurrentLinkedDeque<>();
+    U.quietAndWarn(log,"TCP discovery SPI is configured in debug mode.");
+  }
   fromAddrs.clear();
   noResAddrs.clear();
   sockTimeoutWorker=new SocketTimeoutWorker();
@@ -18,8 +23,16 @@ synchronized (mux) {
     throw new GridSpiException("Failed to resolve local host to set of external addresses: " + locHost,e);
   }
   locNode=new GridTcpDiscoveryNode(locNodeId,addrs.get1(),addrs.get2(),tcpSrvr.port,metricsProvider,nodeVer);
+  try {
+    Collection<InetSocketAddress> extAddrs=addrRslvr == null ? null : U.resolveAddresses(addrRslvr,F.flat(Arrays.asList(addrs.get1(),addrs.get2())),locNode.discoveryPort());
+    if (extAddrs != null)     nodeAttrs.put(createSpiAttributeName(ATTR_EXT_ADDRS),extAddrs);
+  }
+ catch (  GridException e) {
+    throw new GridSpiException("Failed to resolve local host to addresses: " + locHost,e);
+  }
   locNode.setAttributes(nodeAttrs);
   locNode.local(true);
+  locNodeAddrs=getNodeAddresses(locNode);
   if (log.isDebugEnabled())   log.debug("Local node initialized: " + locNode);
   tcpSrvr.start();
   ring.localNode(locNode);

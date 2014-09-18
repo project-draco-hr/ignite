@@ -1,20 +1,25 @@
 {
-  GridClientMessageInterceptor interceptor=ctx.config().getClientMessageInterceptor();
+  GridClientMessageInterceptor interceptor=config().getClientMessageInterceptor();
   if (interceptor == null)   return;
-  for (  String param : INTERCEPTED_PARAMS) {
-    Object oldVal=req.parameter(param);
-    if (oldVal != null) {
-      Object newVal=interceptor.onReceive(oldVal);
-      req.parameter(param,newVal);
+  if (req instanceof GridRestCacheRequest) {
+    GridRestCacheRequest req0=(GridRestCacheRequest)req;
+    req0.key(interceptor.onReceive(req0.key()));
+    req0.value(interceptor.onReceive(req0.value()));
+    req0.value2(interceptor.onReceive(req0.value2()));
+    Map<Object,Object> oldVals=req0.values();
+    if (oldVals != null) {
+      Map<Object,Object> newVals=new HashMap<>(oldVals.size());
+      for (      Map.Entry<Object,Object> e : oldVals.entrySet())       newVals.put(interceptor.onReceive(e.getKey()),interceptor.onReceive(e.getValue()));
+      req0.values(U.sealMap(newVals));
     }
   }
-  int i=1;
-  while (true) {
-    Object k=req.parameter("k" + i);
-    Object v=req.parameter("v" + i);
-    if (k == null && v == null)     break;
-    if (k != null)     req.parameter("k" + i,interceptor.onReceive(k));
-    if (v != null)     req.parameter("v" + i,interceptor.onReceive(v));
-    i++;
+ else   if (req instanceof GridRestTaskRequest) {
+    GridRestTaskRequest req0=(GridRestTaskRequest)req;
+    List<Object> oldParams=req0.params();
+    if (oldParams != null) {
+      Collection<Object> newParams=new ArrayList<>(oldParams.size());
+      for (      Object o : oldParams)       newParams.add(interceptor.onReceive(o));
+      req0.params(U.sealList(newParams));
+    }
   }
 }

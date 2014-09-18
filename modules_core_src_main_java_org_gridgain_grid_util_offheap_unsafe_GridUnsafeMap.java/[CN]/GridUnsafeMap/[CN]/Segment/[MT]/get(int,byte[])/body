@@ -3,7 +3,13 @@
   try {
     long addr=Bin.first(binAddr,mem);
     while (addr != 0) {
-      if (Entry.keyEquals(addr,keyBytes,mem))       return Entry.valueBytes(addr,mem);
+      if (Entry.keyEquals(addr,keyBytes,mem)) {
+{
+          int keyLen=Entry.readKeyLength(addr,mem);
+          int valLen=Entry.readValueLength(addr,mem);
+          return mem.readBytes(addr + HEADER + keyLen,valLen);
+        }
+      }
       addr=Entry.nextAddress(addr,mem);
     }
     return null;

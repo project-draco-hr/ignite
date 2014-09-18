@@ -1,0 +1,50 @@
+{
+  while (true) {
+    MainNode<K,V> m=GCAS_READ(ct);
+    if (m instanceof CNode) {
+      CNode<K,V> cn=(CNode<K,V>)m;
+      int idx=(hc >>> lev) & 0x1f;
+      int flag=1 << idx;
+      int bmp=cn.bitmap;
+      int mask=flag - 1;
+      int pos=Integer.bitCount(bmp & mask);
+      if ((bmp & flag) != 0) {
+        BasicNode cnAtPos=cn.array[pos];
+        if (cnAtPos instanceof INode) {
+          INode<K,V> in=(INode<K,V>)cnAtPos;
+          if (startgen == in.gen)           return in.rec_insert(k,v,hc,lev + 5,this,startgen,ct);
+ else {
+            if (GCAS(cn,cn.renewed(startgen,ct),ct)) {
+              continue;
+            }
+ else             return false;
+          }
+        }
+ else         if (cnAtPos instanceof SNode) {
+          SNode<K,V> sn=(SNode<K,V>)cnAtPos;
+          if (sn.hc == hc && equal((K)sn.k,k,ct))           return GCAS(cn,cn.updatedAt(pos,new SNode<K,V>(k,v,hc),gen),ct);
+ else {
+            CNode<K,V> rn=(cn.gen == gen) ? cn : cn.renewed(gen,ct);
+            MainNode<K,V> nn=rn.updatedAt(pos,inode(CNode.dual(sn,sn.hc,new SNode(k,v,hc),hc,lev + 5,gen)),gen);
+            return GCAS(cn,nn,ct);
+          }
+        }
+      }
+ else {
+        CNode<K,V> rn=(cn.gen == gen) ? cn : cn.renewed(gen,ct);
+        MainNode<K,V> ncnode=rn.insertedAt(pos,flag,new SNode<K,V>(k,v,hc),gen);
+        return GCAS(cn,ncnode,ct);
+      }
+    }
+ else     if (m instanceof TNode) {
+      clean(parent,ct,lev - 5);
+      return false;
+    }
+ else     if (m instanceof LNode) {
+      LNode<K,V> ln=(LNode<K,V>)m;
+      MainNode<K,V> nn=ln.inserted(k,v);
+      return GCAS(ln,nn,ct);
+    }
+    throw new RuntimeException("Should not happen");
+  }
+}

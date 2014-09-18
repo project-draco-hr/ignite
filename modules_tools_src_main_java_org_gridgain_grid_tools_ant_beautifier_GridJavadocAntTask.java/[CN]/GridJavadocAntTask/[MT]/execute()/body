@@ -1,0 +1,22 @@
+{
+  if (dir == null)   throw new BuildException("'dir' attribute must be specified.");
+  if (css == null)   throw new BuildException("'css' attribute must be specified.");
+  log("dir=" + dir,Project.MSG_DEBUG);
+  log("css=" + css,Project.MSG_DEBUG);
+  DirectoryScanner scanner=getDirectoryScanner(dir);
+  boolean fail=false;
+  for (  String fileName : scanner.getIncludedFiles()) {
+    String file=dir.getAbsolutePath() + '/' + fileName;
+    try {
+      processFile(file);
+    }
+ catch (    IOException e) {
+      throw new BuildException("IO error while processing: " + file,e);
+    }
+catch (    IllegalArgumentException e) {
+      System.err.println("JavaDoc error: " + e.getMessage());
+      fail=true;
+    }
+  }
+  if (fail)   throw new BuildException("Execution failed due to previous errors.");
+}

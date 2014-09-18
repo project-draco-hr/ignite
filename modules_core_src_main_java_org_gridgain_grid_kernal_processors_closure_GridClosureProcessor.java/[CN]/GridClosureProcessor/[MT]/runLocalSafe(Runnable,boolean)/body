@@ -1,20 +1,3 @@
 {
-  try {
-    return runLocal(c,sys);
-  }
- catch (  Throwable e) {
-    if (e instanceof Error)     U.error(log,"Closure execution failed with error.",e);
-    if (e.getCause() instanceof RejectedExecutionException) {
-      U.warn(log,"Closure execution has been rejected (will execute in the same thread) [sysPool=" + sys + ", closure="+ c+ ']');
-      try {
-        c.run();
-        return new GridFinishedFuture(ctx);
-      }
- catch (      Throwable t) {
-        if (t instanceof Error)         U.error(log,"Closure execution failed with error.",t);
-        return new GridFinishedFuture(ctx,U.cast(t));
-      }
-    }
- else     return new GridFinishedFuture(ctx,U.cast(e));
-  }
+  return runLocalSafe(c,sys ? GridClosurePolicy.SYSTEM_POOL : GridClosurePolicy.PUBLIC_POOL);
 }

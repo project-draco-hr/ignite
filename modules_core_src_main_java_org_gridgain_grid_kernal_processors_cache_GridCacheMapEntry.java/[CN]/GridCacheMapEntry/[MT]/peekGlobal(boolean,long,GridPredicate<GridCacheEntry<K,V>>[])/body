@@ -7,7 +7,7 @@
       V val;
 synchronized (this) {
         if (checkExpired()) {
-          rmv=markObsolete(cctx.versions().next(this.ver));
+          rmv=markObsolete0(cctx.versions().next(this.ver),true);
           return null;
         }
         checkObsolete();
@@ -19,6 +19,9 @@ synchronized (this) {
     }
   }
   finally {
-    if (rmv)     cctx.cache().map().removeEntry(this);
+    if (rmv) {
+      onMarkedObsolete();
+      cctx.cache().map().removeEntry(this);
+    }
   }
 }

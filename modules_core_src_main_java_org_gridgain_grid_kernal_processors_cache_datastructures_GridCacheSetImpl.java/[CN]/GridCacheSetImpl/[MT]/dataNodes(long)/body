@@ -1,0 +1,11 @@
+{
+  if (ctx.isLocal() || ctx.isReplicated())   return Collections.singleton(ctx.localNode());
+  Collection<GridNode> nodes;
+  if (collocated) {
+    nodes=ctx.affinity().nodes(hdrPart,topVer);
+    if (!nodes.isEmpty())     nodes=Collections.singleton(nodes.contains(ctx.localNode()) ? ctx.localNode() : F.first(nodes));
+  }
+ else   nodes=CU.affinityNodes(ctx,topVer);
+  if (nodes.isEmpty())   throw new GridException("Failed to get set data, all cache nodes left grid.");
+  return nodes;
+}

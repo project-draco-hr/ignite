@@ -1,0 +1,25 @@
+{
+  try {
+    onAccess();
+    try (GridCloseableIterator<T> iter=iterator0()){
+      boolean rmv=false;
+      Set<GridCacheSetItemKey> rmvKeys=null;
+      for (      T val : iter) {
+        if (!c.contains(val)) {
+          rmv=true;
+          if (rmvKeys == null)           rmvKeys=new HashSet<>(BATCH_SIZE);
+          rmvKeys.add(itemKey(val));
+          if (rmvKeys.size() == BATCH_SIZE) {
+            retryRemoveAll(rmvKeys);
+            rmvKeys.clear();
+          }
+        }
+      }
+      if (!F.isEmpty(rmvKeys))       retryRemoveAll(rmvKeys);
+      return rmv;
+    }
+   }
+ catch (  GridException e) {
+    throw new GridRuntimeException(e);
+  }
+}

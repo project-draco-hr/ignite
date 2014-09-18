@@ -1,0 +1,19 @@
+{
+  boolean success=false;
+  try {
+    endpoint=GridIpcEndpointFactory.connectEndpoint(endpointAddr,new GridLoggerProxy(new GridGgfsHadoopJclLogger(log),null,null,""));
+    out=new GridGgfsDataOutputStream(new BufferedOutputStream(endpoint.outputStream()));
+    reader=new ReaderThread();
+    reader.setDaemon(true);
+    reader.start();
+    success=true;
+  }
+ catch (  GridException e) {
+    GridIpcOutOfSystemResourcesException resEx=e.getCause(GridIpcOutOfSystemResourcesException.class);
+    if (resEx != null)     throw new GridException(GridIpcSharedMemoryServerEndpoint.OUT_OF_RESOURCES_MSG,resEx);
+    throw e;
+  }
+ finally {
+    if (!success)     stop();
+  }
+}

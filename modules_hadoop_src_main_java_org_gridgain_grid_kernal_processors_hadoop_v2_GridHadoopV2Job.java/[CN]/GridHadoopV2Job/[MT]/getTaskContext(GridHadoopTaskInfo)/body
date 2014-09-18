@@ -1,0 +1,21 @@
+{
+  T2<GridHadoopTaskType,Integer> locTaskId=new T2<>(info.type(),info.taskNumber());
+  GridFutureAdapter<GridHadoopTaskContext> fut=ctxs.get(locTaskId);
+  if (fut != null)   return fut.get();
+  GridFutureAdapter<GridHadoopTaskContext> old=ctxs.putIfAbsent(locTaskId,fut=new GridFutureAdapter<>());
+  if (old != null)   return old.get();
+  GridHadoopClassLoader ldr=clsLdrPool.poll();
+  if (ldr == null)   ldr=new GridHadoopClassLoader(rsrcMgr.classPath());
+  try {
+    Class<?> cls=ldr.loadClass(GridHadoopV2TaskContext.class.getName());
+    Constructor<?> ctr=cls.getConstructor(GridHadoopTaskInfo.class,GridHadoopJob.class,GridHadoopJobId.class,UUID.class);
+    GridHadoopTaskContext res=(GridHadoopTaskContext)ctr.newInstance(info,this,jobId,locNodeId);
+    fut.onDone(res);
+    return res;
+  }
+ catch (  Throwable e) {
+    GridException te=transformException(e);
+    fut.onDone(te);
+    throw te;
+  }
+}

@@ -1,0 +1,18 @@
+{
+  onAccess();
+  boolean rmv=false;
+  Set<GridCacheSetItemKey> rmvKeys=null;
+  for (  Object obj : c) {
+    if (rmv) {
+      if (rmvKeys == null)       rmvKeys=new HashSet<>(BATCH_SIZE);
+      rmvKeys.add(itemKey(obj));
+      if (rmvKeys.size() == BATCH_SIZE) {
+        retryRemoveAll(rmvKeys);
+        rmvKeys.clear();
+      }
+    }
+ else     rmv|=remove(obj);
+  }
+  if (!F.isEmpty(rmvKeys))   retryRemoveAll(rmvKeys);
+  return rmv;
+}
