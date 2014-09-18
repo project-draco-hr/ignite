@@ -1,4 +1,25 @@
 {
-  job().prepareTaskEnvironment(taskInfo());
-  Thread.currentThread().setContextClassLoader(jobConf().getClassLoader());
+  File locDir;
+switch (taskInfo().type()) {
+case MAP:
+case REDUCE:
+    job().prepareTaskEnvironment(taskInfo());
+  locDir=taskLocalDir(locNodeId,taskInfo());
+break;
+default :
+locDir=jobLocalDir(locNodeId,taskInfo().jobId());
+}
+Thread.currentThread().setContextClassLoader(jobConf().getClassLoader());
+try {
+FileSystem fs=FileSystem.get(jobConf());
+GridHadoopFileSystemsUtils.setUser(fs,jobConf().getUser());
+LocalFileSystem locFs=FileSystem.getLocal(jobConf());
+locFs.setWorkingDirectory(new Path(locDir.getAbsolutePath()));
+}
+ catch (Throwable e) {
+throw transformException(e);
+}
+ finally {
+Thread.currentThread().setContextClassLoader(null);
+}
 }
