@@ -6,10 +6,10 @@
   for (int i=0; i < 2; i++) {
     boolean useNewAPI=i == 1;
     ggfs.delete(new GridGgfsPath(PATH_OUTPUT),true);
-    serializationWasConfigured=false;
-    partitionerWasConfigured=false;
-    inputFormatWasConfigured=false;
-    outputFormatWasConfigured=false;
+    flags.put("serializationWasConfigured",false);
+    flags.put("partitionerWasConfigured",false);
+    flags.put("inputFormatWasConfigured",false);
+    flags.put("outputFormatWasConfigured",false);
     JobConf jobConf=new JobConf();
     jobConf.set(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY,CustomSerialization.class.getName());
     jobConf.setInt(FileInputFormat.SPLIT_MAXSIZE,65000);
@@ -34,12 +34,12 @@
     FileOutputFormat.setOutputPath(job,new Path(ggfsScheme() + PATH_OUTPUT));
     job.setNumReduceTasks(3);
     job.setJarByClass(GridHadoopWordCount2.class);
-    GridFuture<?> fut=grid(0).hadoop().submit(new GridHadoopJobId(UUID.randomUUID(),1),new GridHadoopDefaultJobInfo(job.getConfiguration()));
+    GridFuture<?> fut=grid(0).hadoop().submit(new GridHadoopJobId(UUID.randomUUID(),1),createJobInfo(job.getConfiguration()));
     fut.get();
-    assertTrue("Serialization was configured (new API is " + useNewAPI + ")",serializationWasConfigured);
-    assertTrue("Partitioner was configured (new API is = " + useNewAPI + ")",partitionerWasConfigured);
-    assertTrue("Input format was configured (new API is = " + useNewAPI + ")",inputFormatWasConfigured);
-    assertTrue("Output format was configured (new API is = " + useNewAPI + ")",outputFormatWasConfigured);
+    assertTrue("Serialization was configured (new API is " + useNewAPI + ")",flags.get("serializationWasConfigured"));
+    assertTrue("Partitioner was configured (new API is = " + useNewAPI + ")",flags.get("partitionerWasConfigured"));
+    assertTrue("Input format was configured (new API is = " + useNewAPI + ")",flags.get("inputFormatWasConfigured"));
+    assertTrue("Output format was configured (new API is = " + useNewAPI + ")",flags.get("outputFormatWasConfigured"));
     assertEquals("Use new API = " + useNewAPI,"key3\t15000\n" + "key6\t18000\n",readAndSortFile(PATH_OUTPUT + "/" + (useNewAPI ? "part-r-" : "part-")+ "00000"));
     assertEquals("Use new API = " + useNewAPI,"key1\t10000\n" + "key4\t7000\n",readAndSortFile(PATH_OUTPUT + "/" + (useNewAPI ? "part-r-" : "part-")+ "00001"));
     assertEquals("Use new API = " + useNewAPI,"key2\t20000\n" + "key5\t12000\n",readAndSortFile(PATH_OUTPUT + "/" + (useNewAPI ? "part-r-" : "part-")+ "00002"));
