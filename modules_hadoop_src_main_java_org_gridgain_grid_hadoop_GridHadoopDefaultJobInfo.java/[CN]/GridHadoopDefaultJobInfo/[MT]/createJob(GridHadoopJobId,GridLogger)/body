@@ -1,3 +1,11 @@
 {
-  return new GridHadoopV2Job(jobId,this,log);
+  try {
+    GridHadoopClassLoader ldr=new GridHadoopClassLoader(null);
+    Class<?> jobCls=ldr.loadClass(GridHadoopV2Job.class.getName());
+    Constructor<?> constructor=jobCls.getConstructor(GridHadoopJobId.class,GridHadoopDefaultJobInfo.class,GridLogger.class);
+    return (GridHadoopJob)constructor.newInstance(jobId,this,log);
+  }
+ catch (  Exception e) {
+    throw new GridException(e);
+  }
 }
