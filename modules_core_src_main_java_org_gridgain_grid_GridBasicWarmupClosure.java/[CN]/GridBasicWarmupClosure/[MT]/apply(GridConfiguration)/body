@@ -1,0 +1,31 @@
+{
+  GridConfiguration cfg=prepareConfiguration(gridCfg);
+  if (cfg == null)   return;
+  out("Starting grids to warmup caches [gridCnt=" + gridCnt + ", caches="+ cfg.getCacheConfiguration().length+ ']');
+  Collection<Grid> grids=new LinkedList<>();
+  String old=System.getProperty(GridSystemProperties.GG_UPDATE_NOTIFIER);
+  try {
+    System.setProperty(GridSystemProperties.GG_UPDATE_NOTIFIER,"false");
+    GridTcpDiscoveryIpFinder ipFinder=new GridTcpDiscoveryVmIpFinder(true);
+    for (int i=0; i < gridCnt; i++) {
+      GridConfiguration cfg0=new GridConfiguration(cfg);
+      GridTcpDiscoverySpi discoSpi=new GridTcpDiscoverySpi();
+      discoSpi.setIpFinder(ipFinder);
+      discoSpi.setLocalPort(discoveryPort);
+      cfg0.setDiscoverySpi(discoSpi);
+      cfg0.setGridLogger(new GridNullLogger());
+      cfg0.setGridName("gridgain-warmup-grid-" + i);
+      grids.add(GridGain.start(cfg0));
+    }
+    doWarmup(grids);
+  }
+ catch (  Exception e) {
+    throw new GridRuntimeException(e);
+  }
+ finally {
+    for (    Grid grid : grids)     GridGain.stop(grid.name(),false);
+    out("Stopped warmup grids.");
+    if (old == null)     old="false";
+    System.setProperty(GridSystemProperties.GG_UPDATE_NOTIFIER,old);
+  }
+}
