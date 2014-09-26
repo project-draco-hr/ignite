@@ -1,8 +1,15 @@
 {
   try {
-    GridHadoopClassLoader ldr=new GridHadoopClassLoader(null);
-    Class<?> jobCls=ldr.loadClass(GridHadoopV2Job.class.getName());
-    Constructor<?> constructor=jobCls.getConstructor(GridHadoopJobId.class,GridHadoopDefaultJobInfo.class,GridLogger.class);
+    Class<?> jobCls0=jobCls;
+    if (jobCls0 == null) {
+synchronized (GridHadoopDefaultJobInfo.class) {
+        if ((jobCls0=jobCls) == null) {
+          GridHadoopClassLoader ldr=new GridHadoopClassLoader(null);
+          jobCls=jobCls0=ldr.loadClass(GridHadoopV2Job.class.getName());
+        }
+      }
+    }
+    Constructor<?> constructor=jobCls0.getConstructor(GridHadoopJobId.class,GridHadoopDefaultJobInfo.class,GridLogger.class);
     return (GridHadoopJob)constructor.newInstance(jobId,this,log);
   }
  catch (  Exception e) {
