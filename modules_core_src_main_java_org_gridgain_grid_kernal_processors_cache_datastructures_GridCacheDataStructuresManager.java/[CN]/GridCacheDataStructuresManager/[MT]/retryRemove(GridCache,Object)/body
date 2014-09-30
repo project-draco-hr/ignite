@@ -1,12 +1,8 @@
 {
-  int cnt=0;
-  while (true) {
-    try {
+  return retry(new Callable<T>(){
+    @Nullable @Override public T call() throws Exception {
       return (T)cache.remove(key);
     }
- catch (    GridCacheTxRollbackException|GridCachePartialUpdateException|GridTopologyException e) {
-      if (cnt++ == 3)       throw e;
- else       if (log.isDebugEnabled())       log.debug("Failed to remove cache item, will retry [err=" + e + ']');
-    }
   }
+);
 }
