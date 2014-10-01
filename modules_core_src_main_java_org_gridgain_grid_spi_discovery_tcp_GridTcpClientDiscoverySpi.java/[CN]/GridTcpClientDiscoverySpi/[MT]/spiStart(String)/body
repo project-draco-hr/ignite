@@ -1,0 +1,29 @@
+{
+  startStopwatch();
+  try {
+    locHost=U.resolveLocalHost(locAddr);
+  }
+ catch (  IOException e) {
+    throw new GridSpiException("Unknown local address: " + locAddr,e);
+  }
+  if (ipFinder instanceof GridTcpDiscoveryMulticastIpFinder) {
+    GridTcpDiscoveryMulticastIpFinder mcastIpFinder=((GridTcpDiscoveryMulticastIpFinder)ipFinder);
+    if (mcastIpFinder.getLocalAddress() == null)     mcastIpFinder.setLocalAddress(locAddr);
+  }
+  GridBiTuple<Collection<String>,Collection<String>> addrs;
+  try {
+    addrs=U.resolveLocalAddresses(locHost);
+  }
+ catch (  IOException|GridException e) {
+    throw new GridSpiException("Failed to resolve local host to set of external addresses: " + locHost,e);
+  }
+  locNode=new GridTcpDiscoveryNode(locNodeId,addrs.get1(),addrs.get2(),-1,metricsProvider,locNodeVer,true);
+  locNode.setAttributes(locNodeAttrs);
+  locNode.local(true);
+  sockTimeoutWorker=new SocketTimeoutWorker();
+  sockTimeoutWorker.start();
+  stats.onJoinStarted();
+  joinTopology();
+  stats.onJoinFinished();
+  if (log.isDebugEnabled())   log.debug(startInfo());
+}

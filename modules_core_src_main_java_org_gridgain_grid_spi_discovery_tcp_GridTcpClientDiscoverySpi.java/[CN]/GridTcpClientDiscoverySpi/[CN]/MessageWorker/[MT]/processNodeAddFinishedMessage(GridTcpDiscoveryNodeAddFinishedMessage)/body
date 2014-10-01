@@ -1,0 +1,15 @@
+{
+  if (msg.verified() && locNodeId.equals(msg.nodeId())) {
+    GridTcpDiscoverySpiState state=spiState();
+    if (state == CONNECTING) {
+      long topVer=msg.topologyVersion();
+      locNode.order(topVer);
+synchronized (mux) {
+        spiState=CONNECTED;
+        mux.notifyAll();
+      }
+      notifyDiscovery(EVT_NODE_JOINED,topVer,locNode);
+    }
+ else     if (log.isDebugEnabled())     log.debug("Discarding node add finished message (this message has already been processed) " + "[spiState=" + state + ", msg="+ msg+ ", locNode="+ locNode+ ']');
+  }
+}
