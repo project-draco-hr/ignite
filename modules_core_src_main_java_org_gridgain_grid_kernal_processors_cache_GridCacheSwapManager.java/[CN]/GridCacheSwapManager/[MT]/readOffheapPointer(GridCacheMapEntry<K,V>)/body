@@ -1,0 +1,9 @@
+{
+  if (!offheapEnabled)   return null;
+  K key=entry.key();
+  int part=cctx.affinity().partition(key);
+  byte[] keyBytes=entry.getOrMarshalKeyBytes();
+  GridBiTuple<Long,Integer> ptr=offheap.getPointer(spaceName,part,key,keyBytes);
+  if (ptr != null)   return null;
+  return readAndRemoveSwap(key,part,keyBytes);
+}

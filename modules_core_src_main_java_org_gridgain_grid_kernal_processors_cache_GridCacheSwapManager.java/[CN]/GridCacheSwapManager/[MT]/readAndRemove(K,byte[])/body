@@ -14,32 +14,5 @@
       return entry;
     }
   }
-  if (swapEnabled) {
-    final GridTuple<GridCacheSwapEntry<V>> t=F.t1();
-    final GridTuple<GridException> err=F.t1();
-    swapMgr.remove(spaceName,new GridSwapKey(key,part,keyBytes),new CI1<byte[]>(){
-      @Override public void apply(      byte[] rmv){
-        if (rmv != null) {
-          try {
-            GridCacheSwapEntry<V> entry=swapEntry((GridCacheSwapEntry<V>)unmarshal(rmv,cctx.deploy().localLoader()));
-            if (entry == null)             return;
-            t.set(entry);
-            V v=entry.value();
-            byte[] valBytes=entry.valueBytes();
-            if (cctx.events().isRecordable(EVT_CACHE_OBJECT_UNSWAPPED))             cctx.events().addEvent(part,key,cctx.nodeId(),(GridUuid)null,null,EVT_CACHE_OBJECT_UNSWAPPED,null,false,v,true,null,null,null);
-            onUnswapped(part,key,keyBytes,v,valBytes,entry.version(),entry.ttl(),entry.expireTime());
-            GridCacheQueryManager<K,V> qryMgr=cctx.queries();
-            if (qryMgr != null)             qryMgr.onUnswap(key,v,valBytes);
-          }
- catch (          GridException e) {
-            err.set(e);
-          }
-        }
-      }
-    }
-,cctx.deploy().globalLoader());
-    if (err.get() != null)     throw err.get();
-    return t.get();
-  }
-  return null;
+  return readAndRemoveSwap(key,part,keyBytes);
 }
