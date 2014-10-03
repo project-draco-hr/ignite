@@ -1,0 +1,30 @@
+{
+  for (int i=0; i < cnt; i++) {
+    Grid g=startGrid("server-" + i);
+    srvNodeIds.add(g.localNode().id());
+  }
+  if (joinLatch != null) {
+    for (int i=0; i < cnt; i++) {
+      G.grid("server-" + i).events().localListen(new GridPredicate<GridEvent>(){
+        @Override public boolean apply(        GridEvent evt){
+          info("Event fired: " + evt);
+          joinLatch.countDown();
+          return true;
+        }
+      }
+,EVT_NODE_JOINED);
+    }
+  }
+  if (leftLatch != null) {
+    for (int i=0; i < cnt; i++) {
+      G.grid("server-" + i).events().localListen(new GridPredicate<GridEvent>(){
+        @Override public boolean apply(        GridEvent evt){
+          info("Event fired: " + evt);
+          leftLatch.countDown();
+          return true;
+        }
+      }
+,EVT_NODE_LEFT);
+    }
+  }
+}
