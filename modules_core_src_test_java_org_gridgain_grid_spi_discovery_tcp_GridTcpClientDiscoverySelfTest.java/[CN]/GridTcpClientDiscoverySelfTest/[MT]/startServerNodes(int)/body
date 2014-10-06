@@ -27,4 +27,16 @@
 ,EVT_NODE_LEFT);
     }
   }
+  if (failedLatch != null) {
+    for (int i=0; i < cnt; i++) {
+      G.grid("server-" + i).events().localListen(new GridPredicate<GridEvent>(){
+        @Override public boolean apply(        GridEvent evt){
+          info("Event fired: " + evt);
+          failedLatch.countDown();
+          return true;
+        }
+      }
+,EVT_NODE_FAILED);
+    }
+  }
 }

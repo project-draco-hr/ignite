@@ -4,6 +4,8 @@
     writeToSocket(sock,msg);
   }
  catch (  GridException|IOException e) {
-    if (log.isDebugEnabled())     U.error(log,"Caught exception on redirecting message to client [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ", msg="+ msg+ ']',e);
+    if (log.isDebugEnabled())     U.error(log,"Client connection failed [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ", msg="+ msg+ ']',e);
+    U.interrupt(clientMsgWorkers.remove(nodeId));
+    U.closeQuiet(sock);
   }
 }

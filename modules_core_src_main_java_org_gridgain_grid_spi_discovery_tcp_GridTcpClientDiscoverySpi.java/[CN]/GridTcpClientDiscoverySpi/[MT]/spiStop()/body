@@ -4,13 +4,15 @@ synchronized (mux) {
     spiState=LEFT;
   }
   Socket sock=sockRdr.sock;
-  try {
-    GridTcpDiscoveryNodeLeftMessage msg=new GridTcpDiscoveryNodeLeftMessage(locNodeId);
-    msg.client(true);
-    writeToSocket(sock,msg);
-  }
- catch (  IOException|GridException e) {
-    if (log.isDebugEnabled())     U.error(log,"Failed to send node left message (will stop anyway) [sock=" + sock + ']',e);
+  if (!fail) {
+    try {
+      GridTcpDiscoveryNodeLeftMessage msg=new GridTcpDiscoveryNodeLeftMessage(locNodeId);
+      msg.client(true);
+      writeToSocket(sock,msg);
+    }
+ catch (    IOException|GridException e) {
+      if (log.isDebugEnabled())       U.error(log,"Failed to send node left message (will stop anyway) [sock=" + sock + ']',e);
+    }
   }
   closeConnection();
   U.interrupt(sockTimeoutWorker);
