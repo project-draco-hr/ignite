@@ -1,7 +1,15 @@
 {
   try {
     if (log.isDebugEnabled())     log.debug("Redirecting message to client [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ", msg="+ msg+ ']');
-    writeToSocket(sock,msg);
+    if (msg.verified()) {
+      try {
+        prepareNodeAddedMessage(msg,null,null);
+        writeToSocket(sock,msg);
+      }
+  finally {
+        clearNodeAddedMessage(msg);
+      }
+    }
   }
  catch (  GridException|IOException e) {
     if (log.isDebugEnabled())     U.error(log,"Client connection failed [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ", msg="+ msg+ ']',e);

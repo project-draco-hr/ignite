@@ -1,30 +1,30 @@
 {
   GridTcpDiscoveryNode node=msg.node();
-  if (msg.verified() && locNodeId.equals(node.id())) {
-    Collection<List<Object>> dataList=null;
+  if (locNodeId.equals(node.id())) {
     GridTcpDiscoverySpiState state=spiState();
     if (state == CONNECTING) {
       Collection<GridTcpDiscoveryNode> top=msg.topology();
       if (!F.isEmpty(top)) {
-        Map<UUID,GridNode> top0=new HashMap<>(top.size(),1.0f);
         for (        GridTcpDiscoveryNode n : top) {
           n.visible(true);
-          top0.put(n.id(),n);
+          rmtNodes.put(n.id(),n);
         }
-        rmtNodes=Collections.unmodifiableMap(top0);
+        Collection<List<Object>> dataList=msg.oldNodesDiscoveryData();
+        if (dataList != null) {
+          for (          List<Object> discoData : dataList)           exchange.onExchange(discoData);
+        }
         locNode.setAttributes(node.attributes());
         locNode.visible(true);
-        dataList=msg.oldNodesDiscoveryData();
-        msg.messages(null);
-        msg.topology(null);
-        msg.topologyHistory(null);
-        msg.clearDiscoveryData();
       }
  else       if (log.isDebugEnabled())       log.debug("Discarding node added message with empty topology: " + msg);
     }
  else     if (log.isDebugEnabled())     log.debug("Discarding node added message (this message has already been processed) " + "[spiState=" + state + ", msg="+ msg+ ", locNode="+ locNode+ ']');
-    if (dataList != null) {
-      for (      List<Object> discoData : dataList)       exchange.onExchange(discoData);
+  }
+ else {
+    boolean topChanged=rmtNodes.putIfAbsent(node.id(),node) == null;
+    if (topChanged) {
+      List<Object> data=msg.newNodeDiscoveryData();
+      if (data != null)       exchange.onExchange(data);
     }
   }
 }

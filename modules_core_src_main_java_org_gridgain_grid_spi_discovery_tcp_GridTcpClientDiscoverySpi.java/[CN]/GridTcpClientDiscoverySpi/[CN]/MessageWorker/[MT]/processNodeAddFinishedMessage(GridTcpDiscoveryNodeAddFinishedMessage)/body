@@ -1,5 +1,5 @@
 {
-  if (msg.verified() && locNodeId.equals(msg.nodeId())) {
+  if (locNodeId.equals(msg.nodeId())) {
     GridTcpDiscoverySpiState state=spiState();
     if (state == CONNECTING) {
       long topVer=msg.topologyVersion();
@@ -11,5 +11,17 @@ synchronized (mux) {
       notifyDiscovery(EVT_NODE_JOINED,topVer,locNode);
     }
  else     if (log.isDebugEnabled())     log.debug("Discarding node add finished message (this message has already been processed) " + "[spiState=" + state + ", msg="+ msg+ ", locNode="+ locNode+ ']');
+  }
+ else {
+    GridTcpDiscoveryNode node=rmtNodes.get(msg.nodeId());
+    if (node == null) {
+      if (log.isDebugEnabled())       log.debug("Discarding node add finished message since node is not found [msg=" + msg + ']');
+      return;
+    }
+    long topVer=msg.topologyVersion();
+    node.order(topVer);
+    if (locNodeVer.equals(node.version()))     node.version(locNodeVer);
+    notifyDiscovery(EVT_NODE_JOINED,topVer,node);
+    stats.onNodeJoined();
   }
 }
