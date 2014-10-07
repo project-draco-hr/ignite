@@ -1,15 +1,11 @@
 {
-  startUpSecondary();
   GridGgfsConfiguration ggfsCfg=new GridGgfsConfiguration();
   ggfsCfg.setDataCacheName("partitioned");
   ggfsCfg.setMetaCacheName("replicated");
-  ggfsCfg.setName("ggfs");
+  ggfsCfg.setName("ggfs-secondary");
   ggfsCfg.setBlockSize(512 * 1024);
-  ggfsCfg.setDefaultMode(mode);
-  ggfsCfg.setPathModes(pathModes);
-  ggfsCfg.setIpcEndpointConfiguration(GridGgfsTestUtils.jsonToMap("{type:'tcp', port:10500}"));
-  ggfsCfg.setManagementPort(-1);
-  ggfsCfg.setSecondaryFileSystem(new GridGgfsHadoopFileSystemWrapper("ggfs://ggfs-secondary:ggfs-grid-secondary@127.0.0.1:11500/","modules/core/src/test/config/hadoop/core-site-loopback-secondary.xml"));
+  ggfsCfg.setDefaultMode(PRIMARY);
+  ggfsCfg.setIpcEndpointConfiguration(GridGgfsTestUtils.jsonToMap("{type:'tcp', port:11500}"));
   GridCacheConfiguration cacheCfg=defaultCacheConfiguration();
   cacheCfg.setName("partitioned");
   cacheCfg.setCacheMode(PARTITIONED);
@@ -26,16 +22,13 @@
   metaCacheCfg.setQueryIndexEnabled(false);
   metaCacheCfg.setAtomicityMode(TRANSACTIONAL);
   GridConfiguration cfg=new GridConfiguration();
-  cfg.setGridName("ggfs-grid");
+  cfg.setGridName("ggfs-grid-secondary");
   GridTcpDiscoverySpi discoSpi=new GridTcpDiscoverySpi();
   discoSpi.setIpFinder(new GridTcpDiscoveryVmIpFinder(true));
   cfg.setDiscoverySpi(discoSpi);
   cfg.setCacheConfiguration(metaCacheCfg,cacheCfg);
   cfg.setGgfsConfiguration(ggfsCfg);
   cfg.setLocalHost("127.0.0.1");
-  G.start(cfg);
-  Configuration fsCfg=new Configuration();
-  fsCfg.addResource(U.resolveGridGainUrl("modules/core/src/test/config/hadoop/core-site-loopback.xml"));
-  fsCfg.setBoolean("fs.ggfs.impl.disable.cache",true);
-  fs=(GridGgfsHadoopFileSystem)FileSystem.get(new URI("ggfs://ggfs:ggfs-grid@/"),fsCfg);
+  cfg.setRestEnabled(false);
+  ggfsSecondary=(GridGgfsImpl)G.start(cfg).ggfs("ggfs-secondary");
 }
