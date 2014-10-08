@@ -1,0 +1,18 @@
+{
+  int size=16 + 1 + 24;
+  if (ver instanceof GridCacheVersionEx)   size+=24;
+  size+=1;
+  size+=valBytes.length + 4;
+  byte[] arr=new byte[size];
+  long off=BYTE_ARR_OFF;
+  UNSAFE.putLong(arr,off,ttl);
+  off+=8;
+  UNSAFE.putLong(arr,off,expireTime);
+  off+=8;
+  off=writeVersion(arr,off,ver,true);
+  UNSAFE.putBoolean(arr,off++,valIsByteArr);
+  UNSAFE.putInt(arr,off,valBytes.length);
+  off+=4;
+  UNSAFE.copyMemory(valBytes,BYTE_ARR_OFF,arr,off,valBytes.length);
+  return arr;
+}
