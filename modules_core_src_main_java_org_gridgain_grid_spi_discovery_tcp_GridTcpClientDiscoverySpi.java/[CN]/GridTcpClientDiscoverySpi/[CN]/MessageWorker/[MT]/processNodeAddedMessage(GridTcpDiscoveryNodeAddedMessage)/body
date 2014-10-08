@@ -1,8 +1,7 @@
 {
   GridTcpDiscoveryNode node=msg.node();
   if (locNodeId.equals(node.id())) {
-    GridTcpDiscoverySpiState state=spiState();
-    if (state == CONNECTING) {
+    if (joinLatch.getCount() > 0) {
       Collection<GridTcpDiscoveryNode> top=msg.topology();
       if (!F.isEmpty(top)) {
         for (        GridTcpDiscoveryNode n : top) {
@@ -18,7 +17,7 @@
       }
  else       if (log.isDebugEnabled())       log.debug("Discarding node added message with empty topology: " + msg);
     }
- else     if (log.isDebugEnabled())     log.debug("Discarding node added message (this message has already been processed) " + "[spiState=" + state + ", msg="+ msg+ ", locNode="+ locNode+ ']');
+ else     if (log.isDebugEnabled())     log.debug("Discarding node added message (this message has already been processed) " + "[msg=" + msg + ", locNode="+ locNode+ ']');
   }
  else {
     boolean topChanged=rmtNodes.putIfAbsent(node.id(),node) == null;

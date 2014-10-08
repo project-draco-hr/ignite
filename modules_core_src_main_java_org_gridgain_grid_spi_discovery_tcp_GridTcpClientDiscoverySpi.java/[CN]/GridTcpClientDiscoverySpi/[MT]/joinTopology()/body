@@ -1,2 +1,49 @@
 {
+  stats.onJoinStarted();
+  Collection<InetSocketAddress> addrs=resolvedAddresses();
+  if (F.isEmpty(addrs))   throw new GridSpiException("No addresses registered in the IP finder: " + ipFinder);
+  List<InetSocketAddress> shuffled=new ArrayList<>(addrs);
+  Collections.shuffle(shuffled);
+  GridTcpDiscoveryJoinRequestMessage req=new GridTcpDiscoveryJoinRequestMessage(locNode,exchange.collect(locNodeId));
+  req.client(true);
+  while (true) {
+    boolean retry=false;
+    Iterator<InetSocketAddress> it=shuffled.iterator();
+    while (it.hasNext()) {
+      InetSocketAddress addr=it.next();
+      try {
+        long ts=U.currentTimeMillis();
+        initConnection(addr);
+        stats.onClientSocketInitialized(U.currentTimeMillis() - ts);
+        writeToSocket(sock,req);
+        int res=readReceipt(sock,ackTimeout);
+switch (res) {
+case RES_OK:
+          sockRdr.allowRead();
+        if (U.await(joinLatch,netTimeout,MILLISECONDS)) {
+          if (log.isDebugEnabled())           log.debug("Successfully connected to topology [sock=" + sock + ']');
+          stats.onJoinFinished();
+          return;
+        }
+ else {
+          throw new GridSpiException("Join process timed out [sock=" + sock + ", timeout="+ netTimeout+ ']');
+        }
+case RES_CONTINUE_JOIN:
+case RES_WAIT:
+      closeConnection();
+    retry=true;
+  break;
+default :
+throw new GridSpiException("Unexpected response to join request: " + res);
+}
+}
+ catch (GridException|IOException e) {
+if (log.isDebugEnabled()) U.error(log,"Failed to establish connection with address: " + addr,e);
+closeConnection();
+it.remove();
+}
+}
+if (!retry) break;
+}
+throw new GridSpiException("Failed to connect to any address from IP finder (make sure " + "IP finder addresses are correct, and operating system firewalls are disabled on all " + "host machines): "+ addrs);
 }
