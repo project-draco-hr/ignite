@@ -1,13 +1,7 @@
 {
-  if (filename == null && wildcardMatcher == null) {
-    return true;
-  }
-  if (filename == null || wildcardMatcher == null) {
-    return false;
-  }
-  if (caseSensitivity == null) {
-    caseSensitivity=IOCase.SENSITIVE;
-  }
+  if (filename == null && wildcardMatcher == null)   return true;
+  if (filename == null || wildcardMatcher == null)   return false;
+  if (caseSensitivity == null)   caseSensitivity=IOCase.SENSITIVE;
   String[] wcs=splitOnTokens(wildcardMatcher);
   boolean anyChars=false;
   int textIdx=0;
@@ -23,16 +17,12 @@
     while (wcsIdx < wcs.length) {
       if (wcs[wcsIdx].equals("?")) {
         textIdx++;
-        if (textIdx > filename.length()) {
-          break;
-        }
+        if (textIdx > filename.length())         break;
         anyChars=false;
       }
  else       if (wcs[wcsIdx].equals("*")) {
         anyChars=true;
-        if (wcsIdx == wcs.length - 1) {
-          textIdx=filename.length();
-        }
+        if (wcsIdx == wcs.length - 1)         textIdx=filename.length();
       }
  else {
         if (anyChars) {
@@ -41,9 +31,7 @@
             break;
           }
           int repeat=caseSensitivity.checkIndexOf(filename,textIdx + 1,wcs[wcsIdx]);
-          if (repeat >= 0) {
-            backtrack.push(new int[]{wcsIdx,repeat});
-          }
+          if (repeat >= 0)           backtrack.push(new int[]{wcsIdx,repeat});
         }
  else {
           if (!caseSensitivity.checkRegionMatches(filename,textIdx,wcs[wcsIdx])) {
@@ -55,9 +43,7 @@
       }
       wcsIdx++;
     }
-    if (wcsIdx == wcs.length && textIdx == filename.length()) {
-      return true;
-    }
+    if (wcsIdx == wcs.length && textIdx == filename.length())     return true;
   }
  while (backtrack.size() > 0);
   return false;
