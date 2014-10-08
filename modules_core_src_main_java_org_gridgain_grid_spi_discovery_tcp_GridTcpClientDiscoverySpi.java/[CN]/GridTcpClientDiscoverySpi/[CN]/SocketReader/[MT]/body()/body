@@ -1,2 +1,34 @@
 {
+  try {
+    U.await(readLatch);
+    InputStream in=new BufferedInputStream(sock.getInputStream());
+    sock.setKeepAlive(true);
+    sock.setTcpNoDelay(true);
+    while (!isInterrupted()) {
+      try {
+        GridTcpDiscoveryAbstractMessage msg=marsh.unmarshal(in,U.gridClassLoader());
+        msg.senderNodeId(nodeId);
+        if (log.isDebugEnabled())         log.debug("Message has been received: " + msg);
+        stats.onMessageReceived(msg);
+        msgWrk.addMessage(msg);
+      }
+ catch (      GridException e) {
+        if (log.isDebugEnabled())         U.error(log,"Failed to read message [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']',e);
+        IOException ioEx=X.cause(e,IOException.class);
+        if (ioEx != null)         throw ioEx;
+        ClassNotFoundException clsNotFoundEx=X.cause(e,ClassNotFoundException.class);
+        if (clsNotFoundEx != null)         LT.warn(log,null,"Failed to read message due to ClassNotFoundException " + "(make sure same versions of all classes are available on all nodes) " + "[rmtNodeId=" + nodeId + ", err="+ clsNotFoundEx.getMessage()+ ']');
+ else         LT.error(log,e,"Failed to read message [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']');
+      }
+    }
+  }
+ catch (  IOException e) {
+    if (log.isDebugEnabled())     U.error(log,"Connection failed [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']',e);
+  }
+catch (  GridInterruptedException e) {
+    if (log.isDebugEnabled())     U.error(log,"Socket reader was interrupted.",e);
+  }
+ finally {
+    closeConnection();
+  }
 }
