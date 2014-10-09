@@ -1,2 +1,25 @@
 {
+  long binAddr=readLock(hash);
+  try {
+    long addr=Bin.first(binAddr,mem);
+    while (addr != 0) {
+      if (Entry.keyEquals(addr,keyBytes,mem)) {
+        if (lru != null) {
+          long qAddr=Entry.queueAddress(addr,mem);
+          if (qAddr != 0) {
+            lru.remove(qAddr);
+            Entry.queueAddress(addr,0,mem);
+          }
+        }
+        int keyLen=Entry.readKeyLength(addr,mem);
+        int valLen=Entry.readValueLength(addr,mem);
+        return new GridBiTuple<>(addr + HEADER + keyLen,valLen);
+      }
+      addr=Entry.nextAddress(addr,mem);
+    }
+    return null;
+  }
+  finally {
+    readUnlock();
+  }
 }
