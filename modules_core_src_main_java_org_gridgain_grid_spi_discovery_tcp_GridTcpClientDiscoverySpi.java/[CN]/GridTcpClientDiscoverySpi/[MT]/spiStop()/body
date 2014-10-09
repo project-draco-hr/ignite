@@ -1,14 +1,17 @@
 {
   rmtNodes.clear();
-  try {
-    GridTcpDiscoveryNodeLeftMessage msg=new GridTcpDiscoveryNodeLeftMessage(locNodeId);
-    msg.client(true);
-    writeToSocket(sock,msg);
+  Socket sock0=sock;
+  if (sock0 != null) {
+    try {
+      GridTcpDiscoveryNodeLeftMessage msg=new GridTcpDiscoveryNodeLeftMessage(locNodeId);
+      msg.client(true);
+      writeToSocket(sock0,msg);
+    }
+ catch (    IOException|GridException e) {
+      if (log.isDebugEnabled())       U.error(log,"Failed to send node left message (will stop anyway) [sock=" + sock0 + ']',e);
+    }
+    closeConnection();
   }
- catch (  IOException|GridException e) {
-    if (log.isDebugEnabled())     U.error(log,"Failed to send node left message (will stop anyway) [sock=" + sock + ']',e);
-  }
-  closeConnection();
   U.interrupt(sockTimeoutWorker);
   U.join(sockTimeoutWorker,log);
   U.interrupt(disconnectHnd);
