@@ -4,11 +4,14 @@
 synchronized (this) {
     if (isStartVersion() && ((flags & IS_UNSWAPPED_MASK) == 0)) {
       GridCacheSwapEntry<V> e;
-      if (cctx.portableOffheap()) {
+      if (cctx.offheapTiered()) {
         e=cctx.swap().readOffheapPointer(this);
         if (e != null && e.offheapPointer() > 0) {
-          if (needVal)           e.value((V)cctx.portable().unmarshal(e.offheapPointer(),true));
           valPtr=e.offheapPointer();
+          if (needVal) {
+            V val=unmarshalOffheap(false);
+            e.value(val);
+          }
         }
  else         valPtr=0;
       }
