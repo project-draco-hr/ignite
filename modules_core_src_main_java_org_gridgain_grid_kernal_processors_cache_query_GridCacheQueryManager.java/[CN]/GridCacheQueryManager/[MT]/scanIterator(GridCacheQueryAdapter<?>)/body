@@ -1,14 +1,17 @@
 {
-  GridPredicate<GridCacheEntry<K,V>> filter=new P1<GridCacheEntry<K,V>>(){
-    @Override public boolean apply(    GridCacheEntry<K,V> e){
-      return qry.projectionFilter() == null || qry.projectionFilter().apply((GridCacheEntry<Object,Object>)e);
+  GridPredicate<GridCacheEntry<K,V>> filter=null;
+  if (qry.projectionFilter() != null) {
+    filter=new P1<GridCacheEntry<K,V>>(){
+      @Override public boolean apply(      GridCacheEntry<K,V> e){
+        return qry.projectionFilter().apply((GridCacheEntry<Object,Object>)e);
+      }
     }
-  }
 ;
-  final GridCacheProjection<K,V> prj=cctx.cache().projection(filter);
+  }
+  final GridCacheProjection<K,V> prj=filter != null ? cctx.cache().projection(filter) : cctx.cache();
   final GridBiPredicate<K,V> keyValFilter=qry.scanFilter();
   injectResources(keyValFilter);
-  final GridIterator<GridIndexingKeyValueRow<K,V>> it=new GridIteratorAdapter<GridIndexingKeyValueRow<K,V>>(){
+  GridIterator<GridIndexingKeyValueRow<K,V>> heapIt=new GridIteratorAdapter<GridIndexingKeyValueRow<K,V>>(){
     private GridIndexingKeyValueRow<K,V> next;
     private Iterator<K> iter=prj.keySet().iterator();
 {
@@ -49,6 +52,15 @@
     }
   }
 ;
+  final GridIterator<GridIndexingKeyValueRow<K,V>> it;
+  if (cctx.isSwapOrOffheapEnabled()) {
+    List<GridIterator<GridIndexingKeyValueRow<K,V>>> iters=new ArrayList<>(3);
+    iters.add(heapIt);
+    if (cctx.isOffHeapEnabled())     iters.add(offheapIterator(qry));
+    if (cctx.swap().swapEnabled())     iters.add(swapIterator(qry));
+    it=new CompoundIterator<>(iters);
+  }
+ else   it=heapIt;
   return new GridCloseableIteratorAdapter<GridIndexingKeyValueRow<K,V>>(){
     @Override protected boolean onHasNext(){
       return it.hasNext();

@@ -1,0 +1,12 @@
+{
+  GridPredicate<GridCacheEntry<Object,Object>> prjPred=qry.projectionFilter();
+  GridBiPredicate<K,V> filter=qry.scanFilter();
+  if ((cctx.portableEnabled() && cctx.offheapTiered()) && (prjPred != null || filter != null)) {
+    OffheapIteratorClosure c=new OffheapIteratorClosure(prjPred,filter,qry.keepPortable());
+    return cctx.swap().rawOffHeapIterator(c);
+  }
+ else {
+    Iterator<Map.Entry<byte[],byte[]>> it=cctx.swap().rawOffHeapIterator(null);
+    return scanIterator(it,prjPred,filter,qry.keepPortable());
+  }
+}
