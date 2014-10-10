@@ -1,7 +1,7 @@
 {
   stats.onJoinStarted();
   Collection<InetSocketAddress> addrs=resolvedAddresses();
-  if (F.isEmpty(addrs))   throw new GridSpiException("No addresses registered in the IP finder: " + ipFinder);
+  if (addrs == null || addrs.isEmpty())   throw new GridSpiException("No addresses registered in the IP finder: " + ipFinder);
   List<InetSocketAddress> shuffled=new ArrayList<>(addrs);
   Collections.shuffle(shuffled);
   GridTcpDiscoveryJoinRequestMessage req=new GridTcpDiscoveryJoinRequestMessage(locNode,exchange.collect(locNodeId));
@@ -13,26 +13,28 @@
       InetSocketAddress addr=it.next();
       try {
         long ts=U.currentTimeMillis();
-        initConnection(addr);
+        UUID rmtNodeId=initConnection(addr);
+        Socket sock0=sock;
         stats.onClientSocketInitialized(U.currentTimeMillis() - ts);
-        writeToSocket(sock,req);
-        int res=readReceipt(sock,ackTimeout);
+        writeToSocket(sock0,req);
+        int res=readReceipt(sock0,ackTimeout);
 switch (res) {
 case RES_OK:
-          sockRdr.allowRead();
-        if (U.await(joinLatch,netTimeout,MILLISECONDS)) {
-          if (log.isDebugEnabled())           log.debug("Successfully connected to topology [sock=" + sock + ']');
-          stats.onJoinFinished();
-          return;
-        }
+          sockRdr=new SocketReader(sock0,rmtNodeId,new MessageWorker(sock0));
+        sockRdr.start();
+      if (U.await(joinLatch,netTimeout,MILLISECONDS)) {
+        if (log.isDebugEnabled())         log.debug("Successfully connected to topology [sock=" + sock0 + ']');
+        stats.onJoinFinished();
+        return;
+      }
  else {
-          throw new GridSpiException("Join process timed out [sock=" + sock + ", timeout="+ netTimeout+ ']');
-        }
+        throw new GridSpiException("Join process timed out [sock=" + sock0 + ", timeout="+ netTimeout+ ']');
+      }
 case RES_CONTINUE_JOIN:
 case RES_WAIT:
-      closeConnection();
-    retry=true;
-  break;
+    closeConnection();
+  retry=true;
+break;
 default :
 throw new GridSpiException("Unexpected response to join request: " + res);
 }

@@ -1,6 +1,5 @@
 {
   try {
-    U.await(readLatch);
     InputStream in=new BufferedInputStream(sock.getInputStream());
     sock.setKeepAlive(true);
     sock.setTcpNoDelay(true);
@@ -25,10 +24,9 @@
  catch (  IOException e) {
     if (log.isDebugEnabled())     U.error(log,"Connection failed [sock=" + sock + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']',e);
   }
-catch (  GridInterruptedException e) {
-    if (log.isDebugEnabled())     U.error(log,"Socket reader was interrupted.",e);
-  }
  finally {
     closeConnection();
+    U.interrupt(msgWrk);
+    U.join(msgWrk,log);
   }
 }

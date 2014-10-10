@@ -3,15 +3,16 @@
   startServerNodes(3);
   startClientNodes(3);
   checkNodes(3,3);
-  srvFailedLatch=new CountDownLatch(2);
-  clientFailedLatch=new CountDownLatch(2);
-  srvJoinLatch=new CountDownLatch(2);
-  clientJoinLatch=new CountDownLatch(2);
+  resetClientIpFinder(2);
+  srvFailedLatch=new CountDownLatch(4);
+  clientFailedLatch=new CountDownLatch(4);
+  srvJoinedLatch=new CountDownLatch(2);
+  clientJoinedLatch=new CountDownLatch(2);
   attachListeners(2,2);
-  ((GridTcpDiscoverySpi)G.grid("server-2").configuration().getDiscoverySpi()).simulateNodeFailure();
+  failServer(2);
   await(srvFailedLatch);
   await(clientFailedLatch);
-  await(srvJoinLatch);
-  await(clientJoinLatch);
+  await(srvJoinedLatch);
+  await(clientJoinedLatch);
   checkNodes(2,3);
 }
