@@ -12,8 +12,12 @@
  catch (    IOException|GridException e) {
       if (log.isDebugEnabled())       U.error(log,"Failed to send node left message (will stop anyway) [sock=" + sock0 + ']',e);
     }
-    closeConnection();
+    U.closeQuiet(sock);
   }
+  U.interrupt(hbSender);
+  U.join(hbSender,log);
+  U.interrupt(sockRdr);
+  U.join(sockRdr,log);
   U.interrupt(sockTimeoutWorker);
   U.join(sockTimeoutWorker,log);
   if (log.isDebugEnabled())   log.debug(stopInfo());

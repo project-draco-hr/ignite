@@ -1,10 +1,23 @@
 {
+  Socket sock0=sock;
+  if (sock0 == null) {
+    if (log.isDebugEnabled())     log.debug("Failed to start heartbeat sender, node is already disconnected.");
+    return;
+  }
   try {
     while (!isInterrupted()) {
-      writeToSocket(sock,new GridTcpDiscoveryHeartbeatMessage(locNodeId));
+      U.sleep(hbFreq);
+      writeToSocket(sock0,new GridTcpDiscoveryHeartbeatMessage(locNodeId));
     }
   }
- catch (  IOException|GridException e) {
-    if (log.isDebugEnabled())     U.error(log,"Failed to send heartbeat message [sock=" + sock + ']',e);
+ catch (  GridInterruptedException ignored) {
+    if (log.isDebugEnabled())     log.debug("Heartbeat sender was interrupted.");
+  }
+catch (  IOException|GridException e) {
+    if (log.isDebugEnabled())     U.error(log,"Failed to send heartbeat message [sock=" + sock0 + ']',e);
+  }
+ finally {
+    U.closeQuiet(sock0);
+    sock=null;
   }
 }

@@ -1,19 +1,20 @@
 {
-  try {
-    while (!isInterrupted()) {
+  while (!isInterrupted()) {
+    try {
       U.sleep(disconnectCheckInt);
       if (sock == null) {
-        if (log.isDebugEnabled())         log.debug("Node disconnected from topology, will try to reconnect.");
+        if (log.isDebugEnabled())         log.debug("Node is disconnected from topology, will try to reconnect.");
         rmtNodes.clear();
         locNode.order(0);
         joinTopology();
       }
     }
-  }
- catch (  GridInterruptedException ignored) {
-    if (log.isDebugEnabled())     log.debug("Disconnect handler was interrupted.");
-  }
-catch (  GridSpiException e) {
-    U.error(log,"Failed to reconnect to topology after failure.",e);
+ catch (    GridInterruptedException ignored) {
+      if (log.isDebugEnabled())       log.debug("Disconnect handler was interrupted.");
+      return;
+    }
+catch (    GridSpiException e) {
+      U.error(log,"Failed to reconnect to topology after failure.",e);
+    }
   }
 }
