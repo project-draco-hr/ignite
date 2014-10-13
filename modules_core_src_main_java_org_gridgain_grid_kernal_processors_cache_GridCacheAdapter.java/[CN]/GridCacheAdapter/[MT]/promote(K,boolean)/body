@@ -1,0 +1,18 @@
+{
+  ctx.denyOnFlags(F.asList(READ,SKIP_SWAP));
+  A.notNull(key,"key");
+  if (keyCheck)   validateCacheKey(key);
+  GridCacheSwapEntry<V> unswapped=ctx.swap().readAndRemove(key);
+  if (unswapped == null)   return null;
+  GridCacheEntryEx<K,V> entry=entryEx(key);
+  try {
+    if (!entry.initialValue(key,unswapped))     return null;
+  }
+ catch (  GridCacheEntryRemovedException ignored) {
+    if (log.isDebugEnabled())     log.debug("Entry has been concurrently removed.");
+    return null;
+  }
+  V val=unswapped.value();
+  if (ctx.portableEnabled() && deserializePortable && val instanceof GridPortableObject)   return ctx.cloneOnFlag((V)((GridPortableObject)val).deserialize());
+ else   return ctx.cloneOnFlag(val);
+}
