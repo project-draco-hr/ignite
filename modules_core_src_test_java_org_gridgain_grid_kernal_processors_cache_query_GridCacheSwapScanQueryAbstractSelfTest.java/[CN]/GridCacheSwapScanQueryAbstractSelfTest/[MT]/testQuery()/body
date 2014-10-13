@@ -1,24 +1,4 @@
 {
-  GridCache<Key,Person> cache=grid(0).cache(null);
-  for (int i=0; i < 100; i++)   cache.putx(new Key(i),new Person("p-" + i,i));
-  try {
-    GridCacheQuery<Map.Entry<Key,Person>> qry=cache.queries().createScanQuery(new GridBiPredicate<Key,Person>(){
-      @Override public boolean apply(      Key key,      Person p){
-        assertEquals(key.id,(Integer)p.salary);
-        return key.id % 2 == 0;
-      }
-    }
-);
-    Collection<Map.Entry<Key,Person>> res=qry.execute().get();
-    assertEquals(50,res.size());
-    for (    Map.Entry<Key,Person> e : res) {
-      Key k=e.getKey();
-      Person p=e.getValue();
-      assertEquals(k.id,(Integer)p.salary);
-      assertEquals(0,k.id % 2);
-    }
-  }
-  finally {
-    for (int i=0; i < 10; i++)     cache.removex(new Key(i));
-  }
+  checkQuery(grid(0).cache(ATOMIC_CACHE_NAME));
+  checkQuery(grid(0).cache(TRANSACTIONAL_CACHE_NAME));
 }

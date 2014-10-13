@@ -6,14 +6,19 @@ synchronized (this) {
       GridCacheSwapEntry<V> e;
       if (cctx.offheapTiered()) {
         e=cctx.swap().readOffheapPointer(this);
-        if (e != null && e.offheapPointer() > 0) {
-          valPtr=e.offheapPointer();
-          if (needVal) {
-            V val=unmarshalOffheap(false);
-            e.value(val);
+        if (e != null) {
+          if (e.offheapPointer() > 0) {
+            valPtr=e.offheapPointer();
+            if (needVal) {
+              V val=unmarshalOffheap(false);
+              e.value(val);
+            }
+          }
+ else {
+            valPtr=0;
+            if (cctx.portableEnabled() && !e.valueIsByteArray())             e.valueBytes(null);
           }
         }
- else         valPtr=0;
       }
  else       e=detached() ? cctx.swap().read(this) : cctx.swap().readAndRemove(this);
       if (log.isDebugEnabled())       log.debug("Read swap entry [swapEntry=" + e + ", cacheEntry="+ this+ ']');
