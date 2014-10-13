@@ -2,7 +2,8 @@
   int size=16 + 1 + 24;
   if (ver instanceof GridCacheVersionEx)   size+=24;
   size+=1;
-  size+=valBytes.length + 4;
+  int len=valBytes.limit();
+  size+=len + 4;
   size+=(valClsLdrId == null ? 1 : 24);
   size+=(keyClsLdrId == null ? 1 : 24);
   byte[] arr=new byte[size];
@@ -13,10 +14,10 @@
   off+=8;
   off=U.writeVersion(arr,off,ver);
   UNSAFE.putBoolean(arr,off++,valIsByteArr);
-  UNSAFE.putInt(arr,off,valBytes.length);
+  UNSAFE.putInt(arr,off,len);
   off+=4;
-  UNSAFE.copyMemory(valBytes,BYTE_ARR_OFF,arr,off,valBytes.length);
-  off+=valBytes.length;
+  UNSAFE.copyMemory(valBytes.array(),BYTE_ARR_OFF,arr,off,len);
+  off+=len;
   off=U.writeGridUuid(arr,off,valClsLdrId);
   U.writeGridUuid(arr,off,keyClsLdrId);
   return arr;
