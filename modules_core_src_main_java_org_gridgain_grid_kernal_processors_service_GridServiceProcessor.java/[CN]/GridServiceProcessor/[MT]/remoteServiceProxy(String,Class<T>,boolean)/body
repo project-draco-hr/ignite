@@ -1,0 +1,17 @@
+{
+  final UUID rmtNodeId=getRemoteNodeId(name,sticky);
+  if (rmtNodeId != null) {
+    return (T)Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{svc},new InvocationHandler(){
+      @Override public Object invoke(      Object proxy,      Method mtd,      Object[] args) throws Throwable {
+        return G.grid().forNodeId(rmtNodeId).compute().call(new Callable<Object>(){
+          @Override public Object call() throws Exception {
+            return G.grid().services().service(name);
+          }
+        }
+);
+      }
+    }
+);
+  }
+ else   throw new GridException("No deployed service with given name: " + name);
+}
