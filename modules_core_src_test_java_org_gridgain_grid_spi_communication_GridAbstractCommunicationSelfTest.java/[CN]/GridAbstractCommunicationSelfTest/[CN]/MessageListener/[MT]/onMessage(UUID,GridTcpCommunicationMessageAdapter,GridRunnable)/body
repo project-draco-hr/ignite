@@ -3,25 +3,15 @@
   msgC.run();
   if (msg instanceof GridTestMessage) {
     GridTestMessage testMsg=(GridTestMessage)msg;
-    if (!testMsg.getSourceNodeId().equals(nodeId)) {
-      fail("Listener nodeId not equals to message nodeId.");
-    }
+    if (!testMsg.getSourceNodeId().equals(nodeId))     fail("Listener nodeId not equals to message nodeId.");
 synchronized (mux) {
       Set<UUID> recipients=msgDestMap.get(testMsg.getSourceNodeId());
       if (recipients != null) {
-        if (!recipients.remove(locNodeId)) {
-          fail("Received unknown message [locNodeId=" + locNodeId + ", msg="+ testMsg+ ']');
-        }
-        if (recipients.isEmpty()) {
-          msgDestMap.remove(testMsg.getSourceNodeId());
-        }
-        if (msgDestMap.isEmpty()) {
-          mux.notifyAll();
-        }
+        if (!recipients.remove(locNodeId))         fail("Received unknown message [locNodeId=" + locNodeId + ", msg="+ testMsg+ ']');
+        if (recipients.isEmpty())         msgDestMap.remove(testMsg.getSourceNodeId());
+        if (msgDestMap.isEmpty())         mux.notifyAll();
       }
- else {
-        fail("Received unknown message [locNodeId=" + locNodeId + ", msg="+ testMsg+ ']');
-      }
+ else       fail("Received unknown message [locNodeId=" + locNodeId + ", msg="+ testMsg+ ']');
     }
   }
 }
