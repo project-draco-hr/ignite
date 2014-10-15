@@ -1,0 +1,21 @@
+{
+  Map<String,String> res=new LinkedHashMap<>();
+  try {
+    GridBiTuple<Collection<String>,Collection<String>> addrs=GridUtils.resolveLocalAddresses(InetAddress.getByName("0.0.0.0"));
+    assert(addrs.get1() != null);
+    assert(addrs.get2() != null);
+    Iterator<String> ipIt=addrs.get1().iterator();
+    Iterator<String> hostIt=addrs.get2().iterator();
+    while (ipIt.hasNext() && hostIt.hasNext()) {
+      String ip=ipIt.next();
+      String hostName=hostIt.next();
+      if (hostName.length() > 0 && !hostName.equals(ip))       res.put(ip,hostName);
+    }
+  }
+ catch (  Throwable e) {
+    throw new GridException("Failed to resolve host name",e);
+  }
+  System.out.println("Resolving of node host name");
+  for (  Map.Entry<String,String> ent : res.entrySet())   System.out.println(" IP: " + ent.getKey() + ", name: "+ ent.getValue());
+  return res;
+}
