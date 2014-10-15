@@ -1,16 +1,18 @@
 {
   info("Test timeout: " + (getTestTimeout() / (60 * 1000)) + " min.");
   startGridsMultiThreaded(GRID_CNT);
+  clientFlagGlobal=true;
+  for (int i=GRID_CNT; i < GRID_CNT + CLIENT_GRID_CNT; i++)   startGrid(i);
   final AtomicBoolean done=new AtomicBoolean();
   final AtomicBoolean done0=new AtomicBoolean();
   final AtomicInteger idx=new AtomicInteger();
   final List<Integer> idxs=new ArrayList<>();
-  for (int i=0; i < GRID_CNT; i++)   idxs.add(i);
+  for (int i=GRID_CNT; i < GRID_CNT + CLIENT_GRID_CNT; i++)   idxs.add(i);
   final CyclicBarrier barrier=new CyclicBarrier(THREAD_CNT,new Runnable(){
     @Override public void run(){
       if (done0.get())       done.set(true);
       Collections.shuffle(idxs);
-      idx.set(0);
+      idx.set(GRID_CNT);
     }
   }
 );
@@ -21,6 +23,7 @@
         if (done.get())         break;
         int i=idxs.get(idx.getAndIncrement());
         stopGrid(i);
+        clientFlagPerThread.set(i >= GRID_CNT);
         startGrid(i);
       }
       info("Thread finished.");
