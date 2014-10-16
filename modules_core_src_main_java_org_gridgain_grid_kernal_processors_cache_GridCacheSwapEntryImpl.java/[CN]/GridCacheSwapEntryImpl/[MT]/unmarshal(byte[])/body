@@ -6,7 +6,7 @@
   off+=8;
   boolean verEx=UNSAFE.getBoolean(arr,off++);
   GridCacheVersion ver=U.readVersion(arr,off,verEx);
-  off+=verEx ? 48 : 24;
+  off+=verEx ? VERSION_EX_SIZE : VERSION_SIZE;
   boolean valIsByteArr=UNSAFE.getBoolean(arr,off++);
   int arrLen=UNSAFE.getInt(arr,off);
   off+=4;
@@ -14,7 +14,7 @@
   UNSAFE.copyMemory(arr,off,valBytes,BYTE_ARR_OFF,arrLen);
   off+=arrLen;
   GridUuid valClsLdrId=U.readGridUuid(arr,off);
-  off+=valClsLdrId == null ? 1 : 25;
+  off+=valClsLdrId == null ? 1 : (1 + GUID_SIZE);
   GridUuid keyClsLdrId=U.readGridUuid(arr,off);
   return new GridCacheSwapEntryImpl<T>(ByteBuffer.wrap(valBytes),valIsByteArr,ver,ttl,expireTime,keyClsLdrId,valClsLdrId);
 }

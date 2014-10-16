@@ -5,7 +5,6 @@
   long topVer=ctx.affinity().affinityTopologyVersion();
   if (!reload && !forcePrimary) {
     Map<K,V> locVals=new HashMap<>(keys.size(),1.0f);
-    GridCacheVersion obsoleteVer=null;
     boolean success=true;
     for (    K key : keys) {
       GridCacheEntryEx<K,V> entry=null;
@@ -16,7 +15,7 @@
             boolean isNew=entry.isNewLocked();
             V v=entry.innerGet(null,true,false,true,true,true,true,false,subjId,null,taskName,filter);
             if (v == null) {
-              if (obsoleteVer == null)               obsoleteVer=context().versions().next();
+              GridCacheVersion obsoleteVer=context().versions().next();
               if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(key);
               success=false;
             }
