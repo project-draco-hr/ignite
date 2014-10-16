@@ -1,3 +1,54 @@
 {
-  return deploy(cfg,true);
+  A.notNull(cfg,"cfg");
+  validate(cfg);
+  while (true) {
+    try {
+      GridServiceDeploymentFuture fut=new GridServiceDeploymentFuture(ctx,cfg);
+      GridServiceDeploymentFuture old;
+      if ((old=depFuts.putIfAbsent(cfg.getName(),fut)) != null) {
+        if (!old.configuration().equals(cfg)) {
+          fut.onDone(new GridException("Failed to deploy service " + "(service exists and must be undeployed first): " + cfg.getName()));
+          return fut;
+        }
+        fut=old;
+      }
+ else {
+        GridServiceDeploymentKey key=new GridServiceDeploymentKey(cfg.getName());
+        if (ctx.deploy().enabled())         ctx.cache().internalCache(UTILITY_CACHE_NAME).context().deploy().ignoreOwnership(true);
+        try {
+          GridServiceDeployment dep=(GridServiceDeployment)depCache.putIfAbsent(key,new GridServiceDeployment(ctx.localNodeId(),cfg));
+          if (dep != null) {
+            if (!dep.configuration().equals(cfg)) {
+              depFuts.remove(cfg.getName(),fut);
+              fut.onDone(new GridException("Failed to deploy service " + "(service already exists with different configuration): " + cfg.getName()));
+            }
+ else {
+              for (              GridCacheEntry<Object,Object> e : assignCache.entrySetx()) {
+                if (e.getKey() instanceof GridServiceAssignmentsKey) {
+                  GridServiceAssignments assigns=(GridServiceAssignments)e.getValue();
+                  if (assigns.name().equals(cfg.getName())) {
+                    depFuts.remove(cfg.getName(),fut);
+                    fut.onDone();
+                    break;
+                  }
+                }
+              }
+              if (!dep.configuration().equals(cfg))               U.warn(log,"Service already deployed with different configuration (will ignore) " + "[deployed=" + dep.configuration() + ", new="+ cfg+ ']');
+            }
+          }
+        }
+  finally {
+          if (ctx.deploy().enabled())           ctx.cache().internalCache(UTILITY_CACHE_NAME).context().deploy().ignoreOwnership(false);
+        }
+      }
+      return fut;
+    }
+ catch (    GridTopologyException e) {
+      if (log.isDebugEnabled())       log.debug("Topology changed while deploying service (will retry): " + e.getMessage());
+    }
+catch (    GridException e) {
+      log.error("Failed to deploy service: " + cfg.getName(),e);
+      return new GridFinishedFuture<>(ctx,e);
+    }
+  }
 }

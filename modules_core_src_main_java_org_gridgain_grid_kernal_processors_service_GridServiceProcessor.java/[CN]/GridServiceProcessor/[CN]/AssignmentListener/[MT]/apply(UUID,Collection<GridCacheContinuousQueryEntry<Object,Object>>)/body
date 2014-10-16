@@ -6,11 +6,12 @@
         GridServiceAssignments assigns=(GridServiceAssignments)e.getValue();
         if (assigns != null) {
           svcName.set(assigns.name());
-          if (assigns.nodeId().equals(ctx.localNodeId())) {
-            GridFutureAdapter<?> fut=depFuts.remove(assigns.name());
-            if (fut != null)             fut.onDone();
-          }
           redeploy(assigns);
+          GridServiceDeploymentFuture fut=depFuts.get(assigns.name());
+          if (fut != null && fut.configuration().equals(assigns.configuration())) {
+            depFuts.remove(assigns.name(),fut);
+            fut.onDone();
+          }
         }
  else {
           String name=((GridServiceAssignmentsKey)e.getKey()).name();
