@@ -1,0 +1,16 @@
+{
+  return (T)Proxy.newProxyInstance(U.gridClassLoader(),new Class<?>[]{svc},new InvocationHandler(){
+    @Override public Object invoke(    Object proxy,    final Method mtd,    final Object[] args) throws Throwable {
+      GridNode rmtNode=null;
+      if (sticky && rmtNodeId != null)       rmtNode=ctx.grid().node(rmtNodeId);
+      return ctx.closure().callAsyncNoFailover(GridClosureCallMode.BALANCE,new Callable<Object>(){
+        @Override public Object call() throws Exception {
+          rmtNodeId=ctx.localNodeId();
+          return mtd.invoke(ctx.service().service(name),args);
+        }
+      }
+,Collections.singletonList(rmtNode),false).get();
+    }
+  }
+);
+}
