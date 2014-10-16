@@ -1,12 +1,19 @@
 {
   String name="dummyService";
   Grid g=randomGrid();
-  CountDownLatch latch=new CountDownLatch(nodeCount());
-  DummyService.exeLatch(name,latch);
-  GridFuture<?> fut=g.services().deployNodeSingleton(name,new DummyService());
+  final int[] cntr=new int[1];
+  GridFuture<?> fut=g.services().deployNodeSingleton(name,new GridIntService(cntr){
+    @Override public void cancel(    GridServiceContext ctx){
+    }
+    @Override public void execute(    GridServiceContext ctx) throws Exception {
+      cntr[0]=239;
+    }
+  }
+);
   info("Deployed service: " + name);
   fut.get();
   info("Finished waiting for service future: " + name);
-  latch.await();
-  DummyService proxy=g.services().serviceProxy(name,DummyService.class,true);
+  GridService proxy=g.services().serviceProxy(name,GridService.class,true);
+  proxy.execute(new GridServiceContextImpl(null,null,null,null,null,null));
+  assertEquals("Proxy service was not executed",239,cntr[0]);
 }
