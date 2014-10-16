@@ -1,0 +1,10 @@
+{
+  byte[] bytes=e.getValue();
+  byte[] val=GridCacheSwapEntryImpl.getValueIfByteArray(bytes);
+  if (val != null)   return (V)val;
+  if (cctx.offheapTiered() && cctx.portableEnabled())   return (V)cctx.portable().unmarshal(bytes,GridCacheSwapEntryImpl.valueOffset(bytes));
+ else {
+    GridByteArrayInputStream in=new GridByteArrayInputStream(bytes,GridCacheSwapEntryImpl.valueOffset(bytes),bytes.length);
+    return cctx.marshaller().unmarshal(in,cctx.deploy().globalLoader());
+  }
+}
