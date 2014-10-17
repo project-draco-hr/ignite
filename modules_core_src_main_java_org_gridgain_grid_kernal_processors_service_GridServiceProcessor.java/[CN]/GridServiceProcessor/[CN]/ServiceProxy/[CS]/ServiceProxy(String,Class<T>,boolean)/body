@@ -1,2 +1,20 @@
 {
+  A.ensure(svc.isInterface(),"Only interfaces could be used for proxy.");
+  proxy=(T)Proxy.newProxyInstance(svc.getClassLoader(),new Class[]{svc},new InvocationHandler(){
+    @Override public Object invoke(    Object proxy,    final Method mtd,    final Object[] args) throws Throwable {
+      while (true) {
+        GridNode newRmtNode;
+        try {
+          newRmtNode=getNodeWithService(name,sticky);
+          if (newRmtNode == null)           throw new GridException("There are no deployed instances for service: " + name);
+        }
+ catch (        GridTopologyException e) {
+          if (log.isDebugEnabled())           log.debug("Topology changed during service proxy get  (will retry): " + e.getMessage());
+          continue;
+        }
+        return ctx.closure().callAsyncNoFailover(GridClosureCallMode.BALANCE,new ProxyCallable(),Collections.singleton(newRmtNode),false).get();
+      }
+    }
+  }
+);
 }
