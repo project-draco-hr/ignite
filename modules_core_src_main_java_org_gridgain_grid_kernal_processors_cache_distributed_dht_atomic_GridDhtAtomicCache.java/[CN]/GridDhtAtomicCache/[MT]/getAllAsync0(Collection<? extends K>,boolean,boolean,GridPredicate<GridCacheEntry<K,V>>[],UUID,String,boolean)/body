@@ -1,10 +1,10 @@
 {
   ctx.checkSecurity(GridSecurityPermission.CACHE_READ);
   if (F.isEmpty(keys))   return new GridFinishedFuture<>(ctx.kernalContext(),Collections.<K,V>emptyMap());
+  if (keyCheck)   validateCacheKeys(keys);
   long topVer=ctx.affinity().affinityTopologyVersion();
   if (!reload && !forcePrimary) {
     Map<K,V> locVals=new HashMap<>(keys.size(),1.0f);
-    GridCacheVersion obsoleteVer=null;
     boolean success=true;
     for (    K key : keys) {
       GridCacheEntryEx<K,V> entry=null;
@@ -13,9 +13,9 @@
           entry=ctx.isSwapOrOffheapEnabled() ? entryEx(key) : peekEx(key);
           if (entry != null) {
             boolean isNew=entry.isNewLocked();
-            V v=entry.innerGet(null,true,false,true,true,true,true,subjId,null,taskName,filter);
+            V v=entry.innerGet(null,true,false,true,true,true,true,false,subjId,null,taskName,filter);
             if (v == null) {
-              if (obsoleteVer == null)               obsoleteVer=context().versions().next();
+              GridCacheVersion obsoleteVer=context().versions().next();
               if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(key);
               success=false;
             }

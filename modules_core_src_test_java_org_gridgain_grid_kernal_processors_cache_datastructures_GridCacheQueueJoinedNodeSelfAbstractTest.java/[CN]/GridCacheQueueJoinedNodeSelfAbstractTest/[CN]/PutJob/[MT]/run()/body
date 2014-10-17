@@ -2,16 +2,14 @@
   assertNotNull(grid);
   log.info("Running job [node=" + grid.localNode().id() + ", job="+ getClass().getSimpleName()+ "]");
   try {
-    GridCacheQueue<Integer> queue=grid.cache(null).dataStructures().queue(queueName,0,true,true);
+    GridCacheQueue<Integer> queue=grid.cache(null).dataStructures().queue(queueName,0,true,false);
     assertNotNull(queue);
     int i=0;
-    while (!Thread.currentThread().isInterrupted())     queue.add(i++);
+    while (!stop)     queue.add(i++);
   }
- catch (  GridInterruptedException e) {
-    log.info("Cancelling job due to interruption: " + e.getMessage());
-  }
-catch (  GridException e) {
+ catch (  Exception e) {
     error("Failed to put value to the queue",e);
+    fail("Unexpected exception: " + e);
   }
   log.info("PutJob finished");
 }
