@@ -1,0 +1,16 @@
+{
+  for (int i=0; i < GRID_CNT; i++) {
+    final GridKernal grid=(GridKernal)grid(i);
+    TestCommunicationSpi commSpi=(TestCommunicationSpi)grid.configuration().getCommunicationSpi();
+    commSpi.skipNearRequest=false;
+    commSpi.skipNearResponse=false;
+    commSpi.skipDhtRequest=false;
+    commSpi.skipDhtResponse=false;
+    GridTestUtils.retryAssert(log,10,100,new CA(){
+      @Override public void apply(){
+        assertTrue(grid.internalCache().context().mvcc().atomicFutures().isEmpty());
+      }
+    }
+);
+  }
+}
