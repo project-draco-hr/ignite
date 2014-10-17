@@ -12,11 +12,14 @@
       try {
         entry=swapOrOffheap ? entryEx(key) : peekEx(key);
         if (entry != null) {
-          V v=entry.innerGet(null,swapOrOffheap,false,false,true,true,true,subjId,null,taskName,filter);
+          V v=entry.innerGet(null,swapOrOffheap,false,false,true,true,true,false,subjId,null,taskName,filter);
           if (v != null)           vals.put(key,v);
  else           success=false;
         }
- else         success=false;
+ else {
+          if (!storeEnabled)           metrics0().onRead(false);
+          success=false;
+        }
         break;
       }
  catch (      GridCacheEntryRemovedException ignored) {
