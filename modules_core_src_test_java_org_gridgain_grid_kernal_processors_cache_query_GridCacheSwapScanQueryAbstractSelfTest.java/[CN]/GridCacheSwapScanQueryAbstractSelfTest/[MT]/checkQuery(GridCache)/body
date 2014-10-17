@@ -1,0 +1,29 @@
+{
+  final int ENTRY_CNT=500;
+  for (int i=0; i < ENTRY_CNT; i++)   assertTrue(cache.putx(new Key(i),new Person("p-" + i,i)));
+  try {
+    GridCacheQuery<Map.Entry<Key,Person>> qry=cache.queries().createScanQuery(new GridBiPredicate<Key,Person>(){
+      @Override public boolean apply(      Key key,      Person p){
+        assertEquals(key.id,(Integer)p.salary);
+        return key.id % 2 == 0;
+      }
+    }
+);
+    Collection<Map.Entry<Key,Person>> res=qry.execute().get();
+    assertEquals(ENTRY_CNT / 2,res.size());
+    for (    Map.Entry<Key,Person> e : res) {
+      Key k=e.getKey();
+      Person p=e.getValue();
+      assertEquals(k.id,(Integer)p.salary);
+      assertEquals(0,k.id % 2);
+    }
+    qry=cache.queries().createScanQuery(null);
+    res=qry.execute().get();
+    assertEquals(ENTRY_CNT,res.size());
+    checkProjectionFilter(cache,ENTRY_CNT / 2 - 5);
+    testMultithreaded(cache,ENTRY_CNT / 2);
+  }
+  finally {
+    for (int i=0; i < ENTRY_CNT; i++)     assertTrue(cache.removex(new Key(i)));
+  }
+}
