@@ -1,0 +1,27 @@
+{
+  final int ENTRY_CNT=500;
+  for (int i=0; i < ENTRY_CNT; i++)   assertTrue(cache.putx(String.valueOf(i),(long)i));
+  try {
+    GridCacheQuery<Map.Entry<String,Long>> qry=cache.queries().createScanQuery(new GridBiPredicate<String,Long>(){
+      @Override public boolean apply(      String key,      Long val){
+        assertEquals(key,String.valueOf(val));
+        return val % 2 == 0;
+      }
+    }
+);
+    Collection<Map.Entry<String,Long>> res=qry.execute().get();
+    assertEquals(ENTRY_CNT / 2,res.size());
+    for (    Map.Entry<String,Long> e : res) {
+      String key=e.getKey();
+      Long val=e.getValue();
+      assertEquals(key,String.valueOf(val));
+      assertEquals(0,val % 2);
+    }
+    qry=cache.queries().createScanQuery(null);
+    res=qry.execute().get();
+    assertEquals(ENTRY_CNT,res.size());
+  }
+  finally {
+    for (int i=0; i < ENTRY_CNT; i++)     assertTrue(cache.removex(String.valueOf(i)));
+  }
+}
