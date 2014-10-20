@@ -1,10 +1,8 @@
 {
-  GridService svc=grid.services().service(svcName);
-  if (svc == null)   throw new GridServiceNotFoundException(svcName);
-  Class<?> svcCls=svc.getClass();
-  Class<?>[] argTypes=new Class[args == null ? 0 : args.length];
-  for (int i=0; args != null && i < args.length; i++)   argTypes[i]=args[i].getClass();
-  Method mtd=svcCls.getMethod(mtdName,argTypes);
-  if (mtd == null)   throw new GridServiceMethodNotFoundException(svcName,mtdName,argTypes);
-  return mtd.invoke(svc,args);
+  GridServiceContextImpl svcCtx=((GridKernal)grid).context().service().serviceContext(svcName);
+  if (svcCtx == null)   throw new GridServiceNotFoundException(svcName);
+  GridServiceMethodReflectKey key=new GridServiceMethodReflectKey(mtdName,args);
+  Method mtd=svcCtx.method(key);
+  if (mtd == null)   throw new GridServiceMethodNotFoundException(svcName,mtdName,key.argTypes());
+  return mtd.invoke(svcCtx.service(),args);
 }
