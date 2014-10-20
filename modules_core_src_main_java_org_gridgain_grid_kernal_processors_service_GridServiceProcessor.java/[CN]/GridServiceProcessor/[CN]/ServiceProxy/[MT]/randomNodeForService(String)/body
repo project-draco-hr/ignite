@@ -1,0 +1,20 @@
+{
+  Object svc=service(name);
+  if (svc != null)   return ctx.discovery().localNode();
+  Map<UUID,Integer> snapshot=serviceTopology(name);
+  if (snapshot == null || snapshot.isEmpty())   return null;
+  if (snapshot.size() == 1)   return ctx.discovery().node(snapshot.keySet().iterator().next());
+  int idx=RAND.nextInt(snapshot.size());
+  int i=0;
+  for (  Map.Entry<UUID,Integer> e : snapshot.entrySet()) {
+    if (i++ >= idx) {
+      if (e.getValue() > 0)       return ctx.discovery().node(e.getKey());
+    }
+  }
+  i=0;
+  for (  Map.Entry<UUID,Integer> e : snapshot.entrySet()) {
+    if (e.getValue() > 0)     return ctx.discovery().node(e.getKey());
+    if (i == idx)     return null;
+  }
+  return null;
+}
