@@ -1,0 +1,13 @@
+{
+  LazyOffheapEntry e=new LazyOffheapEntry(keyPtr,valPtr);
+  if (prjPred != null) {
+    GridCacheEntry<K,V> cacheEntry=new GridCacheScanSwapEntry(e);
+    if (!prjPred.apply((GridCacheEntry<Object,Object>)cacheEntry))     return null;
+  }
+  if (filter != null) {
+    K key=(K)cctx.unwrapPortableIfNeeded(e.key(),keepPortable);
+    V val=(V)cctx.unwrapPortableIfNeeded(e.value(),keepPortable);
+    if (!filter.apply(key,val))     return null;
+  }
+  return new GridIndexingKeyValueRowAdapter<>(e.key(),(V)cctx.unwrapTemporary(e.value()));
+}

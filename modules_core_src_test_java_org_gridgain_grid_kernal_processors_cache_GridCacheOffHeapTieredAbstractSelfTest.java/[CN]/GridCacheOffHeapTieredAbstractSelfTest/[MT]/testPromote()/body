@@ -1,0 +1,16 @@
+{
+  GridCache<Integer,TestValue> c=grid(0).cache(null);
+  TestValue val=new TestValue(new byte[100 * 1024]);
+  List<Integer> keys=primaryKeys(c,200);
+  for (  Integer key : keys)   c.putx(key,val);
+  for (int i=0; i < 50; i++) {
+    TestValue val0=c.promote(keys.get(i));
+    Assert.assertArrayEquals(val.val,val0.val);
+  }
+  List<Integer> keys0=keys.subList(50,100);
+  c.promoteAll(keys0);
+  for (  Integer key : keys0) {
+    TestValue val0=c.get(key);
+    Assert.assertArrayEquals(val.val,val0.val);
+  }
+}
