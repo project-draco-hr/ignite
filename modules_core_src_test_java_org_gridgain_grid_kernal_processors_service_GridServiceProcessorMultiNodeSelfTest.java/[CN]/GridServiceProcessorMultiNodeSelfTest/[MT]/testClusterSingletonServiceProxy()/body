@@ -1,0 +1,11 @@
+{
+  String name="remoteService";
+  Grid gLoc=startGrid(getTestGridName() + "local");
+  Grid gRemote=startGrid(getTestGridName() + "remote");
+  GridFuture<?> fut=gRemote.services().deployClusterSingleton(name,getDummyService());
+  info("Deployed service: " + name);
+  fut.get();
+  info("Finished waiting for service future: " + name);
+  GridDummyService proxy=gLoc.services().serviceProxy(name,GridDummyService.class,true);
+  assertEquals("Proxy service was not executed",239,proxy.getInt());
+}
