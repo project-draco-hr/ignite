@@ -6,8 +6,8 @@
       GridServiceDeploymentFuture fut=new GridServiceDeploymentFuture(ctx,cfg);
       GridServiceDeploymentFuture old;
       if ((old=depFuts.putIfAbsent(cfg.getName(),fut)) != null) {
-        if (!old.configuration().equals(cfg)) {
-          fut.onDone(new GridException("Failed to deploy service " + "(service exists and must be undeployed first): " + cfg.getName()));
+        if (!old.configuration().equalsIgnoreNodeFilter(cfg)) {
+          fut.onDone(new GridException("Failed to deploy service (service already exists with " + "different configuration) [deployed=" + old.configuration() + ", new="+ cfg+ ']'));
           return fut;
         }
         fut=old;
@@ -18,9 +18,9 @@
         try {
           GridServiceDeployment dep=(GridServiceDeployment)depCache.putIfAbsent(key,new GridServiceDeployment(ctx.localNodeId(),cfg));
           if (dep != null) {
-            if (!dep.configuration().equals(cfg)) {
+            if (!dep.configuration().equalsIgnoreNodeFilter(cfg)) {
               depFuts.remove(cfg.getName(),fut);
-              fut.onDone(new GridException("Failed to deploy service " + "(service already exists with different configuration): " + cfg.getName()));
+              fut.onDone(new GridException("Failed to deploy service (service already exists with " + "different configuration) [deployed=" + dep.configuration() + ", new="+ cfg+ ']'));
             }
  else {
               for (              GridCacheEntry<Object,Object> e : assignCache.entrySetx()) {
@@ -33,7 +33,7 @@
                   }
                 }
               }
-              if (!dep.configuration().equals(cfg))               U.warn(log,"Service already deployed with different configuration (will ignore) " + "[deployed=" + dep.configuration() + ", new="+ cfg+ ']');
+              if (!dep.configuration().equalsIgnoreNodeFilter(cfg))               U.warn(log,"Service already deployed with different configuration (will ignore) " + "[deployed=" + dep.configuration() + ", new="+ cfg+ ']');
             }
           }
         }
