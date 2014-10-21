@@ -2,22 +2,22 @@
   String name="serviceOnEachNodeUpdateTopology";
   Grid g=randomGrid();
   CountDownLatch latch=new CountDownLatch(nodeCount());
-  DummyService.exeLatch(name,latch);
-  GridFuture<?> fut=g.services().deployNodeSingleton(name,new DummyService());
+  org.gridgain.grid.kernal.processors.service.DummyService.exeLatch(name,latch);
+  GridFuture<?> fut=g.services().deployNodeSingleton(name,new org.gridgain.grid.kernal.processors.service.DummyService());
   info("Deployed service: " + name);
   fut.get();
   info("Finished waiting for service future: " + name);
   latch.await();
-  assertEquals(name,nodeCount(),DummyService.started(name));
-  assertEquals(name,0,DummyService.cancelled(name));
+  TestCase.assertEquals(name,nodeCount(),org.gridgain.grid.kernal.processors.service.DummyService.started(name));
+  TestCase.assertEquals(name,0,org.gridgain.grid.kernal.processors.service.DummyService.cancelled(name));
   int newNodes=2;
   latch=new CountDownLatch(newNodes);
-  DummyService.exeLatch(name,latch);
+  org.gridgain.grid.kernal.processors.service.DummyService.exeLatch(name,latch);
   startExtraNodes(newNodes);
   try {
     latch.await();
-    assertEquals(name,nodeCount() + newNodes,DummyService.started(name));
-    assertEquals(name,0,DummyService.cancelled(name));
+    TestCase.assertEquals(name,nodeCount() + newNodes,org.gridgain.grid.kernal.processors.service.DummyService.started(name));
+    TestCase.assertEquals(name,0,org.gridgain.grid.kernal.processors.service.DummyService.cancelled(name));
     checkCount(name,g.services().deployedServices(),nodeCount() + newNodes);
   }
   finally {
