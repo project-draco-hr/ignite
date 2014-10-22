@@ -17,12 +17,23 @@
           if (Entry.readValueLength(cur,mem) == valBytes.length) {
             Entry.writeValueBytes(cur,valBytes,mem);
             isNew=false;
-            if (lru != null)             lru.touch(Entry.queueAddress(cur,mem),cur);
+            if (lru != null) {
+              qAddr=Entry.queueAddress(cur,mem);
+              if (qAddr == 0) {
+                qAddr=lru.offer(part,cur,hash);
+                Entry.queueAddress(cur,qAddr,mem);
+              }
+ else               lru.touch(qAddr,cur);
+            }
             return false;
           }
           if (prev != 0)           Entry.nextAddress(prev,next,mem);
  else           first=next;
           qAddr=Entry.queueAddress(cur,mem);
+          if (qAddr == 0 && lru != null) {
+            qAddr=lru.offer(part,cur,hash);
+            Entry.queueAddress(cur,qAddr,mem);
+          }
           relSize=Entry.size(cur,mem);
           relAddr=cur;
           isNew=false;
