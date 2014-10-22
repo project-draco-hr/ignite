@@ -5,6 +5,8 @@
     return op.apply(cache,ctx).chain(resultWrapper(cache,key));
   }
  else {
-    return ctx.grid().forPredicate(F.nodeForNodeId(destId)).compute().withNoFailover().call(new CacheOperationCallable(clientId,cacheName,op,key));
+    GridCompute comp=ctx.grid().forPredicate(F.nodeForNodeId(destId)).compute().withNoFailover().enableAsync();
+    comp.call(new CacheOperationCallable(clientId,cacheName,op,key));
+    return comp.future();
   }
 }

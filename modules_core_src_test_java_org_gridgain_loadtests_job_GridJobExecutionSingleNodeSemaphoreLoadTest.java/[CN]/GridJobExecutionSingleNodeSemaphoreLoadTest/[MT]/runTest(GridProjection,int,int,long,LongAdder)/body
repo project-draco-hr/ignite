@@ -9,7 +9,9 @@
   GridLoadTestUtils.runMultithreadedInLoop(new Callable<Object>(){
     @Nullable @Override public Object call() throws Exception {
       sem.acquire();
-      GridComputeTaskFuture<Object> f=g.compute().execute(GridJobExecutionLoadTestTask.class,null);
+      GridCompute comp=g.compute().enableAsync();
+      comp.execute(GridJobExecutionLoadTestTask.class,null);
+      GridComputeTaskFuture<Object> f=comp.future();
       f.listenAsync(lsnr);
       iterCntr.increment();
       return null;

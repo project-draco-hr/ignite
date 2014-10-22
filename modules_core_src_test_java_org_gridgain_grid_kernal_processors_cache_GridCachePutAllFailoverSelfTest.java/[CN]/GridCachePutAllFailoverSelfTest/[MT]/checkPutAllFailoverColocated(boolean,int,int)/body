@@ -2,7 +2,7 @@
   nearEnabled=near;
   backups=shutdownCnt;
   Collection<Integer> testKeys=generateTestKeys();
-  Grid master=startGrid(MASTER);
+  final Grid master=startGrid(MASTER);
   List<Grid> workers=new ArrayList<>(workerCnt);
   for (int i=1; i <= workerCnt; i++)   workers.add(startGrid("worker" + i));
   info("Master: " + master.localNode().id());
@@ -20,6 +20,7 @@
     int failoverPushGap=0;
     final CountDownLatch emptyLatch=new CountDownLatch(1);
     final AtomicBoolean inputExhausted=new AtomicBoolean();
+    GridCompute comp=master.forPredicate(workerNodesFilter).compute().enableAsync();
     for (    Integer key : testKeys) {
       GridNode mappedNode=master.mapKeyToNode(CACHE_NAME,key);
       UUID nodeId=mappedNode.id();
@@ -32,7 +33,8 @@
       if (data.size() == DATA_CHUNK_SIZE) {
         chunkCntr++;
         log.info("Pushing data chunk [chunkNo=" + chunkCntr + "]");
-        GridComputeTaskFuture<Void> fut=master.forPredicate(workerNodesFilter).compute().execute(new GridCachePutAllTask(nodeId,CACHE_NAME),data);
+        comp.execute(new GridCachePutAllTask(nodeId,CACHE_NAME),data);
+        GridComputeTaskFuture<Void> fut=comp.future();
         resQueue.put(fut);
         fut.listenAsync(new CI1<GridFuture<Void>>(){
           @Override public void apply(          GridFuture<Void> f){
@@ -65,7 +67,8 @@
       }
     }
     for (    Map.Entry<UUID,Collection<Integer>> entry : dataChunks.entrySet()) {
-      GridComputeTaskFuture<Void> fut=master.forPredicate(workerNodesFilter).compute().execute(new GridCachePutAllTask(entry.getKey(),CACHE_NAME),entry.getValue());
+      comp.execute(new GridCachePutAllTask(entry.getKey(),CACHE_NAME),entry.getValue());
+      GridComputeTaskFuture<Void> fut=comp.future();
       resQueue.put(fut);
       fut.listenAsync(new CI1<GridFuture<Void>>(){
         @Override public void apply(        GridFuture<Void> f){

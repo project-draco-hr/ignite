@@ -3,6 +3,8 @@
   if (locExec)   return ctx.closure().callLocalSafe(c,false);
  else {
     if (ctx.discovery().node(destId) == null)     return new GridFinishedFutureEx<>(new GridException("Destination node ID has left the grid (retry " + "the query): " + destId));
-    return ctx.grid().forNodeId(destId).compute().withNoFailover().call(c);
+    GridCompute comp=ctx.grid().forNodeId(destId).compute().withNoFailover().enableAsync();
+    comp.call(c);
+    return comp.future();
   }
 }

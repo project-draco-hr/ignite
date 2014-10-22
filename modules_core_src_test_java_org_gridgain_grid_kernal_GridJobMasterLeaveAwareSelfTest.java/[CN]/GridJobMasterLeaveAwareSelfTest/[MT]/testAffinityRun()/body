@@ -1,9 +1,11 @@
 {
   testMasterLeaveAwareCallback(1,new C1<GridProjection,GridFuture<?>>(){
-    @Override public GridFuture<?> apply(    GridProjection gridProjection){
-      GridCacheAffinity<Object> aff=gridProjection.grid().cache(null).affinity();
-      GridNode node=F.first(gridProjection.nodes());
-      return gridProjection.compute().affinityRun(null,keyForNode(aff,node),new TestRunnable());
+    @Override public GridFuture<?> apply(    GridProjection prj){
+      GridCompute comp=prj.compute().enableAsync();
+      GridCacheAffinity<Object> aff=prj.grid().cache(null).affinity();
+      GridNode node=F.first(prj.nodes());
+      comp.affinityRun(null,keyForNode(aff,node),new TestRunnable());
+      return comp.future();
     }
   }
 );
