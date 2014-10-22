@@ -16,14 +16,14 @@
         GridServiceDeploymentKey key=new GridServiceDeploymentKey(cfg.getName());
         if (ctx.deploy().enabled())         ctx.cache().internalCache(UTILITY_CACHE_NAME).context().deploy().ignoreOwnership(true);
         try {
-          GridServiceDeployment dep=(GridServiceDeployment)depCache.putIfAbsent(key,new GridServiceDeployment(ctx.localNodeId(),cfg));
+          GridServiceDeployment dep=(GridServiceDeployment)cache.putIfAbsent(key,new GridServiceDeployment(ctx.localNodeId(),cfg));
           if (dep != null) {
             if (!dep.configuration().equalsIgnoreNodeFilter(cfg)) {
               depFuts.remove(cfg.getName(),fut);
               fut.onDone(new GridException("Failed to deploy service (service already exists with " + "different configuration) [deployed=" + dep.configuration() + ", new="+ cfg+ ']'));
             }
  else {
-              for (              GridCacheEntry<Object,Object> e : assignCache.entrySetx()) {
+              for (              GridCacheEntry<Object,Object> e : cache.entrySetx()) {
                 if (e.getKey() instanceof GridServiceAssignmentsKey) {
                   GridServiceAssignments assigns=(GridServiceAssignments)e.getValue();
                   if (assigns.name().equals(cfg.getName())) {
