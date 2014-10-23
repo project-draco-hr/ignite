@@ -3,14 +3,16 @@
     System.out.println();
     System.out.println("Compute runnable example started.");
     Collection<GridFuture> futs=new ArrayList<>();
+    GridCompute compute=g.compute().enableAsync();
     for (    final String word : "Print words using runnable".split(" ")) {
-      futs.add(g.compute().run(new GridRunnable(){
+      compute.run(new GridRunnable(){
         @Override public void run(){
           System.out.println();
           System.out.println(">>> Printing '" + word + "' on this node from grid job.");
         }
       }
-));
+);
+      futs.add(compute.future());
     }
     for (    GridFuture<?> f : futs)     f.get();
     System.out.println();

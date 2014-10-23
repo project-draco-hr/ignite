@@ -1,7 +1,7 @@
 {
   final Grid grid=G.grid(getTestGridName());
   final long end=getTestDurationInMinutes() * 60 * 1000 + System.currentTimeMillis();
-  grid.compute().withTimeout(5000).execute(GridSingleSplitTestTask.class.getName(),3).get();
+  grid.compute().withTimeout(5000).execute(GridSingleSplitTestTask.class.getName(),3);
   info("Load test will be executed for '" + getTestDurationInMinutes() + "' mins.");
   info("Thread count: " + getThreadCount());
   final GridLoadTestStatistics stats=new GridLoadTestStatistics();
@@ -14,7 +14,9 @@
         long start=System.currentTimeMillis();
         try {
           int levels=20;
-          GridComputeTaskFuture<Integer> fut=grid.compute().execute(new GridSingleSplitTestTask(),levels);
+          GridCompute comp=grid.compute().enableAsync();
+          comp.execute(new GridSingleSplitTestTask(),levels);
+          GridComputeTaskFuture<Integer> fut=comp.future();
           int res=fut.get();
           if (res != levels)           fail("Received wrong result [expected=" + levels + ", actual="+ res+ ']');
           long taskCnt=stats.onTaskCompleted(fut,levels,System.currentTimeMillis() - start);
