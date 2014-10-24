@@ -1,17 +1,22 @@
 {
   GridCompute comp=ctx.grid().forCache(cacheName).compute().withNoFailover().enableAsync();
-  comp.broadcast(c);
-  GridFuture<Collection<Object>> fut=comp.future();
-  return fut.chain(new C1<GridFuture<Collection<Object>>,GridRestResponse>(){
-    @Override public GridRestResponse apply(    GridFuture<Collection<Object>> fut){
-      try {
-        fut.get();
-        return new GridRestResponse();
-      }
- catch (      GridException e) {
-        throw new GridClosureException(e);
+  try {
+    comp.broadcast(c);
+    GridFuture<Collection<Object>> fut=comp.future();
+    return fut.chain(new C1<GridFuture<Collection<Object>>,GridRestResponse>(){
+      @Override public GridRestResponse apply(      GridFuture<Collection<Object>> fut){
+        try {
+          fut.get();
+          return new GridRestResponse();
+        }
+ catch (        GridException e) {
+          throw new GridClosureException(e);
+        }
       }
     }
-  }
 );
+  }
+ catch (  GridException e) {
+    return new GridFinishedFutureEx<>(e);
+  }
 }
