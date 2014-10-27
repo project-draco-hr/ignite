@@ -2,5 +2,26 @@
   try (Grid g=GridGain.start("examples/config/example-compute.xml")){
     System.out.println();
     System.out.println("Compute reducer example started.");
+    Integer sum=g.compute().apply(new GridClosure<String,Integer>(){
+      @Override public Integer apply(      String word){
+        System.out.println();
+        System.out.println(">>> Printing '" + word + "' on this node from grid job.");
+        return word.length();
+      }
+    }
+,Arrays.asList("Count characters using reducer".split(" ")),new GridReducer<Integer,Integer>(){
+      private AtomicInteger sum=new AtomicInteger();
+      @Override public boolean collect(      Integer len){
+        sum.addAndGet(len);
+        return true;
+      }
+      @Override public Integer reduce(){
+        return sum.get();
+      }
+    }
+);
+    System.out.println();
+    System.out.println(">>> Total number of characters in the phrase is '" + sum + "'.");
+    System.out.println(">>> Check all nodes for output (this node is also part of the grid).");
   }
  }
