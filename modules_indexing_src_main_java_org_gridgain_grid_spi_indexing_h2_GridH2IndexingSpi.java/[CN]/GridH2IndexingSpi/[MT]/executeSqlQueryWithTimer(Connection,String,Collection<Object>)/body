@@ -1,23 +1,22 @@
 {
   long start=U.currentTimeMillis();
   try {
-    T2<PreparedStatement,ResultSet> res=executeSqlQuery(conn,sql,params);
+    ResultSet rs=executeSqlQuery(conn,sql,params);
     long time=U.currentTimeMillis() - start;
     if (time > longQryExecTimeout) {
       String msg="Query execution is too long (" + time + " ms): "+ sql;
       String longMsg=msg;
       if (longQryExplain) {
-        T2<PreparedStatement,ResultSet> t2=executeSqlQuery(conn,"EXPLAIN " + sql,params);
-        if (t2 == null)         longMsg="Failed to explain plan because required table does not exist: " + sql;
+        ResultSet plan=executeSqlQuery(conn,"EXPLAIN " + sql,params);
+        if (plan == null)         longMsg="Failed to explain plan because required table does not exist: " + sql;
  else {
-          ResultSet planRs=t2.get2();
-          planRs.next();
-          longMsg="Query execution is too long [time=" + time + " ms, sql='"+ sql+ '\''+ ", plan="+ U.nl()+ planRs.getString(1)+ U.nl()+ ", parameters="+ params+ "]";
+          plan.next();
+          longMsg="Query execution is too long [time=" + time + " ms, sql='"+ sql+ '\''+ ", plan="+ U.nl()+ plan.getString(1)+ U.nl()+ ", parameters="+ params+ "]";
         }
       }
       LT.warn(log,null,longMsg,msg);
     }
-    return res;
+    return rs;
   }
  catch (  SQLException e) {
     onSqlException();
