@@ -1,0 +1,22 @@
+{
+  if (o instanceof Map.Entry) {
+    Map.Entry entry=(Map.Entry)o;
+    Object key=entry.getKey();
+    boolean unwrapped=false;
+    if (key instanceof GridPortableObject) {
+      key=((GridPortableObject)key).deserialize();
+      unwrapped=true;
+    }
+    Object val=entry.getValue();
+    if (val instanceof GridPortableObject) {
+      val=((GridPortableObject)val).deserialize();
+      unwrapped=true;
+    }
+    return unwrapped ? F.t(key,val) : o;
+  }
+ else {
+    if (o instanceof Collection)     return unwrapPortablesIfNeeded((Collection<Object>)o,false);
+ else     if (o instanceof GridPortableObject)     return ((GridPortableObject)o).deserialize();
+  }
+  return o;
+}
