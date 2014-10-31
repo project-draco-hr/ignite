@@ -1,0 +1,24 @@
+{
+  long now=U.currentTimeMillis();
+  long end=timeout == 0 ? Long.MAX_VALUE : timeout + now;
+  if (end < 0)   end=Long.MAX_VALUE;
+  Collection<?> res=null;
+  while (true) {
+    if (now > end)     throw new GridComputeTaskTimeoutException("Timeout occurred while waiting for completion.");
+    GridifyRangeArgument taskArg=createGridifyArgument(arg,res);
+    if (taskArg == null)     return result(res);
+ else     if (taskArg.getInputSize() != UNKNOWN_SIZE && taskArg.getInputSize() <= threshold) {
+      try {
+        mtd.setAccessible(true);
+        return mtd.invoke(arg.getTarget(),taskArg.getMethodParameters());
+      }
+ catch (      IllegalAccessException|InvocationTargetException e) {
+        throw new GridException("Failed to execute method locally.",e);
+      }
+    }
+ else {
+      res=compute.withTimeout(timeout == 0 ? 0L : (end - now)).execute(new GridifyDefaultRangeTask(cls,nodeFilter,threshold,splitSize,true),taskArg);
+    }
+    now=U.currentTimeMillis();
+  }
+}

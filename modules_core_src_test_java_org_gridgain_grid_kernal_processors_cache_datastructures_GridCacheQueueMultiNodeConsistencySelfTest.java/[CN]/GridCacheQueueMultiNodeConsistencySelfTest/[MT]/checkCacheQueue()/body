@@ -8,14 +8,14 @@
   if (stopRandomGrid)   stopGrid(1 + new Random().nextInt(GRID_CNT));
   if (forceRepartition)   for (int i=0; i < GRID_CNT; i++)   grid(i).cache(null).forceRepartition();
   Grid newGrid=startGrid(GRID_CNT + 1);
-  Collection<Integer> locQueueContent=newGrid.forLocal().compute().call(new GridCallable<Collection<Integer>>(){
+  Collection<Integer> locQueueContent=compute(newGrid.cluster().forLocal()).call(new GridCallable<Collection<Integer>>(){
     @GridInstanceResource private Grid grid;
     /** 
  * {@inheritDoc} 
  */
     @Override public Collection<Integer> call() throws Exception {
       Collection<Integer> values=new ArrayList<>();
-      grid.log().info("Running job [node=" + grid.localNode().id() + ", job="+ this+ "]");
+      grid.log().info("Running job [node=" + grid.cluster().localNode().id() + ", job="+ this+ "]");
       GridCacheQueue<Integer> locQueue=grid.cache(null).dataStructures().queue(queueName,QUEUE_CAPACITY,false,true);
       grid.log().info("Queue size " + locQueue.size());
       for (      Integer element : locQueue)       values.add(element);

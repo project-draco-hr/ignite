@@ -2,11 +2,11 @@
   final Grid grid3=startGrid(3);
   GridPredicate<GridNode> p=new P1<GridNode>(){
     @Override public boolean apply(    GridNode e){
-      return grid1.localNode().id().equals(e.id()) || grid3.localNode().id().equals(e.id());
+      return grid1.cluster().localNode().id().equals(e.id()) || grid3.cluster().localNode().id().equals(e.id());
     }
   }
 ;
-  executeAsync(grid1.forPredicate(p).compute(),new JobStealingSingleNodeTask(4),null).get(TASK_EXEC_TIMEOUT_MS);
+  executeAsync(compute(grid1.cluster().forPredicate(p)),new JobStealingSingleNodeTask(4),null).get(TASK_EXEC_TIMEOUT_MS);
   assertEquals(2,jobDistrMap.keySet().size());
-  assertFalse(jobDistrMap.containsKey(grid2.localNode().id()));
+  assertFalse(jobDistrMap.containsKey(grid2.cluster().localNode().id()));
 }

@@ -3,9 +3,9 @@
     Grid g=startGrid();
     GridCache<Integer,Integer> cache=g.cache(null);
     for (int i=0; i < 1000; i++)     assertTrue(cache.putx(i,i));
-    GridCacheQuery<Map.Entry<Integer,Integer>> q=cache.queries().createSqlQuery(Integer.class,"_key >= 0 order by _key").projection(grid);
+    GridCacheQuery<Map.Entry<Integer,Integer>> q=cache.queries().createSqlQuery(Integer.class,"_key >= 0 order by _key").projection(grid.cluster());
     q.pageSize(50);
-    q.projection(g.forNodes(Arrays.asList(g.localNode(),grid(0).localNode())));
+    q.projection(g.cluster().forNodes(Arrays.asList(g.cluster().localNode(),grid(0).localNode())));
     GridCacheQueryFuture<Map.Entry<Integer,Integer>> fut=q.execute();
     assertEquals(0,(int)fut.next().getKey());
     final ConcurrentMap<UUID,Map<Long,GridFutureAdapter<GridCloseableIterator<GridIndexingKeyValueRow<Integer,Integer>>>>> map=U.field(((GridKernal)grid(0)).internalCache().context().queries(),"qryIters");
@@ -15,11 +15,11 @@
       }
     }
 ,getTestTimeout()));
-    Map<Long,GridFutureAdapter<GridCloseableIterator<GridIndexingKeyValueRow<Integer,Integer>>>> futs=map.get(g.localNode().id());
+    Map<Long,GridFutureAdapter<GridCloseableIterator<GridIndexingKeyValueRow<Integer,Integer>>>> futs=map.get(g.cluster().localNode().id());
     assertEquals(1,futs.size());
     GridCloseableIterator<GridIndexingKeyValueRow<Integer,Integer>> iter=U.field(F.first(futs.values()).get(),"iter");
     assertFalse(iter.isClosed());
-    final UUID nodeId=g.localNode().id();
+    final UUID nodeId=g.cluster().localNode().id();
     final CountDownLatch latch=new CountDownLatch(1);
     grid(0).events().localListen(new GridPredicate<GridEvent>(){
       @Override public boolean apply(      GridEvent evt){

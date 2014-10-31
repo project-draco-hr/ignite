@@ -8,7 +8,7 @@
     @Override public boolean apply(    UUID nodeId,    Object msg){
       try {
         log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ']');
-        if (!nodeId.equals(grid1.localNode().id())) {
+        if (!nodeId.equals(grid1.cluster().localNode().id())) {
           log.error("Unexpected sender node: " + nodeId);
           error.set(true);
           return false;
@@ -21,6 +21,6 @@
     }
   }
 );
-  grid1.forRemotes().message().send(null,Collections.singleton(rcCls.newInstance()));
+  message(grid1.cluster().forRemotes()).send(null,Collections.singleton(rcCls.newInstance()));
   assertFalse(rcvLatch.await(3,TimeUnit.SECONDS));
 }

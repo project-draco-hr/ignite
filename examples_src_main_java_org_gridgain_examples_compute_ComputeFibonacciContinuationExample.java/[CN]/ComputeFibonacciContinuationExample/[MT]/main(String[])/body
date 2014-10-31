@@ -3,15 +3,15 @@
     System.out.println();
     System.out.println("Compute Fibonacci continuation example started.");
     long N=100;
-    final UUID exampleNodeId=g.localNode().id();
+    final UUID exampleNodeId=g.cluster().localNode().id();
     final GridPredicate<GridNode> nodeFilter=new GridPredicate<GridNode>(){
       @Override public boolean apply(      GridNode n){
-        return g.forRemotes().nodes().isEmpty() || !n.id().equals(exampleNodeId);
+        return g.cluster().forRemotes().nodes().isEmpty() || !n.id().equals(exampleNodeId);
       }
     }
 ;
     long start=System.currentTimeMillis();
-    BigInteger fib=g.forPredicate(nodeFilter).compute().apply(new FibonacciClosure(nodeFilter),N);
+    BigInteger fib=g.compute(g.cluster().forPredicate(nodeFilter)).apply(new FibonacciClosure(nodeFilter),N);
     long duration=System.currentTimeMillis() - start;
     System.out.println();
     System.out.println(">>> Finished executing Fibonacci for '" + N + "' in "+ duration+ " ms.");

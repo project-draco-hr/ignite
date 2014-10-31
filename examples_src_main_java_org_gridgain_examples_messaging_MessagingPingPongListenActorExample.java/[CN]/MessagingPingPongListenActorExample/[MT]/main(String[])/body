@@ -1,11 +1,11 @@
 {
   try (Grid g=GridGain.start("examples/config/example-compute.xml")){
-    if (!ExamplesUtils.checkMinTopologySize(g,2))     return;
+    if (!ExamplesUtils.checkMinTopologySize(g.cluster(),2))     return;
     System.out.println();
     System.out.println(">>> Messaging ping-pong listen actor example started.");
-    Collection<GridNode> rmtNodes=g.forRemotes().nodes();
-    GridProjection nodeB=g.forNode(rmtNodes.iterator().next());
-    nodeB.message().remoteListen(null,new GridMessagingListenActor<String>(){
+    Collection<GridNode> rmtNodes=g.cluster().forRemotes().nodes();
+    GridProjection nodeB=g.cluster().forNode(rmtNodes.iterator().next());
+    g.message(nodeB).remoteListen(null,new GridMessagingListenActor<String>(){
       @Override public void receive(      UUID nodeId,      String rcvMsg) throws GridException {
         System.out.println(rcvMsg);
         if ("PING".equals(rcvMsg))         respond("PONG");
@@ -24,7 +24,7 @@
       }
     }
 );
-    nodeB.message().send(null,"PING");
+    g.message(nodeB).send(null,"PING");
     try {
       cnt.await();
     }

@@ -1,10 +1,10 @@
 {
   try (Grid g=GridGain.start("examples/config/example-compute.xml")){
-    if (!ExamplesUtils.checkMinTopologySize(g,2))     return;
+    if (!ExamplesUtils.checkMinTopologySize(g.cluster(),2))     return;
     System.out.println();
     System.out.println(">>> Messaging ping-pong example started.");
-    GridProjection nodeB=g.forRemotes().forRandom();
-    nodeB.message().remoteListen(null,new GridBiPredicate<UUID,String>(){
+    GridProjection nodeB=g.cluster().forRemotes().forRandom();
+    g.message(nodeB).remoteListen(null,new GridBiPredicate<UUID,String>(){
       /** 
  * This will be injected on node listener comes to. 
  */
@@ -13,7 +13,7 @@
         System.out.println("Received message [msg=" + rcvMsg + ", sender="+ nodeId+ ']');
         try {
           if ("PING".equals(rcvMsg)) {
-            grid.forNodeId(nodeId).message().send(null,"PONG");
+            grid.message(grid.cluster().forNodeId(nodeId)).send(null,"PONG");
             return true;
           }
           return false;
@@ -31,11 +31,11 @@
         System.out.println("Received message [msg=" + rcvMsg + ", sender="+ nodeId+ ']');
         try {
           if (cnt.getCount() == 1) {
-            g.forNodeId(nodeId).message().send(null,"STOP");
+            g.message(g.cluster().forNodeId(nodeId)).send(null,"STOP");
             cnt.countDown();
             return false;
           }
- else           if ("PONG".equals(rcvMsg))           g.forNodeId(nodeId).message().send(null,"PING");
+ else           if ("PONG".equals(rcvMsg))           g.message(g.cluster().forNodeId(nodeId)).send(null,"PING");
  else           throw new RuntimeException("Received unexpected message: " + rcvMsg);
           cnt.countDown();
           return true;
@@ -46,7 +46,7 @@
       }
     }
 );
-    nodeB.message().send(null,"PING");
+    g.message(nodeB).send(null,"PING");
     try {
       cnt.await();
     }

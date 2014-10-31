@@ -15,11 +15,11 @@
       @Override public boolean apply(      GridCacheEvent evt){
         System.out.println("Cache event [name=" + evt.name() + ", key="+ evt.key()+ ']');
         int key=evt.key();
-        return key >= 10 && cache.affinity().isPrimary(g.localNode(),key);
+        return key >= 10 && cache.affinity().isPrimary(g.cluster().localNode(),key);
       }
     }
 ;
-    g.forCache(CACHE_NAME).events().remoteListen(locLsnr,rmtLsnr,EVT_CACHE_OBJECT_PUT,EVT_CACHE_OBJECT_READ,EVT_CACHE_OBJECT_REMOVED);
+    g.events(g.cluster().forCache(CACHE_NAME)).remoteListen(locLsnr,rmtLsnr,EVT_CACHE_OBJECT_PUT,EVT_CACHE_OBJECT_READ,EVT_CACHE_OBJECT_REMOVED);
     for (int i=0; i < 20; i++)     cache.putx(i,Integer.toString(i));
     Thread.sleep(2000);
   }
