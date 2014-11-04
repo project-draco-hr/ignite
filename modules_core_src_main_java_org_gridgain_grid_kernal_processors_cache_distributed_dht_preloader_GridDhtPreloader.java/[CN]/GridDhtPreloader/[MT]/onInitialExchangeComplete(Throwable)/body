@@ -1,0 +1,16 @@
+{
+  if (err == null) {
+    startFut.onDone();
+    final long start=U.currentTimeMillis();
+    if (cctx.config().getPreloadPartitionedDelay() >= 0) {
+      U.log(log,"Starting preloading in " + cctx.config().getPreloadMode() + " mode: "+ cctx.name());
+      demandPool.syncFuture().listenAsync(new CI1<Object>(){
+        @Override public void apply(        Object t){
+          U.log(log,"Completed preloading in " + cctx.config().getPreloadMode() + " mode "+ "[cache="+ cctx.name()+ ", time="+ (U.currentTimeMillis() - start)+ " ms]");
+        }
+      }
+);
+    }
+  }
+ else   startFut.onDone(err);
+}

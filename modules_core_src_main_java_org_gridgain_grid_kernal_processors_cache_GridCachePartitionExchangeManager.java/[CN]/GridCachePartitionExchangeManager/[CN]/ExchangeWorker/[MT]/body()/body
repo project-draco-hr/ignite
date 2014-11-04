@@ -1,0 +1,79 @@
+{
+  long timeout=cctx.gridConfig().getNetworkTimeout();
+  boolean startEvtFired=false;
+  while (!isCancelled()) {
+    GridDhtPartitionsExchangeFuture<K,V> exchFut=null;
+    try {
+      boolean preloadFinished=true;
+      for (      GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
+        preloadFinished&=cacheCtx.preloader().syncFuture().isDone();
+        if (!preloadFinished)         break;
+      }
+      if (futQ.isEmpty() && preloadFinished) {
+        refreshPartitions(timeout);
+        timeout=cctx.gridConfig().getNetworkTimeout();
+      }
+      if (log.isDebugEnabled())       log.debug("Before waiting for exchange futures [futs" + F.view(exchFuts.values(),F.unfinishedFutures()) + ", worker="+ this+ ']');
+      exchFut=poll(futQ,timeout,this);
+      if (exchFut == null)       continue;
+      busy=true;
+      Map<Integer,GridDhtPreloaderAssignments<K,V>> assignsMap=null;
+      boolean dummyReassign=exchFut.dummyReassign();
+      boolean forcePreload=exchFut.forcePreload();
+      try {
+        if (isCancelled())         break;
+        if (!exchFut.dummy() && !exchFut.forcePreload()) {
+          exchFut.init();
+          exchFut.get();
+          if (log.isDebugEnabled())           log.debug("After waiting for exchange future [exchFut=" + exchFut + ", worker="+ this+ ']');
+          if (exchFut.exchangeId().nodeId().equals(cctx.localNodeId()))           lastRefresh.compareAndSet(-1,U.currentTimeMillis());
+          boolean changed=false;
+          for (          GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
+            changed|=cacheCtx.topology().afterExchange(exchFut.exchangeId());
+            if (cctx.events().isRecordable(EVT_CACHE_PRELOAD_STARTED)) {
+              if (!cacheCtx.isReplicated() || !startEvtFired) {
+                GridDiscoveryEvent discoEvt=exchFut.discoveryEvent();
+                cctx.events().addPreloadEvent(-1,EVT_CACHE_PRELOAD_STARTED,discoEvt.eventNode(),discoEvt.type(),discoEvt.timestamp());
+              }
+            }
+          }
+          startEvtFired=true;
+          if (changed && futQ.isEmpty())           refreshPartitions();
+        }
+ else {
+          if (log.isDebugEnabled())           log.debug("Got dummy exchange (will reassign)");
+          if (!dummyReassign) {
+            timeout=0;
+            continue;
+          }
+        }
+        for (        GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
+          long delay=cacheCtx.config().getPreloadPartitionedDelay();
+          if (delay == 0 || forcePreload) {
+            GridDhtPreloaderAssignments<K,V> assigns=cacheCtx.preloader().assign(exchFut);
+            if (assigns != null) {
+              if (assignsMap == null)               assignsMap=new HashMap<>();
+              assignsMap.put(cacheCtx.cacheId(),assigns);
+            }
+          }
+        }
+      }
+  finally {
+        busy=false;
+      }
+      if (assignsMap != null) {
+        for (        Map.Entry<Integer,GridDhtPreloaderAssignments<K,V>> e : assignsMap.entrySet()) {
+          int cacheId=e.getKey();
+          GridCacheContext<K,V> cacheCtx=cctx.cacheContext(cacheId);
+          cacheCtx.preloader().addAssignments(e.getValue(),forcePreload);
+        }
+      }
+    }
+ catch (    GridInterruptedException e) {
+      throw e;
+    }
+catch (    GridException e) {
+      U.error(log,"Failed to wait for completion of partition map exchange " + "(preloading will not start): " + exchFut,e);
+    }
+  }
+}

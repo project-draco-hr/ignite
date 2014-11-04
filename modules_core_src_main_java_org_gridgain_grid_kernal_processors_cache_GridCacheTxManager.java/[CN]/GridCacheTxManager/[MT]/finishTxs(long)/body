@@ -1,0 +1,25 @@
+{
+  GridCompoundFuture<GridCacheTx,Boolean> res=new GridCompoundFuture<>(context().kernalContext(),new GridReducer<GridCacheTx,Boolean>(){
+    @Override public boolean collect(    GridCacheTx e){
+      return true;
+    }
+    @Override public Boolean reduce(){
+      return true;
+    }
+  }
+);
+  for (  GridCacheTxEx<K,V> tx : idMap.values()) {
+    if (tx.concurrency() == PESSIMISTIC) {
+      if (tx.topologyVersion() > 0 && tx.topologyVersion() < topVer)       res.add(tx.finishFuture());
+    }
+ else     if (tx.concurrency() == OPTIMISTIC) {
+      GridCacheTxState state=tx.state();
+      long txTopVer=tx.topologyVersion();
+      if ((state == PREPARING || state == PREPARED || state == COMMITTING) && txTopVer > 0 && txTopVer < topVer) {
+        res.add(tx.finishFuture());
+      }
+    }
+  }
+  res.markInitialized();
+  return res;
+}

@@ -3,9 +3,10 @@
     if (error() instanceof GridCacheTxHeuristicException) {
       long topVer=this.tx.topologyVersion();
       for (      GridCacheTxEntry<K,V> e : this.tx.writeMap().values()) {
+        GridCacheContext<K,V> cacheCtx=e.context();
         try {
-          if (e.op() != NOOP && !cctx.affinity().localNode(e.key(),topVer)) {
-            GridCacheEntryEx<K,V> cacheEntry=cctx.cache().peekEx(e.key());
+          if (e.op() != NOOP && !cacheCtx.affinity().localNode(e.key().key(),topVer)) {
+            GridCacheEntryEx<K,V> cacheEntry=cacheCtx.cache().peekEx(e.key().key());
             if (cacheEntry != null)             cacheEntry.invalidate(null,this.tx.xidVersion());
           }
         }
