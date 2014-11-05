@@ -1,0 +1,31 @@
+{
+  try {
+    portables=true;
+    startGrids(2);
+    Grid g0=grid(0);
+    GridMarshaller marsh=g0.configuration().getMarshaller();
+    if (marsh instanceof GridOptimizedMarshaller)     assertTrue(((GridOptimizedMarshaller)marsh).isRequireSerializable());
+ else     fail("Expected GridOptimizedMarshaller, but found: " + marsh.getClass().getName());
+    GridDataLoader<Integer,TestObject> dataLdr=g0.dataLoader(null);
+    Map<Integer,TestObject> map=U.newHashMap(KEYS_COUNT);
+    for (int i=0; i < KEYS_COUNT; i++)     map.put(i,new TestObject(i));
+    dataLdr.addData(map);
+    dataLdr.close(false);
+    Random rnd=new Random();
+    GridCache<Integer,TestObject> c=g0.cache(null);
+    for (int i=0; i < 100; i++) {
+      Integer k=rnd.nextInt(KEYS_COUNT);
+      TestObject v=c.get(k);
+      assertEquals(k,v.val());
+    }
+    GridCacheProjection<Integer,TestObject> c2=c.keepPortable();
+    for (int i=0; i < 100; i++) {
+      Integer k=rnd.nextInt(KEYS_COUNT);
+      TestObject v=c2.get(k);
+      assertEquals(k,v.val());
+    }
+  }
+  finally {
+    G.stopAll(true);
+  }
+}
