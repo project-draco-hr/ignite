@@ -1,0 +1,14 @@
+{
+  String name="testNodeSingletonNotDeployedProxy";
+  Grid grid=randomGrid();
+  grid.forRemotes().services().deployNodeSingleton(name,new CounterServiceImpl()).get();
+  info("Deployed service: " + name);
+  CounterService svc=grid.services().serviceProxy(name,CounterService.class,false);
+  try {
+    svc.increment();
+    fail("Should never reach here.");
+  }
+ catch (  GridRuntimeException e) {
+    info("Got expected exception: " + e.getMessage());
+  }
+}

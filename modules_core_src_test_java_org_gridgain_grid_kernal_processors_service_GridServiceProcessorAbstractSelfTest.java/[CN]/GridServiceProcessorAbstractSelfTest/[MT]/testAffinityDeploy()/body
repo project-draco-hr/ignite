@@ -1,13 +1,11 @@
 {
   Grid g=randomGrid();
-  String name="serviceAffinity";
   final Integer affKey=1;
   g.cache(CACHE_NAME).put(affKey,affKey.toString());
-  final CountDownLatch latch=new CountDownLatch(1);
-  GridFuture<?> fut=g.services().deployKeyAffinitySingleton(name,new AffinityService(latch,affKey),CACHE_NAME,affKey);
+  String name="serviceAffinity";
+  GridFuture<?> fut=g.services().deployKeyAffinitySingleton(name,new AffinityService(affKey),CACHE_NAME,affKey);
   info("Deployed service: " + name);
   fut.get();
   info("Finished waiting for service future: " + name);
-  latch.await();
   checkCount(name,g.services().deployedServices(),1);
 }
