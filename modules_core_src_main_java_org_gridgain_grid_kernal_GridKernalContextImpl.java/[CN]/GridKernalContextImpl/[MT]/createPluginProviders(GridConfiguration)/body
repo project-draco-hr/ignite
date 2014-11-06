@@ -1,0 +1,21 @@
+{
+  if (!F.isEmpty(cfg.getPluginConfigurations())) {
+    Collection<PluginProvider> res=new ArrayList<>(cfg.getPluginConfigurations().size());
+    for (    PluginConfiguration pluginCfg : cfg.getPluginConfigurations()) {
+      try {
+        if (pluginCfg.providerClass() == null)         throw new IgniteException("Provider class is null.");
+        PluginProvider provider=pluginCfg.providerClass().newInstance();
+        if (F.isEmpty(provider.name()))         throw new IgniteException("Plugin name can not be empty.");
+        if (provider.plugin() == null)         throw new IgniteException("Plugin is null.");
+        res.add(provider);
+        if (plugins.containsKey(provider.name()))         throw new IgniteException("Duplicated plugin name: " + provider.name());
+        plugins.put(provider.name(),provider);
+      }
+ catch (      InstantiationException|IllegalAccessException e) {
+        throw new IgniteException("Failed to create plugin provider instance.",e);
+      }
+    }
+    return res;
+  }
+ else   return Collections.emptyList();
+}
