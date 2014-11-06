@@ -19,13 +19,13 @@
           if (msg instanceof GridTcpDiscoveryDuplicateIdMessage)           err=duplicateIdError((GridTcpDiscoveryDuplicateIdMessage)msg);
  else           if (msg instanceof GridTcpDiscoveryAuthFailedMessage)           err=authenticationFailedError((GridTcpDiscoveryAuthFailedMessage)msg);
  else           if (msg instanceof GridTcpDiscoveryCheckFailedMessage)           err=checkFailedError((GridTcpDiscoveryCheckFailedMessage)msg);
+          if (err != null) {
+            joinErr=err;
+            joinLatch.countDown();
+            return;
+          }
         }
-        if (err != null) {
-          joinErr=err;
-          joinLatch.countDown();
-          return;
-        }
- else         msgWrk.addMessage(msg);
+        msgWrk.addMessage(msg);
       }
  catch (      GridException e) {
         if (log.isDebugEnabled())         U.error(log,"Failed to read message [sock=" + sock0 + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']',e);

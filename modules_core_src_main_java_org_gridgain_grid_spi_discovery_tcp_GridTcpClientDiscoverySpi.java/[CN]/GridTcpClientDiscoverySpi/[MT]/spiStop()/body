@@ -3,16 +3,23 @@
   U.interrupt(disconnectHnd);
   U.join(disconnectHnd,log);
   Socket sock0=sock;
+  sock=null;
   if (sock0 != null) {
+    leaveLatch=new CountDownLatch(1);
     try {
       GridTcpDiscoveryNodeLeftMessage msg=new GridTcpDiscoveryNodeLeftMessage(locNodeId);
       msg.client(true);
       writeToSocket(sock0,msg);
+      if (!U.await(leaveLatch,netTimeout,MILLISECONDS)) {
+        if (log.isDebugEnabled())         log.debug("Did not receive node left message for local node (will stop anyway) [sock=" + sock0 + ']');
+      }
     }
  catch (    IOException|GridException e) {
       if (log.isDebugEnabled())       U.error(log,"Failed to send node left message (will stop anyway) [sock=" + sock0 + ']',e);
     }
-    U.closeQuiet(sock);
+ finally {
+      U.closeQuiet(sock0);
+    }
   }
   U.interrupt(hbSender);
   U.join(hbSender,log);
