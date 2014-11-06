@@ -1,16 +1,25 @@
 {
-  int pos=recipients.get(recipient);
-  try {
-    int off=pos - pruned;
-    if (off < queue.size)     return queue.get(off);
-    if (it.hasNext()) {
-      R res=it.next();
-      queue.add(res);
-      return res;
+synchronized (recipients) {
+    int pos=recipients.get(recipient);
+    try {
+      int off=pos - pruned;
+      if (off < queue.size)       return queue.get(off);
+      GridSpiCloseableIterator<R> it;
+      try {
+        it=get();
+      }
+ catch (      GridException e) {
+        throw new GridRuntimeException(e);
+      }
+      if (it.hasNext()) {
+        R res=it.next();
+        queue.add(res);
+        return res;
+      }
+      return null;
     }
-    return null;
-  }
   finally {
-    pruneQueue(recipient,pos + 1);
+      pruneQueue(recipient,pos + 1);
+    }
   }
 }
