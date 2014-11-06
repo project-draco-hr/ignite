@@ -1,0 +1,17 @@
+{
+  locIncrements.incrementAndGet();
+  try {
+    while (true) {
+      Value val=cache.get(key);
+      if (val == null) {
+        Value old=cache.putIfAbsent(key,val=new Value(0));
+        if (old != null)         val=old;
+      }
+      Value newVal=new Value(val.get() + 1);
+      if (cache.replace(key,val,newVal))       return newVal.get();
+    }
+  }
+ catch (  Exception e) {
+    throw new GridRuntimeException(e);
+  }
+}
