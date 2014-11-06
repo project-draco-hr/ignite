@@ -20,6 +20,16 @@ synchronized (ctxs) {
         final ExecutorService exe=Executors.newSingleThreadExecutor(threadFactory);
         final GridServiceContextImpl svcCtx=new GridServiceContextImpl(assigns.name(),UUID.randomUUID(),assigns.cacheName(),assigns.affinityKey(),cp,exe);
         ctxs.add(svcCtx);
+        try {
+          cp.init(svcCtx);
+        }
+ catch (        Throwable e) {
+          log.error("Failed to initialize service (service will not be deployed): " + assigns.name(),e);
+          ctxs.remove(svcCtx);
+          if (e instanceof Error)           throw (Error)e;
+          if (e instanceof RuntimeException)           throw (RuntimeException)e;
+          return;
+        }
         if (log.isInfoEnabled())         log.info("Starting service instance [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']');
         exe.submit(new Runnable(){
           @Override public void run(){
