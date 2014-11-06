@@ -26,6 +26,15 @@ synchronized (ctxs) {
           if (fut != null)           fut.onDone();
           fut=undepFuts.remove(name);
           if (fut != null)           fut.onDone();
+          GridServiceAssignmentsKey key=new GridServiceAssignmentsKey(name);
+          if (cache.cache().affinity().isPrimary(ctx.discovery().localNode(),key)) {
+            try {
+              cache.remove(key);
+            }
+ catch (            GridException ex) {
+              log.error("Failed to remove assignments for undeployed service: " + name,ex);
+            }
+          }
         }
       }
     }
