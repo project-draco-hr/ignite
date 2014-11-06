@@ -1,0 +1,12 @@
+{
+  if (enterBusy()) {
+    try {
+      GridBiTuple<Long,Long> space=ggfsCtx.kernalContext().grid().compute().execute(new GgfsGlobalSpaceTask(name()),null).get();
+      return new GridGgfsStatus(space.get1(),space.get2());
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get global space because Grid is stopping.");
+}

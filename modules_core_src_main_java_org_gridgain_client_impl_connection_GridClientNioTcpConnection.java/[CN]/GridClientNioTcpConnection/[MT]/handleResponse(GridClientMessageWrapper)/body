@@ -6,18 +6,22 @@
     return;
   }
   if (fut.forward()) {
-    GridRouterResponse msg=new GridRouterResponse(req.message(),req.requestId(),clientId,req.destinationId());
+    GridRouterResponse msg=new GridRouterResponse(req.messageArray(),req.requestId(),clientId,req.destinationId());
     removePending(msg.requestId());
     fut.onDone(msg);
   }
  else {
     GridClientMessage msg;
+    if (keepPortablesMode != null)     keepPortablesMode.set(fut.keepPortables());
     try {
-      msg=marsh.unmarshal(req.message());
+      msg=marsh.unmarshal(req.messageArray());
     }
  catch (    IOException e) {
       fut.onDone(new GridClientException("Failed to unmarshal message.",e));
       return;
+    }
+ finally {
+      if (keepPortablesMode != null)       keepPortablesMode.set(true);
     }
     msg.requestId(req.requestId());
     msg.clientId(req.clientId());

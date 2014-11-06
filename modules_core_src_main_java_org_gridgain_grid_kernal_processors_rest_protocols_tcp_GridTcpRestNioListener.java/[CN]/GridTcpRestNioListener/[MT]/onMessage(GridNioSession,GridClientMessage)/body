@@ -4,21 +4,24 @@
     if (msg == GridClientPingPacket.PING_MESSAGE)     ses.send(new GridClientPingPacketWrapper());
  else     if (msg instanceof GridClientHandshakeRequest) {
       GridClientHandshakeRequest hs=(GridClientHandshakeRequest)msg;
-      byte[] verBytes=hs.versionBytes();
-      if (!Arrays.equals(VER_BYTES,verBytes))       U.warn(log,"Client version check failed [ses=" + ses + ", expected="+ Arrays.toString(VER_BYTES)+ ", actual="+ Arrays.toString(verBytes)+ ']');
-      GridClientMarshaller marsh=suppMarshMap.get(hs.protocolId());
-      if (marsh == null) {
-        log.error("No marshaller found with given protocol ID [protocolId=" + hs.protocolId() + ']');
-        ses.send(new GridClientHandshakeResponseWrapper(CODE_UNKNOWN_PROTO_ID)).listenAsync(new CI1<GridNioFuture<?>>(){
-          @Override public void apply(          GridNioFuture<?> fut){
-            ses.close();
-          }
-        }
-);
-        return;
+      short ver=hs.version();
+      if (!SUPP_VERS.contains(ver)) {
+        U.error(log,"Client protocol version is not supported [ses=" + ses + ", ver="+ ver+ ", supported="+ SUPP_VERS+ ']');
+        ses.close();
       }
-      ses.addMeta(GridNioSessionMetaKey.MARSHALLER.ordinal(),marsh);
-      ses.send(new GridClientHandshakeResponseWrapper(CODE_OK));
+ else {
+        byte marshId=hs.marshallerId();
+        if (marshMapLatch.getCount() > 0)         U.awaitQuiet(marshMapLatch);
+        GridClientMarshaller marsh=marshMap.get(marshId);
+        if (marsh == null) {
+          U.error(log,"Client marshaller ID is invalid. Note that .NET and C++ clients " + "are supported only in enterprise edition [ses=" + ses + ", marshId="+ marshId+ ']');
+          ses.close();
+        }
+ else {
+          ses.addMeta(MARSHALLER.ordinal(),marsh);
+          ses.send(new GridClientHandshakeResponseWrapper(CODE_OK));
+        }
+      }
     }
  else {
       final GridRestRequest req=createRestRequest(ses,msg);
@@ -45,11 +48,11 @@
           wrapper.requestId(msg.requestId());
           wrapper.clientId(msg.clientId());
           try {
-            byte[] bytes=proto.marshaller(ses).marshal(res);
+            ByteBuffer bytes=proto.marshaller(ses).marshal(res,0);
             wrapper.message(bytes);
-            wrapper.messageSize(bytes.length + 40);
+            wrapper.messageSize(bytes.remaining() + 40);
           }
- catch (          IOException|GridException e) {
+ catch (          IOException e) {
             U.error(log,"Failed to marshal response: " + res,e);
             ses.close();
             return;

@@ -14,20 +14,16 @@
   }
  else   if (msg instanceof GridClientResponse) {
     GridClientMarshaller marsh=marshaller(ses);
-    byte[] msgBytes=marsh.marshal(msg);
-    ByteBuffer res=ByteBuffer.allocate(msgBytes.length + 45);
     GridClientMessage clientMsg=(GridClientMessage)msg;
-    res.put(GRIDGAIN_REQ_FLAG);
-    res.put(U.intToBytes(msgBytes.length + 40));
-    res.putLong(clientMsg.requestId());
-    res.put(U.uuidToBytes(clientMsg.clientId()));
-    res.put(U.uuidToBytes(clientMsg.destinationId()));
-    res.put(msgBytes);
-    res.flip();
+    ByteBuffer res=marsh.marshal(msg,45);
+    ByteBuffer slice=res.slice();
+    slice.put(GRIDGAIN_REQ_FLAG);
+    slice.putInt(res.remaining() - 5);
+    slice.putLong(clientMsg.requestId());
+    slice.put(U.uuidToBytes(clientMsg.clientId()));
+    slice.put(U.uuidToBytes(clientMsg.destinationId()));
     return res;
   }
- else   if (msg instanceof GridClientPingPacket || msg instanceof GridClientHandshakeResponse) {
-    return super.encode(ses,msg);
-  }
+ else   if (msg instanceof GridClientPingPacket || msg instanceof GridClientHandshakeResponse)   return super.encode(ses,msg);
  else   throw new GridException("Unsupported message: " + msg);
 }

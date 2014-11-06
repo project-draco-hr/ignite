@@ -1,19 +1,27 @@
 {
   GridCacheSetHeaderKey key=new GridCacheSetHeaderKey(name);
   GridCache cache=cctx.cache();
-  GridCacheSetHeader hdr=(GridCacheSetHeader)cache.remove(key);
+  GridCacheSetHeader hdr=retryRemove(cache,key);
   if (hdr == null)   return false;
   if (!cctx.isLocal()) {
-    cctx.topology().readLock();
-    try {
-      GridDhtTopologyFuture fut=cctx.topologyVersionFuture();
-      long topVer=fut.topologySnapshot().topologyVersion();
+    while (true) {
+      long topVer=cctx.topologyVersionFuture().get();
       Collection<GridNode> nodes=CU.affinityNodes(cctx,topVer);
-      cctx.closures().callAsyncNoFailover(BROADCAST,new BlockSetCallable(cctx.name(),hdr.id()),nodes,true).get();
-      cctx.closures().callAsyncNoFailover(BROADCAST,new RemoveSetDataCallable(cctx.name(),hdr.id(),topVer),nodes,true).get();
-    }
-  finally {
-      cctx.topology().readUnlock();
+      try {
+        cctx.closures().callAsyncNoFailover(BROADCAST,new BlockSetCallable(cctx.name(),hdr.id()),nodes,true).get();
+      }
+ catch (      GridTopologyException e) {
+        if (log.isDebugEnabled())         log.debug("BlockSet job failed, will retry: " + e);
+        continue;
+      }
+      try {
+        cctx.closures().callAsyncNoFailover(BROADCAST,new RemoveSetDataCallable(cctx.name(),hdr.id(),topVer),nodes,true).get();
+      }
+ catch (      GridTopologyException e) {
+        if (log.isDebugEnabled())         log.debug("RemoveSetData job failed, will retry: " + e);
+        continue;
+      }
+      if (cctx.topologyVersionFuture().get() == topVer)       break;
     }
   }
  else {

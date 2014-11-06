@@ -1,0 +1,29 @@
+{
+  try {
+    locHost=U.getLocalHost();
+  }
+ catch (  IOException e) {
+    throw new GridException("Failed to initialize local address.",e);
+  }
+  try {
+    shmemSrv=resetShmemServer();
+  }
+ catch (  GridException e) {
+    U.warn(log,"Failed to start shared memory communication server.",e);
+  }
+  try {
+    nioSrvr=resetNioServer();
+  }
+ catch (  GridException e) {
+    throw new GridException("Failed to initialize TCP server: " + locHost,e);
+  }
+  locProcDesc.address(locHost.getHostAddress());
+  locProcDesc.sharedMemoryPort(boundTcpShmemPort);
+  locProcDesc.tcpPort(boundTcpPort);
+  locIdMsg=new ProcessHandshakeMessage(locProcDesc);
+  if (shmemSrv != null) {
+    shmemAcceptWorker=new ShmemAcceptWorker(shmemSrv);
+    new GridThread(shmemAcceptWorker).start();
+  }
+  nioSrvr.start();
+}

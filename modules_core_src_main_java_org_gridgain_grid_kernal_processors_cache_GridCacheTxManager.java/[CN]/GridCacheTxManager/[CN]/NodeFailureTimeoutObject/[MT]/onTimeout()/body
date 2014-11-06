@@ -1,29 +1,39 @@
 {
-  if (log.isDebugEnabled())   log.debug("Processing node failed event [locNodeId=" + cctx.localNodeId() + ", failedNodeId="+ evtNodeId+ ']');
-  for (  GridCacheTxEx<K,V> tx : idMap.values()) {
-    if ((tx.near() && !tx.local()) || (cctx.isStoreEnabled() && tx.masterNodeIds().contains(evtNodeId))) {
-      salvageTx(tx,false,RECOVERY_FINISH);
-    }
- else     if (tx.optimistic()) {
-      if (tx.originatingNodeId().equals(evtNodeId)) {
-        if (tx.state() == PREPARED)         commitIfPrepared(tx);
+  try {
+    cctx.kernalContext().gateway().readLock();
+  }
+ catch (  IllegalStateException ignore) {
+    if (log.isDebugEnabled())     log.debug("Failed to acquire kernal gateway (grid is stopping).");
+    return;
+  }
+  try {
+    if (log.isDebugEnabled())     log.debug("Processing node failed event [locNodeId=" + cctx.localNodeId() + ", failedNodeId="+ evtNodeId+ ']');
+    for (    GridCacheTxEx<K,V> tx : idMap.values()) {
+      if ((tx.near() && !tx.local()) || (cctx.isStoreEnabled() && tx.masterNodeIds().contains(evtNodeId))) {
+        salvageTx(tx,false,RECOVERY_FINISH);
+      }
+ else       if (tx.optimistic()) {
+        if (tx.originatingNodeId().equals(evtNodeId)) {
+          if (tx.state() == PREPARED)           commitIfPrepared(tx);
  else {
-          if (tx.setRollbackOnly())           tx.rollbackAsync();
+            if (tx.setRollbackOnly())             tx.rollbackAsync();
+          }
+        }
+      }
+ else {
+        if (tx.originatingNodeId().equals(evtNodeId)) {
+          if (tx.state() != COMMITTING && tx.state() != COMMITTED)           commitIfRemotelyCommitted(tx);
+ else {
+            if (log.isDebugEnabled())             log.debug("Skipping pessimistic transaction check (transaction is being committed) " + "[tx=" + tx + ", locNodeId="+ cctx.localNodeId()+ ']');
+          }
+        }
+ else {
+          if (log.isDebugEnabled())           log.debug("Skipping pessimistic transaction check [tx=" + tx + ", evtNodeId="+ evtNodeId+ ", locNodeId="+ cctx.localNodeId()+ ']');
         }
       }
     }
- else {
-      if (tx.originatingNodeId().equals(evtNodeId)) {
-        if (tx.state() != COMMITTING && tx.state() != COMMITTED) {
-          commitIfRemotelyCommitted(tx);
-        }
- else {
-          if (log.isDebugEnabled())           log.debug("Skipping pessimistic transaction check (transaction is being committed) " + "[tx=" + tx + ", locNodeId="+ cctx.localNodeId()+ ']');
-        }
-      }
- else {
-        if (log.isDebugEnabled())         log.debug("Skipping pessimistic transaction check [tx=" + tx + ", evtNodeId="+ evtNodeId+ ", locNodeId="+ cctx.localNodeId()+ ']');
-      }
-    }
+  }
+  finally {
+    cctx.kernalContext().gateway().readUnlock();
   }
 }

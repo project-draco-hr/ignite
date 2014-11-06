@@ -1,0 +1,16 @@
+{
+  if (includeBackups)   return null;
+  return new GridIndexingQueryFilter(){
+    @Nullable @Override public GridBiPredicate<K,V> forSpace(    final String spaceName){
+      final GridCacheAdapter<Object,Object> cache=ctx.cache().internalCache(spaceName);
+      if (cache.context().isReplicated() || cache.configuration().getBackups() == 0)       return null;
+      return new GridBiPredicate<K,V>(){
+        @Override public boolean apply(        K k,        V v){
+          return cache.context().affinity().primary(ctx.discovery().localNode(),k,-1);
+        }
+      }
+;
+    }
+  }
+;
+}

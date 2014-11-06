@@ -1,0 +1,17 @@
+{
+  if (enterBusy()) {
+    try {
+      A.notNull(path,"path");
+      if (log.isDebugEnabled())       log.debug("Get file info: " + path);
+      GridGgfsMode mode=modeRslvr.resolveMode(path);
+      if (mode == PROXY)       throw new GridException("PROXY mode cannot be used in GGFS directly: " + path);
+      GridGgfsFileInfo info=resolveFileInfo(path,mode);
+      if (info == null)       return null;
+      return new GridGgfsFileImpl(path,info,data.groupBlockSize());
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get path info because grid is stopping.");
+}

@@ -1,0 +1,17 @@
+{
+  if (enterBusy()) {
+    try {
+      A.notNull(path,"path");
+      if (log.isDebugEnabled())       log.debug("Calculating path summary: " + path);
+      GridUuid fileId=meta.fileId(path);
+      if (fileId == null)       throw new GridGgfsFileNotFoundException("Failed to get path summary (path not found): " + path);
+      GridGgfsPathSummary sum=new GridGgfsPathSummary(path);
+      summary0(fileId,sum);
+      return sum;
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get path summary because Grid is stopping.");
+}

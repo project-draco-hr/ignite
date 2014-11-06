@@ -10,22 +10,18 @@
         return EMPTY_FILE_STATUS;
       }
       FileStatus[] arr=secondaryFs.listStatus(toSecondary(f));
-      if (arr != null) {
-        for (int i=0; i < arr.length; i++)         arr[i]=toPrimary(arr[i]);
-      }
+      if (arr == null)       throw new FileNotFoundException("File " + f + " does not exist.");
+      for (int i=0; i < arr.length; i++)       arr[i]=toPrimary(arr[i]);
       if (clientLog.isLogEnabled()) {
-        String[] fileArr=null;
-        if (arr != null) {
-          fileArr=new String[arr.length];
-          for (int i=0; i < arr.length; i++)           fileArr[i]=arr[i].getPath().toString();
-        }
+        String[] fileArr=new String[arr.length];
+        for (int i=0; i < arr.length; i++)         fileArr[i]=arr[i].getPath().toString();
         clientLog.logListDirectory(path,PROXY,fileArr);
       }
       return arr;
     }
  else {
-      Collection<GridGgfsFile> list=rmtClient.listFiles(path).get();
-      if (list == null)       return null;
+      Collection<GridGgfsFile> list=rmtClient.listFiles(path);
+      if (list == null)       throw new FileNotFoundException("File " + f + " does not exist.");
       List<GridGgfsFile> files=new ArrayList<>(list);
       FileStatus[] arr=new FileStatus[files.size()];
       for (int i=0; i < arr.length; i++)       arr[i]=convert(files.get(i));
@@ -37,13 +33,7 @@
       return arr;
     }
   }
- catch (  GridGgfsFileNotFoundException ignored) {
-    return null;
-  }
-catch (  GridException e) {
-    throw new IOException("Failed to list file status for path: " + f,e);
-  }
- finally {
+  finally {
     leaveBusy();
   }
 }

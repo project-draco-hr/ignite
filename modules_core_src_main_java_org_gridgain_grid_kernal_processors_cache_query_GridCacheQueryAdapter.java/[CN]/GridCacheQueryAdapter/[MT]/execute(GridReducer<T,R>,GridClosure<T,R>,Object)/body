@@ -4,13 +4,15 @@
   if (log.isDebugEnabled())   log.debug("Executing query [query=" + this + ", nodes="+ nodes+ ']');
   if (cctx.deploymentEnabled()) {
     try {
-      cctx.deploy().registerClasses(cls,filter,rmtReducer,rmtTransform);
+      cctx.deploy().registerClasses(filter,rmtReducer,rmtTransform);
       cctx.deploy().registerClasses(args);
     }
  catch (    GridException e) {
       return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),e);
     }
   }
+  if (subjId == null)   subjId=cctx.localNodeId();
+  taskHash=cctx.kernalContext().job().currentTaskNameHash();
   GridCacheQueryBean bean=new GridCacheQueryBean(this,(GridReducer<Object,Object>)rmtReducer,(GridClosure<Object,Object>)rmtTransform,args);
   GridCacheQueryManager qryMgr=cctx.queries();
   boolean loc=nodes.size() == 1 && F.first(nodes).id().equals(cctx.localNodeId());

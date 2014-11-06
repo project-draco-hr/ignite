@@ -2,10 +2,8 @@
   if (!validateTypeDescriptor(spaceName,type))   return false;
   for (  TableDescriptor table : tables(schema(spaceName)))   if (table.type().valueClass().getClass().getName().equals(type.valueClass().getName()))   throw new GridSpiException("Failed to register type in query index because" + " class is already registered (most likely that class with the same name" + " was not properly undeployed): "+ type);
   TableDescriptor tbl=new TableDescriptor(spaceName,type);
-  Statement stmt=null;
   try {
     Connection conn=connectionForThread(null);
-    stmt=conn.createStatement();
     Schema schema=schemas.get(tbl.schema());
     if (schema == null) {
       schema=new Schema(spaceName);
@@ -18,9 +16,6 @@
  catch (  SQLException e) {
     onSqlException();
     throw new GridSpiException("Failed to register query type: " + type,e);
-  }
- finally {
-    U.close(stmt,log);
   }
   return true;
 }

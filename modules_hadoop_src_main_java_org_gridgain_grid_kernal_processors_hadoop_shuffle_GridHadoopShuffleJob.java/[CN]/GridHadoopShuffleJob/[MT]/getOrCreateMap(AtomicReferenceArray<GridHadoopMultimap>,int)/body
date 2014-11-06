@@ -1,0 +1,12 @@
+{
+  GridHadoopMultimap map=maps.get(idx);
+  if (map == null) {
+    map=get(job.info(),SHUFFLE_REDUCER_NO_SORTING,false) ? new GridHadoopConcurrentHashMultimap(job.info(),mem,get(job.info(),PARTITION_HASHMAP_SIZE,8 * 1024)) : new GridHadoopSkipList(job.info(),mem);
+    if (!maps.compareAndSet(idx,null,map)) {
+      map.close();
+      return maps.get(idx);
+    }
+    stats.onShuffleStart(idx);
+  }
+  return map;
+}

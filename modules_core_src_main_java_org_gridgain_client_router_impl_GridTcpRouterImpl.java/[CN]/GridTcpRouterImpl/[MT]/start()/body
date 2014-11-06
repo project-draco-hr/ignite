@@ -5,8 +5,20 @@
  catch (  GridClientException e) {
     throw new GridException("Failed to initialise embedded client.",e);
   }
-  final GridNioServerListener<GridClientMessage> lsnr=new GridTcpRouterNioListener(log,client);
-  parser=new GridTcpRouterNioParser(log);
+  GridNioServerListener<GridClientMessage> lsnr;
+  try {
+    Class<?> cls=Class.forName(ENT_NIO_LSNR_CLS);
+    Constructor<?> cons=cls.getDeclaredConstructor(GridLogger.class,GridRouterClientImpl.class);
+    cons.setAccessible(true);
+    lsnr=(GridNioServerListener<GridClientMessage>)cons.newInstance(log,client);
+  }
+ catch (  ClassNotFoundException ignored) {
+    lsnr=new GridTcpRouterNioListenerOsImpl(log,client);
+  }
+catch (  NoSuchMethodException|IllegalAccessException|InstantiationException|InvocationTargetException e) {
+    throw new GridException("Failed to create NIO listener.",e);
+  }
+  parser=new GridTcpRouterNioParser();
   final InetAddress hostAddr;
   try {
     hostAddr=InetAddress.getByName(cfg.getHost());
@@ -31,6 +43,7 @@
     }
  else     U.warn(log,"TCP REST router failed to start on endpoint: " + hostAddr.getHostAddress() + ":"+ port+ ". Will try next port within allowed port range.");
   }
+  if (bindPort == 0)   throw new GridException("Failed to bind TCP router server (possibly all ports in range " + "are in use) [firstPort=" + cfg.getPort() + ", lastPort="+ (cfg.getPort() + cfg.getPortRange())+ ", addr="+ hostAddr+ ']');
   try {
     ObjectName objName=U.registerMBean(ManagementFactory.getPlatformMBeanServer(),"Router","TCP Router " + id,getClass().getSimpleName(),this,GridTcpRouterMBean.class);
     if (log.isDebugEnabled())     log.debug("Registered MBean: " + objName);

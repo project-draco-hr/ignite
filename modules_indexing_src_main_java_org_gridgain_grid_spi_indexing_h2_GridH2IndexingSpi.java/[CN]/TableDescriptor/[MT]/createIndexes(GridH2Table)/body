@@ -1,7 +1,7 @@
 {
   this.tbl=tbl;
   ArrayList<Index> idxs=new ArrayList<>();
-  idxs.add(new GridH2TreeIndex("_key_PK",tbl,true,KEY_COL,VAL_COL,offheap,tbl.indexColumn(0,ASCENDING)));
+  idxs.add(new GridH2TreeIndex("_key_PK",tbl,true,KEY_COL,VAL_COL,tbl.indexColumn(0,ASCENDING)));
   if (type().valueClass() == String.class) {
     try {
       luceneIdx=new GridLuceneIndex(marshaller,offheap,spaceName,type,true);
@@ -24,11 +24,13 @@
  else {
       IndexColumn[] cols=new IndexColumn[idx.fields().size()];
       int i=0;
+      boolean escapeAll=isEscapeAll(spaceName);
       for (      String field : idx.fields()) {
-        Column col=tbl.getColumn(field.toUpperCase());
+        String fieldName=escapeAll ? field : escapeName(field,escapeAll).toUpperCase();
+        Column col=tbl.getColumn(fieldName);
         cols[i++]=tbl.indexColumn(col.getColumnId(),idx.descending(field) ? DESCENDING : ASCENDING);
       }
-      if (idx.type() == SORTED)       idxs.add(new GridH2TreeIndex(name,tbl,false,KEY_COL,VAL_COL,offheap,cols));
+      if (idx.type() == SORTED)       idxs.add(new GridH2TreeIndex(name,tbl,false,KEY_COL,VAL_COL,cols));
  else       if (idx.type() == GEO_SPATIAL)       idxs.add(new GridH2SpatialIndex(tbl,name,cols,KEY_COL,VAL_COL));
  else       throw new IllegalStateException();
     }

@@ -1,0 +1,16 @@
+{
+  Grid g=randomGrid();
+  int newNodes=2;
+  CountDownLatch latch=new CountDownLatch(newNodes);
+  DummyService.exeLatch(name,latch);
+  startExtraNodes(newNodes);
+  try {
+    latch.await();
+    assertEquals(name,newNodes,DummyService.started(name));
+    assertEquals(name,0,DummyService.cancelled(name));
+    checkCount(name,g.services().deployedServices(),nodeCount() + newNodes);
+  }
+  finally {
+    stopExtraNodes(newNodes);
+  }
+}

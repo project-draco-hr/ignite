@@ -1,0 +1,22 @@
+{
+  if (ctx.isDaemon())   return;
+  GridHadoopConfiguration cfg=ctx.config().getHadoopConfiguration();
+  if (cfg == null)   cfg=new GridHadoopConfiguration();
+ else   cfg=new GridHadoopConfiguration(cfg);
+  initializeDefaults(cfg);
+  validate(cfg);
+  if (hadoopHome() != null)   U.quietAndInfo(log,"HADOOP_HOME is set to " + hadoopHome());
+  boolean ok=false;
+  try {
+    hadoopUrls();
+    ok=true;
+  }
+ catch (  GridException e) {
+    U.quietAndWarn(log,e.getMessage());
+  }
+  if (ok) {
+    hctx=new GridHadoopContext(ctx,cfg,new GridHadoopJobTracker(),cfg.isExternalExecution() ? new GridHadoopExternalTaskExecutor() : new GridHadoopEmbeddedTaskExecutor(),new GridHadoopShuffle());
+    for (    GridHadoopComponent c : hctx.components())     c.start(hctx);
+    hadoop=new GridHadoopImpl(this);
+  }
+}

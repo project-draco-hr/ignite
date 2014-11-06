@@ -1,0 +1,111 @@
+{
+  String gridgainHome=U.getGridGainHome();
+  println("GRIDGAIN_HOME is set to '" + gridgainHome + "'.");
+  checkGridGainHome(gridgainHome);
+  String homeVar="HADOOP_HOME";
+  String hadoopHome=System.getenv(homeVar);
+  if (F.isEmpty(hadoopHome)) {
+    homeVar="HADOOP_PREFIX";
+    hadoopHome=System.getenv(homeVar);
+  }
+  if (F.isEmpty(hadoopHome))   exit("Neither HADOOP_HOME nor HADOOP_PREFIX environment variable is set. Please set one of them to a " + "valid Hadoop installation directory and run setup tool again.",null);
+  hadoopHome=hadoopHome.replaceAll("\"","");
+  println(homeVar + " is set to '" + hadoopHome+ "'.");
+  String hiveHome=System.getenv("HIVE_HOME");
+  if (!F.isEmpty(hiveHome)) {
+    hiveHome=hiveHome.replaceAll("\"","");
+    println("HIVE_HOME is set to '" + hiveHome + "'.");
+  }
+  File hadoopDir=new File(hadoopHome);
+  if (!hadoopDir.exists())   exit("Hadoop installation folder does not exist.",null);
+  if (!hadoopDir.isDirectory())   exit("HADOOP_HOME must point to a directory.",null);
+  if (!hadoopDir.canRead())   exit("Hadoop installation folder can not be read. Please check permissions.",null);
+  File hadoopCommonDir;
+  String hadoopCommonHome=System.getenv("HADOOP_COMMON_HOME");
+  if (F.isEmpty(hadoopCommonHome)) {
+    hadoopCommonDir=new File(hadoopDir,"share/hadoop/common");
+    println("HADOOP_COMMON_HOME is not set, will use '" + hadoopCommonDir.getPath() + "'.");
+  }
+ else {
+    println("HADOOP_COMMON_HOME is set to '" + hadoopCommonHome + "'.");
+    hadoopCommonDir=new File(hadoopCommonHome);
+  }
+  if (!hadoopCommonDir.canRead())   exit("Failed to read Hadoop common dir in '" + hadoopCommonHome + "'.",null);
+  File hadoopCommonLibDir=new File(hadoopCommonDir,"lib");
+  if (!hadoopCommonLibDir.canRead())   exit("Failed to read Hadoop 'lib' folder in '" + hadoopCommonLibDir.getPath() + "'.",null);
+  if (U.isWindows()) {
+    checkJavaPathSpaces();
+    File hadoopBinDir=new File(hadoopDir,"bin");
+    if (!hadoopBinDir.canRead())     exit("Failed to read subdirectory 'bin' in HADOOP_HOME.",null);
+    File winutilsFile=new File(hadoopBinDir,WINUTILS_EXE);
+    if (!winutilsFile.exists()) {
+      if (ask("File '" + WINUTILS_EXE + "' does not exist. "+ "It may be replaced by a stub. Create it?")) {
+        println("Creating file stub '" + winutilsFile.getAbsolutePath() + "'.");
+        boolean ok=false;
+        try {
+          ok=winutilsFile.createNewFile();
+        }
+ catch (        IOException ignore) {
+        }
+        if (!ok)         exit("Failed to create '" + WINUTILS_EXE + "' file. Please check permissions.",null);
+      }
+ else       println("Ok. But Hadoop client probably will not work on Windows this way...");
+    }
+    processCmdFiles(hadoopDir,"bin","sbin","libexec");
+  }
+  File gridgainLibs=new File(new File(gridgainHome),"libs");
+  if (!gridgainLibs.exists())   exit("GridGain 'libs' folder is not found.",null);
+  Collection<File> jarFiles=new ArrayList<>();
+  addJarsInFolder(jarFiles,gridgainLibs);
+  addJarsInFolder(jarFiles,new File(gridgainLibs,"gridgain-hadoop"));
+  boolean jarsLinksCorrect=true;
+  for (  File file : jarFiles) {
+    File link=new File(hadoopCommonLibDir,file.getName());
+    jarsLinksCorrect&=isJarLinkCorrect(link,file);
+    if (!jarsLinksCorrect)     break;
+  }
+  if (!jarsLinksCorrect) {
+    if (ask("GridGain JAR files are not found in Hadoop 'lib' directory. " + "Create appropriate symbolic links?")) {
+      File[] oldGridGainJarFiles=hadoopCommonLibDir.listFiles(GRIDGAIN_JARS);
+      if (oldGridGainJarFiles.length > 0 && ask("The Hadoop 'lib' directory contains JARs from other GridGain " + "installation. They must be deleted to continue. Continue?")) {
+        for (        File file : oldGridGainJarFiles) {
+          println("Deleting file '" + file.getAbsolutePath() + "'.");
+          if (!file.delete())           exit("Failed to delete file '" + file.getPath() + "'.",null);
+        }
+      }
+      for (      File file : jarFiles) {
+        File targetFile=new File(hadoopCommonLibDir,file.getName());
+        try {
+          println("Creating symbolic link '" + targetFile.getAbsolutePath() + "'.");
+          Files.createSymbolicLink(targetFile.toPath(),file.toPath());
+        }
+ catch (        IOException e) {
+          if (U.isWindows()) {
+            warn("Ability to create symbolic links is required!");
+            warn("On Windows platform you have to grant permission 'Create symbolic links'");
+            warn("to your user or run the Accelerator as Administrator.");
+          }
+          exit("Creating symbolic link failed! Check permissions.",e);
+        }
+      }
+    }
+ else     println("Ok. But Hadoop client will not be able to talk to GridGain cluster without those JARs in classpath...");
+  }
+  File hadoopEtc=new File(hadoopDir,"etc" + File.separator + "hadoop");
+  File gridgainDocs=new File(gridgainHome,"docs");
+  if (!gridgainDocs.canRead())   exit("Failed to read GridGain 'docs' folder at '" + gridgainDocs.getAbsolutePath() + "'.",null);
+  if (hadoopEtc.canWrite()) {
+    if (ask("Replace 'core-site.xml' and 'mapred-site.xml' files with preconfigured templates " + "(existing files will be backed up)?")) {
+      replaceWithBackup(new File(gridgainDocs,"core-site.gridgain.xml"),new File(hadoopEtc,"core-site.xml"));
+      replaceWithBackup(new File(gridgainDocs,"mapred-site.gridgain.xml"),new File(hadoopEtc,"mapred-site.xml"));
+    }
+ else     println("Ok. You can configure them later, the templates are available at GridGain's 'docs' directory...");
+  }
+  if (!F.isEmpty(hiveHome)) {
+    File hiveConfDir=new File(hiveHome + File.separator + "conf");
+    if (!hiveConfDir.canWrite())     warn("Can not write to '" + hiveConfDir.getAbsolutePath() + "'. To run Hive queries you have to "+ "configure 'hive-site.xml' manually. The template is available at GridGain's 'docs' directory.");
+ else     if (ask("Replace 'hive-site.xml' with preconfigured template (existing file will be backed up)?"))     replaceWithBackup(new File(gridgainDocs,"hive-site.gridgain.xml"),new File(hiveConfDir,"hive-site.xml"));
+ else     println("Ok. You can configure it later, the template is available at GridGain's 'docs' directory...");
+  }
+  println("Apache Hadoop setup is complete.");
+}

@@ -11,7 +11,11 @@
           GridNearCacheEntry<K,V> entry=cache().entryExx(info.key(),topVer);
           GridCacheVersion saved=savedVers.get(info.key());
           entry.loadedValue(tx,nodeId,info.value(),info.valueBytes(),atomic ? info.version() : ver,info.version(),saved,info.ttl(),info.expireTime(),true,topVer,subjId);
+          cctx.evicts().touch(entry,topVer);
         }
+        V val=info.value();
+        if (cctx.portableEnabled() && deserializePortable && val instanceof GridPortableObject)         val=((GridPortableObject)val).deserialize();
+        map.put(info.key(),val);
       }
  catch (      GridCacheEntryRemovedException ignore) {
         if (log.isDebugEnabled())         log.debug("Got removed entry while processing get response (will not retry).");
@@ -20,7 +24,6 @@ catch (      GridException e) {
         onDone(e);
         return Collections.emptyMap();
       }
-      map.put(info.key(),info.value());
     }
   }
   return map;

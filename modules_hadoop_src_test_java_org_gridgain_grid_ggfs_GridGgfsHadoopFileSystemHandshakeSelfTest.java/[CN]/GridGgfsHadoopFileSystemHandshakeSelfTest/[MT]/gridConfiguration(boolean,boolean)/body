@@ -1,0 +1,38 @@
+{
+  GridConfiguration cfg=super.getConfiguration(dfltGridName ? null : GRID_NAME);
+  cfg.setLocalHost("127.0.0.1");
+  cfg.setRestEnabled(false);
+  GridTcpDiscoverySpi discoSpi=new GridTcpDiscoverySpi();
+  discoSpi.setIpFinder(IP_FINDER);
+  cfg.setDiscoverySpi(discoSpi);
+  GridTcpCommunicationSpi commSpi=new GridTcpCommunicationSpi();
+  commSpi.setSharedMemoryPort(-1);
+  cfg.setCommunicationSpi(commSpi);
+  GridCacheConfiguration metaCacheCfg=defaultCacheConfiguration();
+  metaCacheCfg.setName("replicated");
+  metaCacheCfg.setCacheMode(REPLICATED);
+  metaCacheCfg.setWriteSynchronizationMode(FULL_SYNC);
+  metaCacheCfg.setQueryIndexEnabled(false);
+  metaCacheCfg.setAtomicityMode(TRANSACTIONAL);
+  GridCacheConfiguration dataCacheCfg=defaultCacheConfiguration();
+  dataCacheCfg.setName("partitioned");
+  dataCacheCfg.setCacheMode(PARTITIONED);
+  dataCacheCfg.setDistributionMode(PARTITIONED_ONLY);
+  dataCacheCfg.setWriteSynchronizationMode(FULL_SYNC);
+  dataCacheCfg.setAffinityMapper(new GridGgfsGroupDataBlocksKeyMapper(128));
+  dataCacheCfg.setBackups(0);
+  dataCacheCfg.setQueryIndexEnabled(false);
+  dataCacheCfg.setAtomicityMode(TRANSACTIONAL);
+  cfg.setCacheConfiguration(metaCacheCfg,dataCacheCfg);
+  GridGgfsConfiguration ggfsCfg=new GridGgfsConfiguration();
+  ggfsCfg.setDataCacheName("partitioned");
+  ggfsCfg.setMetaCacheName("replicated");
+  ggfsCfg.setName(dfltGgfsName ? null : GGFS_NAME);
+  ggfsCfg.setPrefetchBlocks(1);
+  ggfsCfg.setDefaultMode(PRIMARY);
+  ggfsCfg.setIpcEndpointConfiguration(GridGgfsTestUtils.jsonToMap("{type:'tcp', port:" + DFLT_IPC_PORT + "}"));
+  ggfsCfg.setManagementPort(-1);
+  ggfsCfg.setBlockSize(512 * 1024);
+  cfg.setGgfsConfiguration(ggfsCfg);
+  return cfg;
+}

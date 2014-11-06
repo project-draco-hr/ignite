@@ -1,13 +1,15 @@
 {
   WindowHolder tup=ref.get();
   GridConcurrentSkipListSet<Holder<E>> evtsQueue=tup.collection();
+  boolean sizeCheck=maxSize != 0;
   int overflow=tup.size().get() - maxSize;
   long timeBound=U.currentTimeMillis() - timeInterval;
   int idx=0;
   int cnt=0;
   for (  Holder holder : evtsQueue) {
-    if (idx < overflow || holder.ts < timeBound)     cnt++;
- else     if (idx >= overflow && holder.ts >= timeBound)     break;
+    if ((idx < overflow && sizeCheck) || holder.ts < timeBound)     cnt++;
+ else     if ((idx >= overflow && sizeCheck) && holder.ts >= timeBound)     break;
+ else     if (!sizeCheck && holder.ts >= timeBound)     break;
     idx++;
   }
   return cnt;

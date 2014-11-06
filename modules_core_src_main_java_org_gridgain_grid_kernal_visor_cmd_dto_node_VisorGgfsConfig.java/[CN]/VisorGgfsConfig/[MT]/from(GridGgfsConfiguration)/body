@@ -8,8 +8,12 @@
   cfg.streamBufferSize(ggfs.getStreamBufferSize());
   cfg.perNodeBatchSize(ggfs.getPerNodeBatchSize());
   cfg.perNodeParallelBatchCount(ggfs.getPerNodeParallelBatchCount());
-  cfg.secondaryHadoopFileSystemUri(ggfs.getSecondaryHadoopFileSystemUri());
-  cfg.secondaryHadoopFileSystemConfigPath(ggfs.getSecondaryHadoopFileSystemConfigPath());
+  GridGgfsFileSystem secFs=ggfs.getSecondaryFileSystem();
+  if (secFs != null) {
+    Map<String,String> props=secFs.properties();
+    cfg.secondaryHadoopFileSystemUri(props.get(SECONDARY_FS_URI));
+    cfg.secondaryHadoopFileSystemConfigPath(props.get(SECONDARY_FS_CONFIG_PATH));
+  }
   cfg.defaultMode(ggfs.getDefaultMode());
   cfg.pathModes(ggfs.getPathModes());
   cfg.dualModePutExecutorService(compactClass(ggfs.getDualModePutExecutorService()));
@@ -21,7 +25,8 @@
   cfg.fragmentizerEnabled(ggfs.isFragmentizerEnabled());
   cfg.fragmentizerThrottlingBlockLength(ggfs.getFragmentizerThrottlingBlockLength());
   cfg.fragmentizerThrottlingDelay(ggfs.getFragmentizerThrottlingDelay());
-  cfg.ipcEndpointConfiguration(ggfs.getIpcEndpointConfiguration());
+  Map<String,String> endpointCfg=ggfs.getIpcEndpointConfiguration();
+  cfg.ipcEndpointConfiguration(endpointCfg != null ? endpointCfg.toString() : null);
   cfg.ipcEndpointEnabled(ggfs.isIpcEndpointEnabled());
   cfg.maxSpace(ggfs.getMaxSpaceSize());
   cfg.managementPort(ggfs.getManagementPort());

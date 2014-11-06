@@ -5,7 +5,7 @@
   }
  catch (  SQLException e) {
     if (e.getErrorCode() == ErrorCode.TABLE_OR_VIEW_NOT_FOUND_1)     return null;
-    throw new GridSpiException("Failed to parse query: " + sql,e);
+    throw new GridSpiException("Failed to parse SQL query: " + sql,e);
   }
 switch (commandType(stmt)) {
 case CommandInterface.SELECT:
@@ -17,5 +17,10 @@ default :
   throw new GridSpiException("Failed to execute non-query SQL statement: " + sql);
 }
 bindParameters(stmt,params);
-return new T2<>(stmt,stmt.executeQuery());
+try {
+return stmt.executeQuery();
+}
+ catch (SQLException e) {
+throw new GridSpiException("Failed to execute SQL query.",e);
+}
 }

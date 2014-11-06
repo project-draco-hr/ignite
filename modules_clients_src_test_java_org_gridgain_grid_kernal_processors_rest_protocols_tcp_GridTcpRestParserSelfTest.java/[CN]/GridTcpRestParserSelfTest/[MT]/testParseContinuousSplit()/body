@@ -1,6 +1,6 @@
 {
   ByteBuffer tmp=ByteBuffer.allocate(10 * 1024);
-  GridClientCacheRequest<String,Integer> req=new GridClientCacheRequest<>(CAS);
+  GridClientCacheRequest req=new GridClientCacheRequest(CAS);
   req.key("key");
   req.value(1);
   req.value2(2);
@@ -11,7 +11,8 @@
     ByteBuffer[] split=split(tmp,splitPos);
     tmp.flip();
     GridNioSession ses=new GridMockNioSession();
-    GridTcpRestParser parser=new GridTcpRestParser(log);
+    ses.addMeta(MARSHALLER.ordinal(),new GridClientOptimizedMarshaller());
+    GridTcpRestParser parser=new GridTcpRestParser();
     Collection<GridClientCacheRequest> lst=new ArrayList<>(5);
     for (    ByteBuffer buf : split) {
       GridClientCacheRequest r;

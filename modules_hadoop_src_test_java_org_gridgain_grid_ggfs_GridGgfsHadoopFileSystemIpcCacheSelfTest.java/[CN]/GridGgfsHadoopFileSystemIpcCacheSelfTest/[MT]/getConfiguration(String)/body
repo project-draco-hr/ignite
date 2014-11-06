@@ -1,0 +1,21 @@
+{
+  GridConfiguration cfg=super.getConfiguration(gridName);
+  GridTcpDiscoverySpi discoSpi=new GridTcpDiscoverySpi();
+  discoSpi.setIpFinder(IP_FINDER);
+  cfg.setDiscoverySpi(discoSpi);
+  GridGgfsConfiguration ggfsCfg=new GridGgfsConfiguration();
+  ggfsCfg.setDataCacheName("partitioned");
+  ggfsCfg.setMetaCacheName("replicated");
+  ggfsCfg.setName("ggfs");
+  ggfsCfg.setManagementPort(GridGgfsConfiguration.DFLT_MGMT_PORT + cnt);
+  ggfsCfg.setIpcEndpointConfiguration(GridGgfsTestUtils.jsonToMap("{type:'shmem', port:" + (GridIpcSharedMemoryServerEndpoint.DFLT_IPC_PORT + cnt) + "}"));
+  ggfsCfg.setBlockSize(512 * 1024);
+  cfg.setGgfsConfiguration(ggfsCfg);
+  cfg.setCacheConfiguration(cacheConfiguration());
+  cfg.setIncludeEventTypes(EVT_TASK_FAILED,EVT_TASK_FINISHED,EVT_JOB_MAPPED);
+  GridTcpCommunicationSpi commSpi=new GridTcpCommunicationSpi();
+  commSpi.setSharedMemoryPort(-1);
+  cfg.setCommunicationSpi(commSpi);
+  cnt++;
+  return cfg;
+}

@@ -1,13 +1,15 @@
 {
   GridConfiguration cfg=loadConfiguration("modules/core/src/test/config/spring-multicache.xml");
   cfg.setGridName(gridName);
-  cfg.setRestEnabled(false);
-  for (  GridCacheConfiguration cCfg : cfg.getCacheConfiguration()) {
-    if (cCfg.getCacheMode() == GridCacheMode.PARTITIONED) {
-      cCfg.setAffinity(new GridCacheConsistentHashAffinityFunction(2048,null));
-      cCfg.setBackups(1);
+  if (cacheEnabled) {
+    for (    GridCacheConfiguration cCfg : cfg.getCacheConfiguration()) {
+      if (cCfg.getCacheMode() == GridCacheMode.PARTITIONED) {
+        cCfg.setAffinity(new GridCacheConsistentHashAffinityFunction(2048,null));
+        cCfg.setBackups(1);
+      }
     }
   }
+ else   cfg.setCacheConfiguration();
   ((GridTcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(IP_FINDER);
   return cfg;
 }

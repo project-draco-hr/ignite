@@ -1,15 +1,7 @@
 {
-  Connection conn=connectionForThread(null);
   TableDescriptor tbl=tableDescriptor(spaceName,type);
   if (tbl == null)   return -1;
-  try {
-    ResultSet rs=executeSqlQueryWithTimer(conn,"SELECT COUNT(*) FROM " + tbl.fullTableName(),null).get2();
-    rs.next();
-    return rs.getInt(1);
-  }
- catch (  SQLException e) {
-    U.rollbackConnection(conn,log);
-    onSqlException();
-    throw new GridSpiException("Failed to get table size: " + tbl.fullTableName(),e);
-  }
+  GridSpiCloseableIterator<List<GridIndexingEntity<?>>> iter=queryFields(spaceName,"SELECT COUNT(*) FROM " + tbl.fullTableName(),null,null).iterator();
+  if (!iter.hasNext())   throw new IllegalStateException();
+  return ((GridIndexingEntityAdapter<Number>)iter.next().get(0)).value().longValue();
 }

@@ -23,17 +23,13 @@
     int errCnt=0;
     while (true) {
       try {
-        if (!isCheckpointTableExists(conn)) {
-          createCheckpointTable(conn);
-        }
+        if (!isCheckpointTableExists(conn))         createCheckpointTable(conn);
         conn.commit();
         break;
       }
  catch (      SQLException e) {
         U.rollbackConnection(conn,log);
-        if (++errCnt >= retryNum) {
-          throw new GridSpiException("Failed to create checkpoint table: " + tblName,e);
-        }
+        if (++errCnt >= retryNum)         throw new GridSpiException("Failed to create checkpoint table: " + tblName,e);
         if (log.isDebugEnabled()) {
           log.debug("Failed to create checkpoint table as it may already exist (will try again): " + tblName);
         }
@@ -46,7 +42,5 @@
  finally {
     U.close(conn,log);
   }
-  if (log.isDebugEnabled()) {
-    log.debug(startInfo());
-  }
+  if (log.isDebugEnabled())   log.debug(startInfo());
 }
