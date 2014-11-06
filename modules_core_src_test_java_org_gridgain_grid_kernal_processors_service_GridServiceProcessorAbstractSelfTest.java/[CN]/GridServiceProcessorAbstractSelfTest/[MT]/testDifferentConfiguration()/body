@@ -1,0 +1,15 @@
+{
+  String name="dupService";
+  GridFuture<?> fut1=randomGrid().services().deployClusterSingleton(name,new DummyService());
+  GridFuture<?> fut2=randomGrid().services().deployNodeSingleton(name,new DummyService());
+  info("Deployed service: " + name);
+  fut1.get();
+  info("Finished waiting for service future: " + name);
+  try {
+    fut2.get();
+    fail("Failed to receive mismatching configuration exception.");
+  }
+ catch (  GridException e) {
+    info("Received mismatching configuration exception: " + e.getMessage());
+  }
+}
