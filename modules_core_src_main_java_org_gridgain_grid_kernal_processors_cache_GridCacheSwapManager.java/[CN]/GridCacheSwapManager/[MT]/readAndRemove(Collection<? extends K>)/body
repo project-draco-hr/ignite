@@ -9,7 +9,7 @@
     while (iter.hasNext()) {
       K key=iter.next();
       int part=cctx.affinity().partition(key);
-      byte[] keyBytes=CU.marshal(cctx,key);
+      byte[] keyBytes=CU.marshal(cctx.shared(),key);
       byte[] entryBytes=offheap.remove(spaceName,part,key,keyBytes);
       if (entryBytes != null) {
         GridCacheSwapEntry<V> entry=swapEntry(unmarshalSwapEntry(entryBytes));
@@ -29,7 +29,7 @@
   Collection<GridSwapKey> converted=new ArrayList<>(F.viewReadOnly(keysList,new C1<K,GridSwapKey>(){
     @Override public GridSwapKey apply(    K key){
       try {
-        return new GridSwapKey(key,cctx.affinity().partition(key),CU.marshal(cctx,key));
+        return new GridSwapKey(key,cctx.affinity().partition(key),CU.marshal(cctx.shared(),key));
       }
  catch (      GridException e) {
         throw new GridRuntimeException(e);
