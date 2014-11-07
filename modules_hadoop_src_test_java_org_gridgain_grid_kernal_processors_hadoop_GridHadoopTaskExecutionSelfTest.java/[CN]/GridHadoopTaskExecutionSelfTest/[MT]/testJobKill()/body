@@ -4,11 +4,20 @@
   GridHadoopJobId jobId=new GridHadoopJobId(UUID.randomUUID(),1);
   boolean killRes=hadoop.kill(jobId);
   assertFalse(killRes);
-  final GridFuture<?> fut=hadoop.submit(jobId,new GridHadoopDefaultJobInfo(cfg));
+  final GridFuture<?> fut=hadoop.submit(jobId,createJobInfo(cfg));
+  if (!GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return splitsCount.get() > 0;
+    }
+  }
+,20000)) {
+    U.dumpThreads(log);
+    assertTrue(false);
+  }
   if (!GridTestUtils.waitForCondition(new GridAbsPredicate(){
     @Override public boolean apply(){
       X.println("___ executed tasks: " + executedTasks.get());
-      return executedTasks.get() == 16;
+      return executedTasks.get() == splitsCount.get();
     }
   }
 ,20000)) {

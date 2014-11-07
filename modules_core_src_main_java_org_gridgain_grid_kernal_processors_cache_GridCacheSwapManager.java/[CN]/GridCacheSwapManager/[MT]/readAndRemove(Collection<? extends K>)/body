@@ -10,16 +10,15 @@
       K key=iter.next();
       int part=cctx.affinity().partition(key);
       byte[] keyBytes=CU.marshal(cctx,key);
-      int hash=U.hash(key);
       byte[] entryBytes=offheap.remove(spaceName,part,key,keyBytes);
       if (entryBytes != null) {
-        GridCacheSwapEntry<V> entry=swapEntry((GridCacheSwapEntry<V>)unmarshal(entryBytes,cctx.deploy().localLoader()));
+        GridCacheSwapEntry<V> entry=swapEntry(unmarshalSwapEntry(entryBytes));
         if (entry == null)         continue;
         iter.remove();
-        onOffHeaped(part,key,keyBytes,entry.value(),entry.valueBytes(),entry.version(),entry.ttl(),entry.expireTime());
-        if (cctx.events().isRecordable(EVT_CACHE_OBJECT_FROM_OFFHEAP))         cctx.events().addEvent(part,key,cctx.nodeId(),(GridUuid)null,null,EVT_CACHE_OBJECT_FROM_OFFHEAP,null,false,null,true,null);
+        onOffHeaped(part,key,keyBytes,entry);
+        if (cctx.events().isRecordable(EVT_CACHE_OBJECT_FROM_OFFHEAP))         cctx.events().addEvent(part,key,cctx.nodeId(),(GridUuid)null,null,EVT_CACHE_OBJECT_FROM_OFFHEAP,null,false,null,true,null,null,null);
         if (qryMgr != null)         qryMgr.onUnswap(key,entry.value(),entry.valueBytes());
-        GridCacheBatchSwapEntry<K,V> unswapped=new GridCacheBatchSwapEntry<>(key,keyBytes,hash,part,entry.valueBytes(),entry.valueIsByteArray(),entry.version(),entry.ttl(),entry.expireTime(),entry.keyClassLoaderId(),entry.valueClassLoaderId());
+        GridCacheBatchSwapEntry<K,V> unswapped=new GridCacheBatchSwapEntry<>(key,keyBytes,part,ByteBuffer.wrap(entry.valueBytes()),entry.valueIsByteArray(),entry.version(),entry.ttl(),entry.expireTime(),entry.keyClassLoaderId(),entry.valueClassLoaderId());
         unswapped.value(entry.value());
         res.add(unswapped);
       }
@@ -42,14 +41,14 @@
     @Override public void apply(    GridSwapKey swapKey,    byte[] rmv){
       if (rmv != null) {
         try {
-          GridCacheSwapEntry<V> entry=swapEntry((GridCacheSwapEntry<V>)unmarshal(rmv,cctx.deploy().localLoader()));
+          GridCacheSwapEntry<V> entry=swapEntry(unmarshalSwapEntry(rmv));
           if (entry == null)           return;
           K key=(K)swapKey.key();
-          GridCacheBatchSwapEntry<K,V> unswapped=new GridCacheBatchSwapEntry<>(key,swapKey.keyBytes(),U.hash(key),swapKey.partition(),entry.valueBytes(),entry.valueIsByteArray(),entry.version(),entry.ttl(),entry.expireTime(),entry.keyClassLoaderId(),entry.valueClassLoaderId());
+          GridCacheBatchSwapEntry<K,V> unswapped=new GridCacheBatchSwapEntry<>(key,swapKey.keyBytes(),swapKey.partition(),ByteBuffer.wrap(entry.valueBytes()),entry.valueIsByteArray(),entry.version(),entry.ttl(),entry.expireTime(),entry.keyClassLoaderId(),entry.valueClassLoaderId());
           unswapped.value(entry.value());
           res.add(unswapped);
-          if (cctx.events().isRecordable(EVT_CACHE_OBJECT_UNSWAPPED))           cctx.events().addEvent(swapKey.partition(),key,cctx.nodeId(),(GridUuid)null,null,EVT_CACHE_OBJECT_UNSWAPPED,null,false,entry.value(),true,null);
-          onUnswapped(swapKey.partition(),key,swapKey.keyBytes(),entry.value(),entry.valueBytes(),entry.version(),entry.ttl(),entry.expireTime());
+          if (cctx.events().isRecordable(EVT_CACHE_OBJECT_UNSWAPPED))           cctx.events().addEvent(swapKey.partition(),key,cctx.nodeId(),(GridUuid)null,null,EVT_CACHE_OBJECT_UNSWAPPED,null,false,entry.value(),true,null,null,null);
+          onUnswapped(swapKey.partition(),key,swapKey.keyBytes(),entry);
           if (qryMgr != null)           qryMgr.onUnswap(key,entry.value(),entry.valueBytes());
         }
  catch (        GridException e) {

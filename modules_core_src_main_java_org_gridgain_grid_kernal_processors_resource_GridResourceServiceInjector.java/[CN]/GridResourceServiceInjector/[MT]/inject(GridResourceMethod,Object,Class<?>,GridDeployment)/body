@@ -1,0 +1,10 @@
+{
+  GridServiceResource ann=(GridServiceResource)mtd.getAnnotation();
+  Class svcItf=ann.proxyInterface();
+  Object svc;
+  if (svcItf == Void.class)   svc=grid.services().service(ann.serviceName());
+ else   svc=grid.services().serviceProxy(ann.serviceName(),svcItf,ann.proxySticky());
+  Class<?>[] types=mtd.getMethod().getParameterTypes();
+  if (types.length != 1)   throw new GridException("Setter does not have single parameter of required type [type=" + svc.getClass().getName() + ", setter="+ mtd+ ']');
+  if (svc != null)   GridResourceUtils.inject(mtd.getMethod(),target,svc);
+}

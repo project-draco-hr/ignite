@@ -1,2 +1,22 @@
 {
+  if (log.isDebugEnabled())   log.debug("Remote node left grid while sending or waiting for reply (will retry): " + this);
+  long updTopVer=ctx.discovery().topologyVersion();
+  if (updTopVer > topVer) {
+    map(keys.keySet(),F.t(node,keys),updTopVer);
+    onDone(Collections.<K,V>emptyMap());
+  }
+ else {
+    final RemapTimeoutObject timeout=new RemapTimeoutObject(ctx.config().getNetworkTimeout(),topVer,e);
+    ctx.discovery().topologyFuture(topVer + 1).listenAsync(new CI1<GridFuture<Long>>(){
+      @Override public void apply(      GridFuture<Long> longGridFuture){
+        if (timeout.finish()) {
+          ctx.timeout().removeTimeoutObject(timeout);
+          map(keys.keySet(),F.t(node,keys),cctx.affinity().affinityTopologyVersion());
+          onDone(Collections.<K,V>emptyMap());
+        }
+      }
+    }
+);
+    ctx.timeout().addTimeoutObject(timeout);
+  }
 }

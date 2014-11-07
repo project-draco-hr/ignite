@@ -1,0 +1,30 @@
+{
+  String[] tokens=ipStr.split(regexDelim);
+  if (tokens.length == 2) {
+    String addrStr=tokens[0];
+    String portStr=tokens[1];
+    if (portStr.contains("..")) {
+      try {
+        int port1=Integer.parseInt(portStr.substring(0,portStr.indexOf("..")));
+        int port2=Integer.parseInt(portStr.substring(portStr.indexOf("..") + 2,portStr.length()));
+        if (port2 < port1 || port1 == port2 || port1 <= 0 || port2 <= 0)         throw new GridSpiException(errMsg);
+        Collection<InetSocketAddress> res=new ArrayList<>(port2 - port1);
+        for (int i=port1; i <= port2; i++)         res.add(new InetSocketAddress(addrStr,i));
+        return res;
+      }
+ catch (      IllegalArgumentException e) {
+        throw new GridSpiException(errMsg,e);
+      }
+    }
+ else {
+      try {
+        int port=Integer.parseInt(portStr);
+        return Collections.singleton(new InetSocketAddress(addrStr,port));
+      }
+ catch (      IllegalArgumentException e) {
+        throw new GridSpiException(errMsg,e);
+      }
+    }
+  }
+ else   throw new GridSpiException(errMsg);
+}
