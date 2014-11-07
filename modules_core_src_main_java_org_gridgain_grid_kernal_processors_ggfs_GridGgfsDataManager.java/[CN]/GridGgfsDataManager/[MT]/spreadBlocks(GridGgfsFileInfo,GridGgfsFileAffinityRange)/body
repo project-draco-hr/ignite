@@ -10,8 +10,7 @@
         byte[] block=dataCachePrj.get(colocatedKey);
         if (block != null) {
           if (block.length != fileInfo.blockSize()) {
-            GridCacheTx tx=dataCachePrj.txStart(PESSIMISTIC,REPEATABLE_READ);
-            try {
+            try (GridCacheTx tx=dataCachePrj.txStart(PESSIMISTIC,REPEATABLE_READ)){
               Map<GridGgfsBlockKey,byte[]> vals=dataCachePrj.getAll(F.asList(colocatedKey,key));
               byte[] val=vals.get(colocatedKey);
               if (val != null) {
@@ -22,10 +21,7 @@
                 if (log.isDebugEnabled())                 log.debug("Failed to find colocated file block for spread (will ignore) " + "[fileInfo=" + fileInfo + ", range="+ range+ ", startIdx="+ startIdx+ ", endIdx="+ endIdx+ ", idx="+ idx+ ']');
               }
             }
-  finally {
-              tx.close();
-            }
-          }
+           }
  else           ldr.addData(key,block);
           bytesProcessed+=block.length;
           if (bytesProcessed >= ggfsCtx.configuration().getFragmentizerThrottlingBlockLength()) {
