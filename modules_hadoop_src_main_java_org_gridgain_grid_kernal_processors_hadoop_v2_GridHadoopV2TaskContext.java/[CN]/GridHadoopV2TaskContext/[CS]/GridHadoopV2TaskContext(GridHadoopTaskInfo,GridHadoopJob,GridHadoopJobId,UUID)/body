@@ -1,0 +1,18 @@
+{
+  super(taskInfo,job);
+  this.locNodeId=locNodeId;
+  Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+  try {
+    JobConf jobConf=new JobConf();
+    GridHadoopFileSystemsUtils.setupFileSystems(jobConf);
+    for (    Map.Entry<String,String> e : ((GridHadoopDefaultJobInfo)job.info()).properties().entrySet())     jobConf.set(e.getKey(),e.getValue());
+    jobConf.setBooleanIfUnset(PARAM_GGFS_PREFER_LOCAL_WRITES,true);
+    jobCtx=new JobContextImpl(jobConf,new JobID(jobId.globalId().toString(),jobId.localId()));
+    useNewMapper=jobConf.getUseNewMapper();
+    useNewReducer=jobConf.getUseNewReducer();
+    useNewCombiner=jobConf.getCombinerClass() == null;
+  }
+  finally {
+    Thread.currentThread().setContextClassLoader(null);
+  }
+}

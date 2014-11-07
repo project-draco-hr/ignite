@@ -1,0 +1,12 @@
+{
+  if (!ggfsCtx.configuration().isFragmentizerEnabled())   return null;
+  if (!Boolean.parseBoolean(fileInfo.properties().get(GridGgfs.PROP_PREFER_LOCAL_WRITES)))   return null;
+  int blockSize=fileInfo.blockSize();
+  long off=((fileInfo.length() + blockSize - 1) / blockSize) * blockSize;
+  long lastBlockOff=off - fileInfo.blockSize();
+  if (lastBlockOff < 0)   lastBlockOff=0;
+  GridGgfsFileMap map=fileInfo.fileMap();
+  GridUuid prevAffKey=map == null ? null : map.affinityKey(lastBlockOff,false);
+  GridUuid affKey=data.nextAffinityKey(prevAffKey);
+  return affKey == null ? null : new GridGgfsFileAffinityRange(off,off,affKey);
+}

@@ -14,13 +14,13 @@
   }
    GridHadoopFileBlock fileBlock2=new GridHadoopFileBlock(HOSTS,inFileUri,fileBlock1.length(),ggfs.info(inFile).length() - fileBlock1.length());
   GridHadoopV2Job gridJob=getHadoopJob(ggfsScheme() + inFile.toString(),ggfsScheme() + PATH_OUTPUT);
-  GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo(null,GridHadoopTaskType.MAP,gridJob.id(),0,0,fileBlock1);
+  GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo(GridHadoopTaskType.MAP,gridJob.id(),0,0,fileBlock1);
   GridHadoopTestTaskContext ctx=new GridHadoopTestTaskContext(taskInfo,gridJob);
   ctx.mockOutput().clear();
-  createAndExecuteTask(gridJob,taskInfo,ctx);
+  ctx.run();
   assertEquals("hello0,1; world0,1; world1,1; hello1,1",Joiner.on("; ").join(ctx.mockOutput()));
   ctx.mockOutput().clear();
-  taskInfo=new GridHadoopTaskInfo(null,GridHadoopTaskType.MAP,gridJob.id(),0,0,fileBlock2);
-  createAndExecuteTask(gridJob,taskInfo,ctx);
+  ctx.taskInfo(new GridHadoopTaskInfo(GridHadoopTaskType.MAP,gridJob.id(),0,0,fileBlock2));
+  ctx.run();
   assertEquals("hello2,1; world2,1; world3,1; hello3,1",Joiner.on("; ").join(ctx.mockOutput()));
 }

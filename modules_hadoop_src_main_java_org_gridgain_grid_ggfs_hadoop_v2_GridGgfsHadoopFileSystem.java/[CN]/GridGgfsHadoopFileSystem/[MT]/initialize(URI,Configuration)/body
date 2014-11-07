@@ -10,6 +10,7 @@
     if (seqReadsBeforePrefetch > 0)     seqReadsBeforePrefetchOverride=true;
     dfltReplication=(short)cfg.getInt("dfs.replication",3);
     colocateFileWrites=parameter(cfg,PARAM_GGFS_COLOCATED_WRITES,uriAuthority,false);
+    preferLocFileWrites=cfg.getBoolean(PARAM_GGFS_PREFER_LOCAL_WRITES,false);
     String logDirCfg=parameter(cfg,PARAM_GGFS_LOG_DIR,uriAuthority,DFLT_GGFS_LOG_DIR);
     File logDirFile=U.resolveGridGainPath(logDirCfg);
     String logDir=logDirFile != null ? logDirFile.getAbsolutePath() : null;
@@ -33,13 +34,17 @@
       }
     }
     if (initSecondary) {
-      if (paths.secondaryConfigurationPath() == null)       throw new IOException("Failed to connect to the secondary file system because configuration " + "path is not provided.");
-      if (paths.secondaryUri() == null)       throw new IOException("Failed to connect to the secondary file system because URI is not " + "provided.");
-      String secondaryConfPath=paths.secondaryConfigurationPath();
+      Map<String,String> props=paths.properties();
+      String secUri=props.get(GridGgfsHadoopFileSystemWrapper.SECONDARY_FS_URI);
+      String secConfPath=props.get(GridGgfsHadoopFileSystemWrapper.SECONDARY_FS_CONFIG_PATH);
+      if (secConfPath == null)       throw new IOException("Failed to connect to the secondary file system because configuration " + "path is not provided.");
+      if (secUri == null)       throw new IOException("Failed to connect to the secondary file system because URI is not " + "provided.");
+      if (secConfPath == null)       throw new IOException("Failed to connect to the secondary file system because configuration " + "path is not provided.");
+      if (secUri == null)       throw new IOException("Failed to connect to the secondary file system because URI is not " + "provided.");
       try {
-        secondaryUri=new URI(paths.secondaryUri());
-        URL secondaryCfgUrl=U.resolveGridGainUrl(secondaryConfPath);
-        if (secondaryCfgUrl == null)         throw new IOException("Failed to resolve secondary file system config URL: " + secondaryConfPath);
+        secondaryUri=new URI(secUri);
+        URL secondaryCfgUrl=U.resolveGridGainUrl(secConfPath);
+        if (secondaryCfgUrl == null)         throw new IOException("Failed to resolve secondary file system config URL: " + secConfPath);
         Configuration conf=new Configuration();
         conf.addResource(secondaryCfgUrl);
         String prop=String.format("fs.%s.impl.disable.cache",secondaryUri.getScheme());
@@ -47,10 +52,10 @@
         secondaryFs=AbstractFileSystem.get(secondaryUri,conf);
       }
  catch (      URISyntaxException ignore) {
-        throw new IOException("Failed to resolve secondary file system URI: " + paths.secondaryUri());
+        throw new IOException("Failed to resolve secondary file system URI: " + secUri);
       }
 catch (      IOException e) {
-        throw new IOException("Failed to connect to the secondary file system: " + paths.secondaryUri(),e);
+        throw new IOException("Failed to connect to the secondary file system: " + secUri,e);
       }
     }
   }

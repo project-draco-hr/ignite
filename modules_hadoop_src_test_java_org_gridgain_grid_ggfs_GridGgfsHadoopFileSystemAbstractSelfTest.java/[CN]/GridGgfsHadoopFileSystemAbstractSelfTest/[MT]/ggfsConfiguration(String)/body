@@ -5,11 +5,10 @@
   cfg.setName("ggfs");
   cfg.setPrefetchBlocks(1);
   cfg.setDefaultMode(mode);
-  if (mode != PRIMARY) {
-    cfg.setSecondaryHadoopFileSystemUri(SECONDARY_URI);
-    cfg.setSecondaryHadoopFileSystemConfigPath(SECONDARY_CFG_PATH);
-  }
-  cfg.setIpcEndpointConfiguration(GridHadoopTestUtils.jsonToMap(primaryIpcEndpointConfiguration(gridName)));
+  if (mode != PRIMARY)   cfg.setSecondaryFileSystem(new GridGgfsHadoopFileSystemWrapper(SECONDARY_URI,SECONDARY_CFG_PATH));
+  String x=primaryIpcEndpointConfiguration(gridName);
+  Map<String,String> endPointCfg=GridHadoopTestUtils.jsonToMap(x);
+  cfg.setIpcEndpointConfiguration(endPointCfg);
   cfg.setManagementPort(-1);
   cfg.setBlockSize(512 * 1024);
   return cfg;
