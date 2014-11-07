@@ -9,7 +9,8 @@
           GridCacheTx tx=cctx.tm().userTx();
           if (tx == null) {
             GridCacheConfiguration cfg=cctx.config();
-            tx=cctx.tm().onCreated(cctx.cache().newTx(false,false,cfg.getDefaultTxConcurrency(),cfg.getDefaultTxIsolation(),cfg.getDefaultTxTimeout(),cfg.isInvalidate() || cctx.hasFlag(INVALIDATE),cctx.syncCommit(),cctx.syncRollback(),cctx.isSwapOrOffheapEnabled(),cctx.isStoreEnabled(),0,null,false));
+            GridTransactionsConfiguration tCfg=cctx.kernalContext().config().getTransactionsConfiguration();
+            tx=cctx.tm().onCreated(cctx.cache().newTx(false,false,tCfg.getDefaultTxConcurrency(),tCfg.getDefaultTxIsolation(),tCfg.getDefaultTxTimeout(),cfg.isInvalidate() || cctx.hasFlag(INVALIDATE),cctx.syncCommit(),cctx.syncRollback(),cctx.isSwapOrOffheapEnabled(),cctx.isStoreEnabled(),0,null,false));
           }
           rsrc=new GridCacheXAResource((GridCacheTxEx)tx,cctx);
           if (!jtaTx.enlistResource(rsrc))           throw new GridException("Failed to enlist XA resource to JTA user transaction.");

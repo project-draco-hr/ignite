@@ -1,13 +1,20 @@
 {
   if (ctx.config().isDaemon())   return;
-  if (!F.isEmpty(cacheMBeans))   for (  ObjectName mb : cacheMBeans) {
-    try {
-      mBeanSrv.unregisterMBean(mb);
-      if (log.isDebugEnabled())       log.debug("Unregistered cache MBean: " + mb);
+  if (!F.isEmpty(cacheMBeans)) {
+    for (    ObjectName mb : cacheMBeans) {
+      try {
+        mBeanSrv.unregisterMBean(mb);
+        if (log.isDebugEnabled())         log.debug("Unregistered cache MBean: " + mb);
+      }
+ catch (      JMException e) {
+        U.error(log,"Failed to unregister cache MBean: " + mb,e);
+      }
     }
- catch (    JMException e) {
-      U.error(log,"Failed to unregister cache MBean: " + mb,e);
-    }
+  }
+  List<? extends GridCacheSharedManager<?,?>> sharedMgrs=sharedCtx.managers();
+  for (ListIterator<? extends GridCacheSharedManager<?,?>> it=sharedMgrs.listIterator(sharedMgrs.size()); it.hasPrevious(); ) {
+    GridCacheSharedManager<?,?> mgr=it.previous();
+    mgr.onKernalStop(cancel);
   }
   for (  GridCacheAdapter<?,?> cache : stopSeq) {
     GridCacheContext ctx=cache.context();
