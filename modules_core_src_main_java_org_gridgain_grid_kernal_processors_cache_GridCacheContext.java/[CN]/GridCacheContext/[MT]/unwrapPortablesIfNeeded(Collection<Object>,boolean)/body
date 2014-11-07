@@ -1,8 +1,21 @@
 {
-  if (!config().isPortableEnabled())   return col;
-  Collection<Object> unwrapped=new ArrayList<>(col.size());
-  for (  Object o : col) {
-    unwrapped.add(unwrapPortableIfNeeded(o,keepPortable));
+  if (keepPortable || !config().isPortableEnabled())   return col;
+  if (col instanceof ArrayList)   return unwrapPortables((ArrayList<Object>)col);
+  int idx=0;
+  for (  Object obj : col) {
+    Object unwrapped=unwrapPortable(obj);
+    if (obj != unwrapped) {
+      Collection<Object> unwrappedCol=new ArrayList<>(col.size());
+      int idx0=0;
+      for (      Object obj0 : col) {
+        if (idx0 < idx)         unwrappedCol.add(obj0);
+ else         if (idx == idx0)         unwrappedCol.add(unwrapped);
+ else         unwrappedCol.add(unwrapPortable(obj0));
+        idx0++;
+      }
+      return unwrappedCol;
+    }
+    idx++;
   }
-  return unwrapped;
+  return col;
 }
