@@ -1,0 +1,37 @@
+{
+  if (U.isJdk(cls))   return;
+  if (parent != null && parent.knowsClass(cls))   throw new GridException("Recursive reference found in type: " + cls.getName());
+  if (parent == null) {
+    GridCacheQueryTextField txtAnnCls=cls.getAnnotation(GridCacheQueryTextField.class);
+    if (txtAnnCls != null)     type.valueTextIndex(true);
+    GridCacheQueryGroupIndex grpIdx=cls.getAnnotation(GridCacheQueryGroupIndex.class);
+    if (grpIdx != null)     type.addIndex(grpIdx.name(),SORTED);
+    GridCacheQueryGroupIndex.List grpIdxList=cls.getAnnotation(GridCacheQueryGroupIndex.List.class);
+    if (grpIdxList != null && !F.isEmpty(grpIdxList.value())) {
+      for (      GridCacheQueryGroupIndex idx : grpIdxList.value())       type.addIndex(idx.name(),SORTED);
+    }
+  }
+  for (Class<?> c=cls; c != null && !c.equals(Object.class); c=c.getSuperclass()) {
+    for (    Field field : c.getDeclaredFields()) {
+      GridCacheQuerySqlField sqlAnn=field.getAnnotation(GridCacheQuerySqlField.class);
+      GridCacheQueryTextField txtAnn=field.getAnnotation(GridCacheQueryTextField.class);
+      if (sqlAnn != null || txtAnn != null) {
+        ClassProperty prop=new ClassProperty(field);
+        prop.parent(parent);
+        processAnnotation(key,sqlAnn,txtAnn,field.getType(),prop,type);
+        type.addProperty(key,prop,true);
+      }
+    }
+    for (    Method mtd : c.getDeclaredMethods()) {
+      GridCacheQuerySqlField sqlAnn=mtd.getAnnotation(GridCacheQuerySqlField.class);
+      GridCacheQueryTextField txtAnn=mtd.getAnnotation(GridCacheQueryTextField.class);
+      if (sqlAnn != null || txtAnn != null) {
+        if (mtd.getParameterTypes().length != 0)         throw new GridException("Getter with GridCacheQuerySqlField " + "annotation cannot have parameters: " + mtd);
+        ClassProperty prop=new ClassProperty(mtd);
+        prop.parent(parent);
+        processAnnotation(key,sqlAnn,txtAnn,mtd.getReturnType(),prop,type);
+        type.addProperty(key,prop,true);
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  GridGgfsPath inDir=new GridGgfsPath(PATH_INPUT);
+  ggfs.mkdirs(inDir);
+  GridGgfsPath inFile=new GridGgfsPath(inDir,GridHadoopWordCount2.class.getSimpleName() + "-input");
+  URI inFileUri=URI.create(ggfsScheme() + inFile.toString());
+  generateTestFile(inFile.toString(),"red",100,"blue",200,"green",150,"yellow",70);
+  long fileLen=ggfs.info(inFile).length();
+  Long l=fileLen / 2;
+  GridHadoopFileBlock fileBlock1=new GridHadoopFileBlock(HOSTS,inFileUri,0,l);
+  GridHadoopFileBlock fileBlock2=new GridHadoopFileBlock(HOSTS,inFileUri,l,fileLen - l);
+  GridHadoopV2Job gridJob=getHadoopJob(inFileUri.toString(),ggfsScheme() + PATH_OUTPUT);
+  GridHadoopTestTaskContext combine1Ctx=runMapCombineTask(fileBlock1,gridJob);
+  GridHadoopTestTaskContext combine2Ctx=runMapCombineTask(fileBlock2,gridJob);
+  GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo(null,GridHadoopTaskType.REDUCE,gridJob.id(),0,0,null);
+  GridHadoopTestTaskContext reduceCtx=new GridHadoopTestTaskContext(taskInfo,gridJob);
+  reduceCtx.makeTreeOfWritables(combine1Ctx.mockOutput());
+  reduceCtx.makeTreeOfWritables(combine2Ctx.mockOutput());
+  createAndExecuteTask(gridJob,taskInfo,reduceCtx);
+  taskInfo=new GridHadoopTaskInfo(null,GridHadoopTaskType.COMMIT,gridJob.id(),0,0,null);
+  createAndExecuteTask(gridJob,taskInfo,reduceCtx);
+  assertEquals("blue\t200\n" + "green\t150\n" + "red\t100\n"+ "yellow\t70\n",readAndSortFile(PATH_OUTPUT + "/" + getOutputFileNamePrefix()+ "00000"));
+}

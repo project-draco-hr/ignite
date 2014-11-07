@@ -6,6 +6,14 @@
   }
   getTestData().setDiscoverySpi(discoSpi);
   getTestResources().inject(discoSpi);
+  discoSpi.setAuthenticator(new GridDiscoverySpiNodeAuthenticator(){
+    @Override public GridSecurityContext authenticateNode(    GridNode n,    GridSecurityCredentials cred){
+      GridSecuritySubjectAdapter subj=new GridSecuritySubjectAdapter(GridSecuritySubjectType.REMOTE_NODE,n.id());
+      subj.permissions(new GridAllowAllPermissionSet());
+      return new GridSecurityContext(subj);
+    }
+  }
+);
   configure(discoSpi);
   if (discoSpi.getNodeAttributes() != null)   getTestData().getAttributes().putAll(discoSpi.getNodeAttributes());
 }

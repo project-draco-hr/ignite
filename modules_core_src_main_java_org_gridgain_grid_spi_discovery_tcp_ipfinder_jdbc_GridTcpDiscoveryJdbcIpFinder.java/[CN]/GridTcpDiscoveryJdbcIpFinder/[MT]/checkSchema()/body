@@ -1,0 +1,23 @@
+{
+  try {
+    U.await(initLatch);
+  }
+ catch (  GridInterruptedException e) {
+    throw new GridSpiException("Thread has been interrupted.",e);
+  }
+  Connection conn=null;
+  Statement stmt=null;
+  try {
+    conn=dataSrc.getConnection();
+    conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+    stmt=conn.createStatement();
+    stmt.execute(CHK_QRY);
+  }
+ catch (  SQLException e) {
+    throw new GridSpiException("IP finder has not been properly initialized.",e);
+  }
+ finally {
+    U.closeQuiet(stmt);
+    U.closeQuiet(conn);
+  }
+}

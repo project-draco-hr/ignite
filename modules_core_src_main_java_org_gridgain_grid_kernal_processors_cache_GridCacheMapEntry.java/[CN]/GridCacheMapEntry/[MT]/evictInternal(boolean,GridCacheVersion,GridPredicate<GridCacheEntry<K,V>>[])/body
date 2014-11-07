@@ -1,4 +1,5 @@
 {
+  boolean marked=false;
   try {
     if (F.isEmptyOrNulls(filter)) {
 synchronized (this) {
@@ -16,7 +17,7 @@ synchronized (this) {
           }
  else           clearIndex(prev);
           value(null,null);
-          onMarkedObsolete();
+          marked=true;
           return true;
         }
       }
@@ -44,7 +45,7 @@ synchronized (this) {
             }
  else             clearIndex(prevVal);
             value(null,null);
-            onMarkedObsolete();
+            marked=true;
             return true;
           }
  else           return false;
@@ -55,6 +56,9 @@ synchronized (this) {
  catch (  GridCacheEntryRemovedException ignore) {
     if (log.isDebugEnabled())     log.debug("Got removed entry when evicting (will simply return): " + this);
     return true;
+  }
+ finally {
+    if (marked)     onMarkedObsolete();
   }
   return false;
 }

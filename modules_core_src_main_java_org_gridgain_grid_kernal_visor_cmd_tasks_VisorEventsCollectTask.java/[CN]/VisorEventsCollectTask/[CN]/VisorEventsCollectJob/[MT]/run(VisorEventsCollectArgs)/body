@@ -1,0 +1,48 @@
+{
+  final long startEvtTime=arg.timeArgument() == null ? 0L : System.currentTimeMillis() - arg.timeArgument();
+  final GridNodeLocalMap<String,Long> nl=g.nodeLocalMap();
+  final Long startEvtOrder=arg.keyOrder() != null && nl.containsKey(arg.keyOrder()) ? nl.get(arg.keyOrder()) : -1L;
+  Collection<GridEvent> evts=g.events().localQuery(new GridPredicate<GridEvent>(){
+    @Override public boolean apply(    GridEvent event){
+      return event.localOrder() > startEvtOrder && (arg.typeArgument() == null || F.contains(arg.typeArgument(),event.type())) && event.timestamp() >= startEvtTime && (arg.taskName() == null || filterByTaskName(event,arg.taskName())) && (arg.taskSessionId() == null || filterByTaskSessionId(event,arg.taskSessionId()));
+    }
+  }
+);
+  Collection<VisorGridEvent> res=new ArrayList<>(evts.size());
+  Long maxOrder=startEvtOrder;
+  for (  GridEvent e : evts) {
+    int tid=e.type();
+    GridUuid id=e.id();
+    String name=e.name();
+    UUID nid=e.node().id();
+    long t=e.timestamp();
+    String msg=e.message();
+    String shortDisplay=e.shortDisplay();
+    maxOrder=Math.max(maxOrder,e.localOrder());
+    if (e instanceof GridTaskEvent) {
+      GridTaskEvent te=(GridTaskEvent)e;
+      res.add(new VisorGridTaskEvent(tid,id,name,nid,t,msg,shortDisplay,te.taskName(),te.taskClassName(),te.taskSessionId(),te.internal()));
+    }
+ else     if (e instanceof GridJobEvent) {
+      GridJobEvent je=(GridJobEvent)e;
+      res.add(new VisorGridJobEvent(tid,id,name,nid,t,msg,shortDisplay,je.taskName(),je.taskClassName(),je.taskSessionId(),je.jobId()));
+    }
+ else     if (e instanceof GridDeploymentEvent) {
+      GridDeploymentEvent de=(GridDeploymentEvent)e;
+      res.add(new VisorGridDeploymentEvent(tid,id,name,nid,t,msg,shortDisplay,de.alias()));
+    }
+ else     if (e instanceof GridLicenseEvent) {
+      GridLicenseEvent le=(GridLicenseEvent)e;
+      res.add(new VisorGridLicenseEvent(tid,id,name,nid,t,msg,shortDisplay,le.licenseId()));
+    }
+ else     if (e instanceof GridDiscoveryEvent) {
+      GridDiscoveryEvent de=(GridDiscoveryEvent)e;
+      GridNode node=de.eventNode();
+      String addr=F.first(node.addresses());
+      res.add(new VisorGridDiscoveryEvent(tid,id,name,nid,t,msg,shortDisplay,node.id(),addr,node.isDaemon()));
+    }
+ else     res.add(new VisorGridEvent(tid,id,name,nid,t,msg,shortDisplay));
+  }
+  if (arg.keyOrder() != null && !res.isEmpty())   nl.put(arg.keyOrder(),maxOrder);
+  return res;
+}

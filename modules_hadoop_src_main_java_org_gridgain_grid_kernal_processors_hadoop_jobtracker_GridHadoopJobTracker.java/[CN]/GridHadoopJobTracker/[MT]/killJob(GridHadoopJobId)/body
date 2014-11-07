@@ -1,0 +1,23 @@
+{
+  if (!busyLock.tryReadLock())   return false;
+  try {
+    GridHadoopJobMetadata meta=(GridHadoopJobMetadata)jobMetaCache().get(jobId);
+    if (meta != null && meta.phase() != PHASE_COMPLETE && meta.phase() != PHASE_CANCELLING) {
+      GridHadoopTaskCancelledException err=new GridHadoopTaskCancelledException("Job cancelled.");
+      jobMetaCache().transform(jobId,new CancelJobClosure(null,err));
+    }
+  }
+  finally {
+    busyLock.readUnlock();
+  }
+  GridFuture<?> fut=finishFuture(jobId);
+  if (fut != null) {
+    try {
+      fut.get();
+    }
+ catch (    Throwable e) {
+      if (e.getCause() instanceof GridHadoopTaskCancelledException)       return true;
+    }
+  }
+  return false;
+}

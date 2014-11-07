@@ -1,4 +1,7 @@
 {
   if (grpLockKey != null)   throw new IllegalStateException("Group locking is not supported for LOCAL cache.");
-  return new GridLocalTx<>(ctx,implicit,implicitSingle,concurrency,isolation,timeout,invalidate,swapEnabled,storeEnabled,txSize);
+  GridCacheProjectionImpl<K,V> prj=ctx.projectionPerCall();
+  UUID subjId=prj == null ? null : prj.subjectId();
+  int taskNameHash=ctx.kernalContext().job().currentTaskNameHash();
+  return new GridLocalTx<>(ctx,implicit,implicitSingle,concurrency,isolation,timeout,invalidate,swapOrOffheapEnabled,storeEnabled,txSize,subjId,taskNameHash);
 }

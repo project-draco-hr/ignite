@@ -1,0 +1,45 @@
+{
+  if (!busyLock.tryReadLock())   return new GridFinishedFuture<>(ctx,new GridException("Failed to handle request (received request while stopping grid)."));
+  try {
+    final GridWorkerFuture<GridRestResponse> fut=new GridWorkerFuture<>(ctx);
+    workersCnt.increment();
+    GridWorker w=new GridWorker(ctx.gridName(),"rest-proc-worker",log){
+      @Override protected void body(){
+        try {
+          GridFuture<GridRestResponse> res=handleRequest(req);
+          res.listenAsync(new GridInClosure<GridFuture<GridRestResponse>>(){
+            @Override public void apply(            GridFuture<GridRestResponse> f){
+              try {
+                fut.onDone(f.get());
+              }
+ catch (              GridException e) {
+                fut.onDone(e);
+              }
+            }
+          }
+);
+        }
+ catch (        Throwable e) {
+          if (e instanceof Error)           U.error(log,"Client request execution failed with error.",e);
+          fut.onDone(U.cast(e));
+        }
+ finally {
+          workersCnt.decrement();
+        }
+      }
+    }
+;
+    fut.setWorker(w);
+    try {
+      config().getRestExecutorService().execute(w);
+    }
+ catch (    RejectedExecutionException e) {
+      U.error(log,"Failed to execute worker due to execution rejection " + "(increase upper bound on REST executor service). " + "Will attempt to process request in the current thread instead.",e);
+      w.run();
+    }
+    return fut;
+  }
+  finally {
+    busyLock.readUnlock();
+  }
+}

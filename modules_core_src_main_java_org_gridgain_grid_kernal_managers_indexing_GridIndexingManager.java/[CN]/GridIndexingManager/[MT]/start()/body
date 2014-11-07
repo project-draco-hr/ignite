@@ -1,5 +1,6 @@
 {
   if (ctx.config().isDaemon())   return;
+  if (!enabled())   U.warn(log,"Indexing is disabled (to enable please configure GridH2IndexingSpi).");
   GridIndexingMarshaller m=new IdxMarshaller();
   for (  GridIndexingSpi spi : getSpis()) {
     spi.registerMarshaller(m);
@@ -7,5 +8,12 @@
   }
   execSvc=ctx.config().getExecutorService();
   startSpi();
+  for (  GridCacheConfiguration ccfg : ctx.config().getCacheConfiguration()) {
+    GridCacheQueryConfiguration qryCfg=ccfg.getQueryConfiguration();
+    if (qryCfg != null) {
+      for (      GridCacheQueryTypeMetadata meta : qryCfg.getTypeMetadata())       declaredTypesByName.put(new TypeName(ccfg.getName(),meta.getType()),meta);
+      if (qryCfg.getTypeResolver() != null)       typeResolvers.put(ccfg.getName(),qryCfg.getTypeResolver());
+    }
+  }
   if (log.isDebugEnabled())   log.debug(startInfo());
 }

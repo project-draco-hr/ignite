@@ -1,31 +1,30 @@
 {
   if (msg instanceof GridMemcachedMessage)   memcachedLsnr.onMessage(ses,(GridMemcachedMessage)msg);
  else {
-    if (msg == GridClientPingPacket.PING_MESSAGE)     ses.send(GridClientPingPacket.PING_MESSAGE);
+    if (msg == GridClientPingPacket.PING_MESSAGE)     ses.send(new GridClientPingPacketWrapper());
  else     if (msg instanceof GridClientHandshakeRequest) {
-      GridClientHandshakeResponse res=null;
       GridClientHandshakeRequest hs=(GridClientHandshakeRequest)msg;
-      byte[] verBytes=hs.versionBytes();
-      if (!Arrays.equals(VER_BYTES,verBytes)) {
-        log.warning("Client version check failed [ses=" + ses + ", expected="+ Arrays.toString(VER_BYTES)+ ", actual="+ Arrays.toString(verBytes)+ ']');
-        res=GridClientHandshakeResponse.ERR_VERSION_CHECK_FAILED;
+      short ver=hs.version();
+      if (!SUPP_VERS.contains(ver)) {
+        U.error(log,"Client protocol version is not supported [ses=" + ses + ", ver="+ ver+ ", supported="+ SUPP_VERS+ ']');
+        ses.close();
       }
-      GridClientMarshaller marsh=suppMarshMap.get(hs.protocolId());
-      if (marsh == null) {
-        log.error("No marshaller found with given protocol ID [protocolId=" + hs.protocolId() + ']');
-        ses.send(GridClientHandshakeResponse.ERR_UNKNOWN_PROTO_ID).listenAsync(new CI1<GridNioFuture<?>>(){
-          @Override public void apply(          GridNioFuture<?> fut){
-            ses.close();
-          }
+ else {
+        byte marshId=hs.marshallerId();
+        if (marshMapLatch.getCount() > 0)         U.awaitQuiet(marshMapLatch);
+        GridClientMarshaller marsh=marshMap.get(marshId);
+        if (marsh == null) {
+          U.error(log,"Client marshaller ID is invalid. Note that .NET and C++ clients " + "are supported only in enterprise edition [ses=" + ses + ", marshId="+ marshId+ ']');
+          ses.close();
         }
-);
-        return;
+ else {
+          ses.addMeta(MARSHALLER.ordinal(),marsh);
+          ses.send(new GridClientHandshakeResponseWrapper(CODE_OK));
+        }
       }
-      ses.addMeta(GridNioSessionMetaKey.MARSHALLER.ordinal(),marsh);
-      ses.send(res == null ? GridClientHandshakeResponse.OK : res);
     }
  else {
-      final GridRestRequest req=createRestRequest(msg);
+      final GridRestRequest req=createRestRequest(ses,msg);
       if (req != null)       hnd.handleAsync(req).listenAsync(new CI1<GridFuture<GridRestResponse>>(){
         @Override public void apply(        GridFuture<GridRestResponse> fut){
           GridClientResponse res=new GridClientResponse();
@@ -45,7 +44,20 @@
             res.successStatus(GridClientResponse.STATUS_FAILED);
             res.errorMessage("Failed to process client request: " + e.getMessage());
           }
-          ses.send(res);
+          GridClientMessageWrapper wrapper=new GridClientMessageWrapper();
+          wrapper.requestId(msg.requestId());
+          wrapper.clientId(msg.clientId());
+          try {
+            ByteBuffer bytes=proto.marshaller(ses).marshal(res,0);
+            wrapper.message(bytes);
+            wrapper.messageSize(bytes.remaining() + 40);
+          }
+ catch (          IOException e) {
+            U.error(log,"Failed to marshal response: " + res,e);
+            ses.close();
+            return;
+          }
+          ses.send(wrapper);
         }
       }
 );

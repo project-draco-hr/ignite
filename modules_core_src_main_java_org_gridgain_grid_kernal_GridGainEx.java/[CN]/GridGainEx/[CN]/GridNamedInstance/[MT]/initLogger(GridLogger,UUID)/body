@@ -1,0 +1,42 @@
+{
+  try {
+    if (cfgLog == null) {
+      Class<?> log4jCls;
+      try {
+        log4jCls=Class.forName("org.gridgain.grid.logger.log4j.GridLog4jLogger");
+      }
+ catch (      ClassNotFoundException|NoClassDefFoundError ignored) {
+        log4jCls=null;
+      }
+      if (log4jCls != null) {
+        URL url=U.resolveGridGainUrl("config/gridgain-log4j.xml");
+        if (url == null) {
+          File cfgFile=new File("config/gridgain-log4j.xml");
+          if (!cfgFile.exists())           cfgFile=new File("../config/gridgain-log4j.xml");
+          if (cfgFile.exists()) {
+            try {
+              url=cfgFile.toURI().toURL();
+            }
+ catch (            MalformedURLException ignore) {
+            }
+          }
+        }
+        if (url != null) {
+          boolean configured=(Boolean)log4jCls.getMethod("isConfigured").invoke(null);
+          if (configured)           url=null;
+        }
+        if (url != null) {
+          Constructor<?> ctor=log4jCls.getConstructor(URL.class);
+          cfgLog=(GridLogger)ctor.newInstance(url);
+        }
+ else         cfgLog=(GridLogger)log4jCls.newInstance();
+      }
+ else       cfgLog=new GridJavaLogger();
+    }
+    if (cfgLog instanceof GridLoggerNodeIdAware)     ((GridLoggerNodeIdAware)cfgLog).setNodeId(nodeId);
+    return cfgLog;
+  }
+ catch (  Exception e) {
+    throw new GridException("Failed to create logger.",e);
+  }
+}

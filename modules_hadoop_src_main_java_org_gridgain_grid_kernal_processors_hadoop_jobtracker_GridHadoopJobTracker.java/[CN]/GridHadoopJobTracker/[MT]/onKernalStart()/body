@@ -1,0 +1,40 @@
+{
+  super.onKernalStart();
+  GridCacheContinuousQuery<Object,Object> qry=jobMetaCache().queries().createContinuousQuery();
+  qry.callback(new GridBiPredicate<UUID,Collection<Map.Entry<Object,Object>>>(){
+    @Override public boolean apply(    UUID nodeId,    final Collection<Map.Entry<Object,Object>> evts){
+      if (!busyLock.tryReadLock())       return false;
+      try {
+        evtProcSvc.submit(new EventHandler(){
+          @Override protected void body() throws GridException {
+            processJobMetadata(evts);
+          }
+        }
+);
+        return true;
+      }
+  finally {
+        busyLock.readUnlock();
+      }
+    }
+  }
+);
+  qry.execute();
+  ctx.kernalContext().event().addLocalEventListener(new GridLocalEventListener(){
+    @Override public void onEvent(    final GridEvent evt){
+      if (!busyLock.tryReadLock())       return;
+      try {
+        evtProcSvc.submit(new EventHandler(){
+          @Override protected void body(){
+            processNodeLeft((GridDiscoveryEvent)evt);
+          }
+        }
+);
+      }
+  finally {
+        busyLock.readUnlock();
+      }
+    }
+  }
+,GridEventType.EVT_NODE_FAILED,GridEventType.EVT_NODE_LEFT);
+}

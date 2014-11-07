@@ -1,19 +1,30 @@
 {
-  final GridCacheSet<Integer> set0=cache().dataStructures().set(SET_NAME,collocated,true);
-  for (int i=0; i < 500; i++)   assertTrue(set0.add(i));
-  final GridCloseableIterator<Integer> iter=set0.iteratorEx();
-  assertFalse(iter.isClosed());
-  assertTrue(iter.hasNext());
-  iter.next();
-  assertTrue(iter.hasNext());
-  iter.close();
-  GridTestUtils.assertThrows(log,new Callable<Void>(){
-    @Override public Void call() throws Exception {
-      iter.next();
-      return null;
+  GridCacheSet<Integer> set0=cache().dataStructures().set(SET_NAME,collocated,true);
+  for (int i=0; i < 5000; i++)   assertTrue(set0.add(i));
+  createIterators(set0);
+  System.gc();
+  for (int i=0; i < 10; i++) {
+    try {
+      set0.size();
+      assertSetIteratorsCleared();
+    }
+ catch (    AssertionFailedError e) {
+      if (i == 9)       throw e;
+      log.info("Set iterators not cleared, will wait");
+      Thread.sleep(500);
     }
   }
-,NoSuchElementException.class,null);
-  assertTrue(iter.isClosed());
-  assertFalse(iter.hasNext());
+  createIterators(set0);
+  int idx=gridCount() > 1 ? 1 : 0;
+  cache(idx).dataStructures().removeSet(SET_NAME);
+  for (int i=0; i < 10; i++) {
+    try {
+      assertSetIteratorsCleared();
+    }
+ catch (    AssertionFailedError e) {
+      if (i == 9)       throw e;
+      log.info("Set iterators not cleared, will wait");
+      Thread.sleep(500);
+    }
+  }
 }

@@ -1,0 +1,29 @@
+{
+  GridCacheInterceptor retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public Object onBeforePut(    Object key,    @Nullable Object oldVal,    Object newVal){
+      return (Integer)newVal + 1;
+    }
+  }
+;
+  interceptor.retInterceptor=retInterceptor;
+  log.info("Update 1 " + op);
+  update(0,op,key,1,null);
+  checkCacheValue(key,2);
+  assertEquals(1,interceptor.beforePutMap.size());
+  GridBiTuple t=interceptor.beforePutMap.get(key);
+  assertEquals(null,t.get1());
+  assertEquals(1,t.get2());
+  assertEquals(1,interceptor.afterPutMap.size());
+  assertEquals(2,interceptor.afterPutMap.get(key));
+  interceptor.reset();
+  interceptor.retInterceptor=retInterceptor;
+  log.info("Update 2 " + op);
+  update(0,op,key,3,2);
+  checkCacheValue(key,4);
+  assertEquals(1,interceptor.beforePutMap.size());
+  t=interceptor.beforePutMap.get(key);
+  assertEquals(2,t.get1());
+  assertEquals(3,t.get2());
+  assertEquals(1,interceptor.afterPutMap.size());
+  assertEquals(4,interceptor.afterPutMap.get(key));
+}

@@ -1,0 +1,24 @@
+{
+  try {
+    GridNioFilter codec=new GridNioCodecFilter(parser,log,true);
+    GridNioFilter[] filters;
+    if (sslCtx != null) {
+      GridNioSslFilter sslFilter=new GridNioSslFilter(sslCtx,log);
+      sslFilter.directMode(true);
+      boolean auth=cfg.isRestTcpSslClientAuth();
+      sslFilter.wantClientAuth(auth);
+      sslFilter.needClientAuth(auth);
+      filters=new GridNioFilter[]{codec,sslFilter};
+    }
+ else     filters=new GridNioFilter[]{codec};
+    srv=GridNioServer.<GridClientMessage>builder().address(hostAddr).port(port).listener(lsnr).logger(log).selectorCount(cfg.getRestTcpSelectorCount()).gridName(ctx.gridName()).tcpNoDelay(cfg.isRestTcpNoDelay()).directBuffer(cfg.isRestTcpDirectBuffer()).byteOrder(ByteOrder.nativeOrder()).socketSendBufferSize(cfg.getRestTcpSendBufferSize()).socketReceiveBufferSize(cfg.getRestTcpReceiveBufferSize()).sendQueueLimit(cfg.getRestTcpSendQueueLimit()).filters(filters).directMode(true).messageWriter(msgWriter).build();
+    srv.idleTimeout(cfg.getRestIdleTimeout());
+    srv.start();
+    ctx.ports().registerPort(port,GridPortProtocol.TCP,getClass());
+    return true;
+  }
+ catch (  GridException e) {
+    if (log.isDebugEnabled())     log.debug("Failed to start " + name() + " protocol on port "+ port+ ": "+ e.getMessage());
+    return false;
+  }
+}

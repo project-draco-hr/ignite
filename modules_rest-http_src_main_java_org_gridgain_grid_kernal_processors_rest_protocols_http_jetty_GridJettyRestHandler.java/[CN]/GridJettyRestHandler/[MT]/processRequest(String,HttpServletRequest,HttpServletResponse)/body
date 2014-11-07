@@ -1,0 +1,46 @@
+{
+  res.setContentType("application/json");
+  res.setCharacterEncoding("UTF-8");
+  GridRestCommand cmd=command(req);
+  if (cmd == null) {
+    res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    return;
+  }
+  if (!authChecker.apply(req.getHeader("X-Signature"))) {
+    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    return;
+  }
+  GridRestResponse cmdRes;
+  Map<String,Object> params=parameters(req);
+  try {
+    GridRestRequest cmdReq=createRequest(cmd,params,req);
+    if (log.isDebugEnabled())     log.debug("Initialized command request: " + cmdReq);
+    cmdRes=hnd.handle(cmdReq);
+    if (cmdRes == null)     throw new IllegalStateException("Received null result from handler: " + hnd);
+    byte[] sesTok=cmdRes.sessionTokenBytes();
+    if (sesTok != null)     cmdRes.setSessionToken(U.byteArray2HexString(sesTok));
+    res.setStatus(HttpServletResponse.SC_OK);
+  }
+ catch (  Throwable e) {
+    res.setStatus(HttpServletResponse.SC_OK);
+    U.error(log,"Failed to process HTTP request [action=" + act + ", req="+ req+ ']',e);
+    cmdRes=new GridRestResponse(STATUS_FAILED,e.getMessage());
+  }
+  JsonConfig cfg=new GridJettyJsonConfig();
+  JSON json;
+  try {
+    json=JSONSerializer.toJSON(cmdRes,cfg);
+  }
+ catch (  JSONException e) {
+    U.error(log,"Failed to convert response to JSON: " + cmdRes,e);
+    json=JSONSerializer.toJSON(new GridRestResponse(STATUS_FAILED,e.getMessage()),cfg);
+  }
+  try {
+    if (log.isDebugEnabled())     log.debug("Parsed command response into JSON object: " + json.toString(2));
+    res.getWriter().write(json.toString());
+    if (log.isDebugEnabled())     log.debug("Processed HTTP request [action=" + act + ", jsonRes="+ cmdRes+ ", req="+ req+ ']');
+  }
+ catch (  IOException e) {
+    U.error(log,"Failed to send HTTP response: " + json.toString(2),e);
+  }
+}

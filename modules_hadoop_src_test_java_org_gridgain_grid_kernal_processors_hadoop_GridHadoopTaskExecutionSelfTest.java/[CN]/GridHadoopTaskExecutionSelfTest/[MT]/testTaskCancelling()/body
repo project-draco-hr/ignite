@@ -1,0 +1,23 @@
+{
+  Configuration cfg=prepareJobForCancelling();
+  GridHadoopJobId jobId=new GridHadoopJobId(UUID.randomUUID(),1);
+  final GridFuture<?> fut=grid(0).hadoop().submit(jobId,new GridHadoopDefaultJobInfo(cfg));
+  if (!GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return executedTasks.get() == 16;
+    }
+  }
+,20000)) {
+    U.dumpThreads(log);
+    assertTrue(false);
+  }
+  failMapperId=1;
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      fut.get();
+      return null;
+    }
+  }
+,GridException.class,null);
+  assertEquals(executedTasks.get(),cancelledTasks.get() + 1);
+}

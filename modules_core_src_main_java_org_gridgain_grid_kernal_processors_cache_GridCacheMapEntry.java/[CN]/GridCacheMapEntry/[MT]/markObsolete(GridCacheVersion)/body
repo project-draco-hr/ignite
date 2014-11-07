@@ -1,15 +1,8 @@
 {
-  GridCacheVersion obsoleteVer=obsoleteVersionExtras();
-  if (ver != null) {
-    if (obsoleteVer != null)     return true;
-    GridCacheMvcc<K> mvcc=mvccExtras();
-    if (mvcc == null || mvcc.isEmpty(ver)) {
-      obsoleteVer=ver;
-      obsoleteVersionExtras(obsoleteVer);
-      value(null,null);
-      onMarkedObsolete();
-    }
-    return obsoleteVer != null;
+  boolean obsolete;
+synchronized (this) {
+    obsolete=markObsolete0(ver,true);
   }
- else   return obsoleteVer != null;
+  if (obsolete)   onMarkedObsolete();
+  return obsolete;
 }

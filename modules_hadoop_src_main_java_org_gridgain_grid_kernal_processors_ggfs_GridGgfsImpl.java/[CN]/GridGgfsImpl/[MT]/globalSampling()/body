@@ -1,9 +1,17 @@
 {
-  try {
-    return meta.sampling();
+  if (busyLock.enterBusy()) {
+    try {
+      try {
+        return meta.sampling();
+      }
+ catch (      GridException e) {
+        U.error(log,"Failed to get sampling state.",e);
+        return false;
+      }
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
   }
- catch (  GridException e) {
-    U.error(log,"Failed to get sampling state.",e);
-    return false;
-  }
+ else   throw new IllegalStateException("Failed to get global sampling flag because Grid is stopping.");
 }

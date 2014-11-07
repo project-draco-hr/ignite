@@ -125,6 +125,53 @@ commState.readItems++;
 commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
+case 15:
+if (commState.readSize == -1) {
+if (buf.remaining() < 4) return false;
+commState.readSize=commState.getInt();
+}
+if (commState.readSize >= 0) {
+if (nearTransformClosBytes == null) nearTransformClosBytes=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+byte[] _val=commState.getByteArray();
+if (_val == BYTE_ARR_NOT_READ) return false;
+nearTransformClosBytes.add((byte[])_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 16:
+if (buf.remaining() < 1) return false;
+forceTransformBackups=commState.getBoolean();
+commState.idx++;
+case 17:
+if (commState.readSize == -1) {
+if (buf.remaining() < 4) return false;
+commState.readSize=commState.getInt();
+}
+if (commState.readSize >= 0) {
+if (transformClosBytes == null) transformClosBytes=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+byte[] _val=commState.getByteArray();
+if (_val == BYTE_ARR_NOT_READ) return false;
+transformClosBytes.add((byte[])_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 18:
+UUID subjId0=commState.getUuid();
+if (subjId0 == UUID_NOT_READ) return false;
+subjId=subjId0;
+commState.idx++;
+case 19:
+if (buf.remaining() < 4) return false;
+taskNameHash=commState.getInt();
+commState.idx++;
 }
 return true;
 }

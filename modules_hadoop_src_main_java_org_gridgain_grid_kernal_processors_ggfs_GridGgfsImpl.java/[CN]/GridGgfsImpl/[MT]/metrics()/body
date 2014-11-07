@@ -1,15 +1,23 @@
 {
-  GridGgfsPathSummary sum=new GridGgfsPathSummary();
-  summary0(ROOT_ID,sum);
-  long secondarySpaceSize=0;
-  if (secondaryFs != null) {
+  if (busyLock.enterBusy()) {
     try {
-      secondarySpaceSize=secondaryFs.getContentSummary(secondaryPath(new GridGgfsPath())).getSpaceConsumed();
+      GridGgfsPathSummary sum=new GridGgfsPathSummary();
+      summary0(ROOT_ID,sum);
+      long secondarySpaceSize=0;
+      if (secondaryFs != null) {
+        try {
+          secondarySpaceSize=secondaryFs.getContentSummary(secondaryPath(new GridGgfsPath())).getSpaceConsumed();
+        }
+ catch (        IOException e) {
+          LT.warn(log,e,"Failed to get secondary file system consumed space size.");
+          secondarySpaceSize=-1;
+        }
+      }
+      return new GridGgfsMetricsAdapter(ggfsCtx.data().spaceSize(),ggfsCtx.data().maxSpaceSize(),secondarySpaceSize,sum.directoriesCount(),sum.filesCount(),metrics.filesOpenedForRead(),metrics.filesOpenedForWrite(),metrics.readBlocks(),metrics.readBlocksSecondary(),metrics.writeBlocks(),metrics.writeBlocksSecondary(),metrics.readBytes(),metrics.readBytesTime(),metrics.writeBytes(),metrics.writeBytesTime());
     }
- catch (    IOException e) {
-      LT.warn(log,e,"Failed to get secondary file system consumed space size.");
-      secondarySpaceSize=-1;
+  finally {
+      busyLock.leaveBusy();
     }
   }
-  return new GridGgfsMetricsAdapter(ggfsCtx.data().spaceSize(),ggfsCtx.data().maxSpaceSize(),secondarySpaceSize,sum.directoriesCount(),sum.filesCount(),metrics.filesOpenedForRead(),metrics.filesOpenedForWrite(),metrics.readBlocks(),metrics.readBlocksSecondary(),metrics.writeBlocks(),metrics.writeBlocksSecondary(),metrics.readBytes(),metrics.readBytesTime(),metrics.writeBytes(),metrics.writeBytesTime());
+ else   throw new IllegalStateException("Failed to get metrics because Grid is stopping.");
 }

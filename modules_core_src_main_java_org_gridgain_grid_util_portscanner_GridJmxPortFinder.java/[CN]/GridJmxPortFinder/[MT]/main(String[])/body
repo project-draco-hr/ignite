@@ -5,7 +5,15 @@
  catch (  UnknownHostException ignored) {
     return;
   }
-  int port;
+  String jmxPort=X.getSystemOrEnv(GG_JMX_PORT);
+  if (jmxPort != null) {
+    try {
+      System.out.println(Integer.parseInt(jmxPort));
+    }
+ catch (    NumberFormatException ignored) {
+    }
+    return;
+  }
   RandomAccessFile ra=null;
   FileLock lock=null;
   try {
@@ -16,19 +24,32 @@
     lock=ra.getChannel().lock();
     ra.seek(0);
     String startPortStr=ra.readLine();
-    int startPort;
+    int startPort=MIN_PORT;
     if (startPortStr != null && !startPortStr.isEmpty()) {
-      startPort=Integer.valueOf(startPortStr) + 1;
-      if (startPort > MAX_PORT)       startPort=MIN_PORT;
+      try {
+        startPort=Integer.valueOf(startPortStr) + 1;
+        if (startPort < MIN_PORT || startPort > MAX_PORT)         startPort=MIN_PORT;
+      }
+ catch (      NumberFormatException ignored) {
+      }
     }
- else     startPort=MIN_PORT;
-    port=findPort(startPort);
+    int port=findPort(startPort);
     ra.setLength(0);
     ra.writeBytes(String.valueOf(port));
+    System.out.println(port);
   }
-  finally {
-    if (lock != null)     lock.release();
-    if (ra != null)     ra.close();
+ catch (  IOException ignored) {
   }
-  System.out.println(port);
+ finally {
+    if (lock != null)     try {
+      lock.release();
+    }
+ catch (    IOException ignored) {
+    }
+    if (ra != null)     try {
+      ra.close();
+    }
+ catch (    IOException ignored) {
+    }
+  }
 }

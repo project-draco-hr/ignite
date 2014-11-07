@@ -1,0 +1,13 @@
+{
+  if (ctx.isDaemon())   return;
+  GridHadoopConfiguration cfg=ctx.config().getHadoopConfiguration();
+  if (cfg == null)   cfg=new GridHadoopConfiguration();
+ else   cfg=new GridHadoopConfiguration(cfg);
+  initializeDefaults(cfg);
+  validate(cfg);
+  if (checkHadoopInstallation()) {
+    hctx=new GridHadoopContext(ctx,cfg,new GridHadoopJobTracker(),cfg.isExternalExecution() ? new GridHadoopExternalTaskExecutor() : new GridHadoopEmbeddedTaskExecutor(),new GridHadoopShuffle());
+    for (    GridHadoopComponent c : hctx.components())     c.start(hctx);
+    hadoop=new GridHadoopImpl(this);
+  }
+}

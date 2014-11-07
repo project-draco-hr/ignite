@@ -1,0 +1,19 @@
+{
+  if (!visitGuard.compareAndSet(false,true))   return false;
+  for (long meta=heads.get(0); meta != 0L; meta=nextMeta(meta,0)) {
+    long valPtr=value(meta);
+    long lastVisited=ignoreLastVisited ? 0 : lastVisitedValue(meta);
+    if (valPtr != lastVisited) {
+      long k=key(meta);
+      v.onKey(k + 4,keySize(k));
+      lastVisitedValue(meta,valPtr);
+      do {
+        v.onValue(valPtr + 12,valueSize(valPtr));
+        valPtr=nextValue(valPtr);
+      }
+ while (valPtr != lastVisited);
+    }
+  }
+  visitGuard.lazySet(false);
+  return true;
+}

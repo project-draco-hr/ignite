@@ -1,10 +1,14 @@
 {
   if (newPath == null) {
-    if (secondaryFs != null)     secondaryFs.setWorkingDirectory(toSecondary(convert(DFLT_WORKING_DIR)));
-    workingDir=DFLT_WORKING_DIR;
+    Path homeDir=getHomeDirectory();
+    if (secondaryFs != null)     secondaryFs.setWorkingDirectory(toSecondary(homeDir));
+    workingDir.set(homeDir);
   }
  else {
-    if (secondaryFs != null)     secondaryFs.setWorkingDirectory(toSecondary(newPath));
-    workingDir=convert(newPath);
+    Path fixedNewPath=fixRelativePart(newPath);
+    String res=fixedNewPath.toUri().getPath();
+    if (!DFSUtil.isValidName(res))     throw new IllegalArgumentException("Invalid DFS directory name " + res);
+    if (secondaryFs != null)     secondaryFs.setWorkingDirectory(toSecondary(fixedNewPath));
+    workingDir.set(fixedNewPath);
   }
 }

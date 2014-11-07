@@ -1,0 +1,14 @@
+{
+  String hadoopHome=System.getenv("HADOOP_HOME");
+  if (!F.isEmpty(hadoopHome))   U.quietAndInfo(log,"Apache Hadoop is found at " + hadoopHome);
+  URL location=null;
+  try {
+    location=Class.forName("org.apache.hadoop.conf.Configuration").getProtectionDomain().getCodeSource().getLocation();
+  }
+ catch (  ClassNotFoundException|NoClassDefFoundError ignored) {
+    U.quietAndWarn(log,"Hadoop accelerator is disabled (Hadoop is not in classpath, " + "is HADOOP_HOME environment variable set?)");
+    return false;
+  }
+  if (log.isDebugEnabled())   log.debug("Hadoop classes are loaded from " + location);
+  return true;
+}
