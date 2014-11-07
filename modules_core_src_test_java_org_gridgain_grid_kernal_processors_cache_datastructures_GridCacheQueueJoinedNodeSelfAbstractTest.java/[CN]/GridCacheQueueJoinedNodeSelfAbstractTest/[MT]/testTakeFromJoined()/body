@@ -1,8 +1,10 @@
 {
   String queueName=UUID.randomUUID().toString();
   GridCacheQueue<Integer> queue=grid(0).cache(null).dataStructures().queue(queueName,0,true,true);
+  assertNotNull(queue);
   assertTrue(queue.isEmpty());
-  GridFuture<?> fut=grid(0).forLocal().compute().run(new PutJob(queueName));
+  PutJob putJob=new PutJob(queueName);
+  GridFuture<?> fut=grid(0).forLocal().compute().run(putJob);
   Collection<GridFuture<?>> futs=new ArrayList<>(GRID_CNT - 1);
   Collection<TakeJob> jobs=new ArrayList<>(GRID_CNT - 1);
   int itemsLeft=ITEMS_CNT;
@@ -15,10 +17,15 @@
   }
   assertEquals("Not all items will be polled",0,itemsLeft);
   for (  TakeJob job : jobs)   job.awaitItems();
+  log.info("Start one more grid.");
   Grid joined=startGrid(GRID_CNT);
-  Integer polled=joined.forLocal().compute().call(new TakeJob(queueName,1,1)).get();
+  TakeJob joinedJob=new TakeJob(queueName,1,1);
+  jobs.add(joinedJob);
+  Integer polled=joined.forLocal().compute().call(joinedJob).get();
   assertNotNull("Joined node should poll item",polled);
   info(">>> Joined node polled " + polled);
   for (  GridFuture<?> f : futs)   f.cancel();
-  fut.cancel();
+  putJob.stop(true);
+  fut.get();
+  for (  TakeJob job : jobs)   job.awaitDone();
 }
