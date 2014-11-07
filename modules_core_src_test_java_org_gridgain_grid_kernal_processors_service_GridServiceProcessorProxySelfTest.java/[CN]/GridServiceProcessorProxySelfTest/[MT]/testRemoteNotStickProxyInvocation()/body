@@ -1,13 +1,13 @@
 {
   final String name="testRemoteNotStickProxyInvocation";
   final Grid grid=grid(0);
-  grid.services().deployNodeSingleton(name,new MapServiceImpl<String,Integer>()).get();
-  MapService<Integer,String> svc=grid.forRemotes().services().serviceProxy(name,MapService.class,false);
+  grid.services().deployNodeSingleton(name,new MapServiceImpl<String,Integer>());
+  MapService<Integer,String> svc=grid.services(grid.cluster().forRemotes()).serviceProxy(name,MapService.class,false);
   assertFalse(svc instanceof GridService);
   for (int i=0; i < nodeCount(); i++)   svc.put(i,Integer.toString(i));
   int size=0;
-  for (  GridNode n : grid.forRemotes().nodes()) {
-    MapService<Integer,String> map=grid.forNode(n).services().serviceProxy(name,MapService.class,false);
+  for (  GridNode n : grid.cluster().forRemotes().nodes()) {
+    MapService<Integer,String> map=grid.services(grid.cluster().forNode(n)).serviceProxy(name,MapService.class,false);
     assertFalse(map instanceof GridService);
     size+=map.size();
   }
