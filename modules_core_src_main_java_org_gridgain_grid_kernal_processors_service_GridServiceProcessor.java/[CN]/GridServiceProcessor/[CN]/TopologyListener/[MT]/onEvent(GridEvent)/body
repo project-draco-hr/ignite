@@ -9,7 +9,7 @@
           final Collection<GridServiceDeployment> retries=new ConcurrentLinkedQueue<>();
           if (ctx.deploy().enabled())           ctx.cache().context().deploy().ignoreOwnership(true);
           try {
-            for (            GridCacheEntry<Object,Object> e : depCache.entrySetx()) {
+            for (            GridCacheEntry<Object,Object> e : cache.entrySetx()) {
               if (!(e.getKey() instanceof GridServiceDeploymentKey))               continue;
               GridServiceDeployment dep=(GridServiceDeployment)e.getValue();
               try {
@@ -27,6 +27,19 @@
             if (ctx.deploy().enabled())             ctx.cache().context().deploy().ignoreOwnership(false);
           }
           if (!retries.isEmpty())           onReassignmentFailed(topVer,retries);
+        }
+        for (        GridCacheEntry<Object,Object> e : cache.primaryEntrySetx()) {
+          if (!(e.getKey() instanceof GridServiceAssignmentsKey))           continue;
+          String name=((GridServiceAssignmentsKey)e.getKey()).name();
+          try {
+            if (cache.get(new GridServiceDeploymentKey(name)) == null) {
+              if (log.isDebugEnabled())               log.debug("Removed zombie assignments: " + e.getValue());
+              cache.remove(e.getKey());
+            }
+          }
+ catch (          GridException ex) {
+            log.error("Failed to clean up zombie assignments for service: " + name,ex);
+          }
         }
       }
     }
