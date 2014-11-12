@@ -8,21 +8,23 @@
       UUID nodeId=((GridDiscoveryEvent)evt).eventNode().id();
       Map<Long,GridFutureAdapter<QueryResult<K,V>>> futs=qryIters.remove(nodeId);
       if (futs != null) {
-        for (        GridFutureAdapter<QueryResult<K,V>> fut : futs.values()) {
-          fut.listenAsync(new CIX1<GridFuture<QueryResult<K,V>>>(){
+        for (        Map.Entry<Long,GridFutureAdapter<QueryResult<K,V>>> entry : futs.entrySet()) {
+          final Object recipient=recipient(nodeId,entry.getKey());
+          entry.getValue().listenAsync(new CIX1<GridFuture<QueryResult<K,V>>>(){
             @Override public void applyx(            GridFuture<QueryResult<K,V>> f) throws GridException {
-              f.get().iter.close();
+              f.get().closeIfNotShared(recipient);
             }
           }
 );
         }
       }
-      Map<Long,GridFutureAdapter<GridIndexingFieldsResult>> fieldsFuts=fieldsQryRes.remove(nodeId);
+      Map<Long,GridFutureAdapter<FieldsResult>> fieldsFuts=fieldsQryRes.remove(nodeId);
       if (fieldsFuts != null) {
-        for (        GridFutureAdapter<GridIndexingFieldsResult> fut : fieldsFuts.values()) {
-          fut.listenAsync(new CIX1<GridFuture<GridIndexingFieldsResult>>(){
-            @Override public void applyx(            GridFuture<GridIndexingFieldsResult> f) throws GridException {
-              f.get().iterator().close();
+        for (        Map.Entry<Long,GridFutureAdapter<FieldsResult>> entry : fieldsFuts.entrySet()) {
+          final Object recipient=recipient(nodeId,entry.getKey());
+          entry.getValue().listenAsync(new CIX1<GridFuture<FieldsResult>>(){
+            @Override public void applyx(            GridFuture<FieldsResult> f) throws GridException {
+              f.get().closeIfNotShared(recipient);
             }
           }
 );
