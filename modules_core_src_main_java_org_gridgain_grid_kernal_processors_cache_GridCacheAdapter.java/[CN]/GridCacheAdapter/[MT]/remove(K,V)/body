@@ -6,7 +6,9 @@
   return syncOp(new SyncOp<Boolean>(true){
     @Override public Boolean op(    GridCacheTxLocalAdapter<K,V> tx) throws GridException {
       if (ctx.deploymentEnabled())       ctx.deploy().registerClass(val);
-      return tx.removeAllAsync(ctx,Collections.singletonList(key),null,false,ctx.vararg(F.<K,V>cacheContainsPeek(val))).get().success();
+      K key0=key;
+      if (ctx.portableEnabled())       key0=(K)ctx.marshalToPortable(key);
+      return tx.removeAllAsync(ctx,Collections.singletonList(key0),null,false,ctx.vararg(F.<K,V>cacheContainsPeek(val))).get().success();
     }
     @Override public String toString(){
       return "remove [key=" + key + ", val="+ val+ ']';
