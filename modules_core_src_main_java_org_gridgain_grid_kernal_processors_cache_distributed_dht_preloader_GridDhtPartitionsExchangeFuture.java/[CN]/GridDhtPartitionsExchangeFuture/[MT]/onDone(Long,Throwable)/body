@@ -2,6 +2,7 @@
   if (err == null) {
     for (    GridCacheContext<K,V> cacheCtx : cctx.cacheContexts())     cacheCtx.affinity().cleanUpCache(res - 10);
   }
+  cctx.exchange().onExchangeDone(this);
   if (super.onDone(res,err) && !dummy && !forcePreload) {
     if (log.isDebugEnabled())     log.debug("Completed partition exchange [localNode=" + cctx.localNodeId() + ", exchange= "+ this+ ']');
     initFut.onDone(err == null);
@@ -10,7 +11,6 @@
     for (    GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
       if (exchId.event() == GridEventType.EVT_NODE_FAILED || exchId.event() == GridEventType.EVT_NODE_LEFT)       cacheCtx.config().getAffinity().removeNode(exchId.nodeId());
     }
-    cctx.exchange().onExchangeDone(this);
     return true;
   }
   return dummy;
