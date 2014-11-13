@@ -1,3 +1,13 @@
 {
-  if (gate != null)   gate.enter();
+  if (cctx.deploymentEnabled())   cctx.deploy().onEnter();
+  try {
+    cctx.kernalContext().gateway().readLock();
+  }
+ catch (  IllegalStateException e) {
+    throw e;
+  }
+catch (  RuntimeException|Error e) {
+    cctx.kernalContext().gateway().readUnlock();
+    throw e;
+  }
 }
