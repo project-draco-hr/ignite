@@ -11,19 +11,19 @@
     tx.prepare();
     if (commitInfo != null) {
       for (      GridCacheTxEntry<K,V> entry : commitInfo.recoveryWrites()) {
-        GridCacheTxEntry<K,V> write=tx.writeMap().get(entry.key());
+        GridCacheTxEntry<K,V> write=tx.writeMap().get(entry.txKey());
         if (write != null) {
           GridCacheEntryEx<K,V> cached=entry.cached();
           if (cached == null || cached.detached()) {
-            cached=write.context().cache().entryEx(entry.key().key(),tx.topologyVersion());
+            cached=write.context().cache().entryEx(entry.key(),tx.topologyVersion());
             entry.cached(cached,cached.keyBytes());
           }
-          tx.writeMap().put(entry.key(),entry);
+          tx.writeMap().put(entry.txKey(),entry);
           continue;
         }
         ((GridCacheTxAdapter<K,V>)tx).recoveryWrites(commitInfo.recoveryWrites());
-        GridCacheTxEntry<K,V> read=tx.readMap().remove(entry.key());
-        if (read != null)         tx.writeMap().put(entry.key(),entry);
+        GridCacheTxEntry<K,V> read=tx.readMap().remove(entry.txKey());
+        if (read != null)         tx.writeMap().put(entry.txKey(),entry);
       }
       tx.commitAsync().listenAsync(new CommitListener(tx));
     }
