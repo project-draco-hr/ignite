@@ -1,0 +1,10 @@
+{
+  assertEquals(0,executeHiveQuery("create table table_a (" + "id_a int," + "id_b int"+ ") "+ "row format delimited fields terminated by '\\t'"+ "stored as textfile "+ "location '/table-a'"));
+  assertEquals(0,executeHadoopCmd("fs","-put",new File(testWorkDir,"data-a").getAbsolutePath(),"/table-a"));
+  assertEquals(0,executeHiveQuery("create table table_b (" + "id_b int," + "rndv int"+ ") "+ "row format delimited fields terminated by '\\t'"+ "stored as textfile "+ "location '/table-b'"));
+  assertEquals(0,executeHadoopCmd("fs","-put",new File(testWorkDir,"data-b").getAbsolutePath(),"/table-b"));
+  assertEquals(0,executeHiveQuery("select * from table_a limit 10"));
+  assertEquals(0,executeHiveQuery("select count(id_b) from table_b"));
+  assertEquals(0,executeHiveQuery("select * from table_a a inner join table_b b on a.id_b = b.id_b limit 10"));
+  assertEquals(0,executeHiveQuery("select count(b.id_b) from table_a a inner join table_b b on a.id_b = b.id_b"));
+}
