@@ -1,15 +1,15 @@
 {
   super(ctx);
   ExtensionRegistry registry=new ExtensionRegistry();
-  if (cfgs != null) {
-    for (    PluginConfiguration pluginCfg : cfgs) {
-      GridPluginContext pluginCtx=new GridPluginContext(ctx,pluginCfg);
+  if (cfg.getPluginConfigurations() != null) {
+    for (    PluginConfiguration pluginCfg : cfg.getPluginConfigurations()) {
+      GridPluginContext pluginCtx=new GridPluginContext(ctx,pluginCfg,cfg);
       PluginProvider provider;
       try {
         if (pluginCfg.providerClass() == null)         throw new IgniteException("Provider class is null.");
         try {
-          Constructor<? extends PluginProvider> ctr=pluginCfg.providerClass().getConstructor(pluginCfg.getClass(),PluginContext.class);
-          provider=ctr.newInstance(pluginCfg,pluginCtx);
+          Constructor<? extends PluginProvider> ctr=pluginCfg.providerClass().getConstructor(PluginContext.class);
+          provider=ctr.newInstance(pluginCtx);
         }
  catch (        NoSuchMethodException ignore) {
           try {
