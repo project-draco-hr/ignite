@@ -1,0 +1,10 @@
+{
+  GridNodeLocalMap<String,VisorQueryTask.VisorFutureResultSetHolder<Map.Entry<Object,Object>>> storage=g.nodeLocalMap();
+  VisorQueryTask.VisorFutureResultSetHolder<Map.Entry<Object,Object>> t=storage.get(arg.get1());
+  if (t == null)   throw new GridInternalException("Scan query results are expired.");
+  GridBiTuple<List<Object[]>,Map.Entry<Object,Object>> rows=VisorQueryUtils.fetchScanQueryRows(t.future(),t.next(),arg.get2());
+  Boolean hasMore=rows.get2() != null;
+  if (hasMore)   storage.put(arg.get1(),new VisorQueryTask.VisorFutureResultSetHolder<>(t.future(),rows.get2(),true));
+ else   storage.remove(arg.get1());
+  return new VisorQueryResult(rows.get1(),hasMore);
+}
