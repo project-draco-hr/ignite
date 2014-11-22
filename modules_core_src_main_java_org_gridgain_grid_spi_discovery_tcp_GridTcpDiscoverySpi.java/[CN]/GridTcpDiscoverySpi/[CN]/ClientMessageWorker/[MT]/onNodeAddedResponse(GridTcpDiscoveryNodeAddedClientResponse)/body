@@ -1,0 +1,12 @@
+{
+  CI1<GridTcpDiscoveryNodeAddedClientResponse> cb=null;
+  lock.lock();
+  try {
+    if (nodeAddedCbs != null)     cb=nodeAddedCbs.remove(res.nodeAddedMessageId());
+  }
+  finally {
+    lock.unlock();
+  }
+  if (cb != null)   cb.apply(res);
+ else   if (log.isDebugEnabled())   log.debug("Discarding node added response because there is no callback: " + res);
+}

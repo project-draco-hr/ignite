@@ -1,4 +1,14 @@
 {
   super.cleanup();
+  Collection<CI1<GridTcpDiscoveryNodeAddedClientResponse>> cbs;
+  lock.lock();
+  try {
+    cbs=nodeAddedCbs.values();
+    nodeAddedCbs=null;
+  }
+  finally {
+    lock.unlock();
+  }
+  for (  CI1<GridTcpDiscoveryNodeAddedClientResponse> cb : cbs)   cb.apply(null);
   U.closeQuiet(sock);
 }
