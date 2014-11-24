@@ -1,28 +1,3 @@
 {
-  VisorDataCollectorTaskResult data=new VisorDataCollectorTaskResult();
-  for (  GridComputeJobResult res : results) {
-    VisorDataCollectorJobResult jobData=res.getData();
-    if (jobData != null) {
-      UUID nid=res.getNode().id();
-      GridException unhandledEx=res.getException();
-      if (unhandledEx == null) {
-        data.gridNames.put(nid,jobData.gridName);
-        data.topologyVersions.put(nid,jobData.topologyVersion);
-        data.taskMonitoringEnabled.put(nid,jobData.taskMonitoringEnabled);
-        if (!jobData.events.isEmpty())         data.events.addAll(jobData.events);
-        if (jobData.eventsEx != null)         data.eventsEx.put(nid,jobData.eventsEx);
-        if (!jobData.caches.isEmpty())         data.caches.put(nid,jobData.caches);
-        if (jobData.cachesEx != null)         data.cachesEx.put(nid,jobData.cachesEx);
-        if (!jobData.streamers.isEmpty())         data.streamers.put(nid,jobData.streamers);
-        if (jobData.streamersEx != null)         data.streamersEx.put(nid,jobData.streamersEx);
-        if (!jobData.ggfss.isEmpty())         data.ggfss.put(nid,jobData.ggfss);
-        if (!jobData.ggfsEndpoints.isEmpty())         data.ggfsEndpoints.put(nid,jobData.ggfsEndpoints);
-        if (jobData.ggfssEx != null)         data.ggfssEx.put(nid,jobData.ggfssEx);
-      }
- else {
-        if (!(unhandledEx instanceof GridEmptyProjectionException))         data.unhandledEx.put(nid,unhandledEx);
-      }
-    }
-  }
-  return data;
+  return reduce(new VisorNodeDataCollectorTaskResult(),results);
 }
