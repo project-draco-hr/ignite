@@ -7,9 +7,10 @@
     if (cached.detached())     continue;
     try {
       if (cached.obsolete() || cached.markObsoleteIfEmpty(tx.xidVersion()))       cacheCtx.cache().removeEntry(cached);
-      if (tx.dht() && isNearEnabled(cacheCtx)) {
-        GridNearCacheEntry<K,V> e=cacheCtx.dht().near().peekExx(entry.key());
-        if (e != null && e.markObsoleteIfEmpty(tx.xidVersion()))         cacheCtx.dht().near().removeEntry(e);
+      if (!tx.near() && isNearEnabled(cacheCtx)) {
+        GridNearCacheAdapter<K,V> near=cacheCtx.isNear() ? cacheCtx.near() : cacheCtx.dht().near();
+        GridNearCacheEntry<K,V> e=near.peekExx(entry.key());
+        if (e != null && e.markObsoleteIfEmpty(tx.xidVersion()))         near.removeEntry(e);
       }
     }
  catch (    GridException e) {
