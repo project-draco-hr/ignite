@@ -1,0 +1,22 @@
+{
+  startServerNodes(3);
+  startClientNodes(3);
+  checkNodes(3,3);
+  attachListeners(3,3);
+  assertTrue(checkMetrics(3,3,0));
+  G.grid("client-0").compute().broadcast(F.noop()).get();
+  assertTrue(GridTestUtils.waitForCondition(new PA(){
+    @Override public boolean apply(){
+      return checkMetrics(3,3,1);
+    }
+  }
+,10000));
+  checkMetrics(3,3,1);
+  G.grid("server-0").compute().broadcast(F.noop()).get();
+  assertTrue(GridTestUtils.waitForCondition(new PA(){
+    @Override public boolean apply(){
+      return checkMetrics(3,3,2);
+    }
+  }
+,10000));
+}

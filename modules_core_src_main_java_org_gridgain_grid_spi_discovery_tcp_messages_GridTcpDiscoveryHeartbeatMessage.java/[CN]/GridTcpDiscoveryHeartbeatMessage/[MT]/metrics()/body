@@ -1,8 +1,46 @@
 {
-  return F.viewReadOnly(metrics,new C1<byte[],GridNodeMetrics>(){
-    @Override public GridNodeMetrics apply(    byte[] metricsBytes){
-      return GridDiscoveryMetricsHelper.deserialize(metricsBytes,0);
+  final Iterator<Map.Entry<UUID,T2<byte[],Map<UUID,byte[]>>>> it=metrics.entrySet().iterator();
+  return new AbstractMap<UUID,GridNodeMetrics>(){
+    @Override public Set<Entry<UUID,GridNodeMetrics>> entrySet(){
+      return new AbstractSet<Entry<UUID,GridNodeMetrics>>(){
+        @Override public Iterator<Entry<UUID,GridNodeMetrics>> iterator(){
+          return new Iterator<Entry<UUID,GridNodeMetrics>>(){
+            private Entry<UUID,T2<byte[],Map<UUID,byte[]>>> cur=it.hasNext() ? it.next() : null;
+            private Iterator<Entry<UUID,byte[]>> clientsIt;
+            @Override public boolean hasNext(){
+              return clientsIt == null ? cur != null : clientsIt.hasNext() || it.hasNext();
+            }
+            @Override public Entry<UUID,GridNodeMetrics> next(){
+              if (clientsIt == null) {
+                if (cur == null)                 throw new NoSuchElementException();
+                Map<UUID,byte[]> map=cur.getValue().get2();
+                clientsIt=map != null ? map.entrySet().iterator() : Collections.<Entry<UUID,byte[]>>emptyIterator();
+                return new T2<>(cur.getKey(),deserialize(cur.getValue().get1(),0));
+              }
+ else {
+                if (clientsIt.hasNext()) {
+                  Entry<UUID,byte[]> nextClient=clientsIt.next();
+                  return new T2<>(nextClient.getKey(),deserialize(nextClient.getValue(),0));
+                }
+ else {
+                  clientsIt=null;
+                  cur=it.hasNext() ? it.next() : null;
+                  return next();
+                }
+              }
+            }
+            @Override public void remove(){
+              throw new UnsupportedOperationException();
+            }
+          }
+;
+        }
+        @Override public int size(){
+          throw new UnsupportedOperationException();
+        }
+      }
+;
     }
   }
-);
+;
 }

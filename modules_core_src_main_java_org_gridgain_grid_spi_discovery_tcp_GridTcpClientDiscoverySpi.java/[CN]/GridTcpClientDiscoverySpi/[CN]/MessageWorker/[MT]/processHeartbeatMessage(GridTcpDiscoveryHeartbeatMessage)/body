@@ -3,6 +3,7 @@
     if (msg.senderNodeId() == null) {
       Socket sock0=sock;
       if (sock0 != null) {
+        msg.setMetrics(locNodeId,metricsProvider.getMetrics());
         try {
           writeToSocket(sock0,msg);
           if (log.isDebugEnabled())           log.debug("Heartbeat message sent [sock=" + sock0 + ", msg="+ msg+ ']');
@@ -22,7 +23,7 @@
     if (msg.hasMetrics()) {
       for (      Map.Entry<UUID,GridNodeMetrics> e : msg.metrics().entrySet()) {
         UUID nodeId=e.getKey();
-        GridTcpDiscoveryNode node=rmtNodes.get(nodeId);
+        GridTcpDiscoveryNode node=nodeId.equals(locNodeId) ? locNode : rmtNodes.get(nodeId);
         if (node != null) {
           node.setMetrics(e.getValue());
           node.lastUpdateTime(U.currentTimeMillis());
