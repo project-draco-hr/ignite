@@ -1,0 +1,12 @@
+{
+  if (log.isDebugEnabled())   log.debug("IP finder cleaner has been started.");
+  while (!isInterrupted()) {
+    Thread.sleep(ipFinderCleanFreq);
+    if (!isLocalNodeCoordinator())     continue;
+    if (spiStateCopy() != CONNECTED) {
+      if (log.isDebugEnabled())       log.debug("Stopping IP finder cleaner (SPI is not connected to topology).");
+      return;
+    }
+    if (ipFinder.isShared())     cleanIpFinder();
+  }
+}
