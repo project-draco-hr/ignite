@@ -1,0 +1,14 @@
+{
+  assertEquals(0,executeHadoopCmd("fs","-ls","/"));
+  assertEquals(0,executeHadoopCmd("fs","-mkdir","/input"));
+  assertEquals(0,executeHadoopCmd("fs","-put",new File(testWorkDir,"test-data").getAbsolutePath(),"/input"));
+  assertTrue(ggfs.exists(new GridGgfsPath("/input/test-data")));
+  assertEquals(0,executeHadoopCmd("jar",examplesJar.getAbsolutePath(),"wordcount","/input","/output"));
+  assertTrue(ggfs.exists(new GridGgfsPath("/output")));
+  BufferedReader in=new BufferedReader(new InputStreamReader(ggfs.open(new GridGgfsPath("/output/part-r-00000"))));
+  List<String> res=new ArrayList<>();
+  String line;
+  while ((line=in.readLine()) != null)   res.add(line);
+  Collections.sort(res);
+  assertEquals("[blue\t150, green\t200, red\t100, yellow\t50]",res.toString());
+}
