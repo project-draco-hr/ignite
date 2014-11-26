@@ -1,0 +1,16 @@
+{
+  Configuration cfg=new Configuration();
+  Path jobStatPath=new Path(new Path(statDir),jobId.toString());
+  GridHadoopStatCounter cntr=cntrs.counter(GridHadoopStatCounter.GROUP_NAME,GridHadoopStatCounter.COUNTER_NAME,GridHadoopStatCounter.class);
+  FileSystem fs=jobStatPath.getFileSystem(cfg);
+  fs.mkdirs(jobStatPath);
+  try (FSDataOutputStream out=fs.create(new Path(jobStatPath,"statistics"))){
+    for (    T2<String,Long> evt : cntr.evts()) {
+      out.writeUTF(evt.get1());
+      out.writeChar(':');
+      out.writeUTF(evt.get2().toString());
+      out.writeChar('\n');
+    }
+    out.flush();
+  }
+ }
