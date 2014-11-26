@@ -1,3 +1,12 @@
 {
-  return tx.commitAsync();
+  Collection<Integer> cacheIds=tx.activeCacheIds();
+  if (cacheIds.isEmpty())   return tx.commitAsync();
+ else   if (cacheIds.size() == 1) {
+    int cacheId=F.first(cacheIds);
+    return cacheContext(cacheId).cache().commitTxAsync(tx);
+  }
+ else {
+    for (    Integer cacheId : cacheIds)     cacheContext(cacheId).cache().awaitLastFut();
+    return tx.commitAsync();
+  }
 }
