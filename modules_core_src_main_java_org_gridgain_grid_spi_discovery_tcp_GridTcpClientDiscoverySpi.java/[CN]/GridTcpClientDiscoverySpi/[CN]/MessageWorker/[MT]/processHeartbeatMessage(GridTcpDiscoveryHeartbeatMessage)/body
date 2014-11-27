@@ -21,15 +21,11 @@
   }
  else {
     if (msg.hasMetrics()) {
-      for (      Map.Entry<UUID,GridNodeMetrics> e : msg.metrics().entrySet()) {
-        UUID nodeId=e.getKey();
-        GridTcpDiscoveryNode node=nodeId.equals(locNodeId) ? locNode : rmtNodes.get(nodeId);
-        if (node != null) {
-          node.setMetrics(e.getValue());
-          node.lastUpdateTime(U.currentTimeMillis());
-          notifyDiscovery(EVT_NODE_METRICS_UPDATED,topVer,node,updateTopology(topVer));
-        }
- else         if (log.isDebugEnabled())         log.debug("Received metrics from unknown node: " + nodeId);
+      long tstamp=U.currentTimeMillis();
+      for (      Map.Entry<UUID,MetricsSet> e : msg.metrics().entrySet()) {
+        MetricsSet metricsSet=e.getValue();
+        updateMetrics(e.getKey(),metricsSet.metrics(),tstamp);
+        for (        T2<UUID,GridNodeMetrics> t : metricsSet.clientMetrics())         updateMetrics(t.get1(),t.get2(),tstamp);
       }
     }
   }
