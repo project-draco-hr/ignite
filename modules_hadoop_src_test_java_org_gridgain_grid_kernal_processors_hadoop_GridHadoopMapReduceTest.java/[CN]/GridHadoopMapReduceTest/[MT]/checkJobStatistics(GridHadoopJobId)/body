@@ -10,6 +10,7 @@
   phaseOrders.put("Crun",4);
   phaseOrders.put("finish",5);
   String prevTaskId=null;
+  long apiEvtCnt=0;
   for (  T2<String,Long> evt : statCntr.evts()) {
     String[] parsedEvt=evt.get1().split(" ");
     String taskId;
@@ -27,6 +28,7 @@
     assertNotNull("Invalid phase " + taskPhase,pos);
     tasks.get(taskId).put(pos,evt.get2());
     prevTaskId=taskId;
+    apiEvtCnt++;
   }
   for (  Map.Entry<String,SortedMap<Integer,Long>> task : tasks.entrySet()) {
     Map<Integer,Long> order=task.getValue();
@@ -36,4 +38,18 @@
       prev=phase.getValue();
     }
   }
+  final GridGgfsPath statPath=new GridGgfsPath("/users/anonymous/" + jobId + "/statistics");
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      try {
+        return ggfs.exists(statPath);
+      }
+ catch (      GridException e) {
+        throw new GridRuntimeException(e);
+      }
+    }
+  }
+,10000);
+  BufferedReader reader=new BufferedReader(new InputStreamReader(ggfs.open(statPath)));
+  assertEquals(apiEvtCnt,GridHadoopTestUtils.simpleCheckJobStatFile(reader));
 }

@@ -15,7 +15,16 @@
   examplesJar=fileList[0];
   testWorkDir=Files.createTempDirectory("hadoop-cli-test").toFile();
   U.copy(U.resolveGridGainPath("docs/core-site.gridgain.xml"),new File(testWorkDir,"core-site.xml"),false);
-  U.copy(U.resolveGridGainPath("docs/mapred-site.gridgain.xml"),new File(testWorkDir,"mapred-site.xml"),false);
-  generateTestFile(new File(testWorkDir,"test-data"),"red",100,"green",200,"blue",150,"yellow",50);
+  File srcFile=U.resolveGridGainPath("docs/mapred-site.gridgain.xml");
+  File dstFile=new File(testWorkDir,"mapred-site.xml");
+  try (BufferedReader in=new BufferedReader(new FileReader(srcFile));PrintWriter out=new PrintWriter(dstFile)){
+    String line;
+    while ((line=in.readLine()) != null) {
+      if (line.startsWith("</configuration>"))       out.println("    <property>\n" + "        <name>" + GridHadoopUtils.JOB_STATISTICS_WRITER_PROPERTY + "</name>\n"+ "        <value>"+ GridHadoopFSStatWriter.class.getName()+ "</value>\n"+ "    </property>\n");
+      out.println(line);
+    }
+    out.flush();
+  }
+   generateTestFile(new File(testWorkDir,"test-data"),"red",100,"green",200,"blue",150,"yellow",50);
   generateHiveTestFiles();
 }
