@@ -1,8 +1,5 @@
 {
-  stats.onJoinStarted();
-  GridTcpDiscoveryJoinRequestMessage req=new GridTcpDiscoveryJoinRequestMessage(locNode,exchange.collect(locNodeId));
-  req.client(true);
-  req.clientReconnect(recon);
+  if (!recon)   stats.onJoinStarted();
   Collection<InetSocketAddress> addrs=null;
   while (!Thread.currentThread().isInterrupted()) {
     try {
@@ -27,21 +24,31 @@
           UUID rmtNodeId=t.get2();
           stats.onClientSocketInitialized(U.currentTimeMillis() - ts);
           locNode.clientRouterNodeId(rmtNodeId);
-          writeToSocket(sock,req);
+          GridTcpDiscoveryAbstractMessage msg=recon ? new GridTcpDiscoveryClientReconnectMessage(locNodeId,rmtNodeId,lastMsgId) : new GridTcpDiscoveryJoinRequestMessage(locNode,exchange.collect(locNodeId));
+          msg.client(true);
+          writeToSocket(sock,msg);
           int res=readReceipt(sock,ackTimeout);
 switch (res) {
 case RES_OK:
             this.sock=sock;
-          sockRdr=new SocketReader(rmtNodeId,new MessageWorker());
+          sockRdr=new SocketReader(rmtNodeId,new MessageWorker(recon));
         sockRdr.start();
       if (U.await(joinLatch,netTimeout,MILLISECONDS)) {
         GridSpiException joinErr0=joinErr;
         if (joinErr0 != null)         throw joinErr0;
+        if (reconFailed) {
+          if (log.isDebugEnabled())           log.debug("Failed to reconnect, will try to rejoin [locNode=" + locNode + ']');
+          U.closeQuiet(sock);
+          U.interrupt(sockRdr);
+          U.join(sockRdr,log);
+          this.sock=null;
+          return true;
+        }
         if (log.isDebugEnabled())         log.debug("Successfully connected to topology [sock=" + sock + ']');
         hbSender=new HeartbeatSender();
         hbSender.start();
         stats.onJoinFinished();
-        return;
+        return false;
       }
  else {
         U.warn(log,"Join process timed out (will try other address) [sock=" + sock + ", timeout="+ netTimeout+ ']');
@@ -62,7 +69,7 @@ U.closeQuiet(sock);
 }
  catch (GridInterruptedException ignored) {
 if (log.isDebugEnabled()) log.debug("Joining thread was interrupted.");
-return;
+return recon;
 }
 catch (IOException|GridException e) {
 if (log.isDebugEnabled()) U.error(log,"Failed to establish connection with address: " + addr,e);
@@ -79,4 +86,5 @@ U.sleep(2000);
 if (log.isDebugEnabled()) log.debug("Joining thread was interrupted.");
 }
 }
+return recon;
 }
