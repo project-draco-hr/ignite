@@ -42,13 +42,13 @@ case RES_OK:
           U.interrupt(sockRdr);
           U.join(sockRdr,log);
           this.sock=null;
-          return true;
+          return false;
         }
         if (log.isDebugEnabled())         log.debug("Successfully connected to topology [sock=" + sock + ']');
         hbSender=new HeartbeatSender();
         hbSender.start();
         stats.onJoinFinished();
-        return false;
+        return true;
       }
  else {
         U.warn(log,"Join process timed out (will try other address) [sock=" + sock + ", timeout="+ netTimeout+ ']');
@@ -69,7 +69,7 @@ U.closeQuiet(sock);
 }
  catch (GridInterruptedException ignored) {
 if (log.isDebugEnabled()) log.debug("Joining thread was interrupted.");
-return recon;
+return false;
 }
 catch (IOException|GridException e) {
 if (log.isDebugEnabled()) U.error(log,"Failed to establish connection with address: " + addr,e);
@@ -86,5 +86,5 @@ U.sleep(2000);
 if (log.isDebugEnabled()) log.debug("Joining thread was interrupted.");
 }
 }
-return recon;
+return false;
 }
