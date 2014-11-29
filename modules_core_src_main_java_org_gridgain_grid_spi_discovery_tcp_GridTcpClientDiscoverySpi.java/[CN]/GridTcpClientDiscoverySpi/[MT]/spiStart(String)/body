@@ -1,5 +1,29 @@
 {
   startStopwatch();
+  assertParameter(ipFinder != null,"ipFinder != null");
+  assertParameter(netTimeout > 0,"networkTimeout > 0");
+  assertParameter(sockTimeout > 0,"sockTimeout > 0");
+  assertParameter(ackTimeout > 0,"ackTimeout > 0");
+  assertParameter(hbFreq > 0,"heartbeatFreq > 0");
+  assertParameter(threadPri > 0,"threadPri > 0");
+  try {
+    locHost=U.resolveLocalHost(locAddr);
+  }
+ catch (  IOException e) {
+    throw new GridSpiException("Unknown local address: " + locAddr,e);
+  }
+  if (log.isDebugEnabled()) {
+    log.debug(configInfo("localHost",locHost.getHostAddress()));
+    log.debug(configInfo("threadPri",threadPri));
+    log.debug(configInfo("networkTimeout",netTimeout));
+    log.debug(configInfo("sockTimeout",sockTimeout));
+    log.debug(configInfo("ackTimeout",ackTimeout));
+    log.debug(configInfo("ipFinder",ipFinder));
+    log.debug(configInfo("heartbeatFreq",hbFreq));
+  }
+  if (netTimeout < 3000)   U.warn(log,"Network timeout is too low (at least 3000 ms recommended): " + netTimeout);
+  if (hbFreq < 2000)   U.warn(log,"Heartbeat frequency is too high (at least 2000 ms recommended): " + hbFreq);
+  registerMBean(gridName,this,GridTcpClientDiscoverySpiMBean.class);
   try {
     locHost=U.resolveLocalHost(locAddr);
   }
