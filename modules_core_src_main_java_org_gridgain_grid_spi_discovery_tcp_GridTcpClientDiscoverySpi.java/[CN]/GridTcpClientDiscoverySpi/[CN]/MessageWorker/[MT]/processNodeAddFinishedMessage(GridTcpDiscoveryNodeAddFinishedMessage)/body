@@ -3,7 +3,7 @@
     if (joinLatch.getCount() > 0) {
       long topVer=msg.topologyVersion();
       locNode.order(topVer);
-      notifyDiscovery(EVT_NODE_JOINED,topVer,locNode,updateTopology(topVer));
+      notifyDiscovery(EVT_NODE_JOINED,topVer,locNode,updateTopologyHistory(topVer));
       joinErr=null;
       joinLatch.countDown();
     }
@@ -19,7 +19,7 @@
     node.order(topVer);
     node.visible(true);
     if (locNodeVer.equals(node.version()))     node.version(locNodeVer);
-    Collection<GridNode> top=updateTopology(topVer);
+    Collection<GridNode> top=updateTopologyHistory(topVer);
     if (!pending && joinLatch.getCount() > 0) {
       if (log.isDebugEnabled())       log.debug("Discarding node add finished message (join process is not finished): " + msg);
       return;
