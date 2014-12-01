@@ -4,6 +4,17 @@
   assertEquals(0,executeHadoopCmd("fs","-put",new File(testWorkDir,"test-data").getAbsolutePath(),"/input"));
   assertTrue(ggfs.exists(new GridGgfsPath("/input/test-data")));
   assertEquals(0,executeHadoopCmd("jar",examplesJar.getAbsolutePath(),"wordcount","/input","/output"));
+  GridGgfsPath path=new GridGgfsPath("/users/" + System.getProperty("user.name") + "/");
+  assertTrue(ggfs.exists(path));
+  GridGgfsPath jobStatPath=null;
+  for (  GridGgfsPath jobPath : ggfs.listPaths(path)) {
+    assertNull(jobStatPath);
+    jobStatPath=jobPath;
+  }
+  File locStatFile=new File(testWorkDir,"performance");
+  assertEquals(0,executeHadoopCmd("fs","-get",jobStatPath.toString() + "/performance",locStatFile.toString()));
+  long evtCnt=GridHadoopTestUtils.simpleCheckJobStatFile(new BufferedReader(new FileReader(locStatFile)));
+  assertTrue(evtCnt >= 22);
   assertTrue(ggfs.exists(new GridGgfsPath("/output")));
   BufferedReader in=new BufferedReader(new InputStreamReader(ggfs.open(new GridGgfsPath("/output/part-r-00000"))));
   List<String> res=new ArrayList<>();
