@@ -1,17 +1,19 @@
 {
   execStartTs=U.currentTimeMillis();
-  final GridHadoopCounters counters=new GridHadoopCountersImpl();
   Throwable err=null;
   GridHadoopTaskState state=GridHadoopTaskState.COMPLETED;
+  GridHadoopPerformanceCounter perfCntr=null;
   try {
     ctx=job.getTaskContext(info);
-    ctx.counters(counters);
+    perfCntr=GridHadoopPerformanceCounter.getCounter(ctx.counters(),nodeId);
+    perfCntr.onTaskSubmit(info,submitTs);
+    perfCntr.onTaskPrepare(info,execStartTs);
     ctx.prepareTaskEnvironment();
-    runTask(ctx);
+    runTask(perfCntr);
     if (info.type() == MAP && job.info().hasCombiner()) {
       ctx.taskInfo(new GridHadoopTaskInfo(COMBINE,info.jobId(),info.taskNumber(),info.attempt(),null));
       try {
-        runTask(ctx);
+        runTask(perfCntr);
       }
   finally {
         ctx.taskInfo(info);
@@ -28,9 +30,9 @@ catch (  Throwable e) {
   }
  finally {
     execEndTs=U.currentTimeMillis();
-    stats.onTaskEnd(info);
-    onTaskFinished(new GridHadoopTaskStatus(state,err,counters));
-    if (local != null)     local.close();
+    if (perfCntr != null)     perfCntr.onTaskFinish(info,execEndTs);
+    onTaskFinished(new GridHadoopTaskStatus(state,err,ctx == null ? null : ctx.counters()));
+    if (combinerInput != null)     combinerInput.close();
     if (ctx != null)     ctx.cleanupTaskEnvironment();
   }
   return null;
