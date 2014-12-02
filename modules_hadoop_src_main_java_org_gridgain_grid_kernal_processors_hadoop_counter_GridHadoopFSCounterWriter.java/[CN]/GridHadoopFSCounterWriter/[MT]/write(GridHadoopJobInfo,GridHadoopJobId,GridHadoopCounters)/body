@@ -1,0 +1,25 @@
+{
+  Configuration hadoopCfg=new Configuration();
+  for (  Map.Entry<String,String> e : ((GridHadoopDefaultJobInfo)jobInfo).properties().entrySet())   hadoopCfg.set(e.getKey(),e.getValue());
+  String user=jobInfo.user();
+  if (F.isEmpty(user))   user=DEFAULT_USER_NAME;
+  String dir=jobInfo.property(COUNTER_WRITER_DIR_PROPERTY);
+  if (dir == null)   dir=DEFAULT_COUNTER_WRITER_DIR;
+  Path jobStatPath=new Path(new Path(dir.replace(USER_MACRO,user)),jobId.toString());
+  GridHadoopPerformanceCounter perfCntr=GridHadoopPerformanceCounter.getCounter(cntrs,null);
+  try {
+    FileSystem fs=jobStatPath.getFileSystem(hadoopCfg);
+    fs.mkdirs(jobStatPath);
+    try (PrintStream out=new PrintStream(fs.create(new Path(jobStatPath,PERFORMANCE_COUNTER_FILE_NAME)))){
+      for (      T2<String,Long> evt : perfCntr.evts()) {
+        out.print(evt.get1());
+        out.print(':');
+        out.println(evt.get2().toString());
+      }
+      out.flush();
+    }
+   }
+ catch (  IOException e) {
+    throw new GridException(e);
+  }
+}
