@@ -1,0 +1,34 @@
+{
+  Collection<String> phases=new HashSet<>();
+  phases.add("submit");
+  phases.add("prepare");
+  phases.add("start");
+  phases.add("finish");
+  phases.add("requestId");
+  phases.add("responseId");
+  Collection<String> evtTypes=new HashSet<>();
+  evtTypes.add("JOB");
+  evtTypes.add("SETUP");
+  evtTypes.add("MAP");
+  evtTypes.add("SHUFFLE");
+  evtTypes.add("REDUCE");
+  evtTypes.add("COMBINE");
+  evtTypes.add("COMMIT");
+  long evtCnt=0;
+  String line;
+  while ((line=reader.readLine()) != null) {
+    String[] splitLine=line.split(":");
+    Long.parseLong(splitLine[1]);
+    String[] evt=splitLine[0].split(" ");
+    assertTrue("Unknown event '" + evt[0] + "'",evtTypes.contains(evt[0]));
+    String phase;
+    if ("JOB".equals(evt[0]))     phase=evt[1];
+ else {
+      Long.parseLong(evt[1]);
+      phase=evt[2];
+    }
+    assertTrue("Unknown phase '" + phase + "' in "+ Arrays.toString(evt),phases.contains(phase));
+    evtCnt++;
+  }
+  return evtCnt;
+}

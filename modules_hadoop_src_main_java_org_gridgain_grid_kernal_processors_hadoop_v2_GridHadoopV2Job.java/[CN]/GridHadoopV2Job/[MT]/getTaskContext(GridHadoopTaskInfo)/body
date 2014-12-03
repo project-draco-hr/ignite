@@ -10,8 +10,15 @@
       GridHadoopClassLoader ldr=new GridHadoopClassLoader(rsrcMgr.classPath());
       cls=ldr.loadClass(GridHadoopV2TaskContext.class.getName());
     }
-    Constructor<?> ctr=cls.getConstructor(GridHadoopTaskInfo.class,GridHadoopJob.class,GridHadoopJobId.class,UUID.class);
-    GridHadoopTaskContext res=(GridHadoopTaskContext)ctr.newInstance(info,this,jobId,locNodeId);
+    Constructor<?> ctr=cls.getConstructor(GridHadoopTaskInfo.class,GridHadoopJob.class,GridHadoopJobId.class,UUID.class,DataInput.class);
+    if (jobConfData == null) synchronized (jobConf) {
+      if (jobConfData == null) {
+        ByteArrayOutputStream buf=new ByteArrayOutputStream();
+        jobConf.write(new DataOutputStream(buf));
+        jobConfData=buf.toByteArray();
+      }
+    }
+    GridHadoopTaskContext res=(GridHadoopTaskContext)ctr.newInstance(info,this,jobId,locNodeId,new DataInputStream(new ByteArrayInputStream(jobConfData)));
     fut.onDone(res);
     return res;
   }
