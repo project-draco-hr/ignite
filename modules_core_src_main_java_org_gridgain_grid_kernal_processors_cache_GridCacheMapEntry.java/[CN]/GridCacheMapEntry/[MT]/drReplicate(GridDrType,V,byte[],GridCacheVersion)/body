@@ -1,14 +1,3 @@
 {
-  if (cctx.isDrEnabled() && drType != DR_NONE && !isInternal()) {
-    GridDrSenderCacheConfiguration drSndCfg=cctx.config().getDrSenderConfiguration();
-    GridDrSenderCacheEntryFilter<K,V> drFilter=drSndCfg != null ? (GridDrSenderCacheEntryFilter<K,V>)drSndCfg.getEntryFilter() : null;
-    GridDrRawEntry<K,V> entry=new GridDrRawEntry<>(key,keyBytes,val,valBytes,rawTtl(),rawExpireTime(),ver.drVersion());
-    boolean apply=drFilter == null;
-    if (!apply) {
-      entry.unmarshal(cctx.marshaller());
-      apply=drFilter.accept(entry);
-    }
-    if (apply)     cctx.dr().replicate(entry,drType);
- else     cctx.cache().metrics0().onSenderCacheEntryFiltered();
-  }
+  if (cctx.isDrEnabled() && drType != DR_NONE && !isInternal())   cctx.dr().replicate(key,keyBytes,val,valBytes,rawTtl(),rawExpireTime(),ver.drVersion(),drType);
 }

@@ -4,7 +4,9 @@
   assertNotNull(queue);
   assertTrue(queue.isEmpty());
   PutJob putJob=new PutJob(queueName);
-  GridFuture<?> fut=grid(0).forLocal().compute().run(putJob);
+  GridCompute comp=compute(grid(0).forLocal()).enableAsync();
+  comp.run(putJob);
+  GridFuture<?> fut=comp.future();
   Collection<GridFuture<?>> futs=new ArrayList<>(GRID_CNT - 1);
   Collection<TakeJob> jobs=new ArrayList<>(GRID_CNT - 1);
   int itemsLeft=ITEMS_CNT;
@@ -12,7 +14,9 @@
     int cnt=ITEMS_CNT / (GRID_CNT - 1);
     TakeJob job=new TakeJob(queueName,cnt,10);
     jobs.add(job);
-    futs.add(grid(i).forLocal().compute().call(job));
+    comp=compute(grid(i).forLocal()).enableAsync();
+    comp.call(job);
+    futs.add(comp.future());
     itemsLeft-=cnt;
   }
   assertEquals("Not all items will be polled",0,itemsLeft);
@@ -21,7 +25,7 @@
   Grid joined=startGrid(GRID_CNT);
   TakeJob joinedJob=new TakeJob(queueName,1,1);
   jobs.add(joinedJob);
-  Integer polled=joined.forLocal().compute().call(joinedJob).get();
+  Integer polled=forLocal(joined).call(joinedJob);
   assertNotNull("Joined node should poll item",polled);
   info(">>> Joined node polled " + polled);
   for (  GridFuture<?> f : futs)   f.cancel();

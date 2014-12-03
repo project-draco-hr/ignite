@@ -6,7 +6,7 @@
     @Override public boolean apply(    UUID nodeId,    Object msg){
       try {
         log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ']');
-        if (!nodeId.equals(grid2.localNode().id())) {
+        if (!nodeId.equals(grid2.cluster().localNode().id())) {
           log.error("Unexpected sender node: " + nodeId);
           error.set(true);
           return false;
@@ -20,10 +20,10 @@
     }
   }
 );
-  GridProjection rNode1=grid2.forRemotes();
-  rNode1.message().send(null,MSG_1);
-  rNode1.message().send(null,MSG_2);
-  rNode1.message().send(null,MSG_3);
+  GridProjection rNode1=grid2.cluster().forRemotes();
+  message(rNode1).send(null,MSG_1);
+  message(rNode1).send(null,MSG_2);
+  message(rNode1).send(null,MSG_3);
   assertTrue(rcvLatch.await(3,TimeUnit.SECONDS));
   assertFalse(error.get());
   assertTrue(rcvMsgs.contains(MSG_1));

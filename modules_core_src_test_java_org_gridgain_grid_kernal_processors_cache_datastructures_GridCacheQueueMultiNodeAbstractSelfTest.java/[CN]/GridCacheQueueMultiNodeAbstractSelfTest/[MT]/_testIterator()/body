@@ -3,18 +3,18 @@
   info("Queue name: " + queueName);
   GridCacheQueue<Integer> queue=grid(0).cache(null).dataStructures().queue(queueName,QUEUE_CAPACITY,false,true);
   assertTrue(queue.isEmpty());
-  grid(0).compute().call(new AddAllJob(queueName,RETRIES)).get();
+  grid(0).compute().call(new AddAllJob(queueName,RETRIES));
   assertEquals(GRID_CNT * RETRIES,queue.size());
   Collection<GridNode> nodes=grid(0).nodes();
   for (  GridNode node : nodes) {
-    Collection<Integer> queueElements=grid(0).forNode(node).compute().call(new GridCallable<Collection<Integer>>(){
+    Collection<Integer> queueElements=compute(grid(0).forNode(node)).call(new GridCallable<Collection<Integer>>(){
       @GridInstanceResource private Grid grid;
       /** 
  * {@inheritDoc} 
  */
       @Override public Collection<Integer> call() throws Exception {
         Collection<Integer> values=new ArrayList<>();
-        grid.log().info("Running job [node=" + grid.localNode().id() + ", job="+ this+ "]");
+        grid.log().info("Running job [node=" + grid.cluster().localNode().id() + ", job="+ this+ "]");
         GridCacheQueue<Integer> locQueue=grid.cache(null).dataStructures().queue(queueName,QUEUE_CAPACITY,false,true);
         grid.log().info("Queue size " + locQueue.size());
         for (        Integer element : locQueue)         values.add(element);
@@ -22,7 +22,7 @@
         return values;
       }
     }
-).get();
+);
     assertTrue(F.eqOrdered(queue,queueElements));
   }
   grid(0).cache(null).dataStructures().removeQueue(queueName);

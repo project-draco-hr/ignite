@@ -5,20 +5,20 @@
   Grid master=startGrid(MASTER);
   List<Grid> workers=new ArrayList<>(workerCnt);
   for (int i=1; i <= workerCnt; i++)   workers.add(startGrid("worker" + i));
-  info("Master: " + master.localNode().id());
+  info("Master: " + master.cluster().localNode().id());
   List<Grid> runningWorkers=new ArrayList<>(workerCnt);
   for (int i=1; i <= workerCnt; i++) {
-    UUID id=workers.get(i - 1).localNode().id();
+    UUID id=workers.get(i - 1).cluster().localNode().id();
     info(String.format("Worker%d: %s",i,id));
     runningWorkers.add(workers.get(i - 1));
   }
   try {
-    master.mapKeyToNode(CACHE_NAME,"Dummy");
+    master.cluster().mapKeyToNode(CACHE_NAME,"Dummy");
     Map<UUID,Collection<Integer>> dataChunks=new HashMap<>();
     int chunkCntr=0;
     int failoverPushGap=0;
     for (    Integer key : testKeys) {
-      GridNode mappedNode=master.mapKeyToNode(CACHE_NAME,key);
+      GridNode mappedNode=master.cluster().mapKeyToNode(CACHE_NAME,key);
       UUID nodeId=mappedNode.id();
       Collection<Integer> data=dataChunks.get(nodeId);
       if (data == null) {
@@ -37,7 +37,7 @@
             if (failoverPushGap > 0)             failoverPushGap--;
  else {
               Grid victim=runningWorkers.remove(0);
-              info("Shutting down node: " + victim.localNode().id());
+              info("Shutting down node: " + victim.cluster().localNode().id());
               stopGrid(victim.name());
               failoverPushGap=FAILOVER_PUSH_GAP;
             }

@@ -1,5 +1,8 @@
 {
-  GridComputeTaskFuture<Void> fut=master.forPredicate(workerNodesFilter).compute().execute(new GridCacheGroupLockPutTask(preferredNodeId,CACHE_NAME,optimisticTx()),dataChunk);
+  GridProjection prj=master.cluster().forPredicate(workerNodesFilter);
+  GridCompute comp=master.compute(prj).enableAsync();
+  comp.execute(new GridCacheGroupLockPutTask(preferredNodeId,CACHE_NAME,optimisticTx()),dataChunk);
+  GridComputeTaskFuture<Void> fut=comp.future();
   fut.listenAsync(new CI1<GridFuture<Void>>(){
     @Override public void apply(    GridFuture<Void> f){
       GridComputeTaskFuture taskFut=(GridComputeTaskFuture)f;

@@ -10,14 +10,16 @@
       G.start(cfg);
     }
   }
-  boolean useSession=false;
+  boolean useSes=false;
   if (args.length == 3) {
-    if ("-session".equals(args[2].trim()))     useSession=true;
+    if ("-session".equals(args[2].trim()))     useSes=true;
   }
   try {
     Grid grid=G.grid();
-    GridComputeTaskFuture<Object> fut=grid.compute().execute(!useSession ? TestTask.class : TestSessionTask.class,null);
-    if (useSession) {
+    GridCompute comp=grid.compute().enableAsync();
+    comp.execute(!useSes ? TestTask.class : TestSessionTask.class,null);
+    GridComputeTaskFuture<Object> fut=comp.future();
+    if (useSes) {
       fut.getTaskSession().setAttribute("attr1",1);
       fut.getTaskSession().setAttribute("attr2",2);
     }

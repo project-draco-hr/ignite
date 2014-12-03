@@ -1,12 +1,12 @@
 {
   GridPredicate<GridNode> topPred=new GridPredicate<GridNode>(){
     @Override public boolean apply(    GridNode e){
-      return grid2.localNode().id().equals(e.id());
+      return grid2.cluster().localNode().id().equals(e.id());
     }
   }
 ;
-  grid1.forPredicate(topPred).compute().withTimeout(TASK_EXEC_TIMEOUT_MS).execute(new JobStealingSpreadTask(2),null).get(TASK_EXEC_TIMEOUT_MS);
+  executeAsync(compute(grid1.cluster().forPredicate(topPred)).withTimeout(TASK_EXEC_TIMEOUT_MS),new JobStealingSpreadTask(2),null).get(TASK_EXEC_TIMEOUT_MS);
   assertEquals(1,jobDistrMap.keySet().size());
-  assertEquals(2,jobDistrMap.get(grid2.localNode().id()).size());
-  assertFalse(jobDistrMap.containsKey(grid1.localNode().id()));
+  assertEquals(2,jobDistrMap.get(grid2.cluster().localNode().id()).size());
+  assertFalse(jobDistrMap.containsKey(grid1.cluster().localNode().id()));
 }

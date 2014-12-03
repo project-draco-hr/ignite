@@ -1,8 +1,10 @@
 {
-  GridFuture<Collection<String>> fut=prj.compute().broadcast(new TestClosure(),"arg");
+  GridCompute comp=compute(prj).enableAsync();
+  comp.broadcast(new TestClosure(),"arg");
+  GridFuture<Collection<String>> fut=comp.future();
   waitForExecution(fut);
   cnt.set(0);
-  Collection<String> res=prj.compute().broadcast(new TestClosure(),"arg").get();
+  Collection<String> res=compute(prj).broadcast(new TestClosure(),"arg");
   assertEquals(projectionSize(),res.size());
   waitForValue(cnt,projectionSize());
   for (  String resStr : res)   assertEquals("arg",resStr);

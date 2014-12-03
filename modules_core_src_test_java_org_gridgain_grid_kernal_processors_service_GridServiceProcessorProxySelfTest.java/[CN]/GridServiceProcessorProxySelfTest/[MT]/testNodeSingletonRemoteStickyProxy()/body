@@ -1,13 +1,13 @@
 {
   String name="testNodeSingletonRemoteStickyProxy";
   Grid grid=randomGrid();
-  grid.forRemotes().services().deployNodeSingleton(name,new CounterServiceImpl()).get();
+  grid.services(grid.cluster().forRemotes()).deployNodeSingleton(name,new CounterServiceImpl());
   CounterService svc=grid.services().serviceProxy(name,CounterService.class,true);
   for (int i=0; i < 10; i++)   svc.increment();
   assertEquals(10,svc.get());
   int total=0;
-  for (  GridNode n : grid.forRemotes().nodes()) {
-    CounterService rmtSvc=grid.forNode(n).services().serviceProxy(name,CounterService.class,false);
+  for (  GridNode n : grid.cluster().forRemotes().nodes()) {
+    CounterService rmtSvc=grid.services(grid.cluster().forNode(n)).serviceProxy(name,CounterService.class,false);
     int cnt=rmtSvc.localIncrements();
     assertTrue("Invalid local increments: " + cnt,cnt == 10 || cnt == 0);
     total+=rmtSvc.localIncrements();
