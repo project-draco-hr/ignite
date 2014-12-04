@@ -1,14 +1,14 @@
 {
   if (entry == null)   return;
   if (exchLog.isDebugEnabled())   exchLog.debug("Rechecking entry for completion [entry=" + entry + ", finFut="+ this+ ']');
-  Collection<GridCacheMvccCandidate<K>> cands=pendingLocks.get(entry.key());
+  Collection<GridCacheMvccCandidate<K>> cands=pendingLocks.get(entry.txKey());
   if (cands != null) {
 synchronized (cands) {
       for (Iterator<GridCacheMvccCandidate<K>> it=cands.iterator(); it.hasNext(); ) {
         GridCacheMvccCandidate<K> cand=it.next();
         if (cand.removed())         it.remove();
       }
-      if (cands.isEmpty())       pendingLocks.remove(entry.key());
+      if (cands.isEmpty())       pendingLocks.remove(entry.txKey());
       if (pendingLocks.isEmpty()) {
         onDone();
         if (exchLog.isDebugEnabled())         exchLog.debug("Finish lock future is done: " + this);

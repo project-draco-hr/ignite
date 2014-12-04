@@ -1,0 +1,11 @@
+{
+  if (!busyLock.readLock().tryLock())   return;
+  try {
+    if (started.compareAndSet(false,true))     refreshPartitions();
+  }
+  finally {
+    busyLock.readLock().unlock();
+    cctx.time().removeTimeoutObject(this);
+    pendingResend.compareAndSet(this,null);
+  }
+}

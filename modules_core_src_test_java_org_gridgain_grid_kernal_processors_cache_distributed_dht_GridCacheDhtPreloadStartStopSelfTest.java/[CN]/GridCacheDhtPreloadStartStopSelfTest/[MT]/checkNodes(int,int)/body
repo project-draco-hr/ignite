@@ -14,7 +14,8 @@
     stopGrids(grids);
     GridDhtCacheAdapter<Integer,String> dht=dht(c1);
     info(">>> Waiting for preload futures...");
-    for (    GridFuture<?> fut : ((GridDhtPreloader<Integer,String>)dht.preloader()).exchangeFutures())     fut.get();
+    GridCachePartitionExchangeManager<Object,Object> exchMgr=((GridKernal)g1).context().cache().context().exchange();
+    for (    GridFuture<?> fut : exchMgr.exchangeFutures())     fut.get();
     GridCacheAffinity<Integer> aff=affinity(c1);
     for (int i=0; i < keyCnt; i++) {
       if (aff.mapPartitionToPrimaryAndBackups(aff.partition(i)).contains(g1.cluster().localNode())) {

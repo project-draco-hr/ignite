@@ -1,29 +1,28 @@
 {
-  checkInternal(entry.key());
-  GridNearCacheEntry<K,V> cached=cctx.near().peekExx(entry.key());
+  checkInternal(entry.txKey());
+  GridCacheContext<K,V> cacheCtx=entry.context();
+  if (!cacheCtx.isNear())   cacheCtx=cacheCtx.dht().near().context();
+  GridNearCacheEntry<K,V> cached=cacheCtx.near().peekExx(entry.key());
   if (cached == null) {
-    evicted.add(entry.key());
-    if (entry.keyBytes() != null)     evictedBytes.add(entry.keyBytes());
+    evicted.add(entry.txKey());
     return false;
   }
  else {
     cached.unswap();
     try {
       if (cached.peek(GLOBAL,CU.<K,V>empty()) == null && cached.evictInternal(false,xidVer,null)) {
-        evicted.add(entry.key());
-        if (entry.keyBytes() != null)         evictedBytes.add(entry.keyBytes());
+        evicted.add(entry.txKey());
         return false;
       }
  else {
         entry.cached(cached,entry.keyBytes());
-        writeMap.put(entry.key(),entry);
+        writeMap.put(entry.txKey(),entry);
         addExplicit(entry);
         return true;
       }
     }
  catch (    GridCacheEntryRemovedException ignore) {
-      evicted.add(entry.key());
-      if (entry.keyBytes() != null)       evictedBytes.add(entry.keyBytes());
+      evicted.add(entry.txKey());
       if (log.isDebugEnabled())       log.debug("Got removed entry when adding to remote transaction (will ignore): " + cached);
       return false;
     }

@@ -1,9 +1,11 @@
 {
   GridDhtCacheEntry<K,V> cached=(GridDhtCacheEntry<K,V>)entry.cached();
   boolean ret;
+  GridCacheContext<K,V> cacheCtx=entry.context();
+  GridDhtCacheAdapter<K,V> dht=cacheCtx.isNear() ? cacheCtx.near().dht() : cacheCtx.dht();
   while (true) {
     try {
-      Collection<GridNode> dhtNodes=cctx.dht().topology().nodes(cached.partition(),tx.topologyVersion());
+      Collection<GridNode> dhtNodes=dht.topology().nodes(cached.partition(),tx.topologyVersion());
       if (log.isDebugEnabled())       log.debug("Mapping entry to DHT nodes [nodes=" + U.toShortString(dhtNodes) + ", entry="+ entry+ ']');
       Collection<UUID> readers=cached.readers();
       Collection<GridNode> nearNodes=null;
@@ -12,12 +14,12 @@
         if (log.isDebugEnabled())         log.debug("Mapping entry to near nodes [nodes=" + U.toShortString(nearNodes) + ", entry="+ entry+ ']');
       }
  else       if (log.isDebugEnabled())       log.debug("Entry has no near readers: " + entry);
-      ret=map(entry,F.view(dhtNodes,F.remoteNodes(cctx.nodeId())),dhtMap,futDhtMap);
+      ret=map(entry,F.view(dhtNodes,F.remoteNodes(cctx.localNodeId())),dhtMap,futDhtMap);
       ret|=map(entry,F.view(nearNodes,F0.notIn(dhtNodes)),nearMap,futNearMap);
       break;
     }
  catch (    GridCacheEntryRemovedException ignore) {
-      cached=cctx.dht().entryExx(entry.key());
+      cached=dht.entryExx(entry.key());
       entry.cached(cached,cached.keyBytes());
     }
   }

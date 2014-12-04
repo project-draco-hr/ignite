@@ -2,13 +2,15 @@
   Collection<GridCacheTxEntry<K,V>> entries=(tx.local() && !tx.dht()) ? tx.allEntries() : tx.writeEntries();
   for (  GridCacheTxEntry<K,V> entry : entries) {
     GridCacheEntryEx<K,V> cached=entry.cached();
-    if (cached == null)     cached=cctx.cache().peekEx(entry.key());
+    GridCacheContext<K,V> cacheCtx=entry.context();
+    if (cached == null)     cached=cacheCtx.cache().peekEx(entry.key());
     if (cached.detached())     continue;
     try {
-      if (cached.obsolete() || cached.markObsoleteIfEmpty(tx.xidVersion()))       cctx.cache().removeEntry(cached);
-      if (tx.dht() && isNearEnabled(cctx)) {
-        GridNearCacheEntry<K,V> e=cctx.dht().near().peekExx(entry.key());
-        if (e != null && e.markObsoleteIfEmpty(tx.xidVersion()))         cctx.dht().near().removeEntry(e);
+      if (cached.obsolete() || cached.markObsoleteIfEmpty(tx.xidVersion()))       cacheCtx.cache().removeEntry(cached);
+      if (!tx.near() && isNearEnabled(cacheCtx)) {
+        GridNearCacheAdapter<K,V> near=cacheCtx.isNear() ? cacheCtx.near() : cacheCtx.dht().near();
+        GridNearCacheEntry<K,V> e=near.peekExx(entry.key());
+        if (e != null && e.markObsoleteIfEmpty(tx.xidVersion()))         near.removeEntry(e);
       }
     }
  catch (    GridException e) {
