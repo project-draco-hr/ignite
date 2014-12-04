@@ -2,15 +2,15 @@
   final long startEvtTime=arg.timeArgument() == null ? 0L : System.currentTimeMillis() - arg.timeArgument();
   final ClusterNodeLocalMap<String,Long> nl=g.nodeLocalMap();
   final Long startEvtOrder=arg.keyOrder() != null && nl.containsKey(arg.keyOrder()) ? nl.get(arg.keyOrder()) : -1L;
-  Collection<GridEvent> evts=g.events().localQuery(new IgnitePredicate<GridEvent>(){
-    @Override public boolean apply(    GridEvent event){
+  Collection<IgniteEvent> evts=g.events().localQuery(new IgnitePredicate<IgniteEvent>(){
+    @Override public boolean apply(    IgniteEvent event){
       return event.localOrder() > startEvtOrder && (arg.typeArgument() == null || F.contains(arg.typeArgument(),event.type())) && event.timestamp() >= startEvtTime && (arg.taskName() == null || filterByTaskName(event,arg.taskName())) && (arg.taskSessionId() == null || filterByTaskSessionId(event,arg.taskSessionId()));
     }
   }
 );
   Collection<VisorGridEvent> res=new ArrayList<>(evts.size());
   Long maxOrder=startEvtOrder;
-  for (  GridEvent e : evts) {
+  for (  IgniteEvent e : evts) {
     int tid=e.type();
     IgniteUuid id=e.id();
     String name=e.name();
