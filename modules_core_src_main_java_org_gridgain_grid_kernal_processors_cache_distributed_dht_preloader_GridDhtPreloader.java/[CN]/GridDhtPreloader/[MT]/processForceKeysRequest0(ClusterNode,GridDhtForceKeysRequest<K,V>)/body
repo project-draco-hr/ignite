@@ -1,0 +1,29 @@
+{
+  if (!enterBusy())   return;
+  try {
+    ClusterNode loc=cctx.localNode();
+    GridDhtForceKeysResponse<K,V> res=new GridDhtForceKeysResponse<>(cctx.cacheId(),msg.futureId(),msg.miniId());
+    for (    K k : msg.keys()) {
+      int p=cctx.affinity().partition(k);
+      GridDhtLocalPartition<K,V> locPart=top.localPartition(p,-1,false);
+      if (locPart == null && !top.owners(p).contains(loc))       res.addMissed(k);
+      GridCacheEntryEx<K,V> entry=cctx.dht().peekEx(k);
+      if (entry != null) {
+        GridCacheEntryInfo<K,V> info=entry.info();
+        if (info != null && !info.isNew())         res.addInfo(info);
+      }
+ else       if (log.isDebugEnabled())       log.debug("Key is not present in DHT cache: " + k);
+    }
+    if (log.isDebugEnabled())     log.debug("Sending force key response [node=" + node.id() + ", res="+ res+ ']');
+    cctx.io().send(node,res);
+  }
+ catch (  GridTopologyException ignore) {
+    if (log.isDebugEnabled())     log.debug("Received force key request form failed node (will ignore) [nodeId=" + node.id() + ", req="+ msg+ ']');
+  }
+catch (  GridException e) {
+    U.error(log,"Failed to reply to force key request [nodeId=" + node.id() + ", req="+ msg+ ']',e);
+  }
+ finally {
+    leaveBusy();
+  }
+}

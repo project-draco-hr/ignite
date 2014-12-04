@@ -1,19 +1,19 @@
 {
   final GridRoundRobinLoadBalancingSpi spi=getSpi();
-  final List<GridNode> allNodes=(List<GridNode>)getSpiContext().nodes();
+  final List<ClusterNode> allNodes=(List<ClusterNode>)getSpiContext().nodes();
   GridTestUtils.runMultiThreaded(new Callable<Object>(){
     @Override public Object call() throws Exception {
       GridComputeTaskSession ses=new GridTestTaskSession(GridUuid.randomUuid());
       Map<UUID,AtomicInteger> nodeCnts=new HashMap<>();
       for (int i=1; i <= ITER_CNT; i++) {
-        GridNode node=spi.getBalancedNode(ses,allNodes,new GridTestJob());
+        ClusterNode node=spi.getBalancedNode(ses,allNodes,new GridTestJob());
         if (!nodeCnts.containsKey(node.id()))         nodeCnts.put(node.id(),new AtomicInteger(1));
  else         nodeCnts.get(node.id()).incrementAndGet();
       }
       int predictCnt=ITER_CNT / allNodes.size();
       int floor=(int)(predictCnt * 0.8);
       double avgSpread=0;
-      for (      GridNode n : allNodes) {
+      for (      ClusterNode n : allNodes) {
         int curCnt=nodeCnts.get(n.id()).intValue();
         avgSpread+=Math.abs(predictCnt - curCnt);
         String msg="Node stats [id=" + n.id() + ", cnt="+ curCnt+ ", floor="+ floor+ ", predictCnt="+ predictCnt+ ']';

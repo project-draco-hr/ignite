@@ -8,11 +8,11 @@
     markInitialized();
     return;
   }
-  Collection<GridNode> checkNodes=CU.remoteNodes(cctx,tx.topologyVersion());
+  Collection<ClusterNode> checkNodes=CU.remoteNodes(cctx,tx.topologyVersion());
   if (tx instanceof GridDhtTxRemote) {
     if (tx.nodeId().equals(failedNodeId) && !tx.eventNodeId().equals(failedNodeId)) {
       nearCheck=true;
-      GridNode nearNode=cctx.discovery().node(tx.eventNodeId());
+      ClusterNode nearNode=cctx.discovery().node(tx.eventNodeId());
       if (nearNode == null) {
         onDone(new GridTopologyException("Failed to check near transaction state (near node left grid): " + tx.eventNodeId()));
         return;
@@ -20,7 +20,7 @@
       checkNodes=Collections.singletonList(nearNode);
     }
   }
-  for (  GridNode rmtNode : checkNodes) {
+  for (  ClusterNode rmtNode : checkNodes) {
     if (rmtNode.id().equals(failedNodeId))     continue;
     MiniFuture fut=new MiniFuture(rmtNode.id());
     GridCachePessimisticCheckCommittedTxRequest<K,V> req=new GridCachePessimisticCheckCommittedTxRequest<>(tx,originatingThreadId,futureId(),fut.futureId(),nearCheck);

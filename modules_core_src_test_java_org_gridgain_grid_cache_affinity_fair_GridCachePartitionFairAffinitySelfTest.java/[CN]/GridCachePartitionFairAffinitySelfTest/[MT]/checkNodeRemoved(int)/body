@@ -2,16 +2,16 @@
   int parts=256;
   GridCacheAffinityFunction aff=new GridCachePartitionFairAffinity(parts);
   int nodesCnt=50;
-  List<GridNode> nodes=new ArrayList<>(nodesCnt);
-  List<List<GridNode>> prev=null;
+  List<ClusterNode> nodes=new ArrayList<>(nodesCnt);
+  List<List<ClusterNode>> prev=null;
   for (int i=0; i < nodesCnt; i++) {
     info("======================================");
     info("Assigning partitions: " + i);
     info("======================================");
-    GridNode node=new GridTestNode(UUID.randomUUID());
+    ClusterNode node=new GridTestNode(UUID.randomUUID());
     nodes.add(node);
     GridDiscoveryEvent discoEvt=new GridDiscoveryEvent(node,"",GridEventType.EVT_NODE_JOINED,node);
-    List<List<GridNode>> assignment=aff.assignPartitions(new GridCacheAffinityFunctionContextImpl(nodes,prev,discoEvt,i,backups));
+    List<List<ClusterNode>> assignment=aff.assignPartitions(new GridCacheAffinityFunctionContextImpl(nodes,prev,discoEvt,i,backups));
     info("Assigned.");
     verifyAssignment(assignment,backups,parts,nodes.size());
     prev=assignment;
@@ -23,9 +23,9 @@
     info("======================================");
     info("Assigning partitions: " + i);
     info("======================================");
-    GridNode rmv=nodes.remove(nodes.size() - 1);
+    ClusterNode rmv=nodes.remove(nodes.size() - 1);
     GridDiscoveryEvent discoEvt=new GridDiscoveryEvent(rmv,"",GridEventType.EVT_NODE_LEFT,rmv);
-    List<List<GridNode>> assignment=aff.assignPartitions(new GridCacheAffinityFunctionContextImpl(nodes,prev,discoEvt,i,backups));
+    List<List<ClusterNode>> assignment=aff.assignPartitions(new GridCacheAffinityFunctionContextImpl(nodes,prev,discoEvt,i,backups));
     info("Assigned.");
     verifyAssignment(assignment,backups,parts,nodes.size());
     prev=assignment;

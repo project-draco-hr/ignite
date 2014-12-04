@@ -1,7 +1,7 @@
 {
   final GridCacheAffinity<Integer> aff=dht.affinity();
   Ignite ignite=dht.context().grid();
-  GridNode locNode=ignite.cluster().localNode();
+  ClusterNode locNode=ignite.cluster().localNode();
   GridDhtPartitionTopology<Integer,String> top=dht.topology();
   System.out.println("\nTopology of cache #" + idx + " ("+ locNode.id()+ ")"+ ":");
   System.out.println("----------------------------------");
@@ -13,7 +13,7 @@
   List<GridDhtLocalPartition> locals=new ArrayList<GridDhtLocalPartition>(top.localPartitions());
   Collections.sort(locals);
   for (  final GridDhtLocalPartition part : locals) {
-    Collection<GridNode> partNodes=aff.mapKeyToPrimaryAndBackups(part.id());
+    Collection<ClusterNode> partNodes=aff.mapKeyToPrimaryAndBackups(part.id());
     String ownStr=!partNodes.contains(dht.context().localNode()) ? "NOT AN OWNER" : F.eqNodes(CU.primary(partNodes),locNode) ? "PRIMARY" : "BACKUP";
     Collection<Integer> keys=F.viewReadOnly(dht.keySet(),F.<Integer>identity(),new P1<Integer>(){
       @Override public boolean apply(      Integer k){

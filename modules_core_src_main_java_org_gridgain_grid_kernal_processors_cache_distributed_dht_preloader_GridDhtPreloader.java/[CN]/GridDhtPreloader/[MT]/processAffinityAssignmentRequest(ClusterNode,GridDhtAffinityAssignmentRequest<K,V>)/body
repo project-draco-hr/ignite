@@ -1,0 +1,17 @@
+{
+  final long topVer=req.topologyVersion();
+  if (log.isDebugEnabled())   log.debug("Processing affinity assignment request [node=" + node + ", req="+ req+ ']');
+  cctx.affinity().affinityReadyFuture(req.topologyVersion()).listenAsync(new CI1<GridFuture<Long>>(){
+    @Override public void apply(    GridFuture<Long> fut){
+      if (log.isDebugEnabled())       log.debug("Affinity is ready for topology version, will send response [topVer=" + topVer + ", node="+ node+ ']');
+      List<List<ClusterNode>> assignment=cctx.affinity().assignments(topVer);
+      try {
+        cctx.io().send(node,new GridDhtAffinityAssignmentResponse<K,V>(cctx.cacheId(),topVer,assignment),AFFINITY_POOL);
+      }
+ catch (      GridException e) {
+        U.error(log,"Failed to send affinity assignment response to remote node [node=" + node + ']',e);
+      }
+    }
+  }
+);
+}

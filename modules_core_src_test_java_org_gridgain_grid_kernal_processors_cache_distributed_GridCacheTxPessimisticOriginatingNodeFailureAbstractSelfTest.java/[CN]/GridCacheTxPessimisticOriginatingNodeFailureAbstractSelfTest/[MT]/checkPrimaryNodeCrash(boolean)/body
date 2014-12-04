@@ -2,7 +2,7 @@
   Collection<Integer> keys=new ArrayList<>(20);
   for (int i=0; i < 20; i++)   keys.add(i);
   final Collection<GridKernal> grids=new ArrayList<>();
-  GridNode primaryNode=grid(1).localNode();
+  ClusterNode primaryNode=grid(1).localNode();
   for (int i=0; i < gridCount(); i++) {
     if (i != 1)     grids.add((GridKernal)grid(i));
   }
@@ -13,11 +13,11 @@
     grid(originatingNode()).cache(null).put(key,initVal);
     map.put(key,String.valueOf(key));
   }
-  Map<Integer,Collection<GridNode>> nodeMap=new HashMap<>();
+  Map<Integer,Collection<ClusterNode>> nodeMap=new HashMap<>();
   GridCache<Integer,String> cache=grid(0).cache(null);
   info("Failing node ID: " + grid(1).localNode().id());
   for (  Integer key : keys) {
-    Collection<GridNode> nodes=new ArrayList<>();
+    Collection<ClusterNode> nodes=new ArrayList<>();
     nodes.addAll(cache.affinity().mapKeyToPrimaryAndBackups(key));
     nodes.remove(primaryNode);
     nodeMap.put(key,nodes);
@@ -47,11 +47,11 @@
 ,10000);
   assertTrue(txFinished);
   info("Transactions finished.");
-  for (  Map.Entry<Integer,Collection<GridNode>> e : nodeMap.entrySet()) {
+  for (  Map.Entry<Integer,Collection<ClusterNode>> e : nodeMap.entrySet()) {
     final Integer key=e.getKey();
     final String val=map.get(key);
     assertFalse(e.getValue().isEmpty());
-    for (    GridNode node : e.getValue()) {
+    for (    ClusterNode node : e.getValue()) {
       final UUID checkNodeId=node.id();
       compute(G.grid(checkNodeId).cluster().forNode(node)).call(new Callable<Void>(){
         /** 

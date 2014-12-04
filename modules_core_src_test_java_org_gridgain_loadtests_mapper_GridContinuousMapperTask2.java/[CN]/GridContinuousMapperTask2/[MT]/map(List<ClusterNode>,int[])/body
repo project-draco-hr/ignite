@@ -1,0 +1,21 @@
+{
+  Map<GridComputeJob,ClusterNode> mappings=new HashMap<>(jobIds.length);
+  Iterator<ClusterNode> nodeIter=g.cluster().forRemotes().nodes().iterator();
+  for (  int jobId : jobIds) {
+    GridComputeJob job=new GridComputeJobAdapter(jobId){
+      @GridInstanceResource private Ignite g;
+      @Override public Object execute(){
+        Integer jobId=argument(0);
+        X.println(">>> Received job for ID: " + jobId);
+        return g.cache("replicated").peek(jobId);
+      }
+    }
+;
+    if (g.cluster().nodes().size() == 1)     mappings.put(job,g.cluster().localNode());
+ else {
+      ClusterNode n=nodeIter.hasNext() ? nodeIter.next() : (nodeIter=g.cluster().forRemotes().nodes().iterator()).next();
+      mappings.put(job,n);
+    }
+  }
+  return mappings;
+}

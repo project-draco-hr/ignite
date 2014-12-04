@@ -2,18 +2,18 @@
   if (keys.isEmpty())   return;
   try {
     int keyCnt=-1;
-    Map<GridNode,GridNearUnlockRequest<K,V>> map=null;
+    Map<ClusterNode,GridNearUnlockRequest<K,V>> map=null;
     Collection<K> locKeys=new LinkedList<>();
     for (    K key : keys) {
       GridCacheMvccCandidate<K> lock=ctx.mvcc().removeExplicitLock(threadId,key,ver);
       if (lock != null) {
         long topVer=lock.topologyVersion();
         if (map == null) {
-          Collection<GridNode> affNodes=CU.allNodes(ctx,topVer);
+          Collection<ClusterNode> affNodes=CU.allNodes(ctx,topVer);
           keyCnt=(int)Math.ceil((double)keys.size() / affNodes.size());
           map=U.newHashMap(affNodes.size());
         }
-        GridNode primary=ctx.affinity().primary(key,topVer);
+        ClusterNode primary=ctx.affinity().primary(key,topVer);
         if (!primary.isLocal()) {
           GridNearUnlockRequest<K,V> req=map.get(primary);
           if (req == null) {
@@ -31,8 +31,8 @@
     if (map == null || map.isEmpty())     return;
     Collection<GridCacheVersion> committed=ctx.tm().committedVersions(ver);
     Collection<GridCacheVersion> rolledback=ctx.tm().rolledbackVersions(ver);
-    for (    Map.Entry<GridNode,GridNearUnlockRequest<K,V>> mapping : map.entrySet()) {
-      GridNode n=mapping.getKey();
+    for (    Map.Entry<ClusterNode,GridNearUnlockRequest<K,V>> mapping : map.entrySet()) {
+      ClusterNode n=mapping.getKey();
       GridDistributedUnlockRequest<K,V> req=mapping.getValue();
       if (!F.isEmpty(req.keyBytes()) || !F.isEmpty(req.keys())) {
         req.completedVersions(committed,rolledback);

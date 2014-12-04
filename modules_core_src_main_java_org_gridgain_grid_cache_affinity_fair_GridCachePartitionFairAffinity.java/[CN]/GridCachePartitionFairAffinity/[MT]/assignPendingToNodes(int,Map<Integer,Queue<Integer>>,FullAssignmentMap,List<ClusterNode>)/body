@@ -1,0 +1,32 @@
+{
+  Iterator<Integer> it=pendingMap.get(tier).iterator();
+  int idx=0;
+  while (it.hasNext()) {
+    int part=it.next();
+    int i=idx;
+    boolean assigned=false;
+    do {
+      ClusterNode node=topSnapshot.get(i);
+      if (fullMap.assign(part,tier,node,false,pendingMap)) {
+        it.remove();
+        assigned=true;
+      }
+      i=(i + 1) % topSnapshot.size();
+      if (assigned)       idx=i;
+    }
+ while (i != idx);
+    if (!assigned) {
+      do {
+        ClusterNode node=topSnapshot.get(i);
+        if (fullMap.assign(part,tier,node,true,pendingMap)) {
+          it.remove();
+          assigned=true;
+        }
+        i=(i + 1) % topSnapshot.size();
+        if (assigned)         idx=i;
+      }
+ while (i != idx);
+    }
+    if (!assigned)     throw new IllegalStateException("Failed to find assignable node for partition.");
+  }
+}
