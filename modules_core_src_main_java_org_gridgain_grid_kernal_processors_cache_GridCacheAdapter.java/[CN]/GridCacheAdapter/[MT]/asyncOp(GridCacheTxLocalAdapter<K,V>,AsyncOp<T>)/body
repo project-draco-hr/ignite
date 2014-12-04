@@ -1,14 +1,14 @@
 {
-  GridFuture<T> fail=asyncOpAcquire();
+  IgniteFuture<T> fail=asyncOpAcquire();
   if (fail != null)   return fail;
   FutureHolder holder=lastFut.get();
   holder.lock();
   try {
-    GridFuture fut=holder.future();
+    IgniteFuture fut=holder.future();
     if (fut != null && !fut.isDone()) {
       final GridCacheTxLocalAdapter<K,V> tx0=tx;
-      GridFuture<T> f=new GridEmbeddedFuture<>(fut,new C2<T,Exception,GridFuture<T>>(){
-        @Override public GridFuture<T> apply(        T t,        Exception e){
+      IgniteFuture<T> f=new GridEmbeddedFuture<>(fut,new C2<T,Exception,IgniteFuture<T>>(){
+        @Override public IgniteFuture<T> apply(        T t,        Exception e){
           return op.op(tx0);
         }
       }
@@ -16,7 +16,7 @@
       saveFuture(holder,f);
       return f;
     }
-    GridFuture<T> f=op.op(tx);
+    IgniteFuture<T> f=op.op(tx);
     saveFuture(holder,f);
     if (tx.implicit())     ctx.tm().txContextReset();
     return f;

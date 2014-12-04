@@ -2,7 +2,7 @@
   GridKernalContext ctx=((GridKernal)grid()).context();
   GridMarshaller m=new GridOptimizedMarshaller();
   ClassLoader clsLdr=getClass().getClassLoader();
-  GridFuture<Object> orig=t == null ? new GridFinishedFuture<>(ctx,ex) : new GridFinishedFuture<>(ctx,t);
+  IgniteFuture<Object> orig=t == null ? new GridFinishedFuture<>(ctx,ex) : new GridFinishedFuture<>(ctx,t);
   orig.syncNotify(syncNotify);
   GridFinishedFuture<Object> fut=m.unmarshal(m.marshal(orig),clsLdr);
   assertEquals(t,GridTestUtils.<Object>getFieldValue(fut,"t"));
@@ -14,8 +14,8 @@
   assertEquals(syncNotify,GridTestUtils.<Boolean>getFieldValue(fut,"syncNotify").booleanValue());
   assertEquals(ctx.gridName(),GridTestUtils.<GridKernalContext>getFieldValue(fut,"ctx").gridName());
   final CountDownLatch done=new CountDownLatch(1);
-  fut.listenAsync(new CI1<GridFuture<Object>>(){
-    @Override public void apply(    GridFuture<Object> t){
+  fut.listenAsync(new CI1<IgniteFuture<Object>>(){
+    @Override public void apply(    IgniteFuture<Object> t){
       done.countDown();
     }
   }

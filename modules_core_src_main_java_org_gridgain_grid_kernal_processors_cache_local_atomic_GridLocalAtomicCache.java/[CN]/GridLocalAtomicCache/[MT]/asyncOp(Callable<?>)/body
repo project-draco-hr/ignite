@@ -1,13 +1,13 @@
 {
-  GridFuture fail=asyncOpAcquire();
+  IgniteFuture fail=asyncOpAcquire();
   if (fail != null)   return fail;
   FutureHolder holder=lastFut.get();
   holder.lock();
   try {
-    GridFuture fut=holder.future();
+    IgniteFuture fut=holder.future();
     if (fut != null && !fut.isDone()) {
-      GridFuture f=new GridEmbeddedFuture(fut,new C2<Object,Exception,GridFuture>(){
-        @Override public GridFuture apply(        Object t,        Exception e){
+      IgniteFuture f=new GridEmbeddedFuture(fut,new C2<Object,Exception,IgniteFuture>(){
+        @Override public IgniteFuture apply(        Object t,        Exception e){
           return ctx.closures().callLocalSafe(op);
         }
       }
@@ -15,7 +15,7 @@
       saveFuture(holder,f);
       return f;
     }
-    GridFuture f=ctx.closures().callLocalSafe(op);
+    IgniteFuture f=ctx.closures().callLocalSafe(op);
     saveFuture(holder,f);
     return f;
   }

@@ -5,7 +5,7 @@
   validateCacheValue(newVal);
   ctx.denyOnLocalRead();
   return asyncOp(new AsyncOp<Boolean>(key){
-    @Override public GridFuture<Boolean> op(    GridCacheTxLocalAdapter<K,V> tx){
+    @Override public IgniteFuture<Boolean> op(    GridCacheTxLocalAdapter<K,V> tx){
       if (ctx.deploymentEnabled()) {
         try {
           ctx.deploy().registerClass(oldVal);
@@ -14,7 +14,7 @@
           return new GridFinishedFuture<>(ctx.kernalContext(),e);
         }
       }
-      return tx.putAllAsync(ctx,F.t(key,newVal),false,null,-1,ctx.equalsPeekArray(oldVal)).chain((IgniteClosure<GridFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
+      return tx.putAllAsync(ctx,F.t(key,newVal),false,null,-1,ctx.equalsPeekArray(oldVal)).chain((IgniteClosure<IgniteFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
     }
     @Override public String toString(){
       return "replaceAsync [key=" + key + ", oldVal="+ oldVal+ ", newVal="+ newVal+ ']';

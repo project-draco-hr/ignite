@@ -22,7 +22,7 @@
     FileOutputFormat.setOutputPath(job,new Path(ggfsScheme() + PATH_OUTPUT));
     job.setJarByClass(GridHadoopWordCount2.class);
     GridHadoopJobId jobId=new GridHadoopJobId(UUID.randomUUID(),1);
-    GridFuture<?> fut=grid(0).hadoop().submit(jobId,createJobInfo(job.getConfiguration()));
+    IgniteFuture<?> fut=grid(0).hadoop().submit(jobId,createJobInfo(job.getConfiguration()));
     fut.get();
     checkJobStatistics(jobId);
     assertEquals("Use new mapper: " + useNewMapper + ", new combiner: "+ useNewCombiner+ ", new reducer: "+ useNewReducer,"blue\t200000\n" + "green\t150000\n" + "red\t100000\n"+ "yellow\t70000\n",readAndSortFile(PATH_OUTPUT + "/" + (useNewReducer ? "part-r-" : "part-")+ "00000"));

@@ -4,7 +4,7 @@
   final Collection<UUID> started=new GridConcurrentHashSet<>();
   final Collection<UUID> stopped=new GridConcurrentHashSet<>();
   final Random rnd=new Random();
-  GridFuture<?> starterFut=multithreadedAsync(new Callable<Object>(){
+  IgniteFuture<?> starterFut=multithreadedAsync(new Callable<Object>(){
     @Override public Object call() throws Exception {
       for (int i=0; i < CONSUME_CNT; i++) {
         int idx=rnd.nextInt(GRID_CNT);
@@ -29,7 +29,7 @@
     }
   }
 ,8,"consume-starter");
-  GridFuture<?> stopperFut=multithreadedAsync(new Callable<Object>(){
+  IgniteFuture<?> stopperFut=multithreadedAsync(new Callable<Object>(){
     @Override public Object call() throws Exception {
       while (!stop.get()) {
         IgniteBiTuple<Integer,UUID> t=queue.poll(1,SECONDS);
@@ -49,7 +49,7 @@
     }
   }
 ,4,"consume-stopper");
-  GridFuture<?> nodeRestarterFut=multithreadedAsync(new Callable<Object>(){
+  IgniteFuture<?> nodeRestarterFut=multithreadedAsync(new Callable<Object>(){
     @Override public Object call() throws Exception {
       while (!stop.get()) {
         startGrid("anotherGrid");
@@ -59,7 +59,7 @@
     }
   }
 ,1,"node-restarter");
-  GridFuture<?> jobRunnerFut=multithreadedAsync(new Callable<Object>(){
+  IgniteFuture<?> jobRunnerFut=multithreadedAsync(new Callable<Object>(){
     @Override public Object call() throws Exception {
       while (!stop.get()) {
         int idx=rnd.nextInt(GRID_CNT);

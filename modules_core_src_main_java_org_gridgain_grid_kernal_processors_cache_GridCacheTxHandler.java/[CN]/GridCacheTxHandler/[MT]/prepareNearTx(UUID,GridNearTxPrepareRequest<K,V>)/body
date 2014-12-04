@@ -23,7 +23,7 @@
  else     U.warn(log,"Failed to create local transaction (was transaction rolled back?) [xid=" + tx.xid() + ", req="+ req+ ']');
   }
   if (tx != null) {
-    GridFuture<GridCacheTxEx<K,V>> fut=tx.prepareAsync(req.reads(),req.writes(),req.dhtVersions(),req.messageId(),req.miniId(),req.transactionNodes(),req.last(),req.lastBackups());
+    IgniteFuture<GridCacheTxEx<K,V>> fut=tx.prepareAsync(req.reads(),req.writes(),req.dhtVersions(),req.messageId(),req.miniId(),req.transactionNodes(),req.last(),req.lastBackups());
     if (tx.isRollbackOnly()) {
       try {
         tx.rollback();
@@ -33,8 +33,8 @@
       }
     }
     final GridDhtTxLocal<K,V> tx0=tx;
-    fut.listenAsync(new CI1<GridFuture<GridCacheTxEx<K,V>>>(){
-      @Override public void apply(      GridFuture<GridCacheTxEx<K,V>> txFut){
+    fut.listenAsync(new CI1<IgniteFuture<GridCacheTxEx<K,V>>>(){
+      @Override public void apply(      IgniteFuture<GridCacheTxEx<K,V>> txFut){
         try {
           txFut.get();
         }
