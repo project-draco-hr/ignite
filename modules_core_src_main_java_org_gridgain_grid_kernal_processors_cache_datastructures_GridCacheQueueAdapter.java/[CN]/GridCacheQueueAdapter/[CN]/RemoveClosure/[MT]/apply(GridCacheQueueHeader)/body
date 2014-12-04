@@ -1,17 +1,17 @@
 {
   boolean rmvd=queueRemoved(hdr,id);
-  if (rmvd || hdr.empty() || idx < hdr.head())   return new GridBiTuple<>(hdr,rmvd ? QUEUE_REMOVED_IDX : null);
+  if (rmvd || hdr.empty() || idx < hdr.head())   return new IgniteBiTuple<>(hdr,rmvd ? QUEUE_REMOVED_IDX : null);
   if (idx == hdr.head()) {
     Set<Long> rmvIdxs=hdr.removedIndexes();
     long head=hdr.head() + 1;
     if (!F.contains(rmvIdxs,head)) {
       GridCacheQueueHeader newHdr=new GridCacheQueueHeader(hdr.id(),hdr.capacity(),hdr.collocated(),head,hdr.tail(),hdr.removedIndexes());
-      return new GridBiTuple<>(newHdr,idx);
+      return new IgniteBiTuple<>(newHdr,idx);
     }
     rmvIdxs=new HashSet<>(rmvIdxs);
     while (rmvIdxs.remove(head))     head++;
     GridCacheQueueHeader newHdr=new GridCacheQueueHeader(hdr.id(),hdr.capacity(),hdr.collocated(),head,hdr.tail(),rmvIdxs.isEmpty() ? null : rmvIdxs);
-    return new GridBiTuple<>(newHdr,null);
+    return new IgniteBiTuple<>(newHdr,null);
   }
   Set<Long> rmvIdxs=hdr.removedIndexes();
   if (rmvIdxs == null) {
@@ -26,5 +26,5 @@
  else     idx=null;
   }
   GridCacheQueueHeader newHdr=new GridCacheQueueHeader(hdr.id(),hdr.capacity(),hdr.collocated(),hdr.head(),hdr.tail(),rmvIdxs);
-  return new GridBiTuple<>(newHdr,idx);
+  return new IgniteBiTuple<>(newHdr,idx);
 }

@@ -1,0 +1,26 @@
+{
+  if (F.isEmpty(map))   return true;
+  if (map.size() == 1) {
+    Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e=map.entrySet().iterator().next();
+    return putToStore(tx,e.getKey(),e.getValue().get1(),e.getValue().get2());
+  }
+ else {
+    if (store != null) {
+      if (log.isDebugEnabled())       log.debug("Storing values in cache store [map=" + map + ']');
+      try {
+        store.putAll(tx,locStore ? map : F.viewReadOnly(map,new C1<IgniteBiTuple<V,GridCacheVersion>,Object>(){
+          @Override public Object apply(          IgniteBiTuple<V,GridCacheVersion> t){
+            return t.get1();
+          }
+        }
+));
+      }
+ catch (      ClassCastException e) {
+        handleClassCastException(e);
+      }
+      if (log.isDebugEnabled())       log.debug("Stored value in cache store [map=" + map + ']');
+      return true;
+    }
+    return false;
+  }
+}
