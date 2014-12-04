@@ -1,0 +1,18 @@
+{
+  Socket sock0=sock;
+  if (sock0 == null) {
+    if (log.isDebugEnabled())     log.debug("Failed to start heartbeat sender, node is already disconnected.");
+    return;
+  }
+  try {
+    while (!isInterrupted()) {
+      U.sleep(hbFreq);
+      GridTcpDiscoveryHeartbeatMessage msg=new GridTcpDiscoveryHeartbeatMessage(locNodeId);
+      msg.client(true);
+      sockRdr.addMessage(msg);
+    }
+  }
+ catch (  GridInterruptedException ignored) {
+    if (log.isDebugEnabled())     log.debug("Heartbeat sender was interrupted.");
+  }
+}

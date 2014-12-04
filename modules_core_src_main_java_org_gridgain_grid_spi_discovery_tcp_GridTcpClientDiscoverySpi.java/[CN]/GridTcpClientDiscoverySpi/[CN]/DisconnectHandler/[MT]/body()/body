@@ -1,0 +1,27 @@
+{
+  while (!isInterrupted()) {
+    try {
+      U.sleep(disconnectCheckInt);
+      if (sock == null) {
+        if (log.isDebugEnabled())         log.debug("Node is disconnected from topology, will try to reconnect.");
+        U.interrupt(hbSender);
+        U.join(hbSender,log);
+        U.interrupt(sockRdr);
+        U.join(sockRdr,log);
+        if (!joinTopology(true)) {
+          rmtNodes.clear();
+          locNode.order(0);
+          joinTopology(false);
+          getSpiContext().recordEvent(new GridDiscoveryEvent(locNode,"Client node reconnected: " + locNode,EVT_CLIENT_NODE_RECONNECTED,locNode));
+        }
+      }
+    }
+ catch (    GridInterruptedException ignored) {
+      if (log.isDebugEnabled())       log.debug("Disconnect handler was interrupted.");
+      return;
+    }
+catch (    GridSpiException e) {
+      U.error(log,"Failed to reconnect to topology after failure.",e);
+    }
+  }
+}
