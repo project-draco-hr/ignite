@@ -1,0 +1,24 @@
+{
+  if (leaveLatch != null)   return;
+  if (locNodeId.equals(msg.creatorNodeId())) {
+    if (msg.success()) {
+      pending=true;
+      try {
+        for (        GridTcpDiscoveryAbstractMessage pendingMsg : msg.pendingMessages())         processMessage(pendingMsg);
+      }
+  finally {
+        pending=false;
+      }
+      joinErr=null;
+      reconFailed=false;
+      joinLatch.countDown();
+    }
+ else {
+      joinErr=null;
+      reconFailed=true;
+      getSpiContext().recordEvent(new GridDiscoveryEvent(locNode,"Client node disconnected: " + locNode,EVT_CLIENT_NODE_DISCONNECTED,locNode));
+      joinLatch.countDown();
+    }
+  }
+ else   if (log.isDebugEnabled())   log.debug("Discarding reconnect message for another client: " + msg);
+}

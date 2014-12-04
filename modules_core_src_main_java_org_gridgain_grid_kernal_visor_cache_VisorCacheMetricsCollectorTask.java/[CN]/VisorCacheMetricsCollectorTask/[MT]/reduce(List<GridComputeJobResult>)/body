@@ -1,0 +1,53 @@
+{
+  Map<String,VisorCacheAggregatedMetrics> grpAggrMetrics=new HashMap<>();
+  for (  GridComputeJobResult res : results) {
+    if (res.getException() == null && res.getData() instanceof Collection<?>) {
+      Collection<VisorCacheMetrics2> cms=res.getData();
+      for (      VisorCacheMetrics2 cm : cms) {
+        VisorCacheAggregatedMetrics am=grpAggrMetrics.get(cm.cacheName());
+        if (am == null) {
+          am=new VisorCacheAggregatedMetrics(cm.cacheName());
+          grpAggrMetrics.put(cm.cacheName(),am);
+        }
+        am.nodes().add(cm.nodeId());
+        am.minSize(cm.size());
+        am.maxSize(cm.size());
+        am.lastRead(cm.lastRead());
+        am.lastWrite(cm.lastWrite());
+        am.minHits(cm.hits());
+        am.maxHits(cm.hits());
+        am.minMisses(cm.misses());
+        am.maxMisses(cm.misses());
+        am.minReads(cm.reads());
+        am.maxReads(cm.reads());
+        am.minWrites(cm.writes());
+        am.maxWrites(cm.writes());
+        am.metrics().add(cm);
+        am.avgReads(am.avgReads() + cm.reads());
+        am.avgWrites(am.avgWrites() + cm.writes());
+        am.avgMisses(am.avgMisses() + cm.misses());
+        am.avgHits(am.avgHits() + cm.hits());
+        am.avgSize(am.avgSize() + cm.size());
+        VisorCacheQueryMetrics qm=cm.queryMetrics();
+        VisorCacheQueryAggregatedMetrics aqm=am.queryMetrics();
+        aqm.minTime(qm.minTime());
+        aqm.maxTime(qm.maxTime());
+        aqm.totalTime((long)(aqm.totalTime() + (qm.avgTime() * qm.execs())));
+        aqm.execs(aqm.execs() + qm.execs());
+        aqm.fails(aqm.fails() + qm.fails());
+      }
+    }
+  }
+  Collection<VisorCacheAggregatedMetrics> aggrMetrics=grpAggrMetrics.values();
+  for (  VisorCacheAggregatedMetrics metric : aggrMetrics) {
+    int sz=metric.nodes().size();
+    metric.avgSize(metric.avgSize() / sz);
+    metric.avgHits(metric.avgHits() / sz);
+    metric.avgMisses(metric.avgMisses() / sz);
+    metric.avgReads(metric.avgReads() / sz);
+    metric.avgWrites(metric.avgWrites() / sz);
+    VisorCacheQueryAggregatedMetrics aqm=metric.queryMetrics();
+    aqm.avgTime(aqm.execs() > 0 ? (double)aqm.totalTime() / aqm.execs() : 0.0);
+  }
+  return aggrMetrics;
+}

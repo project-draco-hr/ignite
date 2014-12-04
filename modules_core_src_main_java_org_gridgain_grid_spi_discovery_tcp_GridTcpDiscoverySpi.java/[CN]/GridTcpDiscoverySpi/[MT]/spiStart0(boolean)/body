@@ -12,7 +12,7 @@ synchronized (mux) {
   noResAddrs.clear();
   sockTimeoutWorker=new SocketTimeoutWorker();
   sockTimeoutWorker.start();
-  msgWorker=new MessageWorker();
+  msgWorker=new RingMessageWorker();
   msgWorker.start();
   tcpSrvr=new TcpServer();
   GridBiTuple<Collection<String>,Collection<String>> addrs;
@@ -22,15 +22,15 @@ synchronized (mux) {
  catch (  IOException|GridException e) {
     throw new GridSpiException("Failed to resolve local host to set of external addresses: " + locHost,e);
   }
-  locNode=new GridTcpDiscoveryNode(locNodeId,addrs.get1(),addrs.get2(),tcpSrvr.port,metricsProvider,nodeVer);
+  locNode=new GridTcpDiscoveryNode(locNodeId,addrs.get1(),addrs.get2(),tcpSrvr.port,metricsProvider,locNodeVer);
   try {
     Collection<InetSocketAddress> extAddrs=addrRslvr == null ? null : U.resolveAddresses(addrRslvr,F.flat(Arrays.asList(addrs.get1(),addrs.get2())),locNode.discoveryPort());
-    if (extAddrs != null)     nodeAttrs.put(createSpiAttributeName(ATTR_EXT_ADDRS),extAddrs);
+    if (extAddrs != null)     locNodeAttrs.put(createSpiAttributeName(ATTR_EXT_ADDRS),extAddrs);
   }
  catch (  GridException e) {
     throw new GridSpiException("Failed to resolve local host to addresses: " + locHost,e);
   }
-  locNode.setAttributes(nodeAttrs);
+  locNode.setAttributes(locNodeAttrs);
   locNode.local(true);
   locNodeAddrs=getNodeAddresses(locNode);
   if (log.isDebugEnabled())   log.debug("Local node initialized: " + locNode);
@@ -52,13 +52,9 @@ synchronized (mux) {
   hbsSnd.start();
   chkStatusSnd=new CheckStatusSender();
   chkStatusSnd.start();
-  if (metricsStore != null) {
-    metricsUpdateNtf=new MetricsUpdateNotifier();
-    metricsUpdateNtf.start();
-  }
-  if (ipFinder.isShared() || metricsStore != null) {
-    storesCleaner=new StoresCleaner();
-    storesCleaner.start();
+  if (ipFinder.isShared()) {
+    ipFinderCleaner=new IpFinderCleaner();
+    ipFinderCleaner.start();
   }
   if (log.isDebugEnabled() && !restart)   log.debug(startInfo());
   if (restart)   getSpiContext().registerPort(tcpSrvr.port,TCP);

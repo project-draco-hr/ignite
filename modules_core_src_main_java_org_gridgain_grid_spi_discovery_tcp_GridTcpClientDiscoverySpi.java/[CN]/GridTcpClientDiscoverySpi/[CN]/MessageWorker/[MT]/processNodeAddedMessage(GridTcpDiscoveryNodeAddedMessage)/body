@@ -1,0 +1,34 @@
+{
+  if (leaveLatch != null)   return;
+  GridTcpDiscoveryNode node=msg.node();
+  UUID newNodeId=node.id();
+  if (locNodeId.equals(newNodeId)) {
+    if (joinLatch.getCount() > 0) {
+      Collection<GridTcpDiscoveryNode> top=msg.topology();
+      if (top != null) {
+        for (        GridTcpDiscoveryNode n : top) {
+          if (n.order() > 0)           n.visible(true);
+          rmtNodes.put(n.id(),n);
+        }
+        topHist.clear();
+        if (msg.topologyHistory() != null)         topHist.putAll(msg.topologyHistory());
+        Collection<List<Object>> dataList=msg.oldNodesDiscoveryData();
+        if (dataList != null) {
+          for (          List<Object> discoData : dataList)           exchange.onExchange(discoData);
+        }
+        locNode.setAttributes(node.attributes());
+        locNode.visible(true);
+      }
+ else       if (log.isDebugEnabled())       log.debug("Discarding node added message with empty topology: " + msg);
+    }
+ else     if (log.isDebugEnabled())     log.debug("Discarding node added message (this message has already been processed) " + "[msg=" + msg + ", locNode="+ locNode+ ']');
+  }
+ else {
+    boolean topChanged=rmtNodes.putIfAbsent(newNodeId,node) == null;
+    if (topChanged) {
+      if (log.isDebugEnabled())       log.debug("Added new node to topology: " + node);
+      List<Object> data=msg.newNodeDiscoveryData();
+      if (data != null)       exchange.onExchange(data);
+    }
+  }
+}

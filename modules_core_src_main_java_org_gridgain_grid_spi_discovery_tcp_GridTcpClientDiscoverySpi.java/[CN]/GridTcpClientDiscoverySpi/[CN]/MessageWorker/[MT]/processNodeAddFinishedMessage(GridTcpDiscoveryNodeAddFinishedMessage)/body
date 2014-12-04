@@ -1,0 +1,31 @@
+{
+  if (leaveLatch != null)   return;
+  if (locNodeId.equals(msg.nodeId())) {
+    if (joinLatch.getCount() > 0) {
+      long topVer=msg.topologyVersion();
+      locNode.order(topVer);
+      notifyDiscovery(EVT_NODE_JOINED,topVer,locNode,updateTopologyHistory(topVer));
+      joinErr=null;
+      joinLatch.countDown();
+    }
+ else     if (log.isDebugEnabled())     log.debug("Discarding node add finished message (this message has already been processed) " + "[msg=" + msg + ", locNode="+ locNode+ ']');
+  }
+ else {
+    GridTcpDiscoveryNode node=rmtNodes.get(msg.nodeId());
+    if (node == null) {
+      if (log.isDebugEnabled())       log.debug("Discarding node add finished message since node is not found [msg=" + msg + ']');
+      return;
+    }
+    long topVer=msg.topologyVersion();
+    node.order(topVer);
+    node.visible(true);
+    if (locNodeVer.equals(node.version()))     node.version(locNodeVer);
+    Collection<GridNode> top=updateTopologyHistory(topVer);
+    if (!pending && joinLatch.getCount() > 0) {
+      if (log.isDebugEnabled())       log.debug("Discarding node add finished message (join process is not finished): " + msg);
+      return;
+    }
+    notifyDiscovery(EVT_NODE_JOINED,topVer,node,top);
+    stats.onNodeJoined();
+  }
+}

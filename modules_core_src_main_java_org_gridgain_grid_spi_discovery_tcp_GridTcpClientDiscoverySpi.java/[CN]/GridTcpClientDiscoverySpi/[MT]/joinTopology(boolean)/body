@@ -1,0 +1,90 @@
+{
+  if (!recon)   stats.onJoinStarted();
+  Collection<InetSocketAddress> addrs=null;
+  while (!Thread.currentThread().isInterrupted()) {
+    try {
+      while (addrs == null || addrs.isEmpty()) {
+        addrs=resolvedAddresses();
+        if (!F.isEmpty(addrs)) {
+          if (log.isDebugEnabled())           log.debug("Resolved addresses from IP finder: " + addrs);
+        }
+ else {
+          U.warn(log,"No addresses registered in the IP finder (will retry in 2000ms): " + ipFinder);
+          U.sleep(2000);
+        }
+      }
+      Iterator<InetSocketAddress> it=addrs.iterator();
+      while (it.hasNext() && !Thread.currentThread().isInterrupted()) {
+        InetSocketAddress addr=it.next();
+        Socket sock=null;
+        try {
+          long ts=U.currentTimeMillis();
+          GridBiTuple<Socket,UUID> t=initConnection(addr);
+          sock=t.get1();
+          UUID rmtNodeId=t.get2();
+          stats.onClientSocketInitialized(U.currentTimeMillis() - ts);
+          locNode.clientRouterNodeId(rmtNodeId);
+          GridTcpDiscoveryAbstractMessage msg=recon ? new GridTcpDiscoveryClientReconnectMessage(locNodeId,rmtNodeId,lastMsgId) : new GridTcpDiscoveryJoinRequestMessage(locNode,null);
+          msg.client(true);
+          writeToSocket(sock,msg);
+          int res=readReceipt(sock,ackTimeout);
+switch (res) {
+case RES_OK:
+            this.sock=sock;
+          sockRdr=new SocketReader(rmtNodeId,new MessageWorker(recon));
+        sockRdr.start();
+      if (U.await(joinLatch,netTimeout,MILLISECONDS)) {
+        GridSpiException joinErr0=joinErr;
+        if (joinErr0 != null)         throw joinErr0;
+        if (reconFailed) {
+          if (log.isDebugEnabled())           log.debug("Failed to reconnect, will try to rejoin [locNode=" + locNode + ']');
+          U.closeQuiet(sock);
+          U.interrupt(sockRdr);
+          U.join(sockRdr,log);
+          this.sock=null;
+          return false;
+        }
+        if (log.isDebugEnabled())         log.debug("Successfully connected to topology [sock=" + sock + ']');
+        hbSender=new HeartbeatSender();
+        hbSender.start();
+        stats.onJoinFinished();
+        return true;
+      }
+ else {
+        U.warn(log,"Join process timed out (will try other address) [sock=" + sock + ", timeout="+ netTimeout+ ']');
+        U.closeQuiet(sock);
+        U.interrupt(sockRdr);
+        U.join(sockRdr,log);
+        it.remove();
+        break;
+      }
+case RES_CONTINUE_JOIN:
+case RES_WAIT:
+    U.closeQuiet(sock);
+  break;
+default :
+if (log.isDebugEnabled()) log.debug("Received unexpected response to join request: " + res);
+U.closeQuiet(sock);
+}
+}
+ catch (GridInterruptedException ignored) {
+if (log.isDebugEnabled()) log.debug("Joining thread was interrupted.");
+return false;
+}
+catch (IOException|GridException e) {
+if (log.isDebugEnabled()) U.error(log,"Failed to establish connection with address: " + addr,e);
+U.closeQuiet(sock);
+it.remove();
+}
+}
+if (addrs.isEmpty()) {
+U.warn(log,"Failed to connect to any address from IP finder (will retry to join topology " + "in 2000ms): " + addrs);
+U.sleep(2000);
+}
+}
+ catch (GridInterruptedException ignored) {
+if (log.isDebugEnabled()) log.debug("Joining thread was interrupted.");
+}
+}
+return false;
+}

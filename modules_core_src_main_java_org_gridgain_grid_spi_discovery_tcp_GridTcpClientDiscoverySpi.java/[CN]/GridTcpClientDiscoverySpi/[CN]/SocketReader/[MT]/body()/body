@@ -1,0 +1,53 @@
+{
+  Socket sock0=sock;
+  if (sock0 == null) {
+    if (log.isDebugEnabled())     log.debug("Failed to start socket reader, node is already disconnected.");
+    return;
+  }
+  try {
+    InputStream in=new BufferedInputStream(sock0.getInputStream());
+    sock0.setKeepAlive(true);
+    sock0.setTcpNoDelay(true);
+    while (!isInterrupted()) {
+      try {
+        GridTcpDiscoveryAbstractMessage msg=marsh.unmarshal(in,U.gridClassLoader());
+        msg.senderNodeId(nodeId);
+        if (log.isDebugEnabled())         log.debug("Message has been received: " + msg);
+        stats.onMessageReceived(msg);
+        GridSpiException err=null;
+        if (joinLatch.getCount() > 0) {
+          if (msg instanceof GridTcpDiscoveryDuplicateIdMessage)           err=duplicateIdError((GridTcpDiscoveryDuplicateIdMessage)msg);
+ else           if (msg instanceof GridTcpDiscoveryAuthFailedMessage)           err=authenticationFailedError((GridTcpDiscoveryAuthFailedMessage)msg);
+ else           if (msg instanceof GridTcpDiscoveryCheckFailedMessage)           err=checkFailedError((GridTcpDiscoveryCheckFailedMessage)msg);
+          if (err != null) {
+            joinErr=err;
+            joinLatch.countDown();
+            return;
+          }
+        }
+        msgWrk.addMessage(msg);
+      }
+ catch (      GridException e) {
+        if (log.isDebugEnabled())         U.error(log,"Failed to read message [sock=" + sock0 + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']',e);
+        IOException ioEx=X.cause(e,IOException.class);
+        if (ioEx != null)         throw ioEx;
+        ClassNotFoundException clsNotFoundEx=X.cause(e,ClassNotFoundException.class);
+        if (clsNotFoundEx != null)         LT.warn(log,null,"Failed to read message due to ClassNotFoundException " + "(make sure same versions of all classes are available on all nodes) " + "[rmtNodeId=" + nodeId + ", err="+ clsNotFoundEx.getMessage()+ ']');
+ else         LT.error(log,e,"Failed to read message [sock=" + sock0 + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']');
+      }
+    }
+  }
+ catch (  IOException e) {
+    if (log.isDebugEnabled())     U.error(log,"Connection failed [sock=" + sock0 + ", locNodeId="+ locNodeId+ ", rmtNodeId="+ nodeId+ ']',e);
+  }
+ finally {
+    U.closeQuiet(sock0);
+    U.interrupt(msgWrk);
+    try {
+      U.join(msgWrk);
+    }
+ catch (    GridInterruptedException ignored) {
+    }
+    sock=null;
+  }
+}
