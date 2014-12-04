@@ -1,20 +1,20 @@
 {
   log.info("Check transform.");
-  Grid grid0=grid(0);
-  GridCache<Integer,Integer> cache0=grid0.cache(null);
+  Ignite ignite0=grid(0);
+  GridCache<Integer,Integer> cache0=ignite0.cache(null);
   GridCacheAffinity<Integer> aff=cache0.affinity();
-  UUID id0=grid0.cluster().localNode().id();
-  Integer primaryKey=key(grid0,PRIMARY);
+  UUID id0=ignite0.cluster().localNode().id();
+  Integer primaryKey=key(ignite0,PRIMARY);
   log.info("Transform from primary.");
   cache0.transform(primaryKey,new TransformClosure(primaryKey));
   for (int i=0; i < GRID_CNT; i++)   checkEntry(grid(i),primaryKey,primaryKey,false);
   if (backups > 0) {
-    Integer backupKey=key(grid0,BACKUP);
+    Integer backupKey=key(ignite0,BACKUP);
     log.info("Transform from backup.");
     cache0.transform(backupKey,new TransformClosure(backupKey));
     for (int i=0; i < GRID_CNT; i++)     checkEntry(grid(i),backupKey,backupKey,false);
   }
-  Integer nearKey=key(grid0,NOT_PRIMARY_AND_BACKUP);
+  Integer nearKey=key(ignite0,NOT_PRIMARY_AND_BACKUP);
   log.info("Transform from near.");
   cache0.transform(nearKey,new TransformClosure(nearKey));
   for (int i=0; i < GRID_CNT; i++) {

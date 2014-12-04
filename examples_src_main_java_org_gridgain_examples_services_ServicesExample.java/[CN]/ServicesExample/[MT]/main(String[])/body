@@ -1,22 +1,22 @@
 {
-  try (Grid grid=GridGain.start("examples/config/example-compute.xml")){
-    GridProjection rmts=grid.cluster().forRemotes();
+  try (Ignite ignite=GridGain.start("examples/config/example-compute.xml")){
+    GridProjection rmts=ignite.cluster().forRemotes();
     if (rmts.nodes().isEmpty()) {
       System.err.println(">>>");
       System.err.println(">>> Must start at least one remote node using " + ComputeNodeStartup.class.getSimpleName() + '.');
       System.err.println(">>>");
       return;
     }
-    GridServices svcs=grid.services(rmts);
+    GridServices svcs=ignite.services(rmts);
     try {
       svcs.deployClusterSingleton("myClusterSingletonService",new SimpleMapServiceImpl());
       svcs.deployNodeSingleton("myNodeSingletonService",new SimpleMapServiceImpl());
       svcs.deployMultiple("myMultiService",new SimpleMapServiceImpl(),2,0);
-      serviceProxyExample(grid);
-      serviceInjectionExample(grid);
+      serviceProxyExample(ignite);
+      serviceInjectionExample(ignite);
     }
   finally {
-      grid.services().cancelAll();
+      ignite.services().cancelAll();
     }
   }
  }

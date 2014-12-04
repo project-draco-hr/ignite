@@ -1,0 +1,13 @@
+{
+  Collection<GridComputeTaskFuture<?>> tasks=new ArrayList<>();
+  GridCompute comp=parent.compute().enableAsync();
+  while (add-- > 0) {
+    comp.execute(GridClientStartNodeTask.class,type);
+    tasks.add(comp.future());
+  }
+  for (  GridComputeTaskFuture<?> task : tasks)   task.get();
+  while (rmv-- > 0)   parent.compute().execute(GridClientStopNodeTask.class,type);
+  Collection<String> gridNames=new ArrayList<>();
+  for (  Ignite g : G.allGrids())   gridNames.add(g.name());
+  parent.log().info(">>> Available grids: " + gridNames);
+}

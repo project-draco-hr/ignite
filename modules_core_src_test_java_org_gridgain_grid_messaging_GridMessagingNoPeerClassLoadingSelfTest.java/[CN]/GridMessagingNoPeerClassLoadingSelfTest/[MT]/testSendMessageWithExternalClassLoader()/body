@@ -4,11 +4,11 @@
   Class rcCls=extLdr.loadClass(EXT_RESOURCE_CLS_NAME);
   final AtomicBoolean error=new AtomicBoolean(false);
   final CountDownLatch rcvLatch=new CountDownLatch(1);
-  grid2.message().remoteListen("",new P2<UUID,Object>(){
+  ignite2.message().remoteListen("",new P2<UUID,Object>(){
     @Override public boolean apply(    UUID nodeId,    Object msg){
       try {
         log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ']');
-        if (!nodeId.equals(grid1.cluster().localNode().id())) {
+        if (!nodeId.equals(ignite1.cluster().localNode().id())) {
           log.error("Unexpected sender node: " + nodeId);
           error.set(true);
           return false;
@@ -21,6 +21,6 @@
     }
   }
 );
-  message(grid1.cluster().forRemotes()).send(null,Collections.singleton(rcCls.newInstance()));
+  message(ignite1.cluster().forRemotes()).send(null,Collections.singleton(rcCls.newInstance()));
   assertFalse(rcvLatch.await(3,TimeUnit.SECONDS));
 }

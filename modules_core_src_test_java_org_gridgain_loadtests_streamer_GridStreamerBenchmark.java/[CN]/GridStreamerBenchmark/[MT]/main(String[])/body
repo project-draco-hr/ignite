@@ -3,11 +3,11 @@
   String cfgPath=args.length > 0 ? args[0] : "modules/core/src/test/config/streamer/average/spring-streamer-average-local.xml";
   boolean worker=args.length > 1 && "-w".equalsIgnoreCase(args[1]);
   Collection<GridStreamerLoad> loads=worker ? null : loads(cfgPath);
-  Grid grid=G.start(cfgPath);
+  Ignite ignite=G.start(cfgPath);
   Collection<Thread> loadThreads=new HashSet<>();
   if (loads != null && !loads.isEmpty()) {
     for (    GridStreamerLoad load : loads) {
-      final GridStreamer streamer=grid.streamer(load.getName());
+      final GridStreamer streamer=ignite.streamer(load.getName());
       if (streamer == null)       throw new Exception("Steamer is not found: " + load.getName());
       List<GridInClosure<GridStreamer>> clos=load.getClosures();
       if (clos != null && !clos.isEmpty()) {

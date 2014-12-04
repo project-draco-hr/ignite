@@ -1,12 +1,12 @@
 {
   final String name="testLocalProxyInvocation";
-  final Grid grid=grid(0);
-  grid.services().deployNodeSingleton(name,new MapServiceImpl<String,Integer>());
+  final Ignite ignite=grid(0);
+  ignite.services().deployNodeSingleton(name,new MapServiceImpl<String,Integer>());
   for (int i=0; i < nodeCount(); i++) {
     MapService<Integer,String> svc=grid(i).services().serviceProxy(name,MapService.class,false);
     assertTrue(svc instanceof GridService);
     svc.put(i,Integer.toString(i));
   }
-  MapService<Integer,String> map=grid.services().serviceProxy(name,MapService.class,false);
+  MapService<Integer,String> map=ignite.services().serviceProxy(name,MapService.class,false);
   for (int i=0; i < nodeCount(); i++)   assertEquals(1,map.size());
 }

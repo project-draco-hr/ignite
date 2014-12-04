@@ -1,11 +1,11 @@
 {
   log.info("Check transformAll.");
-  Grid grid0=grid(0);
-  GridCache<Integer,Integer> cache0=grid0.cache(null);
+  Ignite ignite0=grid(0);
+  GridCache<Integer,Integer> cache0=ignite0.cache(null);
   GridCacheAffinity<Integer> aff=cache0.affinity();
-  UUID id0=grid0.cluster().localNode().id();
+  UUID id0=ignite0.cluster().localNode().id();
   Map<Integer,TransformClosure> primaryKeys=new HashMap<>();
-  for (int i=0; i < 10; i++)   primaryKeys.put(key(grid0,PRIMARY),new TransformClosure(1));
+  for (int i=0; i < 10; i++)   primaryKeys.put(key(ignite0,PRIMARY),new TransformClosure(1));
   log.info("TransformAll from primary.");
   cache0.transformAll(primaryKeys);
   for (int i=0; i < GRID_CNT; i++) {
@@ -13,7 +13,7 @@
   }
   if (backups > 0) {
     Map<Integer,TransformClosure> backupKeys=new HashMap<>();
-    for (int i=0; i < 10; i++)     backupKeys.put(key(grid0,BACKUP),new TransformClosure(2));
+    for (int i=0; i < 10; i++)     backupKeys.put(key(ignite0,BACKUP),new TransformClosure(2));
     log.info("TransformAll from backup.");
     cache0.transformAll(backupKeys);
     for (int i=0; i < GRID_CNT; i++) {
@@ -21,7 +21,7 @@
     }
   }
   Map<Integer,TransformClosure> nearKeys=new HashMap<>();
-  for (int i=0; i < 30; i++)   nearKeys.put(key(grid0,NOT_PRIMARY_AND_BACKUP),new TransformClosure(3));
+  for (int i=0; i < 30; i++)   nearKeys.put(key(ignite0,NOT_PRIMARY_AND_BACKUP),new TransformClosure(3));
   log.info("TransformAll from near.");
   cache0.transformAll(nearKeys);
   for (int i=0; i < GRID_CNT; i++) {

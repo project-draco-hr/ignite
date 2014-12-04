@@ -2,7 +2,7 @@
   GridCacheAffinity<String> aff=affinity(grid(0).<String,Integer>cache(null));
   Collection<GridNode> affNodes=aff.mapKeyToPrimaryAndBackups(CNTR_KEY);
   assertEquals(1 + backups,affNodes.size());
-  Grid pri=G.grid(F.first(affNodes).id());
+  Ignite pri=G.grid(F.first(affNodes).id());
   pri.cache(null).put(CNTR_KEY,0);
   assertNull(near(pri).peekEx(CNTR_KEY));
   GridCacheEntryEx<String,Integer> dhtEntry=dht(pri).peekEx(CNTR_KEY);
@@ -14,7 +14,7 @@
   pri.compute().broadcast(new IncrementItemJob(pri.name()));
   info("*** ");
   for (int i=0; i < gridCnt; i++) {
-    Grid g=grid(i);
+    Ignite g=grid(i);
     GridCache<String,Integer> cache=grid(i).cache(null);
     int cntr=cache.peek(CNTR_KEY);
     info("*** Cache counter [grid=" + g.name() + ", cntr="+ cntr+ ']');

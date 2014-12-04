@@ -1,9 +1,9 @@
 {
-  Grid grid0=grid(0);
-  GridCache<Integer,Integer> cache0=grid0.cache(null);
+  Ignite ignite0=grid(0);
+  GridCache<Integer,Integer> cache0=ignite0.cache(null);
   GridCacheAffinity<Integer> aff=cache0.affinity();
-  UUID id0=grid0.cluster().localNode().id();
-  Integer nearKey=key(grid0,NOT_PRIMARY_AND_BACKUP);
+  UUID id0=ignite0.cluster().localNode().id();
+  Integer nearKey=key(ignite0,NOT_PRIMARY_AND_BACKUP);
   cache0.put(nearKey,1);
   for (int i=0; i < GRID_CNT; i++) {
     UUID[] expReaders=aff.isPrimary(grid(i).localNode(),nearKey) ? new UUID[]{id0} : new UUID[]{};
@@ -11,7 +11,7 @@
   }
   cache0.remove(nearKey);
   for (int i=0; i < GRID_CNT; i++)   checkEntry(grid(i),nearKey,null,i == 0);
-  Grid primaryNode=G.grid((String)aff.mapKeyToNode(nearKey).attribute(ATTR_GRID_NAME));
+  Ignite primaryNode=G.grid((String)aff.mapKeyToNode(nearKey).attribute(ATTR_GRID_NAME));
   delay();
   GridCache<Integer,Integer> primaryCache=primaryNode.cache(null);
   primaryCache.put(nearKey,2);

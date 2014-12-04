@@ -3,11 +3,11 @@
   final Collection<Object> rcvMsgs=new ArrayList<>(msgs.size());
   final AtomicBoolean error=new AtomicBoolean(false);
   final CountDownLatch rcvLatch=new CountDownLatch(3);
-  grid2.message().remoteListen(S_TOPIC_1,new P2<UUID,Object>(){
+  ignite2.message().remoteListen(S_TOPIC_1,new P2<UUID,Object>(){
     @Override public boolean apply(    UUID nodeId,    Object msg){
       try {
         log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ']');
-        if (!nodeId.equals(grid1.cluster().localNode().id())) {
+        if (!nodeId.equals(ignite1.cluster().localNode().id())) {
           log.error("Unexpected sender node: " + nodeId);
           error.set(true);
           return false;
@@ -21,7 +21,7 @@
     }
   }
 );
-  GridProjection prj2=grid1.cluster().forRemotes();
+  GridProjection prj2=ignite1.cluster().forRemotes();
   for (  TestMessage msg : msgs)   message(prj2).sendOrdered(S_TOPIC_1,msg,15000);
   assertTrue(rcvLatch.await(6,TimeUnit.SECONDS));
   assertFalse(error.get());

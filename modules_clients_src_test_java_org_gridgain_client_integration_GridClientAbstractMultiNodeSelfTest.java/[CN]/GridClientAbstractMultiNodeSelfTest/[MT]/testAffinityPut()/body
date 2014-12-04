@@ -1,7 +1,7 @@
 {
   Thread.sleep(2 * TOP_REFRESH_FREQ);
   assertEquals(NODES_CNT,client.compute().refreshTopology(false,false).size());
-  Map<UUID,Grid> gridsByLocNode=new HashMap<>(NODES_CNT);
+  Map<UUID,Ignite> gridsByLocNode=new HashMap<>(NODES_CNT);
   GridClientData partitioned=client.data(PARTITIONED_CACHE_NAME);
   GridClientCompute compute=client.compute();
   for (int i=0; i < NODES_CNT; i++)   gridsByLocNode.put(grid(i).localNode().id(),grid(i));
@@ -11,7 +11,7 @@
     assertEquals("Affinity mismatch for key: " + key,primaryNodeId,partitioned.affinity(key));
     assertEquals(primaryNodeId,partitioned.affinity(key));
     partitioned.put(key,"val" + key);
-    for (    Map.Entry<UUID,Grid> entry : gridsByLocNode.entrySet()) {
+    for (    Map.Entry<UUID,Ignite> entry : gridsByLocNode.entrySet()) {
       Object val=entry.getValue().cache(PARTITIONED_CACHE_NAME).peek(key);
       if (primaryNodeId.equals(entry.getKey()))       assertEquals("val" + key,val);
  else       assertNull(val);
@@ -23,7 +23,7 @@
     UUID pinnedNodeId=F.first(F.view(gridsByLocNode.keySet(),F.notEqualTo(primaryNodeId)));
     GridClientNode node=compute.node(pinnedNodeId);
     partitioned.pinNodes(node).put(pinnedKey,"val" + pinnedKey);
-    for (    Map.Entry<UUID,Grid> entry : gridsByLocNode.entrySet()) {
+    for (    Map.Entry<UUID,Ignite> entry : gridsByLocNode.entrySet()) {
       Object val=entry.getValue().cache(PARTITIONED_CACHE_NAME).peek(pinnedKey);
       if (primaryNodeId.equals(entry.getKey()) || pinnedNodeId.equals(entry.getKey()))       assertEquals("val" + pinnedKey,val);
  else       assertNull(val);

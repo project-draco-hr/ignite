@@ -2,11 +2,11 @@
   final Collection<Object> rcvMsgs=new HashSet<>();
   final AtomicBoolean error=new AtomicBoolean(false);
   final CountDownLatch rcvLatch=new CountDownLatch(3);
-  grid1.message().localListen(null,new P2<UUID,Object>(){
+  ignite1.message().localListen(null,new P2<UUID,Object>(){
     @Override public boolean apply(    UUID nodeId,    Object msg){
       try {
         log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ']');
-        if (!nodeId.equals(grid2.cluster().localNode().id())) {
+        if (!nodeId.equals(ignite2.cluster().localNode().id())) {
           log.error("Unexpected sender node: " + nodeId);
           error.set(true);
           return false;
@@ -20,7 +20,7 @@
     }
   }
 );
-  GridProjection rNode1=grid2.cluster().forRemotes();
+  GridProjection rNode1=ignite2.cluster().forRemotes();
   message(rNode1).send(null,MSG_1);
   message(rNode1).send(null,MSG_2);
   message(rNode1).send(null,MSG_3);

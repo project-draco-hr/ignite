@@ -2,11 +2,11 @@
   nearEnabled=near;
   backups=shutdownCnt;
   Collection<Integer> testKeys=generateTestKeys();
-  final Grid master=startGrid(MASTER);
-  List<Grid> workers=new ArrayList<>(workerCnt);
+  final Ignite master=startGrid(MASTER);
+  List<Ignite> workers=new ArrayList<>(workerCnt);
   for (int i=1; i <= workerCnt; i++)   workers.add(startGrid("worker" + i));
   info("Master: " + master.cluster().localNode().id());
-  List<Grid> runningWorkers=new ArrayList<>(workerCnt);
+  List<Ignite> runningWorkers=new ArrayList<>(workerCnt);
   for (int i=1; i <= workerCnt; i++) {
     UUID id=workers.get(i - 1).cluster().localNode().id();
     info(String.format("Worker%d: %s",i,id));
@@ -57,7 +57,7 @@
           if (workerCnt - runningWorkers.size() < shutdownCnt) {
             if (failoverPushGap > 0)             failoverPushGap--;
  else {
-              Grid victim=runningWorkers.remove(0);
+              Ignite victim=runningWorkers.remove(0);
               info("Shutting down node: " + victim.cluster().localNode().id());
               stopGrid(victim.name());
               failoverPushGap=FAILOVER_PUSH_GAP;
@@ -103,7 +103,7 @@
     info(">>> Absent keys: " + absentKeys);
     assertTrue(absentKeys.isEmpty());
     int primaryCacheSize=0;
-    for (    Grid g : runningWorkers) {
+    for (    Ignite g : runningWorkers) {
       info(">>>>> " + g.cache(CACHE_NAME).size());
       primaryCacheSize+=g.cache(CACHE_NAME).primarySize();
     }

@@ -1,15 +1,15 @@
 {
   final String key=UUID.randomUUID().toString();
-  final Grid grid=grid();
-  grid.cache(null).put(key,"val");
-  GridCacheEntryEx<String,Integer> dhtEntry=dht(grid).peekEx(key);
+  final Ignite ignite=grid();
+  ignite.cache(null).put(key,"val");
+  GridCacheEntryEx<String,Integer> dhtEntry=dht(ignite).peekEx(key);
   if (DEBUG)   info("DHT entry [hash=" + System.identityHashCode(dhtEntry) + ", entry="+ dhtEntry+ ']');
-  String val=txGet(grid,key);
+  String val=txGet(ignite,key);
   assertNotNull(val);
   info("Starting threads: " + THREAD_NUM);
   multithreaded(new Callable<String>(){
     @Override public String call() throws Exception {
-      return txGet(grid,key);
+      return txGet(ignite,key);
     }
   }
 ,THREAD_NUM,"getter-thread");

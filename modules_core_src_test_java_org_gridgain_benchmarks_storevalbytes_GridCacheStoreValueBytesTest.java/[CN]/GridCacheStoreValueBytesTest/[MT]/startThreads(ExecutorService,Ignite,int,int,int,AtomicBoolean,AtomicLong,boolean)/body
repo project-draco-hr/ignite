@@ -1,0 +1,37 @@
+{
+  final Semaphore sem=new Semaphore(concurrentGetNum);
+  final GridInClosure<GridFuture> lsnr=new CI1<GridFuture>(){
+    @Override public void apply(    GridFuture t){
+      sem.release();
+    }
+  }
+;
+  finish.set(false);
+  cntr.set(0);
+  Collection<Future<?>> futs=new ArrayList<>(threadsNum);
+  for (int i=0; i < threadsNum; i++) {
+    futs.add(exec.submit(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        GridCache<Integer,String> cache=ignite.cache(null);
+        Random random=new Random();
+        while (!finish.get()) {
+          Collection<Integer> keys=new ArrayList<>(getKeyNum);
+          for (int i=0; i < KEYS_NUM; i++) {
+            Integer key=KEYS[randomGet ? random.nextInt(KEYS_NUM) : i];
+            keys.add(key);
+            if (keys.size() == getKeyNum) {
+              sem.acquire();
+              GridFuture<Map<Integer,String>> f=cache.getAllAsync(keys);
+              f.listenAsync(lsnr);
+              cntr.incrementAndGet();
+              keys.clear();
+            }
+          }
+        }
+        return null;
+      }
+    }
+));
+  }
+  return futs;
+}

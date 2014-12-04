@@ -21,8 +21,8 @@
   final long cbSleepMs=getLongProperty("GG_CALLBACK_SLEEP_MS",0);
   X.println("The test will start with the following parameters:");
   dumpProperties(System.out);
-  try (Grid grid=GridGain.start(cfgPath)){
-    final GridCache<Object,Object> cache=grid.cache(cacheName);
+  try (Ignite ignite=GridGain.start(cfgPath)){
+    final GridCache<Object,Object> cache=ignite.cache(cacheName);
     if (cache == null)     throw new GridException("Cache is not configured: " + cacheName);
     final GridCacheContinuousQueryManager contQryMgr=((GridCacheAdapter)((GridCacheProxyImpl)cache).cache()).context().continuousQueries();
     if (contQryMgr == null)     throw new GridException("Could not access GridCacheContinuousQueryManager");
@@ -52,7 +52,7 @@
         qry.execute();
       }
  else {
-        grid.events().remoteListen(bufSize,timeInterval,true,new PX2<UUID,GridEvent>(){
+        ignite.events().remoteListen(bufSize,timeInterval,true,new PX2<UUID,GridEvent>(){
           @Override public boolean applyx(          UUID uuid,          GridEvent evt) throws GridInterruptedException {
             if (cbSleepMs > 0)             U.sleep(cbSleepMs);
             cbCntr.incrementAndGet();

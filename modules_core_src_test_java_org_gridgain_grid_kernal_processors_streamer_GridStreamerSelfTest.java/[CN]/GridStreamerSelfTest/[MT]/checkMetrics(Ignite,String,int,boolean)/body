@@ -1,0 +1,33 @@
+{
+  GridStreamer streamer=ignite.streamer(null);
+  GridStreamerMetrics metrics=streamer.metrics();
+  assertEquals(evtCnt,metrics.stageTotalExecutionCount());
+  assertEquals(0,metrics.stageWaitingExecutionCount());
+  assertEquals(0,metrics.currentActiveSessions());
+  assertEquals(0,metrics.maximumActiveSessions());
+  assertEquals(0,metrics.failuresCount());
+  if (pipeline) {
+    assertEquals(4,metrics.pipelineMaximumExecutionNodes());
+    assertEquals(4,metrics.pipelineMinimumExecutionNodes());
+    assertEquals(4,metrics.pipelineAverageExecutionNodes());
+    assertTrue(metrics.pipelineMaximumExecutionTime() > 0);
+    assertTrue(metrics.pipelineMinimumExecutionTime() > 0);
+    assertTrue(metrics.pipelineAverageExecutionTime() > 0);
+  }
+ else {
+    assertEquals(0,metrics.pipelineMaximumExecutionNodes());
+    assertEquals(0,metrics.pipelineMinimumExecutionNodes());
+    assertEquals(0,metrics.pipelineAverageExecutionNodes());
+    assertEquals(0,metrics.pipelineMaximumExecutionTime());
+    assertEquals(0,metrics.pipelineMinimumExecutionTime());
+    assertEquals(0,metrics.pipelineAverageExecutionTime());
+  }
+  GridStreamerStageMetrics stageMetrics=streamer.metrics().stageMetrics(stage);
+  assertNotNull(stageMetrics);
+  assertTrue(stageMetrics.averageExecutionTime() > 0);
+  assertTrue(stageMetrics.minimumExecutionTime() > 0);
+  assertTrue(stageMetrics.maximumExecutionTime() > 0);
+  assertEquals(evtCnt,stageMetrics.totalExecutionCount());
+  assertEquals(0,stageMetrics.failuresCount());
+  assertFalse(stageMetrics.executing());
+}

@@ -1,9 +1,9 @@
 {
   final AtomicInteger msgCnt=new AtomicInteger();
-  assertFalse(grid2.message().isAsync());
-  final GridMessaging msg=grid2.message().enableAsync();
+  assertFalse(ignite2.message().isAsync());
+  final GridMessaging msg=ignite2.message().enableAsync();
   assertTrue(msg.isAsync());
-  assertFalse(grid2.message().isAsync());
+  assertFalse(ignite2.message().isAsync());
   GridTestUtils.assertThrows(log,new Callable<Void>(){
     @Override public Void call() throws Exception {
       msg.future();
@@ -32,7 +32,7 @@
 ,IllegalStateException.class,null);
   id=fut.get();
   Assert.assertNotNull(id);
-  message(grid1.cluster().forRemotes()).send(topic,"msg1");
+  message(ignite1.cluster().forRemotes()).send(topic,"msg1");
   GridTestUtils.waitForCondition(new PA(){
     @Override public boolean apply(){
       return msgCnt.get() > 0;
@@ -51,7 +51,7 @@
   }
 ,IllegalStateException.class,null);
   stopFut.get();
-  message(grid1.cluster().forRemotes()).send(topic,"msg2");
+  message(ignite1.cluster().forRemotes()).send(topic,"msg2");
   U.sleep(1000);
   assertEquals(1,msgCnt.get());
 }

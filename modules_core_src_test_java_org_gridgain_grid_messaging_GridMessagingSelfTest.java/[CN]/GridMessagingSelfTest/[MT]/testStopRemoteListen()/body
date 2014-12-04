@@ -5,7 +5,7 @@
   final String topic1=null;
   final String topic2="top2";
   final String topic3="top3";
-  UUID id1=grid2.message().remoteListen(topic1,new P2<UUID,Object>(){
+  UUID id1=ignite2.message().remoteListen(topic1,new P2<UUID,Object>(){
     @Override public boolean apply(    UUID nodeId,    Object msg){
       System.out.println(Thread.currentThread().getName() + " Listener1 received new message [msg=" + msg+ ", senderNodeId="+ nodeId+ ']');
       msgCnt1.incrementAndGet();
@@ -13,7 +13,7 @@
     }
   }
 );
-  UUID id2=grid2.message().remoteListen(topic2,new P2<UUID,Object>(){
+  UUID id2=ignite2.message().remoteListen(topic2,new P2<UUID,Object>(){
     @Override public boolean apply(    UUID nodeId,    Object msg){
       System.out.println(Thread.currentThread().getName() + " Listener2 received new message [msg=" + msg+ ", senderNodeId="+ nodeId+ ']');
       msgCnt2.incrementAndGet();
@@ -21,7 +21,7 @@
     }
   }
 );
-  UUID id3=grid2.message().remoteListen(topic3,new P2<UUID,Object>(){
+  UUID id3=ignite2.message().remoteListen(topic3,new P2<UUID,Object>(){
     @Override public boolean apply(    UUID nodeId,    Object msg){
       System.out.println(Thread.currentThread().getName() + " Listener3 received new message [msg=" + msg+ ", senderNodeId="+ nodeId+ ']');
       msgCnt3.incrementAndGet();
@@ -29,9 +29,9 @@
     }
   }
 );
-  message(grid1.cluster().forRemotes()).send(topic1,"msg1-1");
-  message(grid1.cluster().forRemotes()).send(topic2,"msg1-2");
-  message(grid1.cluster().forRemotes()).send(topic3,"msg1-3");
+  message(ignite1.cluster().forRemotes()).send(topic1,"msg1-1");
+  message(ignite1.cluster().forRemotes()).send(topic2,"msg1-2");
+  message(ignite1.cluster().forRemotes()).send(topic3,"msg1-3");
   GridTestUtils.waitForCondition(new PA(){
     @Override public boolean apply(){
       return msgCnt1.get() > 0 && msgCnt2.get() > 0 && msgCnt3.get() > 0;
@@ -41,10 +41,10 @@
   assertEquals(1,msgCnt1.get());
   assertEquals(1,msgCnt2.get());
   assertEquals(1,msgCnt3.get());
-  grid2.message().stopRemoteListen(id2);
-  message(grid1.cluster().forRemotes()).send(topic1,"msg2-1");
-  message(grid1.cluster().forRemotes()).send(topic2,"msg2-2");
-  message(grid1.cluster().forRemotes()).send(topic3,"msg2-3");
+  ignite2.message().stopRemoteListen(id2);
+  message(ignite1.cluster().forRemotes()).send(topic1,"msg2-1");
+  message(ignite1.cluster().forRemotes()).send(topic2,"msg2-2");
+  message(ignite1.cluster().forRemotes()).send(topic3,"msg2-3");
   GridTestUtils.waitForCondition(new PA(){
     @Override public boolean apply(){
       return msgCnt1.get() > 1 && msgCnt3.get() > 1;
@@ -54,12 +54,12 @@
   assertEquals(2,msgCnt1.get());
   assertEquals(1,msgCnt2.get());
   assertEquals(2,msgCnt3.get());
-  grid2.message().stopRemoteListen(id2);
-  grid2.message().stopRemoteListen(id1);
-  grid2.message().stopRemoteListen(id3);
-  message(grid1.cluster().forRemotes()).send(topic1,"msg3-1");
-  message(grid1.cluster().forRemotes()).send(topic2,"msg3-2");
-  message(grid1.cluster().forRemotes()).send(topic3,"msg3-3");
+  ignite2.message().stopRemoteListen(id2);
+  ignite2.message().stopRemoteListen(id1);
+  ignite2.message().stopRemoteListen(id3);
+  message(ignite1.cluster().forRemotes()).send(topic1,"msg3-1");
+  message(ignite1.cluster().forRemotes()).send(topic2,"msg3-2");
+  message(ignite1.cluster().forRemotes()).send(topic3,"msg3-3");
   U.sleep(1000);
   assertEquals(2,msgCnt1.get());
   assertEquals(1,msgCnt2.get());

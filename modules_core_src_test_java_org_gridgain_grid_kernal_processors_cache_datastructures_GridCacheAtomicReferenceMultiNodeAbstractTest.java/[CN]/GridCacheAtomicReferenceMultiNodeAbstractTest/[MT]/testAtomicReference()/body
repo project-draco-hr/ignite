@@ -3,28 +3,28 @@
   final String val=UUID.randomUUID().toString();
   final String newVal=UUID.randomUUID().toString();
   GridCacheAtomicReference<String> ref=grid(0).cache(null).dataStructures().atomicReference(refName,val,true);
-  final Grid grid=grid(0);
-  grid.compute().call(new GridCallable<Object>(){
+  final Ignite ignite=grid(0);
+  ignite.compute().call(new GridCallable<Object>(){
     @Override public String call() throws GridException {
-      GridCacheAtomicReference<String> ref=grid.cache(null).dataStructures().atomicReference(refName,val,true);
+      GridCacheAtomicReference<String> ref=ignite.cache(null).dataStructures().atomicReference(refName,val,true);
       assertEquals(val,ref.get());
       return ref.get();
     }
   }
 );
   ref.compareAndSet("WRONG EXPECTED VALUE",newVal);
-  grid.compute().call(new GridCallable<String>(){
+  ignite.compute().call(new GridCallable<String>(){
     @Override public String call() throws GridException {
-      GridCacheAtomicReference<String> ref=grid.cache(null).dataStructures().atomicReference(refName,val,true);
+      GridCacheAtomicReference<String> ref=ignite.cache(null).dataStructures().atomicReference(refName,val,true);
       assertEquals(val,ref.get());
       return ref.get();
     }
   }
 );
   ref.compareAndSet(val,newVal);
-  grid.compute().call(new GridCallable<String>(){
+  ignite.compute().call(new GridCallable<String>(){
     @Override public String call() throws GridException {
-      GridCacheAtomicReference<String> ref=grid.cache(null).dataStructures().atomicReference(refName,val,true);
+      GridCacheAtomicReference<String> ref=ignite.cache(null).dataStructures().atomicReference(refName,val,true);
       assertEquals(newVal,ref.get());
       return ref.get();
     }

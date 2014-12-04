@@ -1,29 +1,29 @@
 {
-  printAffinity(grid,keyCnt);
+  printAffinity(ignite,keyCnt);
   GridPredicate<GridEvent> lsnr=new GridPredicate<GridEvent>(){
     @Override public boolean apply(    GridEvent evt){
       GridCacheEvent e=(GridCacheEvent)evt;
 switch (e.type()) {
 case EVT_CACHE_OBJECT_PUT:
-        log.info(">>> Grid cache event [grid=" + grid.name() + ", name="+ e.name()+ ", key="+ e.key()+ ", oldVal="+ e.oldValue()+ ", newVal="+ e.newValue()+ ']');
+        log.info(">>> Grid cache event [grid=" + ignite.name() + ", name="+ e.name()+ ", key="+ e.key()+ ", oldVal="+ e.oldValue()+ ", newVal="+ e.newValue()+ ']');
       evtCnt.incrementAndGet();
-    if (!grid.name().equals(master) && evtCnt.get() > keyCnt * (BACKUPS + 1)) {
+    if (!ignite.name().equals(master) && evtCnt.get() > keyCnt * (BACKUPS + 1)) {
       failFlag.set(true);
-      fail("Invalid put event count on grid [cnt=" + evtCnt.get() + ", grid="+ grid.name()+ ']');
+      fail("Invalid put event count on grid [cnt=" + evtCnt.get() + ", grid="+ ignite.name()+ ']');
     }
-  Collection<? extends GridNode> affNodes=nodes(affinity(grid),e.<Object>key());
-if (!affNodes.contains(grid.cluster().localNode())) {
+  Collection<? extends GridNode> affNodes=nodes(affinity(ignite),e.<Object>key());
+if (!affNodes.contains(ignite.cluster().localNode())) {
   failFlag.set(true);
-  fail("Key should not be mapped to node [key=" + e.key() + ", node="+ grid.name()+ ']');
+  fail("Key should not be mapped to node [key=" + e.key() + ", node="+ ignite.name()+ ']');
 }
 break;
 default :
 failFlag.set(true);
-fail("Invalid cache event [grid=" + grid + ", evt="+ evt+ ']');
+fail("Invalid cache event [grid=" + ignite + ", evt="+ evt+ ']');
 }
 return true;
 }
 }
 ;
-grid.events().localListen(lsnr,EVT_CACHE_OBJECT_PUT,EVT_CACHE_OBJECT_READ,EVT_CACHE_OBJECT_REMOVED);
+ignite.events().localListen(lsnr,EVT_CACHE_OBJECT_PUT,EVT_CACHE_OBJECT_READ,EVT_CACHE_OBJECT_REMOVED);
 }

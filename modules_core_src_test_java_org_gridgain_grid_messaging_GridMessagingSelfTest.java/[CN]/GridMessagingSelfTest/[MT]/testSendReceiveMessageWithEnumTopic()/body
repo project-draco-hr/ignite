@@ -2,11 +2,11 @@
   final Collection<Object> rcvMsgs=new HashSet<>();
   final AtomicBoolean error=new AtomicBoolean(false);
   final CountDownLatch rcvLatch=new CountDownLatch(3);
-  grid1.message().localListen(TestTopic.TOPIC_1,new P2<UUID,Object>(){
+  ignite1.message().localListen(TestTopic.TOPIC_1,new P2<UUID,Object>(){
     @Override public boolean apply(    UUID nodeId,    Object msg){
       try {
         log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ", topic="+ TestTopic.TOPIC_1+ ']');
-        if (!nodeId.equals(grid1.cluster().localNode().id())) {
+        if (!nodeId.equals(ignite1.cluster().localNode().id())) {
           log.error("Unexpected sender node: " + nodeId);
           error.set(true);
           return false;
@@ -25,11 +25,11 @@
     }
   }
 );
-  grid1.message().localListen(TestTopic.TOPIC_2,new P2<UUID,Object>(){
+  ignite1.message().localListen(TestTopic.TOPIC_2,new P2<UUID,Object>(){
     @Override public boolean apply(    UUID nodeId,    Object msg){
       try {
         log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ", topic="+ TestTopic.TOPIC_2+ ']');
-        if (!nodeId.equals(grid1.cluster().localNode().id())) {
+        if (!nodeId.equals(ignite1.cluster().localNode().id())) {
           log.error("Unexpected sender node: " + nodeId);
           error.set(true);
           return false;
@@ -48,11 +48,11 @@
     }
   }
 );
-  grid1.message().localListen(null,new P2<UUID,Object>(){
+  ignite1.message().localListen(null,new P2<UUID,Object>(){
     @Override public boolean apply(    UUID nodeId,    Object msg){
       try {
         log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ", topic=default]");
-        if (!nodeId.equals(grid1.cluster().localNode().id())) {
+        if (!nodeId.equals(ignite1.cluster().localNode().id())) {
           log.error("Unexpected sender node: " + nodeId);
           error.set(true);
           return false;
@@ -71,7 +71,7 @@
     }
   }
 );
-  GridProjection rNode1=grid1.cluster().forLocal();
+  GridProjection rNode1=ignite1.cluster().forLocal();
   message(rNode1).send(TestTopic.TOPIC_1,MSG_1);
   message(rNode1).send(TestTopic.TOPIC_2,MSG_2);
   message(rNode1).send(null,MSG_3);

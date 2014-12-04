@@ -1,12 +1,12 @@
 {
-  GridNodeLocalMap<String,T2<AtomicLong,AtomicLong>> nodeLoc=grid.cluster().nodeLocalMap();
+  GridNodeLocalMap<String,T2<AtomicLong,AtomicLong>> nodeLoc=ignite.cluster().nodeLocalMap();
   T2<AtomicLong,AtomicLong> cntrs=nodeLoc.get("cntrs");
   if (cntrs == null) {
     T2<AtomicLong,AtomicLong> other=nodeLoc.putIfAbsent("cntrs",cntrs=new T2<>(new AtomicLong(),new AtomicLong(System.currentTimeMillis())));
     if (other != null)     cntrs=other;
   }
   long cnt=cntrs.get1().incrementAndGet();
-  GridNearCacheAdapter near=(GridNearCacheAdapter)((GridKernal)grid).internalCache(cacheName);
+  GridNearCacheAdapter near=(GridNearCacheAdapter)((GridKernal)ignite).internalCache(cacheName);
   GridDhtCacheAdapter dht=near.dht();
   doWork();
   long start=cntrs.get2().get();
