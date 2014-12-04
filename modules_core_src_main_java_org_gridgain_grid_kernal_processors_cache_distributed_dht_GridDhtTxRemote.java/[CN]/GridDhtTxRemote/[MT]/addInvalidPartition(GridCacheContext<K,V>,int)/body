@@ -1,0 +1,11 @@
+{
+  super.addInvalidPartition(cacheCtx,part);
+  for (Iterator<GridCacheTxEntry<K,V>> it=writeMap.values().iterator(); it.hasNext(); ) {
+    GridCacheTxEntry<K,V> e=it.next();
+    GridCacheEntryEx<K,V> cached=e.cached();
+    if (cached != null) {
+      if (cached.partition() == part)       it.remove();
+    }
+ else     if (cacheCtx.affinity().partition(e.key()) == part)     it.remove();
+  }
+}

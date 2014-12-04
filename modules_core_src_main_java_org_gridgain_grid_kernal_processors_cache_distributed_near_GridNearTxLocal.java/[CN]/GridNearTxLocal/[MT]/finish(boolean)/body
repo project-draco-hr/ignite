@@ -33,9 +33,21 @@
     state(UNKNOWN);
     throw err;
   }
- else   if (!state(commit ? COMMITTED : ROLLED_BACK)) {
-    state(UNKNOWN);
-    throw new GridException("Invalid transaction state for commit or rollback: " + this);
+ else {
+    if (commit) {
+      if (!onePhaseCommit()) {
+        if (!state(COMMITTED)) {
+          state(UNKNOWN);
+          throw new GridException("Invalid transaction state for commit: " + this);
+        }
+      }
+    }
+ else {
+      if (!state(ROLLED_BACK)) {
+        state(UNKNOWN);
+        throw new GridException("Invalid transaction state for rollback: " + this);
+      }
+    }
   }
   return true;
 }

@@ -1,21 +1,26 @@
 {
-  if ((initialized() || err != null) && super.onDone(tx,err)) {
-    if (error() instanceof GridCacheTxHeuristicException) {
-      long topVer=this.tx.topologyVersion();
-      for (      GridCacheTxEntry<K,V> e : this.tx.writeMap().values()) {
-        try {
-          if (e.op() != NOOP && !cctx.affinity().localNode(e.key(),topVer)) {
-            GridCacheEntryEx<K,V> cacheEntry=cctx.cache().peekEx(e.key());
-            if (cacheEntry != null)             cacheEntry.invalidate(null,this.tx.xidVersion());
+  if ((initialized() || err != null)) {
+    if (this.tx.onePhaseCommit() && (this.tx.state() == COMMITTING))     this.tx.tmCommit();
+    Throwable th=this.err.get();
+    if (super.onDone(tx,th != null ? th : err)) {
+      if (error() instanceof GridCacheTxHeuristicException) {
+        long topVer=this.tx.topologyVersion();
+        for (        GridCacheTxEntry<K,V> e : this.tx.writeMap().values()) {
+          GridCacheContext<K,V> cacheCtx=e.context();
+          try {
+            if (e.op() != NOOP && !cacheCtx.affinity().localNode(e.key(),topVer)) {
+              GridCacheEntryEx<K,V> cacheEntry=cacheCtx.cache().peekEx(e.key());
+              if (cacheEntry != null)               cacheEntry.invalidate(null,this.tx.xidVersion());
+            }
+          }
+ catch (          Throwable t) {
+            U.error(log,"Failed to invalidate entry.",t);
           }
         }
- catch (        Throwable t) {
-          U.error(log,"Failed to invalidate entry.",t);
-        }
       }
+      cctx.mvcc().removeFuture(this);
+      return true;
     }
-    cctx.mvcc().removeFuture(this);
-    return true;
   }
   return false;
 }

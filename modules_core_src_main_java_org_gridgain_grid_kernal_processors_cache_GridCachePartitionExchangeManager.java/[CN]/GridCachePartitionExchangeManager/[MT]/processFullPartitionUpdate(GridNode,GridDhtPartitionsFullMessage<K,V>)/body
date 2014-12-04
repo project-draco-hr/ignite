@@ -1,0 +1,20 @@
+{
+  if (!enterBusy())   return;
+  try {
+    if (msg.exchangeId() == null) {
+      if (log.isDebugEnabled())       log.debug("Received full partition update [node=" + node.id() + ", msg="+ msg+ ']');
+      boolean updated=false;
+      for (      GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
+        if (!cacheCtx.isLocal()) {
+          GridDhtPartitionTopology<K,V> top=cacheCtx.topology();
+          updated|=top.update(null,msg.partitions().get(cacheCtx.cacheId())) != null;
+        }
+      }
+      if (updated)       refreshPartitions();
+    }
+ else     exchangeFuture(msg.exchangeId(),null).onReceive(node.id(),msg);
+  }
+  finally {
+    leaveBusy();
+  }
+}

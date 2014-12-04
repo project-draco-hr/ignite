@@ -1,5 +1,8 @@
 {
-  GridDhtPartitionsSingleMessage<K,V> m=new GridDhtPartitionsSingleMessage<>(id,top.localPartitionMap(),cctx.versions().last());
+  GridDhtPartitionsSingleMessage<K,V> m=new GridDhtPartitionsSingleMessage<>(id,cctx.versions().last());
+  for (  GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
+    if (!cacheCtx.isLocal())     m.addLocalPartitionMap(cacheCtx.cacheId(),cacheCtx.topology().localPartitionMap());
+  }
   if (log.isDebugEnabled())   log.debug("Sending local partitions [nodeId=" + node.id() + ", exchId="+ exchId+ ", msg="+ m+ ']');
   cctx.io().send(node,m);
 }

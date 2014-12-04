@@ -4,7 +4,8 @@
   GridNearTxFinishFuture<K,V> fut=commitFut.get();
   if (fut == null && !commitFut.compareAndSet(null,fut=new GridNearTxFinishFuture<>(cctx,this,true)))   return commitFut.get();
   cctx.mvcc().addFuture(fut);
-  prepFut.get().listenAsync(new CI1<GridFuture<GridCacheTxEx<K,V>>>(){
+  GridFuture<GridCacheTxEx<K,V>> prepareFut=prepFut.get();
+  prepareFut.listenAsync(new CI1<GridFuture<GridCacheTxEx<K,V>>>(){
     @Override public void apply(    GridFuture<GridCacheTxEx<K,V>> f){
       GridNearTxFinishFuture<K,V> fut0=commitFut.get();
       try {

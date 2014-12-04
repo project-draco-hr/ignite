@@ -1,31 +1,37 @@
 {
-  GridNearTxPrepareFuture<K,V> fut=prepFut.get();
+  GridFuture<GridCacheTxEx<K,V>> fut=prepFut.get();
   if (fut == null) {
-    if (!prepFut.compareAndSet(null,fut=new GridNearTxPrepareFuture<>(cctx,this)))     return prepFut.get();
+    fut=pessimistic() ? new PessimisticPrepareFuture<>(cctx.kernalContext(),this) : new GridNearTxPrepareFuture<>(cctx,this);
+    if (!prepFut.compareAndSet(null,fut))     return prepFut.get();
   }
  else   return fut;
+  mapExplicitLocks();
   if (pessimistic()) {
+    PessimisticPrepareFuture<K,V> pessimisticFut=(PessimisticPrepareFuture<K,V>)fut;
     if (!state(PREPARING)) {
       if (setRollbackOnly()) {
-        if (timedOut())         fut.onError(null,null,new GridCacheTxTimeoutException("Transaction timed out and was " + "rolled back: " + this));
- else         fut.onError(null,null,new GridException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
+        if (timedOut())         pessimisticFut.onError(new GridCacheTxTimeoutException("Transaction timed out and was " + "rolled back: " + this));
+ else         pessimisticFut.onError(new GridException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
       }
- else       fut.onError(null,null,new GridCacheTxRollbackException("Invalid transaction state for prepare " + "[state=" + state() + ", tx="+ this+ ']'));
+ else       pessimisticFut.onError(new GridCacheTxRollbackException("Invalid transaction state for prepare " + "[state=" + state() + ", tx="+ this+ ']'));
       return fut;
     }
     try {
       userPrepare();
       if (!state(PREPARED)) {
         setRollbackOnly();
-        fut.onError(null,null,new GridException("Invalid transaction state for commit [state=" + state() + ", tx="+ this+ ']'));
+        pessimisticFut.onError(new GridException("Invalid transaction state for commit [state=" + state() + ", tx="+ this+ ']'));
         return fut;
       }
-      fut.complete();
+      pessimisticFut.complete();
     }
  catch (    GridException e) {
-      fut.onError(null,null,e);
+      pessimisticFut.onError(e);
     }
   }
- else   prepareOnTopology();
+ else {
+    GridNearTxPrepareFuture<K,V> pf=(GridNearTxPrepareFuture<K,V>)prepFut.get();
+    pf.prepare();
+  }
   return fut;
 }

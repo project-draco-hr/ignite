@@ -1,0 +1,15 @@
+{
+  GridDhtPartitionsSingleMessage<K,V> m=new GridDhtPartitionsSingleMessage<>(id,cctx.versions().last());
+  for (  GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
+    if (!cacheCtx.isLocal())     m.addLocalPartitionMap(cacheCtx.cacheId(),cacheCtx.topology().localPartitionMap());
+  }
+  if (log.isDebugEnabled())   log.debug("Sending local partitions [nodeId=" + node.id() + ", msg="+ m+ ']');
+  try {
+    cctx.io().send(node,m);
+    return true;
+  }
+ catch (  GridTopologyException ignore) {
+    if (log.isDebugEnabled())     log.debug("Failed to send partition update to node because it left grid (will ignore) [node=" + node.id() + ", msg="+ m+ ']');
+    return false;
+  }
+}

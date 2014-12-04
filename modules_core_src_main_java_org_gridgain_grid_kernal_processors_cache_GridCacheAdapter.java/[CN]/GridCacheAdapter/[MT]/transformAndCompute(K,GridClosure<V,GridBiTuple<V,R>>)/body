@@ -4,7 +4,8 @@
   ctx.denyOnLocalRead();
   return syncOp(new SyncOp<R>(true){
     @Override public R op(    GridCacheTxLocalAdapter<K,V> tx) throws GridException {
-      return tx.transformCompute(key,transformer);
+      GridFuture<GridCacheReturn<V>> ret=tx.transformAllAsync(ctx,F.t(key,new GridCacheTransformComputeClosure<>(transformer)),true,null,-1);
+      return transformer.apply(ret.get().value()).get2();
     }
     @Override public String toString(){
       return "transformAndCompute [key=" + key + ", valTransform="+ transformer+ ']';
