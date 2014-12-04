@@ -3,7 +3,7 @@
   GridCache<Integer,Integer> cache0=g0.cache(null);
   int key;
   for (int i=0; ; i++) {
-    if (!cache0.affinity().isPrimaryOrBackup(g0.localNode(),i)) {
+    if (!cache0.affinity().isPrimaryOrBackup(g0.cluster().localNode(),i)) {
       cache0.put(i,i);
       cache0.get(i);
       key=i;
@@ -16,12 +16,12 @@
   for (int j=0; j < gridCount(); j++) {
     Grid g=grid(j);
     assertEquals(1,g.cache(null).metrics().writes());
-    if (g.cache(null).affinity().isPrimary(g.localNode(),key)) {
+    if (g.cache(null).affinity().isPrimary(g.cluster().localNode(),key)) {
       assertEquals(1,g.cache(null).metrics().reads());
       assertEquals(0,g.cache(null).metrics().hits());
       assertEquals(1,g.cache(null).metrics().misses());
     }
- else     if (g.cache(null).affinity().isBackup(g.localNode(),key)) {
+ else     if (g.cache(null).affinity().isBackup(g.cluster().localNode(),key)) {
       assertEquals(0,g.cache(null).metrics().reads());
       assertEquals(0,g.cache(null).metrics().hits());
       assertEquals(0,g.cache(null).metrics().misses());

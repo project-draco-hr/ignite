@@ -1,4 +1,5 @@
 {
+  GridCompute comp=grid.compute().enableAsync();
   while (true) {
     checkCompletion();
     performCancel();
@@ -8,6 +9,12 @@
  catch (    InterruptedException ignored) {
       return;
     }
-    futures.add(grid.compute().withTimeout(TIMEOUT).execute(GridJobLoadTestTask.class,params));
+    try {
+      comp.withTimeout(TIMEOUT).execute(GridJobLoadTestTask.class,params);
+      futures.add(comp.<Integer>future());
+    }
+ catch (    GridException e) {
+      throw new GridRuntimeException(e);
+    }
   }
 }

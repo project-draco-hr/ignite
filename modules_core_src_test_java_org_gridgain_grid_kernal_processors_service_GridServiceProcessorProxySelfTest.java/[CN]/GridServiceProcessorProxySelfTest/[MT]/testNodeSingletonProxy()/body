@@ -1,14 +1,14 @@
 {
   String name="testNodeSingletonProxy";
   Grid grid=randomGrid();
-  grid.services().deployNodeSingleton(name,new CounterServiceImpl()).get();
+  grid.services().deployNodeSingleton(name,new CounterServiceImpl());
   CounterService svc=grid.services().serviceProxy(name,CounterService.class,false);
   for (int i=0; i < 10; i++)   svc.increment();
   assertEquals(10,svc.get());
   assertEquals(10,svc.localIncrements());
-  assertEquals(10,grid.forLocal().services().serviceProxy(name,CounterService.class,false).localIncrements());
-  for (  GridNode n : grid.forRemotes().nodes()) {
-    CounterService rmtSvc=grid.forNode(n).services().serviceProxy(name,CounterService.class,false);
+  assertEquals(10,grid.services(grid.cluster().forLocal()).serviceProxy(name,CounterService.class,false).localIncrements());
+  for (  GridNode n : grid.cluster().forRemotes().nodes()) {
+    CounterService rmtSvc=grid.services(grid.cluster().forNode(n)).serviceProxy(name,CounterService.class,false);
     assertEquals(0,rmtSvc.localIncrements());
   }
 }

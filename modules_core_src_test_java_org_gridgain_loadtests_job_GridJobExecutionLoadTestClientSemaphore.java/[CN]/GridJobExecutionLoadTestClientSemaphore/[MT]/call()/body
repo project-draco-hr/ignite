@@ -5,10 +5,12 @@
     }
   }
 ;
-  GridProjection rmts=g.forRemotes();
+  GridProjection rmts=g.cluster().forRemotes();
+  GridCompute comp=g.compute(rmts).enableAsync();
   while (!finish) {
     tasksSem.acquire();
-    GridComputeTaskFuture<Object> f=rmts.compute().execute(GridJobExecutionLoadTestTask.class,null);
+    comp.execute(GridJobExecutionLoadTestTask.class,null);
+    GridComputeTaskFuture<Object> f=comp.future();
     f.listenAsync(lsnr);
     txCnt.increment();
   }

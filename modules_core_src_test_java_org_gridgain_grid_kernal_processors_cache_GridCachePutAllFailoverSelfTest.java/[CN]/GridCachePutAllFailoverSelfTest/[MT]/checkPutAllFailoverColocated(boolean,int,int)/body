@@ -2,26 +2,27 @@
   nearEnabled=near;
   backups=shutdownCnt;
   Collection<Integer> testKeys=generateTestKeys();
-  Grid master=startGrid(MASTER);
+  final Grid master=startGrid(MASTER);
   List<Grid> workers=new ArrayList<>(workerCnt);
   for (int i=1; i <= workerCnt; i++)   workers.add(startGrid("worker" + i));
-  info("Master: " + master.localNode().id());
+  info("Master: " + master.cluster().localNode().id());
   List<Grid> runningWorkers=new ArrayList<>(workerCnt);
   for (int i=1; i <= workerCnt; i++) {
-    UUID id=workers.get(i - 1).localNode().id();
+    UUID id=workers.get(i - 1).cluster().localNode().id();
     info(String.format("Worker%d: %s",i,id));
     runningWorkers.add(workers.get(i - 1));
   }
   try {
-    master.mapKeyToNode(CACHE_NAME,"Dummy");
+    master.cluster().mapKeyToNode(CACHE_NAME,"Dummy");
     Map<UUID,Collection<Integer>> dataChunks=new HashMap<>();
     int chunkCntr=0;
     final AtomicBoolean jobFailed=new AtomicBoolean(false);
     int failoverPushGap=0;
     final CountDownLatch emptyLatch=new CountDownLatch(1);
     final AtomicBoolean inputExhausted=new AtomicBoolean();
+    GridCompute comp=compute(master.cluster().forPredicate(workerNodesFilter)).enableAsync();
     for (    Integer key : testKeys) {
-      GridNode mappedNode=master.mapKeyToNode(CACHE_NAME,key);
+      GridNode mappedNode=master.cluster().mapKeyToNode(CACHE_NAME,key);
       UUID nodeId=mappedNode.id();
       Collection<Integer> data=dataChunks.get(nodeId);
       if (data == null) {
@@ -32,7 +33,8 @@
       if (data.size() == DATA_CHUNK_SIZE) {
         chunkCntr++;
         log.info("Pushing data chunk [chunkNo=" + chunkCntr + "]");
-        GridComputeTaskFuture<Void> fut=master.forPredicate(workerNodesFilter).compute().execute(new GridCachePutAllTask(nodeId,CACHE_NAME),data);
+        comp.execute(new GridCachePutAllTask(nodeId,CACHE_NAME),data);
+        GridComputeTaskFuture<Void> fut=comp.future();
         resQueue.put(fut);
         fut.listenAsync(new CI1<GridFuture<Void>>(){
           @Override public void apply(          GridFuture<Void> f){
@@ -56,7 +58,7 @@
             if (failoverPushGap > 0)             failoverPushGap--;
  else {
               Grid victim=runningWorkers.remove(0);
-              info("Shutting down node: " + victim.localNode().id());
+              info("Shutting down node: " + victim.cluster().localNode().id());
               stopGrid(victim.name());
               failoverPushGap=FAILOVER_PUSH_GAP;
             }
@@ -65,7 +67,8 @@
       }
     }
     for (    Map.Entry<UUID,Collection<Integer>> entry : dataChunks.entrySet()) {
-      GridComputeTaskFuture<Void> fut=master.forPredicate(workerNodesFilter).compute().execute(new GridCachePutAllTask(entry.getKey(),CACHE_NAME),entry.getValue());
+      comp.execute(new GridCachePutAllTask(entry.getKey(),CACHE_NAME),entry.getValue());
+      GridComputeTaskFuture<Void> fut=comp.future();
       resQueue.put(fut);
       fut.listenAsync(new CI1<GridFuture<Void>>(){
         @Override public void apply(        GridFuture<Void> f){

@@ -1,9 +1,9 @@
 {
-  for (  Grid g : alive)   assertEquals(PERM_NODES_CNT,g.nodes().size());
+  for (  Grid g : alive)   assertEquals(PERM_NODES_CNT,g.cluster().nodes().size());
   for (  final Grid g : alive) {
     GridKernal k=(GridKernal)g;
     GridDiscoveryManager discoMgr=k.context().discovery();
-    final Collection<GridNode> currTop=g.nodes();
+    final Collection<GridNode> currTop=g.cluster().nodes();
     long currVer=discoMgr.topologyVersion();
     for (long v=currVer; v > currVer - GridDiscoveryManager.DISCOVERY_HISTORY_SIZE && v > 0; v--) {
       F.forAll(discoMgr.aliveCacheNodes(null,v),new GridPredicate<GridNode>(){
@@ -14,7 +14,7 @@
 );
       F.forAll(discoMgr.aliveRemoteCacheNodes(null,v),new GridPredicate<GridNode>(){
         @Override public boolean apply(        GridNode e){
-          return currTop.contains(e) || g.localNode().equals(e);
+          return currTop.contains(e) || g.cluster().localNode().equals(e);
         }
       }
 );

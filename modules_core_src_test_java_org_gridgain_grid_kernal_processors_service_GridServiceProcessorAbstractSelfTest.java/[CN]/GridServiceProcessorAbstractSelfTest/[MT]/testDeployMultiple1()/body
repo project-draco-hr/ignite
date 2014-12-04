@@ -3,7 +3,9 @@
   String name="serviceMultiple1";
   CountDownLatch latch=new CountDownLatch(nodeCount() * 2);
   DummyService.exeLatch(name,latch);
-  GridFuture<?> fut=g.services().deployMultiple(name,new DummyService(),nodeCount() * 2,3);
+  GridServices svcs=g.services().enableAsync();
+  svcs.deployMultiple(name,new DummyService(),nodeCount() * 2,3);
+  GridFuture<?> fut=svcs.future();
   info("Deployed service: " + name);
   fut.get();
   info("Finished waiting for service future: " + name);

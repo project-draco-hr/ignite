@@ -1,7 +1,7 @@
 {
   cnt.set(0);
-  ExecutorService execService=prj.compute().executorService();
-  Future<String> fut=execService.submit(new TestCallable<String>(){
+  ExecutorService execSrvc=prj.grid().executorService(prj);
+  Future<String> fut=execSrvc.submit(new TestCallable<String>(){
     @Override public String call() throws Exception {
       return "submit1";
     }
@@ -10,11 +10,11 @@
   waitForValue(cnt,1);
   assertEquals("submit1",fut.get());
   cnt.set(0);
-  fut=execService.submit(new TestRunnable(),"submit2");
+  fut=execSrvc.submit(new TestRunnable(),"submit2");
   waitForValue(cnt,1);
   assertEquals("submit2",fut.get());
   cnt.set(0);
-  Future<?> runFut=execService.submit(new TestRunnable());
+  Future<?> runFut=execSrvc.submit(new TestRunnable());
   waitForValue(cnt,1);
   runFut.get();
 }

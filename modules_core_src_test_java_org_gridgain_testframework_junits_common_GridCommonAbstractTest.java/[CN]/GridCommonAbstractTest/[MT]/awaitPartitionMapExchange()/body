@@ -2,7 +2,7 @@
   for (  Grid g : G.allGrids()) {
     for (    GridCache<?,?> c : ((GridEx)g).cachesx()) {
       GridCacheConfiguration cfg=c.configuration();
-      if (cfg.getCacheMode() == PARTITIONED && cfg.getPreloadMode() != NONE && g.nodes().size() > 1) {
+      if (cfg.getCacheMode() == PARTITIONED && cfg.getPreloadMode() != NONE && g.cluster().nodes().size() > 1) {
         GridCacheAffinityFunction aff=cfg.getAffinity();
         GridDhtCacheAdapter<?,?> dht=dht(c);
         GridDhtPartitionTopology<?,?> top=dht.topology();
@@ -14,7 +14,7 @@
             Collection<GridNode> owners=top.nodes(p,-1);
             int actual=owners.size();
             if (affNodes.size() != owners.size() || !affNodes.containsAll(owners)) {
-              LT.warn(log(),null,"Waiting for topology map update [grid=" + g.name() + ", p="+ p+ ", nodes="+ exp+ ", owners="+ actual+ ", affNodes="+ affNodes+ ", owners="+ owners+ ", locNode="+ g.localNode().id()+ ']');
+              LT.warn(log(),null,"Waiting for topology map update [grid=" + g.name() + ", p="+ p+ ", nodes="+ exp+ ", owners="+ actual+ ", affNodes="+ affNodes+ ", owners="+ owners+ ", locNode="+ g.cluster().localNode().id()+ ']');
               if (i == 0)               start=System.currentTimeMillis();
               Thread.sleep(200);
               continue;

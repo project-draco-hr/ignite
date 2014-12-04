@@ -6,7 +6,7 @@
     @Override public boolean apply(    UUID nodeId,    Object msg){
       try {
         log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ", topic="+ TestTopic.TOPIC_1+ ']');
-        if (!nodeId.equals(grid1.localNode().id())) {
+        if (!nodeId.equals(grid1.cluster().localNode().id())) {
           log.error("Unexpected sender node: " + nodeId);
           error.set(true);
           return false;
@@ -29,7 +29,7 @@
     @Override public boolean apply(    UUID nodeId,    Object msg){
       try {
         log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ", topic="+ TestTopic.TOPIC_2+ ']');
-        if (!nodeId.equals(grid1.localNode().id())) {
+        if (!nodeId.equals(grid1.cluster().localNode().id())) {
           log.error("Unexpected sender node: " + nodeId);
           error.set(true);
           return false;
@@ -52,7 +52,7 @@
     @Override public boolean apply(    UUID nodeId,    Object msg){
       try {
         log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ", topic=default]");
-        if (!nodeId.equals(grid1.localNode().id())) {
+        if (!nodeId.equals(grid1.cluster().localNode().id())) {
           log.error("Unexpected sender node: " + nodeId);
           error.set(true);
           return false;
@@ -71,10 +71,10 @@
     }
   }
 );
-  GridProjection rNode1=grid1.forLocal();
-  rNode1.message().send(TestTopic.TOPIC_1,MSG_1);
-  rNode1.message().send(TestTopic.TOPIC_2,MSG_2);
-  rNode1.message().send(null,MSG_3);
+  GridProjection rNode1=grid1.cluster().forLocal();
+  message(rNode1).send(TestTopic.TOPIC_1,MSG_1);
+  message(rNode1).send(TestTopic.TOPIC_2,MSG_2);
+  message(rNode1).send(null,MSG_3);
   assertTrue(rcvLatch.await(3,TimeUnit.SECONDS));
   assertFalse(error.get());
   assertTrue(rcvMsgs.contains(MSG_1));
