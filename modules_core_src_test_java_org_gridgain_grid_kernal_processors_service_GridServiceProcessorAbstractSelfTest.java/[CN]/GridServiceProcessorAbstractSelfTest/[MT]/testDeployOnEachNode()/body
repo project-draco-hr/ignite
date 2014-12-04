@@ -3,7 +3,7 @@
   String name="serviceOnEachNode";
   CountDownLatch latch=new CountDownLatch(nodeCount());
   DummyService.exeLatch(name,latch);
-  IgniteManaged svcs=g.services().enableAsync();
+  IgniteManaged svcs=g.managed().enableAsync();
   svcs.deployNodeSingleton(name,new DummyService());
   IgniteFuture<?> fut=svcs.future();
   info("Deployed service: " + name);
@@ -12,5 +12,5 @@
   latch.await();
   assertEquals(name,nodeCount(),DummyService.started(name));
   assertEquals(name,0,DummyService.cancelled(name));
-  checkCount(name,g.services().deployedServices(),nodeCount());
+  checkCount(name,g.managed().deployedServices(),nodeCount());
 }
