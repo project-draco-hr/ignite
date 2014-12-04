@@ -1,0 +1,252 @@
+{
+  this.cls=cls;
+  excluded=GridMarshallerExclusions.isExcluded(cls);
+  T2<Integer,Integer> t=IgniteOptimizedClassResolver.writeClassData(cls);
+  hdr=t.get1();
+  id=t.get2();
+  name=cls.getName();
+  if (!excluded) {
+    Class<?> parent;
+    if (cls == byte.class || cls == Byte.class) {
+      type=TYPE_BYTE;
+      isPrimitive=true;
+    }
+ else     if (cls == short.class || cls == Short.class) {
+      type=TYPE_SHORT;
+      isPrimitive=true;
+    }
+ else     if (cls == int.class || cls == Integer.class) {
+      type=TYPE_INT;
+      isPrimitive=true;
+    }
+ else     if (cls == long.class || cls == Long.class) {
+      type=TYPE_LONG;
+      isPrimitive=true;
+    }
+ else     if (cls == float.class || cls == Float.class) {
+      type=TYPE_FLOAT;
+      isPrimitive=true;
+    }
+ else     if (cls == double.class || cls == Double.class) {
+      type=TYPE_DOUBLE;
+      isPrimitive=true;
+    }
+ else     if (cls == char.class || cls == Character.class) {
+      type=TYPE_CHAR;
+      isPrimitive=true;
+    }
+ else     if (cls == boolean.class || cls == Boolean.class) {
+      type=TYPE_BOOLEAN;
+      isPrimitive=true;
+    }
+ else     if (cls == byte[].class)     type=TYPE_BYTE_ARR;
+ else     if (cls == short[].class)     type=TYPE_SHORT_ARR;
+ else     if (cls == int[].class)     type=TYPE_INT_ARR;
+ else     if (cls == long[].class)     type=TYPE_LONG_ARR;
+ else     if (cls == float[].class)     type=TYPE_FLOAT_ARR;
+ else     if (cls == double[].class)     type=TYPE_DOUBLE_ARR;
+ else     if (cls == char[].class)     type=TYPE_CHAR_ARR;
+ else     if (cls == boolean[].class)     type=TYPE_BOOLEAN_ARR;
+ else     if (cls.isArray()) {
+      type=TYPE_OBJ_ARR;
+      arrCompType=cls.getComponentType();
+    }
+ else     if (cls == String.class)     type=TYPE_STR;
+ else     if (cls.isEnum()) {
+      type=TYPE_ENUM;
+      isEnum=true;
+      enumVals=cls.getEnumConstants();
+    }
+ else     if ((parent=cls.getSuperclass()) != null && parent.isEnum()) {
+      type=TYPE_ENUM;
+      isEnum=true;
+      enumVals=parent.getEnumConstants();
+    }
+ else     if (cls == UUID.class)     type=TYPE_UUID;
+ else     if (cls == Properties.class) {
+      type=TYPE_PROPS;
+      try {
+        dfltsFieldOff=UNSAFE.objectFieldOffset(Properties.class.getDeclaredField("defaults"));
+      }
+ catch (      NoSuchFieldException e) {
+        throw new IOException(e);
+      }
+    }
+ else     if (cls == ArrayList.class)     type=TYPE_ARRAY_LIST;
+ else     if (cls == HashMap.class) {
+      type=TYPE_HASH_MAP;
+      try {
+        loadFactorFieldOff=UNSAFE.objectFieldOffset(HashMap.class.getDeclaredField("loadFactor"));
+      }
+ catch (      NoSuchFieldException e) {
+        throw new IOException(e);
+      }
+    }
+ else     if (cls == HashSet.class) {
+      type=TYPE_HASH_SET;
+      try {
+        loadFactorFieldOff=UNSAFE.objectFieldOffset(HashMap.class.getDeclaredField("loadFactor"));
+        mapFieldOff=UNSAFE.objectFieldOffset(HashSet.class.getDeclaredField("map"));
+      }
+ catch (      NoSuchFieldException e) {
+        throw new IOException(e);
+      }
+    }
+ else     if (cls == LinkedList.class)     type=TYPE_LINKED_LIST;
+ else     if (cls == LinkedHashMap.class) {
+      type=TYPE_LINKED_HASH_MAP;
+      try {
+        loadFactorFieldOff=UNSAFE.objectFieldOffset(HashMap.class.getDeclaredField("loadFactor"));
+        accessOrderFieldOff=UNSAFE.objectFieldOffset(LinkedHashMap.class.getDeclaredField("accessOrder"));
+      }
+ catch (      NoSuchFieldException e) {
+        throw new IOException(e);
+      }
+    }
+ else     if (cls == LinkedHashSet.class) {
+      type=TYPE_LINKED_HASH_SET;
+      try {
+        loadFactorFieldOff=UNSAFE.objectFieldOffset(HashMap.class.getDeclaredField("loadFactor"));
+        mapFieldOff=UNSAFE.objectFieldOffset(HashSet.class.getDeclaredField("map"));
+      }
+ catch (      NoSuchFieldException e) {
+        throw new IOException(e);
+      }
+    }
+ else     if (cls == Date.class)     type=TYPE_DATE;
+ else     if (cls == Class.class) {
+      type=TYPE_CLS;
+      isCls=true;
+    }
+ else {
+      Class<?> c=cls;
+      while ((writeReplaceMtd == null || readResolveMtd == null) && c != null && !c.equals(Object.class)) {
+        if (writeReplaceMtd == null) {
+          try {
+            writeReplaceMtd=c.getDeclaredMethod("writeReplace");
+            if (!isStatic(writeReplaceMtd.getModifiers()) && !(isPrivate(writeReplaceMtd.getModifiers()) && c != cls) && writeReplaceMtd.getReturnType().equals(Object.class))             writeReplaceMtd.setAccessible(true);
+ else             writeReplaceMtd=null;
+          }
+ catch (          NoSuchMethodException ignored) {
+          }
+        }
+        if (readResolveMtd == null) {
+          try {
+            readResolveMtd=c.getDeclaredMethod("readResolve");
+            if (!isStatic(readResolveMtd.getModifiers()) && !(isPrivate(readResolveMtd.getModifiers()) && c != cls) && readResolveMtd.getReturnType().equals(Object.class))             readResolveMtd.setAccessible(true);
+ else             readResolveMtd=null;
+          }
+ catch (          NoSuchMethodException ignored) {
+          }
+        }
+        c=c.getSuperclass();
+      }
+      if (Externalizable.class.isAssignableFrom(cls)) {
+        type=TYPE_EXTERNALIZABLE;
+        try {
+          constructor=cls.getDeclaredConstructor();
+          constructor.setAccessible(true);
+        }
+ catch (        NoSuchMethodException e) {
+          throw new IOException("Externalizable class doesn't have default constructor: " + cls,e);
+        }
+      }
+ else {
+        type=TYPE_SERIALIZABLE;
+        isSerial=Serializable.class.isAssignableFrom(cls);
+        writeObjMtds=new ArrayList<>();
+        readObjMtds=new ArrayList<>();
+        List<List<Field>> fields=new ArrayList<>();
+        List<List<T2<IgniteOptimizedFieldType,Long>>> fieldOffs=new ArrayList<>();
+        List<Map<String,IgniteBiTuple<Integer,IgniteOptimizedFieldType>>> fieldInfoMaps=new ArrayList<>();
+        List<List<IgniteBiTuple<Integer,IgniteOptimizedFieldType>>> fieldInfoLists=new ArrayList<>();
+        for (c=cls; c != null && !c.equals(Object.class); c=c.getSuperclass()) {
+          Method mtd;
+          try {
+            mtd=c.getDeclaredMethod("writeObject",ObjectOutputStream.class);
+            int mod=mtd.getModifiers();
+            if (!isStatic(mod) && isPrivate(mod) && mtd.getReturnType() == Void.TYPE)             mtd.setAccessible(true);
+ else             mtd=null;
+          }
+ catch (          NoSuchMethodException ignored) {
+            mtd=null;
+          }
+          writeObjMtds.add(mtd);
+          try {
+            mtd=c.getDeclaredMethod("readObject",ObjectInputStream.class);
+            int mod=mtd.getModifiers();
+            if (!isStatic(mod) && isPrivate(mod) && mtd.getReturnType() == Void.TYPE)             mtd.setAccessible(true);
+ else             mtd=null;
+          }
+ catch (          NoSuchMethodException ignored) {
+            mtd=null;
+          }
+          readObjMtds.add(mtd);
+          Field[] clsFields0=c.getDeclaredFields();
+          Arrays.sort(clsFields0,new Comparator<Field>(){
+            @Override public int compare(            Field f1,            Field f2){
+              return f1.getName().compareTo(f2.getName());
+            }
+          }
+);
+          List<Field> clsFields=new ArrayList<>(clsFields0.length);
+          List<T2<IgniteOptimizedFieldType,Long>> clsFieldOffs=new ArrayList<>(clsFields0.length);
+          for (int i=0; i < clsFields0.length; i++) {
+            Field f=clsFields0[i];
+            int mod=f.getModifiers();
+            if (!isStatic(mod) && !isTransient(mod)) {
+              IgniteOptimizedFieldType type=fieldType(f.getType());
+              clsFields.add(f);
+              clsFieldOffs.add(new T2<>(type,UNSAFE.objectFieldOffset(f)));
+            }
+          }
+          fields.add(clsFields);
+          fieldOffs.add(clsFieldOffs);
+          Map<String,IgniteBiTuple<Integer,IgniteOptimizedFieldType>> fieldInfoMap=null;
+          try {
+            Field serFieldsDesc=c.getDeclaredField("serialPersistentFields");
+            int mod=serFieldsDesc.getModifiers();
+            if (serFieldsDesc.getType() == ObjectStreamField[].class && isPrivate(mod) && isStatic(mod) && isFinal(mod)) {
+              serFieldsDesc.setAccessible(true);
+              ObjectStreamField[] serFields=(ObjectStreamField[])serFieldsDesc.get(null);
+              fieldInfoMap=new HashMap<>();
+              for (int i=0; i < serFields.length; i++) {
+                ObjectStreamField serField=serFields[i];
+                fieldInfoMap.put(serField.getName(),F.t(i,fieldType(serField.getType())));
+              }
+            }
+          }
+ catch (          NoSuchFieldException ignored) {
+          }
+catch (          IllegalAccessException e) {
+            throw new IOException("Failed to get value of 'serialPersistentFields' field in class: " + cls.getName(),e);
+          }
+          if (fieldInfoMap == null) {
+            fieldInfoMap=new HashMap<>();
+            for (int i=0; i < clsFields.size(); i++) {
+              Field f=clsFields.get(i);
+              fieldInfoMap.put(f.getName(),F.t(i,fieldType(f.getType())));
+            }
+          }
+          fieldInfoMaps.add(fieldInfoMap);
+          List<IgniteBiTuple<Integer,IgniteOptimizedFieldType>> fieldInfoList=new ArrayList<>(fieldInfoMap.values());
+          Collections.sort(fieldInfoList,new Comparator<IgniteBiTuple<Integer,IgniteOptimizedFieldType>>(){
+            @Override public int compare(            IgniteBiTuple<Integer,IgniteOptimizedFieldType> t1,            IgniteBiTuple<Integer,IgniteOptimizedFieldType> t2){
+              return t1.get1().compareTo(t2.get1());
+            }
+          }
+);
+          fieldInfoLists.add(fieldInfoList);
+        }
+        Collections.reverse(writeObjMtds);
+        Collections.reverse(readObjMtds);
+        Collections.reverse(fields);
+        Collections.reverse(fieldOffs);
+        Collections.reverse(fieldInfoMaps);
+        Collections.reverse(fieldInfoLists);
+        this.fields=new Fields(fields,fieldOffs,fieldInfoLists,fieldInfoMaps);
+      }
+    }
+  }
+  shortId=GridOptimizedMarshallerUtils.computeSerialVersionUid(cls,fields != null ? fields.ownFields() : null).shortValue();
+}
