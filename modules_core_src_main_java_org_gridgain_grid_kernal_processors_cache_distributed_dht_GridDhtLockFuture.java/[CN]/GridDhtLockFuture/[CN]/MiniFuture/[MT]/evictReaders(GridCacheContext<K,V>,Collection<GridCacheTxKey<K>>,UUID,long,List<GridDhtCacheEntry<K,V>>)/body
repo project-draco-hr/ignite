@@ -1,0 +1,20 @@
+{
+  if (entries == null || keys == null || entries.isEmpty() || keys.isEmpty())   return;
+  for (ListIterator<GridDhtCacheEntry<K,V>> it=entries.listIterator(); it.hasNext(); ) {
+    GridDhtCacheEntry<K,V> cached=it.next();
+    if (keys.contains(cached.txKey())) {
+      while (true) {
+        try {
+          cached.removeReader(nodeId,msgId);
+          if (tx != null)           tx.removeNearMapping(nodeId,cached);
+          break;
+        }
+ catch (        GridCacheEntryRemovedException ignore) {
+          GridDhtCacheEntry<K,V> e=cacheCtx.dht().peekExx(cached.key());
+          if (e == null)           break;
+          it.set(e);
+        }
+      }
+    }
+  }
+}

@@ -1,9 +1,10 @@
 {
   UUID nodeId=UUID.randomUUID();
   GridCacheAdapter<String,String> cache=grid.internalCache();
-  GridCacheTestEntryEx<String,String> entry1=new GridCacheTestEntryEx<>(cache.context(),"1");
-  GridCacheTestEntryEx<String,String> entry2=new GridCacheTestEntryEx<>(cache.context(),"2");
-  GridCacheTestEntryEx<String,String> entry3=new GridCacheTestEntryEx<>(cache.context(),"3");
+  GridCacheContext<String,String> ctx=cache.context();
+  GridCacheTestEntryEx<String,String> entry1=new GridCacheTestEntryEx<>(ctx,"1");
+  GridCacheTestEntryEx<String,String> entry2=new GridCacheTestEntryEx<>(ctx,"2");
+  GridCacheTestEntryEx<String,String> entry3=new GridCacheTestEntryEx<>(ctx,"3");
   GridCacheVersion ver1=version(1);
   GridCacheVersion ver2=version(2);
   GridCacheVersion ver3=version(3);
@@ -14,7 +15,7 @@
   GridCacheMvccCandidate<String> c21=entry2.addLocal(2,ver1,0,true,true);
   GridCacheMvccCandidate<String> c31=entry3.addLocal(2,ver1,0,true,true);
   GridCacheMvccCandidate<String> c33=entry3.addLocal(1,ver3,0,true,false);
-  linkCandidates(c11,c21,c31);
+  linkCandidates(ctx,c11,c21,c31);
   entry1.readyLocal(ver1);
   entry2.readyLocal(ver1);
   entry3.readyLocal(ver1);
@@ -22,7 +23,7 @@
   checkLocal(entry2.candidate(ver1),ver1,true,false,false);
   checkLocal(entry3.candidate(ver1),ver1,true,false,false);
   checkLocal(entry3.candidate(ver3),ver3,false,false,false);
-  linkCandidates(c13,c33);
+  linkCandidates(ctx,c13,c33);
   entry2.addRemote(nodeId,3,ver2,0,false,true);
   checkLocal(entry2.candidate(ver1),ver1,true,false,false);
   entry3.addRemote(nodeId,3,ver2,0,false,false);

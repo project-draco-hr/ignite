@@ -1,0 +1,14 @@
+{
+  if (canCalculateAffinity(cacheCtx)) {
+    if (log.isDebugEnabled())     log.debug("Will recalculate affinity [locNodeId=" + cctx.localNodeId() + ", exchId="+ exchId+ ']');
+    cacheCtx.affinity().calculateAffinity(exchId.topologyVersion(),discoEvt);
+  }
+ else {
+    if (log.isDebugEnabled())     log.debug("Will request affinity from remote node [locNodeId=" + cctx.localNodeId() + ", exchId="+ exchId+ ']');
+    GridDhtAssignmentFetchFuture<K,V> fetchFut=new GridDhtAssignmentFetchFuture<>(cacheCtx,exchId.topologyVersion(),CU.affinityNodes(cacheCtx));
+    fetchFut.init();
+    List<List<GridNode>> affAssignment=fetchFut.get();
+    if (log.isDebugEnabled())     log.debug("Fetched affinity from remote node, initializing affinity assignment [locNodeId=" + cctx.localNodeId() + ", topVer="+ exchId.topologyVersion()+ ']');
+    cacheCtx.affinity().initializeAffinity(exchId.topologyVersion(),affAssignment);
+  }
+}

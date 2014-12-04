@@ -1,15 +1,15 @@
 {
-  checkInternal(e.key());
-  GridCacheTxEntry<K,V> entry=writeMap.get(e.key());
+  checkInternal(e.txKey());
+  GridCacheTxEntry<K,V> entry=writeMap.get(e.txKey());
   if (entry == null) {
-    GridCacheTxEntry<K,V> rmv=readMap.remove(e.key());
+    GridCacheTxEntry<K,V> rmv=readMap.remove(e.txKey());
     if (rmv != null) {
       e.cached(rmv.cached(),rmv.keyBytes());
-      writeMap.put(e.key(),e);
+      writeMap.put(e.txKey(),e);
     }
  else {
-      e.cached(cctx.cache().entryEx(e.key()),null);
-      writeMap.put(e.key(),e);
+      e.cached(e.context().cache().entryEx(e.key()),null);
+      writeMap.put(e.txKey(),e);
     }
   }
  else {

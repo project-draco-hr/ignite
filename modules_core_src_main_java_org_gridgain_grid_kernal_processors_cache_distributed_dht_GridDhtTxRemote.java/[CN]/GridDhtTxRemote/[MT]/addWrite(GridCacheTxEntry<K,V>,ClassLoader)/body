@@ -1,13 +1,14 @@
 {
-  entry.unmarshal(cctx,ldr);
+  entry.unmarshal(cctx,false,ldr);
+  GridCacheContext<K,V> cacheCtx=entry.context();
   try {
-    GridDhtCacheEntry<K,V> cached=cctx.dht().entryExx(entry.key(),topologyVersion());
-    checkInternal(entry.key());
+    GridDhtCacheEntry<K,V> cached=cacheCtx.dht().entryExx(entry.key(),topologyVersion());
+    checkInternal(entry.txKey());
     entry.cached(cached,entry.keyBytes());
-    writeMap.put(entry.key(),entry);
+    writeMap.put(entry.txKey(),entry);
     addExplicit(entry);
   }
  catch (  GridDhtInvalidPartitionException e) {
-    addInvalidPartition(e.partition());
+    addInvalidPartition(cacheCtx,e.partition());
   }
 }

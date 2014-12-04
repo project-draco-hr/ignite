@@ -1,0 +1,27 @@
+{
+  if (!plcEnabled && memoryMode != OFFHEAP_TIERED)   return;
+  if (!loc) {
+    if (cctx.isNear())     return;
+    if (evictSync)     return;
+  }
+  GridCacheEntryEx<K,V> e=txEntry.cached();
+  if (e.detached() || e.isInternal())   return;
+  try {
+    if (e.markObsoleteIfEmpty(null) || e.obsolete())     e.context().cache().removeEntry(e);
+  }
+ catch (  GridException ex) {
+    U.error(log,"Failed to evict entry from cache: " + e,ex);
+  }
+  if (memoryMode == OFFHEAP_TIERED) {
+    try {
+      evict0(cctx.cache(),e,cctx.versions().next(),null,false);
+    }
+ catch (    GridException ex) {
+      U.error(log,"Failed to evict entry from on heap memory: " + e,ex);
+    }
+  }
+ else {
+    notifyPolicy(e);
+    if (evictSyncAgr)     waitForEvictionFutures();
+  }
+}

@@ -7,7 +7,7 @@
   if (committedSize > 3000) {
     minStartVer=new GridCacheVersion(Integer.MAX_VALUE,Long.MAX_VALUE,Long.MAX_VALUE,Integer.MAX_VALUE,0);
     GridCacheTxEx<K,V> stuck=null;
-    for (    GridCacheTxEx<K,V> tx : idMap.values())     if (tx.startVersion().isLess(minStartVer)) {
+    for (    GridCacheTxEx<K,V> tx : txs())     if (tx.startVersion().isLess(minStartVer)) {
       minStartVer=tx.startVersion();
       dur=U.currentTimeMillis() - tx.startTime();
       stuck=tx;
@@ -15,7 +15,7 @@
     X.println("Stuck transaction: " + stuck);
   }
   X.println(">>> ");
-  X.println(">>> Transaction manager memory stats [grid=" + cctx.gridName() + ", cache="+ cctx.name()+ ']');
+  X.println(">>> Transaction manager memory stats [grid=" + cctx.gridName() + ']');
   X.println(">>>   threadMapSize: " + threadMap.size());
   X.println(">>>   idMap [size=" + idMap.size() + ", minStartVer="+ minStartVer+ ", dur="+ dur+ "ms]");
   X.println(">>>   committedQueue [size=" + committedSize + ", firstStartVersion="+ (firstTx == null ? "null" : firstTx.startVersion())+ ", firstEndVersion="+ (firstTx == null ? "null" : firstTx.endVersion())+ ']');

@@ -1,12 +1,12 @@
 {
   GridTimeoutObject obj=lastTimeoutObj.getAndSet(null);
   if (obj != null)   cctx.time().removeTimeoutObject(obj);
-  final GridDhtPartitionsExchangeFuture<K,V> exchFut=lastExchangeFut.get();
+  final GridDhtPartitionsExchangeFuture<K,V> exchFut=lastExchangeFut;
   if (exchFut != null) {
     if (log.isDebugEnabled())     log.debug("Forcing preload event for future: " + exchFut);
     exchFut.listenAsync(new CI1<GridFuture<Long>>(){
       @Override public void apply(      GridFuture<Long> t){
-        exchWorker.addFuture(forcePreloadExchange(exchFut.discoveryEvent(),exchFut.exchangeId()));
+        cctx.shared().exchange().forcePreloadExchange(exchFut);
       }
     }
 );

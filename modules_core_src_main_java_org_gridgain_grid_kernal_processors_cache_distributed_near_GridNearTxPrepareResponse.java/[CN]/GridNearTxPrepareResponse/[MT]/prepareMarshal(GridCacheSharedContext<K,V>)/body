@@ -1,0 +1,19 @@
+{
+  super.prepareMarshal(ctx);
+  if (ownedVals != null && ownedValsBytes == null) {
+    ownedValsBytes=new ArrayList<>(ownedVals.size());
+    for (    Map.Entry<GridCacheTxKey<K>,GridTuple3<GridCacheVersion,V,byte[]>> entry : ownedVals.entrySet()) {
+      GridTuple3<GridCacheVersion,V,byte[]> tup=entry.getValue();
+      boolean rawBytes=false;
+      byte[] valBytes=tup.get3();
+      if (valBytes == null) {
+        if (tup.get2() != null && tup.get2() instanceof byte[]) {
+          rawBytes=true;
+          valBytes=(byte[])tup.get2();
+        }
+ else         valBytes=ctx.marshaller().marshal(tup.get2());
+      }
+      ownedValsBytes.add(ctx.marshaller().marshal(F.t(entry.getKey(),tup.get1(),valBytes,rawBytes)));
+    }
+  }
+}

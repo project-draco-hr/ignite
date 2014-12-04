@@ -7,7 +7,7 @@
  else {
     if (!cancelIds.contains(new CancelMessageId(req.id(),sndId))) {
       if (!F.eq(req.cacheName(),cctx.name())) {
-        GridCacheQueryResponse res=new GridCacheQueryResponse(req.id(),new GridException("Received request for incorrect cache [expected=" + cctx.name() + ", actual="+ req.cacheName()));
+        GridCacheQueryResponse res=new GridCacheQueryResponse(cctx.cacheId(),req.id(),new GridException("Received request for incorrect cache [expected=" + cctx.name() + ", actual="+ req.cacheName()));
         sendQueryResponse(sndId,res,0);
       }
  else {
@@ -20,7 +20,7 @@
         }
  catch (        Throwable e) {
           U.error(log(),"Failed to run query.",e);
-          sendQueryResponse(sndId,new GridCacheQueryResponse(req.id(),e.getCause()),0);
+          sendQueryResponse(sndId,new GridCacheQueryResponse(cctx.cacheId(),req.id(),e.getCause()),0);
         }
  finally {
           threads.remove(req.id());

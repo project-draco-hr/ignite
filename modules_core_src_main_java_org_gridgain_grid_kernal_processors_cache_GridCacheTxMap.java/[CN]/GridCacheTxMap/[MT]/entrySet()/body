@@ -1,20 +1,20 @@
 {
   if (entrySet == null) {
-    entrySet=new GridSerializableSet<Entry<K,GridCacheTxEntry<K,V>>>(){
-      private Set<Entry<K,GridCacheTxEntry<K,V>>> set=txMap.entrySet();
-      @Override public Iterator<Entry<K,GridCacheTxEntry<K,V>>> iterator(){
-        return new GridSerializableIterator<Entry<K,GridCacheTxEntry<K,V>>>(){
-          private Iterator<Entry<K,GridCacheTxEntry<K,V>>> it=set.iterator();
-          private Entry<K,GridCacheTxEntry<K,V>> cur;
+    entrySet=new GridSerializableSet<Entry<GridCacheTxKey<K>,GridCacheTxEntry<K,V>>>(){
+      private Set<Entry<GridCacheTxKey<K>,GridCacheTxEntry<K,V>>> set=txMap.entrySet();
+      @Override public Iterator<Entry<GridCacheTxKey<K>,GridCacheTxEntry<K,V>>> iterator(){
+        return new GridSerializableIterator<Entry<GridCacheTxKey<K>,GridCacheTxEntry<K,V>>>(){
+          private Iterator<Entry<GridCacheTxKey<K>,GridCacheTxEntry<K,V>>> it=set.iterator();
+          private Entry<GridCacheTxKey<K>,GridCacheTxEntry<K,V>> cur;
 {
             advance();
           }
           @Override public boolean hasNext(){
             return cur != null;
           }
-          @Override public Entry<K,GridCacheTxEntry<K,V>> next(){
+          @Override public Entry<GridCacheTxKey<K>,GridCacheTxEntry<K,V>> next(){
             if (cur == null)             throw new NoSuchElementException();
-            Entry<K,GridCacheTxEntry<K,V>> e=cur;
+            Entry<GridCacheTxKey<K>,GridCacheTxEntry<K,V>> e=cur;
             advance();
             return e;
           }
@@ -24,7 +24,7 @@
           private void advance(){
             cur=null;
             while (cur == null && it.hasNext()) {
-              Entry<K,GridCacheTxEntry<K,V>> e=it.next();
+              Entry<GridCacheTxKey<K>,GridCacheTxEntry<K,V>> e=it.next();
               if (filter.apply(e.getValue()))               cur=e;
             }
           }

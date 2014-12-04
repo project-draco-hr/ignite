@@ -9,10 +9,10 @@
     unmarshall(nodeId,cacheMsg);
     if (cacheMsg.allowForStartup())     processMessage(nodeId,cacheMsg,c);
  else {
-      GridFuture<?> startFut=cctx.preloader().startFuture();
+      GridFuture<?> startFut=startFuture(cacheMsg);
       if (startFut.isDone())       processMessage(nodeId,cacheMsg,c);
  else {
-        if (log.isDebugEnabled())         log.debug("Waiting for start future to complete for message [nodeId=" + nodeId + ", locId="+ cctx.nodeId()+ ", msg="+ cacheMsg+ ']');
+        if (log.isDebugEnabled())         log.debug("Waiting for start future to complete for message [nodeId=" + nodeId + ", locId="+ cctx.localNodeId()+ ", msg="+ cacheMsg+ ']');
         startFut.listenAsync(new CI1<GridFuture<?>>(){
           @Override public void apply(          GridFuture<?> f){
             rw.readLock();
@@ -22,7 +22,7 @@
                 return;
               }
               f.get();
-              if (log.isDebugEnabled())               log.debug("Start future completed for message [nodeId=" + nodeId + ", locId="+ cctx.nodeId()+ ", msg="+ cacheMsg+ ']');
+              if (log.isDebugEnabled())               log.debug("Start future completed for message [nodeId=" + nodeId + ", locId="+ cctx.localNodeId()+ ", msg="+ cacheMsg+ ']');
               processMessage(nodeId,cacheMsg,c);
             }
  catch (            GridException e) {
@@ -38,7 +38,7 @@
     }
   }
  catch (  Throwable e) {
-    if (CU.isUtilityCache(cctx.name()) && X.hasCause(e,ClassNotFoundException.class))     U.error(log,"Failed to process message (note that distributed services " + "do not support peer class loading, if you deploy distributed service " + "you should have all required classes in CLASSPATH on all nodes in topology) "+ "[senderId=" + nodeId + ", err="+ X.cause(e,ClassNotFoundException.class).getMessage()+ ']');
+    if (X.hasCause(e,ClassNotFoundException.class))     U.error(log,"Failed to process message (note that distributed services " + "do not support peer class loading, if you deploy distributed service " + "you should have all required classes in CLASSPATH on all nodes in topology) "+ "[senderId=" + nodeId + ", err="+ X.cause(e,ClassNotFoundException.class).getMessage()+ ']');
  else     U.error(log,"Failed to process message [senderId=" + nodeId + ']',e);
   }
  finally {
