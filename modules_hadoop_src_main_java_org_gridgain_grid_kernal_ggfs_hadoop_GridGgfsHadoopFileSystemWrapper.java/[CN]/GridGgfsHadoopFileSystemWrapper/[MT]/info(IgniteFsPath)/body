@@ -1,0 +1,55 @@
+{
+  try {
+    final FileStatus status=fileSys.getFileStatus(convert(path));
+    if (status == null)     return null;
+    final Map<String,String> props=properties(status);
+    return new GridGgfsFile(){
+      @Override public IgniteFsPath path(){
+        return path;
+      }
+      @Override public boolean isFile(){
+        return status.isFile();
+      }
+      @Override public boolean isDirectory(){
+        return status.isDirectory();
+      }
+      @Override public int blockSize(){
+        return (int)status.getBlockSize();
+      }
+      @Override public long groupBlockSize(){
+        return status.getBlockSize();
+      }
+      @Override public long accessTime(){
+        return status.getAccessTime();
+      }
+      @Override public long modificationTime(){
+        return status.getModificationTime();
+      }
+      @Override public String property(      String name) throws IllegalArgumentException {
+        String val=props.get(name);
+        if (val == null)         throw new IllegalArgumentException("File property not found [path=" + path + ", name="+ name+ ']');
+        return val;
+      }
+      @Nullable @Override public String property(      String name,      @Nullable String dfltVal){
+        String val=props.get(name);
+        return val == null ? dfltVal : val;
+      }
+      @Override public long length(){
+        return status.getLen();
+      }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public Map<String,String> properties(){
+        return props;
+      }
+    }
+;
+  }
+ catch (  FileNotFoundException ignore) {
+    return null;
+  }
+catch (  IOException e) {
+    throw handleSecondaryFsError(e,"Failed to get file status [path=" + path + "]");
+  }
+}
