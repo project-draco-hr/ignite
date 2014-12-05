@@ -13,12 +13,11 @@
       for (      GridCacheTxEntry<K,V> entry : commitInfo.recoveryWrites()) {
         GridCacheTxEntry<K,V> write=tx.writeMap().get(entry.txKey());
         if (write != null) {
-          GridCacheEntryEx<K,V> cached=entry.cached();
-          if (cached == null || cached.detached()) {
-            cached=write.context().cache().entryEx(entry.key(),tx.topologyVersion());
-            entry.cached(cached,cached.keyBytes());
-          }
-          tx.writeMap().put(entry.txKey(),entry);
+          GridCacheEntryEx<K,V> cached=write.cached();
+          GridCacheTxEntry<K,V> recovered=entry.cleanCopy(write.context());
+          if (cached == null || cached.detached())           cached=write.context().cache().entryEx(entry.key(),tx.topologyVersion());
+          recovered.cached(cached,cached.keyBytes());
+          tx.writeMap().put(entry.txKey(),recovered);
           continue;
         }
         ((GridCacheTxAdapter<K,V>)tx).recoveryWrites(commitInfo.recoveryWrites());

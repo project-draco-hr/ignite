@@ -22,18 +22,22 @@
   }
   for (  ClusterNode rmtNode : checkNodes) {
     if (rmtNode.id().equals(failedNodeId))     continue;
-    MiniFuture fut=new MiniFuture(rmtNode.id());
-    GridCachePessimisticCheckCommittedTxRequest<K,V> req=new GridCachePessimisticCheckCommittedTxRequest<>(tx,originatingThreadId,futureId(),fut.futureId(),nearCheck);
-    add(fut);
-    try {
-      cctx.io().send(rmtNode.id(),req);
-    }
- catch (    ClusterTopologyException ignored) {
-      fut.onNodeLeft();
-    }
-catch (    GridException e) {
-      fut.onError(e);
-      break;
+    GridCachePessimisticCheckCommittedTxRequest<K,V> req=new GridCachePessimisticCheckCommittedTxRequest<>(tx,originatingThreadId,futureId(),nearCheck);
+    if (rmtNode.isLocal())     add(cctx.tm().checkPessimisticTxCommitted(req));
+ else {
+      MiniFuture fut=new MiniFuture(rmtNode.id());
+      req.miniId(fut.futureId());
+      add(fut);
+      try {
+        cctx.io().send(rmtNode.id(),req);
+      }
+ catch (      ClusterTopologyException ignored) {
+        fut.onNodeLeft();
+      }
+catch (      GridException e) {
+        fut.onError(e);
+        break;
+      }
     }
   }
   markInitialized();
