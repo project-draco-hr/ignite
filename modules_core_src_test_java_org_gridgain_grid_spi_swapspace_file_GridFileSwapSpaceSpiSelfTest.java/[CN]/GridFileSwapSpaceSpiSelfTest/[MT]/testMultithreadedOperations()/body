@@ -1,5 +1,5 @@
 {
-  final ConcurrentHashMap8<GridSwapKey,byte[]> map=new ConcurrentHashMap8<>();
+  final ConcurrentHashMap8<SwapKey,byte[]> map=new ConcurrentHashMap8<>();
   Random rnd=new Random();
   final int keys=25000;
   int hash0=0;
@@ -19,7 +19,7 @@
     @Override public Object call() throws Exception {
       Random rnd=new Random();
       while (!fin.get()) {
-        final GridSwapKey key=key(rnd.nextInt(keys));
+        final SwapKey key=key(rnd.nextInt(keys));
 switch (rnd.nextInt(13)) {
 case 0:
           byte[] val=map.remove(key);
@@ -44,10 +44,10 @@ break;
 case 3:
 case 4:
 case 9:
-Map<GridSwapKey,byte[]> m=new HashMap<>();
+Map<SwapKey,byte[]> m=new HashMap<>();
 int cnt=1 + rnd.nextInt(25);
 for (int i=0; i < cnt; i++) {
-GridSwapKey k=key(rnd.nextInt(keys));
+SwapKey k=key(rnd.nextInt(keys));
 val=map.remove(k);
 if (val != null) assertNull(m.put(k,val));
 }
@@ -55,19 +55,19 @@ if (m.isEmpty()) break;
 spi.storeAll(space,m,context());
 break;
 case 5:
-HashSet<GridSwapKey> s=new HashSet<>();
+HashSet<SwapKey> s=new HashSet<>();
 cnt=1 + rnd.nextInt(25);
 for (int i=0; i < cnt; i++) {
-GridSwapKey k=key(rnd.nextInt(keys));
+SwapKey k=key(rnd.nextInt(keys));
 val=map.get(k);
 if (val == null) s.add(k);
 }
 while (!s.isEmpty()) {
 m=spi.readAll(space,s,context());
 s.removeAll(m.keySet());
-Iterator<GridSwapKey> iter=s.iterator();
+Iterator<SwapKey> iter=s.iterator();
 while (iter.hasNext()) {
-GridSwapKey k=iter.next();
+SwapKey k=iter.next();
 if (map.containsKey(k)) iter.remove();
 }
 }
@@ -104,13 +104,13 @@ default :
 s=new HashSet<>();
 cnt=1 + rnd.nextInt(25);
 for (int i=0; i < cnt; i++) {
-GridSwapKey k=key(rnd.nextInt(keys));
+SwapKey k=key(rnd.nextInt(keys));
 val=map.get(k);
 if (val == null) s.add(k);
 }
 if (s.isEmpty()) break;
-spi.removeAll(space,s,new IgniteBiInClosure<GridSwapKey,byte[]>(){
-@Override public void apply(GridSwapKey k,byte[] bytes){
+spi.removeAll(space,s,new IgniteBiInClosure<SwapKey,byte[]>(){
+@Override public void apply(SwapKey k,byte[] bytes){
 if (bytes != null) assertNull(map.putIfAbsent(k,bytes));
 }
 }
@@ -136,6 +136,6 @@ hash1+=U.bytesToInt(entry.getKey(),0) * Arrays.hashCode(entry.getValue());
 cnt++;
 }
 assertEquals(cnt,spi.count(space));
-for (Map.Entry<GridSwapKey,byte[]> entry : map.entrySet()) hash1+=(Integer)entry.getKey().key() * Arrays.hashCode(entry.getValue());
+for (Map.Entry<SwapKey,byte[]> entry : map.entrySet()) hash1+=(Integer)entry.getKey().key() * Arrays.hashCode(entry.getValue());
 assertEquals(hash0,hash1);
 }

@@ -26,10 +26,10 @@
     if (!swapEnabled || keysList.isEmpty())     return res;
   }
   final GridTuple<GridException> err=F.t1();
-  Collection<GridSwapKey> converted=new ArrayList<>(F.viewReadOnly(keysList,new C1<K,GridSwapKey>(){
-    @Override public GridSwapKey apply(    K key){
+  Collection<SwapKey> converted=new ArrayList<>(F.viewReadOnly(keysList,new C1<K,SwapKey>(){
+    @Override public SwapKey apply(    K key){
       try {
-        return new GridSwapKey(key,cctx.affinity().partition(key),CU.marshal(cctx.shared(),key));
+        return new SwapKey(key,cctx.affinity().partition(key),CU.marshal(cctx.shared(),key));
       }
  catch (      GridException e) {
         throw new GridRuntimeException(e);
@@ -37,8 +37,8 @@
     }
   }
 ));
-  swapMgr.removeAll(spaceName,converted,new IgniteBiInClosure<GridSwapKey,byte[]>(){
-    @Override public void apply(    GridSwapKey swapKey,    byte[] rmv){
+  swapMgr.removeAll(spaceName,converted,new IgniteBiInClosure<SwapKey,byte[]>(){
+    @Override public void apply(    SwapKey swapKey,    byte[] rmv){
       if (rmv != null) {
         try {
           GridCacheSwapEntry<V> entry=swapEntry(unmarshalSwapEntry(rmv));

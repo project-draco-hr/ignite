@@ -1,0 +1,56 @@
+{
+  return new Iterator<Map.Entry<SwapKey,byte[]>>(){
+    /** 
+ */
+    private Map.Entry<SwapKey,byte[]> next;
+    /** 
+ */
+    private Map.Entry<SwapKey,byte[]> last;
+{
+      advance();
+    }
+    @Override public boolean hasNext(){
+      return next != null;
+    }
+    /** 
+ * Gets next entry.
+ */
+    private void advance(){
+      while (iter.hasNext()) {
+        Map.Entry<SwapKey,SwapValue> entry=iter.next();
+        byte[] bytes;
+        try {
+          bytes=entry.getValue().value(Space.this);
+        }
+ catch (        IgniteSpiException e) {
+          throw new GridRuntimeException(e);
+        }
+        if (bytes != null) {
+          next=new T2<>(entry.getKey(),bytes);
+          break;
+        }
+      }
+    }
+    @Override public Map.Entry<SwapKey,byte[]> next(){
+      final Map.Entry<SwapKey,byte[]> res=next;
+      if (res == null)       throw new NoSuchElementException();
+      next=null;
+      advance();
+      last=res;
+      return res;
+    }
+    @Override public void remove(){
+      if (last == null)       throw new IllegalStateException();
+      try {
+        Space.this.remove(last.getKey(),false);
+      }
+ catch (      IgniteSpiException e) {
+        throw new GridRuntimeException(e);
+      }
+ finally {
+        last=null;
+      }
+    }
+  }
+;
+}
