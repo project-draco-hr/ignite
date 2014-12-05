@@ -3,12 +3,12 @@
   final Ignite ignite=grid(0);
   ignite.managed().deployNodeSingleton(name,new MapServiceImpl<String,Integer>());
   MapService<Integer,String> svc=ignite.managed(ignite.cluster().forRemotes()).serviceProxy(name,MapService.class,false);
-  assertFalse(svc instanceof GridService);
+  assertFalse(svc instanceof ManagedService);
   for (int i=0; i < nodeCount(); i++)   svc.put(i,Integer.toString(i));
   int size=0;
   for (  ClusterNode n : ignite.cluster().forRemotes().nodes()) {
     MapService<Integer,String> map=ignite.managed(ignite.cluster().forNode(n)).serviceProxy(name,MapService.class,false);
-    assertFalse(map instanceof GridService);
+    assertFalse(map instanceof ManagedService);
     size+=map.size();
   }
   assertEquals(nodeCount(),size);

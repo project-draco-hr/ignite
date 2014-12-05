@@ -1,0 +1,13 @@
+{
+  IgniteMarshaller m=ctx.config().getMarshaller();
+  try {
+    byte[] bytes=m.marshal(svc);
+    ManagedService cp=m.unmarshal(bytes,svc.getClass().getClassLoader());
+    ctx.resource().inject(cp);
+    return cp;
+  }
+ catch (  GridException e) {
+    log.error("Failed to copy service (will reuse same instance): " + svc.getClass(),e);
+    return svc;
+  }
+}
