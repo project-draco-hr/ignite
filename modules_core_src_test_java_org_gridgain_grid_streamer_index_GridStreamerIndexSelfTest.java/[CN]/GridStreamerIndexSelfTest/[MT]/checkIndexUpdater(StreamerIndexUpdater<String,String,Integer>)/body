@@ -1,0 +1,15 @@
+{
+  List<StreamerIndexProvider<String,String,Integer>> idxps=Arrays.asList(indexProvider(true,"tree",updater,StreamerIndexPolicy.EVENT_TRACKING_ON,false),indexProvider(false,"hash",updater,StreamerIndexPolicy.EVENT_TRACKING_ON,false));
+  for (  StreamerIndexProvider<String,String,Integer> idxp : idxps) {
+    StreamerUnboundedWindow<String> win=new StreamerUnboundedWindow<>();
+    win.setIndexes(idxp);
+    win.start();
+    win.enqueue("A");
+    win.enqueue("A");
+    win.enqueue("B");
+    StreamerIndex<String,Object,Object> idx=win.index(idxp.getName());
+    assertNotNull(idx);
+    assertNull(idx.entry("A"));
+    assertNotNull(idx.entry("B"));
+  }
+}
