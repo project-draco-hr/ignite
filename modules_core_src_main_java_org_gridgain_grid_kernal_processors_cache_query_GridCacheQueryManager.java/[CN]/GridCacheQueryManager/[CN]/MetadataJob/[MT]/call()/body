@@ -13,13 +13,13 @@
 );
   return F.transform(cacheNames,new C1<String,CacheSqlMetadata>(){
     @Override public CacheSqlMetadata apply(    String cacheName){
-      Collection<GridIndexingTypeDescriptor> types=ctx.indexing().types(cacheName);
+      Collection<IndexingTypeDescriptor> types=ctx.indexing().types(cacheName);
       Collection<String> names=U.newHashSet(types.size());
       Map<String,String> keyClasses=U.newHashMap(types.size());
       Map<String,String> valClasses=U.newHashMap(types.size());
       Map<String,Map<String,String>> fields=U.newHashMap(types.size());
       Map<String,Collection<GridCacheSqlIndexMetadata>> indexes=U.newHashMap(types.size());
-      for (      GridIndexingTypeDescriptor type : types) {
+      for (      IndexingTypeDescriptor type : types) {
         if (type.name().startsWith("GridCache"))         continue;
         names.add(type.name());
         keyClasses.put(type.name(),type.keyClass().getName());
@@ -32,9 +32,9 @@
         for (        Map.Entry<String,Class<?>> e : type.valueFields().entrySet())         fieldsMap.put(e.getKey().toUpperCase(),e.getValue().getName());
         fields.put(type.name(),fieldsMap);
         Collection<GridCacheSqlIndexMetadata> indexesCol=new ArrayList<>(type.indexes().size());
-        for (        Map.Entry<String,GridIndexDescriptor> e : type.indexes().entrySet()) {
-          GridIndexDescriptor desc=e.getValue();
-          if (desc.type() == GridIndexType.SORTED) {
+        for (        Map.Entry<String,IndexDescriptor> e : type.indexes().entrySet()) {
+          IndexDescriptor desc=e.getValue();
+          if (desc.type() == IndexType.SORTED) {
             Collection<String> idxFields=e.getValue().fields();
             Collection<String> descendings=new LinkedList<>();
             for (            String idxField : idxFields)             if (desc.descending(idxField))             descendings.add(idxField);

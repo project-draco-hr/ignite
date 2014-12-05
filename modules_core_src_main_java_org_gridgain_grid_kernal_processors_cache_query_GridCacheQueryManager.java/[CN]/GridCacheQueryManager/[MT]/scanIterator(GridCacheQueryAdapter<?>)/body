@@ -13,8 +13,8 @@
   final GridCacheProjection<K,V> prj=prj0;
   final IgniteBiPredicate<K,V> keyValFilter=qry.scanFilter();
   injectResources(keyValFilter);
-  GridIterator<GridIndexingKeyValueRow<K,V>> heapIt=new GridIteratorAdapter<GridIndexingKeyValueRow<K,V>>(){
-    private GridIndexingKeyValueRow<K,V> next;
+  GridIterator<IndexingKeyValueRow<K,V>> heapIt=new GridIteratorAdapter<IndexingKeyValueRow<K,V>>(){
+    private IndexingKeyValueRow<K,V> next;
     private Iterator<K> iter=prj.keySet().iterator();
 {
       advance();
@@ -22,9 +22,9 @@
     @Override public boolean hasNextX(){
       return next != null;
     }
-    @Override public GridIndexingKeyValueRow<K,V> nextX(){
+    @Override public IndexingKeyValueRow<K,V> nextX(){
       if (next == null)       throw new NoSuchElementException();
-      GridIndexingKeyValueRow<K,V> next0=next;
+      IndexingKeyValueRow<K,V> next0=next;
       advance();
       return next0;
     }
@@ -43,7 +43,7 @@
  else           next0=null;
         }
       }
-      next=next0 != null ? new GridIndexingKeyValueRowAdapter<>(next0.getKey(),next0.getValue()) : null;
+      next=next0 != null ? new IndexingKeyValueRowAdapter<>(next0.getKey(),next0.getValue()) : null;
     }
     private boolean checkPredicate(    Map.Entry<K,V> e){
       if (keyValFilter != null) {
@@ -54,20 +54,20 @@
     }
   }
 ;
-  final GridIterator<GridIndexingKeyValueRow<K,V>> it;
+  final GridIterator<IndexingKeyValueRow<K,V>> it;
   if (cctx.isSwapOrOffheapEnabled()) {
-    List<GridIterator<GridIndexingKeyValueRow<K,V>>> iters=new ArrayList<>(3);
+    List<GridIterator<IndexingKeyValueRow<K,V>>> iters=new ArrayList<>(3);
     iters.add(heapIt);
     if (cctx.isOffHeapEnabled())     iters.add(offheapIterator(qry));
     if (cctx.swap().swapEnabled())     iters.add(swapIterator(qry));
     it=new CompoundIterator<>(iters);
   }
  else   it=heapIt;
-  return new GridCloseableIteratorAdapter<GridIndexingKeyValueRow<K,V>>(){
+  return new GridCloseableIteratorAdapter<IndexingKeyValueRow<K,V>>(){
     @Override protected boolean onHasNext(){
       return it.hasNext();
     }
-    @Override protected GridIndexingKeyValueRow<K,V> onNext(){
+    @Override protected IndexingKeyValueRow<K,V> onNext(){
       return it.next();
     }
     @Override protected void onRemove(){

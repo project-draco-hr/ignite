@@ -18,8 +18,8 @@
   assertFalse(spi.query(typeAA.space(),"select * from A.A",Collections.emptySet(),typeAA,null).hasNext());
   assertFalse(spi.query(typeAB.space(),"select * from A.B",Collections.emptySet(),typeAB,null).hasNext());
   assertFalse(spi.query(typeBA.space(),"select * from B.A",Collections.emptySet(),typeBA,null).hasNext());
-  assertFalse(spi.remove("A",new GridIndexingEntityAdapter<>(1,null)));
-  assertFalse(spi.remove("B",new GridIndexingEntityAdapter<>(1,null)));
+  assertFalse(spi.remove("A",new IndexingEntityAdapter<>(1,null)));
+  assertFalse(spi.remove("B",new IndexingEntityAdapter<>(1,null)));
   spi.store(typeAA.space(),typeAA,entity(1),entity(aa(1,"Vasya",10)),"v1".getBytes(),0);
   assertEquals(1,spi.size(typeAA.space(),typeAA));
   assertEquals(0,spi.size(typeAB.space(),typeAB));
@@ -48,7 +48,7 @@
   assertEquals(2,spi.size(typeAA.space(),typeAA));
   assertEquals(2,spi.size(typeAB.space(),typeAB));
   assertEquals(1,spi.size(typeBA.space(),typeBA));
-  Iterator<GridIndexingKeyValueRow<Integer,Map<String,Object>>> res=spi.query(typeAA.space(),"select * from a order by age",Collections.emptySet(),typeAA,null);
+  Iterator<IndexingKeyValueRow<Integer,Map<String,Object>>> res=spi.query(typeAA.space(),"select * from a order by age",Collections.emptySet(),typeAA,null);
   assertTrue(res.hasNext());
   assertEquals(aa(3,"Borya",18),value(res.next()));
   assertTrue(res.hasNext());
@@ -64,18 +64,18 @@
   assertTrue(res.hasNext());
   assertEquals(ba(2,"Kolya",25,true),value(res.next()));
   assertFalse(res.hasNext());
-  Iterator<GridIndexingKeyValueRow<Integer,Map<String,Object>>> txtRes=spi.queryText(typeAB.space(),"good",typeAB,null);
+  Iterator<IndexingKeyValueRow<Integer,Map<String,Object>>> txtRes=spi.queryText(typeAB.space(),"good",typeAB,null);
   assertTrue(txtRes.hasNext());
   assertEquals(ab(4,"Vitalya",20,"Very Good guy"),value(txtRes.next()));
   assertFalse(txtRes.hasNext());
-  GridIndexingFieldsResult fieldsRes=spi.queryFields(null,"select a.a.name n1, a.a.age a1, b.a.name n2, " + "b.a.age a2 from a.a, b.a where a.a.id = b.a.id ",Collections.emptySet(),null);
+  IndexingFieldsResult fieldsRes=spi.queryFields(null,"select a.a.name n1, a.a.age a1, b.a.name n2, " + "b.a.age a2 from a.a, b.a where a.a.id = b.a.id ",Collections.emptySet(),null);
   String[] aliases={"N1","A1","N2","A2"};
   Object[] vals={"Valera",19,"Kolya",25};
   assertTrue(fieldsRes.iterator().hasNext());
-  List<GridIndexingEntity<?>> fields=fieldsRes.iterator().next();
+  List<IndexingEntity<?>> fields=fieldsRes.iterator().next();
   assertEquals(4,fields.size());
   int i=0;
-  for (  GridIndexingEntity<?> f : fields) {
+  for (  IndexingEntity<?> f : fields) {
     assertEquals(aliases[i],fieldsRes.metaData().get(i).fieldName());
     assertEquals(vals[i++],f.value());
   }

@@ -1,0 +1,30 @@
+{
+  localSpi.set(this);
+  setFilters(filters);
+  try {
+    Connection conn=connectionForThread(schema(spaceName));
+    ResultSet rs=executeSqlQueryWithTimer(conn,qry,params);
+    List<IndexingFieldMetadata> meta=null;
+    if (rs != null) {
+      try {
+        ResultSetMetaData rsMeta=rs.getMetaData();
+        meta=new ArrayList<>(rsMeta.getColumnCount());
+        for (int i=1; i <= rsMeta.getColumnCount(); i++) {
+          String schemaName=rsMeta.getSchemaName(i);
+          String typeName=rsMeta.getTableName(i);
+          String name=rsMeta.getColumnLabel(i);
+          String type=rsMeta.getColumnClassName(i);
+          meta.add(new SqlFieldMetadata(schemaName,typeName,name,type));
+        }
+      }
+ catch (      SQLException e) {
+        throw new IgniteSpiException("Failed to get meta data.",e);
+      }
+    }
+    return new IndexingFieldsResultAdapter(meta,new FieldsIterator(rs));
+  }
+  finally {
+    setFilters(null);
+    localSpi.remove();
+  }
+}
