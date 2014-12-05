@@ -1,11 +1,11 @@
 {
   try {
     for (int i=0; i < getSpiCount(); i++) {
-      GridDiscoverySpi spi=getSpi(i);
+      DiscoverySpi spi=getSpi(i);
       GridTestResources rsrcMgr=new GridTestResources(getMBeanServer(i));
       rsrcMgr.inject(spi);
       spi.setNodeAttributes(Collections.<String,Object>singletonMap(TEST_ATTRIBUTE_NAME,"true"),fromString("99.99.99"));
-      spi.setListener(new GridDiscoverySpiListener(){
+      spi.setListener(new DiscoverySpiListener(){
         @SuppressWarnings({"NakedNotify"}) @Override public void onDiscovery(        int type,        long topVer,        ClusterNode node,        Collection<ClusterNode> topSnapshot,        Map<Long,Collection<ClusterNode>> topHist){
           info("Discovery event [type=" + type + ", node="+ node+ ']');
 synchronized (mux) {
@@ -14,7 +14,7 @@ synchronized (mux) {
         }
       }
 );
-      spi.setDataExchange(new GridDiscoverySpiDataExchange(){
+      spi.setDataExchange(new DiscoverySpiDataExchange(){
         @Override public List<Object> collect(        UUID nodeId){
           return new LinkedList<>();
         }
@@ -22,7 +22,7 @@ synchronized (mux) {
         }
       }
 );
-      spi.setAuthenticator(new GridDiscoverySpiNodeAuthenticator(){
+      spi.setAuthenticator(new DiscoverySpiNodeAuthenticator(){
         @Override public GridSecurityContext authenticateNode(        ClusterNode n,        GridSecurityCredentials cred){
           GridSecuritySubjectAdapter subj=new GridSecuritySubjectAdapter(GridSecuritySubjectType.REMOTE_NODE,n.id());
           subj.permissions(new GridAllowAllPermissionSet());
