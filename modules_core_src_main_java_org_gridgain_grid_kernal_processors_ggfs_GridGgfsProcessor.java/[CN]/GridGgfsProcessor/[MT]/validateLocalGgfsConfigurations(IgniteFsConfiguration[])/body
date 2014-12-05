@@ -1,0 +1,37 @@
+{
+  Collection<String> cfgNames=new HashSet<>();
+  for (  IgniteFsConfiguration cfg : cfgs) {
+    String name=cfg.getName();
+    if (cfgNames.contains(name))     throw new GridException("Duplicate GGFS name found (check configuration and " + "assign unique name to each): " + name);
+    GridCacheAdapter<Object,Object> dataCache=ctx.cache().internalCache(cfg.getDataCacheName());
+    if (dataCache == null)     throw new GridException("Data cache is not configured locally for GGFS: " + cfg);
+    if (dataCache.configuration().isQueryIndexEnabled())     throw new GridException("GGFS data cache cannot start with enabled query indexing.");
+    GridCache<Object,Object> metaCache=ctx.cache().cache(cfg.getMetaCacheName());
+    if (metaCache == null)     throw new GridException("Metadata cache is not configured locally for GGFS: " + cfg);
+    if (metaCache.configuration().isQueryIndexEnabled())     throw new GridException("GGFS metadata cache cannot start with enabled query indexing.");
+    if (F.eq(cfg.getDataCacheName(),cfg.getMetaCacheName()))     throw new GridException("Cannot use same cache as both data and meta cache: " + cfg.getName());
+    if (!(dataCache.configuration().getAffinityMapper() instanceof GridGgfsGroupDataBlocksKeyMapper))     throw new GridException("Invalid GGFS data cache configuration (key affinity mapper class should be " + GridGgfsGroupDataBlocksKeyMapper.class.getSimpleName() + "): "+ cfg);
+    long maxSpaceSize=cfg.getMaxSpaceSize();
+    if (maxSpaceSize > 0) {
+      long maxHeapSize=Runtime.getRuntime().maxMemory();
+      long offHeapSize=dataCache.configuration().getOffHeapMaxMemory();
+      if (offHeapSize < 0 && maxSpaceSize > maxHeapSize)       throw new GridException("Maximum GGFS space size cannot be greater that size of available heap " + "memory [maxHeapSize=" + maxHeapSize + ", maxGgfsSpaceSize="+ maxSpaceSize+ ']');
+ else       if (offHeapSize > 0 && maxSpaceSize > maxHeapSize + offHeapSize)       throw new GridException("Maximum GGFS space size cannot be greater than size of available heap " + "memory and offheap storage [maxHeapSize=" + maxHeapSize + ", offHeapSize="+ offHeapSize+ ", maxGgfsSpaceSize="+ maxSpaceSize+ ']');
+    }
+    if (dataCache.configuration().getCacheMode() == PARTITIONED) {
+      int backups=dataCache.configuration().getBackups();
+      if (backups != 0)       throw new GridException("GGFS data cache cannot be used with backups (set backup count " + "to 0 and restart the grid): " + cfg.getDataCacheName());
+    }
+    if (cfg.getMaxSpaceSize() == 0 && dataCache.configuration().getMemoryMode() == OFFHEAP_VALUES)     U.warn(log,"GGFS max space size is not specified but data cache values are stored off-heap (max " + "space will be limited to 80% of max JVM heap size): " + cfg.getName());
+    boolean secondary=cfg.getDefaultMode() == PROXY;
+    if (cfg.getPathModes() != null) {
+      for (      Map.Entry<String,GridGgfsMode> mode : cfg.getPathModes().entrySet()) {
+        if (mode.getValue() == PROXY)         secondary=true;
+      }
+    }
+    if (secondary) {
+      assertParameter(cfg.getSecondaryFileSystem() != null,"secondaryFileSystem cannot be null when mode is SECONDARY");
+    }
+    cfgNames.add(name);
+  }
+}
