@@ -5,7 +5,7 @@
   final int evtCnt=1000;
   final CountDownLatch finishLatch=new CountDownLatch(evtCnt);
   SC stage=new SC(){
-    @SuppressWarnings("unchecked") @Override public Map<String,Collection<?>> applyx(    String stageName,    GridStreamerContext ctx,    Collection<Object> evts){
+    @SuppressWarnings("unchecked") @Override public Map<String,Collection<?>> applyx(    String stageName,    StreamerContext ctx,    Collection<Object> evts){
       ConcurrentMap<String,AtomicInteger> space=ctx.localSpace();
       AtomicInteger cntr=space.get(stageName);
       if (cntr == null)       cntr=F.addIfAbsent(space,stageName,new AtomicInteger());
@@ -46,10 +46,10 @@
       }
     }
     for (    String s : stages)     assertEquals((Integer)sum,stagesSum.get(s));
-    GridStreamerContext streamerCtx=grid(0).streamer(null).context();
+    StreamerContext streamerCtx=grid(0).streamer(null).context();
     for (    final String s : stages) {
-      Collection<Integer> res=streamerCtx.query(new C1<GridStreamerContext,Integer>(){
-        @Override public Integer apply(        GridStreamerContext ctx){
+      Collection<Integer> res=streamerCtx.query(new C1<StreamerContext,Integer>(){
+        @Override public Integer apply(        StreamerContext ctx){
           AtomicInteger cntr=ctx.<String,AtomicInteger>localSpace().get(s);
           return cntr.get();
         }
@@ -57,8 +57,8 @@
 );
       assertEquals(sum,F.sumInt(res));
     }
-    streamerCtx.broadcast(new CI1<GridStreamerContext>(){
-      @Override public void apply(      GridStreamerContext ctx){
+    streamerCtx.broadcast(new CI1<StreamerContext>(){
+      @Override public void apply(      StreamerContext ctx){
         int sum=0;
         ConcurrentMap<String,AtomicInteger> space=ctx.localSpace();
         for (        String s : stages) {
@@ -77,8 +77,8 @@
     }
     assertEquals(sum * stages.length,bcastSum);
     for (    final String s : stages) {
-      Integer res=streamerCtx.reduce(new C1<GridStreamerContext,Integer>(){
-        @Override public Integer apply(        GridStreamerContext ctx){
+      Integer res=streamerCtx.reduce(new C1<StreamerContext,Integer>(){
+        @Override public Integer apply(        StreamerContext ctx){
           AtomicInteger cntr=ctx.<String,AtomicInteger>localSpace().get(s);
           return cntr.get();
         }
