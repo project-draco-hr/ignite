@@ -1,16 +1,16 @@
 {
   try {
     FileStatus[] statuses=fileSys.listStatus(convert(path));
-    if (statuses == null)     throw new GridGgfsFileNotFoundException("Failed to list files (path not found): " + path);
-    Collection<GridGgfsFile> res=new ArrayList<>(statuses.length);
+    if (statuses == null)     throw new IgniteFsFileNotFoundException("Failed to list files (path not found): " + path);
+    Collection<IgniteFsFile> res=new ArrayList<>(statuses.length);
     for (    FileStatus status : statuses) {
       GridGgfsFileInfo fsInfo=status.isDirectory() ? new GridGgfsFileInfo(true,properties(status)) : new GridGgfsFileInfo((int)status.getBlockSize(),status.getLen(),null,null,false,properties(status));
-      res.add(new GridGgfsFileImpl(new IgniteFsPath(path,status.getPath().getName()),fsInfo,1));
+      res.add(new IgniteFsFileImpl(new IgniteFsPath(path,status.getPath().getName()),fsInfo,1));
     }
     return res;
   }
  catch (  FileNotFoundException ignored) {
-    throw new GridGgfsFileNotFoundException("Failed to list files (path not found): " + path);
+    throw new IgniteFsFileNotFoundException("Failed to list files (path not found): " + path);
   }
 catch (  IOException e) {
     throw handleSecondaryFsError(e,"Failed to list statuses due to secondary file system exception: " + path);
