@@ -1,0 +1,20 @@
+{
+  Schema schema=schemas.get(schema(spaceName));
+  if (schema == null)   return;
+  localSpi.set(this);
+  try {
+    for (    TableDescriptor tbl : schema.values()) {
+      if (tbl.type().keyClass().equals(key.getClass()) || !isIndexFixedTyping(spaceName)) {
+        try {
+          if (tbl.tbl.onSwap(key))           return;
+        }
+ catch (        GridException e) {
+          throw new GridException(e);
+        }
+      }
+    }
+  }
+  finally {
+    localSpi.remove();
+  }
+}

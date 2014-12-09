@@ -1,0 +1,37 @@
+{
+  if (ses != null) {
+    if (!sessions.add(ses))     return;
+synchronized (ses) {
+      ses.addLock(this);
+    }
+  }
+  Object[] snapshot;
+  for (long waitTime=100; ; waitTime*=2) {
+    snapshot=actualSnapshot;
+    if (snapshot != null) {
+      for (int i=1, len=idxs.size(); i < len; i++)       index(i).takeSnapshot(snapshot[i - 1]);
+      return;
+    }
+    try {
+      if (lock.writeLock().tryLock(waitTime,TimeUnit.MILLISECONDS))       break;
+    }
+ catch (    InterruptedException e) {
+      throw new GridRuntimeException("Thread got interrupted while trying to acquire index lock.",e);
+    }
+  }
+  boolean snapshoted=false;
+  try {
+    snapshot=actualSnapshot;
+    if (snapshot == null) {
+      snapshot=takeIndexesSnapshot();
+      if (desc == null || desc.memory() == null)       actualSnapshot=snapshot;
+      snapshoted=true;
+    }
+  }
+  finally {
+    lock.writeLock().unlock();
+  }
+  if (!snapshoted) {
+    for (int i=1, len=idxs.size(); i < len; i++)     index(i).takeSnapshot(snapshot[i - 1]);
+  }
+}

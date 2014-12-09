@@ -1,0 +1,31 @@
+{
+  Document doc=new Document();
+  boolean stringsFound=false;
+  if (type.valueTextIndex() || type.valueClass() == String.class) {
+    doc.add(new Field(VAL_STR_FIELD_NAME,val.toString(),Field.Store.YES,Field.Index.ANALYZED));
+    stringsFound=true;
+  }
+  for (int i=0, last=idxdFields.length - 1; i < last; i++) {
+    Object fieldVal=type.value(keyFields.get(i) ? key : val,idxdFields[i]);
+    if (fieldVal != null) {
+      doc.add(new Field(idxdFields[i],fieldVal.toString(),Field.Store.YES,Field.Index.ANALYZED));
+      stringsFound=true;
+    }
+  }
+  String keyStr=Base64.encodeBase64String(marshaller.marshal(key));
+  try {
+    writer.deleteDocuments(new Term(KEY_FIELD_NAME,keyStr));
+    if (!stringsFound)     return;
+    doc.add(new Field(KEY_FIELD_NAME,keyStr,Field.Store.YES,Field.Index.NOT_ANALYZED));
+    if (storeVal && type.valueClass() != String.class)     doc.add(new Field(VAL_FIELD_NAME,marshaller.marshal(val)));
+    doc.add(new Field(VER_FIELD_NAME,ver));
+    doc.add(new Field(EXPIRATION_TIME_FIELD_NAME,DateTools.timeToString(expires,DateTools.Resolution.MILLISECOND),Field.Store.YES,Field.Index.NOT_ANALYZED));
+    writer.addDocument(doc);
+  }
+ catch (  IOException e) {
+    throw new GridException(e);
+  }
+ finally {
+    updateCntr.incrementAndGet();
+  }
+}

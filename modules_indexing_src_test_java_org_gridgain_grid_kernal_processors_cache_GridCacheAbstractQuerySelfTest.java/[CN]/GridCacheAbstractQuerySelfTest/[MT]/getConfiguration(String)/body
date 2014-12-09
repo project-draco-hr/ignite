@@ -3,10 +3,9 @@
   TcpDiscoverySpi disco=new TcpDiscoverySpi();
   disco.setIpFinder(ipFinder);
   c.setDiscoverySpi(disco);
-  GridH2IndexingSpi indexing=new GridH2IndexingSpi();
-  indexing.setDefaultIndexPrimitiveKey(true);
-  indexing.setIndexCustomFunctionClasses(SqlFunctions.class);
-  c.setIndexingSpi(indexing);
+  GridQueryConfiguration idxCfg=new GridQueryConfiguration();
+  idxCfg.setIndexCustomFunctionClasses(SqlFunctions.class);
+  c.setQueryConfiguration(idxCfg);
   c.setSwapSpaceSpi(new FileSwapSpaceSpi());
   c.setMarshaller(new IgniteOptimizedMarshaller(false));
   GridCacheConfiguration[] ccs=new GridCacheConfiguration[2];
@@ -21,6 +20,10 @@
     cc.setPreloadMode(SYNC);
     cc.setSwapEnabled(true);
     cc.setEvictNearSynchronized(false);
+    GridCacheQueryConfiguration qcfg=new GridCacheQueryConfiguration();
+    qcfg.setIndexPrimitiveKey(true);
+    qcfg.setIndexFixedTyping(true);
+    cc.setQueryConfiguration(qcfg);
     if (cacheMode() == GridCacheMode.PARTITIONED)     cc.setBackups(gridCount());
     ccs[i]=cc;
   }
