@@ -3,7 +3,15 @@
     IgniteConfiguration cfg=g.configuration();
     for (    GridCache cache : g.cachesx()) {
       String cacheName=cache.name();
-      if (arg.systemCaches() || !(isSystemCache(cacheName) || isGgfsCache(cfg,cacheName)))       res.caches().add(VisorCache.from(g,cache,arg.sample()));
+      if (arg.systemCaches() || !(isSystemCache(cacheName) || isGgfsCache(cfg,cacheName))) {
+        long start0=U.currentTimeMillis();
+        try {
+          res.caches().add(VisorCache.from(g,cache,arg.sample()));
+        }
+  finally {
+          if (debug)           log(g.log(),"Collected cache: " + cache.name(),getClass(),start0);
+        }
+      }
     }
   }
  catch (  Throwable cachesEx) {
