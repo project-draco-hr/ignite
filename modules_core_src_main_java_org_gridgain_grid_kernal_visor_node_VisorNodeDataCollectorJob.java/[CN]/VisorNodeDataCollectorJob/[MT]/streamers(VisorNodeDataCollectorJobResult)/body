@@ -2,7 +2,15 @@
   try {
     StreamerConfiguration[] cfgs=g.configuration().getStreamerConfiguration();
     if (cfgs != null) {
-      for (      StreamerConfiguration cfg : cfgs)       res.streamers().add(VisorStreamer.from(g.streamer(cfg.getName())));
+      for (      StreamerConfiguration cfg : cfgs) {
+        long start0=U.currentTimeMillis();
+        try {
+          res.streamers().add(VisorStreamer.from(g.streamer(cfg.getName())));
+        }
+  finally {
+          if (debug)           log(g.log(),"Collected streamer: " + cfg.getName(),getClass(),start0);
+        }
+      }
     }
   }
  catch (  Throwable streamersEx) {
