@@ -1,0 +1,11 @@
+{
+  ClientKey id=new ClientKey(node.id(),node.order());
+  GridNioRecoveryDescriptor recovery=recoveryDescs.get(id);
+  if (recovery == null) {
+    int maxSize=Math.max(msgQueueLimit,ackSndThreshold);
+    int queueLimit=unackedMsgsBufSize != 0 ? unackedMsgsBufSize : (maxSize * 5);
+    GridNioRecoveryDescriptor old=recoveryDescs.put(id,recovery=new GridNioRecoveryDescriptor(queueLimit,node,log));
+    if (old != null)     recovery=old;
+  }
+  return recovery;
+}

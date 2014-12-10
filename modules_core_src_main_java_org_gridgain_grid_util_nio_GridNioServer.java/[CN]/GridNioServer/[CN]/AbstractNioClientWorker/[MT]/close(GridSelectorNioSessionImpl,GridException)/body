@@ -36,8 +36,21 @@
     }
     ses.removeMeta(BUF_META_KEY);
     NioOperationFuture<?> fut=ses.removeMeta(NIO_OPERATION.ordinal());
-    if (fut != null)     fut.connectionClosed();
-    while ((fut=(NioOperationFuture<?>)ses.pollFuture()) != null)     fut.connectionClosed();
+    GridNioRecoveryDescriptor recovery=ses.recoveryDescriptor();
+    if (recovery != null) {
+      try {
+        while ((fut=(NioOperationFuture<?>)ses.pollFuture()) != null) {
+          if (fut.skipRecovery())           fut.connectionClosed();
+        }
+      }
+  finally {
+        recovery.release();
+      }
+    }
+ else {
+      if (fut != null)       fut.connectionClosed();
+      while ((fut=(NioOperationFuture<?>)ses.pollFuture()) != null)       fut.connectionClosed();
+    }
     return true;
   }
   return false;

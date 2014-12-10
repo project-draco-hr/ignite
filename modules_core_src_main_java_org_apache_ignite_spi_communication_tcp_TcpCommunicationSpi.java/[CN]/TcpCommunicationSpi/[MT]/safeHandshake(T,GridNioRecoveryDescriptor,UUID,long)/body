@@ -1,0 +1,65 @@
+{
+  HandshakeTimeoutObject<T> obj=new HandshakeTimeoutObject<>(client,U.currentTimeMillis() + timeout);
+  sockTimeoutWorker.addTimeoutObject(obj);
+  long rcvCnt=0;
+  try {
+    if (client instanceof GridCommunicationClient)     ((GridCommunicationClient)client).doHandshake(new HandshakeClosure(rmtNodeId));
+ else {
+      SocketChannel ch=(SocketChannel)client;
+      boolean success=false;
+      try {
+        ByteBuffer buf=ByteBuffer.allocate(17);
+        for (int i=0; i < 17; ) {
+          int read=ch.read(buf);
+          if (read == -1)           throw new GridException("Failed to read remote node ID (connection closed).");
+          i+=read;
+        }
+        UUID rmtNodeId0=U.bytesToUuid(buf.array(),1);
+        if (!rmtNodeId.equals(rmtNodeId0))         throw new GridException("Remote node ID is not as expected [expected=" + rmtNodeId + ", rcvd="+ rmtNodeId0+ ']');
+ else         if (log.isDebugEnabled())         log.debug("Received remote node ID: " + rmtNodeId0);
+        ch.write(ByteBuffer.wrap(U.GG_HEADER));
+        if (recovery != null) {
+          HandshakeMessage msg=new HandshakeMessage(locNodeId,recovery.incrementConnectCount(),recovery.receivedCount());
+          if (log.isDebugEnabled())           log.debug("Write handshake message [rmtNode=" + rmtNodeId + ", msg="+ msg+ ']');
+          buf=ByteBuffer.allocate(33);
+          buf.order(ByteOrder.nativeOrder());
+          boolean written=msg.writeTo(buf);
+          assert written;
+          buf.flip();
+          ch.write(buf);
+        }
+ else         ch.write(ByteBuffer.wrap(nodeIdMsg.nodeIdBytesWithType));
+        if (recovery != null) {
+          if (log.isDebugEnabled())           log.debug("Waiting for handshake [rmtNode=" + rmtNodeId + ']');
+          buf=ByteBuffer.allocate(9);
+          buf.order(ByteOrder.nativeOrder());
+          for (int i=0; i < 9; ) {
+            int read=ch.read(buf);
+            if (read == -1)             throw new GridException("Failed to read remote node recovery handshake " + "(connection closed).");
+            i+=read;
+          }
+          rcvCnt=buf.getLong(1);
+          if (log.isDebugEnabled())           log.debug("Received handshake message [rmtNode=" + rmtNodeId + ", rcvCnt="+ rcvCnt+ ']');
+          if (rcvCnt == -1) {
+            if (log.isDebugEnabled())             log.debug("Connection rejected, will retry client creation [rmtNode=" + rmtNodeId + ']');
+          }
+ else           success=true;
+        }
+ else         success=true;
+      }
+ catch (      IOException e) {
+        if (log.isDebugEnabled())         log.debug("Failed to read from channel: " + e);
+        throw new GridException("Failed to read from channel.",e);
+      }
+ finally {
+        if (!success)         U.closeQuiet(ch);
+      }
+    }
+  }
+  finally {
+    boolean cancelled=obj.cancel();
+    if (cancelled)     sockTimeoutWorker.removeTimeoutObject(obj);
+    if (!cancelled)     throw new HandshakeTimeoutException("Failed to perform handshake due to timeout (consider increasing " + "'connectionTimeout' configuration property).");
+  }
+  return rcvCnt;
+}

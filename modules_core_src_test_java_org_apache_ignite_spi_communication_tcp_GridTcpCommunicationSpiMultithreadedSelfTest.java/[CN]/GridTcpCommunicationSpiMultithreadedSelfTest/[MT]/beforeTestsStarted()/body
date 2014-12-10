@@ -1,4 +1,5 @@
 {
+  U.setWorkDirectory(null,U.getGridGainHome());
   spis.clear();
   nodes.clear();
   spiRsrcs.clear();
@@ -6,8 +7,10 @@
   Map<ClusterNode,GridSpiTestContext> ctxs=new HashMap<>();
   for (int i=0; i < getSpiCount(); i++) {
     CommunicationSpi<GridTcpCommunicationMessageAdapter> spi=newCommunicationSpi();
-    GridTestResources rsrcs=new GridTestResources(getMBeanServer(i));
+    GridTestUtils.setFieldValue(spi,"gridName","grid-" + i);
+    GridTestResources rsrcs=new GridTestResources();
     GridTestNode node=new GridTestNode(rsrcs.getNodeId());
+    node.order(i);
     GridSpiTestContext ctx=initSpiContext();
     ctx.setLocalNode(node);
     info(">>> Initialized context: nodeId=" + ctx.localNode().id());
@@ -18,6 +21,7 @@
     lsnrs.put(rsrcs.getNodeId(),lsnr);
     info("Lsnrs: " + lsnrs);
     node.setAttributes(spi.getNodeAttributes());
+    node.setAttribute(ATTR_MACS,F.concat(U.allLocalMACs(),", "));
     nodes.add(node);
     spi.spiStart(getTestGridName() + (i + 1));
     spis.put(rsrcs.getNodeId(),spi);

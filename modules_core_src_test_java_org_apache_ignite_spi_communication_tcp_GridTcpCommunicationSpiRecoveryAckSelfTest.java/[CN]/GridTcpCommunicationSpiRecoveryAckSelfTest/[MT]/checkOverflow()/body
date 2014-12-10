@@ -1,0 +1,30 @@
+{
+  TcpCommunicationSpi spi0=spis.get(0);
+  TcpCommunicationSpi spi1=spis.get(1);
+  ClusterNode node0=nodes.get(0);
+  ClusterNode node1=nodes.get(1);
+  final GridNioServer srv1=U.field(spi1,"nioSrvr");
+  int msgId=0;
+  spi0.sendMessage(node1,new GridTestMessage(node0.id(),++msgId,0));
+  GridTestUtils.setFieldValue(srv1,"skipWrite",true);
+  final GridNioSession ses0=communicationSession(spi0);
+  for (int i=0; i < 150; i++)   spi0.sendMessage(node1,new GridTestMessage(node0.id(),++msgId,0));
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return ses0.closeTime() != 0;
+    }
+  }
+,5000);
+  assertTrue("Failed to wait for session close",ses0.closeTime() != 0);
+  GridTestUtils.setFieldValue(srv1,"skipWrite",false);
+  for (int i=0; i < 100; i++)   spi0.sendMessage(node1,new GridTestMessage(node0.id(),++msgId,0));
+  final int expMsgs=251;
+  final TestListener lsnr=(TestListener)spi1.getListener();
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return lsnr.rcvCnt.get() >= expMsgs;
+    }
+  }
+,5000);
+  assertEquals(expMsgs,lsnr.rcvCnt.get());
+}

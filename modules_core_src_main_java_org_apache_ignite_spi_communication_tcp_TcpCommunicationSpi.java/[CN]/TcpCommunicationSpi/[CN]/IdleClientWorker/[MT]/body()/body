@@ -1,16 +1,33 @@
 {
   while (!isInterrupted()) {
+    cleanupRecovery();
     for (    Map.Entry<UUID,GridCommunicationClient> e : clients.entrySet()) {
       UUID nodeId=e.getKey();
       GridCommunicationClient client=e.getValue();
-      if (getSpiContext().node(nodeId) == null) {
+      ClusterNode node=getSpiContext().node(nodeId);
+      if (node == null) {
         if (log.isDebugEnabled())         log.debug("Forcing close of non-existent node connection: " + nodeId);
         client.forceClose();
         clients.remove(nodeId,client);
         continue;
       }
+      GridNioRecoveryDescriptor recovery=null;
+      if (client instanceof GridTcpNioCommunicationClient) {
+        recovery=recoveryDescs.get(new ClientKey(node.id(),node.order()));
+        if (recovery != null && recovery.lastAcknowledged() != recovery.received()) {
+          RecoveryLastReceivedMessage msg=new RecoveryLastReceivedMessage(recovery.received());
+          if (log.isDebugEnabled())           log.debug("Send recovery acknowledgement on timeout [rmtNode=" + nodeId + ", rcvCnt="+ msg.received()+ ']');
+          nioSrvr.sendSystem(((GridTcpNioCommunicationClient)client).session(),msg);
+          recovery.lastAcknowledged(msg.received());
+          continue;
+        }
+      }
       long idleTime=client.getIdleTime();
       if (idleTime >= idleConnTimeout) {
+        if (recovery != null && recovery.nodeAlive(getSpiContext().node(nodeId)) && !recovery.messagesFutures().isEmpty()) {
+          if (log.isDebugEnabled())           log.debug("Node connection is idle, but there are unacknowledged messages, " + "will wait: " + nodeId);
+          continue;
+        }
         if (log.isDebugEnabled())         log.debug("Closing idle node connection: " + nodeId);
         if (client.close() || client.closed())         clients.remove(nodeId,client);
       }
