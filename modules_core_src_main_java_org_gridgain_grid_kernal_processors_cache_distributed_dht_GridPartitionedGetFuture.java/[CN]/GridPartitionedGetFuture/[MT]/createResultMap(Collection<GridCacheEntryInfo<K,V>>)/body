@@ -5,9 +5,13 @@
       Map<K,V> map=new GridLeanMap<>(keysSize);
       for (      GridCacheEntryInfo<K,V> info : infos) {
         info.unmarshalValue(cctx,cctx.deploy().globalLoader());
+        K key=info.key();
         V val=info.value();
-        if (cctx.portableEnabled() && deserializePortable && val instanceof PortableObject)         val=((PortableObject)val).deserialize();
-        map.put(info.key(),val);
+        if (cctx.portableEnabled()) {
+          key=(K)cctx.unwrapPortableIfNeeded(key,!deserializePortable);
+          val=(V)cctx.unwrapPortableIfNeeded(val,!deserializePortable);
+        }
+        map.put(key,val);
       }
       return map;
     }

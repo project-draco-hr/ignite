@@ -6,9 +6,18 @@
   }
  else {
     if (store != null) {
-      if (log.isDebugEnabled())       log.debug("Storing values in cache store [map=" + map + ']');
+      Map<K,IgniteBiTuple<V,GridCacheVersion>> map0;
+      if (convertPortable) {
+        map0=U.newHashMap(map.size());
+        for (        Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e : map.entrySet()) {
+          IgniteBiTuple<V,GridCacheVersion> t=e.getValue();
+          map0.put((K)cctx.unwrapPortableIfNeeded(e.getKey(),false),F.t((V)cctx.unwrapPortableIfNeeded(t.get1(),false),t.get2()));
+        }
+      }
+ else       map0=map;
+      if (log.isDebugEnabled())       log.debug("Storing values in cache store [map=" + map0 + ']');
       try {
-        store.putAll(tx,locStore ? map : F.viewReadOnly(map,new C1<IgniteBiTuple<V,GridCacheVersion>,Object>(){
+        store.putAll(tx,locStore ? map0 : F.viewReadOnly(map0,new C1<IgniteBiTuple<V,GridCacheVersion>,Object>(){
           @Override public Object apply(          IgniteBiTuple<V,GridCacheVersion> t){
             return t.get1();
           }
@@ -18,7 +27,7 @@
  catch (      ClassCastException e) {
         handleClassCastException(e);
       }
-      if (log.isDebugEnabled())       log.debug("Stored value in cache store [map=" + map + ']');
+      if (log.isDebugEnabled())       log.debug("Stored value in cache store [map=" + map0 + ']');
       return true;
     }
     return false;

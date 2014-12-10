@@ -22,9 +22,8 @@
   if (cc.getCacheMode() == PARTITIONED || cc.getCacheMode() == REPLICATED) {
     if (cc.getAtomicityMode() == ATOMIC && cc.getWriteSynchronizationMode() == FULL_ASYNC)     U.warn(log,"Cache write synchronization mode is set to FULL_ASYNC. All single-key 'put' and " + "'remove' operations will return 'null', all 'putx' and 'removex' operations will return" + " 'true' [cacheName=" + cc.getName() + ']');
   }
-  IgniteConfiguration cfg=ctx.config();
-  IgniteDeploymentMode depMode=cfg.getDeploymentMode();
-  if (cfg.isPeerClassLoadingEnabled() && (depMode == PRIVATE || depMode == ISOLATED) && !CU.isSystemCache(cc.getName()))   throw new GridException("Cannot start cache in PRIVATE or ISOLATED deployment mode: " + ctx.config().getDeploymentMode());
+  IgniteDeploymentMode depMode=c.getDeploymentMode();
+  if (c.isPeerClassLoadingEnabled() && (depMode == PRIVATE || depMode == ISOLATED) && !CU.isSystemCache(cc.getName()))   throw new GridException("Cannot start cache in PRIVATE or ISOLATED deployment mode: " + ctx.config().getDeploymentMode());
   if (!c.getTransactionsConfiguration().isTxSerializableEnabled() && c.getTransactionsConfiguration().getDefaultTxIsolation() == SERIALIZABLE)   U.warn(log,"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "(most likely misconfiguration - either update 'isTxSerializableEnabled' or " + "'defaultTxIsolationLevel' properties) for cache: "+ cc.getName(),"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "for cache: " + cc.getName());
   if (cc.isWriteBehindEnabled()) {
     if (cc.getStore() == null)     throw new GridException("Cannot enable write-behind cache (cache store is not provided) for cache: " + cc.getName());
@@ -71,4 +70,5 @@ boolean ggfsCache=CU.isGgfsCache(c,cc.getName());
 boolean utilityCache=CU.isUtilityCache(cc.getName());
 if (!ggfsCache && !utilityCache && !cc.isQueryIndexEnabled()) U.warn(log,"Query indexing is disabled (queries will not work) for cache: '" + cc.getName() + "'. "+ "To enable change GridCacheConfiguration.isQueryIndexEnabled() property.","Query indexing is disabled (queries will not work) for cache: " + cc.getName());
 if (cc.getAtomicityMode() == ATOMIC) assertParameter(cc.getTransactionManagerLookupClassName() == null,"transaction manager can not be used with ATOMIC cache");
+if (cc.isPortableEnabled() && !ctx.isEnterprise()) throw new GridException("Portable mode for cache is supported only in Enterprise edition " + "(set 'portableEnabled' property to 'false') [cacheName=" + cc.getName() + ']');
 }
