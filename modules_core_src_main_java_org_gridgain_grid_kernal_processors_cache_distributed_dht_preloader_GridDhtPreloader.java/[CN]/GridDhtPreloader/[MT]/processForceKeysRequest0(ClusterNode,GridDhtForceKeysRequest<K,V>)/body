@@ -7,7 +7,12 @@
       int p=cctx.affinity().partition(k);
       GridDhtLocalPartition<K,V> locPart=top.localPartition(p,-1,false);
       if (locPart == null && !top.owners(p).contains(loc))       res.addMissed(k);
-      GridCacheEntryEx<K,V> entry=cctx.dht().peekEx(k);
+      GridCacheEntryEx<K,V> entry;
+      if (cctx.isSwapOrOffheapEnabled()) {
+        entry=cctx.dht().entryEx(k,true);
+        entry.unswap();
+      }
+ else       entry=cctx.dht().peekEx(k);
       if (entry != null) {
         GridCacheEntryInfo<K,V> info=entry.info();
         if (info != null && !info.isNew())         res.addInfo(info);
