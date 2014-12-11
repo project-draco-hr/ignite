@@ -6,7 +6,7 @@
       if (log.isDebugEnabled())       log.debug("Sending notification to parent node [taskInfo=" + taskInfo + ", state="+ state+ ", err="+ err+ ']');
       comm.sendMessage(nodeDesc,new GridHadoopTaskFinishedMessage(taskInfo,status));
     }
- catch (    GridException e) {
+ catch (    IgniteCheckedException e) {
       log.error("Failed to send message to parent node (will terminate child process).",e);
       shutdown();
       terminate();
@@ -24,7 +24,7 @@
             f.get();
             notifyTaskFinished(taskInfo,status,false);
           }
- catch (          GridException e) {
+ catch (          IgniteCheckedException e) {
             log.error("Failed to flush shuffle messages (will fail the task) [taskInfo=" + taskInfo + ", state="+ state+ ", err="+ err+ ']',e);
             notifyTaskFinished(taskInfo,new GridHadoopTaskStatus(GridHadoopTaskState.FAILED,e),false);
           }
@@ -32,7 +32,7 @@
       }
 );
     }
- catch (    GridException e) {
+ catch (    IgniteCheckedException e) {
       log.error("Failed to flush shuffle messages (will fail the task) [taskInfo=" + taskInfo + ", state="+ state+ ", err="+ err+ ']',e);
       notifyTaskFinished(taskInfo,new GridHadoopTaskStatus(GridHadoopTaskState.FAILED,e),false);
     }

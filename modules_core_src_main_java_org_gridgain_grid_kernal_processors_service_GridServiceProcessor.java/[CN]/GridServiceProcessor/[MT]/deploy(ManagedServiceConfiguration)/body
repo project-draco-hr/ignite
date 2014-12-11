@@ -5,7 +5,7 @@
   GridServiceDeploymentFuture old=depFuts.putIfAbsent(cfg.getName(),fut);
   if (old != null) {
     if (!old.configuration().equalsIgnoreNodeFilter(cfg)) {
-      fut.onDone(new GridException("Failed to deploy service (service already exists with " + "different configuration) [deployed=" + old.configuration() + ", new="+ cfg+ ']'));
+      fut.onDone(new IgniteCheckedException("Failed to deploy service (service already exists with " + "different configuration) [deployed=" + old.configuration() + ", new="+ cfg+ ']'));
       return fut;
     }
     return old;
@@ -19,7 +19,7 @@
         if (dep != null) {
           if (!dep.configuration().equalsIgnoreNodeFilter(cfg)) {
             depFuts.remove(cfg.getName(),fut);
-            fut.onDone(new GridException("Failed to deploy service (service already exists with " + "different configuration) [deployed=" + dep.configuration() + ", new="+ cfg+ ']'));
+            fut.onDone(new IgniteCheckedException("Failed to deploy service (service already exists with " + "different configuration) [deployed=" + dep.configuration() + ", new="+ cfg+ ']'));
           }
  else {
             for (            GridCacheEntry<Object,Object> e : cache.entrySetx()) {
@@ -44,7 +44,7 @@
  catch (    ClusterTopologyException e) {
       if (log.isDebugEnabled())       log.debug("Topology changed while deploying service (will retry): " + e.getMessage());
     }
-catch (    GridException e) {
+catch (    IgniteCheckedException e) {
       if (e.hasCause(ClusterTopologyException.class)) {
         if (log.isDebugEnabled())         log.debug("Topology changed while deploying service (will retry): " + e.getMessage());
         continue;

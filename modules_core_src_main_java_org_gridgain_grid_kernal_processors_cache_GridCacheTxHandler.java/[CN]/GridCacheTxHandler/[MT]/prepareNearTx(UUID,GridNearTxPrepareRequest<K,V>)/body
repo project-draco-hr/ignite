@@ -7,7 +7,7 @@
   try {
     for (    GridCacheTxEntry<K,V> e : F.concat(false,req.reads(),req.writes()))     e.unmarshal(ctx,false,ctx.deploy().globalLoader());
   }
- catch (  GridException e) {
+ catch (  IgniteCheckedException e) {
     return new GridFinishedFuture<>(ctx.kernalContext(),e);
   }
   GridDhtTxLocal<K,V> tx;
@@ -28,7 +28,7 @@
       try {
         tx.rollback();
       }
- catch (      GridException e) {
+ catch (      IgniteCheckedException e) {
         U.error(log,"Failed to rollback transaction: " + tx,e);
       }
     }
@@ -38,7 +38,7 @@
         try {
           txFut.get();
         }
- catch (        GridException e) {
+ catch (        IgniteCheckedException e) {
           tx0.setRollbackOnly();
           if (!(e instanceof GridCacheTxOptimisticException))           U.error(log,"Failed to prepare DHT transaction: " + tx0,e);
         }

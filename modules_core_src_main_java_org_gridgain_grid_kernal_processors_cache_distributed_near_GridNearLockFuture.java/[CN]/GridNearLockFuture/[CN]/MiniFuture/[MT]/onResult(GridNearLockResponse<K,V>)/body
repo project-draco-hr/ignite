@@ -13,7 +13,7 @@
         GridNearCacheEntry<K,V> entry=cctx.near().entryExx(k,topVer);
         try {
           if (res.dhtVersion(i) == null) {
-            onDone(new GridException("Failed to receive DHT version from remote node " + "(will fail the lock): " + res));
+            onDone(new IgniteCheckedException("Failed to receive DHT version from remote node " + "(will fail the lock): " + res));
             return;
           }
           GridTuple3<GridCacheVersion,V,byte[]> oldValTup=valMap.get(entry.key());
@@ -54,7 +54,7 @@
           if (log.isDebugEnabled())           log.debug("Failed to add candidates because entry was removed (will renew).");
           entries.set(i,(GridDistributedCacheEntry<K,V>)cctx.cache().entryEx(entry.key()));
         }
-catch (        GridException e) {
+catch (        IgniteCheckedException e) {
           onDone(e);
           return;
         }
@@ -64,7 +64,7 @@ catch (        GridException e) {
     try {
       proceedMapping(mappings);
     }
- catch (    GridException e) {
+ catch (    IgniteCheckedException e) {
       onDone(e);
     }
     onDone(true);

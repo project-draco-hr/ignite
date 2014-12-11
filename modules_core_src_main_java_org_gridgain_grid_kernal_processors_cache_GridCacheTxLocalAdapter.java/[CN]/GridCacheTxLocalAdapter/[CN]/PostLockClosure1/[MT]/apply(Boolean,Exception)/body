@@ -26,7 +26,7 @@
     if (commit && commitAfterLock()) {
       rollback=false;
       return commitAsync().chain(new CX1<IgniteFuture<GridCacheTx>,T>(){
-        @Override public T applyx(        IgniteFuture<GridCacheTx> f) throws GridException {
+        @Override public T applyx(        IgniteFuture<GridCacheTx> f) throws IgniteCheckedException {
           f.get();
           return r;
         }
@@ -36,7 +36,7 @@
     rollback=false;
     return new GridFinishedFuture<>(cctx.kernalContext(),r);
   }
- catch (  final GridException ex) {
+ catch (  final IgniteCheckedException ex) {
     if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteFuture<GridCacheTx>,T>(){
       @Override public T apply(      IgniteFuture<GridCacheTx> f){
         throw new GridClosureException(ex);

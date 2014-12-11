@@ -12,7 +12,7 @@
       it=rawOffHeapIterator();
       advance();
     }
-    private void advance() throws GridException {
+    private void advance() throws IgniteCheckedException {
       if (it.hasNext())       return;
       it.close();
       if (offheapFlag) {
@@ -25,7 +25,7 @@
       }
  else       done=true;
     }
-    @Override protected Map.Entry<byte[],byte[]> onNext() throws GridException {
+    @Override protected Map.Entry<byte[],byte[]> onNext() throws IgniteCheckedException {
       if (done)       throw new NoSuchElementException();
       cur=it.next();
       advance();
@@ -34,7 +34,7 @@
     @Override protected boolean onHasNext(){
       return !done;
     }
-    @Override protected void onRemove() throws GridException {
+    @Override protected void onRemove() throws IgniteCheckedException {
       if (offheapFlag) {
         K key=unmarshalKey(cur.getKey(),cctx.deploy().globalLoader());
         int part=cctx.affinity().partition(key);
@@ -42,7 +42,7 @@
       }
  else       it.removeX();
     }
-    @Override protected void onClose() throws GridException {
+    @Override protected void onClose() throws IgniteCheckedException {
       if (it != null)       it.close();
     }
   }

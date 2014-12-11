@@ -1,17 +1,17 @@
 {
   storeBlocksAsync(blocksMsg.blocks()).listenAsync(new CI1<IgniteFuture<?>>(){
     @Override public void apply(    IgniteFuture<?> fut){
-      GridException err=null;
+      IgniteCheckedException err=null;
       try {
         fut.get();
       }
- catch (      GridException e) {
+ catch (      IgniteCheckedException e) {
         err=e;
       }
       try {
         ggfsCtx.send(nodeId,topic,new GridGgfsAckMessage(blocksMsg.fileId(),blocksMsg.id(),err),SYSTEM_POOL);
       }
- catch (      GridException e) {
+ catch (      IgniteCheckedException e) {
         U.warn(log,"Failed to send batch acknowledgement (did node leave the grid?) [nodeId=" + nodeId + ", fileId="+ blocksMsg.fileId()+ ", batchId="+ blocksMsg.id()+ ']',e);
       }
     }

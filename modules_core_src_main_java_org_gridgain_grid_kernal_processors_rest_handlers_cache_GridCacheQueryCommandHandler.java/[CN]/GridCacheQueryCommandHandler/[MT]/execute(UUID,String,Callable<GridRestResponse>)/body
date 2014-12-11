@@ -2,13 +2,13 @@
   boolean locExec=destId == null || destId.equals(ctx.localNodeId()) || replicatedCacheAvailable(cacheName);
   if (locExec)   return ctx.closure().callLocalSafe(c,false);
  else {
-    if (ctx.discovery().node(destId) == null)     return new GridFinishedFutureEx<>(new GridException("Destination node ID has left the grid (retry " + "the query): " + destId));
+    if (ctx.discovery().node(destId) == null)     return new GridFinishedFutureEx<>(new IgniteCheckedException("Destination node ID has left the grid (retry " + "the query): " + destId));
     try {
       IgniteCompute comp=ctx.grid().compute(ctx.grid().forNodeId(destId)).withNoFailover().enableAsync();
       comp.call(c);
       return comp.future();
     }
- catch (    GridException e) {
+ catch (    IgniteCheckedException e) {
       return new GridFinishedFutureEx<>(e);
     }
   }
