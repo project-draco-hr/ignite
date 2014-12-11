@@ -1,0 +1,39 @@
+{
+  this.tbl=tbl;
+  ArrayList<Index> idxs=new ArrayList<>();
+  idxs.add(new GridH2TreeIndex("_key_PK",tbl,true,KEY_COL,VAL_COL,tbl.indexColumn(0,ASCENDING)));
+  if (type().valueClass() == String.class) {
+    try {
+      luceneIdx=new GridLuceneIndex(marshaller,offheap,spaceName,type,true);
+    }
+ catch (    IgniteCheckedException e1) {
+      throw new IgniteException(e1);
+    }
+  }
+  for (  Map.Entry<String,GridQueryIndexDescriptor> e : type.indexes().entrySet()) {
+    String name=e.getKey();
+    GridQueryIndexDescriptor idx=e.getValue();
+    if (idx.type() == FULLTEXT) {
+      try {
+        luceneIdx=new GridLuceneIndex(marshaller,offheap,spaceName,type,true);
+      }
+ catch (      IgniteCheckedException e1) {
+        throw new IgniteException(e1);
+      }
+    }
+ else {
+      IndexColumn[] cols=new IndexColumn[idx.fields().size()];
+      int i=0;
+      boolean escapeAll=isEscapeAll(spaceName);
+      for (      String field : idx.fields()) {
+        String fieldName=escapeAll ? field : escapeName(field,escapeAll).toUpperCase();
+        Column col=tbl.getColumn(fieldName);
+        cols[i++]=tbl.indexColumn(col.getColumnId(),idx.descending(field) ? DESCENDING : ASCENDING);
+      }
+      if (idx.type() == SORTED)       idxs.add(new GridH2TreeIndex(name,tbl,false,KEY_COL,VAL_COL,cols));
+ else       if (idx.type() == GEO_SPATIAL)       idxs.add(new GridH2SpatialIndex(tbl,name,cols,KEY_COL,VAL_COL));
+ else       throw new IllegalStateException();
+    }
+  }
+  return idxs;
+}

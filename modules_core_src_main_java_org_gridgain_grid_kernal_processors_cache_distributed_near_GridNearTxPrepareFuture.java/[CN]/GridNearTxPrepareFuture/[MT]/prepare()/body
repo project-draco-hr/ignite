@@ -6,7 +6,7 @@
         if (!tx.state(PREPARING)) {
           if (tx.setRollbackOnly()) {
             if (tx.timedOut())             onError(null,null,new GridCacheTxTimeoutException("Transaction timed out and " + "was rolled back: " + this));
- else             onError(null,null,new GridException("Invalid transaction state for prepare " + "[state=" + tx.state() + ", tx="+ this+ ']'));
+ else             onError(null,null,new IgniteCheckedException("Invalid transaction state for prepare " + "[state=" + tx.state() + ", tx="+ this+ ']'));
           }
  else           onError(null,null,new GridCacheTxRollbackException("Invalid transaction state for " + "prepare [state=" + tx.state() + ", tx="+ this+ ']'));
           return;
@@ -20,7 +20,7 @@
  catch (      GridCacheTxTimeoutException|GridCacheTxOptimisticException e) {
         onError(cctx.localNodeId(),null,e);
       }
-catch (      GridException e) {
+catch (      IgniteCheckedException e) {
         tx.setRollbackOnly();
         String msg="Failed to prepare transaction (will attempt rollback): " + this;
         U.error(log,msg,e);

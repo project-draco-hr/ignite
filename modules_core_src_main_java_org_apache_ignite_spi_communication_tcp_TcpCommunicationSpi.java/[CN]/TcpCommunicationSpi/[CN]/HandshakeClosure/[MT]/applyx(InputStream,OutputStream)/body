@@ -4,18 +4,18 @@
     int n=0;
     while (n < 17) {
       int cnt=in.read(b,n,17 - n);
-      if (cnt < 0)       throw new GridException("Failed to get remote node ID (end of stream reached)");
+      if (cnt < 0)       throw new IgniteCheckedException("Failed to get remote node ID (end of stream reached)");
       n+=cnt;
     }
     UUID id=U.bytesToUuid(b,1);
-    if (!rmtNodeId.equals(id))     throw new GridException("Remote node ID is not as expected [expected=" + rmtNodeId + ", rcvd="+ id+ ']');
+    if (!rmtNodeId.equals(id))     throw new IgniteCheckedException("Remote node ID is not as expected [expected=" + rmtNodeId + ", rcvd="+ id+ ']');
  else     if (log.isDebugEnabled())     log.debug("Received remote node ID: " + id);
   }
  catch (  SocketTimeoutException e) {
-    throw new GridException("Failed to perform handshake due to timeout (consider increasing " + "'connectionTimeout' configuration property).",e);
+    throw new IgniteCheckedException("Failed to perform handshake due to timeout (consider increasing " + "'connectionTimeout' configuration property).",e);
   }
 catch (  IOException e) {
-    throw new GridException("Failed to perform handshake.",e);
+    throw new IgniteCheckedException("Failed to perform handshake.",e);
   }
   try {
     out.write(U.GG_HEADER);
@@ -25,6 +25,6 @@ catch (  IOException e) {
     if (log.isDebugEnabled())     log.debug("Sent local node ID [locNodeId=" + locNodeId + ", rmtNodeId="+ rmtNodeId+ ']');
   }
  catch (  IOException e) {
-    throw new GridException("Failed to perform handshake.",e);
+    throw new IgniteCheckedException("Failed to perform handshake.",e);
   }
 }

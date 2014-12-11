@@ -19,7 +19,7 @@ synchronized (mux) {
   try {
     addrs=U.resolveLocalAddresses(locHost);
   }
- catch (  IOException|GridException e) {
+ catch (  IOException|IgniteCheckedException e) {
     throw new IgniteSpiException("Failed to resolve local host to set of external addresses: " + locHost,e);
   }
   locNode=new TcpDiscoveryNode(locNodeId,addrs.get1(),addrs.get2(),tcpSrvr.port,metricsProvider,locNodeVer);
@@ -27,7 +27,7 @@ synchronized (mux) {
     Collection<InetSocketAddress> extAddrs=addrRslvr == null ? null : U.resolveAddresses(addrRslvr,F.flat(Arrays.asList(addrs.get1(),addrs.get2())),locNode.discoveryPort());
     if (extAddrs != null)     locNodeAttrs.put(createSpiAttributeName(ATTR_EXT_ADDRS),extAddrs);
   }
- catch (  GridException e) {
+ catch (  IgniteCheckedException e) {
     throw new IgniteSpiException("Failed to resolve local host to addresses: " + locHost,e);
   }
   locNode.setAttributes(locNodeAttrs);

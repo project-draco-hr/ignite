@@ -7,20 +7,20 @@
     /** 
  */
     @IgniteLocalNodeIdResource private UUID locNodeId;
-    @Override public Serializable execute() throws GridException {
+    @Override public Serializable execute() throws IgniteCheckedException {
       boolean fail;
       try {
         fail=ses.waitForAttribute("fail",0);
       }
  catch (      InterruptedException e) {
-        throw new GridException("Got interrupted while waiting for attribute to be set.",e);
+        throw new IgniteCheckedException("Got interrupted while waiting for attribute to be set.",e);
       }
       if (fail) {
         ses.setAttribute("fail",false);
         for (int i=0; i < 10; i++) {
           for (int ii=0; ii < 10; ii++)           ses.setAttribute("test.job.attr." + i,ii);
         }
-        throw new GridException("Job exception.");
+        throw new IgniteCheckedException("Job exception.");
       }
       try {
         for (int i=0; i < 10; i++) {
@@ -33,7 +33,7 @@
         }
       }
  catch (      InterruptedException e) {
-        throw new GridException("Got interrupted while waiting for attribute to be set.",e);
+        throw new IgniteCheckedException("Got interrupted while waiting for attribute to be set.",e);
       }
       return Integer.parseInt(this.<String>argument(0));
     }

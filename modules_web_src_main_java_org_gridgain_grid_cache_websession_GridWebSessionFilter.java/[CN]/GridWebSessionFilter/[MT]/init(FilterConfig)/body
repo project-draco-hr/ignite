@@ -8,17 +8,17 @@
     retries=retriesStr != null ? Integer.parseInt(retriesStr) : DFLT_MAX_RETRIES_ON_FAIL;
   }
  catch (  NumberFormatException e) {
-    throw new GridRuntimeException("Maximum number of retries parameter is invalid: " + retriesStr,e);
+    throw new IgniteException("Maximum number of retries parameter is invalid: " + retriesStr,e);
   }
   Ignite webSesIgnite=G.ignite(gridName);
-  if (webSesIgnite == null)   throw new GridRuntimeException("Grid for web sessions caching is not started (is it configured?): " + gridName);
+  if (webSesIgnite == null)   throw new IgniteException("Grid for web sessions caching is not started (is it configured?): " + gridName);
   log=webSesIgnite.log();
-  if (webSesIgnite == null)   throw new GridRuntimeException("Grid for web sessions caching is not started (is it configured?): " + gridName);
+  if (webSesIgnite == null)   throw new IgniteException("Grid for web sessions caching is not started (is it configured?): " + gridName);
   cache=webSesIgnite.cache(cacheName);
-  if (cache == null)   throw new GridRuntimeException("Cache for web sessions is not started (is it configured?): " + cacheName);
+  if (cache == null)   throw new IgniteException("Cache for web sessions is not started (is it configured?): " + cacheName);
   GridCacheConfiguration cacheCfg=cache.configuration();
-  if (cacheCfg.getWriteSynchronizationMode() == FULL_ASYNC)   throw new GridRuntimeException("Cache for web sessions cannot be in FULL_ASYNC mode: " + cacheName);
-  if (!cacheCfg.isEagerTtl())   throw new GridRuntimeException("Cache for web sessions cannot operate with lazy TTL. " + "Consider setting eagerTtl to true for cache: " + cacheName);
+  if (cacheCfg.getWriteSynchronizationMode() == FULL_ASYNC)   throw new IgniteException("Cache for web sessions cannot be in FULL_ASYNC mode: " + cacheName);
+  if (!cacheCfg.isEagerTtl())   throw new IgniteException("Cache for web sessions cannot operate with lazy TTL. " + "Consider setting eagerTtl to true for cache: " + cacheName);
   if (cacheCfg.getCacheMode() == LOCAL)   U.quietAndWarn(webSesIgnite.log(),"Using LOCAL cache for web sessions caching " + "(this is only OK in test mode): " + cacheName);
   if (cacheCfg.getCacheMode() == PARTITIONED && cacheCfg.getAtomicityMode() != ATOMIC)   U.quietAndWarn(webSesIgnite.log(),"Using " + cacheCfg.getAtomicityMode() + " atomicity for web sessions "+ "caching (switch to ATOMIC mode for better performance)");
   if (log.isInfoEnabled())   log.info("Started web sessions caching [gridName=" + gridName + ", cacheName="+ cacheName+ ", maxRetriesOnFail="+ retries+ ']');

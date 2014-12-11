@@ -11,7 +11,7 @@
     if (!state(PREPARING)) {
       if (setRollbackOnly()) {
         if (timedOut())         pessimisticFut.onError(new GridCacheTxTimeoutException("Transaction timed out and was " + "rolled back: " + this));
- else         pessimisticFut.onError(new GridException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
+ else         pessimisticFut.onError(new IgniteCheckedException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
       }
  else       pessimisticFut.onError(new GridCacheTxRollbackException("Invalid transaction state for prepare " + "[state=" + state() + ", tx="+ this+ ']'));
       return fut;
@@ -20,12 +20,12 @@
       userPrepare();
       if (!state(PREPARED)) {
         setRollbackOnly();
-        pessimisticFut.onError(new GridException("Invalid transaction state for commit [state=" + state() + ", tx="+ this+ ']'));
+        pessimisticFut.onError(new IgniteCheckedException("Invalid transaction state for commit [state=" + state() + ", tx="+ this+ ']'));
         return fut;
       }
       pessimisticFut.complete();
     }
- catch (    GridException e) {
+ catch (    IgniteCheckedException e) {
       pessimisticFut.onError(e);
     }
   }

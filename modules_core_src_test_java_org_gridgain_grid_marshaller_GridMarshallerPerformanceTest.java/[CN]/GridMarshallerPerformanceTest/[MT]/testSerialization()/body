@@ -1,7 +1,7 @@
 {
   final ByteArrayOutputStream out=new ByteArrayOutputStream();
   IgniteInClosure<TestObject> writer=new CIX1<TestObject>(){
-    @Override public void applyx(    TestObject obj) throws GridException {
+    @Override public void applyx(    TestObject obj) throws IgniteCheckedException {
       out.reset();
       ObjectOutputStream objOut=null;
       try {
@@ -9,7 +9,7 @@
         objOut.writeObject(obj);
       }
  catch (      IOException e) {
-        throw new GridException(e);
+        throw new IgniteCheckedException(e);
       }
  finally {
         U.close(objOut,log);
@@ -18,7 +18,7 @@
   }
 ;
   IgniteOutClosure<TestObject> reader=new COX<TestObject>(){
-    @Override public TestObject applyx() throws GridException {
+    @Override public TestObject applyx() throws IgniteCheckedException {
       ByteArrayInputStream in=new ByteArrayInputStream(out.toByteArray());
       ObjectInputStream objIn=null;
       try {
@@ -26,7 +26,7 @@
         return (TestObject)objIn.readObject();
       }
  catch (      ClassNotFoundException|IOException e) {
-        throw new GridException(e);
+        throw new IgniteCheckedException(e);
       }
  finally {
         U.close(objIn,log);

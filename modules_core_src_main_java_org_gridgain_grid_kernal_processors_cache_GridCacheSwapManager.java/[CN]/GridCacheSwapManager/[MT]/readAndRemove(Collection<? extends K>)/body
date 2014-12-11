@@ -25,14 +25,14 @@
     }
     if (!swapEnabled || keysList.isEmpty())     return res;
   }
-  final GridTuple<GridException> err=F.t1();
+  final GridTuple<IgniteCheckedException> err=F.t1();
   Collection<SwapKey> converted=new ArrayList<>(F.viewReadOnly(keysList,new C1<K,SwapKey>(){
     @Override public SwapKey apply(    K key){
       try {
         return new SwapKey(key,cctx.affinity().partition(key),CU.marshal(cctx.shared(),key));
       }
- catch (      GridException e) {
-        throw new GridRuntimeException(e);
+ catch (      IgniteCheckedException e) {
+        throw new IgniteException(e);
       }
     }
   }
@@ -51,7 +51,7 @@
           onUnswapped(swapKey.partition(),key,swapKey.keyBytes(),entry);
           if (qryMgr != null)           qryMgr.onUnswap(key,entry.value(),entry.valueBytes());
         }
- catch (        GridException e) {
+ catch (        IgniteCheckedException e) {
           err.set(e);
         }
       }
