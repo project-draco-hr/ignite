@@ -1,14 +1,14 @@
 {
   try {
-    if (jobLocDir.exists())     throw new GridException("Local job directory already exists: " + jobLocDir.getAbsolutePath());
+    if (jobLocDir.exists())     throw new IgniteCheckedException("Local job directory already exists: " + jobLocDir.getAbsolutePath());
     JobConf cfg=ctx.getJobConf();
     String mrDir=cfg.get("mapreduce.job.dir");
     if (mrDir != null) {
       stagingDir=new Path(new URI(mrDir));
       if (download) {
         FileSystem fs=FileSystem.get(stagingDir.toUri(),cfg);
-        if (!fs.exists(stagingDir))         throw new GridException("Failed to find map-reduce submission directory (does not exist): " + stagingDir);
-        if (!FileUtil.copy(fs,stagingDir,jobLocDir,false,cfg))         throw new GridException("Failed to copy job submission directory contents to local file system " + "[path=" + stagingDir + ", locDir="+ jobLocDir.getAbsolutePath()+ ", jobId="+ jobId+ ']');
+        if (!fs.exists(stagingDir))         throw new IgniteCheckedException("Failed to find map-reduce submission directory (does not exist): " + stagingDir);
+        if (!FileUtil.copy(fs,stagingDir,jobLocDir,false,cfg))         throw new IgniteCheckedException("Failed to copy job submission directory contents to local file system " + "[path=" + stagingDir + ", locDir="+ jobLocDir.getAbsolutePath()+ ", jobId="+ jobId+ ']');
       }
       File jarJobFile=new File(jobLocDir,"job.jar");
       Collection<URL> clsPathUrls=new ArrayList<>();
@@ -24,10 +24,10 @@
         clsPathUrls.toArray(clsPath);
       }
     }
- else     if (!jobLocDir.mkdirs())     throw new GridException("Failed to create local job directory: " + jobLocDir.getAbsolutePath());
+ else     if (!jobLocDir.mkdirs())     throw new IgniteCheckedException("Failed to create local job directory: " + jobLocDir.getAbsolutePath());
     setLocalFSWorkingDirectory(jobLocDir);
   }
  catch (  URISyntaxException|IOException e) {
-    throw new GridException(e);
+    throw new IgniteCheckedException(e);
   }
 }

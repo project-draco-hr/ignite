@@ -1,0 +1,14 @@
+{
+  int idx0=idx.getAndIncrement();
+  Thread.currentThread().setName("Test thread [idx=" + idx0 + ", grid="+ (idx0 % 2)+ ']');
+  CommunicationSpi<GridTcpCommunicationMessageAdapter> spi=spis.get(idx0 % 2);
+  ClusterNode srcNode=nodes.get(idx0 % 2);
+  ClusterNode dstNode=nodes.get((idx0 + 1) % 2);
+  if (sleep) {
+    ThreadLocalRandom rnd=ThreadLocalRandom.current();
+    long millis=rnd.nextLong(10);
+    if (millis > 0)     Thread.sleep(millis);
+  }
+  for (int i=0; i < msgPerThread; i++)   spi.sendMessage(dstNode,new GridTestMessage(srcNode.id(),msgId.incrementAndGet(),0));
+  return null;
+}

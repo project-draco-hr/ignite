@@ -7,19 +7,19 @@
   }
 ,new P1<GridCache<?,?>>(){
     @Override public boolean apply(    GridCache<?,?> c){
-      return !CU.UTILITY_CACHE_NAME.equals(c.name()) && F.eq(spiName,c.configuration().getIndexingSpiName());
+      return !CU.UTILITY_CACHE_NAME.equals(c.name());
     }
   }
 );
   return F.transform(cacheNames,new C1<String,CacheSqlMetadata>(){
     @Override public CacheSqlMetadata apply(    String cacheName){
-      Collection<IndexingTypeDescriptor> types=ctx.indexing().types(cacheName);
+      Collection<GridQueryTypeDescriptor> types=ctx.query().types(cacheName);
       Collection<String> names=U.newHashSet(types.size());
       Map<String,String> keyClasses=U.newHashMap(types.size());
       Map<String,String> valClasses=U.newHashMap(types.size());
       Map<String,Map<String,String>> fields=U.newHashMap(types.size());
       Map<String,Collection<GridCacheSqlIndexMetadata>> indexes=U.newHashMap(types.size());
-      for (      IndexingTypeDescriptor type : types) {
+      for (      GridQueryTypeDescriptor type : types) {
         if (type.name().startsWith("GridCache"))         continue;
         names.add(type.name());
         keyClasses.put(type.name(),type.keyClass().getName());
@@ -32,9 +32,9 @@
         for (        Map.Entry<String,Class<?>> e : type.valueFields().entrySet())         fieldsMap.put(e.getKey().toUpperCase(),e.getValue().getName());
         fields.put(type.name(),fieldsMap);
         Collection<GridCacheSqlIndexMetadata> indexesCol=new ArrayList<>(type.indexes().size());
-        for (        Map.Entry<String,IndexDescriptor> e : type.indexes().entrySet()) {
-          IndexDescriptor desc=e.getValue();
-          if (desc.type() == IndexType.SORTED) {
+        for (        Map.Entry<String,GridQueryIndexDescriptor> e : type.indexes().entrySet()) {
+          GridQueryIndexDescriptor desc=e.getValue();
+          if (desc.type() == GridQueryIndexType.SORTED) {
             Collection<String> idxFields=e.getValue().fields();
             Collection<String> descendings=new LinkedList<>();
             for (            String idxField : idxFields)             if (desc.descending(idxField))             descendings.add(idxField);

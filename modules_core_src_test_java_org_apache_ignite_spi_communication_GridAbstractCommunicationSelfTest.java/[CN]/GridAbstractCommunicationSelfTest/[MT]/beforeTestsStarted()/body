@@ -1,28 +1,2 @@
 {
-  spis.clear();
-  nodes.clear();
-  spiRsrcs.clear();
-  Map<ClusterNode,GridSpiTestContext> ctxs=new HashMap<>();
-  for (int i=0; i < getSpiCount(); i++) {
-    CommunicationSpi<GridTcpCommunicationMessageAdapter> spi=getSpi(i);
-    GridTestResources rsrcs=new GridTestResources(getMBeanServer(i));
-    GridTestNode node=new GridTestNode(rsrcs.getNodeId());
-    GridSpiTestContext ctx=initSpiContext();
-    ctx.setLocalNode(node);
-    info(">>> Initialized context: nodeId=" + ctx.localNode().id());
-    spiRsrcs.add(rsrcs);
-    rsrcs.inject(spi);
-    spi.setListener(new MessageListener(rsrcs.getNodeId()));
-    node.setAttributes(spi.getNodeAttributes());
-    nodes.add(node);
-    spi.spiStart(getTestGridName() + (i + 1));
-    spis.put(rsrcs.getNodeId(),spi);
-    spi.onContextInitialized(ctx);
-    ctxs.put(node,ctx);
-  }
-  for (  Entry<ClusterNode,GridSpiTestContext> e : ctxs.entrySet()) {
-    for (    ClusterNode n : nodes) {
-      if (!n.equals(e.getKey()))       e.getValue().remoteNodes().add(n);
-    }
-  }
 }

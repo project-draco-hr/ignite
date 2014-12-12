@@ -7,7 +7,7 @@
     try {
       client=new GridShmemCommunicationClient(metricsLsnr,port,connTimeout,log,msgWriter);
     }
- catch (    GridException e) {
+ catch (    IgniteCheckedException e) {
       if (connectAttempts < 2 && X.hasCause(e,ConnectException.class)) {
         connectAttempts++;
         continue;
@@ -15,7 +15,7 @@
       throw e;
     }
     try {
-      safeHandshake(client,node.id(),connTimeout0);
+      safeHandshake(client,null,node.id(),connTimeout0);
     }
  catch (    HandshakeTimeoutException e) {
       if (log.isDebugEnabled())       log.debug("Handshake timedout (will retry with increased timeout) [timeout=" + connTimeout0 + ", err="+ e.getMessage()+ ", client="+ client+ ']');
@@ -30,7 +30,7 @@
         continue;
       }
     }
-catch (    GridException|RuntimeException|Error e) {
+catch (    IgniteCheckedException|RuntimeException|Error e) {
       if (log.isDebugEnabled())       log.debug("Caught exception (will close client) [err=" + e.getMessage() + ", client="+ client+ ']');
       client.forceClose();
       throw e;

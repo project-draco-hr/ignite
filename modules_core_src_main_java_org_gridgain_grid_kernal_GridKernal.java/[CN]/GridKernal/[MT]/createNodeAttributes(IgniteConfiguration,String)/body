@@ -11,7 +11,7 @@
     if (log.isDebugEnabled())     log.debug("Added environment properties to node attributes.");
   }
  catch (  SecurityException e) {
-    throw new GridException("Failed to add environment properties to node attributes due to " + "security violation: " + e.getMessage());
+    throw new IgniteCheckedException("Failed to add environment properties to node attributes due to " + "security violation: " + e.getMessage());
   }
   try {
     for (    Map.Entry<Object,Object> e : F.view(System.getProperties(),new P1<Object>(){
@@ -28,7 +28,7 @@
     if (log.isDebugEnabled())     log.debug("Added system properties to node attributes.");
   }
  catch (  SecurityException e) {
-    throw new GridException("Failed to add system properties to node attributes due to security " + "violation: " + e.getMessage());
+    throw new IgniteCheckedException("Failed to add system properties to node attributes due to security " + "violation: " + e.getMessage());
   }
   String ips=F.concat(U.allLocalIps(),", ");
   String macs=F.concat(U.allLocalMACs(),", ");
@@ -75,12 +75,12 @@
     if (provider != null) {
       GridSecurityCredentials cred=provider.credentials();
       if (cred != null)       add(attrs,ATTR_SECURITY_CREDENTIALS,cred);
- else       if (securityEnabled)       throw new GridException("Failed to start node (authentication SPI is configured, " + "by security credentials provider returned null).");
+ else       if (securityEnabled)       throw new IgniteCheckedException("Failed to start node (authentication SPI is configured, " + "by security credentials provider returned null).");
     }
- else     if (securityEnabled)     throw new GridException("Failed to start node (authentication SPI is configured, " + "but security credentials provider is not set. Fix the configuration and restart the node).");
+ else     if (securityEnabled)     throw new IgniteCheckedException("Failed to start node (authentication SPI is configured, " + "but security credentials provider is not set. Fix the configuration and restart the node).");
   }
- catch (  GridException e) {
-    throw new GridException("Failed to create node security credentials",e);
+ catch (  IgniteCheckedException e) {
+    throw new IgniteCheckedException("Failed to create node security credentials",e);
   }
   addAttributes(attrs,cfg.getCollisionSpi());
   addAttributes(attrs,cfg.getSwapSpaceSpi());

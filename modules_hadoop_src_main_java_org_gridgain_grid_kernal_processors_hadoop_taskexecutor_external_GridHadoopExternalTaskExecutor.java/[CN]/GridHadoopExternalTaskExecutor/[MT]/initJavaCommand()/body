@@ -1,23 +1,23 @@
 {
   String javaHome=System.getProperty("java.home");
   if (javaHome == null)   javaHome=System.getenv("JAVA_HOME");
-  if (javaHome == null)   throw new GridException("Failed to locate JAVA_HOME.");
+  if (javaHome == null)   throw new IgniteCheckedException("Failed to locate JAVA_HOME.");
   javaCmd=javaHome + File.separator + "bin"+ File.separator+ (U.isWindows() ? "java.exe" : "java");
   try {
     Process proc=new ProcessBuilder(javaCmd,"-version").redirectErrorStream(true).start();
     Collection<String> out=readProcessOutput(proc);
     int res=proc.waitFor();
-    if (res != 0)     throw new GridException("Failed to execute 'java -version' command (process finished with nonzero " + "code) [exitCode=" + res + ", javaCmd='"+ javaCmd+ "', msg="+ F.first(out)+ ']');
+    if (res != 0)     throw new IgniteCheckedException("Failed to execute 'java -version' command (process finished with nonzero " + "code) [exitCode=" + res + ", javaCmd='"+ javaCmd+ "', msg="+ F.first(out)+ ']');
     if (log.isInfoEnabled()) {
       log.info("Will use java for external task execution: ");
       for (      String s : out)       log.info("    " + s);
     }
   }
  catch (  IOException e) {
-    throw new GridException("Failed to check java for external task execution.",e);
+    throw new IgniteCheckedException("Failed to check java for external task execution.",e);
   }
 catch (  InterruptedException e) {
     Thread.currentThread().interrupt();
-    throw new GridException("Failed to wait for process completion (thread got interrupted).",e);
+    throw new IgniteCheckedException("Failed to wait for process completion (thread got interrupted).",e);
   }
 }

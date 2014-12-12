@@ -1,0 +1,17 @@
+{
+  super.start();
+  if (idx != null) {
+    ctx.resource().injectGeneric(idx);
+    idx.start(ctx);
+    for (    GridCacheConfiguration ccfg : ctx.config().getCacheConfiguration()) {
+      GridCacheQueryConfiguration qryCfg=ccfg.getQueryConfiguration();
+      if (qryCfg != null) {
+        if (!F.isEmpty(qryCfg.getTypeMetadata())) {
+          for (          GridCacheQueryTypeMetadata meta : qryCfg.getTypeMetadata())           declaredTypesByName.put(new TypeName(ccfg.getName(),meta.getType()),meta);
+        }
+        if (qryCfg.getTypeResolver() != null)         typeResolvers.put(ccfg.getName(),qryCfg.getTypeResolver());
+      }
+    }
+    execSvc=ctx.config().getExecutorService();
+  }
+}
