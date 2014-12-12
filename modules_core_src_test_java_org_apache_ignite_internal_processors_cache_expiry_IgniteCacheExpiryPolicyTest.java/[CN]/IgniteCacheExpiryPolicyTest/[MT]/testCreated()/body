@@ -1,0 +1,19 @@
+{
+  factory=new FactoryBuilder.SingletonFactory<>(new TestCreatedPolicy(1000));
+  startGrids();
+  final Integer key=1;
+  IgniteCache<Integer,Integer> cache=jcache(0);
+  cache.put(1,1);
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      for (int i=0; i < gridCount(); i++) {
+        Object val=cache(i).peek(key);
+        log.info("Value [grid=" + i + ", val="+ val+ ']');
+        if (val != null)         return false;
+      }
+      return false;
+    }
+  }
+,2000);
+  for (int i=0; i < gridCount(); i++)   assertNull("Unexpected non-null value for grid " + i,cache.get(key));
+}
