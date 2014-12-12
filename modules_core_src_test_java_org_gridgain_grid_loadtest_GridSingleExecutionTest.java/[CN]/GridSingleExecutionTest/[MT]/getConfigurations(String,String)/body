@@ -1,9 +1,9 @@
 {
   File path=GridTestUtils.resolveGridGainPath(springCfgPath);
   if (path == null) {
-    throw new GridException("Spring XML configuration file path is invalid: " + new File(springCfgPath) + ". Note that this path should be either absolute path or a relative path to GRIDGAIN_HOME.");
+    throw new IgniteCheckedException("Spring XML configuration file path is invalid: " + new File(springCfgPath) + ". Note that this path should be either absolute path or a relative path to GRIDGAIN_HOME.");
   }
-  if (!path.isFile())   throw new GridException("Provided file path is not a file: " + path);
+  if (!path.isFile())   throw new IgniteCheckedException("Provided file path is not a file: " + path);
   Appender app=new NullAppender();
   Logger.getRootLogger().addAppender(app);
   ApplicationContext springCtx;
@@ -11,18 +11,18 @@
     springCtx=new FileSystemXmlApplicationContext(path.toURI().toURL().toString());
   }
  catch (  BeansException|MalformedURLException e) {
-    throw new GridException("Failed to instantiate Spring XML application context: " + e.getMessage(),e);
+    throw new IgniteCheckedException("Failed to instantiate Spring XML application context: " + e.getMessage(),e);
   }
   Map cfgMap;
   try {
     cfgMap=springCtx.getBeansOfType(IgniteConfiguration.class);
   }
  catch (  BeansException e) {
-    throw new GridException("Failed to instantiate bean [type=" + IgniteConfiguration.class + ", err="+ e.getMessage()+ ']',e);
+    throw new IgniteCheckedException("Failed to instantiate bean [type=" + IgniteConfiguration.class + ", err="+ e.getMessage()+ ']',e);
   }
-  if (cfgMap == null)   throw new GridException("Failed to find a single grid factory configuration in: " + path);
+  if (cfgMap == null)   throw new IgniteCheckedException("Failed to find a single grid factory configuration in: " + path);
   Logger.getRootLogger().removeAppender(app);
-  if (cfgMap.isEmpty())   throw new GridException("Can't find grid factory configuration in: " + path);
+  if (cfgMap.isEmpty())   throw new IgniteCheckedException("Can't find grid factory configuration in: " + path);
   Collection<IgniteConfiguration> res=new ArrayList<>();
   for (  IgniteConfiguration cfg : (Collection<IgniteConfiguration>)cfgMap.values()) {
     UUID nodeId=UUID.randomUUID();

@@ -9,7 +9,7 @@
     try {
       topic=marsh.unmarshal(req.responseTopicBytes(),null);
     }
- catch (    GridException e) {
+ catch (    IgniteCheckedException e) {
       U.error(log,"Failed to unmarshal topic from request: " + req,e);
       return;
     }
@@ -18,7 +18,7 @@
  else {
       GridDeployment dep=ctx.deploy().getGlobalDeployment(req.deploymentMode(),req.sampleClassName(),req.sampleClassName(),req.userVersion(),nodeId,req.classLoaderId(),req.participants(),null);
       if (dep == null) {
-        sendResponse(nodeId,topic,req.requestId(),new GridException("Failed to get deployment for request [sndId=" + nodeId + ", req="+ req+ ']'),false);
+        sendResponse(nodeId,topic,req.requestId(),new IgniteCheckedException("Failed to get deployment for request [sndId=" + nodeId + ", req="+ req+ ']'),false);
         return;
       }
       clsLdr=dep.classLoader();
@@ -29,7 +29,7 @@
       col=marsh.unmarshal(req.collectionBytes(),clsLdr);
       updater=marsh.unmarshal(req.updaterBytes(),clsLdr);
     }
- catch (    GridException e) {
+ catch (    IgniteCheckedException e) {
       U.error(log,"Failed to unmarshal message [nodeId=" + nodeId + ", req="+ req+ ']',e);
       sendResponse(nodeId,topic,req.requestId(),e,false);
       return;

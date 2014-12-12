@@ -10,8 +10,8 @@
           try {
             return unmarshalKey(cur0.getKey(),cctx.deploy().globalLoader());
           }
- catch (          GridException e) {
-            throw new GridRuntimeException(e);
+ catch (          IgniteCheckedException e) {
+            throw new IgniteException(e);
           }
         }
         @Override public V getValue(){
@@ -20,8 +20,8 @@
             swapEntry(e);
             return e.value();
           }
- catch (          GridException ex) {
-            throw new GridRuntimeException(ex);
+ catch (          IgniteCheckedException ex) {
+            throw new IgniteException(ex);
           }
         }
         @Override public V setValue(        V val){
@@ -34,7 +34,7 @@
     @Override protected boolean onHasNext(){
       return it.hasNext();
     }
-    @Override protected void onRemove() throws GridException {
+    @Override protected void onRemove() throws IgniteCheckedException {
       if (cur == null)       throw new IllegalStateException("Method next() has not yet been called, or the remove() method " + "has already been called after the last call to the next() method.");
       try {
         if (cctx.isDht())         cctx.dht().near().removex(cur.getKey(),CU.<K,V>empty());
@@ -44,7 +44,7 @@
         cur=null;
       }
     }
-    @Override protected void onClose() throws GridException {
+    @Override protected void onClose() throws IgniteCheckedException {
       it.close();
     }
   }

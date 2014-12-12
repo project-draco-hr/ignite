@@ -5,13 +5,13 @@
   if (prepFut == null) {
     try {
       if (finish(false) || state() == UNKNOWN)       fut.finish();
- else       fut.onError(new GridException("Failed to commit transaction: " + CU.txString(this)));
+ else       fut.onError(new IgniteCheckedException("Failed to commit transaction: " + CU.txString(this)));
     }
  catch (    GridCacheTxOptimisticException e) {
       if (log.isDebugEnabled())       log.debug("Failed optimistically to prepare transaction [tx=" + this + ", e="+ e+ ']');
       fut.onError(e);
     }
-catch (    GridException e) {
+catch (    IgniteCheckedException e) {
       U.error(log,"Failed to rollback transaction (will make the best effort to rollback remote nodes): " + this,e);
       fut.onError(e);
     }
@@ -23,14 +23,14 @@ catch (    GridException e) {
         try {
           f.get();
         }
- catch (        GridException e) {
+ catch (        IgniteCheckedException e) {
           if (log.isDebugEnabled())           log.debug("Failed to prepare or rollback transaction [tx=" + this + ", e="+ e+ ']');
         }
         try {
           if (finish(false) || state() == UNKNOWN)           fut.finish();
- else           fut.onError(new GridException("Failed to commit transaction: " + CU.txString(GridDhtTxLocal.this)));
+ else           fut.onError(new IgniteCheckedException("Failed to commit transaction: " + CU.txString(GridDhtTxLocal.this)));
         }
- catch (        GridException e) {
+ catch (        IgniteCheckedException e) {
           U.error(log,"Failed to gracefully rollback transaction: " + CU.txString(GridDhtTxLocal.this),e);
           fut.onError(e);
         }

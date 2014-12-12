@@ -5,14 +5,21 @@
     return removeFromStore(tx,key);
   }
   if (store != null) {
-    if (log.isDebugEnabled())     log.debug("Removing values from cache store [keys=" + keys + ']');
+    Collection<? extends K> keys0;
+    keys0=convertPortable ? F.viewReadOnly(keys,new C1<K,K>(){
+      @Override public K apply(      K k){
+        return (K)cctx.unwrapPortableIfNeeded(k,false);
+      }
+    }
+) : keys;
+    if (log.isDebugEnabled())     log.debug("Removing values from cache store [keys=" + keys0 + ']');
     try {
-      store.removeAll(tx,keys);
+      store.removeAll(tx,keys0);
     }
  catch (    ClassCastException e) {
       handleClassCastException(e);
     }
-    if (log.isDebugEnabled())     log.debug("Removed values from cache store [keys=" + keys + ']');
+    if (log.isDebugEnabled())     log.debug("Removed values from cache store [keys=" + keys0 + ']');
     return true;
   }
   return false;

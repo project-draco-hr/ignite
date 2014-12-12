@@ -2,12 +2,12 @@
   if (initLatch.getCount() > 0) {
     if (initGuard.compareAndSet(false,true)) {
       if (log.isDebugEnabled())       log.debug("Initializing cache store.");
-      if (F.isEmpty(connUrl))       throw new GridException("Failed to initialize cache store (connection URL is not provided).");
+      if (F.isEmpty(connUrl))       throw new IgniteCheckedException("Failed to initialize cache store (connection URL is not provided).");
       if (!initSchema) {
         initLatch.countDown();
         return;
       }
-      if (F.isEmpty(createTblQry))       throw new GridException("Failed to initialize cache store (create table query is not provided).");
+      if (F.isEmpty(createTblQry))       throw new IgniteCheckedException("Failed to initialize cache store (create table query is not provided).");
       Connection conn=null;
       Statement stmt=null;
       try {
@@ -18,7 +18,7 @@
         initOk=true;
       }
  catch (      SQLException e) {
-        throw new GridException("Failed to create database table.",e);
+        throw new IgniteCheckedException("Failed to create database table.",e);
       }
  finally {
         U.closeQuiet(stmt);
@@ -28,5 +28,5 @@
     }
  else     U.await(initLatch);
   }
-  if (!initOk)   throw new GridException("Cache store was not properly initialized.");
+  if (!initOk)   throw new IgniteCheckedException("Cache store was not properly initialized.");
 }

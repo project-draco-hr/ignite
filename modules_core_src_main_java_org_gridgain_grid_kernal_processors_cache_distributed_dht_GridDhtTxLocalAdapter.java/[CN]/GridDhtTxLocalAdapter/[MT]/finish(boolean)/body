@@ -4,7 +4,7 @@
   if (commit) {
     if (!state(COMMITTING)) {
       GridCacheTxState state=state();
-      if (state != COMMITTING && state != COMMITTED)       throw new GridException("Invalid transaction state for commit [state=" + state() + ", tx="+ this+ ']');
+      if (state != COMMITTING && state != COMMITTED)       throw new IgniteCheckedException("Invalid transaction state for commit [state=" + state() + ", tx="+ this+ ']');
  else {
         if (log.isDebugEnabled())         log.debug("Invalid transaction state for commit (another thread is committing): " + this);
         return false;
@@ -17,12 +17,12 @@
       return false;
     }
   }
-  GridException err=null;
+  IgniteCheckedException err=null;
   try {
     if (commit && !isRollbackOnly())     userCommit();
  else     userRollback();
   }
- catch (  GridException e) {
+ catch (  IgniteCheckedException e) {
     err=e;
     commit=false;
     if (!isRollbackOnly()) {
@@ -39,14 +39,14 @@
       if (!onePhaseCommit()) {
         if (!state(COMMITTED)) {
           state(UNKNOWN);
-          throw new GridException("Invalid transaction state for commit: " + this);
+          throw new IgniteCheckedException("Invalid transaction state for commit: " + this);
         }
       }
     }
  else {
       if (!state(ROLLED_BACK)) {
         state(UNKNOWN);
-        throw new GridException("Invalid transaction state for rollback: " + this);
+        throw new IgniteCheckedException("Invalid transaction state for rollback: " + this);
       }
     }
   }

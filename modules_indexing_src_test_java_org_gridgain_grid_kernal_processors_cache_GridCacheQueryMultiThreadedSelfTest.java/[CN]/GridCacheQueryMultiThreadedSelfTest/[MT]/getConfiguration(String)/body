@@ -13,22 +13,15 @@
   cacheCfg.setSwapEnabled(true);
   cacheCfg.setBackups(1);
   cacheCfg.setEvictionPolicy(evictsEnabled() ? new GridCacheLruEvictionPolicy(100) : null);
+  GridCacheQueryConfiguration qcfg=new GridCacheQueryConfiguration();
+  qcfg.setIndexPrimitiveKey(true);
+  cacheCfg.setQueryConfiguration(qcfg);
   if (offheapEnabled() && evictsEnabled())   cacheCfg.setOffHeapMaxMemory(1000);
   cfg.setCacheConfiguration(cacheCfg);
-  GridH2IndexingSpi indexing=new GridH2IndexingSpi(){
-    @Override public <K>void onSwap(    @Nullable String spaceName,    String swapSpaceName,    K key) throws IgniteSpiException {
-      super.onSwap(spaceName,swapSpaceName,key);
-      idxSwapCnt.incrementAndGet();
-    }
-    @Override public <K,V>void onUnswap(    @Nullable String spaceName,    K key,    V val,    byte[] valBytes) throws IgniteSpiException {
-      super.onUnswap(spaceName,key,val,valBytes);
-      idxUnswapCnt.incrementAndGet();
-    }
-  }
-;
-  indexing.setDefaultIndexPrimitiveKey(true);
+  GridQueryConfiguration indexing=new GridQueryConfiguration();
   indexing.setMaxOffheapRowsCacheSize(128);
   if (offheapEnabled())   indexing.setMaxOffHeapMemory(0);
-  cfg.setIndexingSpi(indexing);
+  cfg.setQueryConfiguration(indexing);
+  GridQueryProcessor.idxCls=FakeIndexing.class;
   return cfg;
 }

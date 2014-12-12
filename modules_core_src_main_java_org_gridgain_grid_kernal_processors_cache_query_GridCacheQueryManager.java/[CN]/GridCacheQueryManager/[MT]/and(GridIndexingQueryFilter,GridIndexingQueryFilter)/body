@@ -1,0 +1,19 @@
+{
+  if (f1 == null)   return f2;
+  if (f2 == null)   return f1;
+  return new GridIndexingQueryFilter(){
+    @Nullable @Override public <K,V>IgniteBiPredicate<K,V> forSpace(    String spaceName){
+      final IgniteBiPredicate<K,V> fltr1=f1.forSpace(spaceName);
+      final IgniteBiPredicate<K,V> fltr2=f2.forSpace(spaceName);
+      if (fltr1 == null)       return fltr2;
+      if (fltr2 == null)       return fltr1;
+      return new IgniteBiPredicate<K,V>(){
+        @Override public boolean apply(        K k,        V v){
+          return fltr1.apply(k,v) && fltr2.apply(k,v);
+        }
+      }
+;
+    }
+  }
+;
+}

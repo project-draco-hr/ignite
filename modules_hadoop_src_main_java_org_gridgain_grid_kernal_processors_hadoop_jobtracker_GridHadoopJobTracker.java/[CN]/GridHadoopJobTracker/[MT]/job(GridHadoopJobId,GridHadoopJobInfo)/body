@@ -6,7 +6,7 @@
   try {
     if (jobInfo == null) {
       GridHadoopJobMetadata meta=jobMetaCache().get(jobId);
-      if (meta == null)       throw new GridException("Failed to find job metadata for ID: " + jobId);
+      if (meta == null)       throw new IgniteCheckedException("Failed to find job metadata for ID: " + jobId);
       jobInfo=meta.jobInfo();
     }
     job=jobInfo.createJob(jobId,log);
@@ -14,14 +14,14 @@
     fut.onDone(job);
     return job;
   }
- catch (  GridException e) {
+ catch (  IgniteCheckedException e) {
     fut.onDone(e);
     jobs.remove(jobId,fut);
     if (job != null) {
       try {
         job.dispose(false);
       }
- catch (      GridException e0) {
+ catch (      IgniteCheckedException e0) {
         U.error(log,"Failed to dispose job: " + jobId,e0);
       }
     }

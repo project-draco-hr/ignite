@@ -1,7 +1,7 @@
 {
   if (log.isDebugEnabled())   log.debug("Starting streamer: " + name);
-  if (F.isEmpty(c.getStages()))   throw new GridException("Streamer should have at least one stage configured " + "(fix configuration and restart): " + name);
-  if (F.isEmpty(c.getWindows()))   throw new GridException("Streamer should have at least one window configured " + "(fix configuration and restart): " + name);
+  if (F.isEmpty(c.getStages()))   throw new IgniteCheckedException("Streamer should have at least one stage configured " + "(fix configuration and restart): " + name);
+  if (F.isEmpty(c.getWindows()))   throw new IgniteCheckedException("Streamer should have at least one window configured " + "(fix configuration and restart): " + name);
   prepareResources();
   U.startLifecycleAware(lifecycleAwares());
   stages=U.newLinkedHashMap(c.getStages().size());
@@ -9,8 +9,8 @@
   StreamerStageWrapper prev=null;
   for (  StreamerStage s : c.getStages()) {
     String sName=s.name();
-    if (F.isEmpty(sName))     throw new GridException("Streamer stage should have non-empty name [streamerName=" + name + ", stage="+ s+ ']');
-    if (stages.containsKey(sName))     throw new GridException("Streamer stages have duplicate names (all names should be unique) " + "[streamerName=" + name + ", stage="+ s+ ", stageName="+ sName+ ']');
+    if (F.isEmpty(sName))     throw new IgniteCheckedException("Streamer stage should have non-empty name [streamerName=" + name + ", stage="+ s+ ']');
+    if (stages.containsKey(sName))     throw new IgniteCheckedException("Streamer stages have duplicate names (all names should be unique) " + "[streamerName=" + name + ", stage="+ s+ ", stageName="+ sName+ ']');
     if (firstStage == null)     firstStage=sName;
     StreamerStageWrapper wrapper=new StreamerStageWrapper(s,stageIdx);
     stages.put(sName,wrapper);
@@ -21,8 +21,8 @@
   winMap=new LinkedHashMap<>();
   for (  StreamerWindow w : c.getWindows()) {
     String wName=w.name();
-    if (F.isEmpty(wName))     throw new GridException("Streamer window should have non-empty name [streamerName=" + name + ", window="+ w+ ']');
-    if (winMap.containsKey(wName))     throw new GridException("Streamer windows have duplicate names (all names should be unique). " + "If you use two or more windows of the same type you need to assign their names explicitly " + "[streamer=" + name + ", windowName="+ wName+ ']');
+    if (F.isEmpty(wName))     throw new IgniteCheckedException("Streamer window should have non-empty name [streamerName=" + name + ", window="+ w+ ']');
+    if (winMap.containsKey(wName))     throw new IgniteCheckedException("Streamer windows have duplicate names (all names should be unique). " + "If you use two or more windows of the same type you need to assign their names explicitly " + "[streamer=" + name + ", windowName="+ wName+ ']');
     winMap.put(wName,w);
     if (dfltWin == null)     dfltWin=w;
   }

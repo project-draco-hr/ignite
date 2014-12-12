@@ -14,13 +14,13 @@
           cctx.evicts().touch(entry,topVer);
         }
         V val=info.value();
-        if (cctx.portableEnabled() && deserializePortable && val instanceof PortableObject)         val=((PortableObject)val).deserialize();
+        if (cctx.portableEnabled())         val=(V)cctx.unwrapPortableIfNeeded(val,!deserializePortable);
         map.put(info.key(),val);
       }
  catch (      GridCacheEntryRemovedException ignore) {
         if (log.isDebugEnabled())         log.debug("Got removed entry while processing get response (will not retry).");
       }
-catch (      GridException e) {
+catch (      IgniteCheckedException e) {
         onDone(e);
         return Collections.emptyMap();
       }
