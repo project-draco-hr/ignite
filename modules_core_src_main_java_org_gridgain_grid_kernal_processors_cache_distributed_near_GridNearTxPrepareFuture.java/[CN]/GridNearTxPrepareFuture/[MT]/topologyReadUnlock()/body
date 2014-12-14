@@ -1,3 +1,13 @@
 {
-  if (!tx.activeCacheIds().isEmpty())   cctx.cacheContext(F.first(tx.activeCacheIds())).topology().readUnlock();
+  if (!tx.activeCacheIds().isEmpty()) {
+    GridCacheContext<K,V> nonLocalCtx=null;
+    for (    int cacheId : tx.activeCacheIds()) {
+      GridCacheContext<K,V> cacheCtx=cctx.cacheContext(cacheId);
+      if (!cacheCtx.isLocal()) {
+        nonLocalCtx=cacheCtx;
+        break;
+      }
+    }
+    if (nonLocalCtx != null)     nonLocalCtx.topology().readUnlock();
+  }
 }
