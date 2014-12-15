@@ -5,6 +5,7 @@
   Boolean replicate=ctx.isDrEnabled();
   boolean intercept=req.forceTransformBackups() && ctx.config().getInterceptor() != null;
   String taskName=ctx.kernalContext().task().resolveTaskName(req.taskNameHash());
+  ExpiryPolicy expiry=req.expiry() != null ? req.expiry() : ctx.expiry();
   for (int i=0; i < req.size(); i++) {
     K key=req.key(i);
     try {
@@ -16,7 +17,7 @@
           byte[] valBytes=req.valueBytes(i);
           IgniteClosure<V,V> transform=req.transformClosure(i);
           GridCacheOperation op=transform != null ? TRANSFORM : (val != null || valBytes != null) ? UPDATE : DELETE;
-          GridCacheUpdateAtomicResult<K,V> updRes=entry.innerUpdate(ver,nodeId,nodeId,op,op == TRANSFORM ? transform : val,valBytes,false,false,req.ttl(),true,true,false,!req.forceTransformBackups(),CU.<K,V>empty(),replicate ? DR_BACKUP : DR_NONE,req.drTtl(i),req.drExpireTime(i),req.drVersion(i),false,intercept,req.subjectId(),taskName);
+          GridCacheUpdateAtomicResult<K,V> updRes=entry.innerUpdate(ver,nodeId,nodeId,op,op == TRANSFORM ? transform : val,valBytes,false,false,expiry,true,true,false,!req.forceTransformBackups(),CU.<K,V>empty(),replicate ? DR_BACKUP : DR_NONE,req.drTtl(i),req.drExpireTime(i),req.drVersion(i),false,intercept,req.subjectId(),taskName);
           if (updRes.removeVersion() != null)           ctx.onDeferredDelete(entry,updRes.removeVersion());
           entry.onUnlock();
           break;
