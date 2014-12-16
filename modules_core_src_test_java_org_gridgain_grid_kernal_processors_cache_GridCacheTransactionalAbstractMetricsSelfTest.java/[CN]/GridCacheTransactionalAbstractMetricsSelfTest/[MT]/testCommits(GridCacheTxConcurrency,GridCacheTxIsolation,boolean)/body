@@ -6,9 +6,17 @@
     tx.commit();
   }
   for (int i=0; i < gridCount(); i++) {
-    GridCacheTxMetrics metrics=null;
-    if (i == 0)     assertEquals(TX_CNT,metrics.txCommits());
- else     assertEquals(0,metrics.txCommits());
+    IgniteTxMetrics metrics=grid(i).transactions().metrics();
+    GridCacheMetrics cacheMetrics=grid(i).cache(null).metrics();
+    if (i == 0) {
+      assertEquals(TX_CNT,metrics.txCommits());
+      if (put)       assertEquals(TX_CNT,cacheMetrics.txCommits());
+    }
+ else {
+      assertEquals(0,metrics.txCommits());
+      assertEquals(0,cacheMetrics.txCommits());
+    }
     assertEquals(0,metrics.txRollbacks());
+    assertEquals(0,cacheMetrics.txRollbacks());
   }
 }
