@@ -17,7 +17,7 @@
       exchFut=poll(futQ,timeout,this);
       if (exchFut == null)       continue;
       busy=true;
-      Map<Integer,GridDhtPreloaderAssignments<K,V>> assignsMap=null;
+      Map<Integer,GridDhtPreloaderAssignments<K,V>> assignsMap=new HashMap<>();
       boolean dummyReassign=exchFut.dummyReassign();
       boolean forcePreload=exchFut.forcePreload();
       try {
@@ -51,13 +51,9 @@
         }
         for (        GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
           long delay=cacheCtx.config().getPreloadPartitionedDelay();
-          if (delay == 0 || forcePreload) {
-            GridDhtPreloaderAssignments<K,V> assigns=cacheCtx.preloader().assign(exchFut);
-            if (assigns != null) {
-              if (assignsMap == null)               assignsMap=new HashMap<>();
-              assignsMap.put(cacheCtx.cacheId(),assigns);
-            }
-          }
+          GridDhtPreloaderAssignments<K,V> assigns=null;
+          if (delay == 0 || forcePreload)           assigns=cacheCtx.preloader().assign(exchFut);
+          assignsMap.put(cacheCtx.cacheId(),assigns);
         }
       }
   finally {
