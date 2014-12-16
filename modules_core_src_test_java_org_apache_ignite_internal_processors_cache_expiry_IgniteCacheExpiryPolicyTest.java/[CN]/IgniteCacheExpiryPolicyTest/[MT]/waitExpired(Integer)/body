@@ -1,21 +1,3 @@
 {
-  GridTestUtils.waitForCondition(new GridAbsPredicate(){
-    @Override public boolean apply(){
-      for (int i=0; i < gridCount(); i++) {
-        Object val=jcache(i).localPeek(key);
-        log.info("Value [grid=" + i + ", val="+ val+ ']');
-        if (val != null)         return false;
-      }
-      return false;
-    }
-  }
-,3000);
-  GridCache<Integer,Object> cache=cache(0);
-  for (int i=0; i < gridCount(); i++) {
-    ClusterNode node=grid(i).cluster().localNode();
-    Object val=jcache(i).localPeek(key);
-    log.info("Value [grid=" + i + ", primary="+ cache.affinity().isPrimary(node,key)+ ", backup="+ cache.affinity().isBackup(node,key)+ ']');
-    assertNull("Unexpected non-null value for grid " + i,val);
-  }
-  for (int i=0; i < gridCount(); i++)   assertNull("Unexpected non-null value for grid " + i,jcache(i).get(key));
+  waitExpired(Collections.singleton(key));
 }
