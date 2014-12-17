@@ -1,0 +1,50 @@
+{
+  if (keyCheck)   validateCacheKeys(keys);
+  if (op == DELETE)   ctx.checkSecurity(GridSecurityPermission.CACHE_REMOVE);
+ else   ctx.checkSecurity(GridSecurityPermission.CACHE_PUT);
+  String taskName=ctx.kernalContext().job().currentTaskName();
+  GridCacheVersion ver=ctx.versions().next();
+  UUID subjId=ctx.subjectIdPerCall(null);
+  if (storeEnabled && keys.size() > 1) {
+    updateWithBatch(op,keys,vals,expiryPlc,ver,filter,subjId,taskName);
+    return null;
+  }
+  Iterator<?> valsIter=vals != null ? vals.iterator() : null;
+  IgniteBiTuple<Boolean,?> res=null;
+  GridCachePartialUpdateException err=null;
+  boolean intercept=ctx.config().getInterceptor() != null;
+  for (  K key : keys) {
+    Object val=valsIter != null ? valsIter.next() : null;
+    if (key == null)     continue;
+    while (true) {
+      GridCacheEntryEx<K,V> entry=null;
+      try {
+        entry=entryEx(key);
+        IgniteBiTuple<Boolean,V> t=entry.innerUpdateLocal(ver,val == null ? DELETE : op,val,storeEnabled,retval,expiryPlc,true,true,filter,intercept,subjId,taskName);
+        if (res == null) {
+          if (op == TRANSFORM && val instanceof GridCacheTransformComputeClosure) {
+            assert retval;
+            res=new IgniteBiTuple<>(t.get1(),((GridCacheTransformComputeClosure<V,?>)val).returnValue());
+          }
+ else           res=t;
+        }
+        break;
+      }
+ catch (      GridCacheEntryRemovedException ignored) {
+        if (log.isDebugEnabled())         log.debug("Got removed entry while updating (will retry): " + key);
+        entry=null;
+      }
+catch (      IgniteCheckedException e) {
+        if (err == null)         err=partialUpdateException();
+        err.add(F.asList(key),e);
+        U.error(log,"Failed to update key : " + key,e);
+        break;
+      }
+ finally {
+        if (entry != null)         ctx.evicts().touch(entry,ctx.affinity().affinityTopologyVersion());
+      }
+    }
+  }
+  if (err != null)   throw err;
+  return res == null ? null : rawRetval ? new GridCacheReturn<>(res.get2(),res.get1()) : retval ? res.get2() : res.get1();
+}
