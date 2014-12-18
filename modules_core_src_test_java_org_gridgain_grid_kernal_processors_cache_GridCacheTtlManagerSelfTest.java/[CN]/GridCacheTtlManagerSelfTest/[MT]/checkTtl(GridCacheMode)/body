@@ -3,18 +3,12 @@
   final GridKernal g=(GridKernal)startGrid(0);
   try {
     final String key="key";
-    final GridCache<Object,Object> cache=g.cache(null);
-    GridCacheEntry<Object,Object> entry=cache.entry(key);
-    entry.timeToLive(1000);
-    entry.setValue(1);
+    g.jcache(null).withExpiryPolicy(new TouchedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS,1000))).put(key,1);
+    assertEquals(1,g.jcache(null).get(key));
     U.sleep(1100);
     GridTestUtils.retryAssert(log,10,100,new CAX(){
       @Override public void applyx(){
-        try {
-          assertNull(g.cache(null).get(key));
-        }
- catch (        IgniteCheckedException ignore) {
-        }
+        assertNull(g.jcache(null).get(key));
         if (!g.internalCache().context().deferredDelete())         assertNull(g.internalCache().map().getEntry(key));
       }
     }
