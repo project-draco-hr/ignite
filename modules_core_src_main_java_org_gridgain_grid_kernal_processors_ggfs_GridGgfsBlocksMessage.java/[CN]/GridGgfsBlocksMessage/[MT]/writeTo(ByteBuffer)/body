@@ -2,38 +2,38 @@
   commState.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
   if (!commState.typeWritten) {
-    if (!commState.putByte(directType()))     return false;
+    if (!commState.putByte(null,directType()))     return false;
     commState.typeWritten=true;
   }
 switch (commState.idx) {
 case 0:
     if (blocks != null) {
       if (commState.it == null) {
-        if (!commState.putInt(blocks.size()))         return false;
+        if (!commState.putInt(null,blocks.size()))         return false;
         commState.it=blocks.entrySet().iterator();
       }
       while (commState.it.hasNext() || commState.cur != NULL) {
         if (commState.cur == NULL)         commState.cur=commState.it.next();
         Map.Entry<GridGgfsBlockKey,byte[]> e=(Map.Entry<GridGgfsBlockKey,byte[]>)commState.cur;
         if (!commState.keyDone) {
-          if (!commState.putMessage(e.getKey()))           return false;
+          if (!commState.putMessage(null,e.getKey()))           return false;
           commState.keyDone=true;
         }
-        if (!commState.putByteArray(e.getValue()))         return false;
+        if (!commState.putByteArray(null,e.getValue()))         return false;
         commState.keyDone=false;
         commState.cur=NULL;
       }
       commState.it=null;
     }
  else {
-      if (!commState.putInt(-1))       return false;
+      if (!commState.putInt(null,-1))       return false;
     }
   commState.idx++;
 case 1:
-if (!commState.putGridUuid(fileId)) return false;
+if (!commState.putGridUuid(null,fileId)) return false;
 commState.idx++;
 case 2:
-if (!commState.putLong(id)) return false;
+if (!commState.putLong(null,id)) return false;
 commState.idx++;
 }
 return true;
