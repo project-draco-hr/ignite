@@ -1,0 +1,22 @@
+{
+  final long qryReqId=msg.queryRequestId();
+  final int qry=msg.query();
+  final int pageSize=msg.rows().size();
+  QueryRun r=runs.get(qryReqId);
+  GridMergeIndex idx=r.tbls.get(msg.query()).getScanIndex(null);
+  idx.addPage(new GridResultPage<Object>(node.id(),msg.query(),msg.rows()){
+    @Override public void fetchNextPage(){
+      try {
+        ctx.io().sendUserMessage(F.asList(node),new GridNextPageRequest(qryReqId,qry,pageSize));
+      }
+ catch (      IgniteCheckedException e) {
+        throw new IgniteException(e);
+      }
+    }
+  }
+);
+  if (msg.allRows() != -1) {
+    idx.addCount(msg.allRows());
+    r.latch.countDown();
+  }
+}

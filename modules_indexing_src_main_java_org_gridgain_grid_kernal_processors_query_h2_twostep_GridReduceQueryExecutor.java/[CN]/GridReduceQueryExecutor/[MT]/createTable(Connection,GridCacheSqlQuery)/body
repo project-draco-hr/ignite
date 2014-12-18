@@ -1,0 +1,12 @@
+{
+  try {
+    try (PreparedStatement s=conn.prepareStatement("CREATE LOCAL TEMPORARY TABLE " + qry.alias() + " ENGINE \""+ GridMergeTable.Engine.class.getName()+ "\" "+ " AS SELECT * FROM ("+ qry.query()+ ") WHERE FALSE")){
+      h2.bindParameters(s,F.asList(qry.parameters()));
+      s.execute();
+    }
+     return GridMergeTable.Engine.getCreated();
+  }
+ catch (  SQLException|IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+}

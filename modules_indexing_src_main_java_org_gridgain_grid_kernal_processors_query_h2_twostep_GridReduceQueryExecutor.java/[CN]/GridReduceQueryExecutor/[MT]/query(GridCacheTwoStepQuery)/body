@@ -1,0 +1,25 @@
+{
+  long qryReqId=reqIdGen.incrementAndGet();
+  QueryRun r=new QueryRun();
+  r.tbls=new ArrayList<>();
+  try {
+    r.conn=h2.connectionForSpace(null);
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+  for (  GridCacheSqlQuery mapQry : qry.mapQueries())   r.tbls.add(createTable(r.conn,mapQry));
+  Collection<ClusterNode> nodes=ctx.grid().cluster().nodes();
+  r.latch=new CountDownLatch(r.tbls.size() * nodes.size());
+  this.runs.put(qryReqId,r);
+  try {
+    ctx.io().sendUserMessage(nodes,new GridQueryRequest(qryReqId,1000,qry.mapQueries()));
+    r.latch.await();
+    GridCacheSqlQuery rdc=qry.reduceQuery();
+    final ResultSet res=h2.executeSqlQueryWithTimer(r.conn,rdc.query(),F.asList(rdc.parameters()));
+    return new GridFinishedFuture(ctx,new Iter(res));
+  }
+ catch (  IgniteCheckedException|InterruptedException e) {
+    return new GridFinishedFuture<>(ctx,e);
+  }
+}
