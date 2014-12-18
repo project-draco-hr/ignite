@@ -1,17 +1,3 @@
 {
-  boolean found=false;
-  for (int i=0; i < gridCount(); i++) {
-    GridKernal grid=(GridKernal)grid(i);
-    GridCacheAdapter<Object,Object> cache=grid.context().cache().internalCache();
-    GridCacheEntryEx<Object,Object> e=cache.peekEx(key);
-    if (e == null && cache.context().isNear())     e=cache.context().near().dht().peekEx(key);
-    if (e == null)     assertTrue(!cache.affinity().isPrimaryOrBackup(grid.localNode(),key));
- else {
-      found=true;
-      assertEquals("Unexpected ttl for grid " + i,ttl,e.ttl());
-      if (ttl > 0)       assertTrue(e.expireTime() > 0);
- else       assertEquals(0,e.expireTime());
-    }
-  }
-  assertTrue(found);
+  checkTtl(key,ttl,false);
 }
