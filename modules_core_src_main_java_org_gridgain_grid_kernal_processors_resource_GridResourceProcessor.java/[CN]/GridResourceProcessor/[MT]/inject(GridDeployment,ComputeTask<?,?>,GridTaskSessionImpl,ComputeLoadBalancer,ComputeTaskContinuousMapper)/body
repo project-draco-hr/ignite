@@ -1,2 +1,17 @@
 {
+  if (log.isDebugEnabled())   log.debug("Injecting resources: " + task);
+  Object obj=unwrapTarget(task);
+  Class<? extends Annotation>[] filtered=ioc.filter(dep,obj,TASK_INJECTIONS);
+  if (filtered.length == 0)   return;
+  Class<?> taskCls=obj.getClass();
+  for (  Class<? extends Annotation> annCls : filtered) {
+    if (annCls == IgniteTaskSessionResource.class)     injectBasicResource(obj,IgniteTaskSessionResource.class,ses,dep,taskCls);
+ else     if (annCls == IgniteLoadBalancerResource.class)     injectBasicResource(obj,IgniteLoadBalancerResource.class,balancer,dep,taskCls);
+ else     if (annCls == IgniteTaskContinuousMapperResource.class)     injectBasicResource(obj,IgniteTaskContinuousMapperResource.class,mapper,dep,taskCls);
+ else     if (annCls == IgniteInstanceResource.class)     ioc.inject(obj,IgniteInstanceResource.class,gridInjector,dep,taskCls);
+ else     if (annCls == IgniteSpringApplicationContextResource.class)     ioc.inject(obj,IgniteSpringApplicationContextResource.class,springCtxInjector,dep,taskCls);
+ else     if (annCls == IgniteSpringResource.class)     ioc.inject(obj,IgniteSpringResource.class,springBeanInjector,dep,taskCls);
+ else     if (annCls == IgniteLoggerResource.class)     ioc.inject(obj,IgniteLoggerResource.class,logInjector,dep,taskCls);
+ else     if (annCls == IgniteServiceResource.class)     ioc.inject(obj,IgniteServiceResource.class,srvcInjector,dep,taskCls);
+  }
 }
