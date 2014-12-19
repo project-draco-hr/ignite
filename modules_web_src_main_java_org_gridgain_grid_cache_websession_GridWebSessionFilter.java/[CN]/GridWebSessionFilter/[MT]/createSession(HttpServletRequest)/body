@@ -1,2 +1,31 @@
 {
+  HttpSession ses=httpReq.getSession(true);
+  String sesId=sesIdTransformer != null ? sesIdTransformer.apply(ses.getId()) : ses.getId();
+  if (log.isDebugEnabled())   log.debug("Session created: " + sesId);
+  GridWebSession cached=new GridWebSession(ses,true);
+  try {
+    while (true) {
+      try {
+        GridCacheProjection<String,GridWebSession> cache0;
+        if (cached.getMaxInactiveInterval() > 0) {
+          ExpiryPolicy plc=new TouchedExpiryPolicy(new Duration(MILLISECONDS,cached.getMaxInactiveInterval() * 1000));
+          cache0=((GridCacheProjectionEx<String,GridWebSession>)cache).withExpiryPolicy(plc);
+        }
+ else         cache0=cache;
+        GridWebSession old=cache0.putIfAbsent(sesId,cached);
+        if (old != null) {
+          cached=old;
+          if (cached.isNew())           cached=new GridWebSession(cached,false);
+        }
+        break;
+      }
+ catch (      GridCachePartialUpdateException e) {
+        if (log.isDebugEnabled())         log.debug(e.getMessage());
+      }
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException("Failed to save session: " + sesId,e);
+  }
+  return cached;
 }
