@@ -4,7 +4,11 @@
   final int pageSize=msg.rows().size();
   QueryRun r=runs.get(qryReqId);
   GridMergeIndex idx=r.tbls.get(msg.query()).getScanIndex(null);
-  idx.addPage(new GridResultPage<Object>(node.id(),msg.query(),msg.rows()){
+  if (msg.allRows() != -1) {
+    idx.addCount(msg.allRows());
+    r.latch.countDown();
+  }
+  idx.addPage(new GridResultPage<UUID>(node.id(),msg){
     @Override public void fetchNextPage(){
       try {
         ctx.io().sendUserMessage(F.asList(node),new GridNextPageRequest(qryReqId,qry,pageSize));
@@ -15,8 +19,4 @@
     }
   }
 );
-  if (msg.allRows() != -1) {
-    idx.addCount(msg.allRows());
-    r.latch.countDown();
-  }
 }

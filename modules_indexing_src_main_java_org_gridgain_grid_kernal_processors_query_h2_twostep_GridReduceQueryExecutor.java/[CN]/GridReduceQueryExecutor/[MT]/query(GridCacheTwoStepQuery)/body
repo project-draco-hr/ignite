@@ -8,12 +8,16 @@
  catch (  IgniteCheckedException e) {
     throw new IgniteException(e);
   }
-  for (  GridCacheSqlQuery mapQry : qry.mapQueries())   r.tbls.add(createTable(r.conn,mapQry));
   Collection<ClusterNode> nodes=ctx.grid().cluster().nodes();
+  for (  GridCacheSqlQuery mapQry : qry.mapQueries()) {
+    GridMergeTable tbl=createTable(r.conn,mapQry);
+    tbl.getScanIndex(null).setNumberOfSources(nodes.size());
+    r.tbls.add(tbl);
+  }
   r.latch=new CountDownLatch(r.tbls.size() * nodes.size());
   this.runs.put(qryReqId,r);
   try {
-    ctx.io().sendUserMessage(nodes,new GridQueryRequest(qryReqId,1000,qry.mapQueries()));
+    ctx.io().sendUserMessage(nodes,new GridQueryRequest(qryReqId,1000,qry.mapQueries()),GridTopic.TOPIC_QUERY,false,0);
     r.latch.await();
     GridCacheSqlQuery rdc=qry.reduceQuery();
     final ResultSet res=h2.executeSqlQueryWithTimer(r.conn,rdc.query(),F.asList(rdc.parameters()));
