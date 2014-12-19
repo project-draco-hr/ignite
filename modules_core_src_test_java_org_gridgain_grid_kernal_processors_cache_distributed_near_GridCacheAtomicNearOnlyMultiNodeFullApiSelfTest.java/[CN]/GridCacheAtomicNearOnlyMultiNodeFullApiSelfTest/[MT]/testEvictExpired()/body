@@ -1,2 +1,19 @@
 {
+  GridCache<String,Integer> cache=cache();
+  String key=primaryKeysForCache(cache,1).get(0);
+  cache.put(key,1);
+  assertEquals((Integer)1,cache.get(key));
+  long ttl=500;
+  grid(0).jcache(null).withExpiryPolicy(new TouchedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS,ttl))).put(key,1);
+  Thread.sleep(ttl + 100);
+  assertTrue(cache.evict(key));
+  assertNull(cache.peek(key));
+  assertNull(cache.promote(key));
+  assertNull(cache.peek(key));
+  assertTrue(cache.isEmpty());
+  for (int i=0; i < gridCount(); i++) {
+    if (cache(i).entry(key).primary())     cache(i).reload(key);
+  }
+  cache.reload(key);
+  assertEquals((Integer)1,cache.peek(key));
 }

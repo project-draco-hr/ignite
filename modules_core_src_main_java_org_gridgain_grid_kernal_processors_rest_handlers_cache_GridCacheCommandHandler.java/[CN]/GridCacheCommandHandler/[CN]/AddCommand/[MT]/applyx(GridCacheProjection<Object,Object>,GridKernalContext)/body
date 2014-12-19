@@ -1,8 +1,7 @@
 {
-  GridCacheEntry<Object,Object> entry=c.entry(key);
-  if (entry != null) {
-    if (ttl != null)     entry.timeToLive(ttl);
-    return entry.setxIfAbsentAsync(val);
+  if (ttl != null) {
+    Duration duration=new Duration(TimeUnit.MILLISECONDS,ttl);
+    c=((GridCacheProjectionEx<Object,Object>)c).withExpiryPolicy(new ModifiedExpiryPolicy(duration));
   }
- else   return new GridFinishedFuture<Object>(ctx,false);
+  return c.putxIfAbsentAsync(key,val);
 }

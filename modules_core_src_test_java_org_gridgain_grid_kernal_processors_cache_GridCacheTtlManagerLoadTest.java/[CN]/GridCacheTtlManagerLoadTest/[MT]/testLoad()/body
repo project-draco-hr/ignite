@@ -5,12 +5,10 @@
     final AtomicBoolean stop=new AtomicBoolean();
     IgniteFuture<?> fut=multithreadedAsync(new Callable<Object>(){
       @Override public Object call() throws Exception {
-        GridCache<Object,Object> cache=g.cache(null);
+        IgniteCache<Object,Object> cache=g.jcache(null).withExpiryPolicy(new TouchedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS,1000)));
         long key=0;
         while (!stop.get()) {
-          GridCacheEntry<Object,Object> entry=cache.entry(key);
-          entry.timeToLive(1000);
-          entry.setValue(key);
+          cache.put(key,key);
           key++;
         }
         return null;
