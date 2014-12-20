@@ -11,7 +11,7 @@
       @IgniteInstanceResource private Ignite ignite;
       @Override public Void applyx(      final Integer i) throws IgniteCheckedException {
         GridCache<String,int[]> cache=this.ignite.cache(null);
-        try (GridCacheTx tx=cache.txStart(concur,isolation)){
+        try (IgniteTx tx=cache.txStart(concur,isolation)){
           int[] arr=cache.get("TestKey");
           if (arr == null)           arr=new int[jobCnt];
           arr[i]=1;
@@ -29,7 +29,7 @@
   for (  IgniteFuture<?> fut : futs)   fut.get();
   for (int i=0; i < GRID_CNT; i++) {
     GridCacheProjection<String,int[]> c=grid(i).cache(null).projection(String.class,int[].class);
-    try (GridCacheTx tx=c.txStart(concur,isolation)){
+    try (IgniteTx tx=c.txStart(concur,isolation)){
       int[] arr=c.get("TestKey");
       assertNotNull(arr);
       assertEquals(jobCnt,arr.length);
