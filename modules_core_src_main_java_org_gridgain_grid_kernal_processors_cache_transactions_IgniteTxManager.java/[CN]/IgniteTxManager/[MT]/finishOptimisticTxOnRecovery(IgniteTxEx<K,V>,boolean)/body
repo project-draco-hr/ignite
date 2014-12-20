@@ -1,0 +1,13 @@
+{
+  if (log.isDebugEnabled())   log.debug("Finishing prepared transaction [tx=" + tx + ", commit="+ commit+ ']');
+  if (!tx.markFinalizing(RECOVERY_FINISH)) {
+    if (log.isDebugEnabled())     log.debug("Will not try to commit prepared transaction (could not mark finalized): " + tx);
+    return;
+  }
+  if (tx instanceof GridDistributedTxRemoteAdapter) {
+    IgniteTxRemoteEx<K,V> rmtTx=(IgniteTxRemoteEx<K,V>)tx;
+    rmtTx.doneRemote(tx.xidVersion(),Collections.<GridCacheVersion>emptyList(),Collections.<GridCacheVersion>emptyList(),Collections.<GridCacheVersion>emptyList());
+  }
+  if (commit)   tx.commitAsync().listenAsync(new CommitListener(tx));
+ else   tx.rollbackAsync();
+}
