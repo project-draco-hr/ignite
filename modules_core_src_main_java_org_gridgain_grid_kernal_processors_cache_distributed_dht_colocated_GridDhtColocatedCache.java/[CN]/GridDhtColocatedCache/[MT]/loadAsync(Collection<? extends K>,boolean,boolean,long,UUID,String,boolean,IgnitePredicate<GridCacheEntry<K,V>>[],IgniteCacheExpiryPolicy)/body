@@ -1,9 +1,7 @@
 {
-  ctx.checkSecurity(GridSecurityPermission.CACHE_READ);
-  if (F.isEmpty(keys))   return new GridFinishedFuture<>(ctx.kernalContext(),Collections.<K,V>emptyMap());
+  if (keys == null || keys.isEmpty())   return new GridFinishedFuture<>(ctx.kernalContext(),Collections.<K,V>emptyMap());
   if (keyCheck)   validateCacheKeys(keys);
-  long topVer=ctx.affinity().affinityTopologyVersion();
-  final GetExpiryPolicy expiry=accessExpiryPolicy(expiryPlc);
+  if (expiryPlc == null)   expiryPlc=accessExpiryPolicy(ctx.expiry());
   if (!reload && !forcePrimary) {
     Map<K,V> locVals=new HashMap<>(keys.size(),1.0f);
     boolean success=true;
@@ -14,17 +12,14 @@
           entry=ctx.isSwapOrOffheapEnabled() ? entryEx(key) : peekEx(key);
           if (entry != null) {
             boolean isNew=entry.isNewLocked();
-            V v=entry.innerGet(null,true,false,true,true,true,true,false,subjId,null,taskName,filter,expiry);
+            V v=entry.innerGet(null,true,false,true,true,true,true,false,subjId,null,taskName,filter,expiryPlc);
             if (v == null) {
               GridCacheVersion obsoleteVer=context().versions().next();
               if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(key);
               success=false;
             }
  else {
-              if (ctx.portableEnabled() && deserializePortable) {
-                key=(K)ctx.unwrapPortableIfNeeded(key,false);
-                v=(V)ctx.unwrapPortableIfNeeded(v,false);
-              }
+              if (ctx.portableEnabled())               v=(V)ctx.unwrapPortableIfNeeded(v,!deserializePortable);
               locVals.put(key,v);
             }
           }
@@ -44,18 +39,18 @@ catch (        IgniteCheckedException e) {
           return new GridFinishedFuture<>(ctx.kernalContext(),e);
         }
  finally {
-          if (entry != null)           ctx.evicts().touch(entry,topVer);
+          if (entry != null)           context().evicts().touch(entry,topVer);
         }
       }
       if (!success)       break;
     }
     if (success) {
-      sendTtlUpdateRequest(expiry);
+      sendTtlUpdateRequest(expiryPlc);
       return ctx.wrapCloneMap(new GridFinishedFuture<>(ctx.kernalContext(),locVals));
     }
   }
-  if (expiry != null)   expiry.reset();
-  GridPartitionedGetFuture<K,V> fut=new GridPartitionedGetFuture<>(ctx,keys,topVer,reload,forcePrimary,filter,subjId,taskName,deserializePortable,expiry);
+  if (expiryPlc != null)   expiryPlc.reset();
+  GridPartitionedGetFuture<K,V> fut=new GridPartitionedGetFuture<>(ctx,keys,topVer,reload,forcePrimary,filter,subjId,taskName,deserializePortable,expiryPlc);
   fut.init();
   return ctx.wrapCloneMap(fut);
 }
