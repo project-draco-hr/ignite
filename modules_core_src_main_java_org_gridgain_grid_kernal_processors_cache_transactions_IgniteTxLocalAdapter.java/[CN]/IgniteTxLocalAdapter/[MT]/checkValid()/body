@@ -1,0 +1,10 @@
+{
+  if (isRollbackOnly()) {
+    if (timedOut())     throw new IgniteTxTimeoutException("Cache transaction timed out: " + this);
+    IgniteTxState state=state();
+    if (state == ROLLING_BACK || state == ROLLED_BACK)     throw new IgniteTxRollbackException("Cache transaction is marked as rollback-only " + "(will be rolled back automatically): " + this);
+    if (state == UNKNOWN)     throw new IgniteTxHeuristicException("Cache transaction is in unknown state " + "(remote transactions will be invalidated): " + this);
+    throw new IgniteCheckedException("Cache transaction marked as rollback-only: " + this);
+  }
+  if (remainingTime() == 0 && setRollbackOnly())   throw new IgniteTxTimeoutException("Cache transaction timed out " + "(was rolled back automatically): " + this);
+}

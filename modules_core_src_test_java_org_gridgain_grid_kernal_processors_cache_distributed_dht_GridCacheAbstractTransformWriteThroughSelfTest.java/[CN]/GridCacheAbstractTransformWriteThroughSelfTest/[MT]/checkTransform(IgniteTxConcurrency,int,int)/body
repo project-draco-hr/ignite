@@ -1,0 +1,36 @@
+{
+  GridCacheProjection<String,Integer> cache=cache(0);
+  Collection<String> keys=keysForType(nodeType);
+  for (  String key : keys)   cache.put(key,1);
+  GridCacheGenericTestStore<String,Integer> nearStore=stores.get(0);
+  nearStore.reset();
+  for (  String key : keys)   cache.clear(key);
+  info(">>> Starting transform transaction");
+  try (IgniteTx tx=cache.txStart(concurrency,READ_COMMITTED)){
+    if (op == OP_UPDATE) {
+      for (      String key : keys)       cache.transform(key,INCR_CLOS);
+    }
+ else {
+      for (      String key : keys)       cache.transform(key,RMV_CLOS);
+    }
+    tx.commit();
+  }
+   if (batchUpdate()) {
+    assertEquals(0,nearStore.getPutCount());
+    assertEquals(0,nearStore.getRemoveCount());
+    if (op == OP_UPDATE)     assertEquals(1,nearStore.getPutAllCount());
+ else     assertEquals(1,nearStore.getRemoveAllCount());
+  }
+ else {
+    assertEquals(0,nearStore.getPutAllCount());
+    assertEquals(0,nearStore.getRemoveAllCount());
+    if (op == OP_UPDATE)     assertEquals(keys.size(),nearStore.getPutCount());
+ else     assertEquals(keys.size(),nearStore.getRemoveCount());
+  }
+  if (op == OP_UPDATE) {
+    for (    String key : keys)     assertEquals((Integer)2,nearStore.getMap().get(key));
+  }
+ else {
+    for (    String key : keys)     assertNull(nearStore.getMap().get(key));
+  }
+}

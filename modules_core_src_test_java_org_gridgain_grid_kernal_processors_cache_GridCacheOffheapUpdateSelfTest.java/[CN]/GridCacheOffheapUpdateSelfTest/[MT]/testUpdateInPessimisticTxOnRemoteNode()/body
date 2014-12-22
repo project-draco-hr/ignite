@@ -5,16 +5,16 @@
     int key=0;
     while (!rmtCache.affinity().isPrimary(grid(1).localNode(),key))     key++;
     GridCache<Object,Object> locCache=grid(1).cache(null);
-    try (GridCacheTx tx=locCache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+    try (IgniteTx tx=locCache.txStart(PESSIMISTIC,REPEATABLE_READ)){
       locCache.putxIfAbsent(key,0);
       tx.commit();
     }
-     try (GridCacheTx tx=rmtCache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+     try (IgniteTx tx=rmtCache.txStart(PESSIMISTIC,REPEATABLE_READ)){
       assertEquals(0,rmtCache.get(key));
       rmtCache.putx(key,1);
       tx.commit();
     }
-     try (GridCacheTx tx=rmtCache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+     try (IgniteTx tx=rmtCache.txStart(PESSIMISTIC,REPEATABLE_READ)){
       assertEquals(1,rmtCache.get(key));
       rmtCache.putx(key,2);
       tx.commit();
