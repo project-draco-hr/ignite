@@ -1,0 +1,16 @@
+{
+  GridCacheProjection<String,Integer> cache=cache();
+  cache.put("key",4);
+  IgniteTx tx=txEnabled() ? cache.txStart(concurrency,READ_COMMITTED) : null;
+  try {
+    cache.remove("key");
+    cache.transform("key",INCR_CLOS);
+    cache.transform("key",INCR_CLOS);
+    cache.transform("key",INCR_CLOS);
+    if (tx != null)     tx.commit();
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
+  assertEquals((Integer)3,cache.get("key"));
+}
