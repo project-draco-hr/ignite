@@ -1,0 +1,35 @@
+{
+  if (!tx.markFinalizing(RECOVERY_FINISH)) {
+    if (log.isDebugEnabled())     log.debug("Will not try to finish pessimistic transaction (could not mark as finalizing): " + tx);
+    return;
+  }
+  if (tx instanceof GridDistributedTxRemoteAdapter) {
+    IgniteTxRemoteEx<K,V> rmtTx=(IgniteTxRemoteEx<K,V>)tx;
+    rmtTx.doneRemote(tx.xidVersion(),Collections.<GridCacheVersion>emptyList(),Collections.<GridCacheVersion>emptyList(),Collections.<GridCacheVersion>emptyList());
+  }
+  try {
+    tx.prepare();
+    if (commitInfo != null) {
+      for (      IgniteTxEntry<K,V> entry : commitInfo.recoveryWrites()) {
+        IgniteTxEntry<K,V> write=tx.writeMap().get(entry.txKey());
+        if (write != null) {
+          GridCacheEntryEx<K,V> cached=write.cached();
+          IgniteTxEntry<K,V> recovered=entry.cleanCopy(write.context());
+          if (cached == null || cached.detached())           cached=write.context().cache().entryEx(entry.key(),tx.topologyVersion());
+          recovered.cached(cached,cached.keyBytes());
+          tx.writeMap().put(entry.txKey(),recovered);
+          continue;
+        }
+        ((IgniteTxAdapter<K,V>)tx).recoveryWrites(commitInfo.recoveryWrites());
+        IgniteTxEntry<K,V> read=tx.readMap().remove(entry.txKey());
+        if (read != null)         tx.writeMap().put(entry.txKey(),entry);
+      }
+      tx.commitAsync().listenAsync(new CommitListener(tx));
+    }
+ else     tx.rollbackAsync();
+  }
+ catch (  IgniteCheckedException e) {
+    U.error(log,"Failed to prepare pessimistic transaction (will invalidate): " + tx,e);
+    salvageTx(tx);
+  }
+}
