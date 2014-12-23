@@ -1,0 +1,39 @@
+{
+  cache.removeAll(keys);
+  log.info("Test invokeAll [keys=" + keys + ']');
+  IncrementProcessor incProcessor=new IncrementProcessor();
+  Map<Integer,EntryProcessorResult<Integer>> resMap=cache.invokeAll(keys,incProcessor);
+  Map<Object,Object> exp=new HashMap<>();
+  for (  Integer key : keys)   exp.put(key,-1);
+  checkResult(resMap,exp);
+  for (  Integer key : keys)   checkValue(key,1);
+  resMap=cache.invokeAll(keys,incProcessor);
+  exp=new HashMap<>();
+  for (  Integer key : keys)   exp.put(key,1);
+  checkResult(resMap,exp);
+  for (  Integer key : keys)   checkValue(key,2);
+  resMap=cache.invokeAll(keys,new ArgumentsSumProcessor(),10,20,30);
+  for (  Integer key : keys)   exp.put(key,3);
+  checkResult(resMap,exp);
+  for (  Integer key : keys)   checkValue(key,62);
+  resMap=cache.invokeAll(keys,new ExceptionProcessor(null));
+  for (  Integer key : keys) {
+    final EntryProcessorResult<Integer> res=resMap.get(key);
+    assertNotNull("No result for " + key);
+    GridTestUtils.assertThrows(log,new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        res.get();
+        return null;
+      }
+    }
+,EntryProcessorException.class,"Test processor exception.");
+  }
+  for (  Integer key : keys)   checkValue(key,62);
+  resMap=cache.invokeAll(keys,new RemoveProcessor(null));
+  for (  Integer key : keys) {
+    final EntryProcessorResult<Integer> res=resMap.get(key);
+    assertNotNull("No result for " + key);
+    assertNull(res.get());
+  }
+  for (  Integer key : keys)   checkValue(key,null);
+}

@@ -1,3 +1,15 @@
 {
-  throw new UnsupportedOperationException();
+  try {
+    GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+    try {
+      EntryProcessorResult<T> res=delegate.invoke(key,entryProcessor,args).get();
+      return res.get();
+    }
+  finally {
+      gate.leave(prev);
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw new CacheException(e);
+  }
 }

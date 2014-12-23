@@ -1,0 +1,30 @@
+{
+  final IgniteCache<Integer,Integer> cache=jcache();
+  IncrementProcessor incProcessor=new IncrementProcessor();
+  for (  final Integer key : keys()) {
+    log.info("Test invoke [key=" + key + ']');
+    cache.remove(key);
+    Integer res=cache.invoke(key,incProcessor);
+    assertEquals(-1,(int)res);
+    checkValue(key,1);
+    res=cache.invoke(key,incProcessor);
+    assertEquals(1,(int)res);
+    checkValue(key,2);
+    res=cache.invoke(key,incProcessor);
+    assertEquals(2,(int)res);
+    checkValue(key,3);
+    res=cache.invoke(key,new ArgumentsSumProcessor(),10,20,30);
+    assertEquals(3,(int)res);
+    checkValue(key,63);
+    GridTestUtils.assertThrows(log,new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        cache.invoke(key,new ExceptionProcessor(63));
+        return null;
+      }
+    }
+,EntryProcessorException.class,"Test processor exception.");
+    checkValue(key,63);
+    assertNull(cache.invoke(key,new RemoveProcessor(63)));
+    checkValue(key,null);
+  }
+}
