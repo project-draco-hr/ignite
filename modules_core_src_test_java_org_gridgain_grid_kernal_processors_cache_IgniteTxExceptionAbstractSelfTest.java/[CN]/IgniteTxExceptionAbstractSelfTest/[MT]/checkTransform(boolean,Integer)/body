@@ -1,0 +1,23 @@
+{
+  if (putBefore) {
+    idxSpi.forceFail(false);
+    info("Put key: " + key);
+    grid(0).cache(null).put(key,1);
+  }
+  for (int i=0; i < gridCount(); i++)   grid(i).cache(null).get(key);
+  idxSpi.forceFail(true);
+  info("Going to transform: " + key);
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      grid(0).cache(null).transform(key,new IgniteClosure<Object,Object>(){
+        @Override public Object apply(        Object o){
+          return 2;
+        }
+      }
+);
+      return null;
+    }
+  }
+,IgniteTxHeuristicException.class,null);
+  checkEmpty(key);
+}

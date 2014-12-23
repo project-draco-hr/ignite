@@ -1,7 +1,10 @@
 {
   super.onKernalStart0();
   if (plcEnabled && evictSync && !cctx.isNear()) {
-    backupWorker.addEvent(new IgniteDiscoveryEvent(cctx.localNode(),"Dummy event.",EVT_NODE_JOINED,cctx.localNode()));
+    ClusterNode locNode=cctx.localNode();
+    IgniteDiscoveryEvent evt=new IgniteDiscoveryEvent(locNode,"Dummy event.",EVT_NODE_JOINED,locNode);
+    evt.topologySnapshot(locNode.order(),cctx.discovery().topology(locNode.order()));
+    backupWorker.addEvent(evt);
     backupWorkerThread=new IgniteThread(backupWorker);
     backupWorkerThread.start();
   }

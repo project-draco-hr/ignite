@@ -1,0 +1,13 @@
+{
+  for (  IgniteTxEntry<K,V> e : writeMap().values()) {
+    try {
+      GridCacheEntryEx<K,V> cacheEntry=e.cached();
+      if (e.op() != NOOP)       cacheEntry.invalidate(null,xidVer);
+    }
+ catch (    Throwable t) {
+      U.error(log,"Failed to invalidate transaction entries while reverting a commit.",t);
+      break;
+    }
+  }
+  cctx.tm().uncommitTx(this);
+}

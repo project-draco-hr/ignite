@@ -1,9 +1,11 @@
 {
   checkObsolete();
   ReaderId reader=readerId(nodeId);
-  if (reader == null || reader.messageId() > msgId)   return false;
-  rdrs=new LinkedList<>(rdrs);
-  rdrs.remove(reader);
-  rdrs=Collections.unmodifiableList(rdrs);
+  if (reader == null || (reader.messageId() > msgId && msgId >= 0))   return false;
+  List<ReaderId<K,V>> rdrs=new ArrayList<>(this.rdrs.size());
+  for (  ReaderId<K,V> rdr : this.rdrs) {
+    if (!rdr.equals(reader))     rdrs.add(rdr);
+  }
+  this.rdrs=rdrs.isEmpty() ? Collections.<ReaderId<K,V>>emptyList() : Collections.unmodifiableList(rdrs);
   return true;
 }
