@@ -1,0 +1,37 @@
+{
+  StatementBuilder buff=new StatementBuilder("SELECT");
+  if (distinct)   buff.append(" DISTINCT");
+  for (  GridSqlElement expression : select) {
+    buff.appendExceptFirst(",");
+    buff.append('\n');
+    buff.append(StringUtils.indent(expression.getSQL(),4,false));
+  }
+  buff.append("\nFROM ").append(from.getSQL());
+  if (where != null)   buff.append("\nWHERE ").append(StringUtils.unEnclose(where.getSQL()));
+  if (!groups.isEmpty()) {
+    buff.append("\nGROUP BY ");
+    buff.resetCount();
+    for (    GridSqlElement expression : groups) {
+      buff.appendExceptFirst(", ");
+      if (expression instanceof GridAlias)       buff.append(StringUtils.unEnclose(((GridAlias)expression).getNonAliasExpression().getSQL()));
+ else       buff.append(StringUtils.unEnclose(expression.getSQL()));
+    }
+  }
+  if (having != null)   buff.append("\nHAVING ").append(StringUtils.unEnclose(having.getSQL()));
+  if (!sort.isEmpty()) {
+    buff.append("\nORDER BY ");
+    buff.resetCount();
+    for (    Map.Entry<GridSqlElement,Integer> entry : sort.entrySet()) {
+      buff.appendExceptFirst(", ");
+      GridSqlElement expression=entry.getKey();
+      int idx=select.indexOf(expression);
+      if (idx >= 0)       buff.append(idx + 1);
+ else       buff.append('=').append(StringUtils.unEnclose(expression.getSQL()));
+      int type=entry.getValue();
+      if ((type & SortOrder.DESCENDING) != 0)       buff.append(" DESC");
+      if ((type & SortOrder.NULLS_FIRST) != 0)       buff.append(" NULLS FIRST");
+ else       if ((type & SortOrder.NULLS_LAST) != 0)       buff.append(" NULLS LAST");
+    }
+  }
+  return buff.toString();
+}

@@ -1,0 +1,17 @@
+{
+  GridSqlElement res=(GridSqlElement)h2ObjToGridObj.get(filter);
+  if (res == null) {
+    Table tbl=filter.getTable();
+    if (tbl instanceof TableBase)     res=new GridTable(tbl.getSchema().getName(),tbl.getName());
+ else     if (tbl instanceof TableView) {
+      Query qry=GridQueryUtils.getFieldValue(tbl,"viewQuery");
+      assert0(qry instanceof Select,qry);
+      res=new GridSubquery(toGridSelect((Select)qry));
+    }
+ else     throw new IgniteException("Unsupported query: " + filter);
+    String alias=GridQueryUtils.getFieldValue(filter,"alias");
+    if (alias != null)     res=new GridAlias(alias,res,false);
+    h2ObjToGridObj.put(filter,res);
+  }
+  return res;
+}
