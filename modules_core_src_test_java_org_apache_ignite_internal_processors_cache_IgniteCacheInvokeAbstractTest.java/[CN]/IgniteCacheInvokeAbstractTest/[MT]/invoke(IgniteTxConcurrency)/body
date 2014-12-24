@@ -1,0 +1,47 @@
+{
+  final IgniteCache<Integer,Integer> cache=jcache();
+  IncrementProcessor incProcessor=new IncrementProcessor();
+  for (  final Integer key : keys()) {
+    log.info("Test invoke [key=" + key + ", txMode="+ txMode+ ']');
+    cache.remove(key);
+    IgniteTx tx=startTx(txMode);
+    Integer res=cache.invoke(key,incProcessor);
+    if (tx != null)     tx.commit();
+    assertEquals(-1,(int)res);
+    checkValue(key,1);
+    tx=startTx(txMode);
+    res=cache.invoke(key,incProcessor);
+    if (tx != null)     tx.commit();
+    assertEquals(1,(int)res);
+    checkValue(key,2);
+    tx=startTx(txMode);
+    res=cache.invoke(key,incProcessor);
+    if (tx != null)     tx.commit();
+    assertEquals(2,(int)res);
+    checkValue(key,3);
+    tx=startTx(txMode);
+    res=cache.invoke(key,new ArgumentsSumProcessor(),10,20,30);
+    if (tx != null)     tx.commit();
+    assertEquals(3,(int)res);
+    checkValue(key,63);
+    tx=startTx(txMode);
+    String strRes=cache.invoke(key,new ToStringProcessor());
+    if (tx != null)     tx.commit();
+    assertEquals("63",strRes);
+    checkValue(key,63);
+    tx=startTx(txMode);
+    GridTestUtils.assertThrows(log,new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        cache.invoke(key,new ExceptionProcessor(63));
+        return null;
+      }
+    }
+,EntryProcessorException.class,"Test processor exception.");
+    if (tx != null)     tx.commit();
+    checkValue(key,63);
+    tx=startTx(txMode);
+    assertNull(cache.invoke(key,new RemoveProcessor(63)));
+    if (tx != null)     tx.commit();
+    checkValue(key,null);
+  }
+}
