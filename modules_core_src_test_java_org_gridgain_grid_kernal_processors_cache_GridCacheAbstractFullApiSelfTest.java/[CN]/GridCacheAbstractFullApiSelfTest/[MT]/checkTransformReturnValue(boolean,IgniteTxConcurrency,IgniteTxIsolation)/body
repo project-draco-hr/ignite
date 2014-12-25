@@ -1,10 +1,10 @@
 {
-  GridCacheProjection<String,Integer> cache=cache();
+  IgniteCache<String,Integer> cache=jcache();
   if (!put)   cache.put("key",1);
-  IgniteTx tx=txEnabled() ? cache.txStart(concurrency,isolation) : null;
+  IgniteTx tx=txEnabled() ? ignite(0).transactions().txStart(concurrency,isolation) : null;
   try {
     if (put)     cache.put("key",1);
-    cache.transform("key",INCR_PROCESSOR);
+    cache.invoke("key",INCR_PROCESSOR);
     assertEquals((Integer)2,cache.get("key"));
     if (tx != null) {
       assertEquals((Integer)2,cache.get("key"));

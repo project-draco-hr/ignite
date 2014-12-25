@@ -16,7 +16,7 @@
     }
   }
   if (colocatedKey.affinityKey() == null) {
-    dataCachePrj.transform(colocatedKey,new UpdateClosure(startOff,data));
+    dataCachePrj.invoke(colocatedKey,new UpdateProcessor(startOff,data));
     return;
   }
   if (startOff == 0) {
@@ -28,13 +28,13 @@
   try {
     Map<GridGgfsBlockKey,byte[]> vals=dataCachePrj.getAll(F.asList(colocatedKey,key));
     boolean hasVal=false;
-    UpdateClosure transformClos=new UpdateClosure(startOff,data);
+    UpdateProcessor transformClos=new UpdateProcessor(startOff,data);
     if (vals.get(colocatedKey) != null) {
-      dataCachePrj.transform(colocatedKey,transformClos);
+      dataCachePrj.invoke(colocatedKey,transformClos);
       hasVal=true;
     }
     if (vals.get(key) != null) {
-      dataCachePrj.transform(key,transformClos);
+      dataCachePrj.invoke(key,transformClos);
       hasVal=true;
     }
     if (!hasVal)     throw new IgniteCheckedException("Failed to write partial block (no previous data was found in cache) " + "[key=" + colocatedKey + ", relaxedKey="+ key+ ", startOff="+ startOff+ ", dataLen="+ data.length+ ']');
