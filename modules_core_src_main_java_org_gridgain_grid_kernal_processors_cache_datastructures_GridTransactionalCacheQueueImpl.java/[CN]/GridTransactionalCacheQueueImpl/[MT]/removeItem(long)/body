@@ -2,11 +2,11 @@
   try {
     int cnt=0;
     while (true) {
-      try (IgniteTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
-        Long idx=(Long)cache.transformAndCompute(queueKey,new RemoveClosure(id,rmvIdx));
+      try (IgniteTx tx=txs.txStart(PESSIMISTIC,REPEATABLE_READ)){
+        Long idx=(Long)cache.invoke(queueKey,new RemoveProcessor(id,rmvIdx));
         if (idx != null) {
           checkRemoved(idx);
-          boolean rmv=cache.removex(itemKey(idx));
+          boolean rmv=cache.remove(itemKey(idx));
           assert rmv;
         }
         tx.commit();

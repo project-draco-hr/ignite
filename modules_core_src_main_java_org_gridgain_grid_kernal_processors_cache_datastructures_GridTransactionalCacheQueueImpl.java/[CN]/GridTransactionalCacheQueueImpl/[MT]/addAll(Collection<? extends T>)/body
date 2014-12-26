@@ -4,8 +4,8 @@
     boolean retVal;
     int cnt=0;
     while (true) {
-      try (IgniteTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
-        Long idx=(Long)cache.transformAndCompute(queueKey,new AddClosure(id,items.size()));
+      try (IgniteTx tx=txs.txStart(PESSIMISTIC,REPEATABLE_READ)){
+        Long idx=(Long)cache.invoke(queueKey,new AddProcessor(id,items.size()));
         if (idx != null) {
           checkRemoved(idx);
           Map<GridCacheQueueItemKey,T> putMap=new HashMap<>();
@@ -13,7 +13,7 @@
             putMap.put(itemKey(idx),item);
             idx++;
           }
-          cache.putAll(putMap,null);
+          cache.putAll(putMap);
           retVal=true;
         }
  else         retVal=false;

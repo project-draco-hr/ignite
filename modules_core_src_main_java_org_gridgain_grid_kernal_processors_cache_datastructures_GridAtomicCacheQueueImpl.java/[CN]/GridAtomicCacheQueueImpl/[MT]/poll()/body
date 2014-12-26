@@ -1,7 +1,7 @@
 {
   try {
     while (true) {
-      Long idx=transformHeader(new PollClosure(id));
+      Long idx=transformHeader(new PollProcessor(id));
       if (idx == null)       return null;
       checkRemoved(idx);
       GridCacheQueueItemKey key=itemKey(idx);
@@ -9,16 +9,16 @@
       long stop=0;
       while (true) {
         try {
-          T data=(T)cache.remove(key,null);
+          T data=(T)cache.getAndRemove(key);
           if (data != null)           return data;
           if (stop == 0)           stop=U.currentTimeMillis() + RETRY_TIMEOUT;
           while (U.currentTimeMillis() < stop) {
-            data=(T)cache.remove(key,null);
+            data=(T)cache.getAndRemove(key);
             if (data != null)             return data;
           }
           break;
         }
- catch (        GridCachePartialUpdateException e) {
+ catch (        CachePartialUpdateException e) {
           if (cnt++ == MAX_UPDATE_RETRIES)           throw e;
  else {
             U.warn(log,"Failed to remove queue item, will retry [err=" + e + ']');

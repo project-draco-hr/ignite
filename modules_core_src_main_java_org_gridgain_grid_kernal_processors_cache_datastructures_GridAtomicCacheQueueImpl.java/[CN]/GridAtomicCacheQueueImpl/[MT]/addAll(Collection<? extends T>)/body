@@ -1,7 +1,7 @@
 {
   A.notNull(items,"items");
   try {
-    Long idx=transformHeader(new AddClosure(id,items.size()));
+    Long idx=transformHeader(new AddProcessor(id,items.size()));
     if (idx == null)     return false;
     checkRemoved(idx);
     Map<GridCacheQueueItemKey,T> putMap=new HashMap<>();
@@ -12,10 +12,10 @@
     int cnt=0;
     while (true) {
       try {
-        cache.putAll(putMap,null);
+        cache.putAll(putMap);
         break;
       }
- catch (      GridCachePartialUpdateException e) {
+ catch (      CachePartialUpdateException e) {
         if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
  else {
           U.warn(log,"Failed to add items, will retry [err=" + e + ']');

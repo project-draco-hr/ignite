@@ -5,12 +5,11 @@
     int cnt=0;
     while (true) {
       try {
-        try (IgniteTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
-          Long idx=(Long)cache.transformAndCompute(queueKey,new AddClosure(id,1));
+        try (IgniteTx tx=txs.txStart(PESSIMISTIC,REPEATABLE_READ)){
+          Long idx=(Long)cache.invoke(queueKey,new AddProcessor(id,1));
           if (idx != null) {
             checkRemoved(idx);
-            boolean putx=cache.putx(itemKey(idx),item,null);
-            assert putx;
+            cache.put(itemKey(idx),item);
             retVal=true;
           }
  else           retVal=false;
