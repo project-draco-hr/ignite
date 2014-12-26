@@ -1,7 +1,12 @@
 {
-  invoke(null);
+  IgniteCache<Integer,Integer> cache=jcache();
+  invoke(cache,null);
   if (atomicityMode() == TRANSACTIONAL) {
-    invoke(PESSIMISTIC);
-    invoke(OPTIMISTIC);
+    invoke(cache,PESSIMISTIC);
+    invoke(cache,OPTIMISTIC);
+  }
+ else   if (gridCount() > 1) {
+    cache=cache.flagsOn(FORCE_TRANSFORM_BACKUP);
+    invoke(cache,null);
   }
 }
