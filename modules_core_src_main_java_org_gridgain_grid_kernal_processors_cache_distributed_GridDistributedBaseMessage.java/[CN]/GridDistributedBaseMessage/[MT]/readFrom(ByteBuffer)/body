@@ -3,25 +3,23 @@
   if (!super.readFrom(buf))   return false;
 switch (commState.idx) {
 case 3:
-    byte[] candsByIdxBytes0=commState.getByteArray("candsByIdxBytes");
-  if (candsByIdxBytes0 == BYTE_ARR_NOT_READ)   return false;
-candsByIdxBytes=candsByIdxBytes0;
+    candsByIdxBytes=commState.getByteArray("candsByIdxBytes");
+  if (!commState.lastRead())   return false;
 commState.idx++;
 case 4:
-byte[] candsByKeyBytes0=commState.getByteArray("candsByKeyBytes");
-if (candsByKeyBytes0 == BYTE_ARR_NOT_READ) return false;
-candsByKeyBytes=candsByKeyBytes0;
+candsByKeyBytes=commState.getByteArray("candsByKeyBytes");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 5:
 if (commState.readSize == -1) {
-if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
 }
 if (commState.readSize >= 0) {
 if (committedVers == null) committedVers=new ArrayList<>(commState.readSize);
 for (int i=commState.readItems; i < commState.readSize; i++) {
 GridCacheVersion _val=commState.getCacheVersion(null);
-if (_val == CACHE_VER_NOT_READ) return false;
+if (!commState.lastRead()) return false;
 committedVers.add((GridCacheVersion)_val);
 commState.readItems++;
 }
@@ -31,14 +29,14 @@ commState.readItems=0;
 commState.idx++;
 case 6:
 if (commState.readSize == -1) {
-if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
 }
 if (commState.readSize >= 0) {
 if (rolledbackVers == null) rolledbackVers=new ArrayList<>(commState.readSize);
 for (int i=commState.readItems; i < commState.readSize; i++) {
 GridCacheVersion _val=commState.getCacheVersion(null);
-if (_val == CACHE_VER_NOT_READ) return false;
+if (!commState.lastRead()) return false;
 rolledbackVers.add((GridCacheVersion)_val);
 commState.readItems++;
 }
@@ -47,9 +45,8 @@ commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
 case 7:
-GridCacheVersion ver0=commState.getCacheVersion("ver");
-if (ver0 == CACHE_VER_NOT_READ) return false;
-ver=ver0;
+ver=commState.getCacheVersion("ver");
+if (!commState.lastRead()) return false;
 commState.idx++;
 }
 return true;

@@ -2,27 +2,24 @@
   commState.setBuffer(buf);
 switch (commState.idx) {
 case 0:
-    UUID clientId0=commState.getUuid("clientId");
-  if (clientId0 == UUID_NOT_READ)   return false;
-clientId=clientId0;
+    clientId=commState.getUuid("clientId");
+  if (!commState.lastRead())   return false;
 commState.idx++;
 case 1:
-UUID destId0=commState.getUuid("destId");
-if (destId0 == UUID_NOT_READ) return false;
-destId=destId0;
+destId=commState.getUuid("destId");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 2:
-ByteBuffer msg0=commState.getByteBuffer("msg");
-if (msg0 == BYTE_BUF_NOT_READ) return false;
-msg=msg0;
+msg=commState.getByteBuffer("msg");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 3:
-if (buf.remaining() < 4) return false;
 msgSize=commState.getInt("msgSize");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 4:
-if (buf.remaining() < 8) return false;
 reqId=commState.getLong("reqId");
+if (!commState.lastRead()) return false;
 commState.idx++;
 }
 return true;

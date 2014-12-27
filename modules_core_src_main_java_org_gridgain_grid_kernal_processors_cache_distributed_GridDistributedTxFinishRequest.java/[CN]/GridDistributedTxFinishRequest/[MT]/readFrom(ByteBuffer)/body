@@ -3,43 +3,39 @@
   if (!super.readFrom(buf))   return false;
 switch (commState.idx) {
 case 8:
-    GridCacheVersion baseVer0=commState.getCacheVersion("baseVer");
-  if (baseVer0 == CACHE_VER_NOT_READ)   return false;
-baseVer=baseVer0;
+    baseVer=commState.getCacheVersion("baseVer");
+  if (!commState.lastRead())   return false;
 commState.idx++;
 case 9:
-if (buf.remaining() < 1) return false;
 commit=commState.getBoolean("commit");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 10:
-GridCacheVersion commitVer0=commState.getCacheVersion("commitVer");
-if (commitVer0 == CACHE_VER_NOT_READ) return false;
-commitVer=commitVer0;
+commitVer=commState.getCacheVersion("commitVer");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 11:
-IgniteUuid futId0=commState.getGridUuid("futId");
-if (futId0 == GRID_UUID_NOT_READ) return false;
-futId=futId0;
+futId=commState.getGridUuid("futId");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 12:
-byte[] grpLockKeyBytes0=commState.getByteArray("grpLockKeyBytes");
-if (grpLockKeyBytes0 == BYTE_ARR_NOT_READ) return false;
-grpLockKeyBytes=grpLockKeyBytes0;
+grpLockKeyBytes=commState.getByteArray("grpLockKeyBytes");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 13:
-if (buf.remaining() < 1) return false;
 invalidate=commState.getBoolean("invalidate");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 14:
 if (commState.readSize == -1) {
-if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
 }
 if (commState.readSize >= 0) {
 if (recoveryWritesBytes == null) recoveryWritesBytes=new ArrayList<>(commState.readSize);
 for (int i=commState.readItems; i < commState.readSize; i++) {
 byte[] _val=commState.getByteArray(null);
-if (_val == BYTE_ARR_NOT_READ) return false;
+if (!commState.lastRead()) return false;
 recoveryWritesBytes.add((byte[])_val);
 commState.readItems++;
 }
@@ -48,41 +44,41 @@ commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
 case 15:
-if (buf.remaining() < 1) return false;
 syncCommit=commState.getBoolean("syncCommit");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 16:
-if (buf.remaining() < 1) return false;
 syncRollback=commState.getBoolean("syncRollback");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 17:
-if (buf.remaining() < 8) return false;
-threadId=commState.getLong("threadId");
+sys=commState.getBoolean("sys");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 18:
-if (buf.remaining() < 4) return false;
-txSize=commState.getInt("txSize");
+threadId=commState.getLong("threadId");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 19:
+txSize=commState.getInt("txSize");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 20:
 if (commState.readSize == -1) {
-if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
 }
 if (commState.readSize >= 0) {
 if (writeEntriesBytes == null) writeEntriesBytes=new ArrayList<>(commState.readSize);
 for (int i=commState.readItems; i < commState.readSize; i++) {
 byte[] _val=commState.getByteArray(null);
-if (_val == BYTE_ARR_NOT_READ) return false;
+if (!commState.lastRead()) return false;
 writeEntriesBytes.add((byte[])_val);
 commState.readItems++;
 }
 }
 commState.readSize=-1;
 commState.readItems=0;
-commState.idx++;
-case 20:
-if (buf.remaining() < 1) return false;
-sys=commState.getBoolean("sys");
 commState.idx++;
 }
 return true;

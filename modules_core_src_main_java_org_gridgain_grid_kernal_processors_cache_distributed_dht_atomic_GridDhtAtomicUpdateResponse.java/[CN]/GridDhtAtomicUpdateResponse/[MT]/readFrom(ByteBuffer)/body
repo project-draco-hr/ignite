@@ -3,30 +3,27 @@
   if (!super.readFrom(buf))   return false;
 switch (commState.idx) {
 case 3:
-    byte[] errBytes0=commState.getByteArray("errBytes");
-  if (errBytes0 == BYTE_ARR_NOT_READ)   return false;
-errBytes=errBytes0;
+    errBytes=commState.getByteArray("errBytes");
+  if (!commState.lastRead())   return false;
 commState.idx++;
 case 4:
-byte[] failedKeysBytes0=commState.getByteArray("failedKeysBytes");
-if (failedKeysBytes0 == BYTE_ARR_NOT_READ) return false;
-failedKeysBytes=failedKeysBytes0;
+failedKeysBytes=commState.getByteArray("failedKeysBytes");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 5:
-GridCacheVersion futVer0=commState.getCacheVersion("futVer");
-if (futVer0 == CACHE_VER_NOT_READ) return false;
-futVer=futVer0;
+futVer=commState.getCacheVersion("futVer");
+if (!commState.lastRead()) return false;
 commState.idx++;
 case 6:
 if (commState.readSize == -1) {
-if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
 }
 if (commState.readSize >= 0) {
 if (nearEvictedBytes == null) nearEvictedBytes=new ArrayList<>(commState.readSize);
 for (int i=commState.readItems; i < commState.readSize; i++) {
 byte[] _val=commState.getByteArray(null);
-if (_val == BYTE_ARR_NOT_READ) return false;
+if (!commState.lastRead()) return false;
 nearEvictedBytes.add((byte[])_val);
 commState.readItems++;
 }
