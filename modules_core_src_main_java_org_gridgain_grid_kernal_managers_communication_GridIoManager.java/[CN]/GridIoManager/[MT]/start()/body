@@ -21,5 +21,25 @@
     }
   }
 );
+  MessageWriterFactory[] writerExt=ctx.plugins().extensions(MessageWriterFactory.class);
+  if (writerExt != null && writerExt.length > 0)   writerFactory=writerExt[0];
+ else {
+    writerFactory=new MessageWriterFactory(){
+      @Override public MessageWriter writer(){
+        return new GridTcpCommunicationMessageWriter();
+      }
+    }
+;
+  }
+  MessageReaderFactory[] readerExt=ctx.plugins().extensions(MessageReaderFactory.class);
+  if (readerExt != null && readerExt.length > 0)   readerFactory=readerExt[0];
+ else {
+    readerFactory=new MessageReaderFactory(){
+      @Override public MessageReader reader(){
+        return new GridTcpCommunicationMessageReader(msgFactory);
+      }
+    }
+;
+  }
   if (log.isDebugEnabled())   log.debug(startInfo());
 }
