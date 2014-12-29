@@ -17,15 +17,16 @@
           break;
         }
        }
- catch (      ClusterGroupEmptyException e) {
-        throw e;
-      }
-catch (      ClusterTopologyException e) {
-        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
+ catch (      CacheException e) {
+        if (e.getCause() instanceof ClusterGroupEmptyException)         throw e;
+        if (e.getCause() instanceof ClusterTopologyException) {
+          if (cnt++ == MAX_UPDATE_RETRIES)           throw e;
  else {
-          U.warn(log,"Failed to add item, will retry [err=" + e + ']');
-          U.sleep(RETRY_DELAY);
+            U.warn(log,"Failed to add item, will retry [err=" + e + ']');
+            U.sleep(RETRY_DELAY);
+          }
         }
+ else         throw e;
       }
     }
     return retVal;
