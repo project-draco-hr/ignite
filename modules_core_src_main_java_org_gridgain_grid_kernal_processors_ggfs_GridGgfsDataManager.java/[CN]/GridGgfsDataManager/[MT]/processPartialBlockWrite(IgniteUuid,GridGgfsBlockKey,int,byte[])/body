@@ -24,8 +24,7 @@
     return;
   }
   GridGgfsBlockKey key=new GridGgfsBlockKey(colocatedKey.getFileId(),null,colocatedKey.evictExclude(),colocatedKey.getBlockId());
-  IgniteTx tx=dataCachePrj.txStart(PESSIMISTIC,REPEATABLE_READ);
-  try {
+  try (IgniteTx tx=dataCachePrj.txStart(PESSIMISTIC,REPEATABLE_READ)){
     Map<GridGgfsBlockKey,byte[]> vals=dataCachePrj.getAll(F.asList(colocatedKey,key));
     boolean hasVal=false;
     UpdateProcessor transformClos=new UpdateProcessor(startOff,data);
@@ -40,7 +39,4 @@
     if (!hasVal)     throw new IgniteCheckedException("Failed to write partial block (no previous data was found in cache) " + "[key=" + colocatedKey + ", relaxedKey="+ key+ ", startOff="+ startOff+ ", dataLen="+ data.length+ ']');
     tx.commit();
   }
-  finally {
-    tx.close();
-  }
-}
+ }
