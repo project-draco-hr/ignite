@@ -1,12 +1,17 @@
 {
   try {
+    boolean statisticsEnabled=ctx.config().isStatisticsEnabled();
+    long start=statisticsEnabled ? System.nanoTime() : 0L;
     GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+    Map<K,V> res;
     try {
-      return delegate.getAll(keys);
+      res=delegate.getAll(keys);
     }
   finally {
       gate.leave(prev);
     }
+    if (statisticsEnabled)     ctx.cache().metrics0().addGetTimeNanos(System.nanoTime() - start);
+    return res;
   }
  catch (  IgniteCheckedException e) {
     throw cacheException(e);

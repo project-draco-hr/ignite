@@ -1,5 +1,7 @@
 {
   try {
+    boolean statisticsEnabled=ctx.config().isStatisticsEnabled();
+    long start=statisticsEnabled ? System.nanoTime() : 0L;
     GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
     try {
       delegate.putx(key,val);
@@ -7,6 +9,7 @@
   finally {
       gate.leave(prev);
     }
+    if (statisticsEnabled)     ctx.cache().metrics0().addPutTimeNanos(System.nanoTime() - start);
   }
  catch (  IgniteCheckedException e) {
     throw cacheException(e);
