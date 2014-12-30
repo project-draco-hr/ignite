@@ -1,0 +1,22 @@
+{
+  Ignite ignite=ignite(0);
+  IgniteCache<Integer,Integer> cache=jcache();
+  final CacheEntryCreatedListener<Integer,Integer> lsnr=new CacheEntryCreatedListener<Integer,Integer>(){
+    @Override public void onCreated(    Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> evts) throws CacheEntryListenerException {
+      for (      CacheEntryEvent<? extends Integer,? extends Integer> evt : evts) {
+        System.out.println("Event: " + evt.getEventType() + " "+ evt.getKey()+ " "+ evt.getOldValue()+ " "+ evt.getValue());
+      }
+    }
+  }
+;
+  CacheEntryListenerConfiguration<Integer,Integer> lsnrCfg=new MutableCacheEntryListenerConfiguration(new Factory<CacheEntryListener>(){
+    @Override public CacheEntryListener create(){
+      return lsnr;
+    }
+  }
+,null,true,false);
+  cache.registerCacheEntryListener(lsnrCfg);
+  ignite(1).cache(null).put(1,1);
+  ignite(0).cache(null).put(1,2);
+  Thread.sleep(2000);
+}

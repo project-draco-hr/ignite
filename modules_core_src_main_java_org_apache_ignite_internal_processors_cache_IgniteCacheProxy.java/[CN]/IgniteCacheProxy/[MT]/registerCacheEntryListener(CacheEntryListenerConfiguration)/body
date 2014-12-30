@@ -1,3 +1,30 @@
 {
-  throw new UnsupportedOperationException();
+  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+  try {
+    A.notNull(lsnrCfg,"lsnrCfg");
+    Factory<CacheEntryListener<? super K,? super V>> factory=lsnrCfg.getCacheEntryListenerFactory();
+    A.notNull(factory,"cacheEntryListenerFactory");
+    CacheEntryListener lsnr=factory.create();
+    A.notNull(lsnr,"lsnr");
+    EventCallback cb=new EventCallback(lsnr);
+    Set<Integer> types=new HashSet<>();
+    if (cb.create() || cb.update())     types.add(EVT_CACHE_OBJECT_PUT);
+    if (cb.remove())     types.add(EVT_CACHE_OBJECT_REMOVED);
+    if (cb.expire())     types.add(EVT_CACHE_OBJECT_EXPIRED);
+    if (types.isEmpty())     throw new IllegalArgumentException();
+    int[] types0=new int[types.size()];
+    int i=0;
+    for (    Integer type : types)     types0[i++]=type;
+    EventFilter fltr=new EventFilter(cb.create(),cb.update(),lsnrCfg.getCacheEntryEventFilterFactory(),ignite(),ctx.name());
+    IgniteFuture<UUID> fut=ctx.kernalContext().continuous().startRoutine(new GridEventConsumeHandler(cb,fltr,types0),1,0,true,null);
+    try {
+      fut.get();
+    }
+ catch (    IgniteCheckedException e) {
+      throw new IgniteException(e);
+    }
+  }
+  finally {
+    gate.leave(prev);
+  }
 }
