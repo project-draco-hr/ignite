@@ -1,0 +1,46 @@
+{
+  evts=new ArrayList<>();
+  final int expEvts=(vals.size() / 2) * 3;
+  evtsLatch=new CountDownLatch(expEvts);
+  cache.removeAll(vals.keySet());
+  cache.putAll(vals);
+  Map<Integer,Integer> newVals=new HashMap<>();
+  for (  Integer key : vals.keySet())   newVals.put(key,-1);
+  cache.putAll(newVals);
+  evtsLatch.await(5000,TimeUnit.MILLISECONDS);
+  assertEquals(expEvts,evts.size());
+  Iterator<CacheEntryEvent<? extends Integer,? extends Integer>> iter=evts.iterator();
+  for (  Integer key : vals.keySet()) {
+    if (key % 2 == 0) {
+      CacheEntryEvent<? extends Integer,? extends Integer> evt=iter.next();
+      assertTrue(evt.getKey() % 2 == 0);
+      assertTrue(vals.keySet().contains(evt.getKey()));
+      assertEquals(REMOVED,evt.getEventType());
+      assertNull(evt.getValue());
+      assertEquals(vals.get(evt.getKey()),evt.getOldValue());
+      iter.remove();
+    }
+  }
+  for (  Integer key : vals.keySet()) {
+    if (key % 2 == 0) {
+      CacheEntryEvent<? extends Integer,? extends Integer> evt=iter.next();
+      assertTrue(evt.getKey() % 2 == 0);
+      assertTrue(vals.keySet().contains(evt.getKey()));
+      assertEquals(CREATED,evt.getEventType());
+      assertEquals(vals.get(evt.getKey()),evt.getValue());
+      assertNull(evt.getOldValue());
+      iter.remove();
+    }
+  }
+  for (  Integer key : vals.keySet()) {
+    if (key % 2 == 0) {
+      CacheEntryEvent<? extends Integer,? extends Integer> evt=iter.next();
+      assertTrue(evt.getKey() % 2 == 0);
+      assertTrue(vals.keySet().contains(evt.getKey()));
+      assertEquals(UPDATED,evt.getEventType());
+      assertEquals(-1,(int)evt.getValue());
+      assertEquals(vals.get(evt.getKey()),evt.getOldValue());
+      iter.remove();
+    }
+  }
+}

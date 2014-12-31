@@ -1,0 +1,26 @@
+{
+  GridCacheContinuousQueryAdapter<K,V> qry=null;
+  try {
+    A.notNull(lsnrCfg,"lsnrCfg");
+    Factory<CacheEntryListener<? super K,? super V>> factory=lsnrCfg.getCacheEntryListenerFactory();
+    A.notNull(factory,"cacheEntryListenerFactory");
+    CacheEntryListener lsnr=factory.create();
+    A.notNull(lsnr,"lsnr");
+    IgniteCacheProxy<K,V> cache=cctx.kernalContext().cache().jcache(cctx.name());
+    EntryListenerCallback cb=new EntryListenerCallback(cache,lsnr);
+    if (!(cb.create() || cb.update() || cb.remove()|| cb.expire()))     throw new IllegalArgumentException("Listener must implement one of CacheEntryListener sub-interfaces.");
+    qry=(GridCacheContinuousQueryAdapter<K,V>)cctx.cache().queries().createContinuousQuery();
+    GridCacheContinuousQuery<K,V> old=lsnrQrys.putIfAbsent(lsnrCfg,qry);
+    if (old != null)     throw new IllegalArgumentException("Listener is already registered for configuration: " + lsnrCfg);
+    qry.autoUnsubscribe(true);
+    qry.bufferSize(1);
+    qry.localCallback(cb);
+    EntryListenerFilter<K,V> fltr=new EntryListenerFilter<>(cb.create(),cb.update(),cb.remove(),cb.expire(),lsnrCfg.getCacheEntryEventFilterFactory(),cctx.kernalContext().grid(),cctx.name());
+    qry.remoteFilter(fltr);
+    qry.execute(null,false,true);
+  }
+ catch (  IgniteCheckedException e) {
+    lsnrQrys.remove(lsnrCfg,qry);
+    throw e;
+  }
+}
