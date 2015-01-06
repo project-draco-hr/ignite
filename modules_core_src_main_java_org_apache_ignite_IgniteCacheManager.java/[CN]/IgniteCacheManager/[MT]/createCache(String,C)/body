@@ -1,0 +1,30 @@
+{
+  ensureNotClosed();
+  if (cacheCfg == null)   throw new NullPointerException();
+  if (!(cacheCfg instanceof CompleteConfiguration))   throw new UnsupportedOperationException("Configuration is not supported: " + cacheCfg);
+  if (cacheCfg instanceof GridCacheConfiguration) {
+    String cfgCacheName=((GridCacheConfiguration)cacheCfg).getName();
+    if (cfgCacheName != null && !cacheName.equals(cfgCacheName))     throw new IllegalArgumentException();
+    cacheCfg=(C)new GridCacheConfiguration((GridCacheConfiguration)cacheCfg);
+    ((GridCacheConfiguration)cacheCfg).setName(cacheName);
+  }
+  Ignite ignite;
+synchronized (igniteMap) {
+    if (igniteMap.containsKey(cacheName))     throw new CacheException("Cache already exists [cacheName=" + cacheName + ", manager="+ uri+ ']');
+    if (uri.equals(cachingProvider.getDefaultURI())) {
+      IgniteConfiguration cfg=new IgniteConfiguration();
+      cfg.setGridName("grid-for-" + cacheName);
+      cfg.setCacheConfiguration(new GridCacheConfiguration((CompleteConfiguration)cacheCfg));
+      cfg.getCacheConfiguration()[0].setName(cacheName);
+      try {
+        ignite=Ignition.start(cfg);
+      }
+ catch (      IgniteCheckedException e) {
+        throw new CacheException(e);
+      }
+    }
+ else     throw new UnsupportedOperationException();
+    igniteMap.put(cacheName,ignite);
+  }
+  return ignite.jcache(cacheName);
+}
