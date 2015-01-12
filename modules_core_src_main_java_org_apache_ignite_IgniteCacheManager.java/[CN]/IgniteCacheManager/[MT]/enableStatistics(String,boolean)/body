@@ -1,16 +1,21 @@
 {
-  Ignite ignite=findIgnite(cacheName);
+  ensureNotClosed();
+  if (cacheName == null)   throw new NullPointerException();
+  IgniteBiTuple<Ignite,IgniteCacheMXBean> tuple;
+synchronized (igniteMap) {
+    tuple=igniteMap.get(cacheName);
+  }
+  Ignite ignite=tuple.get1();
   GridCache cache=ignite.cache(cacheName);
   GridCacheConfiguration configuration=ignite.jcache(cacheName).getConfiguration(GridCacheConfiguration.class);
   MBeanServer mBeanSrv=ignite.configuration().getMBeanServer();
-  if (cacheName == null)   cacheName="null";
   if (enabled) {
     CacheMetricsMXBean mxBean=new CacheMetricsMXBean(cache);
-    registerCacheObject(mBeanSrv,mxBean,uri.toString(),cacheName,true);
+    registerCacheObject(mBeanSrv,mxBean,cacheName,true);
     configuration.setStatisticsEnabled(true);
   }
  else {
-    unregisterCacheObject(mBeanSrv,uri.toString(),cacheName,true);
+    unregisterCacheObject(mBeanSrv,cacheName,true);
     configuration.setStatisticsEnabled(false);
   }
 }
