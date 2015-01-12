@@ -13,9 +13,10 @@
       ((GridCacheConfiguration)cacheCfg).setName(cacheName);
     }
   }
-  Ignite ignite;
+  IgniteCache<K,V> res;
 synchronized (igniteMap) {
     if (igniteMap.containsKey(cacheName))     throw new CacheException("Cache already exists [cacheName=" + cacheName + ", manager="+ uri+ ']');
+    Ignite ignite;
     if (uri.equals(cachingProvider.getDefaultURI())) {
       IgniteConfiguration cfg=new IgniteConfiguration();
       cfg.setGridName("grid-for-" + cacheName);
@@ -29,7 +30,9 @@ synchronized (igniteMap) {
       }
     }
  else     throw new UnsupportedOperationException();
-    igniteMap.put(cacheName,ignite);
+    res=ignite.jcache(cacheName);
+    igniteMap.put(cacheName,new T2<>(ignite,new IgniteCacheMXBean(res)));
   }
-  return ignite.jcache(cacheName);
+  if (((CompleteConfiguration)cacheCfg).isManagementEnabled())   enableManagement(cacheName,true);
+  return res;
 }
