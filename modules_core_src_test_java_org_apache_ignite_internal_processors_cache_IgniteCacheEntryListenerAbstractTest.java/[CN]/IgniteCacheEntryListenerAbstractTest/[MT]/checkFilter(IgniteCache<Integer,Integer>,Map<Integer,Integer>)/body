@@ -1,16 +1,21 @@
 {
-  evts=new ArrayList<>();
+  evts=Collections.synchronizedList(new ArrayList<CacheEntryEvent<? extends Integer,? extends Integer>>());
   final int expEvts=(vals.size() / 2) * 4;
   evtsLatch=new CountDownLatch(expEvts);
   cache.removeAll(vals.keySet());
   cache.putAll(vals);
-  Map<Integer,Integer> newVals=new HashMap<>();
+  final Map<Integer,Integer> newVals=new HashMap<>();
   for (  Integer key : vals.keySet())   newVals.put(key,-1);
-  cache.withExpiryPolicy(new ModifiedExpiryPolicy(new Duration(MILLISECONDS,100))).putAll(newVals);
-  U.sleep(200);
-  if (!eagerTtl()) {
-    for (    Integer key : newVals.keySet())     assertNull(primaryCache(key,cache.getName()).get(key));
+  cache.withExpiryPolicy(new ModifiedExpiryPolicy(new Duration(MILLISECONDS,500))).putAll(newVals);
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      for (      Integer key : newVals.keySet()) {
+        if (primaryCache(key,cache.getName()).get(key) != null)         return false;
+      }
+      return true;
+    }
   }
+,5000);
   evtsLatch.await(5000,MILLISECONDS);
   assertEquals(expEvts,evts.size());
   Set<Integer> rmvd=new HashSet<>();
