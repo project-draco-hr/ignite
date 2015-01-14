@@ -16,6 +16,7 @@
       }
  else       map0=map;
       if (log.isDebugEnabled())       log.debug("Storing values in cache store [map=" + map0 + ']');
+      boolean ses=initSession(tx);
       try {
         store.putAll(tx,locStore ? map0 : F.viewReadOnly(map0,new C1<IgniteBiTuple<V,GridCacheVersion>,Object>(){
           @Override public Object apply(          IgniteBiTuple<V,GridCacheVersion> t){
@@ -26,6 +27,9 @@
       }
  catch (      ClassCastException e) {
         handleClassCastException(e);
+      }
+ finally {
+        sesHolder.set(null);
       }
       if (log.isDebugEnabled())       log.debug("Stored value in cache store [map=" + map0 + ']');
       return true;

@@ -13,6 +13,7 @@
       }
 ) : keys;
       if (log.isDebugEnabled())       log.debug("Loading values from store for keys: " + keys0);
+      boolean ses=initSession(tx);
       try {
         singleThreadGate.loadAll(tx,keys0,new CI2<K,Object>(){
           @Override public void apply(          K k,          Object o){
@@ -31,6 +32,9 @@
       }
 catch (      IgniteException e) {
         throw U.cast(e);
+      }
+ finally {
+        sesHolder.set(null);
       }
       if (log.isDebugEnabled())       log.debug("Loaded values from store for keys: " + keys0);
     }

@@ -6,11 +6,15 @@
       val=(V)cctx.unwrapPortableIfNeeded(val,false);
     }
     if (log.isDebugEnabled())     log.debug("Storing value in cache store [key=" + key + ", val="+ val+ ']');
+    boolean ses=initSession(tx);
     try {
       store.put(tx,key,locStore ? F.t(val,ver) : val);
     }
  catch (    ClassCastException e) {
       handleClassCastException(e);
+    }
+ finally {
+      if (ses)       sesHolder.set(null);
     }
     if (log.isDebugEnabled())     log.debug("Stored value in cache store [key=" + key + ", val="+ val+ ']');
     return true;
