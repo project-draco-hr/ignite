@@ -15,7 +15,11 @@
   evts=Collections.synchronizedList(new ArrayList<CacheEntryEvent<? extends Integer,? extends Integer>>());
   evtsLatch=new CountDownLatch(expEvts);
   cache.put(key,0);
-  for (int i=0; i < UPDATES; i++)   cache.put(key,i + 1);
+  for (int i=0; i < UPDATES; i++) {
+    if (i % 2 == 0)     cache.put(key,i + 1);
+ else     cache.invoke(key,new SetValueProcessor(i + 1));
+  }
+  assertEquals(String.valueOf(UPDATES),cache.invoke(key,new ToStringProcessor()));
   assertFalse(cache.putIfAbsent(key,-1));
   assertFalse(cache.remove(key,-1));
   assertTrue(cache.remove(key));
