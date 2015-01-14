@@ -1,0 +1,17 @@
+{
+  fillCaches();
+  GridCacheQueriesEx<Integer,FactPurchase> qx=(GridCacheQueriesEx<Integer,FactPurchase>)ignite.<Integer,FactPurchase>cache("partitioned").queries();
+  Set<Integer> set0=new HashSet<>();
+  for (  List<?> o : qx.executeTwoStepQuery("partitioned","select productId from FactPurchase group by productId").get()) {
+    X.println("___ -> " + o);
+    assertTrue(set0.add((Integer)o.get(0)));
+  }
+  X.println("___ ");
+  Set<Integer> set1=new HashSet<>();
+  for (  List<?> o : qx.executeTwoStepQuery("partitioned","select productId from FactPurchase").get()) {
+    X.println("___ -> " + o);
+    set1.add((Integer)o.get(0));
+  }
+  assertFalse(set1.isEmpty());
+  assertEquals(set0,set1);
+}
