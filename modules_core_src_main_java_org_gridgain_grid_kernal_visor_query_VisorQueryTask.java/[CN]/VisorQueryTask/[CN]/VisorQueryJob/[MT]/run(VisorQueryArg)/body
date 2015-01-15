@@ -4,8 +4,9 @@
     String qryId=(scan ? VisorQueryUtils.SCAN_QRY_NAME : VisorQueryUtils.SQL_QRY_NAME) + "-" + UUID.randomUUID();
     GridCache<Object,Object> c=g.cachex(arg.cacheName());
     if (c == null)     return new IgniteBiTuple<>(new IgniteCheckedException("Cache not found: " + escapeName(arg.cacheName())),null);
+    GridCacheProjection<Object,Object> cp=c.keepPortable();
     if (scan) {
-      GridCacheQueryFuture<Map.Entry<Object,Object>> fut=c.queries().createScanQuery(null).pageSize(arg.pageSize()).projection(g.forNodeIds(arg.proj())).execute();
+      GridCacheQueryFuture<Map.Entry<Object,Object>> fut=cp.queries().createScanQuery(null).pageSize(arg.pageSize()).projection(g.forNodeIds(arg.proj())).execute();
       long start=U.currentTimeMillis();
       IgniteBiTuple<List<Object[]>,Map.Entry<Object,Object>> rows=VisorQueryUtils.fetchScanQueryRows(fut,null,arg.pageSize());
       long fetchDuration=U.currentTimeMillis() - start;
@@ -16,7 +17,7 @@
       return new IgniteBiTuple<>(null,new VisorQueryResultEx(g.localNode().id(),qryId,VisorQueryUtils.SCAN_COL_NAMES,rows.get1(),next != null,duration));
     }
  else {
-      GridCacheQueryFuture<List<?>> fut=((GridCacheQueriesEx<?,?>)c.queries()).createSqlFieldsQuery(arg.queryTxt(),true).pageSize(arg.pageSize()).projection(g.forNodeIds(arg.proj())).execute();
+      GridCacheQueryFuture<List<?>> fut=((GridCacheQueriesEx<?,?>)cp.queries()).createSqlFieldsQuery(arg.queryTxt(),true).pageSize(arg.pageSize()).projection(g.forNodeIds(arg.proj())).execute();
       List<Object> firstRow=(List<Object>)fut.next();
       List<GridQueryFieldMetadata> meta=((GridCacheQueryMetadataAware)fut).metadata().get();
       if (meta == null)       return new IgniteBiTuple<Exception,VisorQueryResultEx>(new SQLException("Fail to execute query. No metadata available."),null);
