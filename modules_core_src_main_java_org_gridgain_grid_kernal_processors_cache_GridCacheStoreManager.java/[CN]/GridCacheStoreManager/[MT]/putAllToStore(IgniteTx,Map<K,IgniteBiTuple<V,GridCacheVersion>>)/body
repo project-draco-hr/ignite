@@ -18,18 +18,19 @@
       if (log.isDebugEnabled())       log.debug("Storing values in cache store [map=" + map0 + ']');
       boolean ses=initSession(tx);
       try {
-        store.putAll(tx,locStore ? map0 : F.viewReadOnly(map0,new C1<IgniteBiTuple<V,GridCacheVersion>,Object>(){
-          @Override public Object apply(          IgniteBiTuple<V,GridCacheVersion> t){
-            return t.get1();
+        C1<Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>>,Cache.Entry<? extends K,?>> c=new C1<Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>>,Cache.Entry<? extends K,?>>(){
+          @Override public Cache.Entry<? extends K,?> apply(          Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e){
+            return new CacheEntryImpl<>(e.getKey(),locStore ? e.getValue() : e.getValue().get1());
           }
         }
-));
+;
+        store.writeAll(F.viewReadOnly(map.entrySet(),c));
       }
  catch (      ClassCastException e) {
         handleClassCastException(e);
       }
  finally {
-        sesHolder.set(null);
+        if (ses)         sesHolder.set(null);
       }
       if (log.isDebugEnabled())       log.debug("Stored value in cache store [map=" + map0 + ']');
       return true;

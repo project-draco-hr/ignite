@@ -1,0 +1,11 @@
+{
+  this.store=store;
+  singleThreadGate=store == null ? null : new CacheStoreBalancingWrapper<>(store);
+  if (store instanceof GridCacheWriteBehindStore)   store=((GridCacheWriteBehindStore)store).store();
+  if (store != null) {
+    ctx.resource().injectBasicResource(store,IgniteCacheSessionResource.class,new ThreadLocalSession());
+    sesEnabled=true;
+  }
+ else   sesEnabled=false;
+  locStore=U.hasAnnotation(store,CacheLocalStore.class);
+}

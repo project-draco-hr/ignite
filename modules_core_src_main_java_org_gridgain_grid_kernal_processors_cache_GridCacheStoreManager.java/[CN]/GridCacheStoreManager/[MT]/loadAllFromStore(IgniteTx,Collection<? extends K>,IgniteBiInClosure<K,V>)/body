@@ -15,9 +15,11 @@
       if (log.isDebugEnabled())       log.debug("Loading values from store for keys: " + keys0);
       boolean ses=initSession(tx);
       try {
-        singleThreadGate.loadAll(tx,keys0,new CI2<K,Object>(){
-          @Override public void apply(          K k,          Object o){
-            V v=convert(o);
+        if (keys.size() > singleThreadGate.loadAllThreshold()) {
+          Map<K,Object> map=singleThreadGate.loadAll(keys0);
+          for (          Map.Entry<K,Object> e : map.entrySet()) {
+            K k=e.getKey();
+            V v=convert(e.getValue());
             if (cctx.portableEnabled()) {
               k=(K)cctx.marshalToPortable(k);
               v=(V)cctx.marshalToPortable(v);
@@ -25,7 +27,19 @@
             vis.apply(k,v);
           }
         }
+ else {
+          singleThreadGate.loadAll(keys0,new CI2<K,Object>(){
+            @Override public void apply(            K k,            Object o){
+              V v=convert(o);
+              if (cctx.portableEnabled()) {
+                k=(K)cctx.marshalToPortable(k);
+                v=(V)cctx.marshalToPortable(v);
+              }
+              vis.apply(k,v);
+            }
+          }
 );
+        }
       }
  catch (      ClassCastException e) {
         handleClassCastException(e);
@@ -34,7 +48,7 @@ catch (      IgniteException e) {
         throw U.cast(e);
       }
  finally {
-        sesHolder.set(null);
+        if (ses)         sesHolder.set(null);
       }
       if (log.isDebugEnabled())       log.debug("Loaded values from store for keys: " + keys0);
     }

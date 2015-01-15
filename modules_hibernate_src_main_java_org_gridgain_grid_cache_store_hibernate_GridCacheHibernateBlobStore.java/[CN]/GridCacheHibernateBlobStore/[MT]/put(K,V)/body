@@ -1,0 +1,21 @@
+{
+  init();
+  IgniteTx tx=transaction();
+  if (log.isDebugEnabled())   log.debug("Store put [key=" + key + ", val="+ val+ ", tx="+ tx+ ']');
+  if (val == null) {
+    remove(key);
+    return;
+  }
+  Session ses=session(tx);
+  try {
+    GridCacheHibernateBlobStoreEntry entry=new GridCacheHibernateBlobStoreEntry(toBytes(key),toBytes(val));
+    ses.saveOrUpdate(entry);
+  }
+ catch (  IgniteCheckedException|HibernateException e) {
+    rollback(ses,tx);
+    throw new CacheWriterException("Failed to put value to cache store [key=" + key + ", val"+ val+ "]",e);
+  }
+ finally {
+    end(ses,tx);
+  }
+}

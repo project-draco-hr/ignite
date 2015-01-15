@@ -1,0 +1,19 @@
+{
+  init();
+  IgniteTx tx=transaction();
+  Map<Object,Object> props=session().properties();
+  Connection conn=(Connection)props.remove(ATTR_CONN);
+  if (conn != null) {
+    try {
+      if (commit)       conn.commit();
+ else       conn.rollback();
+    }
+ catch (    SQLException e) {
+      throw new CacheWriterException("Failed to end transaction [xid=" + tx.xid() + ", commit="+ commit+ ']',e);
+    }
+ finally {
+      closeConnection(conn);
+    }
+  }
+  if (log.isDebugEnabled())   log.debug("Transaction ended [xid=" + tx.xid() + ", commit="+ commit+ ']');
+}

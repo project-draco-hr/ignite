@@ -1,0 +1,26 @@
+{
+  init();
+  IgniteTx tx=transaction();
+  if (log.isDebugEnabled())   log.debug("Store put [key=" + key + ", val="+ val+ ", tx="+ tx+ ']');
+  Connection conn=null;
+  PreparedStatement stmt=null;
+  try {
+    conn=connection(tx);
+    stmt=conn.prepareStatement(updateQry);
+    stmt.setObject(1,toBytes(val));
+    stmt.setObject(2,toBytes(key));
+    if (stmt.executeUpdate() == 0) {
+      stmt.close();
+      stmt=conn.prepareStatement(insertQry);
+      stmt.setObject(1,toBytes(key));
+      stmt.setObject(2,toBytes(val));
+      stmt.executeUpdate();
+    }
+  }
+ catch (  IgniteCheckedException|SQLException e) {
+    throw new CacheWriterException("Failed to put object [key=" + key + ", val="+ val+ ']',e);
+  }
+ finally {
+    end(tx,conn,stmt);
+  }
+}
