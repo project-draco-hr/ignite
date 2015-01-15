@@ -1,24 +1,20 @@
 {
-  initFirstTime();
-  curEntry=nextEntry;
-  if (curEntry == null)   throw new NoSuchElementException();
   try {
-    nextEntry=fut.next();
+    final Map.Entry<K,V> cur=iter.onNext();
+    return new Cache.Entry<K,V>(){
+      @Override public K getKey(){
+        return cur.getKey();
+      }
+      @Override public V getValue(){
+        return cur.getValue();
+      }
+      @Override public <T>T unwrap(      Class<T> clazz){
+        throw new IllegalArgumentException();
+      }
+    }
+;
   }
  catch (  IgniteCheckedException e) {
-    curEntry=null;
     throw cacheException(e);
   }
-  return new Cache.Entry<K,V>(){
-    @Override public K getKey(){
-      return curEntry.getKey();
-    }
-    @Override public V getValue(){
-      return curEntry.getValue();
-    }
-    @Override public <T>T unwrap(    Class<T> clazz){
-      throw new IllegalArgumentException();
-    }
-  }
-;
 }
