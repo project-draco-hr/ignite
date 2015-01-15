@@ -1,2 +1,27 @@
 {
+  storeEnabled=false;
+  startGridsMultiThreaded(3);
+  Ignite g0=grid(0);
+  Ignite g1=grid(1);
+  Ignite g2=grid(2);
+  try {
+    Integer k0=forPrimary(g0);
+    Integer k1=forPrimary(g1);
+    Integer k2=forPrimary(g2);
+    IgniteCache<Object,Object> cache=jcache(0);
+    cache.lock(k0).lock();
+    cache.lock(k1).lock();
+    cache.lock(k2).lock();
+    cache.put(k0,"val0");
+    cache.putAll(F.asMap(k1,"val1",k2,"val2"));
+    assertEquals("val0",cache.get(k0));
+    assertEquals("val1",cache.get(k1));
+    assertEquals("val2",cache.get(k2));
+    cache.lock(k0).unlock();
+    cache.lock(k1).unlock();
+    cache.lock(k2).unlock();
+  }
+  finally {
+    stopAllGrids();
+  }
 }
