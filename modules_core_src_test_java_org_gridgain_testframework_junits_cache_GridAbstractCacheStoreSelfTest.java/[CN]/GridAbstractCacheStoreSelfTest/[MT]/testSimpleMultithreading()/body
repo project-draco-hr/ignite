@@ -14,19 +14,12 @@
  else {
             if (rnd.nextBoolean())             assertNotNull(store.load(key));
  else {
-              final AtomicInteger cntr=new AtomicInteger();
-              store.loadAll(Collections.singleton(key),new CI2<Object,Object>(){
-                @Override public void apply(                Object o,                Object o1){
-                  cntr.incrementAndGet();
-                  assertNotNull(o);
-                  assertNotNull(o1);
-                  UUID key=(UUID)o;
-                  UUID val=(UUID)o1;
-                  assertTrue(key.equals(val) || (key.getMostSignificantBits() == val.getLeastSignificantBits() && key.getLeastSignificantBits() == val.getMostSignificantBits()));
-                }
-              }
-);
-              assertEquals(1,cntr.get());
+              Map<Object,Object> loaded=store.loadAll(Collections.singleton(key));
+              assertEquals(1,loaded.size());
+              Map.Entry<Object,Object> e=loaded.entrySet().iterator().next();
+              UUID k=(UUID)e.getKey();
+              UUID v=(UUID)e.getValue();
+              assertTrue(k.equals(v) || (k.getMostSignificantBits() == v.getLeastSignificantBits() && k.getLeastSignificantBits() == v.getMostSignificantBits()));
             }
             if (tx != null)             store.txEnd(true);
             queue.add(key);
@@ -36,8 +29,8 @@
           UUID key=queue.poll();
           if (key == null)           queueEmpty=true;
  else {
-            if (rnd.nextBoolean())             store.remove(key);
- else             store.removeAll(Collections.singleton(key));
+            if (rnd.nextBoolean())             store.delete(key);
+ else             store.deleteAll(Collections.singleton(key));
             if (tx != null)             store.txEnd(true);
           }
         }
@@ -46,16 +39,24 @@
           if (key == null)           queueEmpty=true;
  else {
             UUID val=new UUID(key.getLeastSignificantBits(),key.getMostSignificantBits());
-            if (rnd.nextBoolean())             store.put(key,val);
- else             store.putAll(Collections.singletonMap(key,val));
+            if (rnd.nextBoolean())             store.write(new CacheEntryImpl<>(key,val));
+ else {
+              Collection<Cache.Entry<? extends Object,? extends Object>> col=new ArrayList<>();
+              col.add(new CacheEntryImpl<>(key,val));
+              store.writeAll(col);
+            }
             if (tx != null)             store.txEnd(true);
             queue.add(key);
           }
         }
         if (queueEmpty) {
           UUID key=UUID.randomUUID();
-          if (rnd.nextBoolean())           store.put(key,key);
- else           store.putAll(Collections.singletonMap(key,key));
+          if (rnd.nextBoolean())           store.write(new CacheEntryImpl<>(key,key));
+ else {
+            Collection<Cache.Entry<? extends Object,? extends Object>> col=new ArrayList<>();
+            col.add(new CacheEntryImpl<>(key,key));
+            store.writeAll(col);
+          }
           if (tx != null)           store.txEnd(true);
           queue.add(key);
         }

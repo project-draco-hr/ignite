@@ -1,36 +1,34 @@
 {
   try {
     ses.newSession(tx);
-    store.put("key1","val1");
+    store.write(new CacheEntryImpl<>("key1","val1"));
     if (tx != null && commit) {
       store.txEnd(true);
       tx=new DummyTx();
       ses.newSession(tx);
     }
     if (tx == null || commit)     assertEquals("val1",store.load("key1"));
-    Map<String,String> m=new HashMap<>();
-    m.put("key2","val2");
-    m.put("key3","val3");
-    store.putAll(m);
+    Collection<Cache.Entry<? extends Object,? extends Object>> col=new ArrayList<>();
+    col.add(new CacheEntryImpl<>("key2","val2"));
+    col.add(new CacheEntryImpl<>("key3","val3"));
+    store.writeAll(col);
     if (tx != null && commit) {
       store.txEnd(true);
       tx=new DummyTx();
     }
-    final AtomicInteger cntr=new AtomicInteger();
     if (tx == null || commit) {
-      store.loadAll(Arrays.asList("key1","key2","key3","no_such_key"),new CI2<Object,Object>(){
-        @Override public void apply(        Object o,        Object o1){
-          if ("key1".equals(o))           assertEquals("val1",o1);
-          if ("key2".equals(o))           assertEquals("val2",o1);
-          if ("key3".equals(o))           assertEquals("val3",o1);
-          if ("no_such_key".equals(o))           fail();
-          cntr.incrementAndGet();
-        }
+      Map<Object,Object> loaded=store.loadAll(Arrays.asList("key1","key2","key3","no_such_key"));
+      for (      Map.Entry<Object,Object> e : loaded.entrySet()) {
+        Object key=e.getKey();
+        Object val=e.getValue();
+        if ("key1".equals(key))         assertEquals("val1",val);
+        if ("key2".equals(key))         assertEquals("val2",val);
+        if ("key3".equals(key))         assertEquals("val3",val);
+        if ("no_such_key".equals(key))         fail();
       }
-);
-      assertEquals(3,cntr.get());
+      assertEquals(3,loaded.size());
     }
-    store.removeAll(Arrays.asList("key2","key3"));
+    store.deleteAll(Arrays.asList("key2","key3"));
     if (tx != null && commit) {
       store.txEnd(true);
       tx=new DummyTx();
@@ -41,7 +39,7 @@
       assertNull(store.load("key3"));
       assertEquals("val1",store.load("key1"));
     }
-    store.remove("key1");
+    store.delete("key1");
     if (tx != null && commit) {
       store.txEnd(true);
       tx=new DummyTx();

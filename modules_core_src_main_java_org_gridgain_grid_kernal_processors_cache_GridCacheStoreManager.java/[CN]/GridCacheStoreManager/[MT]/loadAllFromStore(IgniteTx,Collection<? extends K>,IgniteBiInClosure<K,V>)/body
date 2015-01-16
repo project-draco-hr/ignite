@@ -16,15 +16,17 @@
       boolean ses=initSession(tx);
       try {
         if (keys.size() > singleThreadGate.loadAllThreshold()) {
-          Map<K,Object> map=singleThreadGate.loadAll(keys0);
-          for (          Map.Entry<K,Object> e : map.entrySet()) {
-            K k=e.getKey();
-            V v=convert(e.getValue());
-            if (cctx.portableEnabled()) {
-              k=(K)cctx.marshalToPortable(k);
-              v=(V)cctx.marshalToPortable(v);
+          Map<K,Object> map=store.loadAll(keys0);
+          if (map != null) {
+            for (            Map.Entry<K,Object> e : map.entrySet()) {
+              K k=e.getKey();
+              V v=convert(e.getValue());
+              if (cctx.portableEnabled()) {
+                k=(K)cctx.marshalToPortable(k);
+                v=(V)cctx.marshalToPortable(v);
+              }
+              vis.apply(k,v);
             }
-            vis.apply(k,v);
           }
         }
  else {
