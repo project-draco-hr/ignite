@@ -5,19 +5,13 @@
 synchronized (igniteMap) {
     tuple=igniteMap.get(cacheName);
   }
-  ObjectName objName=getObjectName(cacheName,false);
   MBeanServer mBeanSrv=tuple.get1().configuration().getMBeanServer();
-  try {
-    if (enabled) {
-      if (mBeanSrv.queryNames(objName,null).isEmpty())       mBeanSrv.registerMBean(tuple.get2(),objName);
-    }
+  if (enabled) {
+    registerCacheObject(mBeanSrv,tuple.get2(),cacheName,false);
+    tuple.get1().cache(cacheName).configuration().setManagementEnabled(true);
+  }
  else {
-      for (      ObjectName n : mBeanSrv.queryNames(objName,null))       mBeanSrv.unregisterMBean(n);
-    }
-  }
- catch (  InstanceAlreadyExistsException|InstanceNotFoundException ignored) {
-  }
-catch (  MBeanRegistrationException|NotCompliantMBeanException e) {
-    throw new CacheException(e);
+    unregisterCacheObject(mBeanSrv,cacheName,false);
+    tuple.get1().cache(cacheName).configuration().setManagementEnabled(false);
   }
 }
