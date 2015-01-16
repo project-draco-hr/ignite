@@ -1,2 +1,40 @@
 {
+  GridSqlElement el=mapSelect.get(idx);
+  GridSqlAlias alias=null;
+  if (el instanceof GridSqlAlias) {
+    alias=(GridSqlAlias)el;
+    el=alias.child();
+  }
+  if (el instanceof GridSqlAggregateFunction) {
+    GridSqlAggregateFunction agg=(GridSqlAggregateFunction)el;
+switch (agg.type()) {
+case AVG:
+      GridSqlElement cntMap=aggregate(agg.distinct(),COUNT).addChild(agg.child());
+    cntMap=alias(columnName(mapSelect.size()),cntMap);
+  mapSelect.add(cntMap);
+GridSqlElement avgMap=aggregate(agg.distinct(),AVG).addChild(agg.child());
+avgMap=alias(columnName(idx),avgMap);
+mapSelect.set(idx,avgMap);
+GridSqlElement sumUpRdc=aggregate(false,SUM).addChild(op(GridSqlOperationType.MULTIPLY,column(((GridSqlAlias)avgMap).alias()),column(((GridSqlAlias)cntMap).alias())));
+GridSqlElement sumDownRdc=aggregate(false,SUM).addChild(column(((GridSqlAlias)cntMap).alias()));
+GridSqlElement rdc=op(GridSqlOperationType.DIVIDE,sumUpRdc,sumDownRdc);
+if (alias != null) rdc=alias(alias.alias(),rdc);
+rdcSelect[idx]=rdc;
+break;
+case COUNT_ALL:
+case COUNT:
+case MAX:
+case MIN:
+case SUM:
+default :
+throw new IgniteException("Unsupported aggregate: " + agg.type());
+}
+}
+ else {
+if (alias == null) {
+alias=alias(columnName(idx),mapSelect.get(idx));
+mapSelect.set(idx,alias);
+}
+if (idx < rdcSelect.length) rdcSelect[idx]=column(alias.alias());
+}
 }
