@@ -6,17 +6,13 @@
     res.addMapQuery(tbl0,srcQry.getSQL(),params);
     return res;
   }
-  GridSqlSelect mapQry=srcQry.clone();
-  mapQry.clearSelect();
   List<GridSqlElement> mapExps=new ArrayList<>(srcQry.allExpressions());
   GridSqlElement[] rdcExps=new GridSqlElement[srcQry.select().size()];
   for (int i=0, len=mapExps.size(); i < len; i++)   splitSelectExpression(mapExps,rdcExps,i);
-  List<GridSqlAlias> aliases=new ArrayList<>(srcQry.allExpressions().size());
+  GridSqlSelect mapQry=srcQry.clone();
+  mapQry.clearSelect();
   int idx=0;
   for (  GridSqlElement exp : mapExps) {
-    if (exp instanceof GridSqlColumn)     exp=alias(((GridSqlColumn)exp).columnName(),exp);
- else     if (!(exp instanceof GridSqlAlias))     exp=alias(columnAlias(idx),exp);
-    aliases.add((GridSqlAlias)exp);
     mapQry.addSelectExpression(exp);
     idx++;
   }
