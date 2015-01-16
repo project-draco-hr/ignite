@@ -5,12 +5,14 @@
     /** 
  * {@inheritDoc} 
  */
-    @Override public Void apply(    CacheConfiguration cfg){
+    @SuppressWarnings("unchecked") @Override public Void apply(    CacheConfiguration cfg){
       cfg.setAffinity(new GridCacheConsistentHashAffinityFunction(){
       }
 );
       cfg.setEvictionPolicy(new GridCacheFifoEvictionPolicy());
-      cfg.setStore(new TestStore());
+      cfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(new TestStore()));
+      cfg.setReadThrough(true);
+      cfg.setWriteThrough(true);
       return null;
     }
   }
@@ -23,7 +25,7 @@
     @Override public Void apply(    CacheConfiguration cfg){
       cfg.setAffinity(new GridCacheConsistentHashAffinityFunction());
       cfg.setEvictionPolicy(new GridCacheLruEvictionPolicy());
-      cfg.setStore(null);
+      cfg.setCacheStoreFactory(null);
       return null;
     }
   }

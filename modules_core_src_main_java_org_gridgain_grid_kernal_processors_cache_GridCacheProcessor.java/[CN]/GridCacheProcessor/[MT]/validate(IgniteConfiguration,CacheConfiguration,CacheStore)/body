@@ -26,13 +26,15 @@
   if (c.isPeerClassLoadingEnabled() && (depMode == PRIVATE || depMode == ISOLATED) && !CU.isSystemCache(cc.getName()))   throw new IgniteCheckedException("Cannot start cache in PRIVATE or ISOLATED deployment mode: " + ctx.config().getDeploymentMode());
   if (!c.getTransactionsConfiguration().isTxSerializableEnabled() && c.getTransactionsConfiguration().getDefaultTxIsolation() == SERIALIZABLE)   U.warn(log,"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "(most likely misconfiguration - either update 'isTxSerializableEnabled' or " + "'defaultTxIsolationLevel' properties) for cache: "+ cc.getName(),"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "for cache: " + cc.getName());
   if (cc.isWriteBehindEnabled()) {
-    if (cc.getStore() == null)     throw new IgniteCheckedException("Cannot enable write-behind cache (cache store is not provided) for cache: " + cc.getName());
+    if (cfgStore == null)     throw new IgniteCheckedException("Cannot enable write-behind (write or store is not provided) " + "for cache: " + cc.getName());
     assertParameter(cc.getWriteBehindBatchSize() > 0,"writeBehindBatchSize > 0");
     assertParameter(cc.getWriteBehindFlushSize() >= 0,"writeBehindFlushSize >= 0");
     assertParameter(cc.getWriteBehindFlushFrequency() >= 0,"writeBehindFlushFrequency >= 0");
     assertParameter(cc.getWriteBehindFlushThreadCount() > 0,"writeBehindFlushThreadCount > 0");
     if (cc.getWriteBehindFlushSize() == 0 && cc.getWriteBehindFlushFrequency() == 0)     throw new IgniteCheckedException("Cannot set both 'writeBehindFlushFrequency' and " + "'writeBehindFlushSize' parameters to 0 for cache: " + cc.getName());
   }
+  if (cc.isReadThrough() && cfgStore == null)   throw new IgniteCheckedException("Cannot enable read-through (loader or store is not provided) " + "for cache: " + cc.getName());
+  if (cc.isWriteThrough() && cfgStore == null)   throw new IgniteCheckedException("Cannot enable read-through (writer or store is not provided) " + "for cache: " + cc.getName());
   long delay=cc.getPreloadPartitionedDelay();
   if (delay != 0) {
     if (cc.getCacheMode() != PARTITIONED)     U.warn(log,"Preload delay is supported only for partitioned caches (will ignore): " + cc.getName(),"Will ignore preload delay for cache: " + cc.getName());
