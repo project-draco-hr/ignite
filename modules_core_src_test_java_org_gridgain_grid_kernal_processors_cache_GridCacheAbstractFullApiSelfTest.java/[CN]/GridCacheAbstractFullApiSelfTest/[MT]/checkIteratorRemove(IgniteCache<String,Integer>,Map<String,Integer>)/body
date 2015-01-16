@@ -3,15 +3,17 @@
   removeCacheIterator(cache,rmvKey);
   entries.remove(rmvKey);
   assertFalse(cache.containsKey(rmvKey));
+  assertNull(cache.get(rmvKey));
   checkIteratorCache(entries);
-  Iterator<Cache.Entry<String,Integer>> iter=jcache(0).iterator();
+  final Iterator<Cache.Entry<String,Integer>> iter=jcache(0).iterator();
   assertTrue(iter.hasNext());
   iter.next();
   iter.remove();
-  try {
-    iter.remove();
-    fail();
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Void call() throws Exception {
+      iter.remove();
+      return null;
+    }
   }
- catch (  IllegalStateException e) {
-  }
+,IllegalStateException.class,null);
 }
