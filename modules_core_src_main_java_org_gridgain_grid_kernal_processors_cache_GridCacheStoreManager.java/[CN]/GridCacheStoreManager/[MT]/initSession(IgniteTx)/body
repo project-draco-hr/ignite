@@ -1,10 +1,14 @@
 {
-  if (!sesEnabled || tx == null)   return false;
-  SessionData ses=((GridMetadataAware)tx).meta(SES_ATTR);
-  if (ses == null) {
-    ses=new SessionData(tx);
-    ((GridMetadataAware)tx).addMeta(SES_ATTR,ses);
+  if (!sesEnabled)   return false;
+  SessionData ses;
+  if (tx != null) {
+    ses=((GridMetadataAware)tx).meta(SES_ATTR);
+    if (ses == null) {
+      ses=new SessionData(tx);
+      ((GridMetadataAware)tx).addMeta(SES_ATTR,ses);
+    }
   }
+ else   ses=new SessionData(null);
   sesHolder.set(ses);
   return true;
 }
