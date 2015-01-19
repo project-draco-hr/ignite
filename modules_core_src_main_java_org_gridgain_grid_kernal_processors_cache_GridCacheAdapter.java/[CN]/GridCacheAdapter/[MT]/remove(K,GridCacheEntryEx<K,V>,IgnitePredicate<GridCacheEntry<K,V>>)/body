@@ -1,8 +1,10 @@
 {
+  boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  long start=statsEnabled ? System.nanoTime() : 0L;
   ctx.denyOnLocalRead();
   A.notNull(key,"key");
   if (keyCheck)   validateCacheKey(key);
-  return ctx.cloneOnFlag(syncOp(new SyncOp<V>(true){
+  V prevVal=ctx.cloneOnFlag(syncOp(new SyncOp<V>(true){
     @Override public V op(    IgniteTxLocalAdapter<K,V> tx) throws IgniteCheckedException {
       V ret=tx.removeAllAsync(ctx,Collections.singletonList(key),entry,true,filter).get().value();
       if (ctx.config().getInterceptor() != null)       return (V)ctx.config().getInterceptor().onBeforeRemove(key,ret).get2();
@@ -13,4 +15,6 @@
     }
   }
 ));
+  if (statsEnabled)   ctx.cache().metrics0().addRemoveAndGetTimeNanos(System.nanoTime() - start);
+  return prevVal;
 }

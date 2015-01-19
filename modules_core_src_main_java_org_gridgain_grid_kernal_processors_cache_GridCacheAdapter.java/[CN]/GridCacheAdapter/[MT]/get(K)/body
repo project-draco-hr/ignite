@@ -1,5 +1,8 @@
 {
+  boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  long start=statsEnabled ? System.nanoTime() : 0L;
   V val=get(key,true,null);
   if (ctx.config().getInterceptor() != null)   val=(V)ctx.config().getInterceptor().onGet(key,val);
+  if (statsEnabled)   ctx.cache().metrics0().addGetTimeNanos(System.nanoTime() - start);
   return val;
 }

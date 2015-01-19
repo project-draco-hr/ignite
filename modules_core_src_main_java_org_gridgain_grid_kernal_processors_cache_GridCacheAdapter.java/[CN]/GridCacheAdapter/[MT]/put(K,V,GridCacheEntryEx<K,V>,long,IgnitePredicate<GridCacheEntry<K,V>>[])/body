@@ -1,9 +1,11 @@
 {
+  boolean statisticsEnabled=ctx.config().isStatisticsEnabled();
+  long start=statisticsEnabled ? System.nanoTime() : 0L;
   A.notNull(key,"key",val,"val");
   if (keyCheck)   validateCacheKey(key);
   validateCacheValue(val);
   ctx.denyOnLocalRead();
-  return ctx.cloneOnFlag(syncOp(new SyncOp<V>(true){
+  V prevValue=ctx.cloneOnFlag(syncOp(new SyncOp<V>(true){
     @Override public V op(    IgniteTxLocalAdapter<K,V> tx) throws IgniteCheckedException {
       return tx.putAllAsync(ctx,F.t(key,val),true,cached,ttl,filter).get().value();
     }
@@ -12,4 +14,9 @@
     }
   }
 ));
+  if (statisticsEnabled) {
+    ctx.cache().metrics0().addPutTimeNanos(System.nanoTime() - start);
+    ctx.cache().metrics0().addGetTimeNanos(System.nanoTime() - start);
+  }
+  return prevValue;
 }
