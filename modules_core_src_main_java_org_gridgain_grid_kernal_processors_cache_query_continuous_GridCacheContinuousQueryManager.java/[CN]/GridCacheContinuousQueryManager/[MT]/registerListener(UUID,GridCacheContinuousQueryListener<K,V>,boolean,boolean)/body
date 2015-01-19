@@ -1,0 +1,16 @@
+{
+  ListenerInfo<K,V> info=new ListenerInfo<>(lsnr,entryLsnr);
+  boolean added;
+  if (internal) {
+    added=intLsnrs.putIfAbsent(lsnrId,info) == null;
+    if (added)     intLsnrCnt.incrementAndGet();
+  }
+ else {
+    added=lsnrs.putIfAbsent(lsnrId,info) == null;
+    if (added) {
+      lsnrCnt.incrementAndGet();
+      lsnr.onExecution();
+    }
+  }
+  return added;
+}
