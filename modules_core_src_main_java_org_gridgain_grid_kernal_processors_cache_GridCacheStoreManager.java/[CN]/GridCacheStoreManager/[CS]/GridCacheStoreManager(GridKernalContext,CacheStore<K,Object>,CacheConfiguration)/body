@@ -1,9 +1,18 @@
 {
   this.cfgStore=cfgStore;
-  store=cacheStoreWrapper(ctx.gridName(),cfgStore,cfg);
+  store=cacheStoreWrapper(ctx,cfgStore,cfg);
   singleThreadGate=store == null ? null : new CacheStoreBalancingWrapper<>(store);
-  boolean sesEnabled0=false;
-  if (cfgStore != null && cfg.getAtomicityMode() == TRANSACTIONAL)   sesEnabled0=ctx.resource().injectStoreSession(cfgStore,new ThreadLocalSession());
-  sesEnabled=sesEnabled0;
+  if (cfgStore != null && cfg.getAtomicityMode() == TRANSACTIONAL) {
+    try {
+      Field sesField=CacheStore.class.getDeclaredField("ses");
+      sesField.setAccessible(true);
+      sesField.set(cfgStore,new ThreadLocalSession());
+      sesEnabled=true;
+    }
+ catch (    IllegalAccessException|NoSuchFieldException e) {
+      throw new IgniteCheckedException(e);
+    }
+  }
+ else   sesEnabled=true;
   locStore=U.hasAnnotation(cfgStore,CacheLocalStore.class);
 }

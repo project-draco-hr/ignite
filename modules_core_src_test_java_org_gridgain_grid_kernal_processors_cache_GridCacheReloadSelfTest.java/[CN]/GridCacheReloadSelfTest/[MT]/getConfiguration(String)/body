@@ -11,7 +11,7 @@
   cacheCfg.setCacheMode(cacheMode);
   cacheCfg.setEvictionPolicy(new GridCacheLruEvictionPolicy(MAX_CACHE_ENTRIES));
   cacheCfg.setDistributionMode(nearEnabled ? NEAR_PARTITIONED : PARTITIONED_ONLY);
-  cacheCfg.setStore(new CacheStoreAdapter<Integer,Integer>(){
+  final CacheStore store=new CacheStoreAdapter<Integer,Integer>(){
     @Override public Integer load(    Integer key){
       return key;
     }
@@ -20,7 +20,10 @@
     @Override public void delete(    Object key){
     }
   }
-);
+;
+  cacheCfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+  cacheCfg.setReadThrough(true);
+  cacheCfg.setWriteThrough(true);
   if (cacheMode == PARTITIONED)   cacheCfg.setBackups(1);
   cfg.setCacheConfiguration(cacheCfg);
   return cfg;

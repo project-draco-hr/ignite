@@ -9,7 +9,13 @@
   cc.setAtomicityMode(atomicityMode());
   cc.setBackups(BACKUP_CNT);
   cc.setWriteSynchronizationMode(FULL_SYNC);
-  cc.setStore(cacheStore());
+  CacheStore store=cacheStore();
+  if (store != null) {
+    cc.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+    cc.setReadThrough(true);
+    cc.setWriteThrough(true);
+  }
+ else   cc.setCacheStoreFactory(null);
   cc.setAtomicWriteOrderMode(atomicWriteOrderMode());
   c.setCacheConfiguration(cc);
   return c;

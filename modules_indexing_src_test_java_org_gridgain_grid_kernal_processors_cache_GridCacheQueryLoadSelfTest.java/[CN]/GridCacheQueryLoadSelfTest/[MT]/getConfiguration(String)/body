@@ -1,10 +1,12 @@
 {
   IgniteConfiguration cfg=super.getConfiguration(gridName);
-  CacheConfiguration cache=defaultCacheConfiguration();
-  cache.setCacheMode(REPLICATED);
-  cache.setStore(new TestStore());
-  cache.setWriteSynchronizationMode(FULL_SYNC);
-  cfg.setCacheConfiguration(cache);
+  CacheConfiguration ccfg=defaultCacheConfiguration();
+  ccfg.setCacheMode(REPLICATED);
+  ccfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(new TestStore()));
+  ccfg.setReadThrough(true);
+  ccfg.setWriteThrough(true);
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  cfg.setCacheConfiguration(ccfg);
   TcpDiscoverySpi disco=new TcpDiscoverySpi();
   disco.setIpFinder(IP_FINDER);
   cfg.setDiscoverySpi(disco);
