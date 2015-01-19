@@ -16,14 +16,22 @@
       }
  else       map0=map;
       if (log.isDebugEnabled())       log.debug("Storing values in cache store [map=" + map0 + ']');
+      Collection<Cache.Entry<? extends K,? extends Object>> entries=new ArrayList<>(map.size());
+      for (      Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e : map.entrySet())       entries.add(new CacheEntryImpl<>(e.getKey(),locStore ? e.getValue() : e.getValue().get1()));
       boolean ses=initSession(tx);
       try {
-        Collection<Cache.Entry<? extends K,? extends Object>> entries=new ArrayList<>(map.size());
-        for (        Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e : map.entrySet())         entries.add(new CacheEntryImpl<>(e.getKey(),locStore ? e.getValue() : e.getValue().get1()));
         store.writeAll(entries);
       }
  catch (      ClassCastException e) {
         handleClassCastException(e);
+      }
+catch (      Exception e) {
+        if (!entries.isEmpty()) {
+          List<Object> keys=new ArrayList<>(entries.size());
+          for (          Cache.Entry<?,?> entry : entries)           keys.add(entry.getKey());
+          throw new CacheStorePartialUpdateException(keys,e);
+        }
+        throw new IgniteCheckedException(e);
       }
  finally {
         if (ses)         sesHolder.set(null);
