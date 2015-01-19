@@ -4,9 +4,9 @@
     for (int i=0; i < gridCnt; i++)     grid(i).events().localListen(new EvictListener(),EVT_CACHE_ENTRY_EVICTED);
     for (int i=0; i < gridCnt; i++) {
       reset();
-      GridCache<Object,Object> cache=cache(i);
-      cache.lock("key",0L);
-      cache.unlock("key");
+      IgniteCache<Object,Object> cache=jcache(i);
+      cache.lock("key").lock();
+      cache.lock("key").unlock();
       assertTrue(evictLatch.await(3,SECONDS));
       assertEquals(gridCnt,evictCnt.get());
       assertEquals(gridCnt,touchCnt.get());
