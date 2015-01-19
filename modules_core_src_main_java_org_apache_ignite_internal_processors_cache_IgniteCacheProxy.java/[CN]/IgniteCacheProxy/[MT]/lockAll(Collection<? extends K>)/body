@@ -40,9 +40,9 @@
     @Override public boolean tryLock(    long time,    TimeUnit unit) throws InterruptedException {
       if (Thread.interrupted())       throw new InterruptedException();
       try {
+        if (time <= 0)         return delegate.lockAll(keys,-1);
         IgniteFuture<Boolean> fut=null;
         try {
-          if (time <= 0)           return delegate.lockAll(keys,-1);
           fut=delegate.lockAllAsync(keys,time <= 0 ? -1 : unit.toMillis(time));
           return fut.get();
         }
