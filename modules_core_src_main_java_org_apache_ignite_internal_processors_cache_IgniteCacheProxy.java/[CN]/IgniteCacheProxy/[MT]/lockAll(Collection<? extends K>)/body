@@ -1,5 +1,23 @@
 {
-  return new Lock(){
+  return new CacheLock(){
+    @Override public boolean isLocked(){
+      for (      K key : keys) {
+        if (!delegate.isLocked(key))         return false;
+      }
+      return true;
+    }
+    @Override public boolean isLockedByThread(){
+      for (      K key : keys) {
+        if (!delegate.isLockedByThread(key))         return false;
+      }
+      return true;
+    }
+    @Override public IgniteFuture<Boolean> lockAsync(){
+      return delegate.lockAllAsync(keys,0);
+    }
+    @Override public IgniteFuture<Boolean> lockAsync(    long timeout,    TimeUnit unit){
+      return delegate.lockAllAsync(keys,unit.toMillis(timeout));
+    }
     @Override public void lock(){
       try {
         delegate.lockAll(keys,0);
