@@ -1,3 +1,59 @@
 {
-  throw new UnsupportedOperationException();
+  return new Lock(){
+    @Override public void lock(){
+      try {
+        delegate.lockAll(keys,0);
+      }
+ catch (      GridInterruptedException ignored) {
+      }
+catch (      IgniteCheckedException e) {
+        throw new CacheException(e.getMessage(),e);
+      }
+    }
+    @Override public void lockInterruptibly() throws InterruptedException {
+      if (Thread.interrupted())       throw new InterruptedException();
+      try {
+        delegate.lockAll(keys,0);
+      }
+ catch (      GridInterruptedException e) {
+        if (e.getCause() instanceof InterruptedException)         throw (InterruptedException)e.getCause();
+        throw new InterruptedException();
+      }
+catch (      IgniteCheckedException e) {
+        throw new CacheException(e.getMessage(),e);
+      }
+    }
+    @Override public boolean tryLock(){
+      try {
+        return delegate.lockAll(keys,-1);
+      }
+ catch (      IgniteCheckedException e) {
+        throw new CacheException(e.getMessage(),e);
+      }
+    }
+    @Override public boolean tryLock(    long time,    TimeUnit unit) throws InterruptedException {
+      try {
+        return delegate.lockAll(keys,unit.toMillis(time));
+      }
+ catch (      GridInterruptedException e) {
+        if (e.getCause() instanceof InterruptedException)         throw (InterruptedException)e.getCause();
+        throw new InterruptedException();
+      }
+catch (      IgniteCheckedException e) {
+        throw new CacheException(e.getMessage(),e);
+      }
+    }
+    @Override public void unlock(){
+      try {
+        delegate.unlockAll(keys);
+      }
+ catch (      IgniteCheckedException e) {
+        throw new CacheException(e.getMessage(),e);
+      }
+    }
+    @NotNull @Override public Condition newCondition(){
+      throw new UnsupportedOperationException();
+    }
+  }
+;
 }
