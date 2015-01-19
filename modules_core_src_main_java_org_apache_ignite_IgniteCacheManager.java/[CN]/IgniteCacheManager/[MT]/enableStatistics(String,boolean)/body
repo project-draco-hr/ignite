@@ -1,5 +1,21 @@
 {
   ensureNotClosed();
   if (cacheName == null)   throw new NullPointerException();
-  throw new UnsupportedOperationException();
+  IgniteBiTuple<Ignite,IgniteCacheMXBean> tuple;
+synchronized (igniteMap) {
+    tuple=igniteMap.get(cacheName);
+  }
+  Ignite ignite=tuple.get1();
+  GridCache cache=ignite.cache(cacheName);
+  GridCacheConfiguration configuration=ignite.jcache(cacheName).getConfiguration(GridCacheConfiguration.class);
+  MBeanServer mBeanSrv=ignite.configuration().getMBeanServer();
+  if (enabled) {
+    CacheMetricsMXBean mxBean=new CacheMetricsMXBean(cache);
+    registerCacheObject(mBeanSrv,mxBean,cacheName,true);
+    configuration.setStatisticsEnabled(true);
+  }
+ else {
+    unregisterCacheObject(mBeanSrv,cacheName,true);
+    configuration.setStatisticsEnabled(false);
+  }
 }
