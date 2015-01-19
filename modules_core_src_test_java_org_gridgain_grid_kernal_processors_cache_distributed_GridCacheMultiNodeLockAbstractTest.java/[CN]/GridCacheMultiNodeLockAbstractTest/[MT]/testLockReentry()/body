@@ -1,2 +1,15 @@
 {
+  IgniteCache<Integer,String> cache=ignite1.jcache(null);
+  cache.lock(1).lock();
+  try {
+    checkLocked(cache,1);
+    cache.lock(1).lock();
+    checkLocked(cache,1);
+    cache.lockAll(Collections.singleton(1)).unlock();
+    checkLocked(cache,1);
+  }
+  finally {
+    cache.lockAll(Collections.singleton(1)).unlock();
+  }
+  checkUnlocked(cache,1);
 }
