@@ -1,8 +1,17 @@
 {
   GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
-    itHolder.checkWeakQueue();
-    return itHolder.iterator(delegate.queries().createScanQuery(null).execute());
+    ctx.itHolder().checkWeakQueue();
+    GridCacheQueryFuture<Map.Entry<K,V>> fut=delegate.queries().createScanQuery(null).execute();
+    return ctx.itHolder().iterator(fut,new CacheIteratorConverter<Entry<K,V>,Map.Entry<K,V>>(){
+      @Override protected Entry<K,V> convert(      Map.Entry<K,V> e){
+        return new CacheEntryImpl<>(e.getKey(),e.getValue());
+      }
+      @Override protected void remove(      Entry<K,V> item){
+        IgniteCacheProxy.this.remove(item.getKey());
+      }
+    }
+);
   }
   finally {
     gate.leave(prev);
