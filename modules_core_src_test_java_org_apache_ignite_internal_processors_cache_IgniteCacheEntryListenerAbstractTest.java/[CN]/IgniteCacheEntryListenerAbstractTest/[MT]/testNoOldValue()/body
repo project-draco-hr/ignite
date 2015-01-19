@@ -1,0 +1,19 @@
+{
+  CacheEntryListenerConfiguration<Integer,Integer> lsnrCfg=new MutableCacheEntryListenerConfiguration<>(new Factory<CacheEntryListener<Integer,Integer>>(){
+    @Override public CacheEntryListener<Integer,Integer> create(){
+      return new CreateUpdateRemoveExpireListener();
+    }
+  }
+,null,false,true);
+  IgniteCache<Integer,Integer> cache=jcache();
+  try {
+    for (    Integer key : keys()) {
+      log.info("Check create/update/remove/expire events, no old value [key=" + key + ']');
+      cache.registerCacheEntryListener(lsnrCfg);
+      checkEvents(cache,lsnrCfg,key,true,true,true,true,false);
+    }
+  }
+  finally {
+    cache.deregisterCacheEntryListener(lsnrCfg);
+  }
+}
