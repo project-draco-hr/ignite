@@ -12,11 +12,12 @@
   }
   Ignite webSesIgnite=G.ignite(gridName);
   if (webSesIgnite == null)   throw new IgniteException("Grid for web sessions caching is not started (is it configured?): " + gridName);
+  txs=webSesIgnite.transactions();
   log=webSesIgnite.log();
   if (webSesIgnite == null)   throw new IgniteException("Grid for web sessions caching is not started (is it configured?): " + gridName);
-  cache=webSesIgnite.cache(cacheName);
+  cache=webSesIgnite.jcache(cacheName);
   if (cache == null)   throw new IgniteException("Cache for web sessions is not started (is it configured?): " + cacheName);
-  GridCacheConfiguration cacheCfg=cache.configuration();
+  GridCacheConfiguration cacheCfg=cache.getConfiguration(GridCacheConfiguration.class);
   if (cacheCfg.getWriteSynchronizationMode() == FULL_ASYNC)   throw new IgniteException("Cache for web sessions cannot be in FULL_ASYNC mode: " + cacheName);
   if (!cacheCfg.isEagerTtl())   throw new IgniteException("Cache for web sessions cannot operate with lazy TTL. " + "Consider setting eagerTtl to true for cache: " + cacheName);
   if (cacheCfg.getCacheMode() == LOCAL)   U.quietAndWarn(webSesIgnite.log(),"Using LOCAL cache for web sessions caching " + "(this is only OK in test mode): " + cacheName);

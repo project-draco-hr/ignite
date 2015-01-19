@@ -1,0 +1,25 @@
+{
+  GridCacheQueueHeader hdr=e.getValue();
+  boolean rmvd=queueRemoved(hdr,id);
+  if (rmvd || hdr.empty())   return rmvd ? QUEUE_REMOVED_IDX : null;
+  Set<Long> rmvdIdxs=hdr.removedIndexes();
+  if (rmvdIdxs == null) {
+    GridCacheQueueHeader newHdr=new GridCacheQueueHeader(hdr.id(),hdr.capacity(),hdr.collocated(),hdr.head() + 1,hdr.tail(),rmvdIdxs);
+    e.setValue(newHdr);
+    return hdr.head();
+  }
+  long next=hdr.head() + 1;
+  rmvdIdxs=new HashSet<>(rmvdIdxs);
+  do {
+    if (!rmvdIdxs.remove(next)) {
+      GridCacheQueueHeader newHdr=new GridCacheQueueHeader(hdr.id(),hdr.capacity(),hdr.collocated(),next + 1,hdr.tail(),rmvdIdxs.isEmpty() ? null : rmvdIdxs);
+      e.setValue(newHdr);
+      return next;
+    }
+    next++;
+  }
+ while (next != hdr.tail());
+  GridCacheQueueHeader newHdr=new GridCacheQueueHeader(hdr.id(),hdr.capacity(),hdr.collocated(),next,hdr.tail(),rmvdIdxs.isEmpty() ? null : rmvdIdxs);
+  e.setValue(newHdr);
+  return null;
+}

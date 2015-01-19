@@ -8,15 +8,15 @@
     distroMode=GridCacheDistributionMode.CLIENT_ONLY;
     startGrid(2);
     failDeserialization=false;
-    GridCacheProjection<Integer,TestObject> cache=grid(2).cache(null);
+    IgniteCache<Integer,TestObject> cache=grid(2).jcache(null);
     if (backups > 0 && atomicityMode == ATOMIC)     cache=cache.flagsOn(FORCE_TRANSFORM_BACKUP);
     for (int i=0; i < 100; i++)     cache.put(i,new TestObject());
     failDeserialization=true;
     info(">>>>>> Transforming");
-    for (int i=0; i < 200; i++)     cache.transform(i,new Transform());
-    Map<Integer,Transform> transformMap=new HashMap<>();
-    for (int i=0; i < 300; i++)     transformMap.put(i,new Transform());
-    cache.transformAll(transformMap);
+    for (int i=0; i < 200; i++)     cache.invoke(i,new Transform());
+    Set<Integer> keys=new HashSet<>();
+    for (int i=0; i < 300; i++)     keys.add(i);
+    cache.invokeAll(keys,new Transform());
     failDeserialization=false;
   }
   finally {
