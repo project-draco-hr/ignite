@@ -56,8 +56,11 @@ synchronized (this) {
       if (updateMetrics)       cctx.cache().metrics0().onRead(true);
       ret=old;
     }
-    if (evt && expired && cctx.events().isRecordable(EVT_CACHE_OBJECT_EXPIRED)) {
-      cctx.events().addEvent(partition(),key,tx,owner,EVT_CACHE_OBJECT_EXPIRED,null,false,expiredVal,expiredVal != null || hasOldBytes,subjId,null,taskName);
+    if (evt && expired) {
+      if (cctx.events().isRecordable(EVT_CACHE_OBJECT_EXPIRED)) {
+        cctx.events().addEvent(partition(),key,tx,owner,EVT_CACHE_OBJECT_EXPIRED,null,false,expiredVal,expiredVal != null || hasOldBytes,subjId,null,taskName);
+      }
+      cctx.continuousQueries().onEntryExpired(this,key,expiredVal,null);
       evt=false;
     }
     if (evt && !expired && cctx.events().isRecordable(EVT_CACHE_OBJECT_READ)) {
