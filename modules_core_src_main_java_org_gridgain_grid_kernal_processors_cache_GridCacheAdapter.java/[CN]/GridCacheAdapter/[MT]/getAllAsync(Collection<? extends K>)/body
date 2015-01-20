@@ -1,8 +1,23 @@
 {
+  final boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  final long start=statsEnabled ? System.nanoTime() : 0L;
   IgniteFuture<Map<K,V>> fut=getAllAsync(keys,true,null);
   if (ctx.config().getInterceptor() != null)   return fut.chain(new CX1<IgniteFuture<Map<K,V>>,Map<K,V>>(){
     @Override public Map<K,V> applyx(    IgniteFuture<Map<K,V>> f) throws IgniteCheckedException {
       return interceptGet(keys,f.get());
+    }
+  }
+);
+  if (statsEnabled)   fut.listenAsync(new CI1<IgniteFuture<Map<K,V>>>(){
+    @Override public void apply(    IgniteFuture<Map<K,V>> fut){
+      try {
+        if (!fut.isCancelled()) {
+          fut.get();
+          ctx.cache().metrics0().addGetTimeNanos(System.nanoTime() - start);
+        }
+      }
+ catch (      IgniteCheckedException ignore) {
+      }
     }
   }
 );

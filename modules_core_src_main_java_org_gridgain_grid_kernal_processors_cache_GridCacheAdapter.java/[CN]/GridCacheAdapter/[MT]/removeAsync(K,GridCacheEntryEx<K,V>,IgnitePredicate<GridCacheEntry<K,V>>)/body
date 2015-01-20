@@ -1,8 +1,10 @@
 {
+  final boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  final long start=statsEnabled ? System.nanoTime() : 0L;
   ctx.denyOnLocalRead();
   A.notNull(key,"key");
   if (keyCheck)   validateCacheKey(key);
-  return ctx.wrapClone(asyncOp(new AsyncOp<V>(key){
+  IgniteFuture<V> fut=ctx.wrapClone(asyncOp(new AsyncOp<V>(key){
     @Override public IgniteFuture<V> op(    IgniteTxLocalAdapter<K,V> tx){
       return tx.removeAllAsync(ctx,Collections.singletonList(key),null,true,filter).chain((IgniteClosure<IgniteFuture<GridCacheReturn<V>>,V>)RET2VAL);
     }
@@ -11,4 +13,21 @@
     }
   }
 ));
+  if (statsEnabled)   fut.listenAsync(new CI1<IgniteFuture<V>>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void apply(    IgniteFuture<V> fut){
+      try {
+        if (!fut.isCancelled()) {
+          fut.get();
+          ctx.cache().metrics0().addRemoveTimeNanos(System.nanoTime() - start);
+        }
+      }
+ catch (      IgniteCheckedException ignore) {
+      }
+    }
+  }
+);
+  return fut;
 }
