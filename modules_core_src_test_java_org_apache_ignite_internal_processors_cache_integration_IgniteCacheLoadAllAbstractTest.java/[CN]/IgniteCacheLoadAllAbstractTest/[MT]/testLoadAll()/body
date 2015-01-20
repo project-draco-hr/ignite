@@ -1,2 +1,47 @@
 {
+  IgniteCache<Integer,String> cache0=jcache(0);
+  final int KEYS=10;
+  for (int i=0; i < KEYS; i++)   cache0.put(i,String.valueOf(i));
+  stopAllGrids();
+  writeThrough=false;
+  startGrids();
+  cache0=jcache(0);
+  Set<Integer> keys=new HashSet<>();
+  Map<Integer,String> expVals=new HashMap<>();
+  for (int i=0; i < KEYS / 2; i++) {
+    keys.add(i);
+    expVals.put(i,String.valueOf(i));
+  }
+  for (int i=KEYS + 1000; i < KEYS + 1010; i++)   keys.add(i);
+  CompletionListenerFuture fut=new CompletionListenerFuture();
+  log.info("Load1.");
+  cache0.loadAll(keys,false,fut);
+  fut.get();
+  checkValues(KEYS,expVals);
+  HashMap<Integer,String> expChangedVals=new HashMap<>();
+  for (int i=0; i < KEYS / 2; i++) {
+    String val="changed";
+    cache0.put(i,val);
+    expChangedVals.put(i,val);
+  }
+  checkValues(KEYS,expChangedVals);
+  fut=new CompletionListenerFuture();
+  log.info("Load2.");
+  cache0.loadAll(keys,false,fut);
+  fut.get();
+  checkValues(KEYS,expChangedVals);
+  log.info("Load3.");
+  fut=new CompletionListenerFuture();
+  cache0.loadAll(keys,true,fut);
+  fut.get();
+  checkValues(KEYS,expVals);
+  for (int i=0; i < KEYS; i++) {
+    keys.add(i);
+    expVals.put(i,String.valueOf(i));
+  }
+  fut=new CompletionListenerFuture();
+  log.info("Load4.");
+  cache0.loadAll(keys,false,fut);
+  fut.get();
+  checkValues(KEYS,expVals);
 }

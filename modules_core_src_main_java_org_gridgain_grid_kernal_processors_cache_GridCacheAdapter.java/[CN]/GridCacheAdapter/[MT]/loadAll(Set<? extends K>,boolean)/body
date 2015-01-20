@@ -1,2 +1,28 @@
 {
+  A.notNull(keys,"keys");
+  if (keys.size() < 10) {
+    for (    K key : keys) {
+      if (key == null)       throw new NullPointerException("Key to load is null.");
+    }
+  }
+  if (!ctx.store().configured())   return new GridFinishedFuture<>(ctx.kernalContext());
+  if (replaceExisting) {
+    if (ctx.store().isLocalStore()) {
+      Collection<ClusterNode> nodes=ctx.grid().forCache(name()).nodes();
+      return ctx.closures().callAsyncNoFailover(BROADCAST,new LoadKeysCallable<>(ctx.name(),keys,true),nodes,true);
+    }
+ else {
+      return ctx.closures().callLocalSafe(new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          localLoadAndUpdate(keys);
+          return null;
+        }
+      }
+);
+    }
+  }
+ else {
+    Collection<ClusterNode> nodes=ctx.grid().forCache(name()).nodes();
+    return ctx.closures().callAsyncNoFailover(BROADCAST,new LoadKeysCallable<>(ctx.name(),keys,false),nodes,true);
+  }
 }

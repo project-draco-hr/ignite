@@ -1,0 +1,22 @@
+{
+  Map<Object,Object> vals=new HashMap<>();
+  for (int i=0; i < 100; i++)   vals.put(i,i);
+  for (int i=0; i < gridCount(); i++) {
+    log.info("Test with grid: " + i);
+    storeMap.clear();
+    ldrCallCnt.set(0);
+    writerCallCnt.set(0);
+    IgniteCache<Object,Object> cache=jcache(i);
+    assertTrue(cache.getAll(vals.keySet()).isEmpty());
+    int expLoads=gridCount();
+    checkCalls(expLoads,0);
+    storeMap.putAll(vals);
+    assertEquals(vals,cache.getAll(vals.keySet()));
+    expLoads+=gridCount();
+    checkCalls(expLoads,0);
+    for (    Object key : vals.keySet())     assertTrue(storeMap.contains(key));
+    cache.removeAll(vals.keySet());
+    checkCalls(expLoads,gridCount());
+    for (    Object key : vals.keySet())     assertFalse(storeMap.containsKey(key));
+  }
+}
