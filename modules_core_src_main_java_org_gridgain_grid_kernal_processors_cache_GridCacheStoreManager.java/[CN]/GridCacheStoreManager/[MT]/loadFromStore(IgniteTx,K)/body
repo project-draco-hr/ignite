@@ -1,21 +1,3 @@
 {
-  if (store != null) {
-    if (key instanceof GridCacheInternal)     return null;
-    if (convertPortable)     key=(K)cctx.unwrapPortableIfNeeded(key,false);
-    if (log.isDebugEnabled())     log.debug("Loading value from store for key: " + key);
-    V val=null;
-    boolean ses=initSession(tx);
-    try {
-      val=convert(singleThreadGate.load(key));
-    }
- catch (    ClassCastException e) {
-      handleClassCastException(e);
-    }
- finally {
-      if (ses)       sesHolder.set(null);
-    }
-    if (log.isDebugEnabled())     log.debug("Loaded value from store [key=" + key + ", val="+ val+ ']');
-    return cctx.portableEnabled() ? (V)cctx.marshalToPortable(val) : val;
-  }
-  return null;
+  return (V)loadFromStore(tx,key,true);
 }

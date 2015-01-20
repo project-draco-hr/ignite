@@ -1,59 +1,6 @@
 {
   if (store != null) {
-    if (!keys.isEmpty()) {
-      if (keys.size() == 1) {
-        K key=F.first(keys);
-        vis.apply(key,loadFromStore(tx,key));
-        return true;
-      }
-      Collection<? extends K> keys0=convertPortable ? F.viewReadOnly(keys,new C1<K,K>(){
-        @Override public K apply(        K k){
-          return (K)cctx.unwrapPortableIfNeeded(k,false);
-        }
-      }
-) : keys;
-      if (log.isDebugEnabled())       log.debug("Loading values from store for keys: " + keys0);
-      boolean ses=initSession(tx);
-      try {
-        if (keys.size() > singleThreadGate.loadAllThreshold()) {
-          Map<K,Object> map=store.loadAll(keys0);
-          if (map != null) {
-            for (            Map.Entry<K,Object> e : map.entrySet()) {
-              K k=e.getKey();
-              V v=convert(e.getValue());
-              if (cctx.portableEnabled()) {
-                k=(K)cctx.marshalToPortable(k);
-                v=(V)cctx.marshalToPortable(v);
-              }
-              vis.apply(k,v);
-            }
-          }
-        }
- else {
-          singleThreadGate.loadAll(keys0,new CI2<K,Object>(){
-            @Override public void apply(            K k,            Object o){
-              V v=convert(o);
-              if (cctx.portableEnabled()) {
-                k=(K)cctx.marshalToPortable(k);
-                v=(V)cctx.marshalToPortable(v);
-              }
-              vis.apply(k,v);
-            }
-          }
-);
-        }
-      }
- catch (      ClassCastException e) {
-        handleClassCastException(e);
-      }
-catch (      Exception e) {
-        throw U.cast(e);
-      }
- finally {
-        if (ses)         sesHolder.set(null);
-      }
-      if (log.isDebugEnabled())       log.debug("Loaded values from store for keys: " + keys0);
-    }
+    loadAllFromStore(null,keys,vis,null);
     return true;
   }
  else {
