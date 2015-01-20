@@ -14,7 +14,7 @@
           entry=ctx.isSwapOrOffheapEnabled() ? entryEx(key) : peekEx(key);
           if (entry != null) {
             boolean isNew=entry.isNewLocked();
-            V v=entry.innerGet(null,true,false,true,true,true,true,false,subjId,null,taskName,filter,expiry);
+            V v=entry.innerGet(null,true,false,true,true,false,true,false,subjId,null,taskName,filter,expiry);
             if (v == null) {
               GridCacheVersion obsoleteVer=context().versions().next();
               if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(key);
@@ -48,6 +48,7 @@ catch (        IgniteCheckedException e) {
         }
       }
       if (!success)       break;
+ else       ctx.cache().metrics0().onRead(true);
     }
     if (success) {
       sendTtlUpdateRequest(expiry);

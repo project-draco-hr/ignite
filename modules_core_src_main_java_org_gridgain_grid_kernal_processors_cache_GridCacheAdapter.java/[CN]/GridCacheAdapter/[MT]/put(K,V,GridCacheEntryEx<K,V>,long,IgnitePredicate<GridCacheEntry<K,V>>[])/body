@@ -1,6 +1,6 @@
 {
-  boolean statisticsEnabled=ctx.config().isStatisticsEnabled();
-  long start=statisticsEnabled ? System.nanoTime() : 0L;
+  boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  long start=statsEnabled ? System.nanoTime() : 0L;
   A.notNull(key,"key",val,"val");
   if (keyCheck)   validateCacheKey(key);
   validateCacheValue(val);
@@ -14,9 +14,6 @@
     }
   }
 ));
-  if (statisticsEnabled) {
-    ctx.cache().metrics0().addPutTimeNanos(System.nanoTime() - start);
-    ctx.cache().metrics0().addGetTimeNanos(System.nanoTime() - start);
-  }
+  if (statsEnabled)   ctx.cache().metrics0().addPutAndGetTimeNanos(System.nanoTime() - start);
   return prevValue;
 }
