@@ -1,0 +1,19 @@
+{
+  boolean empty=F.isEmpty(col);
+  if (!empty) {
+    out.writeInt(col.size());
+    for (    IgniteTxEntry<K,V> e : col) {
+      V val=e.value();
+      boolean hasWriteVal=e.hasWriteValue();
+      boolean hasReadVal=e.hasReadValue();
+      try {
+        if (invalidate)         e.value(null,false,false);
+        out.writeObject(e);
+      }
+  finally {
+        e.value(val,hasWriteVal,hasReadVal);
+      }
+    }
+  }
+ else   out.writeInt(-1);
+}

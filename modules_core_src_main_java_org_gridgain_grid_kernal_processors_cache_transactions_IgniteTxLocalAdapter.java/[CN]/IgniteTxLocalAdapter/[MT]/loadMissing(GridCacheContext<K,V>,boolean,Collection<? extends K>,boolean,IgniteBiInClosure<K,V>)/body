@@ -1,0 +1,16 @@
+{
+  if (!async) {
+    try {
+      return new GridFinishedFuture<>(cctx.kernalContext(),cacheCtx.store().loadAllFromStore(this,keys,c));
+    }
+ catch (    IgniteCheckedException e) {
+      return new GridFinishedFuture<>(cctx.kernalContext(),e);
+    }
+  }
+ else   return cctx.kernalContext().closure().callLocalSafe(new GPC<Boolean>(){
+    @Override public Boolean call() throws Exception {
+      return cacheCtx.store().loadAllFromStore(IgniteTxLocalAdapter.this,keys,c);
+    }
+  }
+,true);
+}

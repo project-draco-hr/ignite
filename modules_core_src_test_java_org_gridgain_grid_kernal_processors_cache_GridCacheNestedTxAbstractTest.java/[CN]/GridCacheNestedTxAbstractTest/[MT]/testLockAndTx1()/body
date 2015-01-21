@@ -1,6 +1,6 @@
 {
-  final GridCache<String,Integer> c=grid(0).cache(null);
-  final GridCache<Integer,Integer> c1=grid(0).cache(null);
+  final IgniteCache<String,Integer> c=grid(0).jcache(null);
+  final IgniteCache<Integer,Integer> c1=grid(0).jcache(null);
   Collection<Thread> threads=new LinkedList<>();
   c.put(CNTR_KEY,0);
   for (int i=0; i < THREAD_CNT; i++) {
@@ -8,10 +8,10 @@
     threads.add(new Thread(new Runnable(){
       @Override public void run(){
         try {
-          c.lock(CNTR_KEY,0);
+          c.lock(CNTR_KEY).lock();
           int cntr=c.get(CNTR_KEY);
           info("*** Cntr in lock thread: " + cntr);
-          GridCacheTx tx=c.txStart(OPTIMISTIC,READ_COMMITTED);
+          IgniteTx tx=grid(0).transactions().txStart(OPTIMISTIC,READ_COMMITTED);
           try {
             Map<Integer,Integer> data=new HashMap<>();
             for (int i=0; i < RETRIES; i++) {
@@ -30,12 +30,7 @@
           error("Failed lock thread",e);
         }
  finally {
-          try {
-            c.unlock(CNTR_KEY);
-          }
- catch (          IgniteCheckedException e) {
-            error("Failed unlock",e);
-          }
+          c.lock(CNTR_KEY).unlock();
         }
       }
     }
