@@ -1,0 +1,21 @@
+{
+  final GridHadoopJobId jobId=taskInfo.jobId();
+  if (status.state() == FAILED || status.state() == CRASHED)   transform(jobId,new RemoveMappersProcessor(prev,currMappers,status.failCause()));
+ else {
+    ctx.shuffle().flush(jobId).listenAsync(new CIX1<IgniteFuture<?>>(){
+      @Override public void applyx(      IgniteFuture<?> f){
+        Throwable err=null;
+        if (f != null) {
+          try {
+            f.get();
+          }
+ catch (          IgniteCheckedException e) {
+            err=e;
+          }
+        }
+        transform(jobId,new RemoveMappersProcessor(prev,currMappers,err));
+      }
+    }
+);
+  }
+}

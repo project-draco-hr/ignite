@@ -1,0 +1,27 @@
+{
+  if (Thread.interrupted())   throw new InterruptedException();
+  try {
+    if (time <= 0)     return delegate.lockAll(keys,-1);
+    IgniteFuture<Boolean> fut=null;
+    try {
+      fut=delegate.lockAllAsync(keys,time <= 0 ? -1 : unit.toMillis(time));
+      return fut.get();
+    }
+ catch (    GridInterruptedException e) {
+      if (fut != null) {
+        if (!fut.cancel()) {
+          if (fut.isDone()) {
+            Boolean res=fut.get();
+            Thread.currentThread().interrupt();
+            return res;
+          }
+        }
+      }
+      if (e.getCause() instanceof InterruptedException)       throw (InterruptedException)e.getCause();
+      throw new InterruptedException();
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw new CacheException(e.getMessage(),e);
+  }
+}

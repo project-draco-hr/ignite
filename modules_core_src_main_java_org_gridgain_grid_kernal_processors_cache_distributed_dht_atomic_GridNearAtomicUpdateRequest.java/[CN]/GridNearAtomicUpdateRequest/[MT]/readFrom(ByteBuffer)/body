@@ -30,10 +30,15 @@ commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
 case 6:
+byte[] expiryPlcBytes0=commState.getByteArray();
+if (expiryPlcBytes0 == BYTE_ARR_NOT_READ) return false;
+expiryPlcBytes=expiryPlcBytes0;
+commState.idx++;
+case 7:
 if (buf.remaining() < 1) return false;
 fastMap=commState.getBoolean();
 commState.idx++;
-case 7:
+case 8:
 if (commState.readSize == -1) {
 if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt();
@@ -50,16 +55,33 @@ commState.readItems++;
 commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
-case 8:
+case 9:
 GridCacheVersion futVer0=commState.getCacheVersion();
 if (futVer0 == CACHE_VER_NOT_READ) return false;
 futVer=futVer0;
 commState.idx++;
-case 9:
+case 10:
 if (buf.remaining() < 1) return false;
 hasPrimary=commState.getBoolean();
 commState.idx++;
-case 10:
+case 11:
+if (commState.readSize == -1) {
+if (buf.remaining() < 4) return false;
+commState.readSize=commState.getInt();
+}
+if (commState.readSize >= 0) {
+if (invokeArgsBytes == null) invokeArgsBytes=new byte[commState.readSize][];
+for (int i=commState.readItems; i < commState.readSize; i++) {
+byte[] _val=commState.getByteArray();
+if (_val == BYTE_ARR_NOT_READ) return false;
+invokeArgsBytes[i]=(byte[])_val;
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 12:
 if (commState.readSize == -1) {
 if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt();
@@ -76,34 +98,30 @@ commState.readItems++;
 commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
-case 11:
+case 13:
 if (buf.remaining() < 1) return false;
 byte op0=commState.getByte();
 op=GridCacheOperation.fromOrdinal(op0);
 commState.idx++;
-case 12:
+case 14:
 if (buf.remaining() < 1) return false;
 retval=commState.getBoolean();
 commState.idx++;
-case 13:
+case 15:
 if (buf.remaining() < 1) return false;
 byte syncMode0=commState.getByte();
 syncMode=GridCacheWriteSynchronizationMode.fromOrdinal(syncMode0);
 commState.idx++;
-case 14:
+case 16:
 if (buf.remaining() < 8) return false;
 topVer=commState.getLong();
 commState.idx++;
-case 15:
-if (buf.remaining() < 8) return false;
-ttl=commState.getLong();
-commState.idx++;
-case 16:
+case 17:
 GridCacheVersion updateVer0=commState.getCacheVersion();
 if (updateVer0 == CACHE_VER_NOT_READ) return false;
 updateVer=updateVer0;
 commState.idx++;
-case 17:
+case 18:
 if (commState.readSize == -1) {
 if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt();
@@ -120,16 +138,16 @@ commState.readItems++;
 commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
-case 18:
+case 19:
 if (buf.remaining() < 1) return false;
 forceTransformBackups=commState.getBoolean();
 commState.idx++;
-case 19:
+case 20:
 UUID subjId0=commState.getUuid();
 if (subjId0 == UUID_NOT_READ) return false;
 subjId=subjId0;
 commState.idx++;
-case 20:
+case 21:
 if (buf.remaining() < 4) return false;
 taskNameHash=commState.getInt();
 commState.idx++;
