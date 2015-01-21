@@ -1,0 +1,13 @@
+{
+  UUID affinityKey=primaryKeyForCache(grid(0));
+  final GridCache<GridCacheAffinityKey<String>,String> cache=grid(0).cache(null);
+  final GridCacheAffinityKey<String> key=new GridCacheAffinityKey<>("key1",UUID.randomUUID());
+  cache.put(key,"val");
+  try (IgniteTx ignored=cache.txStartAffinity(affinityKey,concurrency,READ_COMMITTED,0,1)){
+    cache.remove(key);
+    fail("Exception should be thrown.");
+  }
+ catch (  IgniteCheckedException ignored) {
+  }
+  assertNull(cache.tx());
+}

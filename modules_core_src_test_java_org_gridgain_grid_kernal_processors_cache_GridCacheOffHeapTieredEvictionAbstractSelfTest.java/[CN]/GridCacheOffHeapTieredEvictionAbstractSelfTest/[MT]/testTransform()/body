@@ -1,13 +1,13 @@
 {
-  final GridCache<Integer,Object> cache=grid(0).cache(null);
+  final IgniteCache<Integer,Object> cache=grid(0).jcache(null);
   GridTestUtils.runMultiThreaded(new Callable<Void>(){
     @Override public Void call() throws Exception {
       ThreadLocalRandom rnd=ThreadLocalRandom.current();
       for (int i=0; i < iterations(); i++) {
         int key=rnd.nextInt(KEYS);
         final TestValue val=vals.get(key % VAL_SIZE);
-        TestClosure c=testClosure(val.val,false);
-        cache.transform(key,c);
+        TestProcessor c=testClosure(val.val,false);
+        cache.invoke(key,c);
       }
       return null;
     }

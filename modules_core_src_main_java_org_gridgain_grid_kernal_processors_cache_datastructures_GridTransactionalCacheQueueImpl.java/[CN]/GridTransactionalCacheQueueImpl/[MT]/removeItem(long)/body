@@ -2,25 +2,26 @@
   try {
     int cnt=0;
     while (true) {
-      try (GridCacheTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
-        Long idx=(Long)cache.transformAndCompute(queueKey,new RemoveClosure(id,rmvIdx));
+      try (IgniteTx tx=txs.txStart(PESSIMISTIC,REPEATABLE_READ)){
+        Long idx=(Long)cache.invoke(queueKey,new RemoveProcessor(id,rmvIdx));
         if (idx != null) {
           checkRemoved(idx);
-          boolean rmv=cache.removex(itemKey(idx));
+          boolean rmv=cache.remove(itemKey(idx));
           assert rmv;
         }
         tx.commit();
         break;
       }
- catch (      ClusterGroupEmptyException e) {
-        throw e;
-      }
-catch (      ClusterTopologyException e) {
-        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
+ catch (      CacheException e) {
+        if (e.getCause() instanceof ClusterGroupEmptyException)         throw e;
+        if (e.getCause() instanceof ClusterTopologyException) {
+          if (cnt++ == MAX_UPDATE_RETRIES)           throw e;
  else {
-          U.warn(log,"Failed to remove item, will retry [err=" + e + ", idx="+ rmvIdx+ ']');
-          U.sleep(RETRY_DELAY);
+            U.warn(log,"Failed to add item, will retry [err=" + e + ']');
+            U.sleep(RETRY_DELAY);
+          }
         }
+ else         throw e;
       }
     }
   }

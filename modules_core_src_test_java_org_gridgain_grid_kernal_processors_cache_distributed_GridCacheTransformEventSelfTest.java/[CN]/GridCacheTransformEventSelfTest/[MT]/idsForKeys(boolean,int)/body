@@ -6,14 +6,13 @@
  else   if (cacheMode == PARTITIONED) {
     for (    int key : keys) {
       for (int i=0; i < GRID_CNT; i++) {
-        GridCacheEntry<Integer,Integer> entry=caches[i].entry(key);
-        if (entry.primary() || (!primaryOnly && entry.backup()))         res.add(ids[i]);
+        if (primary(i,key) || (!primaryOnly && backup(i,key)))         res.add(ids[i]);
       }
     }
   }
  else   if (cacheMode == REPLICATED) {
     for (    int key : keys) {
-      if (primaryOnly)       res.add(caches[0].affinity().mapKeyToNode(key).id());
+      if (primaryOnly)       res.add(grid(0).cache(CACHE_NAME).affinity().mapKeyToNode(key).id());
  else       res.addAll(Arrays.asList(ids));
     }
   }

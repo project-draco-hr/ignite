@@ -1,17 +1,16 @@
 {
   try {
-    Long idx=transformHeader(new AddClosure(id,1));
+    Long idx=transformHeader(new AddProcessor(id,1));
     if (idx == null)     return false;
     checkRemoved(idx);
     int cnt=0;
     GridCacheQueueItemKey key=itemKey(idx);
     while (true) {
       try {
-        boolean putx=cache.putx(key,item,null);
-        assert putx;
+        cache.put(key,item);
         break;
       }
- catch (      GridCachePartialUpdateException e) {
+ catch (      CachePartialUpdateException e) {
         if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
  else {
           U.warn(log,"Failed to put queue item, will retry [err=" + e + ", idx="+ idx+ ']');

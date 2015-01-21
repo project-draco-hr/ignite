@@ -45,10 +45,6 @@ commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
 case 9:
-if (buf.remaining() < 8) return false;
-nearTtl=commState.getLong();
-commState.idx++;
-case 10:
 if (commState.readSize == -1) {
 if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt();
@@ -65,7 +61,7 @@ commState.readItems++;
 commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
-case 11:
+case 10:
 if (commState.readSize == -1) {
 if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt();
@@ -82,10 +78,20 @@ commState.readItems++;
 commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
-case 12:
+case 11:
 GridCacheVersion nearVer0=commState.getCacheVersion();
 if (nearVer0 == CACHE_VER_NOT_READ) return false;
 nearVer=nearVer0;
+commState.idx++;
+case 12:
+GridLongList nearExpireTimes0=commState.getLongList();
+if (nearExpireTimes0 == LONG_LIST_NOT_READ) return false;
+nearExpireTimes=nearExpireTimes0;
+commState.idx++;
+case 13:
+GridLongList nearTtls0=commState.getLongList();
+if (nearTtls0 == LONG_LIST_NOT_READ) return false;
+nearTtls=nearTtls0;
 commState.idx++;
 }
 return true;
