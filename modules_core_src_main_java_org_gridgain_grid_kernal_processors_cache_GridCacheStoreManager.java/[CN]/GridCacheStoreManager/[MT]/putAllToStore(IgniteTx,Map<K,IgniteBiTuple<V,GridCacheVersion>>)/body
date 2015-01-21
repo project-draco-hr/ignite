@@ -18,7 +18,7 @@
       if (log.isDebugEnabled())       log.debug("Storing values in cache store [map=" + map0 + ']');
       Collection<Cache.Entry<? extends K,?>> entries=new ArrayList<>(map.size());
       for (      Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e : map.entrySet())       entries.add(new CacheEntryImpl<>(e.getKey(),locStore ? e.getValue() : e.getValue().get1()));
-      boolean ses=initSession(tx);
+      initSession(tx);
       try {
         store.writeAll(entries);
       }
@@ -34,7 +34,7 @@ catch (      Exception e) {
         throw new IgniteCheckedException(e);
       }
  finally {
-        if (ses)         sesHolder.set(null);
+        sesHolder.set(null);
       }
       if (log.isDebugEnabled())       log.debug("Stored value in cache store [map=" + map0 + ']');
       return true;

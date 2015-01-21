@@ -1,22 +1,35 @@
 {
   Map<Object,Object> vals=new HashMap<>();
-  for (int i=0; i < 100; i++)   vals.put(i,i);
-  for (int i=0; i < gridCount(); i++) {
-    log.info("Test with grid: " + i);
-    storeMap.clear();
-    ldrCallCnt.set(0);
-    writerCallCnt.set(0);
-    IgniteCache<Object,Object> cache=jcache(i);
-    assertTrue(cache.getAll(vals.keySet()).isEmpty());
-    int expLoads=gridCount();
-    checkCalls(expLoads,0);
-    storeMap.putAll(vals);
-    assertEquals(vals,cache.getAll(vals.keySet()));
-    expLoads+=gridCount();
-    checkCalls(expLoads,0);
-    for (    Object key : vals.keySet())     assertTrue(storeMap.contains(key));
-    cache.removeAll(vals.keySet());
-    checkCalls(expLoads,gridCount());
-    for (    Object key : vals.keySet())     assertFalse(storeMap.containsKey(key));
+  IgniteCache<Object,Object> cache=jcache(0);
+  for (  Object key : primaryKeys(cache,100,0))   vals.put(key,key);
+  assertTrue(cache.getAll(vals.keySet()).isEmpty());
+  checkCalls(1,0);
+  storeMap.putAll(vals);
+  assertEquals(vals,cache.getAll(vals.keySet()));
+  checkCalls(1,0);
+  for (  Object key : vals.keySet())   assertEquals(key,storeMap.get(key));
+  cache.removeAll(vals.keySet());
+  checkCalls(0,1);
+  for (  Object key : vals.keySet())   assertFalse(storeMap.containsKey(key));
+  cache.putAll(vals);
+  checkCalls(0,1);
+  for (  Object key : vals.keySet())   assertEquals(key,storeMap.get(key));
+  cache.invokeAll(vals.keySet(),new EntryProcessor<Object,Object,Object>(){
+    @Override public Object process(    MutableEntry<Object,Object> entry,    Object... args){
+      entry.setValue("test1");
+      return null;
+    }
   }
+);
+  checkCalls(0,1);
+  for (  Object key : vals.keySet())   assertEquals("test1",storeMap.get(key));
+  cache.invokeAll(vals.keySet(),new EntryProcessor<Object,Object,Object>(){
+    @Override public Object process(    MutableEntry<Object,Object> entry,    Object... args){
+      entry.remove();
+      return null;
+    }
+  }
+);
+  checkCalls(0,1);
+  for (  Object key : vals.keySet())   assertFalse(storeMap.containsKey(key));
 }
