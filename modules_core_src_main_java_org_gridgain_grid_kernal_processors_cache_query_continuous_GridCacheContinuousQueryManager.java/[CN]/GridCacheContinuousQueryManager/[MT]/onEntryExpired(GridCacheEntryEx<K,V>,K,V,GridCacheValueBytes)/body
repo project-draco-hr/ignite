@@ -1,0 +1,12 @@
+{
+  if (e.isInternal())   return;
+  ConcurrentMap<UUID,ListenerInfo<K,V>> lsnrCol=lsnrs;
+  if (F.isEmpty(lsnrCol))   return;
+  if (cctx.isReplicated() || cctx.affinity().primary(cctx.localNode(),key,-1)) {
+    GridCacheContinuousQueryEntry<K,V> e0=new GridCacheContinuousQueryEntry<>(cctx,e.wrap(false),key,null,null,oldVal,oldBytes,EXPIRED);
+    for (    ListenerInfo<K,V> lsnr : lsnrCol.values()) {
+      if (!lsnr.entryListener())       continue;
+      lsnr.onEntryUpdate(e0,false);
+    }
+  }
+}

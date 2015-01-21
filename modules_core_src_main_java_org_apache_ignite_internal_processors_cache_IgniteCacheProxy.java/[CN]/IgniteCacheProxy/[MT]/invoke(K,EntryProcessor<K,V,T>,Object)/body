@@ -1,3 +1,29 @@
 {
-  throw new UnsupportedOperationException();
+  try {
+    GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+    try {
+      if (isAsync()) {
+        IgniteFuture<EntryProcessorResult<T>> fut=delegate.invokeAsync(key,entryProcessor,args);
+        IgniteFuture<T> fut0=fut.chain(new CX1<IgniteFuture<EntryProcessorResult<T>>,T>(){
+          @Override public T applyx(          IgniteFuture<EntryProcessorResult<T>> fut) throws IgniteCheckedException {
+            EntryProcessorResult<T> res=fut.get();
+            return res != null ? res.get() : null;
+          }
+        }
+);
+        curFut.set(fut0);
+        return null;
+      }
+ else {
+        EntryProcessorResult<T> res=delegate.invoke(key,entryProcessor,args);
+        return res != null ? res.get() : null;
+      }
+    }
+  finally {
+      gate.leave(prev);
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw cacheException(e);
+  }
 }

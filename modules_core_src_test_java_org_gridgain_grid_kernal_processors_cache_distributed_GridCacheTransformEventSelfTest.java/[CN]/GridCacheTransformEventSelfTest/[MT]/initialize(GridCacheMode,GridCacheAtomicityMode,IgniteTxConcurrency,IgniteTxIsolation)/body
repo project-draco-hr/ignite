@@ -7,11 +7,11 @@
   startGrids(GRID_CNT);
   ignites=new Ignite[GRID_CNT];
   ids=new UUID[GRID_CNT];
-  caches=new GridCache[GRID_CNT];
+  caches=new IgniteCache[GRID_CNT];
   for (int i=0; i < GRID_CNT; i++) {
     ignites[i]=grid(i);
     ids[i]=ignites[i].cluster().localNode().id();
-    caches[i]=ignites[i].cache(CACHE_NAME);
+    caches[i]=ignites[i].jcache(CACHE_NAME);
     ignites[i].events().localListen(new IgnitePredicate<IgniteEvent>(){
       @Override public boolean apply(      IgniteEvent evt){
         IgniteCacheEvent evt0=(IgniteCacheEvent)evt;
@@ -26,14 +26,14 @@
   }
   int key=0;
   while (true) {
-    if (cacheMode != PARTITIONED || (caches[0].entry(key).primary() && caches[1].entry(key).backup())) {
+    if (cacheMode != PARTITIONED || (primary(0,key) && backup(1,key))) {
       key1=key++;
       break;
     }
  else     key++;
   }
   while (true) {
-    if (cacheMode != PARTITIONED || (caches[0].entry(key).primary() && caches[1].entry(key).backup())) {
+    if (cacheMode != PARTITIONED || (primary(0,key) && backup(1,key))) {
       key2=key;
       break;
     }
