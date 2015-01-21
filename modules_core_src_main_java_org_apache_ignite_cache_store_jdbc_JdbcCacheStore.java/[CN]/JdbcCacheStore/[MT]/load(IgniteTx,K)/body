@@ -1,0 +1,22 @@
+{
+  init();
+  QueryCache type=entryQtyCache.get(typeKey(key));
+  if (type == null)   throw new IgniteCheckedException("Failed to find mapping description for type: " + key.getClass());
+  if (log.isDebugEnabled())   log.debug("Start load value from db by key: " + key);
+  Connection conn=null;
+  PreparedStatement stmt=null;
+  try {
+    conn=connection(tx);
+    stmt=conn.prepareStatement(type.loadQrySingle);
+    fillKeyParameters(stmt,type,key);
+    ResultSet rs=stmt.executeQuery();
+    if (rs.next())     return buildObject(type.valueType(),type.valueDescriptors(),rs);
+  }
+ catch (  SQLException e) {
+    throw new IgniteCheckedException("Failed to load object by key: " + key,e);
+  }
+ finally {
+    end(tx,conn,stmt);
+  }
+  return null;
+}

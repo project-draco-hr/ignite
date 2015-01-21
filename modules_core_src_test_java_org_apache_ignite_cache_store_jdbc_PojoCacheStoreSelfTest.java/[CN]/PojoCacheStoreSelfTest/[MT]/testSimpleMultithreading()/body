@@ -1,0 +1,67 @@
+{
+  final Random rnd=new Random();
+  final Queue<OrganizationKey> queue=new LinkedBlockingQueue<>();
+  multithreaded(new Callable<Object>(){
+    @Nullable @Override public Object call() throws Exception {
+      for (int i=0; i < 1000; i++) {
+        IgniteTx tx=rnd.nextBoolean() ? new DummyTx() : null;
+        int op=rnd.nextInt(10);
+        boolean queueEmpty=false;
+        if (op < 4) {
+          OrganizationKey key=queue.poll();
+          if (key == null)           queueEmpty=true;
+ else {
+            if (rnd.nextBoolean())             assertNotNull(store.load(tx,key));
+ else {
+              final AtomicInteger cntr=new AtomicInteger();
+              store.loadAll(tx,Collections.singleton(key),new CI2<Object,Object>(){
+                @Override public void apply(                Object o,                Object o1){
+                  cntr.incrementAndGet();
+                  assertNotNull(o);
+                  assertNotNull(o1);
+                  OrganizationKey key=(OrganizationKey)o;
+                  Organization val=(Organization)o1;
+                  assertTrue(key.getId().equals(val.getId()));
+                }
+              }
+);
+              assertEquals(1,cntr.get());
+            }
+            if (tx != null)             store.txEnd(tx,true);
+            queue.add(key);
+          }
+        }
+ else         if (op < 6) {
+          OrganizationKey key=queue.poll();
+          if (key == null)           queueEmpty=true;
+ else {
+            if (rnd.nextBoolean())             store.remove(tx,key);
+ else             store.removeAll(tx,Collections.singleton(key));
+            if (tx != null)             store.txEnd(tx,true);
+          }
+        }
+ else {
+          OrganizationKey key=queue.poll();
+          if (key == null)           queueEmpty=true;
+ else {
+            Organization val=new Organization(key.getId(),"Name" + key.getId(),"City" + key.getId());
+            if (rnd.nextBoolean())             store.put(tx,key,val);
+ else             store.putAll(tx,Collections.singletonMap(key,val));
+            if (tx != null)             store.txEnd(tx,true);
+            queue.add(key);
+          }
+        }
+        if (queueEmpty) {
+          OrganizationKey key=new OrganizationKey(rnd.nextInt());
+          Organization val=new Organization(key.getId(),"Name" + key.getId(),"City" + key.getId());
+          if (rnd.nextBoolean())           store.put(tx,key,val);
+ else           store.putAll(tx,Collections.singletonMap(key,val));
+          if (tx != null)           store.txEnd(tx,true);
+          queue.add(key);
+        }
+      }
+      return null;
+    }
+  }
+,37);
+}

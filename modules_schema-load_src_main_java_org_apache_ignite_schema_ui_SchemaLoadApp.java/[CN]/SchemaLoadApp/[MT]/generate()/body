@@ -1,0 +1,102 @@
+{
+  Collection<PojoDescriptor> selItems=selectedItems();
+  if (selItems.isEmpty()) {
+    MessageBox.warningDialog(owner,"Please select tables to generate POJOs and XML files!");
+    return;
+  }
+  lockUI(genLayerPnl,genPnl,prevBtn,nextBtn);
+  final String outFolder=outFolderTf.getText();
+  final String pkg=pkgTf.getText();
+  final File destFolder=new File(outFolder);
+  Runnable task=new Task<Void>(){
+    private void checkEmpty(    Collection<GridCacheQueryTypeDescriptor> items,    final TreeItem<String> treeItem,    String msg){
+      if (items.isEmpty()) {
+        Platform.runLater(new Runnable(){
+          /** 
+ * {@inheritDoc} 
+ */
+          @Override public void run(){
+            tree.getSelectionModel().select(treeItem);
+          }
+        }
+);
+        throw new IllegalStateException(msg);
+      }
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected Void call() throws Exception {
+      long started=System.currentTimeMillis();
+      if (!destFolder.exists() && !destFolder.mkdirs())       throw new IOException("Failed to create output folder: " + destFolder);
+      Collection<GridCacheQueryTypeMetadata> all=new ArrayList<>();
+      boolean constructor=pojoConstructorCh.isSelected();
+      boolean include=pojoIncludeKeysCh.isSelected();
+      boolean singleXml=xmlSingleFileCh.isSelected();
+      ConfirmCallable askOverwrite=new ConfirmCallable(owner,"File already exists: %s\nOverwrite?");
+      for (      TreeItem<String> schemeItem : rootItem.getChildren()) {
+        for (        TreeItem<String> tblItem : schemeItem.getChildren()) {
+          if (((CheckBoxTreeItem)tblItem).isSelected()) {
+            String scheme=schemeItem.getValue();
+            String tbl=tblItem.getValue();
+            PojoDescriptor pojo=schemas.get(scheme).get(tbl);
+            GridCacheQueryTypeMetadata meta=pojo.metadata();
+            Collection<GridCacheQueryTypeDescriptor> keys=new ArrayList<>();
+            Collection<GridCacheQueryTypeDescriptor> vals=new ArrayList<>();
+            for (            PojoField fld : pojo.fields()) {
+              GridCacheQueryTypeDescriptor desc=fld.descriptor();
+              if (fld.key()) {
+                keys.add(desc);
+                if (include)                 vals.add(desc);
+              }
+ else               vals.add(desc);
+            }
+            checkEmpty(keys,tblItem,"No key fields specified for type: " + tbl);
+            checkEmpty(vals,tblItem,"No value fields specified for type: " + tbl);
+            meta.setKeyDescriptors(keys);
+            meta.setValueDescriptors(vals);
+            all.add(meta);
+            if (!singleXml)             XmlGenerator.transform(pkg,meta,new File(destFolder,meta.getType() + ".xml"),askOverwrite);
+            PojoGenerator.generate(meta,outFolder,pkg,constructor,askOverwrite);
+          }
+        }
+      }
+      if (all.isEmpty())       throw new IllegalStateException("Nothing selected!");
+ else       if (singleXml)       XmlGenerator.transform(pkg,all,new File(outFolder,"Ignite.xml"),askOverwrite);
+      perceptualDelay(started);
+      return null;
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void succeeded(){
+      super.succeeded();
+      unlockUI(genLayerPnl,genPnl,prevBtn,nextBtn);
+      MessageBox.informationDialog(owner,"Generation complete!");
+      if (openFolderCh.isSelected())       try {
+        java.awt.Desktop.getDesktop().open(destFolder);
+      }
+ catch (      IOException e) {
+        MessageBox.errorDialog(owner,"Failed to open folder with results.",e);
+      }
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void cancelled(){
+      super.cancelled();
+      unlockUI(genLayerPnl,genPnl,prevBtn,nextBtn);
+      MessageBox.warningDialog(owner,"Generation canceled.");
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void failed(){
+      super.succeeded();
+      unlockUI(genLayerPnl,genPnl,prevBtn,nextBtn);
+      MessageBox.errorDialog(owner,"Generation failed.",getException());
+    }
+  }
+;
+  exec.submit(task);
+}

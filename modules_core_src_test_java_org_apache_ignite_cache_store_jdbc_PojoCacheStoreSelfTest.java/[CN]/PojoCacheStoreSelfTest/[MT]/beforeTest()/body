@@ -1,0 +1,17 @@
+{
+  super.beforeTest();
+  Class.forName("org.h2.Driver");
+  Connection conn=DriverManager.getConnection(DFLT_CONN_URL,"sa","");
+  Statement stmt=conn.createStatement();
+  stmt.executeUpdate("DROP TABLE IF EXISTS Organization");
+  stmt.executeUpdate("DROP TABLE IF EXISTS Person");
+  stmt.executeUpdate("CREATE TABLE Organization (id integer PRIMARY KEY, name varchar(50), city varchar(50))");
+  stmt.executeUpdate("CREATE TABLE Person (id integer PRIMARY KEY, org_id integer, name varchar(50))");
+  stmt.executeUpdate("CREATE INDEX Org_Name_IDX On Organization (name)");
+  stmt.executeUpdate("CREATE INDEX Org_Name_City_IDX On Organization (name, city)");
+  stmt.executeUpdate("CREATE INDEX Person_Name_IDX1 On Person (name)");
+  stmt.executeUpdate("CREATE INDEX Person_Name_IDX2 On Person (name desc)");
+  conn.commit();
+  U.closeQuiet(stmt);
+  U.closeQuiet(conn);
+}

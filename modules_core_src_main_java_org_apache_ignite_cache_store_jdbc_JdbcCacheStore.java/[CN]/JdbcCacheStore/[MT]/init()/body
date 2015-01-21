@@ -1,0 +1,28 @@
+{
+  if (initLatch.getCount() > 0) {
+    if (initGuard.compareAndSet(false,true)) {
+      if (log.isDebugEnabled())       log.debug("Initializing cache store.");
+      if (dataSrc == null && F.isEmpty(connUrl))       throw new IgniteCheckedException("Failed to initialize cache store (connection is not provided).");
+      if (dialect == null)       dialect=resolveDialect();
+      try {
+        if (typeMetadata == null) {
+          if (typeMetadataPaths == null)           throw new IgniteCheckedException("Failed to initialize cache store (metadata paths is not provided).");
+          Collection<GridCacheQueryTypeMetadata> typeMeta=new ArrayList<>();
+          for (          String path : typeMetadataPaths) {
+            URL url=U.resolveGridGainUrl(path);
+            log.warning("Failed to resolve metadata path: " + path);
+          }
+          setTypeMetadata(typeMeta);
+        }
+        exec=Executors.newFixedThreadPool(maxPoolSz);
+        buildTypeCache();
+        initOk=true;
+      }
+  finally {
+        initLatch.countDown();
+      }
+    }
+ else     U.await(initLatch);
+  }
+  if (!initOk)   throw new IgniteCheckedException("Cache store was not properly initialized.");
+}

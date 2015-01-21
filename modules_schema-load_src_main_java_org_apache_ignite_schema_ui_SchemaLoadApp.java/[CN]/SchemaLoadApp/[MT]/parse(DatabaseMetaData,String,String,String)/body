@@ -1,0 +1,49 @@
+{
+  GridCacheQueryTypeMetadata res=new GridCacheQueryTypeMetadata();
+  res.setSchema(schema);
+  res.setTableName(tbl);
+  res.setType(toJavaClassName(tbl));
+  res.setKeyType(res.getType() + "Key");
+  Collection<GridCacheQueryTypeDescriptor> keyDescs=res.getKeyDescriptors();
+  Collection<GridCacheQueryTypeDescriptor> valDescs=res.getValueDescriptors();
+  Map<String,Class<?>> qryFields=res.getQueryFields();
+  Map<String,Class<?>> ascFields=res.getAscendingFields();
+  Map<String,Class<?>> descFields=res.getDescendingFields();
+  Map<String,LinkedHashMap<String,IgniteBiTuple<Class<?>,Boolean>>> groups=res.getGroups();
+  Set<String> pkFlds=new LinkedHashSet<>();
+  try (ResultSet pk=meta.getPrimaryKeys(catalog,schema,tbl)){
+    while (pk.next())     pkFlds.add(pk.getString(4));
+  }
+   try (ResultSet flds=meta.getColumns(catalog,schema,tbl,null)){
+    while (flds.next()) {
+      String dbName=flds.getString(4);
+      int dbType=flds.getInt(5);
+      String javaName=toJavaFieldName(dbName);
+      Class<?> javaType=dataType(dbType);
+      GridCacheQueryTypeDescriptor desc=new GridCacheQueryTypeDescriptor(javaName,javaType,dbName,dbType);
+      if (pkFlds.contains(dbName))       keyDescs.add(desc);
+ else       valDescs.add(desc);
+      qryFields.put(javaName,javaType);
+    }
+  }
+   try (ResultSet idxs=meta.getIndexInfo(catalog,schema,tbl,false,true)){
+    while (idxs.next()) {
+      String idx=toJavaFieldName(idxs.getString(6));
+      String col=toJavaFieldName(idxs.getString(9));
+      String askOrDesc=idxs.getString(10);
+      LinkedHashMap<String,IgniteBiTuple<Class<?>,Boolean>> idxCols=groups.get(idx);
+      if (idxCols == null) {
+        idxCols=new LinkedHashMap<>();
+        groups.put(idx,idxCols);
+      }
+      Class<?> dataType=qryFields.get(col);
+      Boolean desc=askOrDesc != null ? "D".equals(askOrDesc) : null;
+      if (desc != null) {
+        if (desc)         descFields.put(col,dataType);
+ else         ascFields.put(col,dataType);
+      }
+      idxCols.put(col,new IgniteBiTuple<Class<?>,Boolean>(dataType,desc));
+    }
+  }
+   return new PojoDescriptor(res);
+}

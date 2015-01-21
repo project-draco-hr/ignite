@@ -1,0 +1,10 @@
+{
+  Collection<String> cols=F.concat(false,keyCols,uniqCols);
+  String updPart=mkString(uniqCols,new C1<String,String>(){
+    @Override public String apply(    String col){
+      return String.format("%s = VALUES(%s)",col,col);
+    }
+  }
+,"",", ","");
+  return String.format("INSERT INTO %s.%s (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s",schema,tblName,mkString(cols,", "),repeat("?",cols.size(),"",",",""),updPart);
+}

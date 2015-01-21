@@ -1,0 +1,37 @@
+{
+  IgniteTx tx=new DummyTx();
+  OrganizationKey k1=new OrganizationKey(1);
+  Organization v1=new Organization(1,"Name1","City1");
+  store.put(tx,k1,v1);
+  store.txEnd(tx,false);
+  tx=new DummyTx();
+  assertNull(store.load(tx,k1));
+  OrganizationKey k2=new OrganizationKey(2);
+  Organization v2=new Organization(2,"Name2","City2");
+  assertNull(store.load(tx,k2));
+  store.putAll(tx,Collections.singletonMap(k2,v2));
+  store.txEnd(tx,false);
+  tx=new DummyTx();
+  assertNull(store.load(tx,k2));
+  OrganizationKey k3=new OrganizationKey(3);
+  Organization v3=new Organization(3,"Name3","City3");
+  store.putAll(tx,Collections.singletonMap(k3,v3));
+  store.txEnd(tx,true);
+  tx=new DummyTx();
+  assertEquals(v3,store.load(tx,k3));
+  OrganizationKey k4=new OrganizationKey(4);
+  Organization v4=new Organization(4,"Name4","City4");
+  store.put(tx,k4,v4);
+  store.txEnd(tx,false);
+  tx=new DummyTx();
+  assertNull(store.load(tx,k4));
+  assertEquals(v3,store.load(tx,k3));
+  store.remove(tx,k3);
+  store.txEnd(tx,false);
+  tx=new DummyTx();
+  assertEquals(v3,store.load(tx,k3));
+  store.removeAll(tx,Arrays.asList(k3));
+  store.txEnd(tx,false);
+  tx=new DummyTx();
+  assertEquals(v3,store.load(tx,k3));
+}

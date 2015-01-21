@@ -1,0 +1,25 @@
+{
+  String drvCls=jdbcDrvClsTf.getText();
+  Driver drv=drivers.get(drvCls);
+  if (drv == null) {
+    String path=jdbcDrvJarTf.getText().trim();
+    if (path.isEmpty())     throw new IllegalStateException("Driver jar file name is not specified");
+    File drvJar=new File(jdbcDrvJarTf.getText());
+    if (!drvJar.exists())     throw new IllegalStateException("Driver jar file is not found");
+    try {
+      URL u=new URL("jar:" + drvJar.toURI() + "!/");
+      URLClassLoader ucl=URLClassLoader.newInstance(new URL[]{u});
+      drv=(Driver)Class.forName(drvCls,true,ucl).newInstance();
+      drivers.put(drvCls,drv);
+    }
+ catch (    Throwable e) {
+      throw new IllegalStateException(e);
+    }
+  }
+  String user=userTf.getText().trim();
+  String pwd=pwdTf.getText().trim();
+  Properties info=new Properties();
+  if (!user.isEmpty())   info.put("user",user);
+  if (!pwd.isEmpty())   info.put("password",pwd);
+  return drv.connect(jdbcUrlTf.getText(),info);
+}

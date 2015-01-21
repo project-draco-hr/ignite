@@ -1,0 +1,20 @@
+{
+  Connection conn=null;
+  String dbProductName=null;
+  try {
+    conn=openConnection(false);
+    dbProductName=conn.getMetaData().getDatabaseProductName();
+  }
+ catch (  SQLException e) {
+    throw new IgniteCheckedException("Failed access to metadata for detect database dialect.",e);
+  }
+ finally {
+    closeConnection(conn);
+  }
+  if ("H2".equals(dbProductName))   return new H2Dialect();
+  if ("MySQL".equals(dbProductName))   return new MySQLDialect();
+  if (dbProductName.startsWith("Microsoft SQL Server"))   return new SQLServerDialect();
+  if ("Oracle".equals(dbProductName))   return new OracleDialect();
+  if (dbProductName.startsWith("DB2/"))   return new DB2Dialect();
+  return new BasicJdbcDialect();
+}

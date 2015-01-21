@@ -1,0 +1,19 @@
+{
+  IgniteTx tx=new DummyTx();
+  OrganizationKey k1=new OrganizationKey(1);
+  Organization v1=new Organization(1,"Name1","City1");
+  OrganizationKey k2=new OrganizationKey(2);
+  Organization v2=new Organization(2,"Name2","City2");
+  store.put(tx,k1,v1);
+  store.put(tx,k2,v2);
+  store.txEnd(tx,true);
+  assertEquals(v1,store.load(null,k1));
+  assertEquals(v2,store.load(null,k2));
+  OrganizationKey k3=new OrganizationKey(3);
+  assertNull(store.load(tx,k3));
+  store.remove(tx,k1);
+  store.txEnd(tx,true);
+  assertNull(store.load(tx,k1));
+  assertEquals(v2,store.load(tx,k2));
+  assertNull(store.load(null,k3));
+}

@@ -1,0 +1,60 @@
+{
+  lockUI(connLayerPnl,connPnl,nextBtn);
+  Runnable task=new Task<Void>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected Void call() throws Exception {
+      long started=System.currentTimeMillis();
+      try (Connection conn=connect()){
+        schemas=parse(conn);
+      }
+       pojos=new ArrayList<>();
+      for (      Map<String,PojoDescriptor> schema : schemas.values())       for (      PojoDescriptor pojo : schema.values())       pojos.add(pojo);
+      perceptualDelay(started);
+      return null;
+    }
+    private CheckBoxTreeItem<String> addCheckBoxTreeItem(    CheckBoxTreeItem<String> parent,    String text){
+      CheckBoxTreeItem<String> item=new CheckBoxTreeItem<>(text);
+      item.setSelected(true);
+      item.setExpanded(true);
+      parent.getChildren().add(item);
+      return item;
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void succeeded(){
+      super.succeeded();
+      rootItem.getChildren().clear();
+      for (      Map.Entry<String,Map<String,PojoDescriptor>> schema : schemas.entrySet()) {
+        CheckBoxTreeItem<String> schemaItem=addCheckBoxTreeItem(rootItem,schema.getKey());
+        for (        String tbl : schema.getValue().keySet())         addCheckBoxTreeItem(schemaItem,tbl);
+      }
+      unlockUI(connLayerPnl,connPnl,nextBtn);
+      titleLb.setText("Generate XML And POJOs");
+      titleLb.setGraphic(imageView("text_tree",48));
+      rootPane.setCenter(genLayerPnl);
+      prevBtn.setDisable(false);
+      nextBtn.setText("Generate");
+      tooltip(nextBtn,"Generate XML and POJO files");
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void cancelled(){
+      super.cancelled();
+      unlockUI(connLayerPnl,connPnl,nextBtn);
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void failed(){
+      super.succeeded();
+      unlockUI(connLayerPnl,connPnl,nextBtn);
+      MessageBox.errorDialog(owner,"Failed to get tables list from database.",getException());
+    }
+  }
+;
+  exec.submit(task);
+}

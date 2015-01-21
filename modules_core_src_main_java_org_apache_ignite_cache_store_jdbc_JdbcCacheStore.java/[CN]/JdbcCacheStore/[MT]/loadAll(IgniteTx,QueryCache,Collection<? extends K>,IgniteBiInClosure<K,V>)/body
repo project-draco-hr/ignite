@@ -1,0 +1,29 @@
+{
+  init();
+  Connection conn=null;
+  PreparedStatement stmt=null;
+  try {
+    conn=connection(tx);
+    stmt=conn.prepareStatement(qry.loadQuery(keys.size()));
+    int i=1;
+    for (    K key : keys) {
+      for (      GridCacheQueryTypeDescriptor field : qry.keyDescriptors()) {
+        Object fieldVal=extractField(qry.keyType(),field.getJavaName(),key);
+        if (fieldVal != null)         stmt.setObject(i++,fieldVal);
+ else         stmt.setNull(i++,field.getDbType());
+      }
+    }
+    ResultSet rs=stmt.executeQuery();
+    while (rs.next()) {
+      K key=buildObject(qry.keyType(),qry.keyDescriptors(),rs);
+      V val=buildObject(qry.valueType(),qry.valueDescriptors(),rs);
+      c.apply(key,val);
+    }
+  }
+ catch (  SQLException e) {
+    throw new IgniteCheckedException("Failed to load objects",e);
+  }
+ finally {
+    end(tx,conn,stmt);
+  }
+}

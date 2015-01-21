@@ -1,0 +1,58 @@
+{
+  try {
+    final OrganizationKey k1=new OrganizationKey(1);
+    final Organization v1=new Organization(1,"Name1","City1");
+    store.put(tx,k1,v1);
+    if (tx != null && commit) {
+      store.txEnd(tx,true);
+      tx=new DummyTx();
+    }
+    if (tx == null || commit)     assertEquals(v1,store.load(tx,k1));
+    Map<OrganizationKey,Organization> m=new HashMap<>();
+    final OrganizationKey k2=new OrganizationKey(2);
+    final Organization v2=new Organization(2,"Name2","City2");
+    final OrganizationKey k3=new OrganizationKey(3);
+    final Organization v3=new Organization(3,"Name3","City3");
+    m.put(k2,v2);
+    m.put(k3,v3);
+    store.putAll(tx,m);
+    if (tx != null && commit) {
+      store.txEnd(tx,true);
+      tx=new DummyTx();
+    }
+    final AtomicInteger cntr=new AtomicInteger();
+    final OrganizationKey no_such_key=new OrganizationKey(4);
+    if (tx == null || commit) {
+      store.loadAll(tx,Arrays.asList(k1,k2,k3,no_such_key),new CI2<Object,Object>(){
+        @Override public void apply(        Object o,        Object o1){
+          if (k1.equals(o))           assertEquals(v1,o1);
+          if (k2.equals(o))           assertEquals(v2,o1);
+          if (k3.equals(o))           assertEquals(v3,o1);
+          if (no_such_key.equals(o))           fail();
+          cntr.incrementAndGet();
+        }
+      }
+);
+      assertEquals(3,cntr.get());
+    }
+    store.removeAll(tx,Arrays.asList(k2,k3));
+    if (tx != null && commit) {
+      store.txEnd(tx,true);
+      tx=new DummyTx();
+    }
+    if (tx == null || commit) {
+      assertNull(store.load(tx,k2));
+      assertNull(store.load(tx,k3));
+      assertEquals(v1,store.load(tx,k1));
+    }
+    store.remove(tx,k1);
+    if (tx != null && commit) {
+      store.txEnd(tx,true);
+      tx=new DummyTx();
+    }
+    if (tx == null || commit)     assertNull(store.load(tx,k1));
+  }
+  finally {
+    if (tx != null)     store.txEnd(tx,false);
+  }
+}

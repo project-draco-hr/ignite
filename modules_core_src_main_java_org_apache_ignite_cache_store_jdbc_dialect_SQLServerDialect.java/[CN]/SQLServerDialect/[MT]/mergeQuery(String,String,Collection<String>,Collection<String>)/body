@@ -1,0 +1,23 @@
+{
+  Collection<String> cols=F.concat(false,keyCols,uniqCols);
+  String colsLst=mkString(cols,", ");
+  String match=mkString(keyCols,new C1<String,String>(){
+    @Override public String apply(    String col){
+      return String.format("t.%s=v.%s",col,col);
+    }
+  }
+,"",", ","");
+  String setCols=mkString(uniqCols,new C1<String,String>(){
+    @Override public String apply(    String col){
+      return String.format("t.%s = v.%s",col,col);
+    }
+  }
+,"",", ","");
+  String valuesCols=mkString(cols,new C1<String,String>(){
+    @Override public String apply(    String col){
+      return "v." + col;
+    }
+  }
+,"",", ","");
+  return String.format("MERGE INTO %s.%s t" + " USING (VALUES(%s)) AS v (%s)" + "  ON %s"+ " WHEN MATCHED THEN"+ "  UPDATE SET %s"+ " WHEN NOT MATCHED THEN"+ "  INSERT (%s) VALUES (%s)",schema,tblName,repeat("?",cols.size(),"",",",""),colsLst,match,setCols,colsLst,valuesCols);
+}

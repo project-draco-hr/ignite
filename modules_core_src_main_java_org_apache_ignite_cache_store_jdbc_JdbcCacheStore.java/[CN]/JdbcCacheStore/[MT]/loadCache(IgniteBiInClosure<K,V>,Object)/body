@@ -1,0 +1,40 @@
+{
+  try {
+    init();
+    if (log.isDebugEnabled())     log.debug("Loading all values from db");
+    Collection<Future<?>> futs=new ArrayList<>();
+    for (    final QueryCache type : entryQtyCache.values())     futs.add(exec.submit(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        Connection conn=null;
+        try {
+          PreparedStatement stmt=null;
+          try {
+            conn=connection(null);
+            stmt=conn.prepareStatement(type.loadCacheQry);
+            ResultSet rs=stmt.executeQuery();
+            while (rs.next()) {
+              K key=buildObject(type.keyType(),type.keyDescriptors(),rs);
+              V val=buildObject(type.valueType(),type.valueDescriptors(),rs);
+              clo.apply(key,val);
+            }
+          }
+ catch (          SQLException e) {
+            throw new IgniteCheckedException("Failed to load cache",e);
+          }
+ finally {
+            U.closeQuiet(stmt);
+          }
+        }
+  finally {
+          closeConnection(conn);
+        }
+        return null;
+      }
+    }
+));
+    for (    Future<?> fut : futs)     U.get(fut);
+  }
+ catch (  Exception e) {
+    throw new CacheException(e);
+  }
+}
