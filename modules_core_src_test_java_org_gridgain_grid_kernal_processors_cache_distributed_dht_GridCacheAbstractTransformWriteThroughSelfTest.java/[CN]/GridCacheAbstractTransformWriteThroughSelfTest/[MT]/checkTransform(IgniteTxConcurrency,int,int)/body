@@ -1,17 +1,17 @@
 {
-  GridCacheProjection<String,Integer> cache=cache(0);
+  IgniteCache<String,Integer> cache=jcache(0);
   Collection<String> keys=keysForType(nodeType);
   for (  String key : keys)   cache.put(key,1);
   GridCacheGenericTestStore<String,Integer> nearStore=stores.get(0);
   nearStore.reset();
-  for (  String key : keys)   cache.clear(key);
+  for (  String key : keys)   cache(0).clear(key);
   info(">>> Starting transform transaction");
-  try (IgniteTx tx=cache.txStart(concurrency,READ_COMMITTED)){
+  try (IgniteTx tx=ignite(0).transactions().txStart(concurrency,READ_COMMITTED)){
     if (op == OP_UPDATE) {
-      for (      String key : keys)       cache.transform(key,INCR_CLOS);
+      for (      String key : keys)       cache.invoke(key,INCR_CLOS);
     }
  else {
-      for (      String key : keys)       cache.transform(key,RMV_CLOS);
+      for (      String key : keys)       cache.invoke(key,RMV_CLOS);
     }
     tx.commit();
   }

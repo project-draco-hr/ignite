@@ -1,2 +1,15 @@
 {
+  storeEnabled=false;
+  startGrid();
+  try {
+    IgniteCache<Object,Object> cache=jcache();
+    cache.lock(1).lock();
+    assertNull(cache.getAndPut(1,"key1"));
+    assertEquals("key1",cache.getAndPut(1,"key2"));
+    assertEquals("key2",cache.get(1));
+    cache.lock(1).unlock();
+  }
+  finally {
+    stopAllGrids();
+  }
 }
