@@ -33,7 +33,7 @@
       if (useQry) {
         GridCacheContinuousQuery<Object,Object> qry=cache.queries().createContinuousQuery();
         qry.callback(new PX2<UUID,Collection<Map.Entry<Object,Object>>>(){
-          @Override public boolean applyx(          UUID uuid,          Collection<Map.Entry<Object,Object>> entries) throws GridInterruptedException {
+          @Override public boolean applyx(          UUID uuid,          Collection<Map.Entry<Object,Object>> entries) throws IgniteInterruptedException {
             if (cbSleepMs > 0)             U.sleep(cbSleepMs);
             cbCntr.addAndGet(entries.size());
             return true;
@@ -41,7 +41,7 @@
         }
 );
         qry.filter(new PX2<Object,Object>(){
-          @Override public boolean applyx(          Object key,          Object val) throws GridInterruptedException {
+          @Override public boolean applyx(          Object key,          Object val) throws IgniteInterruptedException {
             if (filterSleepMs > 0)             U.sleep(filterSleepMs);
             return Math.random() * 100 >= filterSkipProb;
           }
@@ -53,14 +53,14 @@
       }
  else {
         ignite.events().remoteListen(bufSize,timeInterval,true,new PX2<UUID,IgniteEvent>(){
-          @Override public boolean applyx(          UUID uuid,          IgniteEvent evt) throws GridInterruptedException {
+          @Override public boolean applyx(          UUID uuid,          IgniteEvent evt) throws IgniteInterruptedException {
             if (cbSleepMs > 0)             U.sleep(cbSleepMs);
             cbCntr.incrementAndGet();
             return true;
           }
         }
 ,new PX1<IgniteEvent>(){
-          @Override public boolean applyx(          IgniteEvent evt) throws GridInterruptedException {
+          @Override public boolean applyx(          IgniteEvent evt) throws IgniteInterruptedException {
             if (filterSleepMs > 0)             U.sleep(filterSleepMs);
             return Math.random() * 100 >= filterSkipProb;
           }
@@ -80,7 +80,7 @@
             X.println("Stats [entriesPerSec=" + cbDelta + ", updatesPerSec="+ updDelta+ ']');
           }
         }
- catch (        GridInterruptedException ignored) {
+ catch (        IgniteInterruptedException ignored) {
         }
       }
     }
