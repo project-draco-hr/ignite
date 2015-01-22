@@ -1,18 +1,15 @@
 {
   initStore(2);
   try {
-    IgniteTx tx=null;
-    store.put(tx,1,"v1");
-    store.put(tx,2,"v2");
-    store.txEnd(tx,true);
-    assertEquals("v1",store.load(null,1));
-    assertEquals("v2",store.load(null,2));
-    assertNull(store.load(null,3));
-    store.remove(tx,1);
-    store.txEnd(tx,true);
-    assertNull(store.load(null,1));
-    assertEquals("v2",store.load(null,2));
-    assertNull(store.load(null,3));
+    store.write(new CacheEntryImpl<>(1,"v1"));
+    store.write(new CacheEntryImpl<>(2,"v2"));
+    assertEquals("v1",store.load(1));
+    assertEquals("v2",store.load(2));
+    assertNull(store.load(3));
+    store.delete(1);
+    assertNull(store.load(1));
+    assertEquals("v2",store.load(2));
+    assertNull(store.load(3));
   }
   finally {
     shutdownStore();

@@ -1,19 +1,23 @@
 {
-  GridCacheConfiguration cacheCfg=super.cacheConfiguration(gridName);
+  CacheConfiguration cacheCfg=super.cacheConfiguration(gridName);
   cacheCfg.setCacheMode(GridCacheMode.PARTITIONED);
-  cacheCfg.setStore(new GridCacheStoreAdapter<Long,String>(){
-    @Nullable @Override public String load(    @Nullable IgniteTx tx,    Long key){
+  CacheStore store=new CacheStoreAdapter<Long,String>(){
+    @Nullable @Override public String load(    Long key){
       return null;
     }
     @Override public void loadCache(    final IgniteBiInClosure<Long,String> c,    @Nullable Object... args){
       for (int i=0; i < KEYS_CNT; i++)       c.apply((long)i,String.valueOf(i));
     }
-    @Override public void put(    @Nullable IgniteTx tx,    Long key,    @Nullable String val){
+    @Override public void write(    Cache.Entry<? extends Long,? extends String> val){
     }
-    @Override public void remove(    @Nullable IgniteTx tx,    Long key){
+    @Override public void delete(    Object key){
     }
   }
-);
+;
+  cacheCfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+  cacheCfg.setReadThrough(true);
+  cacheCfg.setWriteThrough(true);
+  cacheCfg.setLoadPreviousValue(true);
   cacheCfg.setEvictionPolicy(new GridCacheFifoEvictionPolicy(EVICT_PLC_SIZE));
   cacheCfg.setSwapEnabled(true);
   cacheCfg.setEvictSynchronized(false);

@@ -1,7 +1,22 @@
 {
-  GridCacheConfiguration ccfg=defaultCacheConfiguration();
+  CacheConfiguration ccfg=defaultCacheConfiguration();
   ccfg.setAtomicityMode(TRANSACTIONAL);
   ccfg.setDistributionMode(NEAR_PARTITIONED);
-  ccfg.setStore(Mockito.mock(GridCacheStore.class));
+  ccfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(new CacheStoreAdapter(){
+    @Override public Object load(    Object key) throws CacheLoaderException {
+      storeCalled.set(true);
+      return null;
+    }
+    @Override public void write(    Cache.Entry entry) throws CacheWriterException {
+      storeCalled.set(true);
+    }
+    @Override public void delete(    Object key) throws CacheWriterException {
+      storeCalled.set(true);
+    }
+  }
+));
+  ccfg.setReadThrough(true);
+  ccfg.setWriteThrough(true);
+  ccfg.setLoadPreviousValue(true);
   return ccfg;
 }
