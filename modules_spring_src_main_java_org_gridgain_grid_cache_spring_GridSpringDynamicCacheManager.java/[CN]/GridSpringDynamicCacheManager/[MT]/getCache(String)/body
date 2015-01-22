@@ -1,0 +1,22 @@
+{
+  Cache cache=super.getCache(name);
+  if (cache != null)   return cache;
+  try {
+    MetaKey key=new MetaKey(name);
+    cache=metaCache.get(key);
+    if (cache == null) {
+      cache=new GridSpringCache(name,grid,dataCache.projection(new ProjectionFilter(name)),new IgniteClosure<Object,Object>(){
+        @Override public Object apply(        Object o){
+          return new DataKey(name,o);
+        }
+      }
+);
+      Cache old=metaCache.putIfAbsent(key,cache);
+      if (old != null)       cache=old;
+    }
+    return cache;
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+}
