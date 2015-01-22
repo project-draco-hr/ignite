@@ -26,11 +26,12 @@
  */
     @Override protected void succeeded(){
       super.succeeded();
-      rootItem.getChildren().clear();
+      List<SchemaItem> schemasMdl=new ArrayList<>();
       for (      Map.Entry<String,Map<String,PojoDescriptor>> schema : schemas.entrySet()) {
-        CheckBoxTreeItem<String> schemaItem=addCheckBoxTreeItem(rootItem,schema.getKey());
-        for (        String tbl : schema.getValue().keySet())         addCheckBoxTreeItem(schemaItem,tbl);
+        schemasMdl.add(new SchemaItem(schema.getKey()));
+        for (        PojoDescriptor pojo : schema.getValue().values())         schemasMdl.add(new SchemaItem(pojo));
       }
+      schemesTbl.setItems(FXCollections.observableList(schemasMdl));
       unlockUI(connLayerPnl,connPnl,nextBtn);
       titleLb.setText("Generate XML And POJOs");
       titleLb.setGraphic(imageView("text_tree",48));
