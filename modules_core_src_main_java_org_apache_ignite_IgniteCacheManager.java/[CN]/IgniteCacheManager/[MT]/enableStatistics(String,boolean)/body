@@ -6,16 +6,15 @@ synchronized (igniteMap) {
     tuple=igniteMap.get(cacheName);
   }
   Ignite ignite=tuple.get1();
-  GridCache cache=ignite.cache(cacheName);
-  GridCacheConfiguration configuration=ignite.jcache(cacheName).getConfiguration(GridCacheConfiguration.class);
+  IgniteCache<Object,Object> cache=ignite.jcache(cacheName);
+  GridCacheConfiguration cfg=cache.getConfiguration(GridCacheConfiguration.class);
   MBeanServer mBeanSrv=ignite.configuration().getMBeanServer();
   if (enabled) {
-    CacheMetricsMXBean mxBean=new CacheMetricsMXBean(cache);
-    registerCacheObject(mBeanSrv,mxBean,cacheName,true);
-    configuration.setStatisticsEnabled(true);
+    registerCacheObject(mBeanSrv,cache.metrics(),cacheName,CACHE_STATISTICS);
+    cfg.setStatisticsEnabled(true);
   }
  else {
-    unregisterCacheObject(mBeanSrv,cacheName,true);
-    configuration.setStatisticsEnabled(false);
+    unregisterCacheObject(mBeanSrv,cacheName,CACHE_STATISTICS);
+    cfg.setStatisticsEnabled(false);
   }
 }

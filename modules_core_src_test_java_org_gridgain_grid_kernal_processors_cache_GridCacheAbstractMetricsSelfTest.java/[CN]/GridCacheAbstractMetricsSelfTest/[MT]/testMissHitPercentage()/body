@@ -3,16 +3,16 @@
   int keyCnt=keyCount();
   for (int i=0; i < keyCnt; i++) {
     cache0.put(i,i);
-    info("Writes: " + cache0.metrics().writes());
+    info("Puts: " + cache0.metrics().getCachePuts());
     for (int j=0; j < gridCount(); j++) {
       GridCache<Integer,Integer> cache=grid(j).cache(null);
-      int cacheWrites=cache.metrics().writes();
+      long cacheWrites=cache.metrics().getCachePuts();
       assertEquals("Wrong cache metrics [i=" + i + ", grid="+ j+ ']',i + 1,cacheWrites);
     }
     assertEquals("Wrong value for key: " + i,Integer.valueOf(i),cache0.get(i));
   }
   for (int i=0; i < gridCount(); i++) {
-    GridCacheMetrics m=grid(i).cache(null).metrics();
+    CacheMetricsMxBean m=grid(i).cache(null).metrics();
     assertEquals(m.getCacheHits() * 100f / m.getCacheGets(),m.getCacheHitPercentage(),0.1f);
     assertEquals(m.getCacheMisses() * 100f / m.getCacheGets(),m.getCacheMissPercentage(),0.1f);
   }
