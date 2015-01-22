@@ -6,19 +6,7 @@
   }
  else {
     if (store != null) {
-      Collection<Cache.Entry<? extends K,?>> entries;
-      if (convertPortable) {
-        entries=new ArrayList<>(map.size());
-        for (        Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e : map.entrySet()) {
-          K k=e.getKey();
-          Object v=locStore ? e.getValue() : e.getValue().get1();
-          entries.add(new CacheEntryImpl<>((K)cctx.unwrapPortableIfNeeded(k,false),(V)cctx.unwrapPortableIfNeeded(v,false)));
-        }
-      }
- else {
-        entries=new ArrayList<>(map.size());
-        for (        Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e : map.entrySet())         entries.add(new CacheEntryImpl<>(e.getKey(),locStore ? e.getValue() : e.getValue().get1()));
-      }
+      EntriesView entries=new EntriesView(map);
       if (log.isDebugEnabled())       log.debug("Storing values in cache store [entries=" + entries + ']');
       initSession(tx);
       try {
