@@ -1,0 +1,24 @@
+{
+  IgniteConfiguration cfg=new IgniteConfiguration();
+  cfg.setLocalHost("127.0.0.1");
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  TcpDiscoveryIpFinder finder=new TcpDiscoveryVmIpFinder(true);
+  disco.setIpFinder(finder);
+  cfg.setDiscoverySpi(disco);
+  CacheConfiguration ccfg=new CacheConfiguration();
+  ccfg.setSwapEnabled(true);
+  ccfg.setEvictSynchronized(false);
+  ccfg.setEvictionPolicy(new GridCacheFifoEvictionPolicy(EVICT_PLC_SIZE));
+  if (store != null) {
+    ccfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+    ccfg.setReadThrough(true);
+    ccfg.setWriteThrough(true);
+    ccfg.setLoadPreviousValue(true);
+  }
+  FileSwapSpaceSpi swap=new FileSwapSpaceSpi();
+  cfg.setSwapSpaceSpi(swap);
+  ccfg.setCacheMode(GridCacheMode.LOCAL);
+  ccfg.setQueryIndexEnabled(false);
+  cfg.setCacheConfiguration(ccfg);
+  return G.start(cfg);
+}

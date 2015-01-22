@@ -1,0 +1,21 @@
+{
+  IgniteTx tx=transaction();
+  Long key=entry.getKey();
+  Person val=entry.getValue();
+  System.out.println(">>> Store put [key=" + key + ", val="+ val+ ", xid="+ (tx == null ? null : tx.xid())+ ']');
+  if (val == null) {
+    delete(key);
+    return;
+  }
+  Session ses=session(tx);
+  try {
+    ses.saveOrUpdate(val);
+  }
+ catch (  HibernateException e) {
+    rollback(ses,tx);
+    throw new CacheWriterException("Failed to put value to cache store [key=" + key + ", val"+ val+ "]",e);
+  }
+ finally {
+    end(ses,tx);
+  }
+}

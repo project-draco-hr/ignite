@@ -1,29 +1,32 @@
 {
   cacheEnabled=true;
   cacheMode=LOCAL;
-  initCache=new C1<GridCacheConfiguration,Void>(){
+  initCache=new C1<CacheConfiguration,Void>(){
     /** 
  * {@inheritDoc} 
  */
-    @Override public Void apply(    GridCacheConfiguration cfg){
+    @SuppressWarnings("unchecked") @Override public Void apply(    CacheConfiguration cfg){
       cfg.setAffinity(new GridCacheConsistentHashAffinityFunction(){
       }
 );
       cfg.setEvictionPolicy(new GridCacheFifoEvictionPolicy());
-      cfg.setStore(new TestStore());
+      cfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(new TestStore()));
+      cfg.setReadThrough(true);
+      cfg.setWriteThrough(true);
+      cfg.setLoadPreviousValue(true);
       return null;
     }
   }
 ;
   startGrid(1);
-  initCache=new C1<GridCacheConfiguration,Void>(){
+  initCache=new C1<CacheConfiguration,Void>(){
     /** 
  * {@inheritDoc} 
  */
-    @Override public Void apply(    GridCacheConfiguration cfg){
+    @Override public Void apply(    CacheConfiguration cfg){
       cfg.setAffinity(new GridCacheConsistentHashAffinityFunction());
       cfg.setEvictionPolicy(new GridCacheLruEvictionPolicy());
-      cfg.setStore(null);
+      cfg.setCacheStoreFactory(null);
       return null;
     }
   }
