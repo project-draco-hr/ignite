@@ -1,21 +1,24 @@
 {
   cacheEnabled=true;
   cacheMode=PARTITIONED;
-  initCache=new C1<GridCacheConfiguration,Void>(){
-    @Override public Void apply(    GridCacheConfiguration cc){
+  initCache=new C1<CacheConfiguration,Void>(){
+    @SuppressWarnings("unchecked") @Override public Void apply(    CacheConfiguration cc){
       cc.setAtomicityMode(TRANSACTIONAL);
       cc.setDistributionMode(PARTITIONED_ONLY);
-      cc.setStore(new TestStore());
+      cc.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(new TestStore()));
+      cc.setReadThrough(true);
+      cc.setWriteThrough(true);
+      cc.setLoadPreviousValue(true);
       return null;
     }
   }
 ;
   startGrid(1);
-  initCache=new C1<GridCacheConfiguration,Void>(){
-    @Override public Void apply(    GridCacheConfiguration cc){
+  initCache=new C1<CacheConfiguration,Void>(){
+    @Override public Void apply(    CacheConfiguration cc){
       cc.setAtomicityMode(TRANSACTIONAL);
       cc.setDistributionMode(PARTITIONED_ONLY);
-      cc.setStore(null);
+      cc.setCacheStoreFactory(null);
       return null;
     }
   }

@@ -1,11 +1,15 @@
 {
-  GridCacheConfiguration ccfg=super.cacheConfiguration(gridName);
+  CacheConfiguration ccfg=super.cacheConfiguration(gridName);
   assertNotNull(interceptor);
   ccfg.setInterceptor(interceptor);
   if (ccfg.getAtomicityMode() == ATOMIC) {
     assertNotNull(writeOrderMode());
     ccfg.setAtomicWriteOrderMode(writeOrderMode());
   }
-  if (!storeEnabled())   ccfg.setStore(null);
+  if (!storeEnabled()) {
+    ccfg.setCacheStoreFactory(null);
+    ccfg.setReadThrough(false);
+    ccfg.setWriteThrough(false);
+  }
   return ccfg;
 }
