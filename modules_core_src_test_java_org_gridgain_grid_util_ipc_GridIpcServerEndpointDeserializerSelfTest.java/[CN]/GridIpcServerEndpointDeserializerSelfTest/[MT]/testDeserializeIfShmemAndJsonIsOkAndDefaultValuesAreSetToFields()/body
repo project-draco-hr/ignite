@@ -1,12 +1,13 @@
 {
-  shmemSrvEndpoint=new GridIpcSharedMemoryServerEndpoint();
-  shmemSrvEndpoint.setPort(8);
-  String json=JSONSerializer.toJSON(shmemSrvEndpoint).toString();
-  json="{\"type\" : \"shmem\"," + json.substring(1);
-  GridIpcServerEndpoint deserialized=GridIpcServerEndpointDeserializer.deserialize(GridGgfsTestUtils.jsonToMap(json));
+  GridIpcSharedMemoryServerEndpoint defShmemSrvEndpoint=new GridIpcSharedMemoryServerEndpoint();
+  defShmemSrvEndpoint.setPort(8);
+  Map<String,String> endPnt=new HashMap<>();
+  endPnt.put("type","shmem");
+  endPnt.put("port",String.valueOf(defShmemSrvEndpoint.getPort()));
+  GridIpcServerEndpoint deserialized=GridIpcServerEndpointDeserializer.deserialize(endPnt);
   assertTrue(deserialized instanceof GridIpcSharedMemoryServerEndpoint);
   GridIpcSharedMemoryServerEndpoint deserializedShmemEndpoint=(GridIpcSharedMemoryServerEndpoint)deserialized;
-  assertEquals(shmemSrvEndpoint.getPort(),deserializedShmemEndpoint.getPort());
-  assertEquals(shmemSrvEndpoint.getSize(),deserializedShmemEndpoint.getSize());
-  assertEquals(shmemSrvEndpoint.getTokenDirectoryPath(),deserializedShmemEndpoint.getTokenDirectoryPath());
+  assertEquals(defShmemSrvEndpoint.getPort(),deserializedShmemEndpoint.getPort());
+  assertEquals(defShmemSrvEndpoint.getSize(),deserializedShmemEndpoint.getSize());
+  assertEquals(defShmemSrvEndpoint.getTokenDirectoryPath(),deserializedShmemEndpoint.getTokenDirectoryPath());
 }

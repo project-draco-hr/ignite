@@ -3,20 +3,24 @@
   TcpDiscoverySpi disco=new TcpDiscoverySpi();
   disco.setIpFinder(ipFinder);
   c.setDiscoverySpi(disco);
-  GridCacheConfiguration cc=defaultCacheConfiguration();
+  CacheConfiguration cc=defaultCacheConfiguration();
   cc.setCacheMode(cacheMode);
   cc.setDistributionMode(nearEnabled ? NEAR_PARTITIONED : PARTITIONED_ONLY);
   cc.setAtomicityMode(TRANSACTIONAL);
-  cc.setStore(new GridCacheStoreAdapter<Object,Object>(){
-    @Override public Object load(    @Nullable IgniteTx tx,    Object key) throws IgniteCheckedException {
-      throw new IgniteCheckedException("Failed to get key from store: " + key);
+  CacheStore store=new CacheStoreAdapter<Object,Object>(){
+    @Override public Object load(    Object key){
+      throw new IgniteException("Failed to get key from store: " + key);
     }
-    @Override public void put(    @Nullable IgniteTx tx,    Object key,    @Nullable Object val){
+    @Override public void write(    Cache.Entry<?,?> entry){
     }
-    @Override public void remove(    @Nullable IgniteTx tx,    Object key){
+    @Override public void delete(    Object key){
     }
   }
-);
+;
+  cc.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+  cc.setReadThrough(true);
+  cc.setWriteThrough(true);
+  cc.setLoadPreviousValue(true);
   c.setCacheConfiguration(cc);
   c.setIncludeEventTypes(EVT_TASK_FAILED,EVT_TASK_FINISHED,EVT_JOB_MAPPED);
   return c;

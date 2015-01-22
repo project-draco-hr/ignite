@@ -7,26 +7,29 @@
   }
 switch (commState.idx) {
 case 3:
-    if (filterBytes != null) {
-      if (commState.it == null) {
-        if (!commState.putInt(filterBytes.length))         return false;
-        commState.it=arrayIterator(filterBytes);
-      }
-      while (commState.it.hasNext() || commState.cur != NULL) {
-        if (commState.cur == NULL)         commState.cur=commState.it.next();
-        if (!commState.putByteArray((byte[])commState.cur))         return false;
-        commState.cur=NULL;
-      }
-      commState.it=null;
-    }
- else {
-      if (!commState.putInt(-1))       return false;
-    }
+    if (!commState.putLong(accessTtl))     return false;
   commState.idx++;
 case 4:
-if (!commState.putGridUuid(futId)) return false;
+if (filterBytes != null) {
+  if (commState.it == null) {
+    if (!commState.putInt(filterBytes.length))     return false;
+    commState.it=arrayIterator(filterBytes);
+  }
+  while (commState.it.hasNext() || commState.cur != NULL) {
+    if (commState.cur == NULL)     commState.cur=commState.it.next();
+    if (!commState.putByteArray((byte[])commState.cur))     return false;
+    commState.cur=NULL;
+  }
+  commState.it=null;
+}
+ else {
+  if (!commState.putInt(-1))   return false;
+}
 commState.idx++;
 case 5:
+if (!commState.putGridUuid(futId)) return false;
+commState.idx++;
+case 6:
 if (keyBytes != null) {
 if (commState.it == null) {
 if (!commState.putInt(keyBytes.size())) return false;
@@ -36,8 +39,8 @@ while (commState.it.hasNext() || commState.cur != NULL) {
 if (commState.cur == NULL) commState.cur=commState.it.next();
 Map.Entry<byte[],Boolean> e=(Map.Entry<byte[],Boolean>)commState.cur;
 if (!commState.keyDone) {
-  if (!commState.putByteArray(e.getKey()))   return false;
-  commState.keyDone=true;
+if (!commState.putByteArray(e.getKey())) return false;
+commState.keyDone=true;
 }
 if (!commState.putBoolean(e.getValue())) return false;
 commState.keyDone=false;
@@ -49,22 +52,25 @@ commState.it=null;
 if (!commState.putInt(-1)) return false;
 }
 commState.idx++;
-case 6:
+case 7:
 if (!commState.putGridUuid(miniId)) return false;
 commState.idx++;
-case 7:
-if (!commState.putBoolean(reload)) return false;
-commState.idx++;
 case 8:
-if (!commState.putLong(topVer)) return false;
+if (!commState.putBoolean(readThrough)) return false;
 commState.idx++;
 case 9:
-if (!commState.putCacheVersion(ver)) return false;
+if (!commState.putBoolean(reload)) return false;
 commState.idx++;
 case 10:
-if (!commState.putUuid(subjId)) return false;
+if (!commState.putLong(topVer)) return false;
 commState.idx++;
 case 11:
+if (!commState.putCacheVersion(ver)) return false;
+commState.idx++;
+case 12:
+if (!commState.putUuid(subjId)) return false;
+commState.idx++;
+case 13:
 if (!commState.putInt(taskNameHash)) return false;
 commState.idx++;
 }

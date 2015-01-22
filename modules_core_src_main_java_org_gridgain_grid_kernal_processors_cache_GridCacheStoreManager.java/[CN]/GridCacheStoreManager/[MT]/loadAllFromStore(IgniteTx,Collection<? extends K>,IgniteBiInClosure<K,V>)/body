@@ -1,40 +1,10 @@
 {
   if (store != null) {
-    if (!keys.isEmpty()) {
-      if (keys.size() == 1) {
-        K key=F.first(keys);
-        vis.apply(key,loadFromStore(tx,key));
-        return true;
-      }
-      Collection<? extends K> keys0=convertPortable ? F.viewReadOnly(keys,new C1<K,K>(){
-        @Override public K apply(        K k){
-          return (K)cctx.unwrapPortableIfNeeded(k,false);
-        }
-      }
-) : keys;
-      if (log.isDebugEnabled())       log.debug("Loading values from store for keys: " + keys0);
-      try {
-        singleThreadGate.loadAll(tx,keys0,new CI2<K,Object>(){
-          @Override public void apply(          K k,          Object o){
-            V v=convert(o);
-            if (cctx.portableEnabled()) {
-              k=(K)cctx.marshalToPortable(k);
-              v=(V)cctx.marshalToPortable(v);
-            }
-            vis.apply(k,v);
-          }
-        }
-);
-      }
- catch (      ClassCastException e) {
-        handleClassCastException(e);
-      }
-catch (      IgniteException e) {
-        throw U.cast(e);
-      }
-      if (log.isDebugEnabled())       log.debug("Loaded values from store for keys: " + keys0);
-    }
+    loadAllFromStore(null,keys,vis,null);
     return true;
+  }
+ else {
+    for (    K key : keys)     vis.apply(key,null);
   }
   return false;
 }

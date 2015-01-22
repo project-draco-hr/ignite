@@ -1,5 +1,5 @@
 {
-  GridCache<String,Integer> cache=cache(0);
+  IgniteCache<String,Integer> cache=jcache(0);
   for (int i=0; i < 10000; i++)   cache.put(String.valueOf(i),0);
   final AtomicInteger gridIdx=new AtomicInteger(1);
   IgniteFuture<?> fut=GridTestUtils.runMultiThreadedAsync(new Callable<Object>(){
@@ -13,10 +13,16 @@
   waitForRemoteNodes(grid(0),2);
   Set<String> keys=new HashSet<>();
   for (int i=0; i < 10; i++)   keys.add(String.valueOf(i * 1000));
-  cache.transformAll(keys,new C1<Integer,Integer>(){
-    @Override public Integer apply(    Integer val){
-      if (val == null)       keyNotLoaded=true;
-      return val + 1;
+  cache.invokeAll(keys,new EntryProcessor<String,Integer,Void>(){
+    @Override public Void process(    MutableEntry<String,Integer> e,    Object... args){
+      Integer val=e.getValue();
+      if (val == null) {
+        keyNotLoaded=true;
+        e.setValue(1);
+        return null;
+      }
+      e.setValue(val + 1);
+      return null;
     }
   }
 );

@@ -1,0 +1,16 @@
+{
+  try {
+    GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+    try {
+      ClusterGroup nodes=ctx.kernalContext().grid().cluster().forCache(ctx.name());
+      IgniteCompute comp=ctx.kernalContext().grid().compute(nodes).withNoFailover();
+      comp.broadcast(new LoadCacheClosure<>(ctx.name(),p,args));
+    }
+  finally {
+      gate.leave(prev);
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw cacheException(e);
+  }
+}

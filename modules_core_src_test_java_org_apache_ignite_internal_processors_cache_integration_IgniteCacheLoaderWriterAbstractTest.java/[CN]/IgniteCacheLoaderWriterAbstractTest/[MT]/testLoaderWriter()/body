@@ -1,0 +1,41 @@
+{
+  IgniteCache<Object,Object> cache=jcache(0);
+  Object key=primaryKey(cache);
+  assertNull(cache.get(key));
+  checkCalls(1,0);
+  storeMap.put(key,"test");
+  assertEquals("test",cache.get(key));
+  checkCalls(1,0);
+  assertTrue(storeMap.containsKey(key));
+  cache.remove(key);
+  checkCalls(0,1);
+  assertFalse(storeMap.containsKey(key));
+  assertNull(cache.get(key));
+  checkCalls(1,0);
+  cache.put(key,"test1");
+  checkCalls(0,1);
+  assertEquals("test1",storeMap.get(key));
+  assertEquals("test1",cache.get(key));
+  checkCalls(0,0);
+  cache.invoke(key,new EntryProcessor<Object,Object,Object>(){
+    @Override public Object process(    MutableEntry<Object,Object> e,    Object... args){
+      e.setValue("test2");
+      return null;
+    }
+  }
+);
+  checkCalls(0,1);
+  assertEquals("test2",storeMap.get(key));
+  assertEquals("test2",cache.get(key));
+  checkCalls(0,0);
+  cache.invoke(key,new EntryProcessor<Object,Object,Object>(){
+    @Override public Object process(    MutableEntry<Object,Object> e,    Object... args){
+      e.remove();
+      return null;
+    }
+  }
+);
+  checkCalls(0,1);
+  assertFalse(storeMap.containsKey(key));
+  assertNull(cache.get(key));
+}

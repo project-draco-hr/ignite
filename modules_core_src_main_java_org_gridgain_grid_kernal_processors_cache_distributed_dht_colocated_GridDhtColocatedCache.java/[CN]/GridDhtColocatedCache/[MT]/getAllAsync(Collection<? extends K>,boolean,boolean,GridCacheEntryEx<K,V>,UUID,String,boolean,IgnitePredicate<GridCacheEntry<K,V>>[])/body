@@ -12,6 +12,7 @@
 );
   }
   long topVer=tx == null ? ctx.affinity().affinityTopologyVersion() : tx.topologyVersion();
-  subjId=ctx.subjectIdPerCall(subjId);
-  return loadAsync(keys,false,forcePrimary,topVer,subjId,taskName,deserializePortable,filter);
+  GridCacheProjectionImpl<K,V> prj=ctx.projectionPerCall();
+  subjId=ctx.subjectIdPerCall(subjId,prj);
+  return loadAsync(keys,true,false,forcePrimary,topVer,subjId,taskName,deserializePortable,filter,accessExpiryPolicy(prj != null ? prj.expiry() : null));
 }

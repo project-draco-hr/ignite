@@ -1,14 +1,18 @@
 {
   IgniteConfiguration cfg=super.getConfiguration(gridName);
+  cfg.setMarshaller(new IgniteOptimizedMarshaller(false));
   TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
   discoSpi.setIpFinder(IP_FINDER);
   cfg.setDiscoverySpi(discoSpi);
   GridCacheGenericTestStore<String,Integer> store=new GridCacheGenericTestStore<>();
   stores.add(store);
-  GridCacheConfiguration cacheCfg=defaultCacheConfiguration();
+  CacheConfiguration cacheCfg=defaultCacheConfiguration();
   cacheCfg.setCacheMode(PARTITIONED);
   cacheCfg.setBackups(1);
-  cacheCfg.setStore(store);
+  cacheCfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+  cacheCfg.setReadThrough(true);
+  cacheCfg.setWriteThrough(true);
+  cacheCfg.setLoadPreviousValue(true);
   cacheCfg.setAtomicityMode(TRANSACTIONAL);
   cacheCfg.setDistributionMode(NEAR_PARTITIONED);
   cfg.setCacheConfiguration(cacheCfg);

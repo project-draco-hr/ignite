@@ -1,12 +1,12 @@
 {
-  GridCacheProjection<String,Integer> cache=cache();
+  IgniteCache<String,Integer> cache=jcache();
   cache.put("key2",1);
   cache.put("key3",3);
-  IgniteTx tx=txEnabled() ? cache.txStart(concurrency,isolation) : null;
+  IgniteTx tx=txEnabled() ? ignite(0).transactions().txStart(concurrency,isolation) : null;
   try {
-    cache.transform("key1",INCR_CLOS);
-    cache.transform("key2",INCR_CLOS);
-    cache.transform("key3",RMV_CLOS);
+    assertEquals("null",cache.invoke("key1",INCR_PROCESSOR));
+    assertEquals("1",cache.invoke("key2",INCR_PROCESSOR));
+    assertEquals("3",cache.invoke("key3",RMV_PROCESSOR));
     if (tx != null)     tx.commit();
   }
  catch (  Exception e) {
@@ -23,9 +23,9 @@
   cache.remove("key1");
   cache.put("key2",1);
   cache.put("key3",3);
-  cache.transform("key1",INCR_CLOS);
-  cache.transform("key2",INCR_CLOS);
-  cache.transform("key3",RMV_CLOS);
+  assertEquals("null",cache.invoke("key1",INCR_PROCESSOR));
+  assertEquals("1",cache.invoke("key2",INCR_PROCESSOR));
+  assertEquals("3",cache.invoke("key3",RMV_PROCESSOR));
   assertEquals((Integer)1,cache.get("key1"));
   assertEquals((Integer)2,cache.get("key2"));
   assertNull(cache.get("key3"));

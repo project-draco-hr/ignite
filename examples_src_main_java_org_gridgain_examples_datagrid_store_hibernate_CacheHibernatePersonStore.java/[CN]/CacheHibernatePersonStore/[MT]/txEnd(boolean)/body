@@ -1,0 +1,25 @@
+{
+  CacheStoreSession storeSes=session();
+  IgniteTx tx=storeSes.transaction();
+  Map<String,Session> props=storeSes.properties();
+  Session ses=props.remove(ATTR_SES);
+  if (ses != null) {
+    Transaction hTx=ses.getTransaction();
+    if (hTx != null) {
+      try {
+        if (commit) {
+          ses.flush();
+          hTx.commit();
+        }
+ else         hTx.rollback();
+        System.out.println("Transaction ended [xid=" + tx.xid() + ", commit="+ commit+ ']');
+      }
+ catch (      HibernateException e) {
+        throw new CacheWriterException("Failed to end transaction [xid=" + tx.xid() + ", commit="+ commit+ ']',e);
+      }
+ finally {
+        ses.close();
+      }
+    }
+  }
+}
