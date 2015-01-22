@@ -1,0 +1,15 @@
+{
+  if (ctx.store().isLocalStore()) {
+    super.localLoad(keys);
+    return;
+  }
+  final GridCacheVersion ver0=ctx.shared().versions().nextForLoad(topology().topologyVersion());
+  final boolean replicate=ctx.isDrEnabled();
+  final long topVer=ctx.affinity().affinityTopologyVersion();
+  ctx.store().loadAllFromStore(null,keys,new CI2<K,V>(){
+    @Override public void apply(    K key,    V val){
+      loadEntry(key,val,ver0,null,topVer,replicate,0);
+    }
+  }
+);
+}

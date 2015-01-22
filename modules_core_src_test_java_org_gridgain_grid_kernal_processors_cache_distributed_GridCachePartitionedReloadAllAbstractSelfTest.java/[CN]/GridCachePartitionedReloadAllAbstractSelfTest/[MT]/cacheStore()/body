@@ -1,18 +1,18 @@
 {
-  return new GridCacheStoreAdapter<Integer,String>(){
+  return new CacheStoreAdapter<Integer,String>(){
     @IgniteInstanceResource private Ignite g;
     @Override public void loadCache(    IgniteBiInClosure<Integer,String> c,    Object... args){
       X.println("Loading all on: " + caches.indexOf(g.<Integer,String>cache(null)));
       for (      Map.Entry<Integer,String> e : map.entrySet())       c.apply(e.getKey(),e.getValue());
     }
-    @Override public String load(    IgniteTx tx,    Integer key){
+    @Override public String load(    Integer key){
       X.println("Loading on: " + caches.indexOf(g.<Integer,String>cache(null)) + " key="+ key);
       return map.get(key);
     }
-    @Override public void put(    IgniteTx tx,    Integer key,    @Nullable String val){
+    @Override public void write(    Cache.Entry<? extends Integer,? extends String> e){
       fail("Should not be called within the test.");
     }
-    @Override public void remove(    IgniteTx tx,    Integer key){
+    @Override public void delete(    Object key){
       fail("Should not be called within the test.");
     }
   }

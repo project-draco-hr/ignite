@@ -1,0 +1,21 @@
+{
+  init();
+  IgniteTx tx=transaction();
+  if (log.isDebugEnabled())   log.debug("Store load [key=" + key + ", tx="+ tx+ ']');
+  Connection conn=null;
+  PreparedStatement stmt=null;
+  try {
+    conn=connection(tx);
+    stmt=conn.prepareStatement(loadQry);
+    stmt.setObject(1,toBytes(key));
+    ResultSet rs=stmt.executeQuery();
+    if (rs.next())     return fromBytes(rs.getBytes(2));
+  }
+ catch (  IgniteCheckedException|SQLException e) {
+    throw new CacheLoaderException("Failed to load object: " + key,e);
+  }
+ finally {
+    end(tx,conn,stmt);
+  }
+  return null;
+}

@@ -30,12 +30,12 @@
   if (txFut != null)   txFut.markInitialized();
   IgniteFuture<Map<K,V>> fut;
   if (txFut == null || txFut.isDone()) {
-    if (reload && cctx.isStoreEnabled() && cctx.store().configured()) {
+    if (reload && cctx.readThrough() && cctx.store().configured()) {
       fut=cache().reloadAllAsync(keys.keySet(),true,subjId,taskName,filters);
     }
  else {
       if (tx == null) {
-        fut=cache().getDhtAllAsync(keys.keySet(),subjId,taskName,deserializePortable,filters,expiryPlc);
+        fut=cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,deserializePortable,filters,expiryPlc);
       }
  else {
         fut=tx.getAllAsync(cctx,keys.keySet(),null,deserializePortable,filters);
@@ -46,12 +46,12 @@
     fut=new GridEmbeddedFuture<>(txFut,new C2<Boolean,Exception,IgniteFuture<Map<K,V>>>(){
       @Override public IgniteFuture<Map<K,V>> apply(      Boolean b,      Exception e){
         if (e != null)         throw new GridClosureException(e);
-        if (reload && cctx.isStoreEnabled() && cctx.store().configured()) {
+        if (reload && cctx.readThrough() && cctx.store().configured()) {
           return cache().reloadAllAsync(keys.keySet(),true,subjId,taskName,filters);
         }
  else {
           if (tx == null) {
-            return cache().getDhtAllAsync(keys.keySet(),subjId,taskName,deserializePortable,filters,expiryPlc);
+            return cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,deserializePortable,filters,expiryPlc);
           }
  else {
             return tx.getAllAsync(cctx,keys.keySet(),null,deserializePortable,filters);
