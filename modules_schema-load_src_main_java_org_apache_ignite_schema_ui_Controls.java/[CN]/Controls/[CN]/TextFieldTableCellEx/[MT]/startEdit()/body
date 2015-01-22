@@ -1,5 +1,26 @@
 {
   super.startEdit();
-  setText(null);
-  setGraphic(textField);
+  Node g=getGraphic();
+  if (g != null) {
+    final TextField tf=(TextField)g;
+    tf.textProperty().addListener(new ChangeListener<String>(){
+      @Override public void changed(      ObservableValue<? extends String> val,      String oldVal,      String newVal){
+        curTxt=newVal;
+      }
+    }
+);
+    tf.setOnKeyReleased(new EventHandler<KeyEvent>(){
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public void handle(      KeyEvent evt){
+        if (KeyCode.ENTER == evt.getCode())         cancelEdit();
+ else         if (KeyCode.ESCAPE == evt.getCode()) {
+          hardCancel=true;
+          cancelEdit();
+        }
+      }
+    }
+);
+  }
 }
