@@ -1,11 +1,19 @@
 {
   IgniteConfiguration cfg=super.getConfiguration(gridName);
-  GridCacheConfiguration cacheCfg=defaultCacheConfiguration();
+  CacheConfiguration cacheCfg=defaultCacheConfiguration();
   cacheCfg.setCacheMode(cacheMode());
   cacheCfg.setDistributionMode(nearEnabled() ? NEAR_PARTITIONED : PARTITIONED_ONLY);
   cacheCfg.setWriteSynchronizationMode(GridCacheWriteSynchronizationMode.FULL_SYNC);
   cacheCfg.setAtomicityMode(TRANSACTIONAL);
-  cacheCfg.setStore(store);
+  cacheCfg.setCacheStoreFactory(new Factory<CacheStore<? super Object,? super Object>>(){
+    @Override public CacheStore<? super Object,? super Object> create(){
+      return store;
+    }
+  }
+);
+  cacheCfg.setReadThrough(true);
+  cacheCfg.setWriteThrough(true);
+  cacheCfg.setLoadPreviousValue(true);
   cfg.setCacheConfiguration(cacheCfg);
   cfg.setCacheSanityCheckEnabled(sanityCheckEnabled());
   TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
