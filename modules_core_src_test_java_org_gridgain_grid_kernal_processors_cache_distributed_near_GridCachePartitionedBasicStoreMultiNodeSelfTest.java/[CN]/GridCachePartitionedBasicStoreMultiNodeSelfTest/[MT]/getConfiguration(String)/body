@@ -3,13 +3,18 @@
   TcpDiscoverySpi disco=new TcpDiscoverySpi();
   disco.setIpFinder(IP_FINDER);
   c.setDiscoverySpi(disco);
-  GridCacheConfiguration cc=defaultCacheConfiguration();
+  CacheConfiguration cc=defaultCacheConfiguration();
   cc.setCacheMode(PARTITIONED);
   cc.setWriteSynchronizationMode(FULL_SYNC);
   cc.setSwapEnabled(false);
   cc.setAtomicityMode(TRANSACTIONAL);
   cc.setBackups(1);
-  cc.setStore(store);
+  GridCacheTestStore store=new GridCacheTestStore();
+  stores.add(store);
+  cc.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+  cc.setReadThrough(true);
+  cc.setWriteThrough(true);
+  cc.setLoadPreviousValue(true);
   c.setCacheConfiguration(cc);
   return c;
 }

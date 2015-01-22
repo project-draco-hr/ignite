@@ -1,0 +1,35 @@
+{
+  Map<Object,Object> vals=new HashMap<>();
+  IgniteCache<Object,Object> cache=jcache(0);
+  for (  Object key : primaryKeys(cache,100,0))   vals.put(key,key);
+  assertTrue(cache.getAll(vals.keySet()).isEmpty());
+  checkCalls(1,0);
+  storeMap.putAll(vals);
+  assertEquals(vals,cache.getAll(vals.keySet()));
+  checkCalls(1,0);
+  for (  Object key : vals.keySet())   assertEquals(key,storeMap.get(key));
+  cache.removeAll(vals.keySet());
+  checkCalls(0,1);
+  for (  Object key : vals.keySet())   assertFalse(storeMap.containsKey(key));
+  cache.putAll(vals);
+  checkCalls(0,1);
+  for (  Object key : vals.keySet())   assertEquals(key,storeMap.get(key));
+  cache.invokeAll(vals.keySet(),new EntryProcessor<Object,Object,Object>(){
+    @Override public Object process(    MutableEntry<Object,Object> entry,    Object... args){
+      entry.setValue("test1");
+      return null;
+    }
+  }
+);
+  checkCalls(0,1);
+  for (  Object key : vals.keySet())   assertEquals("test1",storeMap.get(key));
+  cache.invokeAll(vals.keySet(),new EntryProcessor<Object,Object,Object>(){
+    @Override public Object process(    MutableEntry<Object,Object> entry,    Object... args){
+      entry.remove();
+      return null;
+    }
+  }
+);
+  checkCalls(0,1);
+  for (  Object key : vals.keySet())   assertFalse(storeMap.containsKey(key));
+}

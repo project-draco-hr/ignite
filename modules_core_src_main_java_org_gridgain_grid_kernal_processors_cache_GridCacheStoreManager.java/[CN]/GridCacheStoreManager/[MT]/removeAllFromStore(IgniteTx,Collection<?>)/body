@@ -1,0 +1,29 @@
+{
+  if (F.isEmpty(keys))   return true;
+  if (keys.size() == 1) {
+    Object key=keys.iterator().next();
+    return removeFromStore(tx,(K)key);
+  }
+  if (store != null) {
+    Collection<Object> keys0=convertPortable ? cctx.unwrapPortablesIfNeeded((Collection<Object>)keys,false) : (Collection<Object>)keys;
+    if (log.isDebugEnabled())     log.debug("Removing values from cache store [keys=" + keys0 + ']');
+    initSession(tx);
+    try {
+      store.deleteAll(keys0);
+    }
+ catch (    ClassCastException e) {
+      handleClassCastException(e);
+    }
+catch (    Exception e) {
+      if (!keys0.isEmpty())       throw new CacheStorePartialUpdateException(keys0,e);
+      if (!(e instanceof CacheWriterException))       e=new CacheWriterException(e);
+      throw new IgniteCheckedException(e);
+    }
+ finally {
+      sesHolder.set(null);
+    }
+    if (log.isDebugEnabled())     log.debug("Removed values from cache store [keys=" + keys0 + ']');
+    return true;
+  }
+  return false;
+}
