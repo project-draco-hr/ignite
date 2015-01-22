@@ -1,0 +1,35 @@
+{
+  storeMap=new ConcurrentHashMap<>();
+  try {
+    store=new TestStore();
+    useCache=true;
+    Ignite ignite=startGrid(1);
+    startGrid(2);
+    startGrid(3);
+    for (int i=0; i < 1000; i++)     storeMap.put(i,i);
+    try (IgniteDataLoader<Object,Object> ldr=ignite.dataLoader(null)){
+      ldr.skipStore(false);
+      for (int i=0; i < 1000; i++)       ldr.removeData(i);
+      for (int i=1000; i < 2000; i++)       ldr.addData(i,i);
+    }
+     for (int i=0; i < 1000; i++)     assertNull(storeMap.get(i));
+    for (int i=1000; i < 2000; i++)     assertEquals(i,storeMap.get(i));
+    try (IgniteDataLoader<Object,Object> ldr=ignite.dataLoader(null)){
+      ldr.skipStore(true);
+      for (int i=0; i < 1000; i++)       ldr.addData(i,i);
+      for (int i=1000; i < 2000; i++)       ldr.removeData(i);
+    }
+     IgniteCache<Object,Object> cache=ignite.jcache(null);
+    for (int i=0; i < 1000; i++) {
+      assertNull(storeMap.get(i));
+      assertEquals(i,cache.get(i));
+    }
+    for (int i=1000; i < 2000; i++) {
+      assertEquals(i,storeMap.get(i));
+      assertNull(cache.localPeek(i));
+    }
+  }
+  finally {
+    storeMap=null;
+  }
+}
