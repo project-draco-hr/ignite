@@ -1,0 +1,49 @@
+{
+  cctx.denyOnFlag(READ);
+  CU.checkStore(cctx);
+  GridCacheVersion startVer;
+  boolean wasNew;
+synchronized (this) {
+    checkObsolete();
+    startVer=ver;
+    wasNew=isNew();
+  }
+  String taskName=cctx.kernalContext().job().currentTaskName();
+  if (cctx.isAll(this,filter)) {
+    V ret=readThrough(null,key,true,filter,cctx.localNodeId(),taskName);
+    boolean touch=false;
+    try {
+synchronized (this) {
+        long ttl=ttlExtras();
+        GridCacheVersion nextVer=cctx.versions().nextForLoad(ver);
+        if (wasNew && !isNew())         return ret;
+        if (startVer.equals(ver)) {
+          releaseSwap();
+          V old=rawGetOrUnmarshalUnlocked(false);
+          long expTime=toExpireTime(ttl);
+          if (cctx.portableEnabled())           ret=(V)cctx.kernalContext().portable().detachPortable(ret);
+          if (ret != null) {
+            updateIndex(ret,null,expTime,nextVer,old);
+            if (cctx.deferredDelete() && !isInternal() && !detached()&& deletedUnlocked())             deletedUnlocked(false);
+          }
+ else {
+            clearIndex(old);
+            if (cctx.deferredDelete() && !isInternal() && !detached()&& !deletedUnlocked())             deletedUnlocked(true);
+          }
+          update(ret,null,expTime,ttl,nextVer);
+          touch=true;
+          return ret;
+        }
+      }
+      if (F.isEmptyOrNulls(filter)) {
+        touch=true;
+        return ret;
+      }
+    }
+  finally {
+      if (touch)       cctx.evicts().touch(this,cctx.affinity().affinityTopologyVersion());
+    }
+    return innerReload(filter);
+  }
+  return null;
+}
