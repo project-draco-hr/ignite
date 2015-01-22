@@ -1,22 +1,2 @@
 {
-  GridCache<Integer,Integer> cache=grid(0).cache(null);
-  for (int i=0; i < TX_CNT; i++) {
-    IgniteTx tx=cache.txStart(concurrency,isolation);
-    if (put)     for (int j=0; j < keyCount(); j++)     cache.put(j,j);
-    tx.rollback();
-  }
-  for (int i=0; i < gridCount(); i++) {
-    IgniteTxMetrics metrics=grid(i).transactions().metrics();
-    CacheMetricsMxBean cacheMetrics=grid(i).cache(null).metrics();
-    assertEquals(0,metrics.txCommits());
-    assertEquals(0,cacheMetrics.getCacheTxCommits());
-    if (i == 0) {
-      assertEquals(TX_CNT,metrics.txRollbacks());
-      if (put)       assertEquals(TX_CNT,cacheMetrics.getCacheTxRollbacks());
-    }
- else {
-      assertEquals(0,metrics.txRollbacks());
-      assertEquals(0,cacheMetrics.getCacheTxRollbacks());
-    }
-  }
 }

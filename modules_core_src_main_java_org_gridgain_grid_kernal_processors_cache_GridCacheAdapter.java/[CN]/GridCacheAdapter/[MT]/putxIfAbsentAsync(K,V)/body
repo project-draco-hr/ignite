@@ -14,18 +14,6 @@
     }
   }
 );
-  if (statsEnabled)   fut.listenAsync(new CI1<IgniteFuture<Boolean>>(){
-    @Override public void apply(    IgniteFuture<Boolean> fut){
-      try {
-        if (!fut.isCancelled()) {
-          fut.get();
-          ctx.cache().metrics0().addPutTimeNanos(System.nanoTime() - start);
-        }
-      }
- catch (      IgniteCheckedException ignore) {
-      }
-    }
-  }
-);
+  if (statsEnabled)   fut.listenAsync(new UpdatePutTimeStatClosure<Boolean>(metrics0(),start));
   return fut;
 }

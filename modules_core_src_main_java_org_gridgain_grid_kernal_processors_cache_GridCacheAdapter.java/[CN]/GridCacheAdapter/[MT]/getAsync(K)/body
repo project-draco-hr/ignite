@@ -8,18 +8,6 @@
     }
   }
 );
-  if (statsEnabled)   fut.listenAsync(new CI1<IgniteFuture<V>>(){
-    @Override public void apply(    IgniteFuture<V> fut){
-      try {
-        if (!fut.isCancelled()) {
-          fut.get();
-          ctx.cache().metrics0().addGetTimeNanos(System.nanoTime() - start);
-        }
-      }
- catch (      IgniteCheckedException ignore) {
-      }
-    }
-  }
-);
+  if (statsEnabled)   fut.listenAsync(new UpdateGetTimeStatClosure<V>(metrics0(),start));
   return fut;
 }
