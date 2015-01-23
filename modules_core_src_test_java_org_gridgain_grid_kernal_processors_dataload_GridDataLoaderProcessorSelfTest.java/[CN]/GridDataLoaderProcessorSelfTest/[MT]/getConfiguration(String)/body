@@ -6,7 +6,7 @@
   cfg.setIncludeProperties();
   cfg.setMarshaller(new IgniteOptimizedMarshaller(false));
   if (useCache) {
-    GridCacheConfiguration cc=defaultCacheConfiguration();
+    CacheConfiguration cc=defaultCacheConfiguration();
     cc.setCacheMode(mode);
     cc.setAtomicityMode(TRANSACTIONAL);
     cc.setDistributionMode(nearEnabled ? NEAR_PARTITIONED : PARTITIONED_ONLY);
@@ -14,6 +14,11 @@
     cc.setEvictionPolicy(new GridCacheFifoEvictionPolicy(10000));
     cc.setEvictSynchronized(false);
     cc.setEvictNearSynchronized(false);
+    if (store != null) {
+      cc.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+      cc.setReadThrough(true);
+      cc.setWriteThrough(true);
+    }
     cfg.setCacheConfiguration(cc);
   }
  else   cfg.setCacheConfiguration();
