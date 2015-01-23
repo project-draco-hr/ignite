@@ -1,0 +1,72 @@
+{
+  final int lineSize=16;
+  final int ptrsCnt=4;
+  final AtomicReferenceArray<CmpMem> ptrs=new AtomicReferenceArray<>(ptrsCnt * lineSize);
+  final AtomicBoolean finished=new AtomicBoolean();
+  final LongAdder cntr=new LongAdder();
+  final GridUnsafeGuard guard=new GridUnsafeGuard();
+  GridRandom rnd=new GridRandom();
+  for (int a=0; a < 7; a++) {
+    finished.set(false);
+    int threads=2 + rnd.nextInt(37);
+    int time=rnd.nextInt(5);
+    X.println("__ starting threads: " + threads + " time: "+ time+ " sec");
+    final LongAdder locAdder=new LongAdder();
+    IgniteFuture<?> fut=multithreadedAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        Random rnd=new GridRandom();
+        while (!finished.get()) {
+          int idx=rnd.nextInt(ptrsCnt) * lineSize;
+          guard.begin();
+          try {
+            final CmpMem old;
+            CmpMem ptr=null;
+switch (rnd.nextInt(6)) {
+case 0:
+              ptr=new CmpMem(cntr);
+case 1:
+            old=ptrs.getAndSet(idx,ptr);
+          if (old != null) {
+            guard.finalizeLater(new Runnable(){
+              @Override public void run(){
+                old.deallocate();
+              }
+            }
+);
+          }
+        break;
+case 2:
+      if (rnd.nextBoolean())       ptr=new CmpMem(cntr);
+    old=ptrs.getAndSet(idx,ptr);
+  if (old != null)   guard.releaseLater(old);
+break;
+default :
+old=ptrs.get(idx);
+if (old != null) old.touch();
+}
+}
+  finally {
+guard.end();
+locAdder.increment();
+}
+}
+return null;
+}
+}
+,threads);
+Thread.sleep(1000 * time);
+X.println("__ stopping ops...");
+finished.set(true);
+fut.get();
+X.println("__ stopped, performed ops: " + locAdder.sum());
+for (int i=0; i < ptrs.length(); i++) {
+CmpMem ptr=ptrs.getAndSet(i,null);
+if (ptr != null) {
+ptr.touch();
+ptr.deallocate();
+}
+}
+X.println("__ " + guard);
+assertEquals(0,cntr.sum());
+}
+}

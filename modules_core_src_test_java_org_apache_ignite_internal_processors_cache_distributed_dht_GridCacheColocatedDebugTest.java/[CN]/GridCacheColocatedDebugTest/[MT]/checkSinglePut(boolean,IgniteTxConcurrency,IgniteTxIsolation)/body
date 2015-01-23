@@ -1,0 +1,20 @@
+{
+  startGrid();
+  try {
+    IgniteTx tx=explicitTx ? cache().txStart(concurrency,isolation) : null;
+    try {
+      cache().putAll(F.asMap(1,"Hello",2,"World"));
+      if (tx != null)       tx.commit();
+      System.out.println(cache().metrics());
+      assertEquals("Hello",cache().get(1));
+      assertEquals("World",cache().get(2));
+      assertNull(cache().get(3));
+    }
+  finally {
+      if (tx != null)       tx.close();
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

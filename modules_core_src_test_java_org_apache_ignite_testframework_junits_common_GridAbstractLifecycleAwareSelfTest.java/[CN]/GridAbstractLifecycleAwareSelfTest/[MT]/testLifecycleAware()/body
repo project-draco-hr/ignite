@@ -1,0 +1,19 @@
+{
+  Ignite ignite=startGrid();
+  afterGridStart(ignite);
+  assertFalse(lifecycleAwares.isEmpty());
+  for (  TestLifecycleAware lifecycleAware : lifecycleAwares) {
+    assertEquals("Unexpected start count for " + lifecycleAware,1,lifecycleAware.startCount());
+    assertEquals("Unexpected stop count for " + lifecycleAware,0,lifecycleAware.stopCount());
+  }
+  try {
+    stopGrid();
+    for (    TestLifecycleAware lifecycleAware : lifecycleAwares) {
+      assertEquals("Unexpected start count for " + lifecycleAware,1,lifecycleAware.startCount());
+      assertEquals("Unexpected stop count for " + lifecycleAware,1,lifecycleAware.stopCount());
+    }
+  }
+  finally {
+    lifecycleAwares.clear();
+  }
+}

@@ -1,0 +1,40 @@
+{
+  log.info("Check put, grid: " + grid);
+  Ignite ignite0=grid(grid);
+  GridCache<Integer,Integer> cache0=ignite0.cache(null);
+  CacheAffinity<Integer> aff=cache0.affinity();
+  UUID id0=ignite0.cluster().localNode().id();
+  Integer primaryKey=key(ignite0,PRIMARY);
+  log.info("Put from primary.");
+  cache0.put(primaryKey,primaryKey);
+  for (int i=0; i < GRID_CNT; i++)   checkEntry(grid(i),primaryKey,primaryKey,false);
+  if (backups > 0) {
+    Integer backupKey=key(ignite0,BACKUP);
+    log.info("Put from backup.");
+    cache0.put(backupKey,backupKey);
+    for (int i=0; i < GRID_CNT; i++)     checkEntry(grid(i),backupKey,backupKey,false);
+  }
+  Integer nearKey=key(ignite0,NOT_PRIMARY_AND_BACKUP);
+  log.info("Put from near.");
+  cache0.put(nearKey,nearKey);
+  for (int i=0; i < GRID_CNT; i++) {
+    UUID[] expReaders=aff.isPrimary(grid(i).localNode(),nearKey) ? new UUID[]{id0} : new UUID[]{};
+    checkEntry(grid(i),nearKey,nearKey,i == grid,expReaders);
+  }
+  Collection<UUID> readers=new HashSet<>();
+  readers.add(id0);
+  int val=nearKey + 1;
+  for (int i=0; i < GRID_CNT; i++) {
+    delay();
+    GridCache<Integer,Integer> cache=grid(i).cache(null);
+    log.info("Put [grid=" + grid(i).name() + ", val="+ val+ ']');
+    cache.put(nearKey,val);
+    if (!aff.isPrimaryOrBackup(grid(i).localNode(),nearKey))     readers.add(grid(i).localNode().id());
+    for (int j=0; j < GRID_CNT; j++) {
+      boolean primaryNode=aff.isPrimary(grid(j).localNode(),nearKey);
+      UUID[] expReaders=primaryNode ? U.toArray(readers,new UUID[readers.size()]) : new UUID[]{};
+      checkEntry(grid(j),nearKey,val,readers.contains(grid(j).localNode().id()),expReaders);
+    }
+    val++;
+  }
+}

@@ -1,0 +1,76 @@
+{
+  nearEnabled=near;
+  backups=shutdownCnt;
+  Collection<Integer> testKeys=generateTestKeys();
+  Ignite master=startGrid(MASTER);
+  List<Ignite> workers=new ArrayList<>(workerCnt);
+  for (int i=1; i <= workerCnt; i++)   workers.add(startGrid("worker" + i));
+  info("Master: " + master.cluster().localNode().id());
+  List<Ignite> runningWorkers=new ArrayList<>(workerCnt);
+  for (int i=1; i <= workerCnt; i++) {
+    UUID id=workers.get(i - 1).cluster().localNode().id();
+    info(String.format("Worker%d: %s",i,id));
+    runningWorkers.add(workers.get(i - 1));
+  }
+  try {
+    master.cluster().mapKeyToNode(CACHE_NAME,"Dummy");
+    Map<UUID,Collection<Integer>> dataChunks=new HashMap<>();
+    int chunkCntr=0;
+    int failoverPushGap=0;
+    for (    Integer key : testKeys) {
+      ClusterNode mappedNode=master.cluster().mapKeyToNode(CACHE_NAME,key);
+      UUID nodeId=mappedNode.id();
+      Collection<Integer> data=dataChunks.get(nodeId);
+      if (data == null) {
+        data=new ArrayList<>(DATA_CHUNK_SIZE);
+        dataChunks.put(nodeId,data);
+      }
+      data.add(key);
+      if (data.size() == DATA_CHUNK_SIZE) {
+        chunkCntr++;
+        info("Pushing data chunk: " + chunkCntr);
+        submitDataChunk(master,nodeId,data);
+        data=new ArrayList<>(DATA_CHUNK_SIZE);
+        dataChunks.put(nodeId,data);
+        if (chunkCntr >= FAIL_ON_CHUNK_NO) {
+          if (workerCnt - runningWorkers.size() < shutdownCnt) {
+            if (failoverPushGap > 0)             failoverPushGap--;
+ else {
+              Ignite victim=runningWorkers.remove(0);
+              info("Shutting down node: " + victim.cluster().localNode().id());
+              stopGrid(victim.name());
+              failoverPushGap=FAILOVER_PUSH_GAP;
+            }
+          }
+        }
+      }
+    }
+    for (    Map.Entry<UUID,Collection<Integer>> entry : dataChunks.entrySet())     submitDataChunk(master,entry.getKey(),entry.getValue());
+    info("Waiting for empty queue...");
+    long seenSize=resQueue.size();
+    while (true) {
+      U.sleep(10000);
+      if (!resQueue.isEmpty()) {
+        long size=resQueue.size();
+        if (seenSize == size) {
+          info(">>> Failed to wait for queue to empty.");
+          break;
+        }
+        seenSize=size;
+      }
+ else       break;
+    }
+    Collection<Integer> absentKeys=findAbsentKeys(runningWorkers.get(0),testKeys);
+    info(">>> Absent keys: " + absentKeys);
+    assertTrue(absentKeys.isEmpty());
+    int primaryCacheSize=0;
+    for (    Ignite g : runningWorkers) {
+      info(">>>>> " + g.cache(CACHE_NAME).size());
+      primaryCacheSize+=g.cache(CACHE_NAME).primarySize();
+    }
+    assertTrue(TEST_MAP_SIZE <= primaryCacheSize);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

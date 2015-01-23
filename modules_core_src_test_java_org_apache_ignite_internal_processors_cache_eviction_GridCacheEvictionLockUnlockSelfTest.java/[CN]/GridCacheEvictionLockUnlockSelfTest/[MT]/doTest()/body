@@ -1,0 +1,19 @@
+{
+  try {
+    startGridsMultiThreaded(gridCnt);
+    for (int i=0; i < gridCnt; i++)     grid(i).events().localListen(new EvictListener(),EVT_CACHE_ENTRY_EVICTED);
+    for (int i=0; i < gridCnt; i++) {
+      reset();
+      IgniteCache<Object,Object> cache=jcache(i);
+      cache.lock("key").lock();
+      cache.lock("key").unlock();
+      assertTrue(evictLatch.await(3,SECONDS));
+      assertEquals(gridCnt,evictCnt.get());
+      assertEquals(gridCnt,touchCnt.get());
+      for (int j=0; j < gridCnt; j++)       assertFalse(cache(j).containsKey("key"));
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

@@ -1,0 +1,34 @@
+{
+  runner=Thread.currentThread();
+  enterThreadLocals();
+  IgniteLogger log=GridWorker.log;
+  if (log.isDebugEnabled())   log.debug("Grid runnable started: " + name);
+  try {
+    if (isCancelled)     runner.interrupt();
+    if (lsnr != null)     lsnr.onStarted(this);
+    body();
+  }
+ catch (  IgniteInterruptedException e) {
+    if (log.isDebugEnabled())     log.debug("Caught interrupted exception: " + e);
+  }
+catch (  InterruptedException e) {
+    if (log.isDebugEnabled())     log.debug("Caught interrupted exception: " + e);
+    Thread.currentThread().interrupt();
+  }
+catch (  Throwable e) {
+    U.error(log,"Runtime error caught during grid runnable execution: " + this,e);
+  }
+ finally {
+synchronized (mux) {
+      finished=true;
+      mux.notifyAll();
+    }
+    cleanup();
+    if (lsnr != null)     lsnr.onStopped(this);
+    if (log.isDebugEnabled())     if (isCancelled)     log.debug("Grid runnable finished due to cancellation: " + name);
+ else     if (runner.isInterrupted())     log.debug("Grid runnable finished due to interruption without cancellation: " + name);
+ else     log.debug("Grid runnable finished normally: " + name);
+    leaveThreadLocals();
+    runner=null;
+  }
+}

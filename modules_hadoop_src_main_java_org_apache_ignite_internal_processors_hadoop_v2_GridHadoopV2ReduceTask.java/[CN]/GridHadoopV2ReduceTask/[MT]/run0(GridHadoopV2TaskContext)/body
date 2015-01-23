@@ -1,0 +1,28 @@
+{
+  OutputFormat outputFormat=null;
+  Exception err=null;
+  JobContextImpl jobCtx=taskCtx.jobContext();
+  try {
+    outputFormat=reduce || !taskCtx.job().info().hasReducer() ? prepareWriter(jobCtx) : null;
+    Reducer reducer=ReflectionUtils.newInstance(reduce ? jobCtx.getReducerClass() : jobCtx.getCombinerClass(),jobCtx.getConfiguration());
+    try {
+      reducer.run(new WrappedReducer().getReducerContext(hadoopContext()));
+    }
+  finally {
+      closeWriter();
+    }
+    commit(outputFormat);
+  }
+ catch (  InterruptedException e) {
+    err=e;
+    Thread.currentThread().interrupt();
+    throw new IgniteInterruptedException(e);
+  }
+catch (  Exception e) {
+    err=e;
+    throw new IgniteCheckedException(e);
+  }
+ finally {
+    if (err != null)     abort(outputFormat);
+  }
+}

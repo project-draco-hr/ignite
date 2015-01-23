@@ -1,0 +1,29 @@
+{
+  assertEquals("as" + "df",testAppend("as","df",true));
+  assertEquals("df" + "as",testAppend("as","df",false));
+  List<String> curList=new ArrayList<>(Arrays.asList("a","b"));
+  List<String> newList=new ArrayList<>(Arrays.asList("b","c"));
+  assertEquals(Arrays.asList("a","b","b","c"),testAppend(curList,newList,true));
+  assertEquals(Arrays.asList("b","c","a","b"),testAppend(curList,newList,false));
+  Set<String> curSet=new HashSet<>(Arrays.asList("a","b"));
+  Set<String> newSet=new HashSet<>(Arrays.asList("b","c"));
+  Set<String> resSet=new HashSet<>(Arrays.asList("a","b","c"));
+  assertEquals(resSet,testAppend(curSet,newSet,true));
+  assertEquals(resSet,testAppend(curSet,newSet,false));
+  assertEquals(resSet,testAppend(newSet,curList,true));
+  assertEquals(resSet,testAppend(newSet,curList,false));
+  assertEquals(resSet,testAppend(curSet,newList,true));
+  assertEquals(resSet,testAppend(curSet,newList,false));
+  Map<String,String> curMap=F.asMap("a","1","b","2","c","3");
+  Map<String,String> newMap=F.asMap("a","#","b",null,"c","%","d","4");
+  assertEquals(F.asMap("a","#","c","%","d","4"),testAppend(curMap,newMap,true));
+  assertEquals(F.asMap("a","1","b","2","c","3","d","4"),testAppend(curMap,newMap,false));
+  try {
+    testAppend("as",Arrays.asList("df"),true);
+    fail("Expects failed with incompatible types message.");
+  }
+ catch (  IgniteCheckedException e) {
+    info("Got expected exception: " + e);
+    assertTrue(e.getMessage().startsWith("Incompatible types"));
+  }
+}

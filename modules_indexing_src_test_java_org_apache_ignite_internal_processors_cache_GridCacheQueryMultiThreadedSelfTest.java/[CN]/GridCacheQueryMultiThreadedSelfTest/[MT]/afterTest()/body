@@ -1,0 +1,20 @@
+{
+  super.afterTest();
+  for (int i=0; i < GRID_CNT; i++) {
+    GridCache<Object,Object> c=grid(i).cache(null);
+    c.removeAll(F.<CacheEntry<Object,Object>>alwaysTrue());
+    Iterator<Map.Entry<Object,Object>> it=c.swapIterator();
+    while (it.hasNext()) {
+      it.next();
+      it.remove();
+    }
+    it=c.offHeapIterator();
+    while (it.hasNext()) {
+      it.next();
+      it.remove();
+    }
+    assertEquals("Swap keys: " + c.swapKeys(),0,c.swapKeys());
+    assertEquals(0,c.offHeapEntriesCount());
+    assertEquals(0,c.size());
+  }
+}

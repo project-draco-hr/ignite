@@ -1,0 +1,21 @@
+{
+  byte[] kb;
+  GridCacheValueBytes vb;
+  V v;
+  int extrasSize;
+synchronized (this) {
+    kb=keyBytes;
+    vb=valueBytesUnlocked();
+    v=val;
+    extrasSize=extrasSize();
+  }
+  if (kb == null || (vb.isNull() && v != null)) {
+    if (kb == null)     kb=CU.marshal(cctx.shared(),key);
+    if (vb.isNull())     vb=(v != null && v instanceof byte[]) ? GridCacheValueBytes.plain(v) : GridCacheValueBytes.marshaled(CU.marshal(cctx.shared(),v));
+synchronized (this) {
+      if (keyBytes == null)       keyBytes=kb;
+      if (!isOffHeapValuesOnly() && valBytes == null && val == v && cctx.config().isStoreValueBytes())       valBytes=vb.isPlain() ? null : vb.get();
+    }
+  }
+  return SIZE_OVERHEAD + extrasSize + kb.length+ (vb.isNull() ? 0 : vb.get().length);
+}

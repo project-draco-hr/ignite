@@ -1,0 +1,16 @@
+{
+  sesFactory.getStatistics().clear();
+  NaturalIdCacheStatistics stats=sesFactory.getStatistics().getNaturalIdCacheStatistics(NATURAL_ID_REGION);
+  long hitBefore=stats.getHitCount();
+  long missBefore=stats.getMissCount();
+  final Session ses=sesFactory.openSession();
+  try {
+    for (    Map.Entry<String,Integer> e : nameToId.entrySet())     assertEquals((int)e.getValue(),((Entity)ses.bySimpleNaturalId(Entity.class).load(e.getKey())).getId());
+    for (    String name : absentNames)     assertNull((ses.bySimpleNaturalId(Entity.class).load(name)));
+    assertEquals(nameToId.size() + hitBefore,stats.getHitCount());
+    assertEquals(absentNames.length + missBefore,stats.getMissCount());
+  }
+  finally {
+    ses.close();
+  }
+}

@@ -1,0 +1,66 @@
+{
+  boolean isNew=true;
+  boolean poll=false;
+  int size=0;
+  int relSize=0;
+  long relAddr=0;
+  long binAddr=writeLock(hash);
+  try {
+    long first=Bin.first(binAddr,mem);
+    long qAddr=0;
+    if (first != 0) {
+      long prev=0;
+      long cur=first;
+      while (true) {
+        long next=Entry.nextAddress(cur,mem);
+        if (Entry.keyEquals(cur,keyBytes,mem)) {
+          if (Entry.readValueLength(cur,mem) == valBytes.length) {
+            Entry.writeValueBytes(cur,valBytes,mem);
+            isNew=false;
+            if (lru != null) {
+              qAddr=Entry.queueAddress(cur,mem);
+              if (qAddr == 0) {
+                qAddr=lru.offer(part,cur,hash);
+                Entry.queueAddress(cur,qAddr,mem);
+              }
+ else               lru.touch(qAddr,cur);
+            }
+            return false;
+          }
+          if (prev != 0)           Entry.nextAddress(prev,next,mem);
+ else           first=next;
+          qAddr=Entry.queueAddress(cur,mem);
+          if (qAddr == 0 && lru != null) {
+            qAddr=lru.offer(part,cur,hash);
+            Entry.queueAddress(cur,qAddr,mem);
+          }
+          relSize=Entry.size(cur,mem);
+          relAddr=cur;
+          isNew=false;
+          break;
+        }
+        prev=cur;
+        cur=next;
+        if (next == 0)         break;
+      }
+    }
+    size=HEADER + keyBytes.length + valBytes.length;
+    poll=!mem.reserve(size);
+    long addr=mem.allocate(size,false,true);
+    Bin.first(binAddr,addr,mem);
+    if (isNew) {
+      cnt++;
+      totalCnt.increment();
+      qAddr=lru == null ? 0 : lru.offer(part,addr,hash);
+    }
+ else     if (lru != null)     lru.touch(qAddr,addr);
+    Entry.write(addr,hash,keyBytes,valBytes,qAddr,first,mem);
+    return isNew;
+  }
+  finally {
+    writeUnlock();
+    if (relAddr != 0)     mem.release(relAddr,relSize);
+    if (poll)     lruPoller.lruPoll(size);
+    if (isNew && cnt > threshold)     rehash();
+  }
+}

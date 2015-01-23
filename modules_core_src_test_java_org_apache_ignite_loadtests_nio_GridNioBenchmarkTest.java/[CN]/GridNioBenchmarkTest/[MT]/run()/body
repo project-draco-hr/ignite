@@ -1,0 +1,23 @@
+{
+  GridNioServerListener<ByteBuffer> lsnr=new GridNioServerListenerAdapter<ByteBuffer>(){
+    @Override public void onConnected(    GridNioSession ses){
+      X.print("New connection accepted.");
+    }
+    @Override public void onDisconnected(    GridNioSession ses,    @Nullable Exception e){
+    }
+    @Override public void onMessage(    GridNioSession ses,    ByteBuffer msg){
+      ByteBuffer buf=ByteBuffer.allocate(msg.remaining()).put(msg);
+      buf.position(0);
+      ses.send(buf);
+    }
+    @Override public void onSessionWriteTimeout(    GridNioSession ses){
+      X.error("Session write timeout. Closing.");
+    }
+    @Override public void onSessionIdleTimeout(    GridNioSession ses){
+      X.error("Session idle timeout. Closing.");
+    }
+  }
+;
+  IgniteLogger log=new GridTestLog4jLogger(U.resolveGridGainUrl("config/gridgain-log4j.xml"));
+  GridNioServer.<ByteBuffer>builder().address(InetAddress.getByName("localhost")).port(port).listener(lsnr).logger(log).selectorCount(selectorCnt).gridName("").tcpNoDelay(false).directBuffer(false).byteOrder(ByteOrder.nativeOrder()).socketSendBufferSize(0).socketReceiveBufferSize(0).sendQueueLimit(0).build().start();
+}

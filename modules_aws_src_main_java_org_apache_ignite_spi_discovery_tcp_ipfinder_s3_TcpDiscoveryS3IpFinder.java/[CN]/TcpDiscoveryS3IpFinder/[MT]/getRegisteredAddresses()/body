@@ -1,0 +1,37 @@
+{
+  initClient();
+  Collection<InetSocketAddress> addrs=new LinkedList<>();
+  try {
+    ObjectListing list=s3.listObjects(bucketName);
+    while (true) {
+      for (      S3ObjectSummary sum : list.getObjectSummaries()) {
+        String key=sum.getKey();
+        StringTokenizer st=new StringTokenizer(key,DELIM);
+        if (st.countTokens() != 2)         U.error(log,"Failed to parse S3 entry due to invalid format: " + key);
+ else {
+          String addrStr=st.nextToken();
+          String portStr=st.nextToken();
+          int port=-1;
+          try {
+            port=Integer.parseInt(portStr);
+          }
+ catch (          NumberFormatException e) {
+            U.error(log,"Failed to parse port for S3 entry: " + key,e);
+          }
+          if (port != -1)           try {
+            addrs.add(new InetSocketAddress(addrStr,port));
+          }
+ catch (          IllegalArgumentException e) {
+            U.error(log,"Failed to parse port for S3 entry: " + key,e);
+          }
+        }
+      }
+      if (list.isTruncated())       list=s3.listNextBatchOfObjects(list);
+ else       break;
+    }
+  }
+ catch (  AmazonClientException e) {
+    throw new IgniteSpiException("Failed to list objects in the bucket: " + bucketName,e);
+  }
+  return addrs;
+}

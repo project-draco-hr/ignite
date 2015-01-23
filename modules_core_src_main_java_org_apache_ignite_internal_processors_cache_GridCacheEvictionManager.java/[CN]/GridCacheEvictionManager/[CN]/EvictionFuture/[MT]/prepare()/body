@@ -1,0 +1,16 @@
+{
+  if (evictInfos.sizex() >= maxQueueSize() && finishPrepare.compareAndSet(false,true)) {
+    prepareLock.writeLock().lock();
+    futsCntLock.lock();
+    try {
+      activeFutsCnt++;
+    }
+  finally {
+      futsCntLock.unlock();
+    }
+    futs.put(id,this);
+    prepare0();
+    return true;
+  }
+  return false;
+}

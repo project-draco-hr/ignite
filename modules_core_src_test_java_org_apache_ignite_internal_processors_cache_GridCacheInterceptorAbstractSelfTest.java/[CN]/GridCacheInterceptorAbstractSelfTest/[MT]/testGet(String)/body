@@ -1,0 +1,65 @@
+{
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public Object onGet(    Object key,    Object val){
+      return null;
+    }
+  }
+;
+  log.info("Get 1.");
+  assertEquals(null,cache(0).get(key));
+  assertEquals(1,interceptor.invokeCnt.get());
+  assertEquals(0,interceptor.getMap.size());
+  interceptor.reset();
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public Object onGet(    Object key,    Object val){
+      return 1;
+    }
+  }
+;
+  log.info("Get 2.");
+  assertEquals((Integer)1,cache(0).get(key));
+  assertEquals(1,interceptor.invokeCnt.get());
+  assertEquals(0,interceptor.getMap.size());
+  interceptor.reset();
+  interceptor.disabled=true;
+  cache(0).put(key,100);
+  interceptor.disabled=false;
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public Object onGet(    Object key,    Object val){
+      return null;
+    }
+  }
+;
+  log.info("Get 3.");
+  assertEquals(null,cache(0).get(key));
+  assertEquals(1,interceptor.invokeCnt.get());
+  assertEquals(1,interceptor.getMap.size());
+  assertEquals(100,interceptor.getMap.get(key));
+  checkCacheValue(key,100);
+  interceptor.reset();
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public Object onGet(    Object key,    Object val){
+      return (Integer)val + 1;
+    }
+  }
+;
+  log.info("Get 4.");
+  assertEquals((Integer)101,cache(0).get(key));
+  assertEquals(1,interceptor.invokeCnt.get());
+  assertEquals(1,interceptor.getMap.size());
+  assertEquals(100,interceptor.getMap.get(key));
+  checkCacheValue(key,100);
+  interceptor.reset();
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public Object onGet(    Object key,    Object val){
+      return (Integer)val + 1;
+    }
+  }
+;
+  log.info("GetAsync 1.");
+  assertEquals((Integer)101,cache(0).getAsync(key).get());
+  assertEquals(1,interceptor.invokeCnt.get());
+  assertEquals(1,interceptor.getMap.size());
+  assertEquals(100,interceptor.getMap.get(key));
+  checkCacheValue(key,100);
+}

@@ -1,0 +1,20 @@
+{
+  int rows=3000;
+  int xs=37;
+  long t=System.currentTimeMillis();
+  Random rnd=new Random();
+  for (int i=0; i < rows; i++) {
+    UUID id=UUID.randomUUID();
+    GridH2Row row=row(id,t++,id.toString(),rnd.nextInt(xs));
+    assertTrue(tbl.doUpdate(row,false));
+  }
+  PreparedStatement ps=conn.prepareStatement("select count(*) from t where x = ?");
+  int cnt=0;
+  for (int x=0; x < xs; x++) {
+    ps.setInt(1,x);
+    ResultSet rs=ps.executeQuery();
+    assertTrue(rs.next());
+    cnt+=rs.getInt(1);
+  }
+  assertEquals(rows,cnt);
+}

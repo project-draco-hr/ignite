@@ -1,0 +1,14 @@
+{
+  assertNotNull(ignite);
+  ignite.log().info("Running job [node=" + ignite.cluster().localNode().id() + ", job="+ this+ ']');
+  CacheQueue<Integer> queue=ignite.cache(null).dataStructures().queue(queueName,QUEUE_CAPACITY,true,true);
+  assertNotNull(queue);
+  try {
+    lthTake.countDown();
+    queue.take();
+  }
+ catch (  IgniteException e) {
+    ignite.log().info("Caught expected exception: " + e.getMessage());
+  }
+  return queue.removed();
+}
