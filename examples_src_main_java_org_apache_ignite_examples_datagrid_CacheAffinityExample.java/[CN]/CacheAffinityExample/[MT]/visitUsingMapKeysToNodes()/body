@@ -1,0 +1,19 @@
+{
+  final Ignite g=Ignition.ignite();
+  Collection<Integer> keys=new ArrayList<>(KEY_CNT);
+  for (int i=0; i < KEY_CNT; i++)   keys.add(i);
+  Map<ClusterNode,Collection<Integer>> mappings=g.cluster().mapKeysToNodes(CACHE_NAME,keys);
+  for (  Map.Entry<ClusterNode,Collection<Integer>> mapping : mappings.entrySet()) {
+    ClusterNode node=mapping.getKey();
+    final Collection<Integer> mappedKeys=mapping.getValue();
+    if (node != null) {
+      g.compute(g.cluster().forNode(node)).run(new IgniteRunnable(){
+        @Override public void run(){
+          GridCache<Integer,String> cache=g.cache(CACHE_NAME);
+          for (          Integer key : mappedKeys)           System.out.println("Co-located using mapKeysToNodes [key= " + key + ", value="+ cache.peek(key)+ ']');
+        }
+      }
+);
+    }
+  }
+}

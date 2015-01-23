@@ -1,0 +1,19 @@
+{
+  int blockSize=BLOCK_SIZE;
+  GridGgfsFileInfo info=new GridGgfsFileInfo(blockSize,1024 * 1024,null,null,false,null);
+  IgniteUuid affKey=IgniteUuid.randomUuid();
+  GridGgfsFileMap map=new GridGgfsFileMap();
+  map.addRange(new GridGgfsFileAffinityRange(3 * BLOCK_SIZE,5 * BLOCK_SIZE - 1,affKey));
+  map.addRange(new GridGgfsFileAffinityRange(13 * BLOCK_SIZE,17 * BLOCK_SIZE - 1,affKey));
+  info.fileMap(map);
+  Collection<IgniteFsBlockLocation> affinity=mgr.affinity(info,0,info.length());
+  checkAffinity(blockSize,info,affinity);
+  affinity=mgr.affinity(info,3 * BLOCK_SIZE + BLOCK_SIZE / 2,info.length());
+  checkAffinity(blockSize,info,affinity);
+  affinity=mgr.affinity(info,14 * BLOCK_SIZE,info.length());
+  checkAffinity(blockSize,info,affinity);
+  affinity=mgr.affinity(info,14 * BLOCK_SIZE,2 * BLOCK_SIZE);
+  checkAffinity(blockSize,info,affinity);
+  affinity=mgr.affinity(info,18 * BLOCK_SIZE,info.length());
+  checkAffinity(blockSize,info,affinity);
+}

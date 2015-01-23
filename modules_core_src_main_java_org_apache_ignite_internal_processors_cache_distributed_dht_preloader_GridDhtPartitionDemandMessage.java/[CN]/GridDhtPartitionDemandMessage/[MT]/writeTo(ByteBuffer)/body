@@ -1,0 +1,43 @@
+{
+  commState.setBuffer(buf);
+  if (!super.writeTo(buf))   return false;
+  if (!commState.typeWritten) {
+    if (!commState.putByte(directType()))     return false;
+    commState.typeWritten=true;
+  }
+switch (commState.idx) {
+case 3:
+    if (parts != null) {
+      if (commState.it == null) {
+        if (!commState.putInt(parts.size()))         return false;
+        commState.it=parts.iterator();
+      }
+      while (commState.it.hasNext() || commState.cur != NULL) {
+        if (commState.cur == NULL)         commState.cur=commState.it.next();
+        if (!commState.putInt((int)commState.cur))         return false;
+        commState.cur=NULL;
+      }
+      commState.it=null;
+    }
+ else {
+      if (!commState.putInt(-1))       return false;
+    }
+  commState.idx++;
+case 4:
+if (!commState.putLong(timeout)) return false;
+commState.idx++;
+case 5:
+if (!commState.putLong(topVer)) return false;
+commState.idx++;
+case 6:
+if (!commState.putByteArray(topicBytes)) return false;
+commState.idx++;
+case 7:
+if (!commState.putLong(updateSeq)) return false;
+commState.idx++;
+case 8:
+if (!commState.putInt(workerId)) return false;
+commState.idx++;
+}
+return true;
+}

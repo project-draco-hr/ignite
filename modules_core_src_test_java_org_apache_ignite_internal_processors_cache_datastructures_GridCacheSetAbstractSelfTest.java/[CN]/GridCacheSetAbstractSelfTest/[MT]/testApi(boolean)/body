@@ -1,0 +1,79 @@
+{
+  assertNotNull(cache().dataStructures().set(SET_NAME,collocated,true));
+  for (int i=0; i < gridCount(); i++) {
+    Set<Integer> set=cache(i).dataStructures().set(SET_NAME,collocated,false);
+    assertFalse(set.contains(1));
+    assertEquals(0,set.size());
+    assertTrue(set.isEmpty());
+  }
+  assertTrue(cache().dataStructures().set(SET_NAME,collocated,false).add(1));
+  for (int i=0; i < gridCount(); i++) {
+    assertEquals(0,cache(i).size());
+    Set<Integer> set=cache(i).dataStructures().set(SET_NAME,collocated,false);
+    assertEquals(1,set.size());
+    assertFalse(set.isEmpty());
+    assertTrue(set.contains(1));
+    assertFalse(set.add(1));
+    assertFalse(set.contains(100));
+  }
+  assertTrue(cache().dataStructures().set(SET_NAME,collocated,true).remove(1));
+  for (int i=0; i < gridCount(); i++) {
+    Set<Integer> set=cache(i).dataStructures().set(SET_NAME,collocated,false);
+    assertEquals(0,set.size());
+    assertTrue(set.isEmpty());
+    assertFalse(set.contains(1));
+    assertFalse(set.remove(1));
+  }
+  Collection<Integer> col1=new ArrayList<>();
+  Collection<Integer> col2=new ArrayList<>();
+  final int ITEMS=100;
+  for (int i=0; i < ITEMS; i++) {
+    assertTrue(cache(i % gridCount()).dataStructures().set(SET_NAME,collocated,false).add(i));
+    col1.add(i);
+    col2.add(i);
+  }
+  col2.add(ITEMS);
+  for (int i=0; i < gridCount(); i++) {
+    Set<Integer> set=cache(i).dataStructures().set(SET_NAME,collocated,false);
+    assertEquals(ITEMS,set.size());
+    assertTrue(set.containsAll(col1));
+    assertFalse(set.containsAll(col2));
+  }
+  for (int i=0; i < gridCount(); i++) {
+    Set<Integer> set=cache(i).dataStructures().set(SET_NAME,collocated,false);
+    assertArrayContent(set.toArray(),ITEMS);
+    assertArrayContent(set.toArray(new Integer[ITEMS]),ITEMS);
+  }
+  Collection<Integer> rmvCol=new ArrayList<>();
+  for (int i=ITEMS - 10; i < ITEMS; i++)   rmvCol.add(i);
+  assertTrue(cache().dataStructures().set(SET_NAME,collocated,false).removeAll(rmvCol));
+  for (int i=0; i < gridCount(); i++) {
+    Set<Integer> set=cache(i).dataStructures().set(SET_NAME,collocated,false);
+    assertFalse(set.removeAll(rmvCol));
+    for (    Integer val : rmvCol)     assertFalse(set.contains(val));
+    assertArrayContent(set.toArray(),ITEMS - 10);
+    assertArrayContent(set.toArray(new Integer[ITEMS - 10]),ITEMS - 10);
+  }
+  assertTrue(cache().dataStructures().set(SET_NAME,collocated,false).addAll(rmvCol));
+  for (int i=0; i < gridCount(); i++) {
+    Set<Integer> set=cache(i).dataStructures().set(SET_NAME,collocated,false);
+    assertEquals(ITEMS,set.size());
+    assertFalse(set.addAll(rmvCol));
+    for (    Integer val : rmvCol)     assertTrue(set.contains(val));
+  }
+  assertTrue(cache().dataStructures().set(SET_NAME,collocated,false).retainAll(rmvCol));
+  for (int i=0; i < gridCount(); i++) {
+    Set<Integer> set=cache(i).dataStructures().set(SET_NAME,collocated,false);
+    assertEquals(rmvCol.size(),set.size());
+    assertFalse(set.retainAll(rmvCol));
+    for (int val=0; val < 10; val++)     assertFalse(set.contains(val));
+    for (    int val : rmvCol)     assertTrue(set.contains(val));
+  }
+  cache().dataStructures().set(SET_NAME,collocated,false).clear();
+  for (int i=0; i < gridCount(); i++) {
+    Set<Integer> set=cache(i).dataStructures().set(SET_NAME,collocated,false);
+    assertEquals(0,set.size());
+    assertTrue(set.isEmpty());
+    assertFalse(set.contains(0));
+  }
+}

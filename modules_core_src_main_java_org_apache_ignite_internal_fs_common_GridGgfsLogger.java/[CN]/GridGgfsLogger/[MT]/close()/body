@@ -1,0 +1,24 @@
+{
+  boolean close=false;
+  if (useCnt.decrementAndGet() == 0) {
+    logLock.writeLock().lock();
+    try {
+      if (useCnt.get() == 0) {
+        loggers.remove(endpoint);
+        close=true;
+      }
+    }
+  finally {
+      logLock.writeLock().unlock();
+    }
+  }
+  if (close) {
+    U.interrupt(flushWorker);
+    try {
+      U.join(flushWorker);
+    }
+ catch (    IgniteInterruptedException ignore) {
+    }
+    entries.clear();
+  }
+}

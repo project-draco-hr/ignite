@@ -1,0 +1,19 @@
+{
+  for (  Ignite g : Ignition.allGrids()) {
+    GridCache<K,V> cache=((GridEx)g).cachex(cacheName);
+    GridDhtPartitionTopology<?,?> top=dht(cache).topology();
+    while (true) {
+      boolean wait=false;
+      for (int p=0; p < affinity(cache).partitions(); p++) {
+        Collection<ClusterNode> nodes=top.nodes(p,-1);
+        if (nodes.size() > backups + 1) {
+          LT.warn(log,null,"Partition map was not updated yet (will wait) [grid=" + g.name() + ", p="+ p+ ", nodes="+ F.nodeIds(nodes)+ ']');
+          wait=true;
+          break;
+        }
+      }
+      if (wait)       Thread.sleep(20);
+ else       break;
+    }
+  }
+}

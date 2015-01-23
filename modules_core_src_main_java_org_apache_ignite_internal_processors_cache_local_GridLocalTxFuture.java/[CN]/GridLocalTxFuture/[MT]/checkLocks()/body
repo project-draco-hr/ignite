@@ -1,0 +1,24 @@
+{
+  for (  IgniteTxEntry<K,V> txEntry : tx.writeMap().values()) {
+    while (true) {
+      try {
+        GridCacheEntryEx<K,V> entry=txEntry.cached();
+        if (entry == null) {
+          onError(new IgniteTxRollbackException("Failed to find cache entry for " + "transaction key (will rollback) [key=" + txEntry.key() + ", tx="+ tx+ ']'));
+          break;
+        }
+        if (!entry.lockedByThread(tx.threadId())) {
+          if (tx.pessimistic())           onError(new IgniteCheckedException("Pessimistic transaction does not own lock for commit: " + tx));
+          if (log.isDebugEnabled())           log.debug("Transaction entry is not locked by transaction (will wait) [entry=" + entry + ", tx="+ tx+ ']');
+          return;
+        }
+        break;
+      }
+ catch (      GridCacheEntryRemovedException ignore) {
+        if (log.isDebugEnabled())         log.debug("Got removed entry in checkLocks method (will retry): " + txEntry);
+        txEntry.cached(txEntry.context().cache().entryEx(txEntry.key()),txEntry.keyBytes());
+      }
+    }
+  }
+  commit();
+}

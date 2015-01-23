@@ -1,0 +1,15 @@
+{
+  if (msg instanceof GridGgfsFragmentizerRequest || msg instanceof GridGgfsSyncMessage) {
+    if (log.isDebugEnabled())     log.debug("Received fragmentizer request from remote node [nodeId=" + nodeId + ", msg="+ msg+ ']');
+    IgniteBiTuple<UUID,GridGgfsCommunicationMessage> tup=F.t(nodeId,(GridGgfsCommunicationMessage)msg);
+    try {
+      if (!msgs.offer(tup,MSG_OFFER_TIMEOUT,TimeUnit.MILLISECONDS)) {
+        U.error(log,"Failed to process fragmentizer communication message (will discard) " + "[nodeId=" + nodeId + ", msg="+ msg+ ']');
+      }
+    }
+ catch (    InterruptedException ignored) {
+      Thread.currentThread().interrupt();
+      U.warn(log,"Failed to process fragmentizer communication message (thread was interrupted) " + "[nodeId=" + nodeId + ", msg="+ msg+ ']');
+    }
+  }
+}

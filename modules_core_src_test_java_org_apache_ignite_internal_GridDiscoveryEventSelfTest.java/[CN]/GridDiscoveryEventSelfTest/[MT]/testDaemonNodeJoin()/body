@@ -1,0 +1,26 @@
+{
+  try {
+    startGridsMultiThreaded(3);
+    final AtomicReference<IgniteCheckedException> err=new AtomicReference<>();
+    for (int i=0; i < 3; i++) {
+      Ignite g=grid(i);
+      g.events().localListen(new IgnitePredicate<IgniteEvent>(){
+        @Override public boolean apply(        IgniteEvent evt){
+          IgniteDiscoveryEvent discoEvt=(IgniteDiscoveryEvent)evt;
+          if (discoEvt.topologyNodes().size() != 3)           err.compareAndSet(null,new IgniteCheckedException("Invalid discovery event [evt=" + discoEvt + ", nodes="+ discoEvt.topologyNodes()+ ']'));
+          return true;
+        }
+      }
+,IgniteEventType.EVT_NODE_JOINED);
+    }
+    daemon=true;
+    GridKernal daemon=(GridKernal)startGrid(3);
+    IgniteDiscoveryEvent join=daemon.context().discovery().localJoinEvent();
+    assertEquals(3,join.topologyNodes().size());
+    U.sleep(100);
+    if (err.get() != null)     throw err.get();
+  }
+  finally {
+    stopAllGrids();
+  }
+}

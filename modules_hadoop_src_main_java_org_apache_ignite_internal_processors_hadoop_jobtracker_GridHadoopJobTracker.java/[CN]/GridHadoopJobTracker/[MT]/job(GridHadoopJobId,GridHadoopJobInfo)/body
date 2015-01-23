@@ -1,0 +1,30 @@
+{
+  GridFutureAdapterEx<GridHadoopJob> fut=jobs.get(jobId);
+  if (fut != null || (fut=jobs.putIfAbsent(jobId,new GridFutureAdapterEx<GridHadoopJob>())) != null)   return fut.get();
+  fut=jobs.get(jobId);
+  GridHadoopJob job=null;
+  try {
+    if (jobInfo == null) {
+      GridHadoopJobMetadata meta=jobMetaCache().get(jobId);
+      if (meta == null)       throw new IgniteCheckedException("Failed to find job metadata for ID: " + jobId);
+      jobInfo=meta.jobInfo();
+    }
+    job=jobInfo.createJob(jobId,log);
+    job.initialize(false,ctx.localNodeId());
+    fut.onDone(job);
+    return job;
+  }
+ catch (  IgniteCheckedException e) {
+    fut.onDone(e);
+    jobs.remove(jobId,fut);
+    if (job != null) {
+      try {
+        job.dispose(false);
+      }
+ catch (      IgniteCheckedException e0) {
+        U.error(log,"Failed to dispose job: " + jobId,e0);
+      }
+    }
+    throw e;
+  }
+}

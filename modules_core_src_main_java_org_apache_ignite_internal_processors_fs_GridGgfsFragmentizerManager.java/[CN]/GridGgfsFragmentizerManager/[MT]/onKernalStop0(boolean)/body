@@ -1,0 +1,25 @@
+{
+  boolean interrupted=false;
+  while (true) {
+    try {
+      if (rw.tryWriteLock(200,TimeUnit.MILLISECONDS))       break;
+ else       Thread.sleep(200);
+    }
+ catch (    InterruptedException ignore) {
+      interrupted=true;
+    }
+  }
+  try {
+    if (interrupted)     Thread.currentThread().interrupt();
+    stopping=true;
+  }
+  finally {
+    rw.writeUnlock();
+  }
+synchronized (this) {
+    if (fragmentizerCrd != null)     fragmentizerCrd.cancel();
+  }
+  if (fragmentizerWorker != null)   fragmentizerWorker.cancel();
+  U.join(fragmentizerCrd,log);
+  U.join(fragmentizerWorker,log);
+}

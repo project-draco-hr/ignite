@@ -1,0 +1,38 @@
+{
+  if (initGuard.compareAndSet(false,true))   try {
+    if (cred == null)     throw new IgniteSpiException("AWS credentials are not set.");
+    if (cfg == null)     U.warn(log,"Amazon client configuration is not set (will use default).");
+    if (F.isEmpty(bucketName))     throw new IgniteSpiException("Bucket name is null or empty (provide bucket name and restart).");
+    s3=cfg != null ? new AmazonS3Client(cred,cfg) : new AmazonS3Client(cred);
+    if (!s3.doesBucketExist(bucketName)) {
+      try {
+        s3.createBucket(bucketName);
+        if (log.isDebugEnabled())         log.debug("Created S3 bucket: " + bucketName);
+        while (!s3.doesBucketExist(bucketName))         try {
+          U.sleep(200);
+        }
+ catch (        IgniteInterruptedException e) {
+          throw new IgniteSpiException("Thread has been interrupted.",e);
+        }
+      }
+ catch (      AmazonClientException e) {
+        if (!s3.doesBucketExist(bucketName)) {
+          s3=null;
+          throw new IgniteSpiException("Failed to create bucket: " + bucketName,e);
+        }
+      }
+    }
+  }
+  finally {
+    initLatch.countDown();
+  }
+ else {
+    try {
+      U.await(initLatch);
+    }
+ catch (    IgniteInterruptedException e) {
+      throw new IgniteSpiException("Thread has been interrupted.",e);
+    }
+    if (s3 == null)     throw new IgniteSpiException("Ip finder has not been initialized properly.");
+  }
+}

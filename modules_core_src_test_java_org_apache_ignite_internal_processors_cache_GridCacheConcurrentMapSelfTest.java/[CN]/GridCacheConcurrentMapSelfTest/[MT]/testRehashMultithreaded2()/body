@@ -1,0 +1,55 @@
+{
+  final AtomicInteger tidGen=new AtomicInteger(0);
+  final Random rand=new Random();
+  final int cnt=100 * 1024;
+  multithreaded(new Callable<Object>(){
+    @SuppressWarnings("UnusedAssignment") @Override public Object call() throws Exception {
+      GridCache<Integer,String> c=grid().cache(null);
+      int tid=tidGen.getAndIncrement();
+      int start=2 * 1024 * tid;
+      Iterator<String> it1=null;
+      Iterator<CacheEntry<Integer,String>> it2=null;
+      Iterator<Integer> it3=null;
+      boolean forgot=false;
+      for (int i=start; i < start + cnt; i++) {
+        int key=i % cnt;
+        if (!forgot && i >= start + tid * 100) {
+          if (it1 == null)           it1=c.values().iterator();
+          if (it2 == null)           it2=c.entrySet().iterator();
+          if (it3 == null)           it3=c.keySet().iterator();
+        }
+        c.put(key,Integer.toString(key));
+        c.get(rand.nextInt(cnt));
+        if (!forgot && i == cnt) {
+          info("Forgetting iterators [it1=" + it1 + ", it2="+ it2+ ", it3="+ it3+ ']');
+          it1=null;
+          it2=null;
+          it3=null;
+          forgot=true;
+        }
+      }
+      it1=null;
+      it2=null;
+      it3=null;
+      for (int i=start; i < start + cnt; i++) {
+        int key=i % cnt;
+        assertEquals(Integer.toString(key),c.get(key));
+      }
+      assertEquals(cnt,c.size());
+      int idx=0;
+      for (      CacheEntry<Integer,String> e : c.entrySet()) {
+        assertNotNull(e.peek());
+        idx++;
+      }
+      assertEquals(cnt,idx);
+      System.gc();
+      return null;
+    }
+  }
+,10);
+  cache().get(rand.nextInt(cnt));
+  System.gc();
+  Thread.sleep(1000);
+  cache().get(rand.nextInt(cnt));
+  assertEquals(0,local().map.iteratorMapSize());
+}

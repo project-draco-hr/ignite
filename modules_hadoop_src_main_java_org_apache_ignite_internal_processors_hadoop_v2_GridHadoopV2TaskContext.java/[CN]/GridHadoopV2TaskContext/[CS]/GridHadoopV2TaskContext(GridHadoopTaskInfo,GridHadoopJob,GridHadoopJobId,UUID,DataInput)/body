@@ -1,0 +1,22 @@
+{
+  super(taskInfo,job);
+  this.locNodeId=locNodeId;
+  Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+  try {
+    JobConf jobConf=new JobConf();
+    try {
+      jobConf.readFields(jobConfDataInput);
+    }
+ catch (    IOException e) {
+      throw new IgniteCheckedException(e);
+    }
+    jobConf.setBooleanIfUnset(PARAM_GGFS_PREFER_LOCAL_WRITES,true);
+    jobCtx=new JobContextImpl(jobConf,new JobID(jobId.globalId().toString(),jobId.localId()));
+    useNewMapper=jobConf.getUseNewMapper();
+    useNewReducer=jobConf.getUseNewReducer();
+    useNewCombiner=jobConf.getCombinerClass() == null;
+  }
+  finally {
+    Thread.currentThread().setContextClassLoader(null);
+  }
+}

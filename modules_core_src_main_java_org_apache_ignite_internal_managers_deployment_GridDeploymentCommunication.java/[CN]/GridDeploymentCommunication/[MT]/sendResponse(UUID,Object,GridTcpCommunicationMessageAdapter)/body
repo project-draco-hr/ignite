@@ -1,0 +1,14 @@
+{
+  ClusterNode node=ctx.discovery().node(nodeId);
+  if (node != null) {
+    try {
+      ctx.io().send(node,topic,res,GridIoPolicy.P2P_POOL);
+      if (log.isDebugEnabled())       log.debug("Sent peer class loading response [node=" + node.id() + ", res="+ res+ ']');
+    }
+ catch (    IgniteCheckedException e) {
+      if (ctx.discovery().pingNode(nodeId))       U.error(log,"Failed to send peer class loading response to node: " + nodeId,e);
+ else       if (log.isDebugEnabled())       log.debug("Failed to send peer class loading response to node " + "(node does not exist): " + nodeId);
+    }
+  }
+ else   if (log.isDebugEnabled())   log.debug("Failed to send peer class loading response to node " + "(node does not exist): " + nodeId);
+}

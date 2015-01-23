@@ -1,0 +1,15 @@
+{
+  A.notNull(key,"key",val,"val");
+  if (keyCheck)   validateCacheKey(key);
+  validateCacheValue(val);
+  ctx.denyOnLocalRead();
+  return asyncOp(new AsyncOp<Boolean>(key){
+    @Override public IgniteFuture<Boolean> op(    IgniteTxLocalAdapter<K,V> tx){
+      return tx.putAllAsync(ctx,F.t(key,val),false,entry,ttl,filter).chain((IgniteClosure<IgniteFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
+    }
+    @Override public String toString(){
+      return "putxAsync [key=" + key + ", val="+ val+ ", filter="+ Arrays.toString(filter)+ ']';
+    }
+  }
+);
+}

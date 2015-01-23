@@ -1,0 +1,24 @@
+{
+  GridCache cache=ignite.cache(null);
+  Session ses=new Session(terminalId());
+  try {
+    try (IgniteTx tx=cache.txStart()){
+      Request req=new Request(getId());
+      req.setMessageId(getId());
+      String key=req.getCacheKey();
+      startTimer("putRequest",tx.xid(),key,terminalId());
+      put(req,key,terminalId());
+      stopTimer("putRequest");
+      key=ses.getCacheKey();
+      startTimer("putSession",tx.xid(),key,terminalId());
+      put(ses,key,terminalId());
+      stopTimer("putSession");
+      startTimer("commit",tx.xid(),null,terminalId());
+      tx.commit();
+      stopTimer("commit");
+    }
+   }
+ catch (  IgniteCheckedException e) {
+    e.printStackTrace();
+  }
+}
