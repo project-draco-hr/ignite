@@ -1,0 +1,30 @@
+{
+  File path=GridTestUtils.resolveGridGainPath(springCfgPath);
+  if (path == null)   throw new IgniteCheckedException("Spring XML configuration file path is invalid: " + new File(springCfgPath) + ". Note that this path should be either absolute path or a relative path to GRIDGAIN_HOME.");
+  if (!path.isFile())   throw new IgniteCheckedException("Provided file path is not a file: " + path);
+  Appender app=new NullAppender();
+  Logger.getRootLogger().addAppender(app);
+  ApplicationContext springCtx;
+  try {
+    springCtx=new FileSystemXmlApplicationContext(path.toURI().toURL().toString());
+  }
+ catch (  BeansException|MalformedURLException e) {
+    throw new IgniteCheckedException("Failed to instantiate Spring XML application context: " + e.getMessage(),e);
+  }
+  Map cfgMap;
+  try {
+    cfgMap=springCtx.getBeansOfType(IgniteConfiguration.class);
+  }
+ catch (  BeansException e) {
+    throw new IgniteCheckedException("Failed to instantiate bean [type=" + IgniteConfiguration.class + ", err="+ e.getMessage()+ ']',e);
+  }
+  if (cfgMap == null)   throw new IgniteCheckedException("Failed to find a single grid factory configuration in: " + path);
+  Logger.getRootLogger().removeAppender(app);
+  if (cfgMap.isEmpty())   throw new IgniteCheckedException("Can't find grid factory configuration in: " + path);
+  Collection<IgniteConfiguration> res=new ArrayList<>();
+  for (  IgniteConfiguration cfg : (Collection<IgniteConfiguration>)cfgMap.values()) {
+    res.add(cfg);
+    cfg.setGridName(GRID_NAME_PREF + gridCnt.incrementAndGet());
+  }
+  return res;
+}

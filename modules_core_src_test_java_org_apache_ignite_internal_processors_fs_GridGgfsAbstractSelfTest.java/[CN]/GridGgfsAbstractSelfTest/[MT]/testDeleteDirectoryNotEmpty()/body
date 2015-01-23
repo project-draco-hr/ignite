@@ -1,0 +1,20 @@
+{
+  create(ggfs,paths(DIR,SUBDIR,SUBSUBDIR),paths(FILE));
+  if (dual)   GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      ggfs.delete(SUBDIR,false);
+      return null;
+    }
+  }
+,IgniteCheckedException.class,"Failed to delete the path due to secondary file system exception:");
+ else {
+    GridTestUtils.assertThrows(log,new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        ggfs.delete(SUBDIR,false);
+        return null;
+      }
+    }
+,GridGgfsDirectoryNotEmptyException.class,"Failed to remove directory (directory is not empty and " + "recursive flag is not set)");
+  }
+  checkExist(ggfs,ggfsSecondary,SUBDIR,SUBSUBDIR,FILE);
+}

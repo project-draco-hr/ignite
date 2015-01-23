@@ -1,0 +1,32 @@
+{
+  GridNioServerListener lsnr=new GridNioServerListenerAdapter(){
+    @Override public void onConnected(    GridNioSession ses){
+    }
+    @Override public void onDisconnected(    GridNioSession ses,    @Nullable Exception e){
+    }
+    @Override public void onMessage(    GridNioSession ses,    Object msg){
+      ses.send(msg);
+    }
+  }
+;
+  GridNioServer<?> srvr=startServer(PORT,new GridPlainParser(),lsnr);
+  Socket s=createSocket();
+  s.connect(new InetSocketAddress(U.getLocalHost(),PORT),1000);
+  try {
+    byte[] msg=new byte[MSG_SIZE];
+    s.getOutputStream().write(msg);
+    int rcvd=0;
+    InputStream inputStream=s.getInputStream();
+    while (rcvd < msg.length) {
+      int cnt=inputStream.read(msg,rcvd,msg.length - rcvd);
+      if (cnt == -1)       fail("Server closed connection before echo reply was fully sent");
+      rcvd+=cnt;
+    }
+    srvr.stop();
+    U.sleep(100);
+    assertEquals(-1,inputStream.read());
+  }
+  finally {
+    s.close();
+  }
+}

@@ -1,0 +1,27 @@
+{
+  final File file=new File(LOCK_FILE_PATH);
+  file.createNewFile();
+  RandomAccessFile raf=new RandomAccessFile(file,"r");
+  System.out.println("Getting lock...");
+  FileLock lock=raf.getChannel().lock(0,Long.MAX_VALUE,true);
+  System.out.println("Obtained lock: " + lock);
+  Thread thread=new Thread(new Runnable(){
+    @Override public void run(){
+      try {
+        RandomAccessFile raf=new RandomAccessFile(file,"r");
+        System.out.println("Getting lock (parallel thread)...");
+        FileLock lock=raf.getChannel().lock(0,Long.MAX_VALUE,true);
+        System.out.println("Obtained lock (parallel thread): " + lock);
+        lock.release();
+      }
+ catch (      Throwable e) {
+        e.printStackTrace();
+      }
+    }
+  }
+);
+  thread.start();
+  JOptionPane.showMessageDialog(null,"Press OK to release lock.");
+  lock.release();
+  thread.join();
+}

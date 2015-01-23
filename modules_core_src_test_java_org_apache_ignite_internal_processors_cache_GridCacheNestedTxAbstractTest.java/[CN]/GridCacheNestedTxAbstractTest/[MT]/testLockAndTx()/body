@@ -1,0 +1,48 @@
+{
+  final IgniteCache<String,Integer> c=grid(0).jcache(null);
+  Collection<Thread> threads=new LinkedList<>();
+  c.put(CNTR_KEY,0);
+  for (int i=0; i < THREAD_CNT; i++) {
+    info("*** Init tx thread: " + i);
+    threads.add(new Thread(new Runnable(){
+      @Override public void run(){
+        IgniteTx tx=grid(0).transactions().txStart(PESSIMISTIC,REPEATABLE_READ);
+        try {
+          int cntr=c.get(CNTR_KEY);
+          info("*** Cntr in tx thread: " + cntr);
+          c.put(CNTR_KEY,++cntr);
+          tx.commit();
+        }
+ catch (        IgniteCheckedException e) {
+          error("Failed tx thread",e);
+        }
+      }
+    }
+));
+  }
+  for (int i=0; i < THREAD_CNT; i++) {
+    info("*** Init lock thread: " + i);
+    threads.add(new Thread(new Runnable(){
+      @Override public void run(){
+        try {
+          c.lock(CNTR_KEY).lock();
+          int cntr=c.get(CNTR_KEY);
+          info("*** Cntr in lock thread: " + cntr);
+          c.put(CNTR_KEY,--cntr);
+        }
+ catch (        Exception e) {
+          error("Failed lock thread",e);
+        }
+ finally {
+          c.lock(CNTR_KEY).unlock();
+        }
+      }
+    }
+));
+  }
+  for (  Thread t : threads)   t.start();
+  for (  Thread t : threads)   t.join();
+  int cntr=c.get(CNTR_KEY);
+  assertEquals(0,cntr);
+  for (int i=0; i < THREAD_CNT; i++)   assertNull(c.get(Integer.toString(i)));
+}

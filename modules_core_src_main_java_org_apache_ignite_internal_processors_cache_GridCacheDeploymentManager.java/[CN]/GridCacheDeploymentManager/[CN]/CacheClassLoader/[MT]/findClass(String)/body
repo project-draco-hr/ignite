@@ -1,0 +1,22 @@
+{
+  if (!isLocallyExcluded(name)) {
+    GridDeployment d=cctx.gridDeploy().getLocalDeployment(name);
+    if (d != null) {
+      Class cls=d.deployedClass(name);
+      if (cls != null)       return cls;
+    }
+  }
+  for (  CachedDeploymentInfo<K,V> t : deps.values()) {
+    UUID sndId=t.senderId();
+    IgniteUuid ldrId=t.loaderId();
+    String userVer=t.userVersion();
+    IgniteDeploymentMode mode=t.mode();
+    Map<UUID,IgniteUuid> participants=t.participants();
+    GridDeployment d=cctx.gridDeploy().getGlobalDeployment(mode,name,name,userVer,sndId,ldrId,participants,nodeFilter);
+    if (d != null) {
+      Class cls=d.deployedClass(name);
+      if (cls != null)       return cls;
+    }
+  }
+  throw new ClassNotFoundException("Failed to load class [name=" + name + ", ctx="+ deps+ ']');
+}

@@ -1,0 +1,24 @@
+{
+  SegmentHeader<K,V> oldHdr=hdr;
+  if (oldHdr.previous() != null && oldHdr.previous().hasReads())   return;
+  int oldId=hdr.id();
+  GridCacheMapEntry<K,V>[] oldTbl=oldHdr.table();
+  int oldCap=oldTbl.length;
+  if (oldCap >= MAX_CAP)   return;
+  SegmentHeader<K,V> newHdr=new SegmentHeader<>(oldCap << 1,oldId + 1,oldHdr);
+  oldHdr.next(newHdr);
+  newHdr.size(oldHdr.size());
+  GridCacheMapEntry<K,V>[] newTbl=newHdr.table();
+  threshold=(int)(newTbl.length * loadFactor);
+  int sizeMask=newTbl.length - 1;
+  for (  GridCacheMapEntry<K,V> bin1 : oldTbl) {
+    for (GridCacheMapEntry<K,V> e=bin1; e != null; e=e.next(oldId)) {
+      int idx=e.hash() & sizeMask;
+      GridCacheMapEntry<K,V> bin2=newTbl[idx];
+      newTbl[idx]=e;
+      e.next(newHdr.id(),bin2);
+    }
+  }
+  hdr=newHdr;
+  if (DEBUG)   checkSegmentConsistency();
+}

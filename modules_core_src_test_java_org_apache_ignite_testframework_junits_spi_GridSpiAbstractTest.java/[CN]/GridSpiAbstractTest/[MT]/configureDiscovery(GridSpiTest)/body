@@ -1,0 +1,22 @@
+{
+  DiscoverySpi discoSpi=spiTest.discoverySpi().newInstance();
+  if (discoSpi instanceof TcpDiscoverySpi) {
+    TcpDiscoverySpi tcpDisco=(TcpDiscoverySpi)discoSpi;
+    tcpDisco.setIpFinder(new TcpDiscoveryVmIpFinder(true));
+  }
+  getTestData().setDiscoverySpi(discoSpi);
+  getTestResources().inject(discoSpi);
+  discoSpi.setAuthenticator(new DiscoverySpiNodeAuthenticator(){
+    @Override public GridSecurityContext authenticateNode(    ClusterNode n,    GridSecurityCredentials cred){
+      GridSecuritySubjectAdapter subj=new GridSecuritySubjectAdapter(GridSecuritySubjectType.REMOTE_NODE,n.id());
+      subj.permissions(new GridAllowAllPermissionSet());
+      return new GridSecurityContext(subj);
+    }
+    @Override public boolean isGlobalNodeAuthentication(){
+      return false;
+    }
+  }
+);
+  configure(discoSpi);
+  if (discoSpi.getNodeAttributes() != null)   getTestData().getAttributes().putAll(discoSpi.getNodeAttributes());
+}

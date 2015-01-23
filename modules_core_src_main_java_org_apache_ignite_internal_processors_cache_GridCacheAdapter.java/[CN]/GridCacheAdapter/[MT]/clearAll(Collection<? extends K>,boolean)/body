@@ -1,0 +1,14 @@
+{
+  if (F.isEmpty(keys))   return;
+  if (keyCheck)   validateCacheKeys(keys);
+  GridCacheVersion obsoleteVer=ctx.versions().next();
+  for (  K key : keys) {
+    GridCacheEntryEx<K,V> e=peekEx(key);
+    try {
+      if (e != null)       e.clear(obsoleteVer,readers,null);
+    }
+ catch (    IgniteCheckedException ex) {
+      U.error(log,"Failed to clear entry (will continue to clear other entries): " + e,ex);
+    }
+  }
+}

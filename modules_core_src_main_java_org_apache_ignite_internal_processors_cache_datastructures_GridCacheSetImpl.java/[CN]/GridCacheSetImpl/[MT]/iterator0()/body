@@ -1,0 +1,19 @@
+{
+  try {
+    CacheQuery qry=new GridCacheQueryAdapter<>(ctx,SET,null,null,null,new GridSetQueryPredicate<>(id,collocated),false,false);
+    Collection<ClusterNode> nodes=dataNodes(ctx.affinity().affinityTopologyVersion());
+    qry.projection(ctx.grid().forNodes(nodes));
+    CacheQueryFuture<T> fut=qry.execute();
+    SetIterator<T> it=new SetIterator<>(fut);
+    itFuts.put(it.weakReference(),fut);
+    if (rmvd) {
+      itFuts.remove(it.weakReference());
+      it.close();
+      checkRemoved();
+    }
+    return it;
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+}

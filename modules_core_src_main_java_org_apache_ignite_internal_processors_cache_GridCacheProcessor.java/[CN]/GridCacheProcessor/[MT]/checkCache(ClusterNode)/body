@@ -1,0 +1,64 @@
+{
+  checkTransactionConfiguration(rmt);
+  GridCacheAttributes[] rmtAttrs=U.cacheAttributes(rmt);
+  GridCacheAttributes[] locAttrs=U.cacheAttributes(ctx.discovery().localNode());
+  if (F.isEmpty(rmtAttrs) || F.isEmpty(locAttrs))   return;
+  IgniteDeploymentMode locDepMode=ctx.config().getDeploymentMode();
+  IgniteDeploymentMode rmtDepMode=rmt.attribute(GridNodeAttributes.ATTR_DEPLOYMENT_MODE);
+  for (  GridCacheAttributes rmtAttr : rmtAttrs) {
+    for (    GridCacheAttributes locAttr : locAttrs) {
+      if (F.eq(rmtAttr.cacheName(),locAttr.cacheName())) {
+        CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"cacheMode","Cache mode",locAttr.cacheMode(),rmtAttr.cacheMode(),true);
+        if (rmtAttr.cacheMode() != LOCAL) {
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"interceptor","Cache Interceptor",interceptor(ctx.discovery().localNode(),rmtAttr.cacheName()),interceptor(rmt,rmtAttr.cacheName()),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"atomicityMode","Cache atomicity mode",locAttr.atomicityMode(),rmtAttr.atomicityMode(),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"cachePreloadMode","Cache preload mode",locAttr.cachePreloadMode(),rmtAttr.cachePreloadMode(),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"cacheAffinity","Cache affinity",locAttr.cacheAffinityClassName(),rmtAttr.cacheAffinityClassName(),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"cacheAffinityMapper","Cache affinity mapper",locAttr.cacheAffinityMapperClassName(),rmtAttr.cacheAffinityMapperClassName(),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"affinityPartitionsCount","Affinity partitions count",locAttr.affinityPartitionsCount(),rmtAttr.affinityPartitionsCount(),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"evictionFilter","Eviction filter",locAttr.evictionFilterClassName(),rmtAttr.evictionFilterClassName(),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"evictionPolicy","Eviction policy",locAttr.evictionPolicyClassName(),rmtAttr.evictionPolicyClassName(),true);
+          if (!skipStoreConsistencyCheck(locAttr,rmtAttr)) {
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"store","Cache store",locAttr.storeClassName(),rmtAttr.storeClassName(),true);
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"readThrough","Read through enabled",locAttr.readThrough(),locAttr.readThrough(),true);
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"writeThrough","Write through enabled",locAttr.writeThrough(),locAttr.writeThrough(),true);
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"loadPreviousValue","Load previous value enabled",locAttr.loadPreviousValue(),locAttr.loadPreviousValue(),true);
+          }
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"cloner","Cache cloner",locAttr.clonerClassName(),rmtAttr.clonerClassName(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"transactionManagerLookup","Transaction manager lookup",locAttr.transactionManagerLookupClassName(),rmtAttr.transactionManagerLookupClassName(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"atomicSequenceReserveSize","Atomic sequence reserve size",locAttr.sequenceReserveSize(),rmtAttr.sequenceReserveSize(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"defaultLockTimeout","Default lock timeout",locAttr.defaultLockTimeout(),rmtAttr.defaultLockTimeout(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"defaultQueryTimeout","Default query timeout",locAttr.defaultQueryTimeout(),rmtAttr.defaultQueryTimeout(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"defaultTimeToLive","Default time to live",locAttr.defaultTimeToLive(),rmtAttr.defaultTimeToLive(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"preloadBatchSize","Preload batch size",locAttr.preloadBatchSize(),rmtAttr.preloadBatchSize(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"swapEnabled","Swap enabled",locAttr.swapEnabled(),rmtAttr.swapEnabled(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"writeSynchronizationMode","Write synchronization mode",locAttr.writeSynchronization(),rmtAttr.writeSynchronization(),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"writeBehindBatchSize","Write behind batch size",locAttr.writeBehindBatchSize(),rmtAttr.writeBehindBatchSize(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"writeBehindEnabled","Write behind enabled",locAttr.writeBehindEnabled(),rmtAttr.writeBehindEnabled(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"writeBehindFlushFrequency","Write behind flush frequency",locAttr.writeBehindFlushFrequency(),rmtAttr.writeBehindFlushFrequency(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"writeBehindFlushSize","Write behind flush size",locAttr.writeBehindFlushSize(),rmtAttr.writeBehindFlushSize(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"writeBehindFlushThreadCount","Write behind flush thread count",locAttr.writeBehindFlushThreadCount(),rmtAttr.writeBehindFlushThreadCount(),false);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"evictMaxOverflowRatio","Eviction max overflow ratio",locAttr.evictMaxOverflowRatio(),rmtAttr.evictMaxOverflowRatio(),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"indexingSpiName","IndexingSpiName",locAttr.indexingSpiName(),rmtAttr.indexingSpiName(),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"queryIndexEnabled","Query index enabled",locAttr.queryIndexEnabled(),rmtAttr.queryIndexEnabled(),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"storeValueBytes","Store value bytes",locAttr.storeValueBytes(),rmtAttr.storeValueBytes(),true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"queryIndexEnabled","Query index enabled",locAttr.queryIndexEnabled(),rmtAttr.queryIndexEnabled(),true);
+          Boolean locPortableEnabled=U.portableEnabled(ctx.discovery().localNode(),locAttr.cacheName());
+          Boolean rmtPortableEnabled=U.portableEnabled(rmt,locAttr.cacheName());
+          if (locPortableEnabled != null && rmtPortableEnabled != null)           CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"portableEnabled","Portables enabled",locPortableEnabled,rmtPortableEnabled,true);
+          if (locAttr.cacheMode() == PARTITIONED) {
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"evictSynchronized","Eviction synchronized",locAttr.evictSynchronized(),rmtAttr.evictSynchronized(),true);
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"evictNearSynchronized","Eviction near synchronized",locAttr.evictNearSynchronized(),rmtAttr.evictNearSynchronized(),true);
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"nearEvictionPolicy","Near eviction policy",locAttr.nearEvictionPolicyClassName(),rmtAttr.nearEvictionPolicyClassName(),false);
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"affinityIncludeNeighbors","Affinity include neighbors",locAttr.affinityIncludeNeighbors(),rmtAttr.affinityIncludeNeighbors(),true);
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"affinityKeyBackups","Affinity key backups",locAttr.affinityKeyBackups(),rmtAttr.affinityKeyBackups(),true);
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"affinityReplicas","Affinity replicas",locAttr.affinityReplicas(),rmtAttr.affinityReplicas(),true);
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"affinityReplicaCountAttrName","Affinity replica count attribute name",locAttr.affinityReplicaCountAttrName(),rmtAttr.affinityReplicaCountAttrName(),true);
+            CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"cacheAffinity.hashIdResolver","Partitioned cache affinity hash ID resolver class",locAttr.affinityHashIdResolverClassName(),rmtAttr.affinityHashIdResolverClassName(),true);
+          }
+        }
+      }
+      CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"deploymentMode","Deployment mode",locDepMode,rmtDepMode,true);
+    }
+  }
+}

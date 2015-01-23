@@ -1,0 +1,21 @@
+{
+  Map<Integer,GridCacheMapEntry<Integer,Integer>> map=new HashMap<>(5 * 1024 * 1024);
+  int i=0;
+  GridCacheTestContext<Integer,Integer> ctx=new GridCacheTestContext<>(new GridTestKernalContext(new GridTestLog4jLogger()));
+  while (true) {
+    Integer key=i++;
+    Integer val=i++;
+    map.put(key,new GridCacheMapEntry<Integer,Integer>(ctx,key,key.hashCode(),val,null,0,1){
+      @Override public boolean tmLock(      IgniteTxEx<Integer,Integer> tx,      long timeout){
+        return false;
+      }
+      @Override public void txUnlock(      IgniteTxEx<Integer,Integer> tx){
+      }
+      @Override public boolean removeLock(      GridCacheVersion ver){
+        return false;
+      }
+    }
+);
+    if (i % 100000 == 0)     info("Inserted objects: " + i / 2);
+  }
+}

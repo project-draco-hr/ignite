@@ -1,0 +1,31 @@
+{
+  if (p != null && !p.apply(key,val))   return;
+  try {
+    GridDhtLocalPartition<K,V> part=top.localPartition(ctx.affinity().partition(key),-1,true);
+    if (part.reserve()) {
+      GridCacheEntryEx<K,V> entry=null;
+      try {
+        if (ctx.portableEnabled()) {
+          key=(K)ctx.marshalToPortable(key);
+          val=(V)ctx.marshalToPortable(val);
+        }
+        entry=entryEx(key,false);
+        entry.initialValue(val,null,ver,ttl,-1,false,topVer,replicate ? DR_LOAD : DR_NONE);
+      }
+ catch (      IgniteCheckedException e) {
+        throw new IgniteException("Failed to put cache value: " + entry,e);
+      }
+catch (      GridCacheEntryRemovedException ignore) {
+        if (log.isDebugEnabled())         log.debug("Got removed entry during loadCache (will ignore): " + entry);
+      }
+ finally {
+        if (entry != null)         entry.context().evicts().touch(entry,topVer);
+        part.release();
+      }
+    }
+ else     if (log.isDebugEnabled())     log.debug("Will node load entry into cache (partition is invalid): " + part);
+  }
+ catch (  GridDhtInvalidPartitionException e) {
+    if (log.isDebugEnabled())     log.debug("Ignoring entry for partition that does not belong [key=" + key + ", val="+ val+ ", err="+ e+ ']');
+  }
+}

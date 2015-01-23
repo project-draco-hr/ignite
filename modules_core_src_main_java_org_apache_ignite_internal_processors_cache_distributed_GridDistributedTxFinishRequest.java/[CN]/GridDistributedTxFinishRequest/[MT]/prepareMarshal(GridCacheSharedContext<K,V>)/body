@@ -1,0 +1,17 @@
+{
+  super.prepareMarshal(ctx);
+  if (writeEntries != null) {
+    marshalTx(writeEntries,ctx);
+    writeEntriesBytes=new ArrayList<>(writeEntries.size());
+    for (    IgniteTxEntry<K,V> e : writeEntries)     writeEntriesBytes.add(ctx.marshaller().marshal(e));
+  }
+  if (recoveryWrites != null) {
+    marshalTx(recoveryWrites,ctx);
+    recoveryWritesBytes=new ArrayList<>(recoveryWrites.size());
+    for (    IgniteTxEntry<K,V> e : recoveryWrites)     recoveryWritesBytes.add(ctx.marshaller().marshal(e));
+  }
+  if (grpLockKey != null && grpLockKeyBytes == null) {
+    if (ctx.deploymentEnabled())     prepareObject(grpLockKey,ctx);
+    grpLockKeyBytes=CU.marshal(ctx,grpLockKey);
+  }
+}

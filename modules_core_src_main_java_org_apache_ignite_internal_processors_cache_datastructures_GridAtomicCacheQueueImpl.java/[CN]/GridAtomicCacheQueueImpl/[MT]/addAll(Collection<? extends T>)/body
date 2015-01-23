@@ -1,0 +1,31 @@
+{
+  A.notNull(items,"items");
+  try {
+    Long idx=transformHeader(new AddProcessor(id,items.size()));
+    if (idx == null)     return false;
+    checkRemoved(idx);
+    Map<GridCacheQueueItemKey,T> putMap=new HashMap<>();
+    for (    T item : items) {
+      putMap.put(itemKey(idx),item);
+      idx++;
+    }
+    int cnt=0;
+    while (true) {
+      try {
+        cache.putAll(putMap);
+        break;
+      }
+ catch (      CachePartialUpdateException e) {
+        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
+ else {
+          U.warn(log,"Failed to add items, will retry [err=" + e + ']');
+          U.sleep(RETRY_DELAY);
+        }
+      }
+    }
+    return true;
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+}

@@ -1,0 +1,18 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(disco);
+  cfg.setNetworkTimeout(2000);
+  cfg.setSwapSpaceSpi(new FileSwapSpaceSpi());
+  CacheConfiguration cacheCfg=defaultCacheConfiguration();
+  cacheCfg.setWriteSynchronizationMode(FULL_SYNC);
+  cacheCfg.setSwapEnabled(false);
+  cacheCfg.setCacheMode(REPLICATED);
+  cacheCfg.setOffHeapMaxMemory(1024L * 1024L * 1024L);
+  cfg.setCacheConfiguration(cacheCfg);
+  cfg.setMarshaller(new IgniteOptimizedMarshaller(false));
+  cfg.setDeploymentMode(SHARED);
+  cfg.setPeerClassLoadingLocalClassPathExclude(GridCacheOffHeapSelfTest.class.getName(),CacheValue.class.getName());
+  return cfg;
+}
