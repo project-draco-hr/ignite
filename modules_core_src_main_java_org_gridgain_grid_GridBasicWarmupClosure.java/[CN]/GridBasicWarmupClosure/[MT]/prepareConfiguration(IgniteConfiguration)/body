@@ -2,20 +2,20 @@
   if (F.isEmpty(gridCfg.getCacheConfiguration()))   return null;
   IgniteConfiguration cp=new IgniteConfiguration();
   cp.setClientConnectionConfiguration(null);
-  Collection<GridCacheConfiguration> reduced=new ArrayList<>();
-  for (  GridCacheConfiguration ccfg : gridCfg.getCacheConfiguration()) {
+  Collection<CacheConfiguration> reduced=new ArrayList<>();
+  for (  CacheConfiguration ccfg : gridCfg.getCacheConfiguration()) {
     if (CU.isSystemCache(ccfg.getName()))     continue;
     if (!matches(reduced,ccfg)) {
-      GridCacheConfiguration ccfgCp=new GridCacheConfiguration(ccfg);
+      CacheConfiguration ccfgCp=new CacheConfiguration(ccfg);
       if (ccfgCp.getDistributionMode() == GridCacheDistributionMode.CLIENT_ONLY)       ccfgCp.setDistributionMode(GridCacheDistributionMode.PARTITIONED_ONLY);
  else       if (ccfgCp.getDistributionMode() == GridCacheDistributionMode.NEAR_ONLY)       ccfgCp.setDistributionMode(GridCacheDistributionMode.NEAR_PARTITIONED);
-      ccfgCp.setStore(null);
+      ccfgCp.setCacheStoreFactory(null);
       ccfgCp.setWriteBehindEnabled(false);
       reduced.add(ccfgCp);
     }
   }
   if (F.isEmpty(reduced))   return null;
-  GridCacheConfiguration[] res=new GridCacheConfiguration[reduced.size()];
+  CacheConfiguration[] res=new CacheConfiguration[reduced.size()];
   reduced.toArray(res);
   cp.setCacheConfiguration(res);
   return cp;

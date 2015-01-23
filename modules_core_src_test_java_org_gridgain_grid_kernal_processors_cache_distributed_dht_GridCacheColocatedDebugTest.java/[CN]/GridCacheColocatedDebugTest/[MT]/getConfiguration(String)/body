@@ -3,15 +3,20 @@
   TcpDiscoverySpi spi=new TcpDiscoverySpi();
   spi.setIpFinder(ipFinder);
   cfg.setDiscoverySpi(spi);
-  GridCacheConfiguration cacheCfg=defaultCacheConfiguration();
+  CacheConfiguration cacheCfg=defaultCacheConfiguration();
   cacheCfg.setCacheMode(PARTITIONED);
   cacheCfg.setDistributionMode(PARTITIONED_ONLY);
   cacheCfg.setAffinity(new GridCacheConsistentHashAffinityFunction(false,30));
   cacheCfg.setBackups(1);
   cacheCfg.setWriteSynchronizationMode(FULL_SYNC);
   cacheCfg.setSwapEnabled(false);
-  if (storeEnabled)   cacheCfg.setStore(new GridCacheTestStore());
- else   cacheCfg.setStore(null);
+  if (storeEnabled) {
+    cacheCfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(new GridCacheTestStore()));
+    cacheCfg.setReadThrough(true);
+    cacheCfg.setWriteThrough(true);
+    cacheCfg.setLoadPreviousValue(true);
+  }
+ else   cacheCfg.setCacheStoreFactory(null);
   cfg.setCacheConfiguration(cacheCfg);
   return cfg;
 }
