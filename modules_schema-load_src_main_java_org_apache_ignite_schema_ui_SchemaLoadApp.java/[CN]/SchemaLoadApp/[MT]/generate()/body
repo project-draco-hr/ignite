@@ -1,7 +1,7 @@
 {
   Collection<PojoDescriptor> selItems=selectedItems();
   if (selItems.isEmpty()) {
-    MessageBox.warningDialog(owner,"Please select tables to generate POJOs and XML files!");
+    MessageBox.warningDialog(owner,"Please select tables to generate XML and POJOs files!");
     return;
   }
   lockUI(genLayerPnl,genPnl,prevBtn,nextBtn);
@@ -9,7 +9,19 @@
   final String pkg=pkgTf.getText();
   final File destFolder=new File(outFolder);
   Runnable task=new Task<Void>(){
-    private void checkEmpty(    Collection<GridCacheQueryTypeDescriptor> items,    final TreeItem<String> treeItem,    String msg){
+    private void checkEmpty(    Collection<GridCacheQueryTypeDescriptor> items,    final PojoDescriptor pojo,    String msg){
+      if (items.isEmpty()) {
+        Platform.runLater(new Runnable(){
+          /** 
+ * {@inheritDoc} 
+ */
+          @Override public void run(){
+            pojosTbl.getSelectionModel().select(pojo);
+          }
+        }
+);
+        throw new IllegalStateException(msg + pojo.table());
+      }
     }
     /** 
  * {@inheritDoc} 
@@ -22,6 +34,28 @@
       boolean include=pojoIncludeKeysCh.isSelected();
       boolean singleXml=xmlSingleFileCh.isSelected();
       ConfirmCallable askOverwrite=new ConfirmCallable(owner,"File already exists: %s\nOverwrite?");
+      for (      PojoDescriptor pojo : pojos) {
+        if (pojo.selected()) {
+          GridCacheQueryTypeMetadata meta=pojo.metadata();
+          Collection<GridCacheQueryTypeDescriptor> keys=new ArrayList<>();
+          Collection<GridCacheQueryTypeDescriptor> vals=new ArrayList<>();
+          for (          PojoField fld : pojo.fields()) {
+            GridCacheQueryTypeDescriptor desc=fld.descriptor();
+            if (fld.key()) {
+              keys.add(desc);
+              if (include)               vals.add(desc);
+            }
+ else             vals.add(desc);
+          }
+          checkEmpty(keys,pojo,"No key fields specified for type: ");
+          checkEmpty(vals,pojo,"No value fields specified for type: ");
+          meta.setKeyDescriptors(keys);
+          meta.setValueDescriptors(vals);
+          all.add(meta);
+          if (!singleXml)           XmlGenerator.generate(pkg,meta,new File(destFolder,meta.getType() + ".xml"),askOverwrite);
+          PojoGenerator.generate(meta,outFolder,pkg,constructor,askOverwrite);
+        }
+      }
       if (all.isEmpty())       throw new IllegalStateException("Nothing selected!");
  else       if (singleXml)       XmlGenerator.generate(pkg,all,new File(outFolder,"Ignite.xml"),askOverwrite);
       perceptualDelay(started);

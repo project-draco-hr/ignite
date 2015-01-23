@@ -7,11 +7,9 @@
     @Override protected Void call() throws Exception {
       long started=System.currentTimeMillis();
       try (Connection conn=connect()){
-        schemas=parse(conn);
+        pojos=parse(conn);
       }
-       pojos=new ArrayList<>();
-      for (      Map<String,PojoDescriptor> schema : schemas.values())       for (      PojoDescriptor pojo : schema.values())       pojos.add(pojo);
-      perceptualDelay(started);
+       perceptualDelay(started);
       return null;
     }
     private CheckBoxTreeItem<String> addCheckBoxTreeItem(    CheckBoxTreeItem<String> parent,    String text){
@@ -26,12 +24,7 @@
  */
     @Override protected void succeeded(){
       super.succeeded();
-      List<SchemaItem> schemasMdl=new ArrayList<>();
-      for (      Map.Entry<String,Map<String,PojoDescriptor>> schema : schemas.entrySet()) {
-        schemasMdl.add(new SchemaItem(schema.getKey()));
-        for (        PojoDescriptor pojo : schema.getValue().values())         schemasMdl.add(new SchemaItem(pojo));
-      }
-      schemesTbl.setItems(FXCollections.observableList(schemasMdl));
+      pojosTbl.setItems(pojos);
       unlockUI(connLayerPnl,connPnl,nextBtn);
       titleLb.setText("Generate XML And POJOs");
       titleLb.setGraphic(imageView("text_tree",48));

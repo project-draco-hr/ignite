@@ -1,16 +1,19 @@
 {
   super.updateItem(item,empty);
-  setGraphic(null);
   if (!empty) {
     TableRow row=getTableRow();
     if (row != null) {
-      SchemaItem schema=(SchemaItem)row.getItem();
-      if (schema != null) {
-        ch.setSelected(item);
-        schemaPnl.getChildren().clear();
-        tblPnl.getChildren().clear();
-        setGraphic(schema.schemaProperty().get(),schemaPnl);
-        setGraphic(schema.tableProperty().get(),tblPnl);
+      final PojoDescriptor schemaItem=(PojoDescriptor)row.getItem();
+      if (schemaItem != null && getGraphic() == null) {
+        boolean isTbl=schemaItem.schema.isEmpty();
+        final CheckBox ch=new CheckBox(isTbl ? schemaItem.table() : schemaItem.schema());
+        ch.setAllowIndeterminate(false);
+        ch.selectedProperty().bindBidirectional(schemaItem.useProperty());
+        ch.indeterminateProperty().bindBidirectional(schemaItem.indeterminate());
+        Pane pnl=new HBox();
+        pnl.setPadding(new Insets(0,0,0,isTbl ? 25 : 5));
+        pnl.getChildren().add(ch);
+        setGraphic(pnl);
       }
     }
   }

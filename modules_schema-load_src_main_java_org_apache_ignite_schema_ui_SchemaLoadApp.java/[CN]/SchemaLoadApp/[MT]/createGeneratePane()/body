@@ -5,10 +5,17 @@
   genPnl.addColumn(35,35,35,Priority.NEVER);
   genPnl.addRow(100,100,Double.MAX_VALUE,Priority.ALWAYS);
   genPnl.addRows(7);
-  TableColumn<SchemaItem,Boolean> useCol=customColumn("Use","use","If checked then this field will be part of key object",SchemaCell.cellFactory());
-  TableColumn<SchemaItem,String> keyClsCol=textColumn("Key Class","keyClass","Key class name");
-  TableColumn<SchemaItem,String> valClsCol=textColumn("Value Class","valueClass","Value class name");
-  schemesTbl=tableView("Tables not found in database",useCol,keyClsCol,valClsCol);
+  TableColumn<PojoDescriptor,Boolean> useCol=customColumn("Schema / Table","use","If checked then this table will be used for XML and POJOs generation",SchemaCell.cellFactory());
+  TableColumn<PojoDescriptor,String> keyClsCol=textColumn("Key Class","keyClass","Key class name");
+  keyClsCol.setOnEditCommit(new EventHandler<TableColumn.CellEditEvent<PojoDescriptor,String>>(){
+    @Override public void handle(    TableColumn.CellEditEvent<PojoDescriptor,String> evt){
+      System.out.println("committed: " + evt.getNewValue());
+      evt.getRowValue().keyClsName.set(evt.getNewValue() + "boom");
+    }
+  }
+);
+  TableColumn<PojoDescriptor,String> valClsCol=textColumn("Value Class","valueClass","Value class name");
+  pojosTbl=tableView("Tables not found in database",useCol,keyClsCol,valClsCol);
   TableColumn<PojoField,Boolean> keyCol=booleanColumn("Key","key","If checked then this field will be part of key object");
   TableColumn<PojoField,String> dbNameCol=tableColumn("DB Name","dbName","Field name in database");
   TableColumn<PojoField,String> dbTypeNameCol=tableColumn("DB Type","dbTypeName","Field type in database");
@@ -53,14 +60,14 @@
     }
   }
 );
-  genPnl.add(splitPane(schemesTbl,borderPane(null,fieldsTbl,null,null,vBox(10,upBtn,downBtn)),0.6),3);
+  genPnl.add(splitPane(pojosTbl,borderPane(null,fieldsTbl,null,null,vBox(10,upBtn,downBtn)),0.6),3);
   final GridPaneEx keyValPnl=paneEx(0,0,0,0);
   keyValPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
   keyValPnl.addColumn();
   keyValPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
   keyValPnl.addColumn();
   pkgTf=genPnl.addLabeled("Package:",textField("Package that will be used for POJOs generation"),2);
-  outFolderTf=genPnl.addLabeled("Output Folder:",textField("Output folder for POJOs and XML files"));
+  outFolderTf=genPnl.addLabeled("Output Folder:",textField("Output folder for XML and POJOs files"));
   genPnl.add(button("...","Select output folder",new EventHandler<ActionEvent>(){
     /** 
  * {@inheritDoc} 
@@ -154,6 +161,28 @@
     }
   }
 )),4);
+  pojosTbl.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<PojoDescriptor>(){
+    @Override public void changed(    ObservableValue<? extends PojoDescriptor> val,    PojoDescriptor oldVal,    PojoDescriptor newItem){
+      if (newItem != null && newItem.parent != null) {
+        curPojo=newItem;
+        fieldsTbl.setItems(curPojo.fields());
+        fieldsTbl.getSelectionModel().select(0);
+        keyValPnl.setDisable(false);
+        renBtn.setDisable(false);
+        revertBtn.setDisable(false);
+      }
+ else {
+        curPojo=null;
+        fieldsTbl.setItems(NO_FIELDS);
+        keyValPnl.setDisable(true);
+        renBtn.setDisable(true);
+        revertBtn.setDisable(true);
+        upBtn.setDisable(true);
+        downBtn.setDisable(true);
+      }
+    }
+  }
+);
   genPnl.add(regexPnl,3);
   genLayerPnl=stackPane(genPnl);
 }

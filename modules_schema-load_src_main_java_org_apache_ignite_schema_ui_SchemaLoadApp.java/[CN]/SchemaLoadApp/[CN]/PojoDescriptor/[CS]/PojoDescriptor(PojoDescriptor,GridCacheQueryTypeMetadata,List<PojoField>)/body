@@ -1,0 +1,40 @@
+{
+  parent=prn;
+  boolean isTbl=parent != null;
+  schema=isTbl ? "" : typeMeta.getSchema();
+  tbl=isTbl ? typeMeta.getTableName() : "";
+  keyClsNamePrev=isTbl ? typeMeta.getKeyType() : "";
+  keyClsName=new SimpleStringProperty(keyClsNamePrev);
+  valClsNamePrev=isTbl ? typeMeta.getType() : "";
+  valClsName=new SimpleStringProperty(valClsNamePrev);
+  use=new SimpleBooleanProperty(true);
+  use.addListener(new ChangeListener<Boolean>(){
+    @Override public void changed(    ObservableValue<? extends Boolean> val,    Boolean oldVal,    Boolean newVal){
+      for (      PojoDescriptor child : children)       child.use.set(newVal);
+      if (parent != null && !parent.children.isEmpty()) {
+        Iterator<PojoDescriptor> it=parent.children.iterator();
+        boolean parentIndeterminate=false;
+        boolean first=it.next().use.get();
+        while (it.hasNext()) {
+          if (it.next().use.get() != first) {
+            parentIndeterminate=true;
+            break;
+          }
+        }
+        parent.indeterminate.set(parentIndeterminate);
+        if (!parentIndeterminate)         parent.use.set(first);
+      }
+    }
+  }
+);
+  if (isTbl) {
+    fieldsPrev=new ArrayList<>(flds.size());
+    for (    PojoField fld : flds)     fieldsPrev.add(new PojoField(fld));
+    fields=FXCollections.observableList(flds);
+  }
+ else {
+    fields=FXCollections.emptyObservableList();
+    fieldsPrev=FXCollections.emptyObservableList();
+  }
+  this.typeMeta=typeMeta;
+}

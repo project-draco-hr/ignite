@@ -1,20 +1,33 @@
 {
-  DatabaseMetaData meta=conn.getMetaData();
-  Map<String,Map<String,PojoDescriptor>> res=new TreeMap<>();
-  try (ResultSet schemas=meta.getSchemas()){
+  DatabaseMetaData dbMeta=conn.getMetaData();
+  List<PojoDescriptor> res=new ArrayList<>();
+  try (ResultSet schemas=dbMeta.getSchemas()){
     while (schemas.next()) {
       String schema=schemas.getString(1);
       if ("INFORMATION_SCHEMA".equalsIgnoreCase(schema))       continue;
       String catalog=schemas.getString(2);
-      Map<String,PojoDescriptor> items=new TreeMap<>();
-      try (ResultSet tbls=meta.getTables(catalog,schema,"%",null)){
+      PojoDescriptor parent=PojoDescriptor.createSchema(schema);
+      List<PojoDescriptor> children=new ArrayList<>();
+      try (ResultSet tbls=dbMeta.getTables(catalog,schema,"%",null)){
         while (tbls.next()) {
           String tbl=tbls.getString(3);
-          items.put(tbl,parse(meta,catalog,schema,tbl));
+          children.add(parseTable(parent,dbMeta,catalog,schema,tbl));
         }
       }
-       if (!items.isEmpty())       res.put(schema,items);
+       if (!children.isEmpty()) {
+        parent.children(children);
+        res.add(parent);
+        res.addAll(children);
+      }
     }
   }
-   return res;
+   Collections.sort(res,new Comparator<PojoDescriptor>(){
+    @Override public int compare(    PojoDescriptor o1,    PojoDescriptor o2){
+      GridCacheQueryTypeMetadata t1=o1.typeMeta;
+      GridCacheQueryTypeMetadata t2=o2.typeMeta;
+      return (t1.getSchema() + t1.getTableName()).compareTo(t2.getSchema() + t2.getTableName());
+    }
+  }
+);
+  return FXCollections.observableList(res);
 }
