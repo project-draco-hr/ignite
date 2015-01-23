@@ -1,0 +1,22 @@
+{
+  Thread t=Thread.currentThread();
+  while (!Thread.interrupted()) {
+    flushLock.lock();
+    try {
+      while (cnt.get() < batchSize && !t.isInterrupted()) {
+        try {
+          U.await(flushCond,1000L,TimeUnit.MILLISECONDS);
+        }
+ catch (        IgniteInterruptedException ignore) {
+          t.interrupt();
+          break;
+        }
+      }
+    }
+  finally {
+      flushLock.unlock();
+    }
+    if (!t.isInterrupted())     flush();
+  }
+  flush();
+}

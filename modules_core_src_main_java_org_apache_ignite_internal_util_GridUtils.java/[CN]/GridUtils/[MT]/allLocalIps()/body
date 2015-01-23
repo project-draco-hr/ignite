@@ -1,0 +1,24 @@
+{
+  List<String> ips=new ArrayList<>(4);
+  try {
+    Enumeration<NetworkInterface> itfs=NetworkInterface.getNetworkInterfaces();
+    if (itfs != null) {
+      for (      NetworkInterface itf : asIterable(itfs)) {
+        if (!itf.isLoopback()) {
+          Enumeration<InetAddress> addrs=itf.getInetAddresses();
+          if (addrs != null) {
+            for (            InetAddress addr : asIterable(addrs)) {
+              String hostAddr=addr.getHostAddress();
+              if (!addr.isLoopbackAddress() && !ips.contains(hostAddr))               ips.add(hostAddr);
+            }
+          }
+        }
+      }
+    }
+  }
+ catch (  SocketException ignore) {
+    return Collections.emptyList();
+  }
+  Collections.sort(ips);
+  return ips;
+}

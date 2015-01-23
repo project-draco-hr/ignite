@@ -1,0 +1,26 @@
+{
+  syncStart();
+  while (!isCancelled()) {
+    try {
+      while (fragmentingFiles.size() < ggfsCtx.configuration().getFragmentizerConcurrentFiles()) {
+        GridGgfsFileInfo fileInfo=fileForFragmentizer(fragmentingFiles.keySet());
+        if (fileInfo == null)         break;
+        requestFragmenting(fileInfo);
+      }
+    }
+ catch (    IgniteCheckedException|IgniteException e) {
+      if (!X.hasCause(e,InterruptedException.class) && !X.hasCause(e,IgniteInterruptedException.class))       LT.warn(log,e,"Failed to get fragmentizer file info (will retry).");
+ else {
+        if (log.isDebugEnabled())         log.debug("Got interrupted exception in fragmentizer coordinator (grid is stopping).");
+        break;
+      }
+    }
+    lock.lock();
+    try {
+      cond.await(FRAGMENTIZER_CHECK_INTERVAL,MILLISECONDS);
+    }
+  finally {
+      lock.unlock();
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  checkObsolete();
+  if (curVer == null || curVer.equals(ver)) {
+    if (val != this.val) {
+      if (newVer == null)       newVer=nextVersion();
+      V old=rawGetOrUnmarshalUnlocked(false);
+      long ttl=ttlExtras();
+      long expTime=toExpireTime(ttl);
+      if (cctx.portableEnabled())       val=(V)cctx.kernalContext().portable().detachPortable(val);
+      if (val != null) {
+        updateIndex(val,null,expTime,newVer,old);
+        if (deletedUnlocked())         deletedUnlocked(false);
+      }
+      update(val,null,expTime,ttl,newVer);
+    }
+    return true;
+  }
+  return false;
+}

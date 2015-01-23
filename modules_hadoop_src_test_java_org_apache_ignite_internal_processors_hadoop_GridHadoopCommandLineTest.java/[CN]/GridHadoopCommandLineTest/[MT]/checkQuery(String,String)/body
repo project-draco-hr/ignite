@@ -1,0 +1,8 @@
+{
+  assertEquals(0,executeHiveQuery("drop table if exists result"));
+  assertEquals(0,executeHiveQuery("create table result " + "row format delimited fields terminated by ' ' " + "stored as textfile "+ "location '/result' as "+ qry));
+  GridGgfsInputStreamAdapter in=ggfs.open(new IgniteFsPath("/result/000000_0"));
+  byte[] buf=new byte[(int)in.length()];
+  in.read(buf);
+  assertEquals(expRes,new String(buf));
+}

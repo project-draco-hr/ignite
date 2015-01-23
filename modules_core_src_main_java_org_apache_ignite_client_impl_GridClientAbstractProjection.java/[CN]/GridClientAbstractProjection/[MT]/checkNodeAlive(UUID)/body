@@ -1,0 +1,26 @@
+{
+  for (  GridClientNodeImpl node : client.topology().nodes()) {
+    try {
+      if (node.nodeId().equals(nodeId))       continue;
+      GridClientConnection conn=client.connectionManager().connection(node);
+      try {
+        GridClientNode target=conn.node(nodeId,false,false,node.nodeId()).get();
+        if (target == null)         client.topology().nodeFailed(nodeId);
+        return target != null;
+      }
+ catch (      GridClientConnectionResetException e) {
+        client.connectionManager().terminateConnection(conn,node,e);
+      }
+catch (      GridClientClosedException e) {
+        throw e;
+      }
+catch (      GridClientException e) {
+        if (log.isLoggable(Level.FINE))         log.log(Level.FINE,"Node request failed, try next node.",e);
+      }
+    }
+ catch (    GridServerUnreachableException e) {
+      if (log.isLoggable(Level.FINE))       log.log(Level.FINE,"Node request failed, try next node.",e);
+    }
+  }
+  return false;
+}

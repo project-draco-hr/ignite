@@ -1,0 +1,12 @@
+{
+  ConcurrentMap<UUID,GridClientImpl> old;
+  busyLock.writeLock().lock();
+  try {
+    old=openClients;
+    openClients=new ConcurrentHashMap<>();
+  }
+  finally {
+    busyLock.writeLock().unlock();
+  }
+  for (  GridClientImpl client : old.values())   client.stop(wait);
+}

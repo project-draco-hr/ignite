@@ -1,0 +1,36 @@
+{
+  TimerTask task=new TimerTask(){
+    @Override public void run(){
+      final IgniteStreamer streamer=g.streamer("priceBars");
+      try {
+        Collection<Bar> bars=streamer.context().reduce(new IgniteClosure<StreamerContext,Collection<Bar>>(){
+          @Override public Collection<Bar> apply(          StreamerContext ctx){
+            Collection<Bar> values=ctx.<String,Bar>localSpace().values();
+            Collection<Bar> res=new ArrayList<>(values.size());
+            for (            Bar bar : values)             res.add(bar.copy());
+            return res;
+          }
+        }
+,new IgniteReducer<Collection<Bar>,Collection<Bar>>(){
+          private final Collection<Bar> res=new ArrayList<>();
+          @Override public boolean collect(          @Nullable Collection<Bar> col){
+            res.addAll(col);
+            return true;
+          }
+          @Override public Collection<Bar> reduce(){
+            return res;
+          }
+        }
+);
+        for (        Bar bar : bars)         System.out.println(bar.toString());
+        System.out.println("-----------------");
+      }
+ catch (      IgniteCheckedException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+;
+  timer.schedule(task,2000,2000);
+  return task;
+}

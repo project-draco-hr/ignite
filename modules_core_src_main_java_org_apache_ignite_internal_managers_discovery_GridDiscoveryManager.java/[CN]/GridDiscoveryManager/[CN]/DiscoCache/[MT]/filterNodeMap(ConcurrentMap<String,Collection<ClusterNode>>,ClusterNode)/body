@@ -1,0 +1,17 @@
+{
+  IgnitePredicate<ClusterNode> p=new P1<ClusterNode>(){
+    @Override public boolean apply(    ClusterNode e){
+      return exclNode.equals(e);
+    }
+  }
+;
+  for (  String cacheName : U.cacheNames(exclNode)) {
+    String maskedName=maskNull(cacheName);
+    while (true) {
+      Collection<ClusterNode> oldNodes=map.get(maskedName);
+      if (oldNodes == null || oldNodes.isEmpty())       break;
+      Collection<ClusterNode> newNodes=F.lose(oldNodes,true,p);
+      if (map.replace(maskedName,oldNodes,newNodes))       break;
+    }
+  }
+}

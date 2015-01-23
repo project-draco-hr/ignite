@@ -1,0 +1,30 @@
+{
+  locHost=null;
+  String sysLocHost=IgniteSystemProperties.getString(GG_LOCAL_HOST);
+  if (sysLocHost != null)   sysLocHost=sysLocHost.trim();
+  if (!F.isEmpty(sysLocHost))   locHost=InetAddress.getByName(sysLocHost);
+ else {
+    List<NetworkInterface> itfs=new ArrayList<>();
+    for (    NetworkInterface itf : asIterable(NetworkInterface.getNetworkInterfaces()))     itfs.add(itf);
+    Collections.sort(itfs,new Comparator<NetworkInterface>(){
+      @Override public int compare(      NetworkInterface itf1,      NetworkInterface itf2){
+        return itf1.getName().compareTo(itf2.getName());
+      }
+    }
+);
+    int reachTimeout=2000;
+    for (    NetworkInterface itf : itfs) {
+      boolean found=false;
+      for (      InetAddress addr : asIterable(itf.getInetAddresses())) {
+        if (!addr.isLoopbackAddress() && !addr.isLinkLocalAddress() && reachable(itf,addr,reachTimeout)) {
+          locHost=addr;
+          found=true;
+          break;
+        }
+      }
+      if (found)       break;
+    }
+  }
+  if (locHost == null)   locHost=InetAddress.getLocalHost();
+  return locHost;
+}

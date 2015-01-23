@@ -1,0 +1,23 @@
+{
+  U.setWorkDirectory(null,U.getGridGainHome());
+  GridIpcSharedMemoryServerEndpoint srv=new GridIpcSharedMemoryServerEndpoint();
+  new GridTestResources().inject(srv);
+  try {
+    srv.start();
+    info("Check that server gets correct exception upon client's killing.");
+    info("Shared memory IDs before starting client endpoint: " + GridIpcSharedMemoryUtils.sharedMemoryIds());
+    Collection<Integer> shmemIdsWithinInteractions=interactWithClient(srv,true);
+    Collection<Integer> shmemIdsAfterInteractions=null;
+    for (int i=0; i < 12; i++) {
+      shmemIdsAfterInteractions=GridIpcSharedMemoryUtils.sharedMemoryIds();
+      info("Shared memory IDs created within interaction: " + shmemIdsWithinInteractions);
+      info("Shared memory IDs after killing client endpoint: " + shmemIdsAfterInteractions);
+      if (CollectionUtils.containsAny(shmemIdsAfterInteractions,shmemIdsWithinInteractions))       U.sleep(1000);
+ else       break;
+    }
+    assertFalse("List of shared memory IDs after killing client endpoint should not include IDs created " + "within server-client interactions.",CollectionUtils.containsAny(shmemIdsAfterInteractions,shmemIdsWithinInteractions));
+  }
+  finally {
+    srv.close();
+  }
+}

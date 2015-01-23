@@ -1,0 +1,30 @@
+{
+  CacheQuery<List<?>> q=grid(0).cache(null).queries().createSqlFieldsQuery("select _key, _val from Integer");
+  q.pageSize(10);
+  q.keepAll(true);
+  CacheQueryFuture<List<?>> f=q.execute();
+  int cnt=0;
+  List<?> row;
+  while ((row=f.next()) != null) {
+    assertEquals(2,row.size());
+    assertEquals(row.get(0),row.get(1));
+    assertTrue((Integer)row.get(0) >= 0 && (Integer)row.get(0) < 200);
+    cnt++;
+  }
+  int size=200;
+  assertEquals(size,cnt);
+  assertTrue(f.isDone());
+  List<List<?>> list=new ArrayList<>(f.get());
+  dedup(list);
+  Collections.sort(list,new Comparator<List<?>>(){
+    @Override public int compare(    List<?> r1,    List<?> r2){
+      return ((Integer)r1.get(0)).compareTo((Integer)r2.get(0));
+    }
+  }
+);
+  for (int i=0; i < 200; i++) {
+    List<?> r=list.get(i);
+    assertEquals(i,r.get(0));
+    assertEquals(i,r.get(1));
+  }
+}

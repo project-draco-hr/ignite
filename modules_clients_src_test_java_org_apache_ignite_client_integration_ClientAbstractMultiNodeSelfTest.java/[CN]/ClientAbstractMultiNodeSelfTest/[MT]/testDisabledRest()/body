@@ -1,0 +1,36 @@
+{
+  restEnabled=false;
+  final Ignite g=startGrid("disabled-rest");
+  try {
+    Thread.sleep(2 * TOP_REFRESH_FREQ);
+    for (int i=0; i < NODES_CNT + 1; i++)     assertEquals(NODES_CNT + 1,client.compute().refreshTopology(false,false).size());
+    final GridClientData data=client.data(PARTITIONED_CACHE_NAME);
+    try {
+      String affKey;
+      do {
+        affKey=UUID.randomUUID().toString();
+      }
+ while (!data.affinity(affKey).equals(g.cluster().localNode().id()));
+      data.put(affKey,"asdf");
+      assertEquals("asdf",cache(0,PARTITIONED_CACHE_NAME).get(affKey));
+    }
+ catch (    GridServerUnreachableException e) {
+      assertTrue("Unexpected exception message: " + e.getMessage(),e.getMessage().startsWith("No available endpoints to connect (is rest enabled for this node?)"));
+    }
+catch (    GridClientException e) {
+      String msg=e.getMessage();
+      assertTrue("Unexpected exception message: " + msg,protocol() == GridClientProtocol.TCP ? msg.contains("No available endpoints to connect (is rest enabled for this node?)") : msg.startsWith("No available nodes on the router for destination node ID"));
+    }
+    String affKey;
+    do {
+      affKey=UUID.randomUUID().toString();
+    }
+ while (data.affinity(affKey).equals(g.cluster().localNode().id()));
+    data.put(affKey,"fdsa");
+    assertEquals("fdsa",cache(0,PARTITIONED_CACHE_NAME).get(affKey));
+  }
+  finally {
+    restEnabled=true;
+    G.stop(g.name(),true);
+  }
+}

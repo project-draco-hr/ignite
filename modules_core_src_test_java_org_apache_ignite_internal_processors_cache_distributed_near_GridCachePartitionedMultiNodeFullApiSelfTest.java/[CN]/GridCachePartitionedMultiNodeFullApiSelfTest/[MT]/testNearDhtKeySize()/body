@@ -1,0 +1,35 @@
+{
+  List<String> keys=new ArrayList<>(5);
+  info("Generating keys for test...");
+  for (int i=0; i < 5; i++) {
+    while (true) {
+      String key=UUID.randomUUID().toString();
+      if (cache().affinity().isPrimary(grid(0).localNode(),key) && cache().affinity().isBackup(grid(1).localNode(),key)) {
+        keys.add(key);
+        assertTrue(cache(0).putx(key,i));
+        break;
+      }
+    }
+  }
+  info("Finished generating keys for test.");
+  assertEquals(Integer.valueOf(0),cache(2).get(keys.get(0)));
+  assertEquals(Integer.valueOf(1),cache(2).get(keys.get(1)));
+  assertEquals(0,cache(0).nearSize());
+  assertEquals(5,cache(0).size() - cache(0).nearSize());
+  assertEquals(0,cache(1).nearSize());
+  assertEquals(5,cache(1).size() - cache(1).nearSize());
+  assertEquals(nearEnabled() ? 2 : 0,cache(2).nearSize());
+  assertEquals(0,cache(2).size() - cache(2).nearSize());
+  IgniteBiPredicate<String,Integer> prjFilter=new P2<String,Integer>(){
+    @Override public boolean apply(    String key,    Integer val){
+      return val >= 1 && val <= 3;
+    }
+  }
+;
+  assertEquals(0,cache(0).projection(prjFilter).nearSize());
+  assertEquals(3,cache(0).projection(prjFilter).size() - cache(0).projection(prjFilter).nearSize());
+  assertEquals(0,cache(1).projection(prjFilter).nearSize());
+  assertEquals(3,cache(1).projection(prjFilter).size() - cache(1).projection(prjFilter).nearSize());
+  assertEquals(nearEnabled() ? 1 : 0,cache(2).projection(prjFilter).nearSize());
+  assertEquals(0,cache(2).projection(prjFilter).size() - cache(2).projection(prjFilter).nearSize());
+}

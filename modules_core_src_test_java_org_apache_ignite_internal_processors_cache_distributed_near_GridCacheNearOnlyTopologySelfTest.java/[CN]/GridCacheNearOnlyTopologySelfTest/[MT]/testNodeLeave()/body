@@ -1,0 +1,49 @@
+{
+  try {
+    cache=true;
+    for (int i=0; i < 2; i++) {
+      nearOnly=i == 0;
+      startGrid(i);
+    }
+    for (int i=0; i < 10; i++)     grid(1).cache(null).put(i,i);
+    final GridCache<Object,Object> nearOnly=grid(0).cache(null);
+    for (int i=0; i < 10; i++) {
+      assertEquals(i,nearOnly.get(i));
+      assertEquals(i,nearOnly.peek(i));
+    }
+    stopGrid(1);
+    for (int i=0; i < 10; i++) {
+      assertNull(nearOnly.peek(i));
+      final int key=i;
+      GridTestUtils.assertThrows(log,new Callable<Object>(){
+        @Override public Object call() throws Exception {
+          return nearOnly.get(key);
+        }
+      }
+,ClusterTopologyException.class,null);
+    }
+    GridTestUtils.assertThrows(log,new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        try (IgniteTx tx=nearOnly.txStart(OPTIMISTIC,REPEATABLE_READ)){
+          nearOnly.putx("key","val");
+          tx.commit();
+        }
+         return null;
+      }
+    }
+,ClusterTopologyException.class,null);
+    GridTestUtils.assertThrows(log,new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        try (IgniteTx tx=nearOnly.txStart(PESSIMISTIC,REPEATABLE_READ)){
+          nearOnly.put("key","val");
+          tx.commit();
+        }
+         return null;
+      }
+    }
+,ClusterTopologyException.class,null);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

@@ -1,0 +1,25 @@
+{
+  assertNotNull(ignite);
+  log.info("Running job [node=" + ignite.cluster().localNode().id() + ", job="+ getClass().getSimpleName()+ "]");
+  Integer lastPolled=null;
+  try {
+    CacheQueue<Integer> queue=ignite.cache(null).dataStructures().queue(queueName,0,true,false);
+    assertNotNull(queue);
+    for (int i=0; i < maxTakeCnt; i++) {
+      lastPolled=queue.take();
+      takeLatch.countDown();
+    }
+  }
+ catch (  IgniteException e) {
+    if (e.getCause() instanceof IgniteInterruptedException || e.getCause() instanceof InterruptedException)     log.info("Cancelling job due to interruption: " + e.getMessage());
+ else     fail("Unexpected error: " + e);
+  }
+catch (  IgniteCheckedException e) {
+    error("Failed to get value from the queue",e);
+  }
+ finally {
+    doneLatch.countDown();
+  }
+  log.info("TakeJob finished, last polled value: " + lastPolled);
+  return lastPolled;
+}

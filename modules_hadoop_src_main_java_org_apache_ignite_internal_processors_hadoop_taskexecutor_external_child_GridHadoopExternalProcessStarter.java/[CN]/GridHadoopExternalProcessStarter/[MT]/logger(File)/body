@@ -1,0 +1,19 @@
+{
+  final URL url=U.resolveGridGainUrl(DFLT_LOG4J_CONFIG);
+  IgniteLog4jLogger logger;
+  try {
+    logger=url != null ? new IgniteLog4jLogger(url) : new IgniteLog4jLogger(true);
+  }
+ catch (  IgniteCheckedException e) {
+    System.err.println("Failed to create URL-based logger. Will use default one.");
+    e.printStackTrace();
+    logger=new IgniteLog4jLogger(true);
+  }
+  logger.updateFilePath(new IgniteClosure<String,String>(){
+    @Override public String apply(    String s){
+      return new File(outputDir,args.childProcId + ".log").getAbsolutePath();
+    }
+  }
+);
+  return logger;
+}

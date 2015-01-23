@@ -1,0 +1,14 @@
+{
+  if (busyLock.enterBusy()) {
+    try {
+      if (fileId == null)       return null;
+      GridGgfsFileInfo info=id2InfoPrj.get(fileId);
+      if (info == null && ROOT_ID.equals(fileId))       id2InfoPrj.putxIfAbsent(ROOT_ID,info=new GridGgfsFileInfo());
+      return info;
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get file info because Grid is stopping: " + fileId);
+}

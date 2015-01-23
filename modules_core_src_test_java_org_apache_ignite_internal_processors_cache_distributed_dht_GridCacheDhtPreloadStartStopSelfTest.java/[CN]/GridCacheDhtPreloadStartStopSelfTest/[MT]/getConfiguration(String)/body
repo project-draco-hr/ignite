@@ -1,0 +1,22 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  CacheConfiguration[] cacheCfgs=new CacheConfiguration[cacheCnt];
+  for (int i=0; i < cacheCnt; i++) {
+    CacheConfiguration cacheCfg=defaultCacheConfiguration();
+    cacheCfg.setName("partitioned-" + i);
+    cacheCfg.setCacheMode(PARTITIONED);
+    cacheCfg.setPreloadBatchSize(preloadBatchSize);
+    cacheCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+    cacheCfg.setPreloadMode(preloadMode);
+    cacheCfg.setAffinity(new CacheConsistentHashAffinityFunction(false,partitions));
+    cacheCfg.setBackups(backups);
+    cacheCfg.setAtomicityMode(TRANSACTIONAL);
+    cacheCfgs[i]=cacheCfg;
+  }
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(disco);
+  cfg.setCacheConfiguration(cacheCfgs);
+  cfg.setDeploymentMode(CONTINUOUS);
+  return cfg;
+}

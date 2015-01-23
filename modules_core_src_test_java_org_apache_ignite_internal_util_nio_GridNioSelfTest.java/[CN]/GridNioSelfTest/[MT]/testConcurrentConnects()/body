@@ -1,0 +1,62 @@
+{
+  final CyclicBarrier barrier=new CyclicBarrier(THREAD_CNT);
+  final AtomicReference<Exception> err=new AtomicReference<>();
+  GridNioServer<?> srvr=startServer(PORT,new GridBufferedParser(true,ByteOrder.nativeOrder()),new EchoListener());
+  try {
+    IgniteFuture<?> fut=multithreadedAsync(new Runnable(){
+      @SuppressWarnings("BusyWait") @Override public void run(){
+        try {
+          for (int i=0; i < 100 && !Thread.currentThread().isInterrupted(); i++) {
+            TestClient client=null;
+            try {
+              client=createClient(U.getLocalHost(),PORT,U.getLocalHost());
+              MessageWithId msg=new MessageWithId();
+              byte[] data=serializeMessage(msg);
+              for (int j=0; j < 10; j++)               client.sendMessage(data,data.length);
+              for (int j=0; j < 10; j++) {
+                byte[] res=client.receiveMessage();
+                if (!Arrays.equals(data,res)) {
+                  info("Invalid response received.");
+                  err.compareAndSet(null,new IgniteCheckedException("Invalid response received."));
+                  barrier.reset();
+                  return;
+                }
+              }
+            }
+ catch (            IgniteCheckedException e) {
+              info("Encountered unexpected exception: " + e);
+              err.compareAndSet(null,e);
+              barrier.reset();
+              break;
+            }
+catch (            IOException e) {
+              info("Encountered IO exception: " + e);
+              err.compareAndSet(null,e);
+              barrier.reset();
+              break;
+            }
+ finally {
+              if (client != null)               client.close();
+            }
+            if ("conn-tester-1".equals(Thread.currentThread().getName()) && i % 10 == 0 && i > 0)             info("Run " + i + " iterations.");
+            barrier.await();
+            Thread.sleep(100);
+          }
+        }
+ catch (        InterruptedException ignored) {
+          barrier.reset();
+          info("Test thread was interrupted (will exit).");
+        }
+catch (        BrokenBarrierException ignored) {
+          info("Barrier was broken (will exit).");
+        }
+      }
+    }
+,THREAD_CNT,"conn-tester");
+    fut.get();
+    if (err.get() != null)     throw err.get();
+  }
+  finally {
+    srvr.stop();
+  }
+}
