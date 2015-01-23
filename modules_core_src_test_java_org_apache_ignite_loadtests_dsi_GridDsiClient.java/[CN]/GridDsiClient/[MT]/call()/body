@@ -1,0 +1,27 @@
+{
+  IgniteCompute comp=g.compute(g.cluster().forPredicate(serverNode())).enableAsync();
+  while (!finish.get()) {
+    try {
+      long t0=System.currentTimeMillis();
+      long submitTime1=t0;
+      comp.execute(GridDsiRequestTask.class,new GridDsiMessage(terminalId,nodeId));
+      ComputeTaskFuture<T3<Long,Integer,Integer>> f1=comp.future();
+      submitTime.setIfGreater(System.currentTimeMillis() - submitTime1);
+      T3<Long,Integer,Integer> res1=f1.get();
+      submitTime1=System.currentTimeMillis();
+      comp.execute(GridDsiResponseTask.class,new GridDsiMessage(terminalId,nodeId));
+      ComputeTaskFuture<T3<Long,Integer,Integer>> f2=comp.future();
+      submitTime.setIfGreater(System.currentTimeMillis() - submitTime1);
+      T3<Long,Integer,Integer> res2=f2.get();
+      long t1=System.currentTimeMillis();
+      txCnt.incrementAndGet();
+      latency.addAndGet(t1 - t0);
+      if (res1 != null)       srvStats=res1;
+      if (res2 != null)       srvStats=res2;
+    }
+ catch (    IgniteCheckedException e) {
+      e.printStackTrace();
+    }
+  }
+  return null;
+}

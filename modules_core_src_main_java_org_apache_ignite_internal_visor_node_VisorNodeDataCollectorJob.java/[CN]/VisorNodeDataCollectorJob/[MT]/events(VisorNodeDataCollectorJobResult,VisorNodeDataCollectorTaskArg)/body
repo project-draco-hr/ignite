@@ -1,0 +1,23 @@
+{
+  try {
+    if (checkExplicitTaskMonitoring(g))     res.taskMonitoringEnabled(true);
+ else {
+      res.taskMonitoringEnabled(arg.taskMonitoringEnabled());
+      if (arg.taskMonitoringEnabled()) {
+        ClusterNodeLocalMap<String,VisorComputeMonitoringHolder> storage=g.nodeLocalMap();
+        VisorComputeMonitoringHolder holder=storage.get(COMPUTE_MONITORING_HOLDER_KEY);
+        if (holder == null) {
+          VisorComputeMonitoringHolder holderNew=new VisorComputeMonitoringHolder();
+          VisorComputeMonitoringHolder holderOld=storage.putIfAbsent(COMPUTE_MONITORING_HOLDER_KEY,holderNew);
+          holder=holderOld == null ? holderNew : holderOld;
+        }
+        holder.startCollect(g,arg.eventsOrderKey());
+        res.taskMonitoringEnabled(g.allEventsUserRecordable(VISOR_TASK_EVTS));
+      }
+    }
+    res.events().addAll(collectEvents(g,arg.eventsOrderKey(),arg.eventsThrottleCounterKey(),arg.taskMonitoringEnabled()));
+  }
+ catch (  Throwable eventsEx) {
+    res.eventsEx(eventsEx);
+  }
+}

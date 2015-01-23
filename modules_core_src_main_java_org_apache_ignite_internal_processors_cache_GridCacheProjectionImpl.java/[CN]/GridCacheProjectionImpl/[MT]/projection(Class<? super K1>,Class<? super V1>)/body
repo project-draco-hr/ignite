@@ -1,0 +1,15 @@
+{
+  A.notNull(keyType,"keyType",valType,"valType");
+  if (!keepPortable && (PortableObject.class.isAssignableFrom(keyType) || PortableObject.class.isAssignableFrom(valType)))   throw new IllegalStateException("Failed to create cache projection for portable objects. " + "Use keepPortable() method instead.");
+  if (keepPortable && (!U.isPortableOrCollectionType(keyType) || !U.isPortableOrCollectionType(valType)))   throw new IllegalStateException("Failed to create typed cache projection. If keepPortable() was " + "called, projection can work only with portable classes (see GridPortables JavaDoc for details).");
+  if (cctx.deploymentEnabled()) {
+    try {
+      cctx.deploy().registerClasses(keyType,valType);
+    }
+ catch (    IgniteCheckedException e) {
+      throw new IgniteException(e);
+    }
+  }
+  GridCacheProjectionImpl<K1,V1> prj=new GridCacheProjectionImpl<>((CacheProjection<K1,V1>)this,(GridCacheContext<K1,V1>)cctx,CU.<K1,V1>typeFilter(keyType,valType),(IgnitePredicate<CacheEntry>)noNullEntryFilter.entryFilter,flags,subjId,keepPortable,expiryPlc);
+  return new GridCacheProxyImpl((GridCacheContext<K1,V1>)cctx,prj,prj);
+}

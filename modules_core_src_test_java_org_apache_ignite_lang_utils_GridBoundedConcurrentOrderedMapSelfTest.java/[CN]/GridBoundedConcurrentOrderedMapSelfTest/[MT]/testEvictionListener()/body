@@ -1,0 +1,20 @@
+{
+  GridBoundedConcurrentOrderedMap<Integer,String> m=new GridBoundedConcurrentOrderedMap<>(1);
+  final AtomicInteger evicted=new AtomicInteger();
+  m.evictionListener(new CI2<Integer,String>(){
+    @Override public void apply(    Integer k,    String v){
+      assertEquals(Integer.toString(k),v);
+      assertEquals(evicted.getAndIncrement(),k.intValue());
+    }
+  }
+);
+  m.put(0,"0");
+  assertEquals(1,m.size());
+  for (int i=1; i <= 10; i++) {
+    m.put(i,Integer.toString(i));
+    assertEquals(1,m.size());
+  }
+  assertEquals(1,m.size());
+  assertEquals(10,m.lastKey().intValue());
+  assertEquals(10,evicted.get());
+}

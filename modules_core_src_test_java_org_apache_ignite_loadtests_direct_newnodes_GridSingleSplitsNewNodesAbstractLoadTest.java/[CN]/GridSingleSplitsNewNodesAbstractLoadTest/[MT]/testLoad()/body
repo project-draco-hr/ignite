@@ -1,0 +1,63 @@
+{
+  final Ignite ignite=startGrid(getTestGridName());
+  try {
+    final long end=getTestDurationInMinutes() * 60 * 1000 + System.currentTimeMillis();
+    ignite.compute().execute(GridSingleSplitNewNodesTestTask.class.getName(),3);
+    info("Load test will be executed for '" + getTestDurationInMinutes() + "' mins.");
+    info("Thread count: " + getThreadCount());
+    final GridLoadTestStatistics stats=new GridLoadTestStatistics();
+    final AtomicInteger gridIdx=new AtomicInteger(0);
+    for (int i=0; i < getNodeCount(); i++) {
+      new Thread(new Runnable(){
+        /** 
+ * {@inheritDoc} 
+ */
+        @SuppressWarnings("BusyWait") @Override public void run(){
+          try {
+            while (end - System.currentTimeMillis() > 0 && !Thread.currentThread().isInterrupted()) {
+              int idx=gridIdx.incrementAndGet();
+              startGrid(idx);
+              Thread.sleep(getHeartbeatFrequency() * 3);
+              stopGrid(idx);
+              Thread.sleep(getHeartbeatFrequency() * 3);
+            }
+          }
+ catch (          Throwable e) {
+            error("Failed to start new node.",e);
+            fail();
+          }
+        }
+      }
+,"grid-notaop-nodes-load-test").start();
+    }
+    GridTestUtils.runMultiThreaded(new Runnable(){
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public void run(){
+        IgniteCompute comp=ignite.compute().enableAsync();
+        while (end - System.currentTimeMillis() > 0 && !Thread.currentThread().isInterrupted()) {
+          long start=System.currentTimeMillis();
+          try {
+            int levels=3;
+            comp.execute(new GridSingleSplitNewNodesTestTask(),levels);
+            ComputeTaskFuture<Integer> fut=comp.future();
+            int res=fut.get();
+            if (res != levels)             fail("Received wrong result [expected=" + levels + ", actual="+ res+ ']');
+            long taskCnt=stats.onTaskCompleted(fut,levels,System.currentTimeMillis() - start);
+            if (taskCnt % 500 == 0)             info(stats.toString());
+          }
+ catch (          Throwable e) {
+            error("Failed to execute grid task.",e);
+            fail();
+          }
+        }
+      }
+    }
+,getThreadCount(),"grid-notaop-load-test");
+    info("Final test statistics: " + stats);
+  }
+  finally {
+    G.stop(getTestGridName(),false);
+  }
+}

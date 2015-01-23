@@ -1,0 +1,19 @@
+{
+  final GridCache<String,Integer> c=grid(0).cache(null);
+  GridKernalContext ctx=((GridKernal)grid(0)).context();
+  c.put(CNTR_KEY,0);
+  for (int i=0; i < 10; i++) {
+    try (IgniteTx tx=c.txStart(PESSIMISTIC,REPEATABLE_READ)){
+      c.get(CNTR_KEY);
+      ctx.closure().callLocalSafe((new Callable<Boolean>(){
+        @Override public Boolean call() throws Exception {
+          assertFalse(((GridCacheAdapter)c).context().tm().inUserTx());
+          assertNull(((GridCacheAdapter)c).context().tm().userTx());
+          return true;
+        }
+      }
+),true);
+      tx.commit();
+    }
+   }
+}

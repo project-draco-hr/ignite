@@ -1,0 +1,15 @@
+{
+  try (Ignite g=Ignition.start("examples/config/example-cache.xml")){
+    System.out.println();
+    System.out.println(">>> Cache atomic sequence example started.");
+    final String seqName=UUID.randomUUID().toString();
+    CacheAtomicSequence seq=g.cache(CACHE_NAME).dataStructures().atomicSequence(seqName,0,true);
+    long firstVal=seq.get();
+    System.out.println("Sequence initial value: " + firstVal);
+    g.compute().run(new SequenceClosure(CACHE_NAME,seqName));
+    System.out.println("Sequence after incrementing [expected=" + (firstVal + RETRIES) + ", actual="+ seq.get()+ ']');
+  }
+   System.out.println();
+  System.out.println("Finished atomic sequence example...");
+  System.out.println("Check all nodes for output (this node is also part of the grid).");
+}

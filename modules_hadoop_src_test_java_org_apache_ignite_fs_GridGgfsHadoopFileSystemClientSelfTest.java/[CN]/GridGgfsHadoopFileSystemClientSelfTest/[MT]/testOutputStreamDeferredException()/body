@@ -1,0 +1,23 @@
+{
+  final byte[] data="test".getBytes();
+  try {
+    switchHandlerErrorFlag(true);
+    GridGgfsHadoop client=new GridGgfsHadoopOutProc("127.0.0.1",10500,getTestGridName(0),"ggfs",LOG);
+    client.handshake(null);
+    IgniteFsPath path=new IgniteFsPath("/test1.file");
+    GridGgfsHadoopStreamDelegate delegate=client.create(path,true,false,1,1024,null);
+    final GridGgfsHadoopOutputStream ggfsOut=new GridGgfsHadoopOutputStream(delegate,LOG,GridGgfsLogger.disabledLogger(),0);
+    ggfsOut.write(data);
+    U.sleep(500);
+    GridTestUtils.assertThrows(null,new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        ggfsOut.write(data);
+        return null;
+      }
+    }
+,IOException.class,"Failed to write data to server (test).");
+  }
+  finally {
+    switchHandlerErrorFlag(false);
+  }
+}

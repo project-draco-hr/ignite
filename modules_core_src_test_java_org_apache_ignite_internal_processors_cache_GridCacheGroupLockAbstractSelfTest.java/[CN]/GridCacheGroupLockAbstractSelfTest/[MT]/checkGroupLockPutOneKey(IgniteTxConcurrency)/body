@@ -1,0 +1,27 @@
+{
+  CollectingEventListener locks=new CollectingEventListener();
+  CollectingEventListener unlocks=new CollectingEventListener();
+  grid(0).events().localListen(locks,EVT_CACHE_OBJECT_LOCKED);
+  grid(0).events().localListen(unlocks,EVT_CACHE_OBJECT_UNLOCKED);
+  UUID affinityKey=primaryKeyForCache(grid(0));
+  GridCache<CacheAffinityKey<String>,String> cache=grid(0).cache(null);
+  CacheAffinityKey<String> key1;
+  CacheAffinityKey<String> key2;
+  try (IgniteTx tx=cache.txStartAffinity(affinityKey,concurrency,READ_COMMITTED,0,2)){
+    if (concurrency == PESSIMISTIC)     assertTrue("Failed to wait for lock events: " + affinityKey,locks.awaitKeys(WAIT_TIMEOUT,affinityKey));
+ else     assertEquals("Unexpected number of lock events: " + locks.affectedKeys(),0,locks.affectedKeys().size());
+    assertEquals("Unexpected number of unlock events: " + unlocks.affectedKeys(),0,unlocks.affectedKeys().size());
+    key1=new CacheAffinityKey<>("key1",affinityKey);
+    key2=new CacheAffinityKey<>("key2",affinityKey);
+    cache.putAll(F.asMap(key1,"val1",key2,"val2"));
+    tx.commit();
+  }
+   assertEquals("Unexpected number of lock events: " + locks.affectedKeys(),1,locks.affectedKeys().size());
+  assertTrue("Failed to wait for unlock events: " + affinityKey,unlocks.awaitKeys(WAIT_TIMEOUT,affinityKey));
+  for (int i=0; i < gridCount(); i++) {
+    Ignite g=grid(i);
+    GridCache<Object,Object> gCache=g.cache(null);
+    if (gCache.affinity().isPrimaryOrBackup(g.cluster().localNode(),key1))     assertEquals("For index: " + i,"val1",gCache.peek(key1));
+    if (gCache.affinity().isPrimaryOrBackup(g.cluster().localNode(),key2))     assertEquals("For index: " + i,"val2",gCache.peek(key2));
+  }
+}

@@ -1,0 +1,18 @@
+{
+  final int nGrids=3;
+  for (int i=1; i < nGrids; i++)   startGrid(i);
+  try {
+    final int nEntries=100;
+    for (int i=1; i <= nEntries; i++)     grid(0).cache(null).put(i,i);
+    for (int i=0; i < nGrids; i++) {
+      grid(i).cache(null).evictAll();
+      assertTrue("Grid #" + i + " has empty swap.",grid(i).cache(null).swapIterator().hasNext());
+    }
+    CacheProjection<Object,Object> cachePrj=grid(0).cache(null).flagsOn(SKIP_SWAP,SKIP_STORE);
+    for (int i=1; i <= nEntries; i++)     assertEquals(i,cachePrj.put(i,i + 1));
+    for (int i=0; i < nGrids; i++)     assertFalse("Grid #" + i + " has non-empty swap.",grid(i).cache(null).swapIterator().hasNext());
+  }
+  finally {
+    for (int i=1; i < nGrids; i++)     stopGrid(i);
+  }
+}

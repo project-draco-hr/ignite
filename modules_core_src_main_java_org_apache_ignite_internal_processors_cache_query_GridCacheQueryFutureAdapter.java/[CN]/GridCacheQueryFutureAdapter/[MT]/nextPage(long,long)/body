@@ -1,0 +1,27 @@
+{
+  Collection<R> res=null;
+  while (res == null) {
+synchronized (mux) {
+      res=queue.poll();
+    }
+    if (res == null) {
+      if (!isDone()) {
+        loadPage();
+        long waitTime=timeout == 0 ? Long.MAX_VALUE : timeout - (U.currentTimeMillis() - startTime);
+        if (waitTime <= 0)         break;
+synchronized (mux) {
+          try {
+            if (queue.isEmpty() && !isDone())             mux.wait(waitTime);
+          }
+ catch (          InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IgniteCheckedException("Query was interrupted: " + qry,e);
+          }
+        }
+      }
+ else       break;
+    }
+  }
+  checkError();
+  return res;
+}

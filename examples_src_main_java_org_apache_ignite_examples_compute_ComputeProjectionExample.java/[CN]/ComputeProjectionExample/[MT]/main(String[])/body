@@ -1,0 +1,19 @@
+{
+  try (Ignite ignite=Ignition.start("examples/config/example-compute.xml")){
+    if (!ExamplesUtils.checkMinTopologySize(ignite.cluster(),2))     return;
+    System.out.println();
+    System.out.println("Compute projection example started.");
+    IgniteCluster cluster=ignite.cluster();
+    sayHello(ignite,cluster);
+    sayHello(ignite,cluster.forRemotes());
+    ClusterGroup randomNode=cluster.forRemotes().forRandom();
+    sayHello(ignite,randomNode);
+    sayHello(ignite,cluster.forHost(randomNode.node()));
+    sayHello(ignite,cluster.forPredicate(new IgnitePredicate<ClusterNode>(){
+      @Override public boolean apply(      ClusterNode n){
+        return n.metrics().getCurrentCpuLoad() < 0.5;
+      }
+    }
+));
+  }
+ }

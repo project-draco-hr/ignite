@@ -1,0 +1,28 @@
+{
+  GridCache<String,Integer> cache=cache();
+  Collection<String> keys=primaryKeysForCache(cache,2);
+  for (  String key : keys)   assertNull(cache.peek(key));
+  Map<String,Integer> vals=new HashMap<>(keys.size());
+  int i=0;
+  for (  String key : keys) {
+    cache.put(key,i);
+    vals.put(key,i);
+    i++;
+  }
+  for (  String key : keys)   assertEquals(vals.get(key),cache.peek(key));
+  cache.clearAll();
+  for (  String key : keys)   assertNull(cache.peek(key));
+  cache.reloadAll(keys);
+  for (  String key : keys)   assertEquals(vals.get(key),cache.peek(key));
+  cache.clearAll();
+  for (  String key : keys)   assertNull(cache.peek(key));
+  String[] keysArr=new String[keys.size()];
+  keys.toArray(keysArr);
+  cache.reloadAll(F.asList(keysArr));
+  for (  String key : keys) {
+    assertEquals(vals.get(key),cache.peek(key));
+    cache.clear(key);
+  }
+  cache.reloadAll(keys);
+  for (  String key : keys)   assertEquals(vals.get(key),cache.peek(key));
+}

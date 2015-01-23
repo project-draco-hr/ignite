@@ -1,0 +1,30 @@
+{
+  mode=LOCAL;
+  useCache=true;
+  try {
+    Ignite g=startGrid();
+    final GridCache<Integer,Integer> c=g.cache(null);
+    final IgniteDataLoader<Integer,Integer> ldr=g.dataLoader(null);
+    ldr.perNodeBufferSize(10);
+    for (int i=0; i < 9; i++)     ldr.addData(i,i);
+    assertTrue(c.isEmpty());
+    multithreaded(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        ldr.flush();
+        assertEquals(9,c.size());
+        return null;
+      }
+    }
+,5,"flush-checker");
+    ldr.addData(100,100);
+    ldr.flush();
+    assertEquals(10,c.size());
+    ldr.addData(200,200);
+    ldr.close(false);
+    ldr.future().get();
+    assertEquals(11,c.size());
+  }
+  finally {
+    stopAllGrids();
+  }
+}

@@ -1,0 +1,66 @@
+{
+  if (log.isDebugEnabled())   log.debug("Received peer class/resource loading request [node=" + nodeId + ", req="+ req+ ']');
+  if (req.responseTopic() == null) {
+    try {
+      req.responseTopic(marsh.unmarshal(req.responseTopicBytes(),null));
+    }
+ catch (    IgniteCheckedException e) {
+      U.error(log,"Failed to process deployment request (will ignore): " + req,e);
+      return;
+    }
+  }
+  GridDeploymentResponse res=new GridDeploymentResponse();
+  GridDeployment dep=ctx.deploy().getDeployment(req.classLoaderId());
+  if (dep != null) {
+    ClassLoader ldr=dep.classLoader();
+    if (!(ldr instanceof GridDeploymentClassLoader)) {
+      try {
+        String clsName=req.resourceName().replace('/','.');
+        int idx=clsName.indexOf(".class");
+        if (idx >= 0)         clsName=clsName.substring(0,idx);
+        Class<?> cls=Class.forName(clsName,true,ldr);
+        if (U.getAnnotation(cls,IgniteNotPeerDeployable.class) != null) {
+          String errMsg="Attempt to peer deploy class that has @GridNotPeerDeployable " + "annotation: " + clsName;
+          U.error(log,errMsg);
+          res.errorMessage(errMsg);
+          res.success(false);
+          sendResponse(nodeId,req.responseTopic(),res);
+          return;
+        }
+      }
+ catch (      ClassNotFoundException ignore) {
+      }
+    }
+    InputStream in=ldr.getResourceAsStream(req.resourceName());
+    if (in == null) {
+      String errMsg="Requested resource not found (ignoring locally): " + req.resourceName();
+      if (log.isDebugEnabled())       log.debug(errMsg);
+      res.success(false);
+      res.errorMessage(errMsg);
+    }
+ else {
+      try {
+        GridByteArrayList bytes=new GridByteArrayList(1024);
+        bytes.readAll(in);
+        res.success(true);
+        res.byteSource(bytes);
+      }
+ catch (      IOException e) {
+        String errMsg="Failed to read resource due to IO failure: " + req.resourceName();
+        U.error(log,errMsg,e);
+        res.errorMessage(errMsg);
+        res.success(false);
+      }
+ finally {
+        U.close(in,log);
+      }
+    }
+  }
+ else {
+    String errMsg="Failed to find local deployment for peer request: " + req;
+    U.warn(log,errMsg);
+    res.success(false);
+    res.errorMessage(errMsg);
+  }
+  sendResponse(nodeId,req.responseTopic(),res);
+}

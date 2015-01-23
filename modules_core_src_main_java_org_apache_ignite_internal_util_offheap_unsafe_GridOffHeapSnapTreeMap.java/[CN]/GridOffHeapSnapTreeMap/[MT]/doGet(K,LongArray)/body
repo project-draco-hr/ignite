@@ -1,0 +1,25 @@
+{
+  final Comparable<? super K> k=comparable(key);
+  while (true) {
+    final long right=unsharedRight(holderRef,unlinked);
+    if (right == 0) {
+      return null;
+    }
+ else {
+      final int rightCmp=k.compareTo(key(right));
+      if (rightCmp == 0) {
+        return vOpt(right);
+      }
+      final long ovl=shrinkOVL(right);
+      if (isShrinkingOrUnlinked(ovl)) {
+        waitUntilShrinkCompleted(right,ovl);
+      }
+ else       if (right == right(holderRef)) {
+        GridOffHeapSmartPointer vo=attemptGet(k,right,(rightCmp < 0 ? Left : Right),ovl,unlinked);
+        if (vo != SpecialRetry) {
+          return vo;
+        }
+      }
+    }
+  }
+}

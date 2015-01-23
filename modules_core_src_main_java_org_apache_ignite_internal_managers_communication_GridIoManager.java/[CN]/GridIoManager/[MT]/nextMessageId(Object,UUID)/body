@@ -1,0 +1,15 @@
+{
+  ConcurrentMap<UUID,AtomicLong> map=msgIdMap.get(topic);
+  if (map == null) {
+    ConcurrentMap<UUID,AtomicLong> lastMap=msgIdMap.putIfAbsent(topic,map=new ConcurrentHashMap8<>());
+    if (lastMap != null)     map=lastMap;
+  }
+  AtomicLong msgId=map.get(nodeId);
+  if (msgId == null) {
+    AtomicLong lastMsgId=map.putIfAbsent(nodeId,msgId=new AtomicLong(0));
+    if (lastMsgId != null)     msgId=lastMsgId;
+  }
+  long id=msgId.incrementAndGet();
+  if (log.isDebugEnabled())   log.debug("Got next message ID [topic=" + topic + ", nodeId="+ nodeId+ ", id="+ id+ ']');
+  return id;
+}

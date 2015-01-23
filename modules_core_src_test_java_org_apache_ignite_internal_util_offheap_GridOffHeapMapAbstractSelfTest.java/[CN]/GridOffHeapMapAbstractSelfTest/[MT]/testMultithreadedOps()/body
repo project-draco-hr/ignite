@@ -1,0 +1,56 @@
+{
+  mem=1512;
+  lruStripes=3;
+  concurrency=8;
+  initCap=256;
+  map=newMap();
+  long zeroAllocated=map.allocatedSize();
+  X.println("Empty map offheap size: " + zeroAllocated);
+  final AtomicBoolean stop=new AtomicBoolean();
+  final byte[][] keys=new byte[127][16];
+  Random rnd=new Random();
+  for (int i=0; i < keys.length; i++) {
+    rnd.nextBytes(keys[i]);
+    keys[i][0]=(byte)i;
+  }
+  IgniteFuture<?> fut=multithreadedAsync(new Callable<Void>(){
+    @Override public Void call() throws IgniteCheckedException {
+      Random rnd=new Random();
+      while (!stop.get()) {
+        byte[] key=keys[rnd.nextInt(keys.length)];
+        int hash=key[0];
+        byte[] val=new byte[1 + rnd.nextInt(11)];
+        rnd.nextBytes(val);
+switch (rnd.nextInt(5)) {
+case 0:
+          map.put(hash,key,val);
+        break;
+case 1:
+      map.remove(hash,key);
+    break;
+case 2:
+  map.contains(hash,key);
+break;
+case 3:
+map.get(hash,key);
+break;
+case 4:
+case 5:
+GridCloseableIterator<IgniteBiTuple<byte[],byte[]>> iter=map.iterator();
+while (iter.hasNext()) assertNotNull(iter.next());
+iter.close();
+break;
+}
+}
+return null;
+}
+}
+,49);
+Thread.sleep(60000);
+stop.set(true);
+fut.get();
+for (byte[] key : keys) map.remove(key[0],key);
+assertEquals(0,map.size());
+assertEquals(0,((GridUnsafeMap)map).lruSize());
+assertEquals(zeroAllocated,map.allocatedSize());
+}

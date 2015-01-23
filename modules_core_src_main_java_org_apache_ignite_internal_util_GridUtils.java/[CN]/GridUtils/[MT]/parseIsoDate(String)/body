@@ -1,0 +1,75 @@
+{
+  StringTokenizer t=new StringTokenizer(str,"+-:.TZ",true);
+  Calendar cal=Calendar.getInstance();
+  cal.clear();
+  try {
+    if (t.hasMoreTokens())     cal.set(Calendar.YEAR,Integer.parseInt(t.nextToken()));
+ else     return cal;
+    if (checkNextToken(t,"-",str) && t.hasMoreTokens())     cal.set(Calendar.MONTH,Integer.parseInt(t.nextToken()) - 1);
+ else     return cal;
+    if (checkNextToken(t,"-",str) && t.hasMoreTokens())     cal.set(Calendar.DAY_OF_MONTH,Integer.parseInt(t.nextToken()));
+ else     return cal;
+    if (checkNextToken(t,"T",str) && t.hasMoreTokens())     cal.set(Calendar.HOUR_OF_DAY,Integer.parseInt(t.nextToken()));
+ else {
+      cal.set(Calendar.HOUR_OF_DAY,0);
+      cal.set(Calendar.MINUTE,0);
+      cal.set(Calendar.SECOND,0);
+      cal.set(Calendar.MILLISECOND,0);
+      return cal;
+    }
+    if (checkNextToken(t,":",str) && t.hasMoreTokens())     cal.set(Calendar.MINUTE,Integer.parseInt(t.nextToken()));
+ else {
+      cal.set(Calendar.MINUTE,0);
+      cal.set(Calendar.SECOND,0);
+      cal.set(Calendar.MILLISECOND,0);
+      return cal;
+    }
+    if (!t.hasMoreTokens())     return cal;
+    String tok=t.nextToken();
+    if (":".equals(tok)) {
+      if (t.hasMoreTokens()) {
+        cal.set(Calendar.SECOND,Integer.parseInt(t.nextToken()));
+        if (!t.hasMoreTokens())         return cal;
+        tok=t.nextToken();
+        if (".".equals(tok)) {
+          String nt=t.nextToken();
+          while (nt.length() < 3)           nt+="0";
+          nt=nt.substring(0,3);
+          cal.set(Calendar.MILLISECOND,Integer.parseInt(nt));
+          if (!t.hasMoreTokens())           return cal;
+          tok=t.nextToken();
+        }
+ else         cal.set(Calendar.MILLISECOND,0);
+      }
+ else       throw new IgniteCheckedException("Invalid date format: " + str);
+    }
+ else {
+      cal.set(Calendar.SECOND,0);
+      cal.set(Calendar.MILLISECOND,0);
+    }
+    if (!"Z".equals(tok)) {
+      if (!"+".equals(tok) && !"-".equals(tok))       throw new IgniteCheckedException("Invalid date format: " + str);
+      boolean plus="+".equals(tok);
+      if (!t.hasMoreTokens())       throw new IgniteCheckedException("Invalid date format: " + str);
+      tok=t.nextToken();
+      int tzHour;
+      int tzMin;
+      if (tok.length() == 4) {
+        tzHour=Integer.parseInt(tok.substring(0,2));
+        tzMin=Integer.parseInt(tok.substring(2,4));
+      }
+ else {
+        tzHour=Integer.parseInt(tok);
+        if (checkNextToken(t,":",str) && t.hasMoreTokens())         tzMin=Integer.parseInt(t.nextToken());
+ else         throw new IgniteCheckedException("Invalid date format: " + str);
+      }
+      if (plus)       cal.set(Calendar.ZONE_OFFSET,(tzHour * 60 + tzMin) * 60 * 1000);
+ else       cal.set(Calendar.ZONE_OFFSET,-(tzHour * 60 + tzMin) * 60 * 1000);
+    }
+ else     cal.setTimeZone(TimeZone.getTimeZone("GMT"));
+  }
+ catch (  NumberFormatException ex) {
+    throw new IgniteCheckedException("Invalid date format: " + str,ex);
+  }
+  return cal;
+}

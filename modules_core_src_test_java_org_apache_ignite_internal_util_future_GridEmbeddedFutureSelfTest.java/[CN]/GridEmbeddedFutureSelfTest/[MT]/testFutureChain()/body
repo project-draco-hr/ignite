@@ -1,0 +1,13 @@
+{
+  GridFutureAdapter<Integer> fut=new GridFutureAdapter<>(ctx);
+  IgniteFuture<Integer> cur=fut;
+  for (int i=0; i < DFLT_MAX_CONCURRENT_ASYNC_OPS; i++) {
+    cur=new GridEmbeddedFuture<>(cur,new IgniteBiClosure<Integer,Exception,IgniteFuture<Integer>>(){
+      @Override public IgniteFuture<Integer> apply(      Integer o,      Exception e){
+        return new GridFinishedFuture<>(ctx,o);
+      }
+    }
+,ctx);
+  }
+  fut.onDone(1);
+}

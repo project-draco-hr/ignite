@@ -1,0 +1,13 @@
+{
+  GridCacheAdapter<Integer,String> cache=((GridKernal)grid(originatingNode())).internalCache();
+  ClusterNode txNode=grid(originatingNode()).localNode();
+  Integer key=null;
+  for (int i=0; i < Integer.MAX_VALUE; i++) {
+    if (!cache.affinity().isPrimary(txNode,i) && !cache.affinity().isBackup(txNode,i)) {
+      key=i;
+      break;
+    }
+  }
+  assertNotNull(key);
+  testTxOriginatingNodeFails(Collections.singleton(key),false);
+}
