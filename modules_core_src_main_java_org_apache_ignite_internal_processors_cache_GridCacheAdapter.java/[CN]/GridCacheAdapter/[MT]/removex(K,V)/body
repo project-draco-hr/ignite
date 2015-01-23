@@ -1,0 +1,15 @@
+{
+  ctx.denyOnLocalRead();
+  A.notNull(key,"key",val,"val");
+  if (keyCheck)   validateCacheKey(key);
+  return syncOp(new SyncOp<GridCacheReturn<V>>(true){
+    @Override public GridCacheReturn<V> op(    IgniteTxLocalAdapter<K,V> tx) throws IgniteCheckedException {
+      if (ctx.deploymentEnabled())       ctx.deploy().registerClass(val);
+      return tx.removeAllAsync(ctx,Collections.singletonList(key),null,true,ctx.vararg(F.<K,V>cacheContainsPeek(val))).get();
+    }
+    @Override public String toString(){
+      return "remove [key=" + key + ", val="+ val+ ']';
+    }
+  }
+);
+}

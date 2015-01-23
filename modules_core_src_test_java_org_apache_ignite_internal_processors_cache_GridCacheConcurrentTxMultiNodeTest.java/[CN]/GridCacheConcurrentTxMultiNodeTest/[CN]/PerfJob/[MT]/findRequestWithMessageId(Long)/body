@@ -1,0 +1,13 @@
+{
+  CacheProjection<Object,Request> cache=ignite.cache(null).projection(Object.class,Request.class);
+  CacheQuery<Map.Entry<Object,Request>> qry=cache.queries().createSqlQuery(Request.class,"messageId = ?");
+  try {
+    Map.Entry<Object,Request> entry=F.first(qry.projection(ignite.cluster().forLocal()).execute(msgId).get());
+    if (entry == null)     return null;
+    return entry.getValue();
+  }
+ catch (  IgniteCheckedException e) {
+    e.printStackTrace();
+    return null;
+  }
+}

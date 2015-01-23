@@ -1,0 +1,17 @@
+{
+  Map<String,Collection<ClusterNode>> macMap=new HashMap<>(topSnapshot.size(),1.0f);
+  for (  ClusterNode node : topSnapshot) {
+    String macs=node.attribute(GridNodeAttributes.ATTR_MACS);
+    Collection<ClusterNode> nodes=macMap.get(macs);
+    if (nodes == null) {
+      nodes=new HashSet<>();
+      macMap.put(macs,nodes);
+    }
+    nodes.add(node);
+  }
+  Map<UUID,Collection<ClusterNode>> neighbors=new HashMap<>(topSnapshot.size(),1.0f);
+  for (  Collection<ClusterNode> group : macMap.values()) {
+    for (    ClusterNode node : group)     neighbors.put(node.id(),group);
+  }
+  return neighbors;
+}

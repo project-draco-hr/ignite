@@ -1,0 +1,57 @@
+{
+  final CX1<IgniteFuture<Object>,Object> passThrough=new CX1<IgniteFuture<Object>,Object>(){
+    @Override public Object applyx(    IgniteFuture<Object> f) throws IgniteCheckedException {
+      return f.get();
+    }
+  }
+;
+  final GridTestKernalContext ctx=new GridTestKernalContext(log);
+  ctx.config().setExecutorService(Executors.newFixedThreadPool(1));
+  ctx.config().setSystemExecutorService(Executors.newFixedThreadPool(1));
+  ctx.add(new GridClosureProcessor(ctx));
+  ctx.start();
+  try {
+    GridFutureAdapter<Object> fut=new GridFutureAdapter<>(ctx);
+    IgniteFuture<Object> chain=fut.chain(passThrough);
+    assertFalse(fut.isDone());
+    assertFalse(chain.isDone());
+    try {
+      chain.get(20);
+      fail("Expects timeout exception.");
+    }
+ catch (    IgniteFutureTimeoutException e) {
+      info("Expected timeout exception: " + e.getMessage());
+    }
+    fut.onDone("result");
+    assertEquals("result",chain.get(1));
+    fut=new GridFutureAdapter<>(ctx);
+    chain=fut.chain(passThrough);
+    fut.onDone(new ClusterGroupEmptyException("test exception"));
+    try {
+      chain.get();
+      fail("Expects failed with exception.");
+    }
+ catch (    ClusterGroupEmptyException e) {
+      info("Expected exception: " + e.getMessage());
+    }
+    fut=new GridFutureAdapter<>(ctx);
+    chain=fut.chain(passThrough);
+    try {
+      fut.onDone(new StackOverflowError("test error"));
+      fail("Expects failed with error.");
+    }
+ catch (    StackOverflowError e) {
+      info("Expected error: " + e.getMessage());
+    }
+    try {
+      chain.get();
+      fail("Expects failed with error.");
+    }
+ catch (    StackOverflowError e) {
+      info("Expected error: " + e.getMessage());
+    }
+  }
+  finally {
+    ctx.stop(false);
+  }
+}

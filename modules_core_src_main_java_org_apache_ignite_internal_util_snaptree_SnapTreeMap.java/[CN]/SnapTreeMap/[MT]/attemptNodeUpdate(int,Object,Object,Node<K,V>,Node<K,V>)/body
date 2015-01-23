@@ -1,0 +1,48 @@
+{
+  if (newValue == null) {
+    if (node.vOpt == null) {
+      return noUpdateResult(func,null);
+    }
+  }
+  if (newValue == null && (node.left == null || node.right == null)) {
+    final Object prev;
+    final Node<K,V> damaged;
+synchronized (parent) {
+      if (isUnlinked(parent.shrinkOVL) || node.parent != parent) {
+        return SpecialRetry;
+      }
+synchronized (node) {
+        prev=node.vOpt;
+        if (!shouldUpdate(func,prev,expected)) {
+          return noUpdateResult(func,prev);
+        }
+        if (prev == null) {
+          return updateResult(func,prev);
+        }
+        if (!attemptUnlink_nl(parent,node)) {
+          return SpecialRetry;
+        }
+      }
+      damaged=fixHeight_nl(parent);
+    }
+    fixHeightAndRebalance(damaged);
+    return updateResult(func,prev);
+  }
+ else {
+synchronized (node) {
+      if (isUnlinked(node.shrinkOVL)) {
+        return SpecialRetry;
+      }
+      final Object prev=node.vOpt;
+      if (!shouldUpdate(func,prev,expected)) {
+        return noUpdateResult(func,prev);
+      }
+      if (newValue == null && (node.left == null || node.right == null)) {
+        return SpecialRetry;
+      }
+      node.vOpt=newValue;
+      afterNodeUpdate_nl(node,newValue);
+      return updateResult(func,prev);
+    }
+  }
+}

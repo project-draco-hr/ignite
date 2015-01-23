@@ -1,0 +1,61 @@
+{
+  try {
+    startGridsMultiThreaded(2);
+    GridKernal[] nodes=new GridKernal[]{(GridKernal)grid(0),(GridKernal)grid(1)};
+    Collection<IgniteFuture> futs=new ArrayList<>();
+    final CountDownLatch startLatch=new CountDownLatch(1);
+    for (    final GridKernal node : nodes) {
+      List<Integer> parts=partitions(node,PARTITION_PRIMARY);
+      Map<Integer,Integer> keyMap=keysFor(node,parts);
+      for (      final Integer key : keyMap.values()) {
+        futs.add(multithreadedAsync(new Runnable(){
+          @Override public void run(){
+            try {
+              try {
+                node.jcache(null).lock(key).lock();
+                info(">>> Acquired explicit lock for key: " + key);
+                startLatch.await();
+                info(">>> Acquiring explicit lock for key: " + key * 10);
+                node.jcache(null).lock(key * 10).lock();
+                info(">>> Releasing locks [key1=" + key + ", key2="+ key * 10 + ']');
+              }
+  finally {
+                node.cache(null).unlock(key * 10);
+                node.cache(null).unlock(key);
+              }
+            }
+ catch (            IgniteCheckedException e) {
+              info(">>> Failed to perform lock [key=" + key + ", e="+ e+ ']');
+            }
+catch (            InterruptedException ignored) {
+              info(">>> Interrupted while waiting for start latch.");
+              Thread.currentThread().interrupt();
+            }
+          }
+        }
+,1));
+      }
+    }
+    IgniteFuture<?> startFut=multithreadedAsync(new Runnable(){
+      @Override public void run(){
+        try {
+          startGrid(2);
+          info(">>> Started grid2.");
+        }
+ catch (        Exception e) {
+          info(">>> Failed to start grid: " + e);
+        }
+      }
+    }
+,1);
+    U.sleep(5000);
+    assertFalse(startFut.isDone());
+    info(">>> Waiting for all locks to be released.");
+    startLatch.countDown();
+    for (    IgniteFuture fut : futs)     fut.get(1000);
+    startFut.get();
+  }
+  finally {
+    stopAllGrids();
+  }
+}

@@ -1,0 +1,30 @@
+{
+  ClientMessageInterceptor interceptor=config().getClientMessageInterceptor();
+  if (interceptor != null && res.getResponse() != null) {
+switch (req.command()) {
+case CACHE_GET:
+case CACHE_GET_ALL:
+case CACHE_PUT:
+case CACHE_ADD:
+case CACHE_PUT_ALL:
+case CACHE_REMOVE:
+case CACHE_REMOVE_ALL:
+case CACHE_REPLACE:
+case CACHE_INCREMENT:
+case CACHE_DECREMENT:
+case CACHE_CAS:
+case CACHE_APPEND:
+case CACHE_PREPEND:
+      res.setResponse(interceptSendObject(res.getResponse(),interceptor));
+    break;
+case EXE:
+  if (res.getResponse() instanceof GridClientTaskResultBean) {
+    GridClientTaskResultBean taskRes=(GridClientTaskResultBean)res.getResponse();
+    taskRes.setResult(interceptor.onSend(taskRes.getResult()));
+  }
+break;
+default :
+break;
+}
+}
+}

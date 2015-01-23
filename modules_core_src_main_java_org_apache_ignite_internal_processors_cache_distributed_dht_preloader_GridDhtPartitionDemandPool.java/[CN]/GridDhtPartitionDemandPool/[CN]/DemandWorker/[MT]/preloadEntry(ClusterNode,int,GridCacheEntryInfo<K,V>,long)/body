@@ -1,0 +1,36 @@
+{
+  try {
+    GridCacheEntryEx<K,V> cached=null;
+    try {
+      cached=cctx.dht().entryEx(entry.key());
+      if (log.isDebugEnabled())       log.debug("Preloading key [key=" + entry.key() + ", part="+ p+ ", node="+ pick.id()+ ']');
+      if (cctx.dht().isGgfsDataCache() && cctx.dht().ggfsDataSpaceUsed() > cctx.dht().ggfsDataSpaceMax()) {
+        LT.error(log,null,"Failed to preload GGFS data cache (GGFS space size exceeded maximum " + "value, will ignore preload entries): " + name());
+        if (cached.markObsoleteIfEmpty(null))         cached.context().cache().removeIfObsolete(cached.key());
+        return true;
+      }
+      if (preloadPred == null || preloadPred.apply(entry)) {
+        if (cached.initialValue(entry.value(),entry.valueBytes(),entry.version(),entry.ttl(),entry.expireTime(),true,topVer,cctx.isDrEnabled() ? DR_PRELOAD : DR_NONE)) {
+          cctx.evicts().touch(cached,topVer);
+          if (cctx.events().isRecordable(EVT_CACHE_PRELOAD_OBJECT_LOADED) && !cached.isInternal())           cctx.events().addEvent(cached.partition(),cached.key(),cctx.localNodeId(),(IgniteUuid)null,null,EVT_CACHE_PRELOAD_OBJECT_LOADED,entry.value(),true,null,false,null,null,null);
+        }
+ else         if (log.isDebugEnabled())         log.debug("Preloading entry is already in cache (will ignore) [key=" + cached.key() + ", part="+ p+ ']');
+      }
+ else       if (log.isDebugEnabled())       log.debug("Preload predicate evaluated to false for entry (will ignore): " + entry);
+    }
+ catch (    GridCacheEntryRemovedException ignored) {
+      if (log.isDebugEnabled())       log.debug("Entry has been concurrently removed while preloading (will ignore) [key=" + cached.key() + ", part="+ p+ ']');
+    }
+catch (    GridDhtInvalidPartitionException ignored) {
+      if (log.isDebugEnabled())       log.debug("Partition became invalid during preloading (will ignore): " + p);
+      return false;
+    }
+  }
+ catch (  IgniteInterruptedException e) {
+    throw e;
+  }
+catch (  IgniteCheckedException e) {
+    throw new IgniteCheckedException("Failed to cache preloaded entry (will stop preloading) [local=" + cctx.nodeId() + ", node="+ pick.id()+ ", key="+ entry.key()+ ", part="+ p+ ']',e);
+  }
+  return true;
+}

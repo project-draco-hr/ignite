@@ -1,0 +1,27 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(disco);
+  cfg.setNetworkTimeout(2000);
+  cfg.setSwapSpaceSpi(new FileSwapSpaceSpi());
+  CacheConfiguration cacheCfg=defaultCacheConfiguration();
+  cacheCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  cacheCfg.setSwapEnabled(true);
+  cacheCfg.setCacheMode(PARTITIONED);
+  cacheCfg.setBackups(1);
+  cacheCfg.setOffHeapMaxMemory(OFFHEAP_MEM);
+  cacheCfg.setEvictSynchronized(true);
+  cacheCfg.setEvictNearSynchronized(true);
+  cacheCfg.setEvictSynchronizedKeyBufferSize(1);
+  cacheCfg.setAtomicityMode(TRANSACTIONAL);
+  cacheCfg.setDistributionMode(NEAR_PARTITIONED);
+  cacheCfg.setEvictionPolicy(null);
+  CacheQueryConfiguration qcfg=new CacheQueryConfiguration();
+  qcfg.setIndexPrimitiveKey(true);
+  qcfg.setIndexPrimitiveValue(true);
+  cacheCfg.setQueryConfiguration(qcfg);
+  cfg.setCacheConfiguration(cacheCfg);
+  cfg.setDeploymentMode(SHARED);
+  return cfg;
+}

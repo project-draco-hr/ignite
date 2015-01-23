@@ -1,0 +1,16 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  int idx=getTestGridIndex(gridName);
+  if (idx == 0) {
+    Map<IgnitePredicate<? extends IgniteEvent>,int[]> lsnrs=new HashMap<>();
+    lsnrs.put(new IgnitePredicate<IgniteEvent>(){
+      @Override public boolean apply(      IgniteEvent evt){
+        fired.countDown();
+        return true;
+      }
+    }
+,new int[]{IgniteEventType.EVT_NODE_JOINED});
+    cfg.setLocalEventListeners(lsnrs);
+  }
+  return cfg;
+}

@@ -1,0 +1,25 @@
+{
+  Ignite g=Ignition.start("examples/config/filesystem/example-ggfs.xml");
+  System.out.println();
+  System.out.println(">>> GGFS example started.");
+  try {
+    IgniteFs fs=g.fileSystem("ggfs");
+    IgniteFsPath workDir=new IgniteFsPath("/examples/ggfs");
+    delete(fs,workDir);
+    mkdirs(fs,workDir);
+    printInfo(fs,workDir);
+    IgniteFsPath filePath=new IgniteFsPath(workDir,"file.txt");
+    create(fs,filePath,new byte[]{1,2,3});
+    printInfo(fs,filePath);
+    append(fs,filePath,new byte[]{4,5});
+    printInfo(fs,filePath);
+    read(fs,filePath);
+    delete(fs,filePath);
+    printInfo(fs,filePath);
+    for (int i=0; i < 5; i++)     create(fs,new IgniteFsPath(workDir,"file-" + i + ".txt"),null);
+    list(fs,workDir);
+  }
+  finally {
+    Ignition.stop(false);
+  }
+}

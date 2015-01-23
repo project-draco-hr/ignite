@@ -1,0 +1,21 @@
+{
+  GridCache<String,Integer> cache=cache();
+  List<String> keys=primaryKeysForCache(cache,2);
+  String key=keys.get(0);
+  String key2=keys.get(1);
+  cache.put(key,1);
+  assertEquals((Integer)1,cache.get(key));
+  assertTrue(cache.evict(key));
+  assertNull(cache.peek(key));
+  cache.reload(key);
+  assertEquals((Integer)1,cache.peek(key));
+  cache.remove(key);
+  cache.put(key,1);
+  cache.put(key2,102);
+  assertFalse(cache.projection(gte100).evict(key));
+  assertEquals((Integer)1,cache.get(key));
+  assertTrue(cache.projection(gte100).evict(key2));
+  assertNull(cache.peek(key2));
+  assertTrue(cache.evict(key));
+  assertNull(cache.peek(key));
+}

@@ -1,0 +1,55 @@
+{
+  GridDhtCacheAdapter<K,V> colocated=cache();
+  boolean remote=false;
+  boolean allowLocRead=!forcePrimary || cctx.affinity().primary(cctx.localNode(),key,topVer);
+  while (true) {
+    GridCacheEntryEx<K,V> entry=null;
+    try {
+      if (!reload && allowLocRead) {
+        try {
+          entry=colocated.context().isSwapOrOffheapEnabled() ? colocated.entryEx(key) : colocated.peekEx(key);
+          if (entry != null) {
+            boolean isNew=entry.isNewLocked();
+            V v=entry.innerGet(null,true,false,true,true,true,true,false,subjId,null,taskName,filters,expiryPlc);
+            colocated.context().evicts().touch(entry,topVer);
+            if (v == null) {
+              if (isNew && entry.markObsoleteIfEmpty(ver))               colocated.removeIfObsolete(key);
+            }
+ else {
+              if (cctx.portableEnabled())               v=(V)cctx.unwrapPortableIfNeeded(v,!deserializePortable);
+              locVals.put(key,v);
+              return false;
+            }
+          }
+        }
+ catch (        GridDhtInvalidPartitionException ignored) {
+        }
+      }
+      ClusterNode node=cctx.affinity().primary(key,topVer);
+      remote=!node.isLocal();
+      LinkedHashMap<K,Boolean> keys=mapped.get(node);
+      if (keys != null && keys.containsKey(key)) {
+        if (remapCnt.incrementAndGet() > MAX_REMAP_CNT) {
+          onDone(new ClusterTopologyException("Failed to remap key to a new node after " + MAX_REMAP_CNT + " attempts (key got remapped to the same node) [key="+ key+ ", node="+ U.toShortString(node)+ ", mappings="+ mapped+ ']'));
+          return false;
+        }
+      }
+      LinkedHashMap<K,Boolean> old=mappings.get(node);
+      if (old == null)       mappings.put(node,old=new LinkedHashMap<>(3,1f));
+      old.put(key,false);
+      break;
+    }
+ catch (    IgniteCheckedException e) {
+      onDone(e);
+      break;
+    }
+catch (    GridCacheEntryRemovedException ignored) {
+    }
+catch (    GridCacheFilterFailedException e) {
+      if (log.isDebugEnabled())       log.debug("Filter validation failed for entry: " + e);
+      colocated.context().evicts().touch(entry,topVer);
+      break;
+    }
+  }
+  return remote;
+}

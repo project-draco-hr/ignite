@@ -1,0 +1,20 @@
+{
+  CacheQueue<Integer> queue=cache().dataStructures().queue(QUEUE_NAME,0,collocated,true);
+  assertNotNull(queue);
+  assertEquals(0,queue.size());
+  int primaryNode=primaryQueueNode();
+  int testNodeIdx=-1;
+  for (int i=0; i < gridCount(); i++) {
+    if (i != primaryNode)     testNodeIdx=i;
+  }
+  log.info("Test node: " + testNodeIdx);
+  log.info("Header primary node: " + primaryNode);
+  queue=grid(testNodeIdx).cache(null).dataStructures().queue(QUEUE_NAME,0,collocated,false);
+  assertNotNull(queue);
+  testAddFailover(queue,Arrays.asList(primaryNode));
+  List<Integer> killIdxs=new ArrayList<>();
+  for (int i=0; i < gridCount(); i++) {
+    if (i != testNodeIdx)     killIdxs.add(i);
+  }
+  testAddFailover(queue,killIdxs);
+}

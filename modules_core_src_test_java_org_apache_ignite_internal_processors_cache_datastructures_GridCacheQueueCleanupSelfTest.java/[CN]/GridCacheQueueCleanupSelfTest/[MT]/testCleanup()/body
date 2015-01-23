@@ -1,0 +1,32 @@
+{
+  CacheQueue<Integer> queue=cache().dataStructures().queue(QUEUE_NAME1,0,false,true);
+  ClusterNode node=grid(0).cache(null).affinity().mapKeyToNode(new GridCacheQueueHeaderKey(QUEUE_NAME1));
+  final Ignite ignite=grid(0).localNode().equals(node) ? grid(1) : grid(0);
+  assertEquals(0,queue.size());
+  for (int i=0; i < 500; i++)   queue.add(i);
+  assertEquals(500,queue.size());
+  ignite.cache(null).dataStructures().removeQueue(QUEUE_NAME1);
+  queue=ignite.cache(null).dataStructures().queue(QUEUE_NAME1,0,false,true);
+  assertEquals(0,queue.size());
+  for (int i=0; i < 500; i++)   queue.add(i);
+  assertEquals(500,queue.size());
+  assertTrue(GridTestUtils.waitForCondition(new PAX(){
+    @SuppressWarnings("WhileLoopReplaceableByForEach") @Override public boolean applyx(){
+      int cnt=0;
+      for (int i=0; i < gridCount(); i++) {
+        Iterator<GridCacheEntryEx<Object,Object>> entries=((GridKernal)grid(i)).context().cache().internalCache().map().allEntries0().iterator();
+        while (entries.hasNext()) {
+          cnt++;
+          entries.next();
+        }
+      }
+      if (cnt > 501) {
+        log.info("Found more cache entries than expected, will wait: " + cnt);
+        return false;
+      }
+      return true;
+    }
+  }
+,5000));
+  for (int i=0; i < 500; i++)   assertEquals((Integer)i,queue.poll());
+}

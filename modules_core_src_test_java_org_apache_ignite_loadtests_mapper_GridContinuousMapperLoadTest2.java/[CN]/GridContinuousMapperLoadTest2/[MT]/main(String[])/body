@@ -1,0 +1,35 @@
+{
+  final AtomicInteger jobIdGen=new AtomicInteger();
+  final AtomicInteger sentJobs=new AtomicInteger();
+  final LinkedBlockingQueue<Integer> queue=new LinkedBlockingQueue<>(10);
+  Thread t=new Thread("mapper-worker"){
+    @Override public void run(){
+      try {
+        while (!Thread.currentThread().isInterrupted())         queue.put(jobIdGen.incrementAndGet());
+      }
+ catch (      InterruptedException ignore) {
+      }
+    }
+  }
+;
+  Ignite g=G.start("examples/config/example-cache.xml");
+  try {
+    int max=20000;
+    IgniteDataLoader<Integer,TestObject> ldr=g.dataLoader("replicated");
+    for (int i=0; i < max; i++)     ldr.addData(i,new TestObject(i,"Test object: " + i));
+    ldr.close(false);
+    X.println("Populated replicated cache.");
+    t.start();
+    while (sentJobs.get() < max) {
+      int[] jobIds=new int[10];
+      for (int i=0; i < jobIds.length; i++)       jobIds[i]=queue.take();
+      sentJobs.addAndGet(10);
+      g.compute().execute(new GridContinuousMapperTask2(),jobIds);
+    }
+  }
+  finally {
+    t.interrupt();
+    t.join();
+    G.stopAll(false);
+  }
+}

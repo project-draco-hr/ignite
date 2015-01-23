@@ -1,0 +1,16 @@
+{
+  if (!fut.trackable())   return true;
+  Collection<GridCacheFuture<?>> cur=futs.get(fut.version());
+  if (cur == null)   return false;
+  boolean rmv, empty;
+synchronized (cur) {
+    rmv=cur.remove(fut);
+    empty=cur.isEmpty();
+  }
+  if (rmv) {
+    if (log.isDebugEnabled())     log.debug("Removed future from future map: " + fut);
+  }
+ else   if (log.isDebugEnabled())   log.debug("Attempted to remove a non-registered future (has it been already removed?): " + fut);
+  if (empty && futs.remove(fut.version(),cur))   if (log.isDebugEnabled())   log.debug("Removed future list from futures map for lock version: " + fut.version());
+  return rmv;
+}

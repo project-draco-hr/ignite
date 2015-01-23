@@ -1,0 +1,16 @@
+{
+  if (!state(PREPARING)) {
+    if (state() != PREPARING || !optimistic()) {
+      if (log.isDebugEnabled())       log.debug("Invalid transaction state for prepare: " + this);
+      return;
+    }
+  }
+  try {
+    cctx.tm().prepareTx(this);
+    if (pessimistic() || isSystemInvalidate())     state(PREPARED);
+  }
+ catch (  IgniteCheckedException e) {
+    setRollbackOnly();
+    throw e;
+  }
+}

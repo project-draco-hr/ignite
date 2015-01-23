@@ -1,0 +1,68 @@
+{
+  final Random rnd=new Random();
+  final LinkedBlockingQueue<UUID> queue=new LinkedBlockingQueue<>();
+  multithreaded(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      for (int i=0; i < 1000; i++) {
+        IgniteTx tx=rnd.nextBoolean() ? new DummyTx() : null;
+        ses.newSession(tx);
+        int op=rnd.nextInt(10);
+        boolean queueEmpty=false;
+        if (op < 4) {
+          UUID key=queue.poll();
+          if (key == null)           queueEmpty=true;
+ else {
+            if (rnd.nextBoolean())             assertNotNull(store.load(key));
+ else {
+              Map<Object,Object> loaded=store.loadAll(Collections.singleton(key));
+              assertEquals(1,loaded.size());
+              Map.Entry<Object,Object> e=loaded.entrySet().iterator().next();
+              UUID k=(UUID)e.getKey();
+              UUID v=(UUID)e.getValue();
+              assertTrue(k.equals(v) || (k.getMostSignificantBits() == v.getLeastSignificantBits() && k.getLeastSignificantBits() == v.getMostSignificantBits()));
+            }
+            if (tx != null)             store.txEnd(true);
+            queue.add(key);
+          }
+        }
+ else         if (op < 6) {
+          UUID key=queue.poll();
+          if (key == null)           queueEmpty=true;
+ else {
+            if (rnd.nextBoolean())             store.delete(key);
+ else             store.deleteAll(Collections.singleton(key));
+            if (tx != null)             store.txEnd(true);
+          }
+        }
+ else {
+          UUID key=queue.poll();
+          if (key == null)           queueEmpty=true;
+ else {
+            UUID val=new UUID(key.getLeastSignificantBits(),key.getMostSignificantBits());
+            if (rnd.nextBoolean())             store.write(new CacheEntryImpl<>(key,val));
+ else {
+              Collection<Cache.Entry<? extends Object,? extends Object>> col=new ArrayList<>();
+              col.add(new CacheEntryImpl<>(key,val));
+              store.writeAll(col);
+            }
+            if (tx != null)             store.txEnd(true);
+            queue.add(key);
+          }
+        }
+        if (queueEmpty) {
+          UUID key=UUID.randomUUID();
+          if (rnd.nextBoolean())           store.write(new CacheEntryImpl<>(key,key));
+ else {
+            Collection<Cache.Entry<? extends Object,? extends Object>> col=new ArrayList<>();
+            col.add(new CacheEntryImpl<>(key,key));
+            store.writeAll(col);
+          }
+          if (tx != null)           store.txEnd(true);
+          queue.add(key);
+        }
+      }
+      return null;
+    }
+  }
+,37);
+}

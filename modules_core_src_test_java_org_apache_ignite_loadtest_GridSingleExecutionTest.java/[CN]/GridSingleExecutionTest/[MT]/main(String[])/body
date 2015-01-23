@@ -1,0 +1,33 @@
+{
+  System.setProperty(IgniteSystemProperties.GG_UPDATE_NOTIFIER,"false");
+  System.out.println("Starting master node [params=" + Arrays.toString(args) + ']');
+  if (args.length < 2) {
+    System.out.println("Log file name must be provided as first argument.");
+    System.exit(1);
+  }
+ else   if (args.length >= 2) {
+    for (    IgniteConfiguration cfg : getConfigurations(args[1],args[0])) {
+      G.start(cfg);
+    }
+  }
+  boolean useSes=false;
+  if (args.length == 3) {
+    if ("-session".equals(args[2].trim()))     useSes=true;
+  }
+  try {
+    Ignite ignite=G.ignite();
+    IgniteCompute comp=ignite.compute().enableAsync();
+    comp.execute(!useSes ? TestTask.class : TestSessionTask.class,null);
+    ComputeTaskFuture<Object> fut=comp.future();
+    if (useSes) {
+      fut.getTaskSession().setAttribute("attr1",1);
+      fut.getTaskSession().setAttribute("attr2",2);
+    }
+    fut.get();
+    System.out.println("Task executed.");
+  }
+  finally {
+    G.stop(true);
+    System.out.println("Master node stopped.");
+  }
+}

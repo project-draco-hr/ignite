@@ -1,0 +1,32 @@
+{
+  GridCacheEntryInfo<K,V> info=null;
+  long time=U.currentTimeMillis();
+  try {
+synchronized (this) {
+      if (!obsolete()) {
+        info=new GridCacheEntryInfo<>();
+        info.key(key);
+        long expireTime=expireTimeExtras();
+        boolean expired=expireTime != 0 && expireTime <= time;
+        info.keyBytes(keyBytes);
+        info.ttl(ttlExtras());
+        info.expireTime(expireTime);
+        info.version(ver);
+        info.setNew(isStartVersion());
+        info.setDeleted(deletedUnlocked());
+        if (!expired) {
+          info.value(cctx.kernalContext().config().isPeerClassLoadingEnabled() ? rawGetOrUnmarshalUnlocked(false) : val);
+          GridCacheValueBytes valBytes=valueBytesUnlocked();
+          if (!valBytes.isNull()) {
+            if (valBytes.isPlain())             info.value((V)valBytes.get());
+ else             info.valueBytes(valBytes.get());
+          }
+        }
+      }
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException("Failed to unmarshal object while creating entry info: " + this,e);
+  }
+  return info;
+}

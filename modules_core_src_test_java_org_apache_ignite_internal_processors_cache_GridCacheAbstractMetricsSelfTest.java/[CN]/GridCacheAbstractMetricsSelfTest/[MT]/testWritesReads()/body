@@ -1,0 +1,36 @@
+{
+  GridCache<Integer,Integer> cache0=grid(0).cache(null);
+  int keyCnt=keyCount();
+  int expReads=0;
+  int expMisses=0;
+  for (int i=0; i < keyCnt; i++) {
+    cache0.put(i,i);
+    boolean isPrimary=cache0.affinity().isPrimary(grid(0).localNode(),i);
+    expReads+=expectedReadsPerPut(isPrimary);
+    expMisses+=expectedMissesPerPut(isPrimary);
+    info("Writes: " + cache0.metrics().writes());
+    for (int j=0; j < gridCount(); j++) {
+      GridCache<Integer,Integer> cache=grid(j).cache(null);
+      int cacheWrites=cache.metrics().writes();
+      assertEquals("Wrong cache metrics [i=" + i + ", grid="+ j+ ']',i + 1,cacheWrites);
+    }
+    assertEquals("Wrong value for key: " + i,Integer.valueOf(i),cache0.get(i));
+    expReads++;
+  }
+  long writes=0;
+  long reads=0;
+  long hits=0;
+  long misses=0;
+  for (int i=0; i < gridCount(); i++) {
+    CacheMetrics m=grid(i).cache(null).metrics();
+    writes+=m.writes();
+    reads+=m.reads();
+    hits+=m.hits();
+    misses+=m.misses();
+  }
+  info("Stats [reads=" + reads + ", hits="+ hits+ ", misses="+ misses+ ']');
+  assertEquals(keyCnt * gridCount(),writes);
+  assertEquals(expReads,reads);
+  assertEquals(keyCnt,hits);
+  assertEquals(expMisses,misses);
+}

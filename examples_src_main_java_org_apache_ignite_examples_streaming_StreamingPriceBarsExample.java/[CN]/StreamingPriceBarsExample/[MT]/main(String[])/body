@@ -1,0 +1,26 @@
+{
+  Timer timer=new Timer("priceBars");
+  final Ignite g=Ignition.start("examples/config/example-streamer.xml");
+  System.out.println();
+  System.out.println(">>> Streaming price bars example started.");
+  try {
+    TimerTask task=scheduleQuery(g,timer);
+    streamData(g);
+    task.run();
+    timer.cancel();
+    g.compute().broadcast(new Runnable(){
+      @Override public void run(){
+        if (!ExamplesUtils.hasStreamer(g,"priceBars"))         System.err.println("Default streamer not found (is example-streamer.xml " + "configuration used on all nodes?)");
+ else {
+          IgniteStreamer streamer=g.streamer("priceBars");
+          System.out.println("Clearing bars from streamer.");
+          streamer.reset();
+        }
+      }
+    }
+);
+  }
+  finally {
+    Ignition.stop(true);
+  }
+}

@@ -1,0 +1,42 @@
+{
+  return new GridCloseableIteratorAdapter<T>(){
+    private GridCloseableIterator<T> curIt;
+    private int idx;
+{
+      try {
+        advance();
+      }
+ catch (      IgniteCheckedException e) {
+        e.printStackTrace();
+      }
+    }
+    private void advance() throws IgniteCheckedException {
+      curIt=null;
+      while (idx < segs.length) {
+        curIt=segs[idx++].iterator(c);
+        if (curIt.hasNext())         return;
+ else         curIt.close();
+      }
+      curIt=null;
+    }
+    @Override protected T onNext() throws IgniteCheckedException {
+      if (curIt == null)       throw new NoSuchElementException();
+      T t=curIt.next();
+      if (!curIt.hasNext()) {
+        curIt.close();
+        advance();
+      }
+      return t;
+    }
+    @Override protected boolean onHasNext(){
+      return curIt != null;
+    }
+    @Override protected void onRemove(){
+      throw new UnsupportedOperationException();
+    }
+    @Override protected void onClose() throws IgniteCheckedException {
+      if (curIt != null)       curIt.close();
+    }
+  }
+;
+}

@@ -1,0 +1,22 @@
+{
+  Collection<GridJobExecuteResponse> resList=null;
+synchronized (mux) {
+    if (state != State.WAITING)     return;
+    if (jobRes != null) {
+      for (      GridJobResultImpl jr : jobRes.values()) {
+        if (!jr.hasResponse() && jr.getNode().id().equals(nodeId)) {
+          if (log.isDebugEnabled())           log.debug("Creating fake response because node left grid [job=" + jr.getJob() + ", nodeId="+ nodeId+ ']');
+          GridJobExecuteResponse fakeRes=new GridJobExecuteResponse(nodeId,ses.getId(),jr.getJobContext().getJobId(),null,null,null,null,null,null,false);
+          fakeRes.setFakeException(new ClusterTopologyException("Node has left grid: " + nodeId));
+          if (resList == null)           resList=new ArrayList<>();
+          resList.add(fakeRes);
+        }
+      }
+    }
+  }
+  if (resList == null)   return;
+  for (  GridJobExecuteResponse res : resList) {
+    if (log.isDebugEnabled())     log.debug("Simulating fake response from left node [res=" + res + ", nodeId="+ nodeId+ ']');
+    onResponse(res);
+  }
+}

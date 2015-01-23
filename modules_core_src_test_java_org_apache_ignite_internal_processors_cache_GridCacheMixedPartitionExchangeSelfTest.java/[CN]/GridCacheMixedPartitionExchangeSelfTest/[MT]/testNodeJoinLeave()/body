@@ -1,0 +1,49 @@
+{
+  try {
+    cache=true;
+    startGrids(4);
+    awaitPartitionMapExchange();
+    final AtomicBoolean finished=new AtomicBoolean();
+    IgniteFuture<Long> fut=GridTestUtils.runMultiThreadedAsync(new IgniteCallable<Object>(){
+      @Override public Object call() throws Exception {
+        Random rnd=new Random();
+        int keys=100;
+        while (!finished.get()) {
+          int g=rnd.nextInt(4);
+          int key=rnd.nextInt(keys);
+          GridCache<Integer,Integer> prj=grid(g).cache(null);
+          try (IgniteTx tx=prj.txStart(PESSIMISTIC,REPEATABLE_READ)){
+            Integer val=prj.get(key);
+            val=val == null ? 1 : val + 1;
+            prj.put(key,val);
+            tx.commit();
+          }
+         }
+        return null;
+      }
+    }
+,4,"async-runner");
+    cache=false;
+    for (int r=0; r < 3; r++) {
+      for (int i=4; i < 8; i++)       startGrid(i);
+      for (int i=4; i < 8; i++)       stopGrid(i);
+    }
+    cache=true;
+    startGrid(4);
+    U.sleep(500);
+    finished.set(true);
+    fut.get();
+    long topVer=grid(0).topologyVersion();
+    assertEquals(29,topVer);
+    for (int i=0; i < 4; i++) {
+      GridKernal grid=(GridKernal)grid(i);
+      GridCacheContext<Object,Object> cctx=grid.internalCache(null).context();
+      IgniteFuture<Long> verFut=cctx.affinity().affinityReadyFuture(topVer);
+      assertEquals((Long)topVer,verFut.get());
+      assertEquals((Long)topVer,cctx.topologyVersionFuture().get());
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

@@ -1,0 +1,45 @@
+{
+  GridCache<String,Integer> nearCache=cache();
+  GridCache<String,Integer> primary=fullCache();
+  Collection<String> keys=primaryKeysForCache(primary,3);
+  info("Keys: " + keys);
+  Map<String,Integer> vals=new HashMap<>(keys.size());
+  int i=0;
+  for (  String key : keys) {
+    nearCache.put(key,i);
+    vals.put(key,i);
+    i++;
+  }
+  for (  String key : keys)   assertEquals(vals.get(key),nearCache.peek(key));
+  nearCache.clearAll();
+  for (  String key : keys)   assertNull(nearCache.peek(key));
+  for (  Map.Entry<String,Integer> entry : vals.entrySet())   nearCache.put(entry.getKey(),entry.getValue());
+  for (  String key : keys)   assertEquals(vals.get(key),nearCache.peek(key));
+  String first=F.first(keys);
+  assertTrue(nearCache.lock(first,0L));
+  nearCache.clearAll();
+  assertEquals(vals.get(first),nearCache.peek(first));
+  assertEquals(vals.get(first),primary.peek(first));
+  nearCache.unlock(first);
+  nearCache.projection(gte100).clear(first);
+  assertEquals(vals.get(first),nearCache.peek(first));
+  assertEquals(vals.get(first),primary.peek(first));
+  nearCache.put(first,101);
+  nearCache.projection(gte100).clear(first);
+  assertTrue(nearCache.isEmpty());
+  assertFalse(primary.isEmpty());
+  i=0;
+  for (  String key : keys) {
+    nearCache.put(key,i);
+    vals.put(key,i);
+    i++;
+  }
+  nearCache.put(first,101);
+  vals.put(first,101);
+  nearCache.projection(gte100).clear(first);
+  for (  String key : keys)   assertEquals(vals.get(key),primary.peek(key));
+  for (  String key : keys) {
+    if (first.equals(key))     assertNull(nearCache.peek(key));
+ else     assertEquals(vals.get(key),nearCache.peek(key));
+  }
+}
