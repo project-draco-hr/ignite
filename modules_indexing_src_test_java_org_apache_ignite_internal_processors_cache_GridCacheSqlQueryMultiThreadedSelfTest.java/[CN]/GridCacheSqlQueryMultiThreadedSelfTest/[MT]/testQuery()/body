@@ -1,15 +1,15 @@
 {
-  final GridCache<Integer,Person> cache=grid(0).cache(null);
+  final Cache<Integer,Person> cache=grid(0).cache(null);
   for (int i=0; i < 2000; i++)   cache.put(i,new Person(i));
   GridTestUtils.runMultiThreaded(new Callable<Void>(){
     @Override public Void call() throws Exception {
       for (int i=0; i < 100; i++) {
-        GridCacheQuery<Map.Entry<Integer,Person>> qry=cache.queries().createSqlQuery("Person","age >= 0");
+        CacheQuery<Map.Entry<Integer,Person>> qry=cache.queries().createSqlQuery("Person","age >= 0");
         qry.includeBackups(false);
         qry.enableDedup(true);
         qry.keepAll(true);
         qry.pageSize(50);
-        GridCacheQueryFuture<Map.Entry<Integer,Person>> fut=qry.execute();
+        CacheQueryFuture<Map.Entry<Integer,Person>> fut=qry.execute();
         int cnt=0;
         while (fut.next() != null)         cnt++;
         assertEquals(2000,cnt);

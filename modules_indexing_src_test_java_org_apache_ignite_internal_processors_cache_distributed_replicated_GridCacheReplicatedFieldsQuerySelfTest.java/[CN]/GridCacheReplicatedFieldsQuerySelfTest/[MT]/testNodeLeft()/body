@@ -4,12 +4,12 @@
     final Map<UUID,Map<Long,GridFutureAdapter<GridQueryFieldsResult>>> map=U.field(((GridKernal)grid(0)).internalCache().context().queries(),"fieldsQryRes");
     map.clear();
     Ignite g=startGrid();
-    GridCache<Integer,Integer> cache=g.cache(null);
-    GridCacheQuery<List<?>> q=cache.queries().createSqlFieldsQuery("select _key from Integer where _key >= " + "0 order by _key");
+    Cache<Integer,Integer> cache=g.cache(null);
+    CacheQuery<List<?>> q=cache.queries().createSqlFieldsQuery("select _key from Integer where _key >= " + "0 order by _key");
     q.pageSize(50);
     ClusterGroup prj=g.cluster().forNodes(Arrays.asList(g.cluster().localNode(),grid(0).localNode()));
     q=q.projection(prj);
-    GridCacheQueryFuture<List<?>> fut=q.execute();
+    CacheQueryFuture<List<?>> fut=q.execute();
     assertEquals(0,fut.next().get(0));
     assertTrue(GridTestUtils.waitForCondition(new PA(){
       @Override public boolean apply(){

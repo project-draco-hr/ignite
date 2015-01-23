@@ -1,7 +1,7 @@
 {
   startGrids(GRID_CNT);
   final String queueName=UUID.randomUUID().toString();
-  GridCacheQueue<Integer> queue0=grid(0).cache(null).dataStructures().queue(queueName,QUEUE_CAPACITY,false,true);
+  CacheQueue<Integer> queue0=grid(0).cache(null).dataStructures().queue(queueName,QUEUE_CAPACITY,false,true);
   assertTrue(queue0.isEmpty());
   grid(0).compute().broadcast(new AddAllJob(queueName,RETRIES));
   assertEquals(GRID_CNT * RETRIES,queue0.size());
@@ -16,7 +16,7 @@
     @Override public Collection<Integer> call() throws Exception {
       Collection<Integer> values=new ArrayList<>();
       grid.log().info("Running job [node=" + grid.cluster().localNode().id() + ", job="+ this+ "]");
-      GridCacheQueue<Integer> locQueue=grid.cache(null).dataStructures().queue(queueName,QUEUE_CAPACITY,false,true);
+      CacheQueue<Integer> locQueue=grid.cache(null).dataStructures().queue(queueName,QUEUE_CAPACITY,false,true);
       grid.log().info("Queue size " + locQueue.size());
       for (      Integer element : locQueue)       values.add(element);
       return values;

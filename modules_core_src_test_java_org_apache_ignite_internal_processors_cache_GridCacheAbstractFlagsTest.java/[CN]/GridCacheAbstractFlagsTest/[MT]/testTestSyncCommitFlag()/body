@@ -7,14 +7,14 @@
     IgniteFuture<?> f=multithreadedAsync(new Callable(){
       @Override public Object call() throws Exception {
         int idx=cntr.getAndIncrement() % gridCount();
-        GridCache<String,Integer> c=cache(idx);
+        Cache<String,Integer> c=cache(idx);
         l.await();
         assertEquals(val,c.get(key));
         return null;
       }
     }
 ,gridCount() * 3);
-    cache(0).flagsOn(GridCacheFlag.SYNC_COMMIT).put(key,val);
+    cache(0).flagsOn(CacheFlag.SYNC_COMMIT).put(key,val);
     l.countDown();
     f.get();
   }

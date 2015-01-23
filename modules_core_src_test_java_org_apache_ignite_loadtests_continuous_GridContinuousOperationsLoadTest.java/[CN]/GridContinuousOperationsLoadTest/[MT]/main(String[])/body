@@ -22,7 +22,7 @@
   X.println("The test will start with the following parameters:");
   dumpProperties(System.out);
   try (Ignite ignite=Ignition.start(cfgPath)){
-    final GridCache<Object,Object> cache=ignite.cache(cacheName);
+    final Cache<Object,Object> cache=ignite.cache(cacheName);
     if (cache == null)     throw new IgniteCheckedException("Cache is not configured: " + cacheName);
     final GridCacheContinuousQueryManager contQryMgr=((GridCacheAdapter)((GridCacheProxyImpl)cache).cache()).context().continuousQueries();
     if (contQryMgr == null)     throw new IgniteCheckedException("Could not access GridCacheContinuousQueryManager");
@@ -31,7 +31,7 @@
     final AtomicLong updCntr=new AtomicLong();
     for (int i=0; i < parallelCnt; i++) {
       if (useQry) {
-        GridCacheContinuousQuery<Object,Object> qry=cache.queries().createContinuousQuery();
+        CacheContinuousQuery<Object,Object> qry=cache.queries().createContinuousQuery();
         qry.callback(new PX2<UUID,Collection<Map.Entry<Object,Object>>>(){
           @Override public boolean applyx(          UUID uuid,          Collection<Map.Entry<Object,Object>> entries) throws IgniteInterruptedException {
             if (cbSleepMs > 0)             U.sleep(cbSleepMs);

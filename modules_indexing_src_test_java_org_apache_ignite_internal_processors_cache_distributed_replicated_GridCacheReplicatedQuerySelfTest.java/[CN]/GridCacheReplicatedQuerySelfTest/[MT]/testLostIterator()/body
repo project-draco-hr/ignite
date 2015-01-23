@@ -1,16 +1,16 @@
 {
-  GridCache<Integer,Integer> cache=ignite.cache(null);
+  Cache<Integer,Integer> cache=ignite.cache(null);
   for (int i=0; i < 1000; i++)   assertTrue(cache.putx(i,i));
-  GridCacheQueryFuture<Map.Entry<Integer,Integer>> fut=null;
+  CacheQueryFuture<Map.Entry<Integer,Integer>> fut=null;
   for (int i=0; i < cache.configuration().getMaximumQueryIteratorCount() + 1; i++) {
-    GridCacheQuery<Map.Entry<Integer,Integer>> q=cache.queries().createSqlQuery(Integer.class,"_key >= 0 order by _key").projection(ignite.cluster());
+    CacheQuery<Map.Entry<Integer,Integer>> q=cache.queries().createSqlQuery(Integer.class,"_key >= 0 order by _key").projection(ignite.cluster());
     q.pageSize(200);
     q.enableDedup(true);
-    GridCacheQueryFuture<Map.Entry<Integer,Integer>> f=q.execute();
+    CacheQueryFuture<Map.Entry<Integer,Integer>> f=q.execute();
     assertEquals(0,(int)f.next().getKey());
     if (fut == null)     fut=f;
   }
-  final GridCacheQueryFuture<Map.Entry<Integer,Integer>> fut0=fut;
+  final CacheQueryFuture<Map.Entry<Integer,Integer>> fut0=fut;
   GridTestUtils.assertThrows(log,new Callable<Object>(){
     @Override public Object call() throws Exception {
       int i=0;

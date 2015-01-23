@@ -2,20 +2,20 @@
   try (Ignite g=Ignition.start("examples/config/example-cache.xml")){
     System.out.println();
     System.out.println(">>> Cache continuous query example started.");
-    GridCache<Integer,String> cache=g.cache(CACHE_NAME);
+    Cache<Integer,String> cache=g.cache(CACHE_NAME);
     cache.globalClearAll(0);
     int keyCnt=20;
     for (int i=0; i < keyCnt; i++)     cache.putx(i,Integer.toString(i));
-    try (GridCacheContinuousQuery<Integer,String> qry=cache.queries().createContinuousQuery()){
-      qry.localCallback(new IgniteBiPredicate<UUID,Collection<GridCacheContinuousQueryEntry<Integer,String>>>(){
-        @Override public boolean apply(        UUID nodeId,        Collection<GridCacheContinuousQueryEntry<Integer,String>> entries){
-          for (          GridCacheContinuousQueryEntry<Integer,String> e : entries)           System.out.println("Queried entry [key=" + e.getKey() + ", val="+ e.getValue()+ ']');
+    try (CacheContinuousQuery<Integer,String> qry=cache.queries().createContinuousQuery()){
+      qry.localCallback(new IgniteBiPredicate<UUID,Collection<CacheContinuousQueryEntry<Integer,String>>>(){
+        @Override public boolean apply(        UUID nodeId,        Collection<CacheContinuousQueryEntry<Integer,String>> entries){
+          for (          CacheContinuousQueryEntry<Integer,String> e : entries)           System.out.println("Queried entry [key=" + e.getKey() + ", val="+ e.getValue()+ ']');
           return true;
         }
       }
 );
-      qry.remoteFilter(new IgnitePredicate<GridCacheContinuousQueryEntry<Integer,String>>(){
-        @Override public boolean apply(        GridCacheContinuousQueryEntry<Integer,String> e){
+      qry.remoteFilter(new IgnitePredicate<CacheContinuousQueryEntry<Integer,String>>(){
+        @Override public boolean apply(        CacheContinuousQueryEntry<Integer,String> e){
           return e.getKey() > 15;
         }
       }

@@ -1,7 +1,7 @@
 {
-  GridCache<Integer,Object> cache=ignite.cache(null);
+  Cache<Integer,Object> cache=ignite.cache(null);
   Object val=new Object(){
-    @GridCacheQuerySqlField private int field1=10;
+    @CacheQuerySqlField private int field1=10;
     @Override public String toString(){
       return "Test anonymous object.";
     }
@@ -9,11 +9,11 @@
 ;
   assertTrue(val.getClass().getName().endsWith("GridCacheAbstractQuerySelfTest$16"));
   assertTrue(cache.putx(1,val));
-  GridCacheQuery<Map.Entry<Integer,Object>> q=cache.queries().createSqlQuery(val.getClass(),"_key >= 0");
+  CacheQuery<Map.Entry<Integer,Object>> q=cache.queries().createSqlQuery(val.getClass(),"_key >= 0");
   q.enableDedup(true);
   Collection<Map.Entry<Integer,Object>> res=q.execute().get();
   assertEquals(1,res.size());
-  GridCacheQuery<List<?>> fieldsQry=cache.queries().createSqlFieldsQuery("select field1 from GridCacheAbstractQuerySelfTest_16");
+  CacheQuery<List<?>> fieldsQry=cache.queries().createSqlFieldsQuery("select field1 from GridCacheAbstractQuerySelfTest_16");
   fieldsQry.enableDedup(true);
   Collection<List<?>> fieldsRes=fieldsQry.execute().get();
   assertEquals(1,fieldsRes.size());

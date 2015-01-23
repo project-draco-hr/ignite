@@ -1,21 +1,21 @@
 {
   if (cc.getCacheMode() == REPLICATED) {
-    if (cc.getAffinity() instanceof GridCachePartitionFairAffinity)     throw new IgniteCheckedException("REPLICATED cache can not be started with GridCachePartitionFairAffinity" + " [cacheName=" + cc.getName() + ']');
-    if (cc.getAffinity() instanceof GridCacheConsistentHashAffinityFunction) {
-      GridCacheConsistentHashAffinityFunction aff=(GridCacheConsistentHashAffinityFunction)cc.getAffinity();
-      if (aff.isExcludeNeighbors())       throw new IgniteCheckedException("For REPLICATED cache flag 'excludeNeighbors' in " + "GridCacheConsistentHashAffinityFunction cannot be set [cacheName=" + cc.getName() + ']');
+    if (cc.getAffinity() instanceof CachePartitionFairAffinity)     throw new IgniteCheckedException("REPLICATED cache can not be started with CachePartitionFairAffinity" + " [cacheName=" + cc.getName() + ']');
+    if (cc.getAffinity() instanceof CacheConsistentHashAffinityFunction) {
+      CacheConsistentHashAffinityFunction aff=(CacheConsistentHashAffinityFunction)cc.getAffinity();
+      if (aff.isExcludeNeighbors())       throw new IgniteCheckedException("For REPLICATED cache flag 'excludeNeighbors' in " + "CacheConsistentHashAffinityFunction cannot be set [cacheName=" + cc.getName() + ']');
     }
-    if (cc.getAffinity() instanceof GridCacheRendezvousAffinityFunction) {
-      GridCacheRendezvousAffinityFunction aff=(GridCacheRendezvousAffinityFunction)cc.getAffinity();
-      if (aff.isExcludeNeighbors())       throw new IgniteCheckedException("For REPLICATED cache flag 'excludeNeighbors' in " + "GridCacheRendezvousAffinityFunction cannot be set [cacheName=" + cc.getName() + ']');
+    if (cc.getAffinity() instanceof CacheRendezvousAffinityFunction) {
+      CacheRendezvousAffinityFunction aff=(CacheRendezvousAffinityFunction)cc.getAffinity();
+      if (aff.isExcludeNeighbors())       throw new IgniteCheckedException("For REPLICATED cache flag 'excludeNeighbors' in " + "CacheRendezvousAffinityFunction cannot be set [cacheName=" + cc.getName() + ']');
     }
     if (cc.getDistributionMode() == NEAR_PARTITIONED) {
       U.warn(log,"NEAR_PARTITIONED distribution mode cannot be used with REPLICATED cache, " + "will be changed to PARTITIONED_ONLY [cacheName=" + cc.getName() + ']');
       cc.setDistributionMode(PARTITIONED_ONLY);
     }
   }
-  if (cc.getCacheMode() == LOCAL && !cc.getAffinity().getClass().equals(LocalAffinityFunction.class))   U.warn(log,"GridCacheAffinityFunction configuration parameter will be ignored for local cache [cacheName=" + cc.getName() + ']');
-  if (cc.getPreloadMode() != GridCachePreloadMode.NONE) {
+  if (cc.getCacheMode() == LOCAL && !cc.getAffinity().getClass().equals(LocalAffinityFunction.class))   U.warn(log,"CacheAffinityFunction configuration parameter will be ignored for local cache [cacheName=" + cc.getName() + ']');
+  if (cc.getPreloadMode() != CachePreloadMode.NONE) {
     assertParameter(cc.getPreloadThreadPoolSize() > 0,"preloadThreadPoolSize > 0");
     assertParameter(cc.getPreloadBatchSize() > 0,"preloadBatchSize > 0");
   }
@@ -65,7 +65,7 @@ break;
 default :
 throw new IllegalStateException("Unknown memory mode: " + cc.getMemoryMode());
 }
-if (cc.getMemoryMode() == GridCacheMemoryMode.OFFHEAP_VALUES) {
+if (cc.getMemoryMode() == CacheMemoryMode.OFFHEAP_VALUES) {
 if (cc.isQueryIndexEnabled()) throw new IgniteCheckedException("Cannot have query indexing enabled while values are stored off-heap. " + "You must either disable query indexing or disable off-heap values only flag for cache: " + cc.getName());
 }
 boolean ggfsCache=CU.isGgfsCache(c,cc.getName());

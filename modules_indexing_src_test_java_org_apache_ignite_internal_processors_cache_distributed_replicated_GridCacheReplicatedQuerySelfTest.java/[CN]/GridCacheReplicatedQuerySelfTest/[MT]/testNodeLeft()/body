@@ -1,12 +1,12 @@
 {
   try {
     Ignite g=startGrid();
-    GridCache<Integer,Integer> cache=g.cache(null);
+    Cache<Integer,Integer> cache=g.cache(null);
     for (int i=0; i < 1000; i++)     assertTrue(cache.putx(i,i));
-    GridCacheQuery<Map.Entry<Integer,Integer>> q=cache.queries().createSqlQuery(Integer.class,"_key >= 0 order by _key").projection(ignite.cluster());
+    CacheQuery<Map.Entry<Integer,Integer>> q=cache.queries().createSqlQuery(Integer.class,"_key >= 0 order by _key").projection(ignite.cluster());
     q.pageSize(50);
     q.projection(g.cluster().forNodes(Arrays.asList(g.cluster().localNode(),grid(0).localNode())));
-    GridCacheQueryFuture<Map.Entry<Integer,Integer>> fut=q.execute();
+    CacheQueryFuture<Map.Entry<Integer,Integer>> fut=q.execute();
     assertEquals(0,(int)fut.next().getKey());
     final ConcurrentMap<UUID,Map<Long,GridFutureAdapter<GridCloseableIterator<IgniteBiTuple<Integer,Integer>>>>> map=U.field(((GridKernal)grid(0)).internalCache().context().queries(),"qryIters");
     assertTrue(GridTestUtils.waitForCondition(new PA(){
