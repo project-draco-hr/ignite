@@ -1,5 +1,14 @@
 {
+  assertTrue(startCalled);
+  assertNotNull(ignite);
   log.info("WriteAll: " + entries);
   writerCallCnt.incrementAndGet();
-  for (  Cache.Entry<? extends Integer,? extends Integer> e : entries)   storeMap.put(e.getKey(),e.getValue());
+  Iterator<Cache.Entry<? extends Integer,? extends Integer>> it=entries.iterator();
+  while (it.hasNext()) {
+    Cache.Entry<? extends Integer,? extends Integer> e=it.next();
+    storeMap.put(e.getKey(),e.getValue());
+    it.remove();
+  }
+  assertTrue(entries.isEmpty());
+  assertEquals(0,entries.size());
 }

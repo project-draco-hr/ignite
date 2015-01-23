@@ -6,18 +6,8 @@
   }
  else {
     if (store != null) {
-      Map<K,IgniteBiTuple<V,GridCacheVersion>> map0;
-      if (convertPortable) {
-        map0=U.newHashMap(map.size());
-        for (        Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e : map.entrySet()) {
-          IgniteBiTuple<V,GridCacheVersion> t=e.getValue();
-          map0.put((K)cctx.unwrapPortableIfNeeded(e.getKey(),false),F.t((V)cctx.unwrapPortableIfNeeded(t.get1(),false),t.get2()));
-        }
-      }
- else       map0=map;
-      if (log.isDebugEnabled())       log.debug("Storing values in cache store [map=" + map0 + ']');
-      Collection<Cache.Entry<? extends K,?>> entries=new ArrayList<>(map.size());
-      for (      Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e : map.entrySet())       entries.add(new CacheEntryImpl<>(e.getKey(),locStore ? e.getValue() : e.getValue().get1()));
+      EntriesView entries=new EntriesView(map);
+      if (log.isDebugEnabled())       log.debug("Storing values in cache store [entries=" + entries + ']');
       initSession(tx);
       try {
         store.writeAll(entries);
@@ -31,12 +21,13 @@ catch (      Exception e) {
           for (          Cache.Entry<?,?> entry : entries)           keys.add(entry.getKey());
           throw new CacheStorePartialUpdateException(keys,e);
         }
+        if (!(e instanceof CacheWriterException))         e=new CacheWriterException(e);
         throw new IgniteCheckedException(e);
       }
  finally {
         sesHolder.set(null);
       }
-      if (log.isDebugEnabled())       log.debug("Stored value in cache store [map=" + map0 + ']');
+      if (log.isDebugEnabled())       log.debug("Stored value in cache store [entries=" + entries + ']');
       return true;
     }
     return false;
