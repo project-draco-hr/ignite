@@ -1,0 +1,35 @@
+{
+  final IgniteCache<String,Integer> cache=jcache();
+  assertEquals("null",cache.invoke("k0",INCR_PROCESSOR));
+  assertEquals((Integer)1,cache.get("k0"));
+  assertEquals("1",cache.invoke("k0",INCR_PROCESSOR));
+  assertEquals((Integer)2,cache.get("k0"));
+  cache.put("k1",1);
+  assertEquals("1",cache.invoke("k1",INCR_PROCESSOR));
+  assertEquals((Integer)2,cache.get("k1"));
+  assertEquals("2",cache.invoke("k1",INCR_PROCESSOR));
+  assertEquals((Integer)3,cache.get("k1"));
+  EntryProcessor<String,Integer,Integer> c=new EntryProcessor<String,Integer,Integer>(){
+    @Override public Integer process(    MutableEntry<String,Integer> e,    Object... args){
+      e.remove();
+      return null;
+    }
+  }
+;
+  assertNull(cache.invoke("k1",c));
+  assertNull(cache.get("k1"));
+  for (int i=0; i < gridCount(); i++)   assertNull(cache(i).peek("k1"));
+  final EntryProcessor<String,Integer,Integer> errProcessor=new EntryProcessor<String,Integer,Integer>(){
+    @Override public Integer process(    MutableEntry<String,Integer> e,    Object... args){
+      throw new EntryProcessorException("Test entry processor exception.");
+    }
+  }
+;
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      cache.invoke("k1",errProcessor);
+      return null;
+    }
+  }
+,EntryProcessorException.class,"Test entry processor exception.");
+}

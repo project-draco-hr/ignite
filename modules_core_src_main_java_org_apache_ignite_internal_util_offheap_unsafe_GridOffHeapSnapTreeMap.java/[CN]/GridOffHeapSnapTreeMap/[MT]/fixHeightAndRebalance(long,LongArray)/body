@@ -1,0 +1,40 @@
+{
+  while (node != 0 && parent(node) > 0) {
+    final int condition=nodeCondition(node);
+    if (condition == NothingRequired || isUnlinked(shrinkOVL(node))) {
+      return;
+    }
+    if (condition != UnlinkRequired && condition != RebalanceRequired) {
+      long n=node;
+      KeyLock.Lock l=lock.lock(n);
+      try {
+        if (isUnlinked(shrinkOVL(node)))         return;
+        node=fixHeight_nl(node);
+      }
+  finally {
+        if (l != null)         l.unlock();
+      }
+    }
+ else {
+      final long nParent=parent(node);
+      if (nParent <= 0)       continue;
+      KeyLock.Lock pl=lock.lock(nParent);
+      try {
+        if (!isUnlinked(shrinkOVL(nParent)) && parent(node) == nParent) {
+          long n=node;
+          KeyLock.Lock nl=lock.lock(n);
+          try {
+            if (isUnlinked(shrinkOVL(node)))             return;
+            node=rebalance_nl(nParent,node,unlinked);
+          }
+  finally {
+            if (nl != null)             nl.unlock();
+          }
+        }
+      }
+  finally {
+        if (pl != null)         pl.unlock();
+      }
+    }
+  }
+}

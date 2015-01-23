@@ -1,0 +1,32 @@
+{
+  final String queueName=UUID.randomUUID().toString();
+  info("Queue name: " + queueName + ", collocated: "+ collocated);
+  try {
+    Collection<IgniteFuture> futs=new ArrayList<>();
+    final int THREADS_PER_NODE=3;
+    final int ITEMS_PER_THREAD=1000;
+    for (int i=0; i < GRID_CNT; i++) {
+      final int idx=i;
+      futs.add(GridTestUtils.runMultiThreadedAsync(new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          GridCache cache=grid(idx).cache(null);
+          CacheQueue<Integer> queue=cache.dataStructures().queue(queueName,0,collocated,true);
+          for (int i=0; i < ITEMS_PER_THREAD; i++)           assertTrue(queue.add(i));
+          return null;
+        }
+      }
+,THREADS_PER_NODE,"testPutMultiNode"));
+    }
+    for (    IgniteFuture fut : futs)     fut.get();
+    GridCache cache=grid(0).cache(null);
+    CacheQueue<Integer> queue=cache.dataStructures().queue(queueName,0,collocated,true);
+    assertEquals(THREADS_PER_NODE * ITEMS_PER_THREAD * GRID_CNT,queue.size());
+    int[] items=new int[ITEMS_PER_THREAD];
+    Integer item;
+    while ((item=queue.poll()) != null)     items[item]++;
+    for (int i=0; i < ITEMS_PER_THREAD; i++)     assertEquals(THREADS_PER_NODE * GRID_CNT,items[i]);
+  }
+  finally {
+    grid(0).cache(null).dataStructures().removeQueue(queueName);
+  }
+}

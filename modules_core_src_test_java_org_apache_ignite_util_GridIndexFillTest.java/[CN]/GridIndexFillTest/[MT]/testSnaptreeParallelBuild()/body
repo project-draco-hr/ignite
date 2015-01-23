@@ -1,0 +1,25 @@
+{
+  final AtomicBoolean stop=new AtomicBoolean();
+  IgniteFuture<?> fut=multithreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      ThreadLocalRandom rnd=ThreadLocalRandom.current();
+      while (!stop.get()) {
+        int k=rnd.nextInt(100);
+        long v=rnd.nextLong(10);
+        if (rnd.nextBoolean())         put(k,v);
+ else         remove(k);
+      }
+      return null;
+    }
+  }
+,12,"put");
+  Thread.sleep(500);
+  Idx newIdx=new Idx(false);
+  idxs.add(newIdx);
+  SnapTreeMap<Integer,Long> snap=idxs.get(0).tree.clone();
+  for (  Map.Entry<Integer,Long> entry : snap.entrySet())   newIdx.addX(entry.getKey(),entry.getValue());
+  newIdx.finish();
+  stop.set(true);
+  fut.get();
+  assertEquals(idxs.get(0).tree,idxs.get(1).tree);
+}

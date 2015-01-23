@@ -1,0 +1,20 @@
+{
+  if (busyLock.enterBusy()) {
+    try {
+      validTxState(false);
+      IgniteTx tx=metaCache.txStart(PESSIMISTIC,REPEATABLE_READ);
+      try {
+        Object prev=val != null ? metaCache.put(sampling,val) : metaCache.remove(sampling);
+        tx.commit();
+        return !F.eq(prev,val);
+      }
+  finally {
+        tx.close();
+      }
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to set sampling flag because Grid is stopping.");
+}

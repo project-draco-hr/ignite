@@ -1,0 +1,30 @@
+{
+  final GridHadoopExecutorService exec=new GridHadoopExecutorService(log,"_GRID_NAME_",10,5);
+  for (int i=0; i < 5; i++) {
+    final int loops=5000;
+    int threads=17;
+    final LongAdder sum=new LongAdder();
+    multithreaded(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        for (int i=0; i < loops; i++) {
+          exec.submit(new Callable<Void>(){
+            @Override public Void call() throws Exception {
+              sum.increment();
+              return null;
+            }
+          }
+);
+        }
+        return null;
+      }
+    }
+,threads);
+    while (exec.active() != 0) {
+      X.println("__ active: " + exec.active());
+      Thread.sleep(200);
+    }
+    assertEquals(threads * loops,sum.sum());
+    X.println("_ ok");
+  }
+  assertTrue(exec.shutdown(0));
+}

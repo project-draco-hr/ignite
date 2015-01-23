@@ -1,0 +1,18 @@
+{
+  gate.enter();
+  try {
+    if (cctx.transactional())     return CU.outTx(new Callable<Boolean>(){
+      @Override public Boolean call() throws Exception {
+        return delegate.addAll(items);
+      }
+    }
+,cctx);
+    return delegate.addAll(items);
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+ finally {
+    gate.leave();
+  }
+}

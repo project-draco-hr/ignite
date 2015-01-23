@@ -1,0 +1,47 @@
+{
+  File file=new File(url.getFile());
+  if (!file.exists() || !file.isFile())   throw new IgniteCheckedException("File doesn't exists: " + url);
+  int linesToRead=to - from + 1;
+  int linesRead=0;
+  if (linesToRead <= 0)   return Collections.emptyList();
+  LinkedList<String> lines=new LinkedList<>();
+  RandomAccessFile raf=null;
+  try {
+    raf=new RandomAccessFile(file,"r");
+    byte[] buf=new byte[Math.min(16 * 1024,linesToRead * LINE_LENGTH)];
+    long endPos=raf.length();
+    String lastLineEnding=null;
+    do {
+      long startPos=endPos - buf.length;
+      if (startPos < 0)       startPos=0;
+      raf.seek(startPos);
+      int bytesRead=raf.read(buf,0,(int)(endPos - startPos));
+      Scanner rdr=new Scanner(new GridByteArrayInputStream(buf,0,bytesRead));
+      List<String> tmpLines=new LinkedList<>();
+      boolean firstLine=true;
+      String fst=null;
+      while (rdr.hasNextLine()) {
+        String line=rdr.nextLine();
+        if (firstLine) {
+          firstLine=false;
+          if (startPos > 0)           fst=lastLineEnding != null && !rdr.hasNextLine() ? line + lastLineEnding : line;
+ else           tmpLines.add(lastLineEnding != null ? line + lastLineEnding : line);
+        }
+ else         if (rdr.hasNextLine())         tmpLines.add(line);
+ else         tmpLines.add(lastLineEnding != null ? line + lastLineEnding : line);
+      }
+      lastLineEnding=fst;
+      endPos=startPos;
+      for (ListIterator<String> it=tmpLines.listIterator(tmpLines.size()); it.hasPrevious(); ) {
+        linesRead++;
+        String prev=it.previous();
+        if ((linesRead >= -to) && (linesRead <= -from))         lines.addFirst(prev);
+      }
+    }
+ while (linesRead < -from && endPos > 0);
+  }
+  finally {
+    U.close(raf,log);
+  }
+  return lines;
+}

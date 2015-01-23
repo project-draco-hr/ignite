@@ -1,0 +1,33 @@
+{
+  A.ensure(cnt >= 0,"cnt >= 0");
+  if (cnt == 0)   return Collections.emptyList();
+  if (cnt == 1)   return F.asList(node(key,p));
+  int hash=hash(key);
+  Collection<N> failed=new GridLeanSet<>();
+  rw.readLock().lock();
+  try {
+    if (circle.isEmpty())     return Collections.emptyList();
+    int size=nodes.size();
+    List<N> ret=new ArrayList<>(Math.min(cnt,size));
+    for (    SortedSet<N> set : circle.tailMap(hash,true).values()) {
+      for (      N n : set) {
+        if (ret.contains(n) || failed.contains(n))         continue;
+        if (apply(p,n))         ret.add(n);
+ else         failed.add(n);
+        if (cnt == ret.size() || size == ret.size() + failed.size())         return ret;
+      }
+    }
+    for (    SortedSet<N> set : circle.headMap(hash,false).values()) {
+      for (      N n : set) {
+        if (ret.contains(n) || failed.contains(n))         continue;
+        if (apply(p,n))         ret.add(n);
+ else         failed.add(n);
+        if (cnt == ret.size() || size == ret.size() + failed.size())         return ret;
+      }
+    }
+    return ret;
+  }
+  finally {
+    rw.readLock().unlock();
+  }
+}

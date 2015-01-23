@@ -1,0 +1,35 @@
+{
+  final AtomicBoolean done=new AtomicBoolean();
+  final ConcurrentLinkedDeque8<Byte> queue=new ConcurrentLinkedDeque8<>();
+  IgniteFuture<?> pollFut=multithreadedAsync(new Callable<Object>(){
+    @Nullable @Override public Object call() throws Exception {
+      info("Thread started.");
+      while (!done.get())       try {
+        queue.poll();
+      }
+ catch (      Throwable t) {
+        error("Error in poll thread.",t);
+        done.set(true);
+      }
+      info("Thread finished.");
+      return null;
+    }
+  }
+,5,"queue-poll");
+  IgniteFuture<?> prodFut=multithreadedAsync(new Callable<Object>(){
+    @Nullable @Override public Object call() throws Exception {
+      info("Thread started.");
+      while (!done.get()) {
+        Node<Byte> n=queue.addx((byte)1);
+        if (RND.nextBoolean())         queue.unlinkx(n);
+      }
+      info("Thread finished.");
+      return null;
+    }
+  }
+,5,"queue-prod");
+  Thread.sleep(2 * 60 * 1000);
+  done.set(true);
+  pollFut.get();
+  prodFut.get();
+}

@@ -1,0 +1,44 @@
+{
+  A.notNull(c,"job");
+  if (c instanceof ComputeJobMasterLeaveAware) {
+    return new GridMasterLeaveAwareComputeJobAdapter(){
+      /** 
+ */
+      @CacheName private final String cn=cacheName;
+      /** 
+ */
+      @CacheAffinityKeyMapped private final Object ak=affKey;
+      @Override public Object execute(){
+        try {
+          return c.call();
+        }
+ catch (        Exception e) {
+          throw new IgniteException(e);
+        }
+      }
+      @Override public void onMasterNodeLeft(      ComputeTaskSession ses) throws IgniteCheckedException {
+        ((ComputeJobMasterLeaveAware)c).onMasterNodeLeft(ses);
+      }
+    }
+;
+  }
+ else {
+    return new ComputeJobAdapter(){
+      /** 
+ */
+      @CacheName private final String cn=cacheName;
+      /** 
+ */
+      @CacheAffinityKeyMapped private final Object ak=affKey;
+      @Override public Object execute(){
+        try {
+          return c.call();
+        }
+ catch (        Exception e) {
+          throw new IgniteException(e);
+        }
+      }
+    }
+;
+  }
+}

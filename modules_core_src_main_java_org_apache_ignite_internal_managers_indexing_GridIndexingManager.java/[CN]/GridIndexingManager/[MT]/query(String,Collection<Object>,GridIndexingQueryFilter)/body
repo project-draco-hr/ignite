@@ -1,0 +1,33 @@
+{
+  if (!enabled())   throw new IgniteCheckedException("Indexing SPI is not configured.");
+  if (!busyLock.enterBusy())   throw new IllegalStateException("Failed to execute query (grid is stopping).");
+  try {
+    final Iterator<?> res=getSpi().query(space,params,filters);
+    if (res == null)     return new GridEmptyCloseableIterator<>();
+    return new IgniteSpiCloseableIterator<Object>(){
+      @Override public void close() throws IgniteCheckedException {
+        if (res instanceof AutoCloseable) {
+          try {
+            ((AutoCloseable)res).close();
+          }
+ catch (          Exception e) {
+            throw new IgniteCheckedException(e);
+          }
+        }
+      }
+      @Override public boolean hasNext(){
+        return res.hasNext();
+      }
+      @Override public Object next(){
+        return res.next();
+      }
+      @Override public void remove(){
+        throw new UnsupportedOperationException();
+      }
+    }
+;
+  }
+  finally {
+    busyLock.leaveBusy();
+  }
+}

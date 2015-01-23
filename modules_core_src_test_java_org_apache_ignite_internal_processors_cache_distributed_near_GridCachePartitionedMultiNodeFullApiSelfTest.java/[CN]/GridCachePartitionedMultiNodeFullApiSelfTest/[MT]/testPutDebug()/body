@@ -1,0 +1,24 @@
+{
+  for (int i=0; i < gridCount(); i++)   info(">>>>> Grid" + i + ": "+ grid(i).localNode().id());
+  int size=10;
+  GridCache<Object,Object> prj0=grid(0).cache(null);
+  for (int i=0; i < size; i++) {
+    info("Putting value [i=" + i + ']');
+    assertNull(prj0.put(i,i));
+    info("Finished putting value [i=" + i + ']');
+  }
+  for (int i=0; i < gridCount(); i++) {
+    assertEquals(0,context(i).tm().idMapSize());
+    GridCache<Object,Object> cache=grid(i).cache(null);
+    ClusterNode node=grid(i).localNode();
+    for (int k=0; k < size; k++) {
+      if (cache.affinity().isPrimaryOrBackup(node,k))       assertEquals("Check failed for node: " + node.id(),k,cache.peek(k));
+    }
+  }
+  for (int i=0; i < size; i++) {
+    info("Putting value 2 [i=" + i + ']');
+    assertEquals(i,prj0.putIfAbsent(i,i * i));
+    info("Finished putting value 2 [i=" + i + ']');
+  }
+  for (int i=0; i < size; i++)   assertEquals(i,prj0.get(i));
+}

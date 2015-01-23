@@ -1,0 +1,20 @@
+{
+  IgniteConfiguration c=super.getConfiguration(gridName);
+  c.getTransactionsConfiguration().setTxSerializableEnabled(true);
+  CacheConfiguration cc=defaultCacheConfiguration();
+  cc.setCacheMode(PARTITIONED);
+  cc.setBackups(1);
+  cc.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  cc.setEvictionPolicy(new CacheFifoEvictionPolicy<>(1000));
+  cc.setNearEvictionPolicy(new GridCacheAlwaysEvictionPolicy());
+  cc.setSwapEnabled(false);
+  cc.setAtomicityMode(TRANSACTIONAL);
+  cc.setDistributionMode(NEAR_PARTITIONED);
+  cc.setEvictSynchronized(false);
+  cc.setEvictNearSynchronized(false);
+  c.setCacheConfiguration(cc);
+  TcpDiscoverySpi spi=new TcpDiscoverySpi();
+  spi.setIpFinder(ipFinder);
+  c.setDiscoverySpi(spi);
+  return c;
+}

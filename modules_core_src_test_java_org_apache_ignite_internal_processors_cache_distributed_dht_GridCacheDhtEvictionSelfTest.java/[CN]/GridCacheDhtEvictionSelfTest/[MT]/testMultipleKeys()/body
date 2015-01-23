@@ -1,0 +1,58 @@
+{
+  final int keyCnt=1000;
+  final Ignite primaryIgnite=grid(0);
+  final Ignite backupIgnite=grid(1);
+  GridNearCacheAdapter<Integer,String> nearPrimary=near(primaryIgnite);
+  GridDhtCacheAdapter<Integer,String> dhtPrimary=dht(primaryIgnite);
+  GridNearCacheAdapter<Integer,String> nearBackup=near(backupIgnite);
+  GridDhtCacheAdapter<Integer,String> dhtBackup=dht(backupIgnite);
+  Collection<Integer> keys=new ArrayList<>(keyCnt);
+  for (int key=0; keys.size() < keyCnt; key++)   if (F.eqNodes(primaryIgnite.cluster().localNode(),F.first(keyNodes(key))))   keys.add(key++);
+  info("Test keys: " + keys);
+  for (  Integer key : keys)   nearPrimary.put(key,"v" + key,null);
+  for (  Integer key : keys) {
+    String val="v" + key;
+    assertEquals(val,nearPrimary.peek(key));
+    assertEquals(val,dhtPrimary.peek(key));
+    assertEquals(val,nearBackup.peek(key));
+    assertEquals(val,dhtBackup.peek(key));
+  }
+  final AtomicInteger cntBackup=new AtomicInteger();
+  IgniteFuture<IgniteEvent> futBackup=waitForLocalEvent(backupIgnite.events(),new P1<IgniteEvent>(){
+    @Override public boolean apply(    IgniteEvent e){
+      return e.node().id().equals(backupIgnite.cluster().localNode().id()) && cntBackup.incrementAndGet() == keyCnt;
+    }
+  }
+,EVT_CACHE_ENTRY_EVICTED);
+  final AtomicInteger cntPrimary=new AtomicInteger();
+  IgniteFuture<IgniteEvent> futPrimary=waitForLocalEvent(primaryIgnite.events(),new P1<IgniteEvent>(){
+    @Override public boolean apply(    IgniteEvent e){
+      return e.node().id().equals(primaryIgnite.cluster().localNode().id()) && cntPrimary.incrementAndGet() == keyCnt;
+    }
+  }
+,EVT_CACHE_ENTRY_EVICTED);
+  for (  Integer key : keys) {
+    boolean evicted=primaryIgnite.cache(null).evict(key);
+    assert evicted;
+  }
+  futBackup.get(3000);
+  futPrimary.get(3000);
+  info("nearBackupSize: " + nearBackup.size());
+  info("dhtBackupSize: " + dhtBackup.size());
+  info("nearPrimarySize: " + nearPrimary.size());
+  info("dhtPrimarySize: " + dhtPrimary.size());
+  for (  Integer key : keys) {
+    String msg="Failed key: " + key;
+    assertNull(msg,nearBackup.peek(key));
+    assertNull(msg,dhtBackup.peek(key));
+    assertNull(msg,nearBackup.peekExx(key));
+    assertNull(msg,dhtBackup.peekExx(key));
+  }
+  for (  Integer key : keys) {
+    String msg="Failed key: " + key;
+    assertNull(msg,nearPrimary.peek(key));
+    assertNull(msg,dhtPrimary.peek(key));
+    assertNull(msg,nearPrimary.peekExx(key));
+    assertNull(dhtPrimary.peekExx(key));
+  }
+}

@@ -1,0 +1,53 @@
+{
+  GridNioServerListener lsnr=new GridNioServerListenerAdapter(){
+    @Override public void onConnected(    GridNioSession ses){
+    }
+    @Override public void onDisconnected(    GridNioSession ses,    @Nullable Exception e){
+    }
+    @Override public void onMessage(    GridNioSession ses,    Object msg){
+      ses.send(msg);
+    }
+  }
+;
+  GridNioServer<?> srvr=startServer(PORT,new GridPlainParser(),lsnr);
+  final AtomicLong cnt=new AtomicLong();
+  final AtomicBoolean running=new AtomicBoolean(true);
+  try {
+    IgniteFuture<?> fut=multithreadedAsync(new Runnable(){
+      @Override public void run(){
+        try {
+          byte[] msg=new byte[MSG_SIZE];
+          for (int i=0; i < msg.length; i++)           msg[i]=(byte)(i ^ (i * i - 1));
+          try (Socket s=createSocket()){
+            s.connect(new InetSocketAddress(U.getLocalHost(),PORT),1000);
+            OutputStream out=s.getOutputStream();
+            InputStream in=new BufferedInputStream(s.getInputStream());
+            while (running.get()) {
+              validateSendMessage0(msg,out,in);
+              cnt.incrementAndGet();
+            }
+          }
+         }
+ catch (        Exception e) {
+          e.printStackTrace();
+        }
+      }
+    }
+,THREAD_CNT);
+    long old=0;
+    long interval=5000;
+    for (int i=0; i < 5; i++) {
+      long l=cnt.get();
+      U.sleep(interval);
+      long msgRate=(l - old) * 1000 / interval;
+      long netSaturation=(l - old) * MSG_SIZE * 2* 8 / (1024 * 1024);
+      System.out.println(">>>>>>> Rate=" + msgRate + " msg/sec, Sat="+ netSaturation+ " MBit/s");
+      old=l;
+    }
+    running.set(false);
+    fut.get();
+  }
+  finally {
+    srvr.stop();
+  }
+}

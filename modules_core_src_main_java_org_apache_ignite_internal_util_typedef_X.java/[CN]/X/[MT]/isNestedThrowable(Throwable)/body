@@ -1,0 +1,21 @@
+{
+  if (throwable == null)   return false;
+  if (throwable instanceof SQLException || throwable instanceof InvocationTargetException)   return true;
+  if (isThrowableNested())   return true;
+  Class<?> cls=throwable.getClass();
+  for (  String CAUSE_MTD_NAME : CAUSE_MTD_NAMES) {
+    try {
+      Method mtd=cls.getMethod(CAUSE_MTD_NAME,null);
+      if (mtd != null && Throwable.class.isAssignableFrom(mtd.getReturnType()))       return true;
+    }
+ catch (    NoSuchMethodException|SecurityException ignored) {
+    }
+  }
+  try {
+    Field field=cls.getField("detail");
+    if (field != null)     return true;
+  }
+ catch (  NoSuchFieldException|SecurityException ignored) {
+  }
+  return false;
+}

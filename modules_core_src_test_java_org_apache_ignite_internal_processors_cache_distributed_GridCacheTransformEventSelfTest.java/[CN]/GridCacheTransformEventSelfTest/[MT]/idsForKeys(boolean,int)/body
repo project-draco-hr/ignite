@@ -1,0 +1,20 @@
+{
+  List<UUID> res=new ArrayList<>();
+  if (cacheMode == LOCAL) {
+    for (    int key : keys)     res.add(ids[0]);
+  }
+ else   if (cacheMode == PARTITIONED) {
+    for (    int key : keys) {
+      for (int i=0; i < GRID_CNT; i++) {
+        if (primary(i,key) || (!primaryOnly && backup(i,key)))         res.add(ids[i]);
+      }
+    }
+  }
+ else   if (cacheMode == REPLICATED) {
+    for (    int key : keys) {
+      if (primaryOnly)       res.add(grid(0).cache(CACHE_NAME).affinity().mapKeyToNode(key).id());
+ else       res.addAll(Arrays.asList(ids));
+    }
+  }
+  return res.toArray(new UUID[res.size()]);
+}

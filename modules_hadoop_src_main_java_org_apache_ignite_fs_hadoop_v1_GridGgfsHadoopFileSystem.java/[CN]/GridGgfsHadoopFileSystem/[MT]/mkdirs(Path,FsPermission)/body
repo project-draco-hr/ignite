@@ -1,0 +1,28 @@
+{
+  A.notNull(f,"f");
+  enterBusy();
+  try {
+    IgniteFsPath path=convert(f);
+    IgniteFsMode mode=mode(path);
+    if (mode == PROXY) {
+      if (secondaryFs == null) {
+        assert mgmt;
+        return false;
+      }
+      if (clientLog.isLogEnabled())       clientLog.logMakeDirectory(path,PROXY);
+      return secondaryFs.mkdirs(toSecondary(f),perm);
+    }
+ else {
+      boolean mkdirRes=rmtClient.mkdirs(path,permission(perm));
+      if (clientLog.isLogEnabled())       clientLog.logMakeDirectory(path,mode);
+      return mkdirRes;
+    }
+  }
+ catch (  IOException e) {
+    if (F.eq(IOException.class,e.getClass()) && (e.getCause() == null || !IgniteFsException.class.isAssignableFrom(e.getCause().getClass())))     throw e;
+ else     return false;
+  }
+ finally {
+    leaveBusy();
+  }
+}

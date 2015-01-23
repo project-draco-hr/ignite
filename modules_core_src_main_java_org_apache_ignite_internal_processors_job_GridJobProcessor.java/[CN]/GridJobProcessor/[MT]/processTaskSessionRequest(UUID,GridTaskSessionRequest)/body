@@ -1,0 +1,29 @@
+{
+  rwLock.readLock();
+  try {
+    if (stopping) {
+      if (log.isDebugEnabled())       log.debug("Received job session request while stopping grid (will ignore): " + req);
+      return;
+    }
+    GridTaskSessionImpl ses=ctx.session().getSession(req.getSessionId());
+    if (ses == null) {
+      if (log.isDebugEnabled())       log.debug("Received job session request for non-existing session: " + req);
+      return;
+    }
+    boolean loc=ctx.localNodeId().equals(nodeId) && !ctx.config().isMarshalLocalJobs();
+    Map<?,?> attrs=loc ? req.getAttributes() : (Map<?,?>)marsh.unmarshal(req.getAttributesBytes(),ses.getClassLoader());
+    if (ctx.event().isRecordable(EVT_TASK_SESSION_ATTR_SET)) {
+      IgniteEvent evt=new IgniteTaskEvent(ctx.discovery().localNode(),"Changed attributes: " + attrs,EVT_TASK_SESSION_ATTR_SET,ses.getId(),ses.getTaskName(),ses.getTaskClassName(),false,null);
+      ctx.event().record(evt);
+    }
+synchronized (ses) {
+      ses.setInternal(attrs);
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    U.error(log,"Failed to deserialize session attributes.",e);
+  }
+ finally {
+    rwLock.readUnlock();
+  }
+}

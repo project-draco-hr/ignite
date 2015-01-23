@@ -1,0 +1,22 @@
+{
+  A.notNull(endpoint,"endpoint cannot be null");
+  A.notNull(dir,"dir cannot be null");
+  A.ensure(batchSize > 0,"batch size cannot be negative");
+  enabled=true;
+  this.endpoint=endpoint;
+  this.batchSize=batchSize;
+  pid=U.jvmPid();
+  File dirFile=new File(dir);
+  A.ensure(dirFile.isDirectory(),"dir must point to a directory");
+  A.ensure(dirFile.exists(),"dir must exist");
+  file=new File(dirFile,"ggfs-log-" + ggfsName + "-"+ pid+ ".csv");
+  entries=new ConcurrentLinkedDeque8<>();
+  cnt=new AtomicInteger();
+  useCnt=new AtomicInteger();
+  rwLock=new ReentrantReadWriteLock();
+  flushLock=new ReentrantLock();
+  flushCond=flushLock.newCondition();
+  flushWorker=new Thread(new FlushWorker());
+  flushWorker.setDaemon(true);
+  flushWorker.start();
+}
