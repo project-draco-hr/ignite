@@ -1,0 +1,21 @@
+{
+  if (!F.isEmpty(committedVers) || !F.isEmpty(rolledbackVers)) {
+    GridCacheMvccCandidate<K> prev=null;
+    GridCacheMvccCandidate<K> owner=null;
+    V val;
+synchronized (this) {
+      checkObsolete();
+      GridCacheMvcc<K> mvcc=mvccExtras();
+      if (mvcc != null) {
+        prev=mvcc.anyOwner();
+        boolean emptyBefore=mvcc.isEmpty();
+        owner=mvcc.orderCompleted(baseVer,committedVers,rolledbackVers);
+        boolean emptyAfter=mvcc.isEmpty();
+        checkCallbacks(emptyBefore,emptyAfter);
+        if (emptyAfter)         mvccExtras(null);
+      }
+      val=this.val;
+    }
+    checkOwnerChanged(prev,owner,val);
+  }
+}

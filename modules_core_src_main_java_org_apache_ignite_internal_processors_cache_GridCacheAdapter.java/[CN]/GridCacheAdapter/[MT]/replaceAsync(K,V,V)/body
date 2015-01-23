@@ -1,0 +1,24 @@
+{
+  A.notNull(key,"key",oldVal,"oldVal",newVal,"newVal");
+  if (keyCheck)   validateCacheKey(key);
+  validateCacheValue(oldVal);
+  validateCacheValue(newVal);
+  ctx.denyOnLocalRead();
+  return asyncOp(new AsyncOp<Boolean>(key){
+    @Override public IgniteFuture<Boolean> op(    IgniteTxLocalAdapter<K,V> tx){
+      if (ctx.deploymentEnabled()) {
+        try {
+          ctx.deploy().registerClass(oldVal);
+        }
+ catch (        IgniteCheckedException e) {
+          return new GridFinishedFuture<>(ctx.kernalContext(),e);
+        }
+      }
+      return tx.putAllAsync(ctx,F.t(key,newVal),false,null,-1,ctx.equalsPeekArray(oldVal)).chain((IgniteClosure<IgniteFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
+    }
+    @Override public String toString(){
+      return "replaceAsync [key=" + key + ", oldVal="+ oldVal+ ", newVal="+ newVal+ ']';
+    }
+  }
+);
+}

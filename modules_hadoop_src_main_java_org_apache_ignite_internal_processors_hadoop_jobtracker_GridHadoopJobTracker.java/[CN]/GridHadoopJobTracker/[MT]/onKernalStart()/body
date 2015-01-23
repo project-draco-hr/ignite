@@ -1,0 +1,40 @@
+{
+  super.onKernalStart();
+  CacheContinuousQuery<GridHadoopJobId,GridHadoopJobMetadata> qry=jobMetaCache().queries().createContinuousQuery();
+  qry.callback(new IgniteBiPredicate<UUID,Collection<Map.Entry<GridHadoopJobId,GridHadoopJobMetadata>>>(){
+    @Override public boolean apply(    UUID nodeId,    final Collection<Map.Entry<GridHadoopJobId,GridHadoopJobMetadata>> evts){
+      if (!busyLock.tryReadLock())       return false;
+      try {
+        evtProcSvc.submit(new EventHandler(){
+          @Override protected void body() throws IgniteCheckedException {
+            processJobMetadataUpdates(evts);
+          }
+        }
+);
+        return true;
+      }
+  finally {
+        busyLock.readUnlock();
+      }
+    }
+  }
+);
+  qry.execute();
+  ctx.kernalContext().event().addLocalEventListener(new GridLocalEventListener(){
+    @Override public void onEvent(    final IgniteEvent evt){
+      if (!busyLock.tryReadLock())       return;
+      try {
+        evtProcSvc.submit(new EventHandler(){
+          @Override protected void body(){
+            processNodeLeft((IgniteDiscoveryEvent)evt);
+          }
+        }
+);
+      }
+  finally {
+        busyLock.readUnlock();
+      }
+    }
+  }
+,IgniteEventType.EVT_NODE_FAILED,IgniteEventType.EVT_NODE_LEFT);
+}

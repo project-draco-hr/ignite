@@ -1,0 +1,30 @@
+{
+  UUID clientId=req.clientId();
+  byte[] sesTok=req.sessionToken();
+  if (sesTok != null) {
+    GridSecureSession ses=ctx.secureSession().validateSession(REMOTE_CLIENT,clientId,sesTok,null);
+    if (ses != null)     return ses.authenticationSubjectContext();
+  }
+  AuthenticationContextAdapter authCtx=new AuthenticationContextAdapter();
+  authCtx.subjectType(REMOTE_CLIENT);
+  authCtx.subjectId(req.clientId());
+  GridSecurityCredentials cred;
+  if (req.credentials() instanceof GridSecurityCredentials)   cred=(GridSecurityCredentials)req.credentials();
+ else   if (req.credentials() instanceof String) {
+    String credStr=(String)req.credentials();
+    int idx=credStr.indexOf(':');
+    cred=idx >= 0 && idx < credStr.length() ? new GridSecurityCredentials(credStr.substring(0,idx),credStr.substring(idx + 1)) : new GridSecurityCredentials(credStr,null);
+  }
+ else {
+    cred=new GridSecurityCredentials();
+    cred.setUserObject(req.credentials());
+  }
+  authCtx.address(req.address());
+  authCtx.credentials(cred);
+  GridSecurityContext subjCtx=ctx.security().authenticate(authCtx);
+  if (subjCtx == null) {
+    if (req.credentials() == null)     throw new IgniteCheckedException("Failed to authenticate remote client (secure session SPI not set?): " + req);
+ else     throw new IgniteCheckedException("Failed to authenticate remote client (invalid credentials?): " + req);
+  }
+  return subjCtx;
+}

@@ -1,0 +1,21 @@
+{
+  if (cacheMode() != PARTITIONED)   return;
+  final String setName=SET_NAME + "testCollocation";
+  Set<Integer> set0=grid(0).cache("noBackupsCache").dataStructures().set(setName,true,true);
+  try {
+    for (int i=0; i < 1000; i++)     assertTrue(set0.add(i));
+    assertEquals(1000,set0.size());
+    UUID setNodeId=null;
+    for (int i=0; i < gridCount(); i++) {
+      GridKernal grid=(GridKernal)grid(i);
+      Iterator<GridCacheEntryEx<Object,Object>> entries=grid.context().cache().internalCache("noBackupsCache").map().allEntries0().iterator();
+      if (entries.hasNext()) {
+        if (setNodeId == null)         setNodeId=grid.localNode().id();
+ else         fail("For collocated set all items should be stored on single node.");
+      }
+    }
+  }
+  finally {
+    grid(0).cache("noBackupsCache").dataStructures().removeSet(setName);
+  }
+}

@@ -1,0 +1,24 @@
+{
+  assertEquals(GridClientRandomBalancer.class,cfg.getBalancer().getClass());
+  assertEquals(10000,cfg.getConnectTimeout());
+  assertEquals(null,cfg.getSecurityCredentialsProvider());
+  assertEquals(expDataCfgs,cfg.getDataConfigurations().size());
+  if (expDataCfgs == 2) {
+    GridClientDataConfiguration nullCfg=cfg.getDataConfiguration(null);
+    assertEquals(null,nullCfg.getName());
+    assertEquals(null,nullCfg.getAffinity());
+    assertEquals(GridClientRandomBalancer.class,nullCfg.getPinnedBalancer().getClass());
+    GridClientDataConfiguration partCfg=cfg.getDataConfiguration("partitioned");
+    assertEquals("partitioned",partCfg.getName());
+    assertEquals(GridClientPartitionAffinity.class,partCfg.getAffinity().getClass());
+    assertEquals(GridClientRoundRobinBalancer.class,partCfg.getPinnedBalancer().getClass());
+  }
+  assertEquals(DFLT_MAX_CONN_IDLE_TIME,cfg.getMaxConnectionIdleTime());
+  assertEquals(GridClientProtocol.TCP,cfg.getProtocol());
+  assertEquals(Arrays.asList("localhost:11211"),new ArrayList<>(cfg.getServers()));
+  assertEquals(true,cfg.isEnableAttributesCache());
+  assertEquals(true,cfg.isEnableMetricsCache());
+  assertEquals(true,cfg.isTcpNoDelay());
+  assertEquals(null,cfg.getSslContextFactory(),null);
+  assertEquals(DFLT_TOP_REFRESH_FREQ,cfg.getTopologyRefreshFrequency());
+}

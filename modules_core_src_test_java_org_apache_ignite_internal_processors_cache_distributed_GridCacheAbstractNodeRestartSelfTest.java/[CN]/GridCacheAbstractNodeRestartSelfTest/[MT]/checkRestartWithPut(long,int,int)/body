@@ -1,0 +1,72 @@
+{
+  final long endTime=System.currentTimeMillis() + duration;
+  final AtomicReference<Throwable> err=new AtomicReference<>();
+  startGrids();
+  Collection<Thread> threads=new LinkedList<>();
+  try {
+    final int logFreq=20;
+    final AtomicInteger putCntr=new AtomicInteger();
+    final CyclicBarrier barrier=new CyclicBarrier(putThreads + restartThreads);
+    for (int i=0; i < putThreads; i++) {
+      final int gridIdx=i;
+      Thread t=new Thread(new Runnable(){
+        @Override public void run(){
+          try {
+            barrier.await();
+            info("Starting put thread...");
+            GridCache<Integer,String> cache=grid(gridIdx).cache(CACHE_NAME);
+            while (System.currentTimeMillis() < endTime && err.get() == null) {
+              int key=RAND.nextInt(keyCnt);
+              try {
+                cache.put(key,Integer.toString(key));
+              }
+ catch (              IgniteTxRollbackException|ClusterTopologyException ignored) {
+              }
+              int c=putCntr.incrementAndGet();
+              if (c % logFreq == 0)               info(">>> Put iteration [cnt=" + c + ", key="+ key+ ']');
+            }
+          }
+ catch (          Exception e) {
+            err.compareAndSet(null,e);
+            error("Failed to put value in cache.",e);
+          }
+        }
+      }
+,"put-worker-" + i);
+      t.start();
+      threads.add(t);
+    }
+    for (int i=0; i < restartThreads; i++) {
+      final int gridIdx=i + putThreads;
+      Thread t=new Thread(new Runnable(){
+        @Override public void run(){
+          try {
+            barrier.await();
+            info("Starting restart thread...");
+            int cnt=0;
+            while (System.currentTimeMillis() < endTime && err.get() == null) {
+              log.info(">>>>>>> Stopping grid " + gridIdx);
+              stopGrid(gridIdx);
+              log.info(">>>>>>> Starting grid " + gridIdx);
+              startGrid(gridIdx);
+              int c=++cnt;
+              if (c % logFreq == 0)               info(">>> Restart iteration: " + c);
+            }
+          }
+ catch (          Exception e) {
+            err.compareAndSet(null,e);
+            error("Failed to restart grid node.",e);
+          }
+        }
+      }
+,"restart-worker-" + i);
+      t.start();
+      threads.add(t);
+    }
+    for (    Thread t : threads)     t.join();
+    if (err.get() != null)     throw err.get();
+  }
+  finally {
+    stopAllGrids();
+  }
+}

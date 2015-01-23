@@ -1,0 +1,27 @@
+{
+  if (ids == null)   assertTrue(evts.isEmpty());
+ else {
+    assertEquals(ids.length,evts.size());
+    for (    UUID id : ids) {
+      IgniteCacheEvent foundEvt=null;
+      for (      IgniteCacheEvent evt : evts) {
+        if (F.eq(id,evt.node().id())) {
+          assertEquals(CLO_NAME,evt.closureClassName());
+          foundEvt=evt;
+          break;
+        }
+      }
+      if (foundEvt == null) {
+        int gridIdx=-1;
+        for (int i=0; i < GRID_CNT; i++) {
+          if (F.eq(this.ids[i],id)) {
+            gridIdx=i;
+            break;
+          }
+        }
+        fail("Expected transform event was not triggered on the node [nodeId=" + id + ", key1Primary="+ primary(gridIdx,key1)+ ", key1Backup="+ backup(gridIdx,key1)+ ", key2Primary="+ primary(gridIdx,key2)+ ", key2Backup="+ backup(gridIdx,key2)+ ']');
+      }
+ else       evts.remove(foundEvt);
+    }
+  }
+}

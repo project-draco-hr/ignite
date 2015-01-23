@@ -1,0 +1,13 @@
+{
+  int maxOrder=0;
+  for (  CacheConfiguration cfg : cfgs) {
+    int preloadOrder=cfg.getPreloadOrder();
+    if (preloadOrder > 0) {
+      if (cfg.getCacheMode() == LOCAL)       throw new IgniteCheckedException("Preload order set for local cache (fix configuration and restart the " + "node): " + cfg.getName());
+      if (cfg.getPreloadMode() == CachePreloadMode.NONE)       throw new IgniteCheckedException("Only caches with SYNC or ASYNC preload mode can be set as preload " + "dependency for other caches [cacheName=" + cfg.getName() + ", preloadMode="+ cfg.getPreloadMode()+ ", preloadOrder="+ cfg.getPreloadOrder()+ ']');
+      maxOrder=Math.max(maxOrder,preloadOrder);
+    }
+ else     if (preloadOrder < 0)     throw new IgniteCheckedException("Preload order cannot be negative for cache (fix configuration and restart " + "the node) [cacheName=" + cfg.getName() + ", preloadOrder="+ preloadOrder+ ']');
+  }
+  return maxOrder;
+}

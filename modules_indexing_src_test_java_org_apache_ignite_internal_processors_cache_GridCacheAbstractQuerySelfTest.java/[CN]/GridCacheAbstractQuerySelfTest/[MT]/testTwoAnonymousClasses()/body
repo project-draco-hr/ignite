@@ -1,0 +1,21 @@
+{
+  GridCache<Integer,Object> cache=ignite.cache(null);
+  Object val1=new Object(){
+    @Override public String toString(){
+      return "Test anonymous object1.";
+    }
+  }
+;
+  Object val2=new Object(){
+    @Override public String toString(){
+      return "Test anonymous object2.";
+    }
+  }
+;
+  assertTrue(cache.putx(1,val1));
+  assertTrue(cache.putx(2,val2));
+  CacheQuery<Map.Entry<Integer,Object>> q=cache.queries().createSqlQuery(val1.getClass(),"_key >= 0");
+  q.enableDedup(true);
+  Collection<Map.Entry<Integer,Object>> res=q.execute().get();
+  assertEquals(1,res.size());
+}

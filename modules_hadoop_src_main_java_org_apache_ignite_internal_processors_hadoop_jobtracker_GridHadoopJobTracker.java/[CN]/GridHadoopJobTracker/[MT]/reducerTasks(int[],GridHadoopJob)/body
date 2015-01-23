@@ -1,0 +1,18 @@
+{
+  UUID locNodeId=ctx.localNodeId();
+  GridHadoopJobId jobId=job.id();
+  JobLocalState state=activeJobs.get(jobId);
+  Collection<GridHadoopTaskInfo> tasks=null;
+  if (reducers != null) {
+    if (state == null)     state=initState(job.id());
+    for (    int rdc : reducers) {
+      if (state.addReducer(rdc)) {
+        if (log.isDebugEnabled())         log.debug("Submitting REDUCE task for execution [locNodeId=" + locNodeId + ", rdc="+ rdc+ ']');
+        GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo(REDUCE,jobId,rdc,0,null);
+        if (tasks == null)         tasks=new ArrayList<>();
+        tasks.add(taskInfo);
+      }
+    }
+  }
+  return tasks;
+}

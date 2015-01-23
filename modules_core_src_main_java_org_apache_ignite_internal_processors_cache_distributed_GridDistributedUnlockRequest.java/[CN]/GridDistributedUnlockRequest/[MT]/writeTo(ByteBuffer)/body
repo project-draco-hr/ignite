@@ -1,0 +1,28 @@
+{
+  commState.setBuffer(buf);
+  if (!super.writeTo(buf))   return false;
+  if (!commState.typeWritten) {
+    if (!commState.putByte(directType()))     return false;
+    commState.typeWritten=true;
+  }
+switch (commState.idx) {
+case 8:
+    if (keyBytes != null) {
+      if (commState.it == null) {
+        if (!commState.putInt(keyBytes.size()))         return false;
+        commState.it=keyBytes.iterator();
+      }
+      while (commState.it.hasNext() || commState.cur != NULL) {
+        if (commState.cur == NULL)         commState.cur=commState.it.next();
+        if (!commState.putByteArray((byte[])commState.cur))         return false;
+        commState.cur=NULL;
+      }
+      commState.it=null;
+    }
+ else {
+      if (!commState.putInt(-1))       return false;
+    }
+  commState.idx++;
+}
+return true;
+}

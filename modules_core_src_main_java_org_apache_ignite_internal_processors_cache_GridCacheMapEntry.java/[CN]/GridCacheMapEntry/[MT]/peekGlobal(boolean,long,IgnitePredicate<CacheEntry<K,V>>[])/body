@@ -1,0 +1,27 @@
+{
+  if (!valid(topVer))   return null;
+  boolean rmv=false;
+  try {
+    while (true) {
+      GridCacheVersion ver;
+      V val;
+synchronized (this) {
+        if (checkExpired()) {
+          rmv=markObsolete0(cctx.versions().next(this.ver),true);
+          return null;
+        }
+        checkObsolete();
+        ver=this.ver;
+        val=rawGetOrUnmarshalUnlocked(false);
+      }
+      if (!cctx.isAll(wrap(false),filter))       return F.t(CU.<V>failed(failFast));
+      if (F.isEmptyOrNulls(filter) || ver.equals(version()))       return F.t(val);
+    }
+  }
+  finally {
+    if (rmv) {
+      onMarkedObsolete();
+      cctx.cache().map().removeEntry(this);
+    }
+  }
+}

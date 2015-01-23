@@ -1,0 +1,82 @@
+{
+  System.setProperty(IgniteSystemProperties.GG_UPDATE_NOTIFIER,"false");
+  logo();
+  Options options=createOptions();
+  CommandLineParser parser=new PosixParser();
+  String cfgPath=null;
+  long minTtl=DFLT_MIN_TIMEOUT;
+  long maxTtl=DFLT_MAX_TIMEOUT;
+  long duration=DFLT_RUN_TIMEOUT;
+  String logCfgPath=null;
+  try {
+    CommandLine cmd=parser.parse(options,args);
+    if (cmd.hasOption(OPTION_HELP))     exit(null,options,0);
+    if (!cmd.hasOption(OPTION_LOG_CFG))     exit("-log should be set",options,-1);
+ else     logCfgPath=cmd.getOptionValue(OPTION_LOG_CFG);
+    if (cmd.hasOption(OPTION_CFG))     cfgPath=cmd.getOptionValue(OPTION_CFG);
+    try {
+      if (cmd.hasOption(OPTION_DURATION))       duration=Long.parseLong(cmd.getOptionValue(OPTION_DURATION));
+    }
+ catch (    NumberFormatException ignored) {
+      exit("Invalid argument for option: " + OPTION_DURATION,options,-1);
+    }
+    try {
+      if (cmd.hasOption(OPTION_MIN_TTL))       minTtl=Long.parseLong(cmd.getOptionValue(OPTION_MIN_TTL));
+    }
+ catch (    NumberFormatException ignored) {
+      exit("Invalid argument for option: " + OPTION_MIN_TTL,options,-1);
+    }
+    try {
+      if (cmd.hasOption(OPTION_MAX_TTL))       maxTtl=Long.parseLong(cmd.getOptionValue(OPTION_MAX_TTL));
+    }
+ catch (    NumberFormatException ignored) {
+      exit("Invalid argument for option: " + OPTION_MAX_TTL,options,-1);
+    }
+    if (minTtl >= maxTtl)     exit("Invalid arguments for options: " + OPTION_MAX_TTL + ", "+ OPTION_MIN_TTL,options,-1);
+  }
+ catch (  ParseException e) {
+    exit(e.getMessage(),options,-1);
+  }
+  System.out.println("Configuration path: " + cfgPath);
+  System.out.println("Log4j configuration path: " + logCfgPath);
+  System.out.println("Duration: " + duration);
+  System.out.println("Minimum TTL: " + minTtl);
+  System.out.println("Maximum TTL: " + maxTtl);
+  G.addListener(new IgniteListener(){
+    @Override public void onStateChange(    String name,    IgniteState state){
+      if (state == STOPPED && latch != null)       latch.countDown();
+    }
+  }
+);
+  Random rand=new Random();
+  long now=System.currentTimeMillis();
+  long end=duration + System.currentTimeMillis();
+  try {
+    while (now < end) {
+      G.start(getConfiguration(cfgPath,logCfgPath));
+      long delay=rand.nextInt((int)(maxTtl - minTtl)) + minTtl;
+      delay=(now + delay > end) ? (end - now) : delay;
+      now=System.currentTimeMillis();
+      echo("Time left (ms): " + (end - now));
+      echo("Going to sleep for (ms): " + delay);
+      Thread.sleep(delay);
+      G.stopAll(false);
+      now=System.currentTimeMillis();
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    echo(e);
+    exit("Failed to start grid: " + e.getMessage(),null,-1);
+  }
+catch (  InterruptedException e) {
+    echo("Loader was interrupted (exiting): " + e.getMessage());
+  }
+  latch=new CountDownLatch(G.allGrids().size());
+  try {
+    while (latch.getCount() > 0)     latch.await();
+  }
+ catch (  InterruptedException e) {
+    echo("Loader was interrupted (exiting): " + e.getMessage());
+  }
+  System.exit(0);
+}
