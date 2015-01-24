@@ -3,12 +3,18 @@
     CacheQuery qry=new GridCacheQueryAdapter<>(ctx,SET,null,null,null,new GridSetQueryPredicate<>(id,collocated),false,false);
     Collection<ClusterNode> nodes=dataNodes(ctx.affinity().affinityTopologyVersion());
     qry.projection(ctx.grid().forNodes(nodes));
-    CacheQueryFuture<T> fut=qry.execute();
-    SetIterator<T> it=new SetIterator<>(fut);
-    itFuts.put(it.weakReference(),fut);
+    CacheQueryFuture<Map.Entry<T,?>> fut=qry.execute();
+    CacheWeakQueryIteratorsHolder.WeakQueryFutureIterator it=ctx.itHolder().iterator(fut,new CacheIteratorConverter<T,Map.Entry<T,?>>(){
+      @Override protected T convert(      Map.Entry<T,?> e){
+        return e.getKey();
+      }
+      @Override protected void remove(      T item){
+        GridCacheSetImpl.this.remove(item);
+      }
+    }
+);
     if (rmvd) {
-      itFuts.remove(it.weakReference());
-      it.close();
+      ctx.itHolder().removeIterator(it);
       checkRemoved();
     }
     return it;
