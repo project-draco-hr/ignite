@@ -1,13 +1,14 @@
 {
   IgniteCache<Integer,String> near=jcache();
-  near.lock(1).lock();
+  Lock lock=near.lock(1);
+  lock.lock();
   try {
     near.put(1,"1");
     assertEquals("1",near.localPeek(1));
     assertEquals("1",dht().peek(1));
     assertTrue(near.isLocalLocked(1,false));
     assertTrue(near.isLocalLocked(1,true));
-    near.lock(1).lock();
+    lock.lock();
     try {
       assertEquals("1",near.get(1));
       assertEquals("1",near.getAndRemove(1));
@@ -17,13 +18,13 @@
       assertTrue(near.isLocalLocked(1,true));
     }
   finally {
-      near.lock(1).unlock();
+      lock.unlock();
     }
     assertTrue(near.isLocalLocked(1,false));
     assertTrue(near.isLocalLocked(1,true));
   }
   finally {
-    near.lock(1).unlock();
+    lock.unlock();
   }
   assertFalse(near.isLocalLocked(1,false));
   assertFalse(near.isLocalLocked(1,true));

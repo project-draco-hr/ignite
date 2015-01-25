@@ -1,20 +1,20 @@
 {
   if (Thread.interrupted())   throw new InterruptedException();
+  if (time <= 0)   return tryLock();
   try {
-    if (time <= 0)     return delegate.lockAll(keys,-1);
-    IgniteFuture<Boolean> fut=null;
+    IgniteFuture<Boolean> fut=delegate.lockAllAsync(keys,unit.toMillis(time));
     try {
-      fut=delegate.lockAllAsync(keys,unit.toMillis(time));
-      return fut.get();
+      boolean res=fut.get();
+      if (res)       incrementLockCounter();
+      return res;
     }
  catch (    IgniteInterruptedException e) {
-      if (fut != null) {
-        if (!fut.cancel()) {
-          if (fut.isDone()) {
-            Boolean res=fut.get();
-            Thread.currentThread().interrupt();
-            return res;
-          }
+      if (!fut.cancel()) {
+        if (fut.isDone()) {
+          Boolean res=fut.get();
+          Thread.currentThread().interrupt();
+          if (res)           incrementLockCounter();
+          return res;
         }
       }
       if (e.getCause() instanceof InterruptedException)       throw (InterruptedException)e.getCause();
