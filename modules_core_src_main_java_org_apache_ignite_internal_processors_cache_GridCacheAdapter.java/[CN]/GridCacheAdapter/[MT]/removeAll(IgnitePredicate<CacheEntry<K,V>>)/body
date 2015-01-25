@@ -1,14 +1,21 @@
 {
-  ctx.denyOnLocalRead();
-  if (F.isEmptyOrNulls(filter))   filter=ctx.trueArray();
-  final IgnitePredicate<CacheEntry<K,V>>[] p=filter;
-  syncOp(new SyncInOp(false){
-    @Override public void inOp(    IgniteTxLocalAdapter<K,V> tx) throws IgniteCheckedException {
-      tx.removeAllAsync(ctx,keySet(p),null,false,null).get();
+  try {
+    if (F.isEmptyOrNulls(filter))     filter=ctx.trueArray();
+    long topVer;
+    do {
+      topVer=ctx.affinity().affinityTopologyVersion();
+      Collection<ClusterNode> nodes=ctx.grid().forCache(name()).nodes();
+      IgniteFuture<Object> fut=null;
+      if (!nodes.isEmpty())       fut=ctx.closures().callAsyncNoFailover(BROADCAST,new GlobalRemoveAllCallable<>(name(),topVer,REMOVE_ALL_BATCH_SIZE,filter),nodes,true);
+      if (fut != null)       fut.get();
     }
-    @Override public String toString(){
-      return "removeAll [filter=" + Arrays.toString(p) + ']';
-    }
+ while (ctx.affinity().affinityTopologyVersion() > topVer);
   }
-);
+ catch (  ClusterGroupEmptyException ignore) {
+    if (log.isDebugEnabled())     log.debug("All remote nodes left while cache remove [cacheName=" + name() + "]");
+  }
+catch (  ComputeTaskTimeoutException e) {
+    U.warn(log,"Timed out waiting for remote nodes to finish cache remove (consider increasing " + "'networkTimeout' configuration property) [cacheName=" + name() + "]");
+    throw e;
+  }
 }
