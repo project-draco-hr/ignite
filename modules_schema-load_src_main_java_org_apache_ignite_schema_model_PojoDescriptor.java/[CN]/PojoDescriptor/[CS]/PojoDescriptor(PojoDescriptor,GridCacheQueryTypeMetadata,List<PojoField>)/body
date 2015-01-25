@@ -1,0 +1,30 @@
+{
+  parent=prn;
+  fullDbName=typeMeta.getSchema() + "." + typeMeta.getTableName();
+  keyClsNamePrev=typeMeta.getKeyType();
+  keyClsName=new SimpleStringProperty(keyClsNamePrev);
+  valClsNamePrev=typeMeta.getType();
+  valClsName=new SimpleStringProperty(valClsNamePrev);
+  use=new SimpleBooleanProperty(true);
+  use.addListener(new ChangeListener<Boolean>(){
+    @Override public void changed(    ObservableValue<? extends Boolean> val,    Boolean oldVal,    Boolean newVal){
+      for (      PojoDescriptor child : children)       child.use.set(newVal);
+      if (parent != null && !parent.children.isEmpty()) {
+        Iterator<PojoDescriptor> it=parent.children.iterator();
+        boolean parentIndeterminate=false;
+        boolean first=it.next().use.get();
+        while (it.hasNext()) {
+          if (it.next().use.get() != first) {
+            parentIndeterminate=true;
+            break;
+          }
+        }
+        parent.indeterminate.set(parentIndeterminate);
+        if (!parentIndeterminate)         parent.use.set(first);
+      }
+    }
+  }
+);
+  this.fields=FXCollections.observableList(fields);
+  this.typeMeta=typeMeta;
+}

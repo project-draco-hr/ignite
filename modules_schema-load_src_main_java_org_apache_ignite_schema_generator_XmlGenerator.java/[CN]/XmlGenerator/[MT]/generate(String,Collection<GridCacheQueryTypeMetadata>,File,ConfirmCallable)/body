@@ -9,6 +9,7 @@
     DocumentBuilder docBuilder=docFactory.newDocumentBuilder();
     Document doc=docBuilder.newDocument();
     doc.setXmlStandalone(true);
+    addComment(doc);
     Element beans=addElement(doc,doc,"beans");
     beans.setAttribute("xmlns","http://www.springframework.org/schema/beans");
     beans.setAttribute("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance");
@@ -19,9 +20,11 @@
     Transformer transformer=transformerFactory.newTransformer();
     transformer.setOutputProperty(OutputKeys.INDENT,"yes");
     transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount","4");
-    transformer.transform(new DOMSource(doc),new StreamResult(out));
+    ByteArrayOutputStream baos=new ByteArrayOutputStream(65536);
+    transformer.transform(new DOMSource(doc),new StreamResult(baos));
+    Files.write(out.toPath(),baos.toString().replaceAll("><",">\n<").replaceAll("\" xmlns","\"\n       xmlns").replaceAll("\" xsi","\"\n       xsi").replaceAll(" http://www.springframework"," \n                           http://www.springframewor").getBytes());
   }
- catch (  ParserConfigurationException|TransformerException e) {
+ catch (  ParserConfigurationException|TransformerException|IOException e) {
     throw new IllegalStateException(e);
   }
 }

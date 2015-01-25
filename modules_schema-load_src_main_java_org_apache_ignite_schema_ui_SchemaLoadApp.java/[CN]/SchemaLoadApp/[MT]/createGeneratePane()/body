@@ -5,62 +5,36 @@
   genPnl.addColumn(35,35,35,Priority.NEVER);
   genPnl.addRow(100,100,Double.MAX_VALUE,Priority.ALWAYS);
   genPnl.addRows(7);
-  TableColumn<PojoDescriptor,Boolean> useCol=customColumn("Schema / Table","use","If checked then this table will be used for XML and POJOs generation",SchemaCell.cellFactory());
-  TableColumn<PojoDescriptor,String> keyClsCol=textColumn("Key Class","keyClass","Key class name");
-  keyClsCol.setOnEditCommit(new EventHandler<TableColumn.CellEditEvent<PojoDescriptor,String>>(){
-    @Override public void handle(    TableColumn.CellEditEvent<PojoDescriptor,String> evt){
-      System.out.println("committed: " + evt.getNewValue());
-      evt.getRowValue().keyClsName.set(evt.getNewValue() + "boom");
+  TableColumn<PojoDescriptor,Boolean> useCol=customColumn("Schema / Table","use","If checked then this table will be used for XML and POJOs generation",PojoDescriptorCell.cellFactory());
+  TableColumn<PojoDescriptor,String> keyClsCol=textColumn("Key Class","keyClassName","Key class name",new TextColumnValidator<PojoDescriptor>(){
+    @Override public boolean valid(    PojoDescriptor rowVal,    String newVal){
+      return checkClassName(rowVal,newVal,true);
     }
   }
 );
-  TableColumn<PojoDescriptor,String> valClsCol=textColumn("Value Class","valueClass","Value class name");
+  TableColumn<PojoDescriptor,String> valClsCol=textColumn("Value Class","valueClassName","Value class name",new TextColumnValidator<PojoDescriptor>(){
+    @Override public boolean valid(    PojoDescriptor rowVal,    String newVal){
+      return checkClassName(rowVal,newVal,false);
+    }
+  }
+);
   pojosTbl=tableView("Tables not found in database",useCol,keyClsCol,valClsCol);
   TableColumn<PojoField,Boolean> keyCol=booleanColumn("Key","key","If checked then this field will be part of key object");
   TableColumn<PojoField,String> dbNameCol=tableColumn("DB Name","dbName","Field name in database");
   TableColumn<PojoField,String> dbTypeNameCol=tableColumn("DB Type","dbTypeName","Field type in database");
-  TableColumn<PojoField,String> javaNameCol=textColumn("Ignite Name","javaName","Field name in POJO class");
+  TableColumn<PojoField,String> javaNameCol=textColumn("Ignite Name","javaName","Field name in POJO class",new TextColumnValidator<PojoField>(){
+    @Override public boolean valid(    PojoField rowVal,    String newVal){
+      for (      PojoField field : curPojo.fields())       if (rowVal != field && newVal.equals(field.javaName())) {
+        MessageBox.warningDialog(owner,"Ignite name must be unique!");
+        return false;
+      }
+      return true;
+    }
+  }
+);
   TableColumn<PojoField,String> javaTypeNameCol=customColumn("Java Type","javaTypeName","Field java type in POJO class",JavaTypeCell.cellFactory());
   final TableView<PojoField> fieldsTbl=tableView("Select table to see table columns",keyCol,dbNameCol,dbTypeNameCol,javaNameCol,javaTypeNameCol);
-  final Button upBtn=button(imageView("navigate_up",24),"Move selected row up",new EventHandler<ActionEvent>(){
-    @Override public void handle(    ActionEvent evt){
-      TableView.TableViewSelectionModel<PojoField> selMdl=fieldsTbl.getSelectionModel();
-      int selIdx=selMdl.getSelectedIndex();
-      if (selIdx > 0) {
-        ObservableList<PojoField> items=fieldsTbl.getItems();
-        int newId=selIdx - 1;
-        items.add(newId,items.remove(selIdx));
-        if (newId == 0)         fieldsTbl.requestFocus();
-        selMdl.select(newId);
-      }
-    }
-  }
-);
-  upBtn.setDisable(true);
-  final Button downBtn=button(imageView("navigate_down",24),"Move selected row down",new EventHandler<ActionEvent>(){
-    @Override public void handle(    ActionEvent evt){
-      TableView.TableViewSelectionModel<PojoField> selMdl=fieldsTbl.getSelectionModel();
-      int selIdx=selMdl.getSelectedIndex();
-      ObservableList<PojoField> items=fieldsTbl.getItems();
-      int maxIdx=items.size() - 1;
-      if (selIdx < maxIdx) {
-        int newId=selIdx + 1;
-        items.add(newId,items.remove(selIdx));
-        if (newId == maxIdx)         fieldsTbl.requestFocus();
-        selMdl.select(newId);
-      }
-    }
-  }
-);
-  downBtn.setDisable(true);
-  fieldsTbl.getSelectionModel().selectedIndexProperty().addListener(new ChangeListener<Number>(){
-    @Override public void changed(    ObservableValue<? extends Number> observable,    Number oldVal,    Number newVal){
-      upBtn.setDisable(newVal == null || newVal.intValue() == 0);
-      downBtn.setDisable(newVal == null || newVal.intValue() == fieldsTbl.getItems().size() - 1);
-    }
-  }
-);
-  genPnl.add(splitPane(pojosTbl,borderPane(null,fieldsTbl,null,null,vBox(10,upBtn,downBtn)),0.6),3);
+  genPnl.add(splitPane(pojosTbl,fieldsTbl,0.6),3);
   final GridPaneEx keyValPnl=paneEx(0,0,0,0);
   keyValPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
   keyValPnl.addColumn();
@@ -69,9 +43,6 @@
   pkgTf=genPnl.addLabeled("Package:",textField("Package that will be used for POJOs generation"),2);
   outFolderTf=genPnl.addLabeled("Output Folder:",textField("Output folder for XML and POJOs files"));
   genPnl.add(button("...","Select output folder",new EventHandler<ActionEvent>(){
-    /** 
- * {@inheritDoc} 
- */
     @Override public void handle(    ActionEvent evt){
       DirectoryChooser dc=new DirectoryChooser();
       File folder=dc.showDialog(owner);
@@ -92,9 +63,6 @@
   regexTf=regexPnl.addLabeled("  Regexp:",textField("Regular expression. For example: (\\w+)"));
   replaceTf=regexPnl.addLabeled("  Replace with:",textField("Replace text. For example: $1_Suffix"));
   final Button renBtn=button("Rename","Replace Ignite names by provided regular expression for current table",new EventHandler<ActionEvent>(){
-    /** 
- * {@inheritDoc} 
- */
     @Override public void handle(    ActionEvent evt){
       if (curPojo == null) {
         MessageBox.warningDialog(owner,"Please select table to rename Ignite names!");
@@ -114,9 +82,6 @@
 );
   renBtn.setDisable(true);
   final Button revertBtn=button("Revert","Revert changes to Ignite names for current table",new EventHandler<ActionEvent>(){
-    /** 
- * {@inheritDoc} 
- */
     @Override public void handle(    ActionEvent evt){
       if (curPojo != null)       curPojo.revertJavaNames();
  else       MessageBox.warningDialog(owner,"Please select table to revert changes to Ignite names!");
@@ -125,9 +90,6 @@
 );
   revertBtn.setDisable(true);
   regexPnl.add(buttonsPane(Pos.BOTTOM_RIGHT,false,renBtn,button("Rename All","Replace Ignite names by provided regular expression for all selected tables",new EventHandler<ActionEvent>(){
-    /** 
- * {@inheritDoc} 
- */
     @Override public void handle(    ActionEvent evt){
       if (checkInput(regexTf,false,"Regular expression should not be empty!"))       return;
       Collection<PojoDescriptor> selItems=selectedItems();
@@ -147,9 +109,6 @@
     }
   }
 ),revertBtn,button("Revert All","Revert changes to Ignite names for all selected tables",new EventHandler<ActionEvent>(){
-    /** 
- * {@inheritDoc} 
- */
     @Override public void handle(    ActionEvent evt){
       Collection<PojoDescriptor> selItems=selectedItems();
       if (selItems.isEmpty()) {
@@ -163,7 +122,7 @@
 )),4);
   pojosTbl.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<PojoDescriptor>(){
     @Override public void changed(    ObservableValue<? extends PojoDescriptor> val,    PojoDescriptor oldVal,    PojoDescriptor newItem){
-      if (newItem != null && newItem.parent != null) {
+      if (newItem != null && newItem.parent() != null) {
         curPojo=newItem;
         fieldsTbl.setItems(curPojo.fields());
         fieldsTbl.getSelectionModel().select(0);
@@ -177,8 +136,6 @@
         keyValPnl.setDisable(true);
         renBtn.setDisable(true);
         revertBtn.setDisable(true);
-        upBtn.setDisable(true);
-        downBtn.setDisable(true);
       }
     }
   }

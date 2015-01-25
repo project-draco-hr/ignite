@@ -1,6 +1,6 @@
 {
-  Collection<PojoDescriptor> selItems=selectedItems();
-  if (selItems.isEmpty()) {
+  final Collection<PojoDescriptor> selPojos=selectedItems();
+  if (selPojos.isEmpty()) {
     MessageBox.warningDialog(owner,"Please select tables to generate XML and POJOs files!");
     return;
   }
@@ -9,12 +9,9 @@
   final String pkg=pkgTf.getText();
   final File destFolder=new File(outFolder);
   Runnable task=new Task<Void>(){
-    private void checkEmpty(    Collection<GridCacheQueryTypeDescriptor> items,    final PojoDescriptor pojo,    String msg){
-      if (items.isEmpty()) {
+    private void checkEmpty(    final PojoDescriptor pojo,    Collection<GridCacheQueryTypeDescriptor> descs,    String msg){
+      if (descs.isEmpty()) {
         Platform.runLater(new Runnable(){
-          /** 
- * {@inheritDoc} 
- */
           @Override public void run(){
             pojosTbl.getSelectionModel().select(pojo);
           }
@@ -31,33 +28,20 @@
       if (!destFolder.exists() && !destFolder.mkdirs())       throw new IOException("Failed to create output folder: " + destFolder);
       Collection<GridCacheQueryTypeMetadata> all=new ArrayList<>();
       boolean constructor=pojoConstructorCh.isSelected();
-      boolean include=pojoIncludeKeysCh.isSelected();
+      boolean includeKeys=pojoIncludeKeysCh.isSelected();
       boolean singleXml=xmlSingleFileCh.isSelected();
       ConfirmCallable askOverwrite=new ConfirmCallable(owner,"File already exists: %s\nOverwrite?");
-      for (      PojoDescriptor pojo : pojos) {
+      for (      PojoDescriptor pojo : selPojos) {
         if (pojo.selected()) {
-          GridCacheQueryTypeMetadata meta=pojo.metadata();
-          Collection<GridCacheQueryTypeDescriptor> keys=new ArrayList<>();
-          Collection<GridCacheQueryTypeDescriptor> vals=new ArrayList<>();
-          for (          PojoField fld : pojo.fields()) {
-            GridCacheQueryTypeDescriptor desc=fld.descriptor();
-            if (fld.key()) {
-              keys.add(desc);
-              if (include)               vals.add(desc);
-            }
- else             vals.add(desc);
-          }
-          checkEmpty(keys,pojo,"No key fields specified for type: ");
-          checkEmpty(vals,pojo,"No value fields specified for type: ");
-          meta.setKeyDescriptors(keys);
-          meta.setValueDescriptors(vals);
+          GridCacheQueryTypeMetadata meta=pojo.metadata(includeKeys);
+          checkEmpty(pojo,meta.getKeyDescriptors(),"No key fields specified for type: ");
+          checkEmpty(pojo,meta.getValueDescriptors(),"No value fields specified for type: ");
           all.add(meta);
           if (!singleXml)           XmlGenerator.generate(pkg,meta,new File(destFolder,meta.getType() + ".xml"),askOverwrite);
-          PojoGenerator.generate(meta,outFolder,pkg,constructor,askOverwrite);
+          PojoGenerator.generate(pojo,outFolder,pkg,constructor,includeKeys,askOverwrite);
         }
       }
-      if (all.isEmpty())       throw new IllegalStateException("Nothing selected!");
- else       if (singleXml)       XmlGenerator.generate(pkg,all,new File(outFolder,"Ignite.xml"),askOverwrite);
+      if (singleXml)       XmlGenerator.generate(pkg,all,new File(outFolder,"Ignite.xml"),askOverwrite);
       perceptualDelay(started);
       return null;
     }

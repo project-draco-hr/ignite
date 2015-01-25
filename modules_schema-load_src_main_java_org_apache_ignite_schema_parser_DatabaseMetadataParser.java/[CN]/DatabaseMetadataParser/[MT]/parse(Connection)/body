@@ -1,0 +1,31 @@
+{
+  DatabaseMetaData dbMeta=conn.getMetaData();
+  List<PojoDescriptor> res=new ArrayList<>();
+  try (ResultSet schemas=dbMeta.getSchemas()){
+    while (schemas.next()) {
+      String schema=schemas.getString(1);
+      if ("INFORMATION_SCHEMA".equalsIgnoreCase(schema))       continue;
+      String catalog=schemas.getString(2);
+      PojoDescriptor parent=PojoDescriptor.schema(schema);
+      List<PojoDescriptor> children=new ArrayList<>();
+      try (ResultSet tbls=dbMeta.getTables(catalog,schema,"%",null)){
+        while (tbls.next()) {
+          String tbl=tbls.getString(3);
+          children.add(parseTable(parent,dbMeta,catalog,schema,tbl));
+        }
+      }
+       if (!children.isEmpty()) {
+        parent.children(children);
+        res.add(parent);
+        res.addAll(children);
+      }
+    }
+  }
+   Collections.sort(res,new Comparator<PojoDescriptor>(){
+    @Override public int compare(    PojoDescriptor o1,    PojoDescriptor o2){
+      return o1.fullDbName().compareTo(o2.fullDbName());
+    }
+  }
+);
+  return FXCollections.observableList(res);
+}
