@@ -1,6 +1,5 @@
 {
-  try {
-    IgniteAtomicSequence s=cache().dataStructures().atomicSequence(STRUCTURE_NAME,1,true);
+  try (IgniteAtomicSequence s=grid(0).atomicSequence(STRUCTURE_NAME,1,true)){
     IgniteFuture<?> fut=GridTestUtils.runMultiThreadedAsync(new CA(){
       @Override public void apply(){
         try {
@@ -11,7 +10,7 @@
                 String name=UUID.randomUUID().toString();
                 names.add(name);
                 Ignite g=startGrid(name);
-                assertTrue(g.cache(null).dataStructures().atomicSequence(STRUCTURE_NAME,1,false).get() > 0);
+                assertTrue(g.atomicSequence(STRUCTURE_NAME,1,false).get() > 0);
               }
             }
   finally {
@@ -34,7 +33,4 @@
     }
     fut.get();
   }
-  finally {
-    cache().dataStructures().removeAtomicSequence(STRUCTURE_NAME);
-  }
-}
+ }

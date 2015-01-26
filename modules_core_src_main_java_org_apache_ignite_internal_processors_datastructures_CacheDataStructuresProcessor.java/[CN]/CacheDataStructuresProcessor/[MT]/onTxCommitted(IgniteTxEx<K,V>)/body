@@ -1,5 +1,6 @@
 {
-  if (!cctx.isDht() && tx.internal() && (!cctx.isColocated() || cctx.isReplicated())) {
+  if (atomicsCtx == null)   return;
+  if (!atomicsCtx.isDht() && tx.internal() && (!atomicsCtx.isColocated() || atomicsCtx.isReplicated())) {
     try {
       waitInitialization();
     }
@@ -19,7 +20,7 @@
             GridCacheCountDownLatchEx latch0=(GridCacheCountDownLatchEx)latch;
             latch0.onUpdate(val.get());
             if (val.get() == 0 && val.autoDelete()) {
-              entry.cached().markObsolete(cctx.versions().next());
+              entry.cached().markObsolete(atomicsCtx.versions().next());
               dsMap.remove(key);
               latch.onRemoved();
             }

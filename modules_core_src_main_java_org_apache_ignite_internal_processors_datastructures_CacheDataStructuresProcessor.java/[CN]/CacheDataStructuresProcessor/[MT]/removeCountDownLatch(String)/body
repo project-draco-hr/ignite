@@ -1,11 +1,10 @@
 {
   waitInitialization();
-  checkTransactionalWithNear();
   try {
     return CU.outTx(new Callable<Boolean>(){
       @Override public Boolean call() throws Exception {
         GridCacheInternal key=new GridCacheInternalKeyImpl(name);
-        try (IgniteTx tx=CU.txStartInternal(cctx,dsView,PESSIMISTIC,REPEATABLE_READ)){
+        try (IgniteTx tx=CU.txStartInternal(atomicsCtx,dsView,PESSIMISTIC,REPEATABLE_READ)){
           GridCacheCountDownLatchValue val=cast(dsView.get(key),GridCacheCountDownLatchValue.class);
           if (val != null) {
             if (val.get() > 0) {
@@ -23,7 +22,7 @@
         }
       }
     }
-,cctx);
+,atomicsCtx);
   }
  catch (  Exception e) {
     throw new IgniteCheckedException("Failed to remove count down latch by name: " + name,e);

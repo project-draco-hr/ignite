@@ -1,8 +1,16 @@
 {
   CacheConfiguration ccfg=new CacheConfiguration();
   ccfg.setName(CU.ATOMICS_CACHE_NAME);
-  ccfg.setCacheMode(cfg.isReplicated() ? REPLICATED : PARTITIONED);
-  if (!cfg.isReplicated())   ccfg.setBackups(cfg.getBackups());
-  ccfg.setDistributionMode(client ? NEAR_ONLY : NEAR_PARTITIONED);
+  ccfg.setAtomicityMode(TRANSACTIONAL);
+  ccfg.setSwapEnabled(false);
+  ccfg.setQueryIndexEnabled(false);
+  ccfg.setPreloadMode(SYNC);
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  ccfg.setCacheMode(cfg.getCacheMode());
+  if (cfg.getCacheMode() == PARTITIONED) {
+    ccfg.setBackups(cfg.getBackups());
+    ccfg.setDistributionMode(client ? NEAR_ONLY : NEAR_PARTITIONED);
+  }
+ else   ccfg.setDistributionMode(client ? NEAR_ONLY : PARTITIONED_ONLY);
   return ccfg;
 }
