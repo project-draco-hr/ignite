@@ -1,0 +1,23 @@
+{
+  PreparedStatement stmt=null;
+  try {
+    stmt=conn.prepareStatement(m.loadQuery(keys.size()));
+    int i=1;
+    for (    Object key : keys)     for (    GridCacheQueryTypeDescriptor field : m.keyDescriptors()) {
+      Object fieldVal=extractField(m.keyType(),field.getJavaName(),key);
+      if (fieldVal != null)       stmt.setObject(i++,fieldVal);
+ else       stmt.setNull(i++,field.getDbType());
+    }
+    ResultSet rs=stmt.executeQuery();
+    Map<K1,V1> entries=U.newHashMap(keys.size());
+    while (rs.next()) {
+      K1 key=buildObject(m.keyType(),m.keyDescriptors(),rs);
+      V1 val=buildObject(m.valueType(),m.valueDescriptors(),rs);
+      entries.put(key,val);
+    }
+    return entries;
+  }
+  finally {
+    U.closeQuiet(stmt);
+  }
+}

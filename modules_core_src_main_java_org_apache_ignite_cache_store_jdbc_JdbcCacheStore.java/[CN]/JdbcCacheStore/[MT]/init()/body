@@ -2,18 +2,10 @@
   if (initLatch.getCount() > 0) {
     if (initGuard.compareAndSet(false,true)) {
       if (log.isDebugEnabled())       log.debug("Initializing cache store.");
-      if (dataSrc == null && F.isEmpty(connUrl))       throw new IgniteCheckedException("Failed to initialize cache store (connection is not provided).");
+      if (dataSrc == null && F.isEmpty(connUrl))       throw new CacheException("Failed to initialize cache store (connection is not provided).");
       if (dialect == null)       dialect=resolveDialect();
       try {
-        if (typeMetadata == null) {
-          if (typeMetadataPaths == null)           throw new IgniteCheckedException("Failed to initialize cache store (metadata paths is not provided).");
-          Collection<GridCacheQueryTypeMetadata> typeMeta=new ArrayList<>();
-          for (          String path : typeMetadataPaths) {
-            URL url=U.resolveGridGainUrl(path);
-            log.warning("Failed to resolve metadata path: " + path);
-          }
-          setTypeMetadata(typeMeta);
-        }
+        if (typeMetadata == null)         throw new CacheException("Failed to initialize cache store (mappping description is not provided).");
         exec=Executors.newFixedThreadPool(maxPoolSz);
         buildTypeCache();
         initOk=true;
@@ -22,7 +14,13 @@
         initLatch.countDown();
       }
     }
- else     U.await(initLatch);
+ else     try {
+      if (initLatch.getCount() > 0)       initLatch.await();
+    }
+ catch (    InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new CacheException(e);
+    }
   }
-  if (!initOk)   throw new IgniteCheckedException("Cache store was not properly initialized.");
+  if (!initOk)   throw new CacheException("Cache store was not properly initialized.");
 }

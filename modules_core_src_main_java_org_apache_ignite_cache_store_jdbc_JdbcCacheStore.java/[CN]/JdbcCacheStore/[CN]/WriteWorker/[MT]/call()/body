@@ -1,0 +1,16 @@
+{
+  PreparedStatement stmt=null;
+  try {
+    stmt=conn.prepareStatement(m.mergeQry);
+    for (    Cache.Entry<?,?> entry : entries) {
+      int i=fillKeyParameters(stmt,m,entry.getKey());
+      fillValueParameters(stmt,i,m,entry.getValue());
+      stmt.addBatch();
+    }
+    stmt.executeBatch();
+  }
+  finally {
+    U.closeQuiet(stmt);
+  }
+  return null;
+}

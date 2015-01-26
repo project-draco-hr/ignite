@@ -5,29 +5,23 @@
     @Nullable @Override public Object call() throws Exception {
       for (int i=0; i < 1000; i++) {
         IgniteTx tx=rnd.nextBoolean() ? new DummyTx() : null;
+        ses.newSession(tx);
         int op=rnd.nextInt(10);
         boolean queueEmpty=false;
         if (op < 4) {
           OrganizationKey key=queue.poll();
           if (key == null)           queueEmpty=true;
  else {
-            if (rnd.nextBoolean())             assertNotNull(store.load(tx,key));
+            if (rnd.nextBoolean())             assertNotNull(store.load(key));
  else {
-              final AtomicInteger cntr=new AtomicInteger();
-              store.loadAll(tx,Collections.singleton(key),new CI2<Object,Object>(){
-                @Override public void apply(                Object o,                Object o1){
-                  cntr.incrementAndGet();
-                  assertNotNull(o);
-                  assertNotNull(o1);
-                  OrganizationKey key=(OrganizationKey)o;
-                  Organization val=(Organization)o1;
-                  assertTrue(key.getId().equals(val.getId()));
-                }
-              }
-);
-              assertEquals(1,cntr.get());
+              Map<Object,Object> loaded=store.loadAll(Collections.singleton(key));
+              assertEquals(1,loaded.size());
+              Map.Entry<Object,Object> e=loaded.entrySet().iterator().next();
+              OrganizationKey k=(OrganizationKey)e.getKey();
+              Organization v=(Organization)e.getValue();
+              assertTrue(k.getId().equals(v.getId()));
             }
-            if (tx != null)             store.txEnd(tx,true);
+            if (tx != null)             store.txEnd(true);
             queue.add(key);
           }
         }
@@ -35,9 +29,9 @@
           OrganizationKey key=queue.poll();
           if (key == null)           queueEmpty=true;
  else {
-            if (rnd.nextBoolean())             store.remove(tx,key);
- else             store.removeAll(tx,Collections.singleton(key));
-            if (tx != null)             store.txEnd(tx,true);
+            if (rnd.nextBoolean())             store.delete(key);
+ else             store.deleteAll(Collections.singleton(key));
+            if (tx != null)             store.txEnd(true);
           }
         }
  else {
@@ -45,18 +39,28 @@
           if (key == null)           queueEmpty=true;
  else {
             Organization val=new Organization(key.getId(),"Name" + key.getId(),"City" + key.getId());
-            if (rnd.nextBoolean())             store.put(tx,key,val);
- else             store.putAll(tx,Collections.singletonMap(key,val));
-            if (tx != null)             store.txEnd(tx,true);
+            Cache.Entry<OrganizationKey,Organization> entry=new CacheEntryImpl<>(key,val);
+            if (rnd.nextBoolean())             store.write(entry);
+ else {
+              Collection<Cache.Entry<?,?>> col=new ArrayList<>();
+              col.add(entry);
+              store.writeAll(col);
+            }
+            if (tx != null)             store.txEnd(true);
             queue.add(key);
           }
         }
         if (queueEmpty) {
           OrganizationKey key=new OrganizationKey(rnd.nextInt());
           Organization val=new Organization(key.getId(),"Name" + key.getId(),"City" + key.getId());
-          if (rnd.nextBoolean())           store.put(tx,key,val);
- else           store.putAll(tx,Collections.singletonMap(key,val));
-          if (tx != null)           store.txEnd(tx,true);
+          Cache.Entry<OrganizationKey,Organization> entry=new CacheEntryImpl<>(key,val);
+          if (rnd.nextBoolean())           store.write(entry);
+ else {
+            Collection<Cache.Entry<?,?>> col=new ArrayList<>();
+            col.add(entry);
+            store.writeAll(col);
+          }
+          if (tx != null)           store.txEnd(true);
           queue.add(key);
         }
       }

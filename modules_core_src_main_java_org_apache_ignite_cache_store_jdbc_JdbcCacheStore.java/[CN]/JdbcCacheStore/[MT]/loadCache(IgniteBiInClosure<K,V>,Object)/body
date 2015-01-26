@@ -3,13 +3,13 @@
     init();
     if (log.isDebugEnabled())     log.debug("Loading all values from db");
     Collection<Future<?>> futs=new ArrayList<>();
-    for (    final QueryCache type : entryQtyCache.values())     futs.add(exec.submit(new Callable<Void>(){
+    for (    final EntryMapping type : typeMeta.values())     futs.add(exec.submit(new Callable<Void>(){
       @Override public Void call() throws Exception {
         Connection conn=null;
         try {
           PreparedStatement stmt=null;
           try {
-            conn=connection(null);
+            conn=connection();
             stmt=conn.prepareStatement(type.loadCacheQry);
             ResultSet rs=stmt.executeQuery();
             while (rs.next()) {
@@ -26,7 +26,7 @@
           }
         }
   finally {
-          closeConnection(conn);
+          U.closeQuiet(conn);
         }
         return null;
       }
