@@ -1,0 +1,43 @@
+{
+  final Ignite ignite=G.ignite(getTestGridName());
+  deployTask(ignite);
+  final long end=getTestDurationInMinutes() * 60 * 1000 + System.currentTimeMillis();
+  ignite.compute().withTimeout(10000).execute(TASK_TYPE_ID,3);
+  info("Load test will be executed for '" + getTestDurationInMinutes() + "' mins.");
+  info("Thread count: " + getThreadCount());
+  final GridLoadTestStatistics stats=new GridLoadTestStatistics();
+  GridTestUtils.runMultiThreaded(new Runnable(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void run(){
+      while (end - System.currentTimeMillis() > 0) {
+        int levels=3;
+        int exp=factorial(levels);
+        long start=System.currentTimeMillis();
+        try {
+          ComputeTaskFuture<Integer> fut=ignite.compute().withTimeout(10000).execute(TASK_TYPE_ID,levels);
+          int res=fut.get();
+          if (res != exp)           fail("Received wrong result [expected=" + exp + ", actual="+ res+ ']');
+          long taskCnt=stats.onTaskCompleted(fut,exp,System.currentTimeMillis() - start);
+          if (taskCnt % 100 == 0) {
+            try {
+              deployTask(ignite);
+            }
+ catch (            IgniteCheckedException e) {
+              error("Failed to deploy grid task.",e);
+              fail();
+            }
+          }
+          if (taskCnt % 500 == 0)           info(stats.toString());
+        }
+ catch (        IgniteCheckedException e) {
+          error("Failed to execute grid task.",e);
+          fail();
+        }
+      }
+    }
+  }
+,getThreadCount(),"grid-notaop-load-test");
+  info("Final test statistics: " + stats);
+}

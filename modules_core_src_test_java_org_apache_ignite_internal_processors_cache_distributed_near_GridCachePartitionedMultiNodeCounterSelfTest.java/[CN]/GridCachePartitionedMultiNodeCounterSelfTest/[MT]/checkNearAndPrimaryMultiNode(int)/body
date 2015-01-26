@@ -1,0 +1,24 @@
+{
+  CacheAffinity<String> aff=affinity(grid(0).<String,Integer>cache(null));
+  Collection<ClusterNode> affNodes=aff.mapKeyToPrimaryAndBackups(CNTR_KEY);
+  assertEquals(1 + backups,affNodes.size());
+  Ignite pri=G.ignite(F.first(affNodes).id());
+  pri.cache(null).put(CNTR_KEY,0);
+  assertNull(near(pri).peekEx(CNTR_KEY));
+  GridCacheEntryEx<String,Integer> dhtEntry=dht(pri).peekEx(CNTR_KEY);
+  assertNotNull(dhtEntry);
+  assertEquals(Integer.valueOf(0),dhtEntry.rawGet());
+  startLatchMultiNode=new CountDownLatch(gridCnt);
+  globalCntrMultiNode=new AtomicInteger(0);
+  lockedMultiNode.set(false);
+  pri.compute().broadcast(new IncrementItemJob(pri.name()));
+  info("*** ");
+  for (int i=0; i < gridCnt; i++) {
+    Ignite g=grid(i);
+    GridCache<String,Integer> cache=grid(i).cache(null);
+    int cntr=cache.peek(CNTR_KEY);
+    info("*** Cache counter [grid=" + g.name() + ", cntr="+ cntr+ ']');
+    assertEquals(RETRIES * gridCnt,cntr);
+  }
+  info("*** ");
+}

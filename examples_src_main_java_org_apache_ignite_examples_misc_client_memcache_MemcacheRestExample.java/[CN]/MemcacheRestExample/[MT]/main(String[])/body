@@ -1,0 +1,27 @@
+{
+  MemcachedClient client=null;
+  try (Ignite g=Ignition.start(MemcacheRestExampleNodeStartup.configuration())){
+    System.out.println();
+    System.out.println(">>> Memcache REST example started.");
+    GridCache<String,Object> cache=g.cache(null);
+    client=startMemcachedClient(host,port);
+    if (client.add("strKey",0,"strVal").get())     System.out.println(">>> Successfully put string value using Memcache client.");
+    System.out.println(">>> Getting value for 'strKey' using GridGain cache API: " + cache.get("strKey"));
+    System.out.println(">>> Getting value for 'strKey' using Memcache client: " + client.get("strKey"));
+    if (client.delete("strKey").get())     System.out.println(">>> Successfully removed string value using Memcache client.");
+    System.out.println(">>> Current cache size: " + cache.size() + " (expected: 0).");
+    if (client.add("intKey",0,100).get())     System.out.println(">>> Successfully put integer value using Memcache client.");
+    System.out.println(">>> Getting value for 'intKey' using GridGain cache API: " + cache.get("intKey"));
+    System.out.println(">>> Getting value for 'intKey' using Memcache client: " + client.get("intKey"));
+    if (client.delete("intKey").get())     System.out.println(">>> Successfully removed integer value using Memcache client.");
+    System.out.println(">>> Current cache size: " + cache.size() + " (expected: 0).");
+    CacheAtomicLong l=cache.dataStructures().atomicLong("atomicLong",10,true);
+    if (client.incr("atomicLong",5,0) == 15)     System.out.println(">>> Successfully incremented atomic long by 5.");
+    System.out.println(">>> New atomic long value: " + l.incrementAndGet() + " (expected: 16).");
+    if (client.decr("atomicLong",3,0) == 13)     System.out.println(">>> Successfully decremented atomic long by 3.");
+    System.out.println(">>> New atomic long value: " + l.decrementAndGet() + " (expected: 12).");
+  }
+  finally {
+    if (client != null)     client.shutdown();
+  }
+}

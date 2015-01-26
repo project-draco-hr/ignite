@@ -1,0 +1,29 @@
+{
+  if (store != null) {
+    if (key instanceof GridCacheInternal)     return true;
+    if (convertPortable) {
+      key=(K)cctx.unwrapPortableIfNeeded(key,false);
+      val=(V)cctx.unwrapPortableIfNeeded(val,false);
+    }
+    if (log.isDebugEnabled())     log.debug("Storing value in cache store [key=" + key + ", val="+ val+ ']');
+    initSession(tx);
+    try {
+      store.write(new CacheEntryImpl<>(key,locStore ? F.t(val,ver) : val));
+    }
+ catch (    ClassCastException e) {
+      handleClassCastException(e);
+    }
+catch (    CacheWriterException e) {
+      throw new IgniteCheckedException(e);
+    }
+catch (    Exception e) {
+      throw new IgniteCheckedException(new CacheWriterException(e));
+    }
+ finally {
+      sesHolder.set(null);
+    }
+    if (log.isDebugEnabled())     log.debug("Stored value in cache store [key=" + key + ", val="+ val+ ']');
+    return true;
+  }
+  return false;
+}

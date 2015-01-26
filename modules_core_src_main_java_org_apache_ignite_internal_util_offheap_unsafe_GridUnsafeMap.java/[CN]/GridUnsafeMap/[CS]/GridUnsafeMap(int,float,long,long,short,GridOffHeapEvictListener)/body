@@ -1,0 +1,35 @@
+{
+  this.concurrency=concurrency;
+  this.load=load;
+  part=0;
+  mem=new GridUnsafeMemory(totalMem);
+  lru=totalMem > 0 ? new GridUnsafeLru(lruStripes,mem) : null;
+  lruRelease=true;
+  if (lru != null)   this.evictLsnr=evictLsnr;
+  totalCnt=new LongAdder();
+  int shift=0;
+  int size=1;
+  while (size < concurrency) {
+    ++shift;
+    size<<=1;
+  }
+  segmentShift=32 - shift;
+  segmentMask=size - 1;
+  segs=new Segment[size];
+  init(initCap,size);
+  lruPoller=new GridUnsafeLruPoller(){
+    @Override public void lruPoll(    int size){
+      if (lru == null)       return;
+      int left=size;
+      while (left > 0) {
+        long qAddr=lru.prePoll();
+        if (qAddr == 0)         return;
+        short order=lru.order(qAddr);
+        int released=freeSpace(order,qAddr);
+        if (released == 0)         return;
+        left-=released;
+      }
+    }
+  }
+;
+}

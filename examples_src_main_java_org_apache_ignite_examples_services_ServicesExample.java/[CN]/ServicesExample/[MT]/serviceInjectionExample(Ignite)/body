@@ -1,0 +1,11 @@
+{
+  System.out.println(">>>");
+  System.out.println(">>> Starting service injection example.");
+  System.out.println(">>>");
+  SimpleMapService<Integer,String> mapSvc=ignite.managed().serviceProxy("myClusterSingletonService",SimpleMapService.class,true);
+  int cnt=10;
+  for (int i=0; i < cnt; i++)   mapSvc.put(i,Integer.toString(i));
+  final Collection<Integer> mapSizes=ignite.compute().broadcast(new SimpleClosure());
+  System.out.println("Closure execution result: " + mapSizes);
+  for (  int mapSize : mapSizes)   if (mapSize != cnt)   throw new Exception("Invalid map size [expected=" + cnt + ", actual="+ mapSize+ ']');
+}

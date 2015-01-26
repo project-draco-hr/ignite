@@ -1,0 +1,21 @@
+{
+  IgniteConfiguration c=super.getConfiguration(gridName);
+  TcpDiscoverySpi spi=new TcpDiscoverySpi(){
+    @Override public void setNodeAttributes(    Map<String,Object> attrs,    IgniteProductVersion ver){
+      super.setNodeAttributes(attrs,ver);
+      String macAddrs="MOCK_MACS_" + (gridInstanceNum / 3);
+      attrs.put(GridNodeAttributes.ATTR_MACS,macAddrs);
+      gridInstanceNum++;
+    }
+  }
+;
+  spi.setIpFinder(ipFinder);
+  c.setDiscoverySpi(spi);
+  CacheConfiguration cc=defaultCacheConfiguration();
+  cc.setCacheMode(PARTITIONED);
+  cc.setBackups(backups);
+  cc.setAffinity(affinityFunction());
+  cc.setPreloadMode(NONE);
+  c.setCacheConfiguration(cc);
+  return c;
+}

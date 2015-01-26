@@ -1,0 +1,57 @@
+{
+  if (atomicityMode() == ATOMIC)   return;
+  grids=3;
+  aff.reset(grids,1);
+  startGrids();
+  int key1=3;
+  String val1=Integer.toString(key1);
+  assertEquals(grid(0).localNode(),F.first(aff.nodes(aff.partition(key1),grid(0).nodes())));
+  int key2=1;
+  String val2=Integer.toString(key2);
+  assertEquals(grid(1).localNode(),F.first(aff.nodes(aff.partition(key2),grid(1).nodes())));
+  IgniteCache<Integer,String> cache=jcache(0);
+  cache.lock(key1).lock();
+  try {
+    cache.lock(key2).lock();
+    try {
+      assertNull(cache.getAndPut(key1,val1));
+      assertEquals(val1,dht(0).peek(key1));
+      assertEquals(val1,dht(1).peek(key1));
+      assertNull(dht(2).peek(key1));
+      assertEquals(val1,near(0).peekNearOnly(key1));
+      assertNull(near(1).peekNearOnly(key1));
+      assertNull(near(2).peekNearOnly(key1));
+      cache.put(key2,val2);
+      assertNull(dht(0).peek(key2));
+      assertEquals(val2,dht(1).peek(key2));
+      assertEquals(val2,dht(2).peek(key2));
+      assertEquals(val2,near(0).peekNearOnly(key2));
+      assertNull(near(1).peekNearOnly(key2));
+      assertNull(near(2).peekNearOnly(key2));
+      String val22=val2 + "2";
+      cache.put(key2,val22);
+      assertNull(dht(0).peek(key2));
+      assertEquals(val22,dht(1).peek(key2));
+      assertEquals(val22,dht(2).peek(key2));
+      assertEquals(val22,near(0).peekNearOnly(key2));
+      assertNull(near(1).peekNearOnly(key2));
+      assertNull(near(2).peekNearOnly(key2));
+      cache.remove(key2);
+      assertNull(dht(0).peek(key2));
+      assertNull(dht(1).peek(key2));
+      assertNull(dht(2).peek(key2));
+      assertNull(dht(0).peekEx(key2));
+      assertNotNull(dht(1).peekEx(key2));
+      assertNotNull(dht(2).peekEx(key2));
+      assertNotNull(near(0).peekEx(key2));
+      assertNull(near(1).peekEx(key2));
+      assertNull(near(2).peekEx(key2));
+    }
+  finally {
+      cache.lock(key2).lock();
+    }
+  }
+  finally {
+    cache.lock(key1).unlock();
+  }
+}

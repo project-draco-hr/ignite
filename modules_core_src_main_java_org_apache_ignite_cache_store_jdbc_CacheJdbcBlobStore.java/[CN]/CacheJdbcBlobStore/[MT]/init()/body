@@ -1,0 +1,39 @@
+{
+  if (initLatch.getCount() > 0) {
+    if (initGuard.compareAndSet(false,true)) {
+      if (log.isDebugEnabled())       log.debug("Initializing cache store.");
+      if (F.isEmpty(connUrl))       throw new IgniteException("Failed to initialize cache store (connection URL is not provided).");
+      if (!initSchema) {
+        initLatch.countDown();
+        return;
+      }
+      if (F.isEmpty(createTblQry))       throw new IgniteException("Failed to initialize cache store (create table query is not provided).");
+      Connection conn=null;
+      Statement stmt=null;
+      try {
+        conn=openConnection(false);
+        stmt=conn.createStatement();
+        stmt.execute(createTblQry);
+        conn.commit();
+        initOk=true;
+      }
+ catch (      SQLException e) {
+        throw new IgniteException("Failed to create database table.",e);
+      }
+ finally {
+        U.closeQuiet(stmt);
+        closeConnection(conn);
+        initLatch.countDown();
+      }
+    }
+ else {
+      try {
+        U.await(initLatch);
+      }
+ catch (      IgniteInterruptedException e) {
+        throw new IgniteException(e);
+      }
+    }
+  }
+  if (!initOk)   throw new IgniteException("Cache store was not properly initialized.");
+}

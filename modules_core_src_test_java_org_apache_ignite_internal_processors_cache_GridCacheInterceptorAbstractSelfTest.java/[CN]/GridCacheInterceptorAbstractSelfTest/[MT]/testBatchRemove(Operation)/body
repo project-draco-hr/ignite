@@ -1,0 +1,78 @@
+{
+  Map<String,Integer> map=new HashMap<>();
+  final String key1;
+  String key2;
+  String key3;
+  if (cacheMode() == LOCAL) {
+    key1="1";
+    key2="2";
+    key3="3";
+  }
+ else {
+    List<String> keys=primaryKeys(0,2);
+    key1=keys.get(0);
+    key2=keys.get(1);
+    key3=backupKey(0);
+  }
+  map.put(key1,1);
+  map.put(key2,2);
+  map.put(key3,3);
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public IgniteBiTuple onBeforeRemove(    Object key,    @Nullable Object val){
+      return new IgniteBiTuple(false,999);
+    }
+  }
+;
+  log.info("Batch remove 1: " + op);
+  batchRemove(0,op,map);
+  checkCacheValue(key1,null);
+  checkCacheValue(key2,null);
+  checkCacheValue(key3,null);
+  assertEquals(0,interceptor.beforeRemoveMap.size());
+  assertEquals(0,interceptor.afterRemoveMap.size());
+  interceptor.disabled=true;
+  cache(0).putAll(map);
+  interceptor.disabled=false;
+  interceptor.reset();
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public IgniteBiTuple onBeforeRemove(    Object key,    @Nullable Object val){
+      return new IgniteBiTuple(false,999);
+    }
+  }
+;
+  log.info("Batch remove 2: " + op);
+  batchRemove(0,op,map);
+  checkCacheValue(key1,null);
+  checkCacheValue(key2,null);
+  checkCacheValue(key3,null);
+  assertEquals(3,interceptor.beforeRemoveMap.size());
+  assertEquals(1,interceptor.beforeRemoveMap.get(key1));
+  assertEquals(2,interceptor.beforeRemoveMap.get(key2));
+  assertEquals(3,interceptor.beforeRemoveMap.get(key3));
+  assertEquals(3,interceptor.afterRemoveMap.size());
+  assertEquals(1,interceptor.afterRemoveMap.get(key1));
+  assertEquals(2,interceptor.afterRemoveMap.get(key2));
+  assertEquals(3,interceptor.afterRemoveMap.get(key3));
+  interceptor.disabled=true;
+  cache(0).putAll(map);
+  interceptor.disabled=false;
+  interceptor.reset();
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public IgniteBiTuple onBeforeRemove(    Object key,    @Nullable Object val){
+      return new IgniteBiTuple(key.equals(key1),999);
+    }
+  }
+;
+  log.info("Batch remove 3: " + op);
+  batchRemove(0,op,map);
+  checkCacheValue(key1,1);
+  checkCacheValue(key2,null);
+  checkCacheValue(key3,null);
+  assertEquals(3,interceptor.beforeRemoveMap.size());
+  assertEquals(1,interceptor.beforeRemoveMap.get(key1));
+  assertEquals(2,interceptor.beforeRemoveMap.get(key2));
+  assertEquals(3,interceptor.beforeRemoveMap.get(key3));
+  assertEquals(2,interceptor.afterRemoveMap.size());
+  assertEquals(2,interceptor.afterRemoveMap.get(key2));
+  assertEquals(3,interceptor.afterRemoveMap.get(key3));
+}

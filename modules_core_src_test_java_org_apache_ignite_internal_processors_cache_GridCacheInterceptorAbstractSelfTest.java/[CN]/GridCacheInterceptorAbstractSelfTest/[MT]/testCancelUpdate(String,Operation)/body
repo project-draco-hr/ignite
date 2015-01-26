@@ -1,0 +1,30 @@
+{
+  CacheInterceptor retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public Object onBeforePut(    Object key,    @Nullable Object oldVal,    Object newVal){
+      return null;
+    }
+  }
+;
+  interceptor.retInterceptor=retInterceptor;
+  log.info("Update 1 " + op);
+  update(0,op,key,1,null);
+  checkCacheValue(key,null);
+  assertEquals(1,interceptor.beforePutMap.size());
+  IgniteBiTuple t=interceptor.beforePutMap.get(key);
+  assertEquals(null,t.get1());
+  assertEquals(1,t.get2());
+  interceptor.reset();
+  interceptor.disabled=true;
+  clearCaches();
+  cache(0).put(key,1);
+  checkCacheValue(key,1);
+  interceptor.disabled=false;
+  interceptor.retInterceptor=retInterceptor;
+  log.info("Update 2 " + op);
+  update(0,op,key,2,1);
+  checkCacheValue(key,1);
+  assertEquals(1,interceptor.beforePutMap.size());
+  t=interceptor.beforePutMap.get(key);
+  assertEquals(1,t.get1());
+  assertEquals(2,t.get2());
+}

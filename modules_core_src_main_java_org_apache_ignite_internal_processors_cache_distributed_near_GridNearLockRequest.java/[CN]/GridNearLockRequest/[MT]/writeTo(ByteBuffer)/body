@@ -1,0 +1,75 @@
+{
+  commState.setBuffer(buf);
+  if (!super.writeTo(buf))   return false;
+  if (!commState.typeWritten) {
+    if (!commState.putByte(directType()))     return false;
+    commState.typeWritten=true;
+  }
+switch (commState.idx) {
+case 24:
+    if (dhtVers != null) {
+      if (commState.it == null) {
+        if (!commState.putInt(dhtVers.length))         return false;
+        commState.it=arrayIterator(dhtVers);
+      }
+      while (commState.it.hasNext() || commState.cur != NULL) {
+        if (commState.cur == NULL)         commState.cur=commState.it.next();
+        if (!commState.putCacheVersion((GridCacheVersion)commState.cur))         return false;
+        commState.cur=NULL;
+      }
+      commState.it=null;
+    }
+ else {
+      if (!commState.putInt(-1))       return false;
+    }
+  commState.idx++;
+case 25:
+if (filterBytes != null) {
+  if (commState.it == null) {
+    if (!commState.putInt(filterBytes.length))     return false;
+    commState.it=arrayIterator(filterBytes);
+  }
+  while (commState.it.hasNext() || commState.cur != NULL) {
+    if (commState.cur == NULL)     commState.cur=commState.it.next();
+    if (!commState.putByteArray((byte[])commState.cur))     return false;
+    commState.cur=NULL;
+  }
+  commState.it=null;
+}
+ else {
+  if (!commState.putInt(-1))   return false;
+}
+commState.idx++;
+case 26:
+if (!commState.putBoolean(implicitSingleTx)) return false;
+commState.idx++;
+case 27:
+if (!commState.putBoolean(implicitTx)) return false;
+commState.idx++;
+case 28:
+if (!commState.putGridUuid(miniId)) return false;
+commState.idx++;
+case 29:
+if (!commState.putBoolean(onePhaseCommit)) return false;
+commState.idx++;
+case 30:
+if (!commState.putLong(topVer)) return false;
+commState.idx++;
+case 31:
+if (!commState.putUuid(subjId)) return false;
+commState.idx++;
+case 32:
+if (!commState.putInt(taskNameHash)) return false;
+commState.idx++;
+case 33:
+if (!commState.putBoolean(hasTransforms)) return false;
+commState.idx++;
+case 34:
+if (!commState.putBoolean(syncCommit)) return false;
+commState.idx++;
+case 35:
+if (!commState.putLong(accessTtl)) return false;
+commState.idx++;
+}
+return true;
+}

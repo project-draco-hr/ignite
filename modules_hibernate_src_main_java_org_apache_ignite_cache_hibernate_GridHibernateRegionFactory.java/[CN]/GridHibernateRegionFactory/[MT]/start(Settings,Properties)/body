@@ -1,0 +1,33 @@
+{
+  String gridName=props.getProperty(GRID_NAME_PROPERTY);
+  if (gridName != null)   ignite=G.ignite(gridName);
+ else {
+    String gridCfg=props.getProperty(GRID_CONFIG_PROPERTY);
+    if (gridCfg == null)     throw new CacheException("Either grid name or path to grid configuration must be specified.");
+    try {
+      ignite=G.start(gridCfg);
+    }
+ catch (    IgniteCheckedException e) {
+      throw new CacheException(e);
+    }
+  }
+  if (ignite == null)   throw new CacheException("Grid '" + gridName + "' for hibernate L2 cache is not started.");
+  String accessType=props.getProperty(DFLT_ACCESS_TYPE_PROPERTY,NONSTRICT_READ_WRITE.name());
+  dfltAccessType=AccessType.valueOf(accessType);
+  for (  Map.Entry<Object,Object> prop : props.entrySet()) {
+    String key=prop.getKey().toString();
+    if (key.startsWith(REGION_CACHE_PROPERTY)) {
+      String regionName=key.substring(REGION_CACHE_PROPERTY.length());
+      String cacheName=prop.getValue().toString();
+      if (ignite.cache(cacheName) == null)       throw new CacheException("Cache '" + cacheName + "' specified for region '"+ regionName+ "' "+ "is not configured.");
+      regionCaches.put(regionName,cacheName);
+    }
+  }
+  String dfltCacheName=props.getProperty(DFLT_CACHE_NAME_PROPERTY);
+  if (dfltCacheName != null) {
+    dfltCache=ignite.cache(dfltCacheName);
+    if (dfltCache == null)     throw new CacheException("Cache specified as default is not configured: " + dfltCacheName);
+  }
+  IgniteLogger log=ignite.log().getLogger(GridHibernateRegionFactory.class);
+  if (log.isDebugEnabled())   log.debug("GridHibernateRegionFactory started [grid=" + gridName + ']');
+}

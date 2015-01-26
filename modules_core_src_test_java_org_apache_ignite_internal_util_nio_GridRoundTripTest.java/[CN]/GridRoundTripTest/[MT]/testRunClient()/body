@@ -1,0 +1,31 @@
+{
+  Socket sock=new Socket();
+  OutputStream out=null;
+  InputStream in=null;
+  try {
+    Random r=new Random();
+    sock.connect(new InetSocketAddress(HOSTNAME,PORT));
+    out=sock.getOutputStream();
+    in=new BufferedInputStream(sock.getInputStream());
+    while (true) {
+      byte[] msg=createMessage(r.nextInt(1024) + 1);
+      long start=System.currentTimeMillis();
+      System.out.println(">>>>>>> [" + start + "] sending message, "+ msg.length+ " bytes");
+      writeMessage(out,msg);
+      byte[] resp=readMessage(in);
+      if (resp.length != msg.length)       throw new IOException("Invalid response");
+      long end=System.currentTimeMillis();
+      System.out.println(">>>>>>> [" + end + "] response received, "+ msg.length+ " bytes");
+      System.out.println("======= Response received within " + (end - start) + "ms\r\n");
+      U.sleep(30);
+    }
+  }
+ catch (  Exception e) {
+    System.out.println("Finishing test thread: " + e.getMessage());
+  }
+ finally {
+    U.closeQuiet(out);
+    U.closeQuiet(in);
+    U.closeQuiet(sock);
+  }
+}

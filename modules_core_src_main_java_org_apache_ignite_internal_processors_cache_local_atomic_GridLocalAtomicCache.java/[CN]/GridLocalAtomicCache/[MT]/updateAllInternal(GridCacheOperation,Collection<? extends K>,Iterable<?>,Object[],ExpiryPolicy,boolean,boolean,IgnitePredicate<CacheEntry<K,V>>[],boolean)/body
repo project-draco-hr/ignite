@@ -1,0 +1,56 @@
+{
+  if (keyCheck)   validateCacheKeys(keys);
+  if (op == DELETE)   ctx.checkSecurity(GridSecurityPermission.CACHE_REMOVE);
+ else   ctx.checkSecurity(GridSecurityPermission.CACHE_PUT);
+  String taskName=ctx.kernalContext().job().currentTaskName();
+  GridCacheVersion ver=ctx.versions().next();
+  UUID subjId=ctx.subjectIdPerCall(null);
+  if (storeEnabled && keys.size() > 1) {
+    return updateWithBatch(op,keys,vals,invokeArgs,expiryPlc,ver,filter,subjId,taskName);
+  }
+  Iterator<?> valsIter=vals != null ? vals.iterator() : null;
+  IgniteBiTuple<Boolean,?> res=null;
+  CachePartialUpdateCheckedException err=null;
+  boolean intercept=ctx.config().getInterceptor() != null;
+  for (  K key : keys) {
+    Object val=valsIter != null ? valsIter.next() : null;
+    if (key == null)     continue;
+    while (true) {
+      GridCacheEntryEx<K,V> entry=null;
+      try {
+        entry=entryEx(key);
+        GridTuple3<Boolean,V,EntryProcessorResult<Object>> t=entry.innerUpdateLocal(ver,val == null ? DELETE : op,val,invokeArgs,storeEnabled,retval,expiryPlc,true,true,filter,intercept,subjId,taskName);
+        if (op == TRANSFORM) {
+          if (t.get3() != null) {
+            Map<K,EntryProcessorResult> computedMap;
+            if (res == null) {
+              computedMap=U.newHashMap(keys.size());
+              res=new IgniteBiTuple<>(true,computedMap);
+            }
+ else             computedMap=(Map<K,EntryProcessorResult>)res.get2();
+            computedMap.put(key,t.get3());
+          }
+        }
+ else         if (res == null)         res=new T2(t.get1(),t.get2());
+        break;
+      }
+ catch (      GridCacheEntryRemovedException ignored) {
+        if (log.isDebugEnabled())         log.debug("Got removed entry while updating (will retry): " + key);
+        entry=null;
+      }
+catch (      IgniteCheckedException e) {
+        if (err == null)         err=partialUpdateException();
+        err.add(F.asList(key),e);
+        U.error(log,"Failed to update key : " + key,e);
+        break;
+      }
+ finally {
+        if (entry != null)         ctx.evicts().touch(entry,ctx.affinity().affinityTopologyVersion());
+      }
+    }
+  }
+  if (err != null)   throw err;
+  Object ret=res == null ? null : rawRetval ? new GridCacheReturn<>(res.get2(),res.get1()) : retval ? res.get2() : res.get1();
+  if (op == TRANSFORM && ret == null)   ret=Collections.emptyMap();
+  return ret;
+}

@@ -1,0 +1,30 @@
+{
+  try {
+    IgniteFuture<GridClient> fut=cliMap.get(addr);
+    if (fut == null) {
+      GridFutureAdapter<GridClient> fut0=new GridFutureAdapter<>();
+      IgniteFuture<GridClient> oldFut=cliMap.putIfAbsent(addr,fut0);
+      if (oldFut != null)       return oldFut.get();
+ else {
+        GridClientConfiguration cliCfg=new GridClientConfiguration();
+        cliCfg.setProtocol(TCP);
+        cliCfg.setServers(Collections.singletonList(addr));
+        cliCfg.setMarshaller(new GridClientOptimizedMarshaller());
+        cliCfg.setDaemon(true);
+        try {
+          GridClient cli=GridClientFactory.start(cliCfg);
+          fut0.onDone(cli);
+          return cli;
+        }
+ catch (        GridClientException e) {
+          fut0.onDone(e);
+          throw new IOException("Failed to establish connection with GridGain node: " + addr,e);
+        }
+      }
+    }
+ else     return fut.get();
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IOException("Failed to establish connection with GridGain node: " + addr,e);
+  }
+}

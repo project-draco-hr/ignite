@@ -1,0 +1,33 @@
+{
+  Collection<UUID> startSync0=startSync=new GridConcurrentHashSet<>(F.viewReadOnly(ggfsCtx.kernalContext().discovery().allNodes(),F.node2id(),new P1<ClusterNode>(){
+    @Override public boolean apply(    ClusterNode n){
+      return ggfsCtx.ggfsNode(n);
+    }
+  }
+));
+  ClusterNode locNode=ggfsCtx.kernalContext().grid().localNode();
+  while (!startSync0.isEmpty()) {
+    for (    UUID nodeId : startSync0) {
+      GridGgfsSyncMessage syncReq=new GridGgfsSyncMessage(locNode.order(),false);
+      try {
+        if (log.isDebugEnabled())         log.debug("Sending fragmentizer sync start request to remote node [nodeId=" + nodeId + ", syncReq="+ syncReq+ ']');
+        sendWithRetries(nodeId,syncReq);
+        if (!ggfsCtx.kernalContext().discovery().alive(nodeId))         startSync0.remove(nodeId);
+      }
+ catch (      IgniteCheckedException e) {
+        if (e.hasCause(ClusterTopologyException.class)) {
+          if (log.isDebugEnabled())           log.debug("Failed to send sync message to remote node (node has left the grid): " + nodeId);
+        }
+ else         U.error(log,"Failed to send synchronize message to remote node (will not wait for reply): " + nodeId,e);
+        startSync0.remove(nodeId);
+      }
+    }
+    lock.lock();
+    try {
+      if (!startSync0.isEmpty())       cond.await(10000,MILLISECONDS);
+    }
+  finally {
+      lock.unlock();
+    }
+  }
+}

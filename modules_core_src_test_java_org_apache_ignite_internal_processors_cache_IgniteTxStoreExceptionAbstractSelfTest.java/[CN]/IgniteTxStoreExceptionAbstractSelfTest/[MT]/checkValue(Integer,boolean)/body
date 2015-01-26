@@ -1,0 +1,25 @@
+{
+  store.forceFail(false);
+  info("Check key: " + key);
+  for (int i=0; i < gridCount(); i++) {
+    GridKernal grid=(GridKernal)grid(i);
+    GridCacheAdapter cache=grid.internalCache(null);
+    GridCacheMapEntry entry=cache.map().getEntry(key);
+    log.info("Entry: " + entry);
+    if (entry != null) {
+      assertFalse("Unexpected entry for grid [idx=" + i + ", entry="+ entry+ ']',entry.lockedByAny());
+      assertEquals("Unexpected entry for grid [idx=" + i + ", entry="+ entry+ ']',putBefore,entry.hasValue());
+      assertEquals("Unexpected entry for grid [idx=" + i + ", entry="+ entry+ ']',putBefore ? 1 : null,entry.rawGetOrUnmarshal(false));
+    }
+    if (cache.isNear()) {
+      entry=((GridNearCacheAdapter)cache).dht().map().getEntry(key);
+      log.info("Dht entry: " + entry);
+      if (entry != null) {
+        assertFalse("Unexpected entry for grid [idx=" + i + ", entry="+ entry+ ']',entry.lockedByAny());
+        assertEquals("Unexpected entry for grid [idx=" + i + ", entry="+ entry+ ']',putBefore,entry.hasValue());
+        assertEquals("Unexpected entry for grid [idx=" + i + ", entry="+ entry+ ']',putBefore ? 1 : null,entry.rawGetOrUnmarshal(false));
+      }
+    }
+  }
+  for (int i=0; i < gridCount(); i++)   assertEquals("Unexpected value for grid " + i,putBefore ? 1 : null,grid(i).cache(null).get(key));
+}

@@ -1,0 +1,28 @@
+{
+  lock.readLock();
+  try {
+    if (stopping && !atLeastOnce) {
+      if (log.isDebugEnabled())       log.debug("Failed to notify parent stage completion (node is stopping) [futId=" + futId + ", err="+ err+ ']');
+      return;
+    }
+    UUID dstNodeId=futId.globalId();
+    if (ctx.localNodeId().equals(dstNodeId)) {
+      GridStreamerStageExecutionFuture stageFut=stageFuts.get(futId);
+      if (log.isDebugEnabled())       log.debug("Notifying local execution future [completeNodeId=" + completeNodeId + ", stageFut="+ stageFut+ ", err="+ err+ ']');
+      if (stageFut != null)       stageFut.onExecutionCompleted(completeNodeId,err);
+    }
+ else {
+      try {
+        if (log.isDebugEnabled())         log.debug("Sending completion response to remote node [nodeId=" + dstNodeId + ", futId="+ futId+ ", err="+ err+ ']');
+        byte[] errBytes=err != null ? ctx.config().getMarshaller().marshal(err) : null;
+        sendWithRetries(dstNodeId,new GridStreamerResponse(futId,errBytes));
+      }
+ catch (      IgniteCheckedException e) {
+        if (!e.hasCause(ClusterTopologyException.class))         log.error("Failed to complete parent stage [futId=" + futId + ", err="+ e+ ']');
+      }
+    }
+  }
+  finally {
+    lock.readUnlock();
+  }
+}

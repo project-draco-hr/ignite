@@ -1,0 +1,25 @@
+{
+  final Collection<Object> rcvMsgs=new HashSet<>();
+  final CountDownLatch rcvLatch=new CountDownLatch(4);
+  ignite2.message().remoteListen(null,new P2<UUID,Object>(){
+    @Override public boolean apply(    UUID nodeId,    Object msg){
+      try {
+        log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ']');
+        rcvMsgs.add(msg);
+        return true;
+      }
+  finally {
+        rcvLatch.countDown();
+      }
+    }
+  }
+);
+  ClusterGroup prj2=ignite1.cluster().forRemotes();
+  message(prj2).send(null,MSG_1);
+  message(prj2).send(null,MSG_2);
+  message(ignite2.cluster().forLocal()).send(null,MSG_3);
+  assertFalse(rcvLatch.await(3,TimeUnit.SECONDS));
+  assertTrue(rcvMsgs.contains(MSG_1));
+  assertTrue(rcvMsgs.contains(MSG_2));
+  assertTrue(rcvMsgs.contains(MSG_3));
+}

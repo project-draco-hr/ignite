@@ -1,0 +1,81 @@
+{
+  final long endTime=System.currentTimeMillis() + duration;
+  final AtomicReference<Throwable> err=new AtomicReference<>();
+  startGrids();
+  Collection<Thread> threads=new LinkedList<>();
+  try {
+    final int logFreq=20;
+    final AtomicInteger txCntr=new AtomicInteger();
+    final CyclicBarrier barrier=new CyclicBarrier(putThreads + restartThreads);
+    final int txKeys=3;
+    for (int i=0; i < putThreads; i++) {
+      final int gridIdx=i;
+      Thread t=new Thread(new Runnable(){
+        @Override public void run(){
+          try {
+            barrier.await();
+            info("Starting put thread...");
+            Ignite ignite=grid(gridIdx);
+            UUID locNodeId=ignite.cluster().localNode().id();
+            GridCache<Integer,String> cache=ignite.cache(CACHE_NAME);
+            List<Integer> keys=new ArrayList<>(txKeys);
+            while (System.currentTimeMillis() < endTime && err.get() == null) {
+              keys.clear();
+              for (int i=0; i < txKeys; i++)               keys.add(RAND.nextInt(keyCnt));
+              Collections.sort(keys);
+              int c=0;
+              try (IgniteTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+                c=txCntr.incrementAndGet();
+                if (c % logFreq == 0)                 info(">>> Tx iteration started [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
+                Map<Integer,String> batch=new LinkedHashMap<>();
+                for (                int key : keys)                 batch.put(key,String.valueOf(key));
+                cache.putAll(batch);
+                tx.commit();
+              }
+ catch (              ClusterTopologyException ignored) {
+              }
+              if (c % logFreq == 0)               info(">>> Tx iteration finished [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
+            }
+          }
+ catch (          Exception e) {
+            err.compareAndSet(null,e);
+            error("Failed to put value in cache.",e);
+          }
+        }
+      }
+,"put-worker-" + i);
+      t.start();
+      threads.add(t);
+    }
+    for (int i=0; i < restartThreads; i++) {
+      final int gridIdx=i + putThreads;
+      Thread t=new Thread(new Runnable(){
+        @Override public void run(){
+          try {
+            barrier.await();
+            info("Starting restart thread...");
+            int cnt=0;
+            while (System.currentTimeMillis() < endTime && err.get() == null) {
+              stopGrid(gridIdx);
+              startGrid(gridIdx);
+              int c=++cnt;
+              if (c % logFreq == 0)               info(">>> Restart iteration: " + c);
+            }
+          }
+ catch (          Exception e) {
+            err.compareAndSet(null,e);
+            error("Failed to restart grid node.",e);
+          }
+        }
+      }
+,"restart-worker-" + i);
+      t.start();
+      threads.add(t);
+    }
+    for (    Thread t : threads)     t.join();
+    if (err.get() != null)     throw err.get();
+  }
+  finally {
+    stopAllGrids();
+  }
+}
