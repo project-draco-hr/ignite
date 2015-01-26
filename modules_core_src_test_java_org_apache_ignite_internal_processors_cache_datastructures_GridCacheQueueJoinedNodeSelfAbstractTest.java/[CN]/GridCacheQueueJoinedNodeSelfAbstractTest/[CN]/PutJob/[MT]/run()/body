@@ -1,0 +1,15 @@
+{
+  assertNotNull(ignite);
+  log.info("Running job [node=" + ignite.cluster().localNode().id() + ", job="+ getClass().getSimpleName()+ "]");
+  try {
+    CacheQueue<Integer> queue=ignite.cache(null).dataStructures().queue(queueName,0,true,false);
+    assertNotNull(queue);
+    int i=0;
+    while (!stop)     queue.add(i++);
+  }
+ catch (  Exception e) {
+    error("Failed to put value to the queue",e);
+    fail("Unexpected exception: " + e);
+  }
+  log.info("PutJob finished");
+}

@@ -1,0 +1,20 @@
+{
+  startGrids(GRID_COUNT);
+  try {
+    int cnt=1000;
+    info("Inserting " + cnt + " keys to cache.");
+    try (IgniteDataLoader<Integer,String> ldr=grid(1).dataLoader(null)){
+      for (int i=0; i < cnt; i++)       ldr.addData(i,Integer.toString(i));
+    }
+     assertTrue("Near cache size " + near(0).nearSize() + ", but eviction maximum size "+ EVICTION_MAX_SIZE,near(0).nearSize() <= EVICTION_MAX_SIZE);
+    info("Getting " + cnt + " keys from cache.");
+    for (int i=0; i < cnt; i++) {
+      GridCache<Integer,String> cache=grid(0).cache(null);
+      assertTrue(cache.get(i).equals(Integer.toString(i)));
+    }
+    assertTrue("Near cache size " + near(0).nearSize() + ", but eviction maximum size "+ EVICTION_MAX_SIZE,near(0).nearSize() <= EVICTION_MAX_SIZE);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

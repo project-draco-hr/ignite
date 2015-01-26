@@ -1,0 +1,57 @@
+{
+  commState.setBuffer(buf);
+  if (!super.writeTo(buf))   return false;
+  if (!commState.typeWritten) {
+    if (!commState.putByte(directType()))     return false;
+    commState.typeWritten=true;
+  }
+switch (commState.idx) {
+case 3:
+    if (dataBytes != null) {
+      if (commState.it == null) {
+        if (!commState.putInt(dataBytes.size()))         return false;
+        commState.it=dataBytes.iterator();
+      }
+      while (commState.it.hasNext() || commState.cur != NULL) {
+        if (commState.cur == NULL)         commState.cur=commState.it.next();
+        if (!commState.putByteArray((byte[])commState.cur))         return false;
+        commState.cur=NULL;
+      }
+      commState.it=null;
+    }
+ else {
+      if (!commState.putInt(-1))       return false;
+    }
+  commState.idx++;
+case 4:
+if (!commState.putByteArray(errBytes)) return false;
+commState.idx++;
+case 5:
+if (!commState.putBoolean(fields)) return false;
+commState.idx++;
+case 6:
+if (!commState.putBoolean(finished)) return false;
+commState.idx++;
+case 7:
+if (metaDataBytes != null) {
+if (commState.it == null) {
+if (!commState.putInt(metaDataBytes.size())) return false;
+commState.it=metaDataBytes.iterator();
+}
+while (commState.it.hasNext() || commState.cur != NULL) {
+if (commState.cur == NULL) commState.cur=commState.it.next();
+if (!commState.putByteArray((byte[])commState.cur)) return false;
+commState.cur=NULL;
+}
+commState.it=null;
+}
+ else {
+if (!commState.putInt(-1)) return false;
+}
+commState.idx++;
+case 8:
+if (!commState.putLong(reqId)) return false;
+commState.idx++;
+}
+return true;
+}

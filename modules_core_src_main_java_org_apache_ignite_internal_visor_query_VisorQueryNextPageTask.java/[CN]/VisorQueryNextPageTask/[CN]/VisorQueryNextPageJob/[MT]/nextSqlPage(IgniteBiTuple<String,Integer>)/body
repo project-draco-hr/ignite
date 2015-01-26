@@ -1,0 +1,11 @@
+{
+  long start=U.currentTimeMillis();
+  ClusterNodeLocalMap<String,VisorQueryTask.VisorFutureResultSetHolder<List<?>>> storage=g.nodeLocalMap();
+  VisorQueryTask.VisorFutureResultSetHolder<List<?>> t=storage.get(arg.get1());
+  if (t == null)   throw new GridInternalException("SQL query results are expired.");
+  IgniteBiTuple<List<Object[]>,List<?>> nextRows=VisorQueryUtils.fetchSqlQueryRows(t.future(),t.next(),arg.get2());
+  boolean hasMore=nextRows.get2() != null;
+  if (hasMore)   storage.put(arg.get1(),new VisorQueryTask.VisorFutureResultSetHolder<>(t.future(),nextRows.get2(),true));
+ else   storage.remove(arg.get1());
+  return new VisorQueryResult(nextRows.get1(),hasMore,U.currentTimeMillis() - start);
+}

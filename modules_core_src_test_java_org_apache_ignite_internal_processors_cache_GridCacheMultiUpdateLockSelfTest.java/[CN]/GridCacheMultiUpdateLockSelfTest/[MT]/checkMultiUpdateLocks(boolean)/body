@@ -1,0 +1,67 @@
+{
+  this.nearEnabled=nearEnabled;
+  startGrids(3);
+  try {
+    GridKernal g=(GridKernal)grid(0);
+    GridCacheContext<Object,Object> cctx=g.internalCache().context();
+    GridDhtCacheAdapter cache=nearEnabled ? cctx.near().dht() : cctx.colocated();
+    long topVer=cache.beginMultiUpdate();
+    IgniteFuture<?> startFut;
+    try {
+      assertEquals(3,topVer);
+      final AtomicBoolean started=new AtomicBoolean();
+      startFut=multithreadedAsync(new Callable<Object>(){
+        @Override public Object call() throws Exception {
+          info(">>>> Starting grid.");
+          Ignite g4=startGrid(4);
+          started.set(true);
+          GridCache<Object,Object> c=g4.cache(null);
+          info(">>>> Checking tx in new grid.");
+          try (IgniteTx tx=c.txStart(PESSIMISTIC,REPEATABLE_READ)){
+            assertEquals(2,c.get("a"));
+            assertEquals(4,c.get("b"));
+            assertEquals(6,c.get("c"));
+          }
+           return null;
+        }
+      }
+,1);
+      U.sleep(200);
+      info(">>>> Checking grid has not started yet.");
+      assertFalse(started.get());
+      GridCache<Object,Object> cache0=g.cache(null);
+      info(">>>> Checking tx commit.");
+      IgniteTx tx=cache0.txStart(PESSIMISTIC,REPEATABLE_READ);
+      try {
+        cache0.put("a",1);
+        cache0.put("b",2);
+        cache0.put("c",3);
+        tx.commit();
+      }
+  finally {
+        tx.close();
+      }
+      info(">>>> Checking grid still is not started");
+      assertFalse(started.get());
+      tx=cache0.txStart(PESSIMISTIC,REPEATABLE_READ);
+      try {
+        cache0.put("a",2);
+        cache0.put("b",4);
+        cache0.put("c",6);
+        tx.commit();
+      }
+  finally {
+        tx.close();
+      }
+    }
+  finally {
+      info(">>>> Releasing multi update.");
+      cache.endMultiUpdate();
+    }
+    info("Waiting for thread termination.");
+    startFut.get();
+  }
+  finally {
+    stopAllGrids();
+  }
+}

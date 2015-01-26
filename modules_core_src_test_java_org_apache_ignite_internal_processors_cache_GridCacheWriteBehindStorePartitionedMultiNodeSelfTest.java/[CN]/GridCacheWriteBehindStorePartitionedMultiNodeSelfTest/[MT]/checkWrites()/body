@@ -1,0 +1,17 @@
+{
+  U.sleep(WRITE_BEHIND_FLUSH_FREQ * 2);
+  Collection<Integer> allKeys=new ArrayList<>(100);
+  for (int i=0; i < GRID_CNT; i++) {
+    Map<Integer,String> map=stores[i].getMap();
+    assertFalse("Missing writes for node: " + i,map.isEmpty());
+    allKeys.addAll(map.keySet());
+    for (int j=0; j < GRID_CNT; j++) {
+      if (i == j)       continue;
+      Collection<Integer> intersection=new HashSet<>(stores[j].getMap().keySet());
+      intersection.retainAll(map.keySet());
+      assertTrue(intersection.isEmpty());
+    }
+  }
+  assertEquals(100,allKeys.size());
+  for (int i=0; i < 100; i++)   assertTrue(allKeys.contains(i));
+}

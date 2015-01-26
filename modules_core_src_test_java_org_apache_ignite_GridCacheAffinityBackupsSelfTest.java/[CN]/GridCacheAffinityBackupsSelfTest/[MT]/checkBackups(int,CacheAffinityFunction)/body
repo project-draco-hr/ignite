@@ -1,0 +1,18 @@
+{
+  this.backups=backups;
+  this.func=func;
+  startGrids(nodesCnt);
+  try {
+    GridCache<Object,Object> cache=grid(0).cache(null);
+    Collection<UUID> members=new HashSet<>();
+    for (int i=0; i < 10000; i++) {
+      Collection<ClusterNode> nodes=cache.affinity().mapKeyToPrimaryAndBackups(i);
+      assertEquals(backups + 1,nodes.size());
+      for (      ClusterNode n : nodes)       members.add(n.id());
+    }
+    assertEquals(nodesCnt,members.size());
+  }
+  finally {
+    stopAllGrids();
+  }
+}

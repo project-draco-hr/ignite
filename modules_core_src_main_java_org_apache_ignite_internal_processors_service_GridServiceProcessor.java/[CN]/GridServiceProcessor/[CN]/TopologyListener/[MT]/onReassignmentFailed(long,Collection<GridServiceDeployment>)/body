@@ -1,0 +1,36 @@
+{
+  if (!busyLock.enterBusy())   return;
+  try {
+    if (ctx.discovery().topologyVersion() != topVer)     return;
+    for (Iterator<GridServiceDeployment> it=retries.iterator(); it.hasNext(); ) {
+      GridServiceDeployment dep=it.next();
+      try {
+        svcName.set(dep.configuration().getName());
+        reassign(dep,topVer);
+        it.remove();
+      }
+ catch (      IgniteCheckedException e) {
+        if (!(e instanceof ClusterTopologyException))         LT.error(log,e,"Failed to do service reassignment (will retry): " + dep.configuration().getName());
+      }
+    }
+    if (!retries.isEmpty()) {
+      ctx.timeout().addTimeoutObject(new GridTimeoutObject(){
+        private IgniteUuid id=IgniteUuid.randomUuid();
+        private long start=System.currentTimeMillis();
+        @Override public IgniteUuid timeoutId(){
+          return id;
+        }
+        @Override public long endTime(){
+          return start + RETRY_TIMEOUT;
+        }
+        @Override public void onTimeout(){
+          onReassignmentFailed(topVer,retries);
+        }
+      }
+);
+    }
+  }
+  finally {
+    busyLock.leaveBusy();
+  }
+}

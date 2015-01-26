@@ -1,0 +1,19 @@
+{
+  A.notNull(src,"src");
+  A.notNull(dst,"dst");
+  enterBusy();
+  try {
+    IgniteFsPath srcPath=convert(src);
+    IgniteFsPath dstPath=convert(dst);
+    Set<IgniteFsMode> childrenModes=modeRslvr.resolveChildrenModes(srcPath);
+    if (childrenModes.contains(PROXY)) {
+      if (clientLog.isLogEnabled())       clientLog.logRename(srcPath,PROXY,dstPath);
+      secondaryFs.renameInternal(toSecondary(src),toSecondary(dst));
+    }
+    rmtClient.rename(srcPath,dstPath);
+    if (clientLog.isLogEnabled())     clientLog.logRename(srcPath,modeRslvr.resolveMode(srcPath),dstPath);
+  }
+  finally {
+    leaveBusy();
+  }
+}

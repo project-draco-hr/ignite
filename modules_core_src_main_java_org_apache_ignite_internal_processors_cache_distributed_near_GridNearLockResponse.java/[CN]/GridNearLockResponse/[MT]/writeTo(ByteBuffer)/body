@@ -1,0 +1,68 @@
+{
+  commState.setBuffer(buf);
+  if (!super.writeTo(buf))   return false;
+  if (!commState.typeWritten) {
+    if (!commState.putByte(directType()))     return false;
+    commState.typeWritten=true;
+  }
+switch (commState.idx) {
+case 11:
+    if (dhtVers != null) {
+      if (commState.it == null) {
+        if (!commState.putInt(dhtVers.length))         return false;
+        commState.it=arrayIterator(dhtVers);
+      }
+      while (commState.it.hasNext() || commState.cur != NULL) {
+        if (commState.cur == NULL)         commState.cur=commState.it.next();
+        if (!commState.putCacheVersion((GridCacheVersion)commState.cur))         return false;
+        commState.cur=NULL;
+      }
+      commState.it=null;
+    }
+ else {
+      if (!commState.putInt(-1))       return false;
+    }
+  commState.idx++;
+case 12:
+if (!commState.putBooleanArray(filterRes)) return false;
+commState.idx++;
+case 13:
+if (mappedVers != null) {
+if (commState.it == null) {
+if (!commState.putInt(mappedVers.length)) return false;
+commState.it=arrayIterator(mappedVers);
+}
+while (commState.it.hasNext() || commState.cur != NULL) {
+if (commState.cur == NULL) commState.cur=commState.it.next();
+if (!commState.putCacheVersion((GridCacheVersion)commState.cur)) return false;
+commState.cur=NULL;
+}
+commState.it=null;
+}
+ else {
+if (!commState.putInt(-1)) return false;
+}
+commState.idx++;
+case 14:
+if (!commState.putGridUuid(miniId)) return false;
+commState.idx++;
+case 15:
+if (pending != null) {
+if (commState.it == null) {
+if (!commState.putInt(pending.size())) return false;
+commState.it=pending.iterator();
+}
+while (commState.it.hasNext() || commState.cur != NULL) {
+if (commState.cur == NULL) commState.cur=commState.it.next();
+if (!commState.putCacheVersion((GridCacheVersion)commState.cur)) return false;
+commState.cur=NULL;
+}
+commState.it=null;
+}
+ else {
+if (!commState.putInt(-1)) return false;
+}
+commState.idx++;
+}
+return true;
+}

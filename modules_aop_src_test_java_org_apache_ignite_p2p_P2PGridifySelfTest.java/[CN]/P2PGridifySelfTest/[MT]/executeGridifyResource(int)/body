@@ -1,0 +1,23 @@
+{
+  String path="org/apache/ignite/p2p/p2p.properties";
+  GridTestClassLoader tstClsLdr=new GridTestClassLoader(GridP2PTestTask.class.getName(),GridP2PTestJob.class.getName());
+  byte[] bytes=new byte[20];
+  try (InputStream in=tstClsLdr.getResourceAsStream(path)){
+    if (in == null) {
+      System.out.println("Resource could not be loaded: " + path);
+      return -2;
+    }
+    in.read(bytes);
+  }
+ catch (  IOException e) {
+    System.out.println("Failed to read from resource stream: " + e.getMessage());
+    return -3;
+  }
+  String rsrcVal=new String(bytes).trim();
+  System.out.println("Remote resource content is : " + rsrcVal);
+  if (!rsrcVal.equals("resource=loaded")) {
+    System.out.println("Invalid loaded resource value: " + rsrcVal);
+    return -4;
+  }
+  return res;
+}

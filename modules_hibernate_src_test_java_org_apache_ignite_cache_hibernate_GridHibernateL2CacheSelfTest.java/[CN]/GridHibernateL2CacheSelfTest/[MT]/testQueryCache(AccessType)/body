@@ -1,0 +1,92 @@
+{
+  createSessionFactories(accessType);
+  try {
+    Session ses=sesFactory1.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      for (int i=0; i < 5; i++)       ses.save(new Entity(i,"name-" + i));
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    ses=sesFactory1.openSession();
+    try {
+      Query qry1=ses.createQuery("from " + ENTITY_NAME + " where id > 2");
+      qry1.setCacheable(true);
+      assertEquals(2,qry1.list().size());
+      Query qry2=ses.createQuery("from " + ENTITY_NAME + " where name = 'name-0'");
+      qry2.setCacheable(true);
+      assertEquals(1,qry2.list().size());
+    }
+  finally {
+      ses.close();
+    }
+    assertEquals(0,sesFactory1.getStatistics().getQueryCacheHitCount());
+    assertEquals(2,sesFactory1.getStatistics().getQueryCacheMissCount());
+    assertEquals(2,sesFactory1.getStatistics().getQueryCachePutCount());
+    ses=sesFactory2.openSession();
+    try {
+      Query qry1=ses.createQuery("from " + ENTITY_NAME + " where id > 2");
+      qry1.setCacheable(true);
+      assertEquals(2,qry1.list().size());
+      Query qry2=ses.createQuery("from " + ENTITY_NAME + " where name = 'name-0'");
+      qry2.setCacheable(true);
+      assertEquals(1,qry2.list().size());
+      Query qry3=ses.createQuery("from " + ENTITY_NAME + " where id > 1");
+      qry3.setCacheable(true);
+      assertEquals(3,qry3.list().size());
+    }
+  finally {
+      ses.close();
+    }
+    assertEquals(2,sesFactory2.getStatistics().getQueryCacheHitCount());
+    assertEquals(1,sesFactory2.getStatistics().getQueryCacheMissCount());
+    assertEquals(1,sesFactory2.getStatistics().getQueryCachePutCount());
+    ses=sesFactory1.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      ses.save(new Entity(5,"name-5"));
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    ses=sesFactory1.openSession();
+    sesFactory1.getStatistics().clear();
+    try {
+      Query qry1=ses.createQuery("from " + ENTITY_NAME + " where id > 2");
+      qry1.setCacheable(true);
+      assertEquals(3,qry1.list().size());
+      Query qry2=ses.createQuery("from " + ENTITY_NAME + " where name = 'name-0'");
+      qry2.setCacheable(true);
+      assertEquals(1,qry2.list().size());
+    }
+  finally {
+      ses.close();
+    }
+    assertEquals(0,sesFactory1.getStatistics().getQueryCacheHitCount());
+    assertEquals(2,sesFactory1.getStatistics().getQueryCacheMissCount());
+    assertEquals(2,sesFactory1.getStatistics().getQueryCachePutCount());
+    sesFactory2.getCache().evictDefaultQueryRegion();
+    ses=sesFactory1.openSession();
+    sesFactory1.getStatistics().clear();
+    try {
+      Query qry1=ses.createQuery("from " + ENTITY_NAME + " where id > 2");
+      qry1.setCacheable(true);
+      assertEquals(3,qry1.list().size());
+      Query qry2=ses.createQuery("from " + ENTITY_NAME + " where name = 'name-0'");
+      qry2.setCacheable(true);
+      assertEquals(1,qry2.list().size());
+    }
+  finally {
+      ses.close();
+    }
+    assertEquals(0,sesFactory1.getStatistics().getQueryCacheHitCount());
+    assertEquals(2,sesFactory1.getStatistics().getQueryCacheMissCount());
+    assertEquals(2,sesFactory1.getStatistics().getQueryCachePutCount());
+  }
+  finally {
+    cleanup();
+  }
+}

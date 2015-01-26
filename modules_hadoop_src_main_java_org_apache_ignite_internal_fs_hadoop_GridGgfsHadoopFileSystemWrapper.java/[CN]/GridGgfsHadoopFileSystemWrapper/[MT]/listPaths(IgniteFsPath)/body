@@ -1,0 +1,15 @@
+{
+  try {
+    FileStatus[] statuses=fileSys.listStatus(convert(path));
+    if (statuses == null)     throw new IgniteFsFileNotFoundException("Failed to list files (path not found): " + path);
+    Collection<IgniteFsPath> res=new ArrayList<>(statuses.length);
+    for (    FileStatus status : statuses)     res.add(new IgniteFsPath(path,status.getPath().getName()));
+    return res;
+  }
+ catch (  FileNotFoundException ignored) {
+    throw new IgniteFsFileNotFoundException("Failed to list files (path not found): " + path);
+  }
+catch (  IOException e) {
+    throw handleSecondaryFsError(e,"Failed to list statuses due to secondary file system exception: " + path);
+  }
+}

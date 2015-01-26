@@ -1,0 +1,14 @@
+{
+  String name="testNodeSingletonNotDeployedProxy";
+  Ignite ignite=randomGrid();
+  ignite.managed(ignite.cluster().forRemotes()).deployNodeSingleton(name,new CounterServiceImpl());
+  info("Deployed service: " + name);
+  CounterService svc=ignite.managed().serviceProxy(name,CounterService.class,false);
+  try {
+    svc.increment();
+    fail("Should never reach here.");
+  }
+ catch (  IgniteException e) {
+    info("Got expected exception: " + e.getMessage());
+  }
+}

@@ -1,0 +1,15 @@
+{
+  try {
+    T res=fut.get();
+    if (fut.isCancelled())     throw new CancellationException("Task was cancelled: " + fut);
+    return res;
+  }
+ catch (  IgniteCheckedException e) {
+    if (fut.isCancelled()) {
+      RuntimeException ex=new CancellationException("Task was cancelled: " + fut);
+      ex.initCause(e);
+      throw ex;
+    }
+    throw new ExecutionException("Failed to get task result: " + fut,e);
+  }
+}
