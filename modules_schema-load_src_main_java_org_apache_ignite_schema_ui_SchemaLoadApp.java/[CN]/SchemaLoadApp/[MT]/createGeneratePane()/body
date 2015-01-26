@@ -4,7 +4,7 @@
   genPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
   genPnl.addColumn(35,35,35,Priority.NEVER);
   genPnl.addRow(100,100,Double.MAX_VALUE,Priority.ALWAYS);
-  genPnl.addRows(7);
+  genPnl.addRows(8);
   TableColumn<PojoDescriptor,Boolean> useCol=customColumn("Schema / Table","use","If checked then this table will be used for XML and POJOs generation",PojoDescriptorCell.cellFactory());
   TableColumn<PojoDescriptor,String> keyClsCol=textColumn("Key Class Name","keyClassName","Key class name",new TextColumnValidator<PojoDescriptor>(){
     @Override public boolean valid(    PojoDescriptor rowVal,    String newVal){
@@ -54,6 +54,7 @@
   pojoConstructorCh=genPnl.add(checkBox("Generate constructors for POJOs","If selected then generate empty and full constructors for POJOs",false),3);
   xmlSingleFileCh=genPnl.add(checkBox("Write all configurations to a single XML file","If selected then all configurations will be saved into the file 'Ignite.xml'",true),3);
   openFolderCh=genPnl.add(checkBox("Reveal output folder","Open output folder in system file manager after generation complete",true),3);
+  genPnl.add(new Separator(),3);
   GridPaneEx regexPnl=paneEx(0,0,0,0);
   regexPnl.addColumn();
   regexPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
@@ -63,7 +64,7 @@
   regexTf=regexPnl.addLabeled("  Regexp:",textField("Regular expression. For example: (\\w+)"));
   replaceTf=regexPnl.addLabeled("  Replace with:",textField("Replace text. For example: $1_SomeText"));
   final ComboBox<String> replaceCb=regexPnl.addLabeled("  Replace:",comboBox("Replacement target","Key class names","Value class names","Java names"));
-  regexPnl.add(buttonsPane(Pos.BOTTOM_RIGHT,false,button("Rename Selected","Replaces each substring of this string that matches the given regular expression" + " with the given replacement.",new EventHandler<ActionEvent>(){
+  regexPnl.add(buttonsPane(Pos.CENTER_LEFT,false,button("Rename Selected","Replaces each substring of this string that matches the given regular expression" + " with the given replacement.",new EventHandler<ActionEvent>(){
     @Override public void handle(    ActionEvent evt){
       if (checkInput(regexTf,false,"Regular expression should not be empty!"))       return;
       String sel=replaceCb.getSelectionModel().getSelectedItem();
@@ -101,7 +102,7 @@
       for (      PojoDescriptor pojo : selItems)       pojo.revertJavaNames();
     }
   }
-)),2);
+)),2).setPadding(new Insets(0,0,0,10));
   pojosTbl.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<PojoDescriptor>(){
     @Override public void changed(    ObservableValue<? extends PojoDescriptor> val,    PojoDescriptor oldVal,    PojoDescriptor newItem){
       if (newItem != null && newItem.parent() != null) {
