@@ -53,7 +53,7 @@ if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt();
 }
 if (commState.readSize >= 0) {
-if (ldrParticipants == null) ldrParticipants=U.newHashMap(commState.readSize);
+if (ldrParticipants == null) ldrParticipants=new HashMap<>(commState.readSize,1.0f);
 for (int i=commState.readItems; i < commState.readSize; i++) {
 if (!commState.keyDone) {
 UUID _val=commState.getUuid();
@@ -96,20 +96,25 @@ if (buf.remaining() < 8) return false;
 startTaskTime=commState.getLong();
 commState.idx++;
 case 16:
+UUID subjId0=commState.getUuid();
+if (subjId0 == UUID_NOT_READ) return false;
+subjId=subjId0;
+commState.idx++;
+case 17:
 String taskClsName0=commState.getString();
 if (taskClsName0 == STR_NOT_READ) return false;
 taskClsName=taskClsName0;
 commState.idx++;
-case 17:
+case 18:
 String taskName0=commState.getString();
 if (taskName0 == STR_NOT_READ) return false;
 taskName=taskName0;
 commState.idx++;
-case 18:
+case 19:
 if (buf.remaining() < 8) return false;
 timeout=commState.getLong();
 commState.idx++;
-case 19:
+case 20:
 if (commState.readSize == -1) {
 if (buf.remaining() < 4) return false;
 commState.readSize=commState.getInt();
@@ -126,15 +131,10 @@ commState.readItems++;
 commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
-case 20:
+case 21:
 String userVer0=commState.getString();
 if (userVer0 == STR_NOT_READ) return false;
 userVer=userVer0;
-commState.idx++;
-case 21:
-UUID subjId0=commState.getUuid();
-if (subjId0 == UUID_NOT_READ) return false;
-subjId=subjId0;
 commState.idx++;
 }
 return true;
