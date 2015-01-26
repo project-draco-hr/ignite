@@ -1,7 +1,11 @@
 {
   GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
-    return delegate.containsKey(key);
+    if (isAsync()) {
+      curFut.set(delegate.containsKeyAsync(key));
+      return false;
+    }
+ else     return delegate.containsKey(key);
   }
   finally {
     gate.leave(prev);
