@@ -1,0 +1,23 @@
+{
+  WaitAttributeType m=argument(0);
+  checkSessionAttributes(taskSes,"fut",m);
+  IgniteUuid jobId=jobCtx.getJobId();
+  for (int i=0; i < ATTR_NUM; i++) {
+    String key=createKey(jobId.toString(),m,i);
+    String val=createValue(jobId.toString(),m,i);
+    taskSes.setAttribute(key,val);
+  }
+  checkSessionAttributes(taskSes,jobId.toString(),m);
+  Collection<ComputeJobSibling> siblings=taskSes.getJobSiblings();
+  if (log.isInfoEnabled())   log.info("Got siblings from job [size=" + siblings.size() + ", siblings="+ siblings+ ']');
+  for (  ComputeJobSibling sibling : taskSes.getJobSiblings()) {
+    if (!sibling.getJobId().equals(jobId))     checkSessionAttributes(taskSes,sibling.getJobId().toString(),m);
+  }
+  try {
+    taskSes.waitForAttribute("done",true,0);
+  }
+ catch (  InterruptedException e) {
+    throw new IgniteCheckedException("Got interrupted while waiting for 'done' attribute.",e);
+  }
+  return null;
+}

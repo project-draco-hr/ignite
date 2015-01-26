@@ -1,0 +1,15 @@
+{
+  if (job instanceof ComputeJobMasterLeaveAware) {
+    if (masterLeaveGuard.compareAndSet(false,true)) {
+      try {
+        ((ComputeJobMasterLeaveAware)job).onMasterNodeLeft(ses.session());
+        if (log.isDebugEnabled())         log.debug("Successfully executed GridComputeJobMasterLeaveAware.onMasterNodeLeft() callback " + "[nodeId=" + taskNode.id() + ", jobId="+ ses.getJobId()+ ", job="+ job+ ']');
+      }
+ catch (      IgniteCheckedException e) {
+        U.error(log,"Failed to execute GridComputeJobMasterLeaveAware.onMasterNodeLeft() callback " + "[nodeId=" + taskNode.id() + ", jobId="+ ses.getJobId()+ ", job="+ job+ ']',e);
+      }
+    }
+    return true;
+  }
+  return false;
+}

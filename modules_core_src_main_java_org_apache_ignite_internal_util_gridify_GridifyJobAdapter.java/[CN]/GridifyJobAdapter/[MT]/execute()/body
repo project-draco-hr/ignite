@@ -1,0 +1,25 @@
+{
+  GridifyArgument arg=argument(0);
+  try {
+    Method mtd=arg.getMethodClass().getDeclaredMethod(arg.getMethodName(),arg.getMethodParameterTypes());
+    if (!mtd.isAccessible())     try {
+      mtd.setAccessible(true);
+    }
+ catch (    SecurityException e) {
+      throw new IgniteCheckedException("Got security exception when attempting to soften access control for " + "@Gridify method: " + mtd,e);
+    }
+    Object obj=null;
+    if (!Modifier.isStatic(mtd.getModifiers()))     obj=arg.getTarget();
+    return mtd.invoke(obj,arg.getMethodParameters());
+  }
+ catch (  InvocationTargetException e) {
+    if (e.getTargetException() instanceof IgniteCheckedException)     throw (IgniteCheckedException)e.getTargetException();
+    throw new IgniteCheckedException("Failed to invoke a method due to user exception.",e.getTargetException());
+  }
+catch (  IllegalAccessException e) {
+    throw new IgniteCheckedException("Failed to access method for execution.",e);
+  }
+catch (  NoSuchMethodException e) {
+    throw new IgniteCheckedException("Failed to find method for execution.",e);
+  }
+}

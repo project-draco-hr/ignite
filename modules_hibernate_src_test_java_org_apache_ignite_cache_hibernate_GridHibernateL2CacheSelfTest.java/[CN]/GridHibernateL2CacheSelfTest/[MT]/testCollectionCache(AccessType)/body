@@ -1,0 +1,65 @@
+{
+  createSessionFactories(accessType);
+  Map<Integer,Integer> idToChildCnt=new HashMap<>();
+  try {
+    Session ses=sesFactory1.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      for (int i=0; i < 3; i++) {
+        Entity e=new Entity(i,"name-" + i);
+        Collection<ChildEntity> children=new ArrayList<>();
+        for (int j=0; j < 3; j++)         children.add(new ChildEntity());
+        e.setChildren(children);
+        idToChildCnt.put(e.getId(),e.getChildren().size());
+        ses.save(e);
+      }
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    ses=sesFactory1.openSession();
+    try {
+      List<Entity> list=ses.createCriteria(ENTITY_NAME).list();
+      assertEquals(idToChildCnt.size(),list.size());
+      for (      Entity e : list)       assertEquals((int)idToChildCnt.get(e.getId()),e.getChildren().size());
+    }
+  finally {
+      ses.close();
+    }
+    assertCollectionCache(sesFactory2,idToChildCnt,3,0);
+    assertCollectionCache(sesFactory1,idToChildCnt,3,0);
+    if (accessType == AccessType.READ_ONLY)     return;
+    ses=sesFactory1.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      Entity e1=(Entity)ses.load(Entity.class,1);
+      e1.getChildren().remove(e1.getChildren().iterator().next());
+      ses.update(e1);
+      idToChildCnt.put(e1.getId(),e1.getChildren().size());
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    assertCollectionCache(sesFactory2,idToChildCnt,2,1);
+    assertCollectionCache(sesFactory1,idToChildCnt,3,0);
+    ses=sesFactory2.openSession();
+    try {
+      Transaction tx=ses.beginTransaction();
+      Entity e1=(Entity)ses.load(Entity.class,1);
+      e1.getChildren().remove(e1.getChildren().iterator().next());
+      ses.update(e1);
+      idToChildCnt.put(e1.getId(),e1.getChildren().size());
+      tx.commit();
+    }
+  finally {
+      ses.close();
+    }
+    assertCollectionCache(sesFactory2,idToChildCnt,2,1);
+    assertCollectionCache(sesFactory1,idToChildCnt,3,0);
+  }
+  finally {
+    cleanup();
+  }
+}

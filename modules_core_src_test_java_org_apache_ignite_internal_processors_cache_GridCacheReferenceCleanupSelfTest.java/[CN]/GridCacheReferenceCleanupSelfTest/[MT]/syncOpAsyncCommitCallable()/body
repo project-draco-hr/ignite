@@ -1,0 +1,22 @@
+{
+  return new Callable<Collection<WeakReference<Object>>>(){
+    @Override public Collection<WeakReference<Object>> call() throws Exception {
+      Collection<WeakReference<Object>> refs=new ArrayList<>();
+      Ignite g=startGrid();
+      try {
+        GridCache<Integer,TestValue> cache=g.cache(null);
+        refs.add(new WeakReference<Object>(cacheContext(cache)));
+        IgniteTx tx=cache.txStart();
+        TestValue val=new TestValue(0);
+        refs.add(new WeakReference<Object>(val));
+        cache.putx(0,val);
+        tx.commit();
+      }
+  finally {
+        G.stop(g.name(),cancel);
+      }
+      return refs;
+    }
+  }
+;
+}

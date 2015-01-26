@@ -1,0 +1,31 @@
+{
+  if (msg instanceof GridGgfsFragmentizerResponse) {
+    GridGgfsFragmentizerResponse res=(GridGgfsFragmentizerResponse)msg;
+    IgniteUuid fileId=res.fileId();
+    Collection<UUID> nodeIds=fragmentingFiles.get(fileId);
+    if (nodeIds != null) {
+      if (nodeIds.remove(nodeId)) {
+        if (nodeIds.isEmpty()) {
+          if (log.isDebugEnabled())           log.debug("Received all responses for fragmentizer task [fileId=" + fileId + ']');
+          fragmentingFiles.remove(fileId,nodeIds);
+          wakeUp();
+        }
+      }
+    }
+ else     log.warning("Received fragmentizer response for file ID which was not requested (will ignore) " + "[nodeId=" + nodeId + ", fileId="+ res.fileId()+ ']');
+  }
+ else   if (msg instanceof GridGgfsSyncMessage) {
+    GridGgfsSyncMessage sync=(GridGgfsSyncMessage)msg;
+    if (sync.response() && sync.order() == ggfsCtx.kernalContext().grid().localNode().order()) {
+      if (log.isDebugEnabled())       log.debug("Received fragmentizer sync response from remote node: " + nodeId);
+      Collection<UUID> startSync0=startSync;
+      if (startSync0 != null) {
+        startSync0.remove(nodeId);
+        if (startSync0.isEmpty()) {
+          if (log.isDebugEnabled())           log.debug("Completed fragmentizer coordinator sync start: " + startSync0);
+          wakeUp();
+        }
+      }
+    }
+  }
+}

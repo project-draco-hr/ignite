@@ -1,0 +1,22 @@
+{
+  if (log.isInfoEnabled())   log.info("Executing grid job: " + this);
+  try {
+    ClassLoader ldr=Thread.currentThread().getContextClassLoader();
+    if (log.isInfoEnabled())     log.info("Loader (inside job): " + ldr);
+    InputStream in=ldr.getResourceAsStream("testResource");
+    if (in != null) {
+      Reader reader=new InputStreamReader(in);
+      try {
+        char res=(char)reader.read();
+        return Integer.parseInt(Character.toString(res));
+      }
+  finally {
+        U.close(in,null);
+      }
+    }
+    return null;
+  }
+ catch (  IOException e) {
+    throw new IgniteCheckedException("Failed to execute job.",e);
+  }
+}

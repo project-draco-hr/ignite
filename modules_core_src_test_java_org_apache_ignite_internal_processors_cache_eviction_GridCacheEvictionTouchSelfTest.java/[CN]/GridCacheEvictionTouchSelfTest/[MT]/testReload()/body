@@ -1,0 +1,20 @@
+{
+  plc=new CacheFifoEvictionPolicy<Object,Object>(100);
+  try {
+    Ignite ignite=startGrid(1);
+    final GridCache<Integer,Integer> cache=ignite.cache(null);
+    for (int i=0; i < 10000; i++)     cache.reload(i);
+    assertEquals(100,cache.size());
+    assertEquals(100,cache.size());
+    assertEquals(100,((CacheFifoEvictionPolicy)plc).queue().size());
+    Collection<Integer> keys=new ArrayList<>(10000);
+    for (int i=0; i < 10000; i++)     keys.add(i);
+    cache.reloadAll(keys);
+    assertEquals(100,cache.size());
+    assertEquals(100,cache.size());
+    assertEquals(100,((CacheFifoEvictionPolicy)plc).queue().size());
+  }
+  finally {
+    stopAllGrids();
+  }
+}

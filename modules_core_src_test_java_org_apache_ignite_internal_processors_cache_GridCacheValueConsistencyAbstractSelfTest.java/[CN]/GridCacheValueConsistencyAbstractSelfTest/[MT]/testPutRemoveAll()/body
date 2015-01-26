@@ -1,0 +1,39 @@
+{
+  awaitPartitionMapExchange();
+  GridCache<String,Integer> cache=cache();
+  int keyCnt=10;
+  for (int i=0; i < keyCnt; i++) {
+    info("Putting value to cache: " + i);
+    cache.put("key" + i,i);
+  }
+  for (int g=0; g < gridCount(); g++) {
+    GridCache<String,Integer> cache0=cache(g);
+    ClusterNode locNode=grid(g).localNode();
+    for (int i=0; i < keyCnt; i++) {
+      String key="key" + i;
+      if (cache.affinity().mapKeyToPrimaryAndBackups(key).contains(grid(g).localNode())) {
+        info("Node is reported as affinity node for key [key=" + key + ", nodeId="+ locNode.id()+ ']');
+        assertEquals((Integer)i,cache0.peek(key));
+      }
+ else {
+        info("Node is reported as NOT affinity node for key [key=" + key + ", nodeId="+ locNode.id()+ ']');
+        if (distributionMode() == NEAR_PARTITIONED && cache == cache0)         assertEquals((Integer)i,cache0.peek(key));
+ else         assertNull(cache0.peek(key));
+      }
+      assertEquals((Integer)i,cache0.get(key));
+    }
+  }
+  for (int g=0; g < gridCount(); g++) {
+    info(">>>> Removing all values form cache: " + g);
+    cache(g).removeAll();
+  }
+  info(">>>> Starting values check");
+  for (int g=0; g < gridCount(); g++) {
+    GridCache<String,Integer> cache0=cache(g);
+    for (int i=0; i < keyCnt; i++) {
+      String key="key" + i;
+      assertNull(cache0.peek(key));
+      assertNull(cache0.get(key));
+    }
+  }
+}

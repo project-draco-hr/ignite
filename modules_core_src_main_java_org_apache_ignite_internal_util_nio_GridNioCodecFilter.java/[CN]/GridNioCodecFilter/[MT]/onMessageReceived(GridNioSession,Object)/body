@@ -1,0 +1,20 @@
+{
+  if (!(msg instanceof ByteBuffer))   throw new GridNioException("Failed to decode incoming message (incoming message is not a byte buffer, " + "is filter properly placed?): " + msg.getClass());
+  try {
+    ByteBuffer input=(ByteBuffer)msg;
+    while (input.hasRemaining()) {
+      Object res=parser.decode(ses,input);
+      if (res != null)       proceedMessageReceived(ses,res);
+ else {
+        if (input.hasRemaining()) {
+          if (directMode)           return;
+          LT.warn(log,null,"Parser returned null but there are still unread data in input buffer (bug in " + "parser code?) [parser=" + parser + ", ses="+ ses+ ']');
+          input.position(input.limit());
+        }
+      }
+    }
+  }
+ catch (  IOException e) {
+    throw new GridNioException(e);
+  }
+}

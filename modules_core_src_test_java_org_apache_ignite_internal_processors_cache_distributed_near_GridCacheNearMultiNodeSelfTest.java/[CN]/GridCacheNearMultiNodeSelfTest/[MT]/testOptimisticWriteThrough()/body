@@ -1,0 +1,29 @@
+{
+  GridCache<Integer,String> near=cache(0);
+  if (transactional()) {
+    try (IgniteTx tx=near.txStart(OPTIMISTIC,REPEATABLE_READ,0,0)){
+      near.putx(2,"2");
+      String s=near.put(3,"3");
+      assertNotNull(s);
+      assertEquals("3",s);
+      assertEquals("2",near.get(2));
+      assertEquals("3",near.get(3));
+      GridDhtCacheEntry<Integer,String> entry=dht(primaryGrid(2)).peekExx(2);
+      if (entry != null)       assertNull("Unexpected entry: " + entry,entry.rawGetOrUnmarshal(false));
+      assertNotNull(dht(primaryGrid(3)).peek(3));
+      tx.commit();
+    }
+   }
+ else {
+    near.putx(2,"2");
+    String s=near.put(3,"3");
+    assertNotNull(s);
+    assertEquals("3",s);
+  }
+  assertEquals("2",near.peek(2));
+  assertEquals("3",near.peek(3));
+  assertEquals("2",dht(primaryGrid(2)).peek(2));
+  assertEquals("3",dht(primaryGrid(3)).peek(3));
+  assertEquals(2,near.size());
+  assertEquals(2,near.size());
+}

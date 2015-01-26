@@ -1,0 +1,34 @@
+{
+  try {
+    if (secReader != null) {
+      secReader.close();
+      for (      IgniteFuture<byte[]> fut : locCache.values()) {
+        try {
+          fut.get();
+        }
+ catch (        IgniteCheckedException ignore) {
+        }
+      }
+      while (!pendingFuts.isEmpty()) {
+        pendingFutsLock.lock();
+        try {
+          pendingFutsCond.await(100,TimeUnit.MILLISECONDS);
+        }
+ catch (        InterruptedException ignore) {
+        }
+ finally {
+          pendingFutsLock.unlock();
+        }
+      }
+      if (!meta.exists(fileInfo.id()))       data.delete(fileInfo);
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IOError(e);
+  }
+ finally {
+    closed=true;
+    metrics.addReadBytesTime(bytes,time);
+    locCache.clear();
+  }
+}

@@ -1,0 +1,19 @@
+{
+  startGrids(gridCount());
+  try {
+    GridCache<Object,Object> cache=grid(0).cache(null);
+    int key=testKey();
+    try (IgniteTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+      cache.get(key);
+      cache.remove(key);
+      tx.commit();
+    }
+     CountingCommunicationSpi commSpi=(CountingCommunicationSpi)grid(0).configuration().getCommunicationSpi();
+    assertEquals(expectedNearLockRequests(),commSpi.nearLocks());
+    assertEquals(expectedDhtLockRequests(),commSpi.dhtLocks());
+    assertEquals(expectedDistributedLockRequests(),commSpi.distributedLocks());
+  }
+  finally {
+    stopAllGrids();
+  }
+}

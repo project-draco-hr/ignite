@@ -1,0 +1,16 @@
+{
+  Collection<IsolatedDeployment> rmv=new LinkedList<>();
+synchronized (mux) {
+    for (Iterator<IsolatedDeployment> iter=cache.values().iterator(); iter.hasNext(); ) {
+      IsolatedDeployment dep=iter.next();
+      ClusterNode node=ctx.discovery().node(dep.senderNodeId());
+      if (node == null) {
+        dep.undeploy();
+        iter.remove();
+        rmv.add(dep);
+      }
+    }
+  }
+  for (  IsolatedDeployment dep : rmv)   dep.recordUndeployed(null);
+  if (log.isDebugEnabled())   log.debug("Registered deployment discovery listener: " + discoLsnr);
+}

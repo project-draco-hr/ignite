@@ -1,0 +1,22 @@
+{
+  if (timedOut)   return null;
+  GridCacheMvccCandidate<K> c=entry.addNearLocal(dhtNodeId,threadId,lockVer,timeout,!inTx(),inTx(),implicitSingleTx());
+  if (inTx()) {
+    IgniteTxEntry<K,V> txEntry=tx.entry(entry.txKey());
+    txEntry.cached(entry,txEntry.keyBytes());
+  }
+  if (c != null)   c.topologyVersion(topVer);
+synchronized (mux) {
+    entries.add(entry);
+  }
+  if (c == null && timeout < 0) {
+    if (log.isDebugEnabled())     log.debug("Failed to acquire lock with negative timeout: " + entry);
+    onFailed(false);
+    return null;
+  }
+  if (timedOut) {
+    entry.removeLock(lockVer);
+    return null;
+  }
+  return c;
+}

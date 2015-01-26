@@ -1,0 +1,33 @@
+{
+  boolean p2pEnabled=false;
+  boolean storeValBytes=false;
+  for (int i=0; i < args.length; i++) {
+    String arg=args[i];
+switch (arg) {
+case "-p2p":
+      p2pEnabled=Boolean.parseBoolean(args[++i]);
+    break;
+case "-storeValBytes":
+  storeValBytes=Boolean.parseBoolean(args[++i]);
+break;
+}
+}
+X.println("Peer class loading enabled: " + p2pEnabled);
+X.println("Store value bytes: " + storeValBytes);
+IgniteConfiguration cfg=new IgniteConfiguration();
+TcpCommunicationSpi commSpi=new TcpCommunicationSpi();
+commSpi.setSharedMemoryPort(-1);
+cfg.setCommunicationSpi(commSpi);
+cfg.setDiscoverySpi(discovery());
+cfg.setPeerClassLoadingEnabled(p2pEnabled);
+CacheConfiguration cacheCfg=new CacheConfiguration();
+cacheCfg.setCacheMode(PARTITIONED);
+cacheCfg.setStoreValueBytes(storeValBytes);
+cacheCfg.setBackups(1);
+if (nearOnly) {
+cacheCfg.setNearEvictionPolicy(new GridCacheAlwaysEvictionPolicy());
+cacheCfg.setDistributionMode(NEAR_ONLY);
+}
+cfg.setCacheConfiguration(cacheCfg);
+return cfg;
+}

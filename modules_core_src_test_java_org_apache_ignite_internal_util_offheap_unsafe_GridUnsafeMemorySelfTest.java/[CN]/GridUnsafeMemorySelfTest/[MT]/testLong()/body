@@ -1,0 +1,20 @@
+{
+  GridUnsafeMemory mem=new GridUnsafeMemory(64);
+  int size=32;
+  long addr=mem.allocate(size);
+  try {
+    long l1=123456;
+    mem.writeLong(addr,l1);
+    long l2=mem.readLong(addr);
+    assertEquals(l1,l2);
+    long l3=654321;
+    mem.writeLongVolatile(addr,l3);
+    long l4=666666;
+    assertTrue(mem.casLong(addr,l3,l4));
+    assertFalse(mem.casLong(addr,l3,0));
+    assertEquals(l4,mem.readLongVolatile(addr));
+  }
+  finally {
+    mem.release(addr,size);
+  }
+}

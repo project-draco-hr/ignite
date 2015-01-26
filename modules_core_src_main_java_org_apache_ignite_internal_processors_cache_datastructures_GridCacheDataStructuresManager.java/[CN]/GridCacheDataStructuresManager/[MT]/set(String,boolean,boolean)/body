@@ -1,0 +1,11 @@
+{
+  waitInitialization();
+  final boolean collocMode=cctx.cache().configuration().getCacheMode() != PARTITIONED || collocated;
+  if (cctx.atomic())   return set0(name,collocMode,create);
+  return CU.outTx(new Callable<CacheSet<T>>(){
+    @Nullable @Override public CacheSet<T> call() throws Exception {
+      return set0(name,collocMode,create);
+    }
+  }
+,cctx);
+}

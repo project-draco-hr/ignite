@@ -1,0 +1,83 @@
+{
+  commState.setBuffer(buf);
+  if (!super.readFrom(buf))   return false;
+switch (commState.idx) {
+case 3:
+    if (commState.readSize == -1) {
+      if (buf.remaining() < 4)       return false;
+      commState.readSize=commState.getInt();
+    }
+  if (commState.readSize >= 0) {
+    if (keysBytes == null)     keysBytes=new ArrayList<>(commState.readSize);
+    for (int i=commState.readItems; i < commState.readSize; i++) {
+      byte[] _val=commState.getByteArray();
+      if (_val == BYTE_ARR_NOT_READ)       return false;
+      keysBytes.add((byte[])_val);
+      commState.readItems++;
+    }
+  }
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 4:
+if (commState.readSize == -1) {
+if (buf.remaining() < 4) return false;
+commState.readSize=commState.getInt();
+}
+if (commState.readSize >= 0) {
+if (nearKeysBytes == null) nearKeysBytes=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+byte[] _val=commState.getByteArray();
+if (_val == BYTE_ARR_NOT_READ) return false;
+nearKeysBytes.add((byte[])_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 5:
+if (commState.readSize == -1) {
+if (buf.remaining() < 4) return false;
+commState.readSize=commState.getInt();
+}
+if (commState.readSize >= 0) {
+if (nearVers == null) nearVers=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+GridCacheVersion _val=commState.getCacheVersion();
+if (_val == CACHE_VER_NOT_READ) return false;
+nearVers.add((GridCacheVersion)_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 6:
+if (buf.remaining() < 8) return false;
+topVer=commState.getLong();
+commState.idx++;
+case 7:
+if (buf.remaining() < 8) return false;
+ttl=commState.getLong();
+commState.idx++;
+case 8:
+if (commState.readSize == -1) {
+if (buf.remaining() < 4) return false;
+commState.readSize=commState.getInt();
+}
+if (commState.readSize >= 0) {
+if (vers == null) vers=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+GridCacheVersion _val=commState.getCacheVersion();
+if (_val == CACHE_VER_NOT_READ) return false;
+vers.add((GridCacheVersion)_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+}
+return true;
+}

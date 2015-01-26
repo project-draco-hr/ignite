@@ -1,0 +1,40 @@
+{
+  info("Grid 0: " + grid(0).localNode().id());
+  info("Grid 1: " + grid(1).localNode().id());
+  info("Grid 2: " + grid(2).localNode().id());
+  info("Grid 3: " + grid(3).localNode().id());
+  Ignite ignite=grid(0);
+  Collection<IgniteFuture<?>> futs=new LinkedList<>();
+  IgniteCompute comp=ignite.compute().enableAsync();
+  for (int i=0; i < jobCnt; i++) {
+    comp.apply(new CX1<Integer,Void>(){
+      @IgniteInstanceResource private Ignite ignite;
+      @Override public Void applyx(      final Integer i) throws IgniteCheckedException {
+        GridCache<String,int[]> cache=this.ignite.cache(null);
+        try (IgniteTx tx=cache.txStart(concur,isolation)){
+          int[] arr=cache.get("TestKey");
+          if (arr == null)           arr=new int[jobCnt];
+          arr[i]=1;
+          cache.put("TestKey",arr);
+          int c=cntr.getAndIncrement();
+          if (c % 50 == 0)           X.println("Executing transaction [i=" + i + ", c="+ c+ ']');
+          tx.commit();
+        }
+         return null;
+      }
+    }
+,i);
+    futs.add(comp.future());
+  }
+  for (  IgniteFuture<?> fut : futs)   fut.get();
+  for (int i=0; i < GRID_CNT; i++) {
+    CacheProjection<String,int[]> c=grid(i).cache(null).projection(String.class,int[].class);
+    try (IgniteTx tx=c.txStart(concur,isolation)){
+      int[] arr=c.get("TestKey");
+      assertNotNull(arr);
+      assertEquals(jobCnt,arr.length);
+      for (      int j : arr)       assertEquals(1,j);
+      tx.commit();
+    }
+   }
+}

@@ -1,0 +1,21 @@
+{
+  try {
+    boolean reset=false;
+    while (!closed) {
+      try {
+        if (reset)         selector=createSelector(null);
+        bodyInternal();
+      }
+ catch (      IgniteCheckedException e) {
+        if (!Thread.currentThread().isInterrupted()) {
+          U.error(log,"Failed to read data from remote connection (will wait for " + ERR_WAIT_TIME + "ms).",e);
+          U.sleep(ERR_WAIT_TIME);
+          reset=true;
+        }
+      }
+    }
+  }
+ catch (  Throwable e) {
+    U.error(log,"Caught unhandled exception in NIO worker thread (restart the node).",e);
+  }
+}
