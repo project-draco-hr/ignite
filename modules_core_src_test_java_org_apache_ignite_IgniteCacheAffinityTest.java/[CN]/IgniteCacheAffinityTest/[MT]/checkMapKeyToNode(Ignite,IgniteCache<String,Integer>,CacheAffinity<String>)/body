@@ -1,0 +1,13 @@
+{
+  CacheAffinity<String> igniteAff=ignite.affinity(jcache.getName());
+  Iterator<Cache.Entry<String,Integer>> iter=jcache.iterator();
+  while (iter.hasNext()) {
+    Cache.Entry<String,Integer> entry=iter.next();
+    UUID node1=igniteAff.mapKeyToNode(entry.getKey()).id();
+    UUID node2=aff.mapKeyToNode(entry.getKey()).id();
+    assertEquals(node1,node2);
+    Collection<ClusterNode> nodes1=igniteAff.mapKeyToPrimaryAndBackups(entry.getKey());
+    Collection<ClusterNode> nodes2=aff.mapKeyToPrimaryAndBackups(entry.getKey());
+    checkEqualCollection(nodes1,nodes2);
+  }
+}
