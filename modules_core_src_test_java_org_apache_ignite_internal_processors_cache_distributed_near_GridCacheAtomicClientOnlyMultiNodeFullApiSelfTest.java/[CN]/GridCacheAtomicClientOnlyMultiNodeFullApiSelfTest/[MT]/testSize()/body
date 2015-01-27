@@ -1,0 +1,14 @@
+{
+  GridCache<String,Integer> cache=cache();
+  int size=10;
+  Map<String,Integer> map=U.newLinkedHashMap(size);
+  for (int i=0; i < size; i++)   map.put("key" + i,i);
+  cache.putAll(map);
+  affinityNodes();
+  checkKeySize(map.keySet());
+  checkSize(map.keySet());
+  assertEquals("Primary keys found in client-only cache [" + "primaryEntries=" + cache.primaryEntrySet() + ", dht="+ cache(nearIdx).entrySet()+ "]",0,cache.primarySize());
+  int fullCacheSize=0;
+  for (int i=0; i < gridCount(); i++)   fullCacheSize+=cache(i).primarySize();
+  assertEquals("Invalid cache size",10,fullCacheSize);
+}

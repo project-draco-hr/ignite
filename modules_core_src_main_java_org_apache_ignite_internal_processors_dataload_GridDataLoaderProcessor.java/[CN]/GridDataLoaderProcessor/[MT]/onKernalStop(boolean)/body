@@ -1,0 +1,20 @@
+{
+  if (ctx.config().isDaemon())   return;
+  ctx.io().removeMessageListener(TOPIC_DATALOAD);
+  busyLock.block();
+  U.interrupt(flusher);
+  U.join(flusher,log);
+  for (  IgniteDataLoader<?,?> ldr : ldrs) {
+    if (log.isDebugEnabled())     log.debug("Closing active data loader on grid stop [ldr=" + ldr + ", cancel="+ cancel+ ']');
+    try {
+      ldr.close(cancel);
+    }
+ catch (    IgniteInterruptedException e) {
+      U.warn(log,"Interrupted while waiting for completion of the data loader: " + ldr,e);
+    }
+catch (    IgniteCheckedException e) {
+      U.error(log,"Failed to close data loader: " + ldr,e);
+    }
+  }
+  if (log.isDebugEnabled())   log.debug("Stopped data loader processor.");
+}

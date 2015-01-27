@@ -1,0 +1,44 @@
+{
+  partDistMode=distMode;
+  writeOrderMode=orderMode;
+  startGrids(4);
+  try {
+    awaitPartitionMapExchange();
+    TestCommunicationSpi commSpi=(TestCommunicationSpi)grid(0).configuration().getCommunicationSpi();
+    commSpi.registerMessage(GridNearAtomicUpdateRequest.class);
+    commSpi.registerMessage(GridDhtAtomicUpdateRequest.class);
+    int putCnt=15;
+    int expNearCnt=0;
+    int expDhtCnt=0;
+    for (int i=0; i < putCnt; i++) {
+      ClusterNode locNode=grid(0).localNode();
+      if (writeOrderMode == CLOCK) {
+        if (cache(0).affinity().isPrimary(locNode,i) || cache(0).affinity().isBackup(locNode,i))         expNearCnt++;
+ else         expNearCnt+=2;
+      }
+ else {
+        if (cache(0).affinity().isPrimary(locNode,i))         expDhtCnt++;
+ else         expNearCnt++;
+      }
+      cache(0).put(i,i);
+    }
+    assertEquals(expNearCnt,commSpi.messageCount(GridNearAtomicUpdateRequest.class));
+    assertEquals(expDhtCnt,commSpi.messageCount(GridDhtAtomicUpdateRequest.class));
+    if (writeOrderMode == CLOCK) {
+      for (int i=1; i < 4; i++) {
+        commSpi=(TestCommunicationSpi)grid(i).configuration().getCommunicationSpi();
+        assertEquals(0,commSpi.messageCount(GridNearAtomicUpdateRequest.class));
+        assertEquals(0,commSpi.messageCount(GridDhtAtomicUpdateRequest.class));
+      }
+    }
+ else {
+      for (int i=1; i < 4; i++) {
+        commSpi=(TestCommunicationSpi)grid(i).configuration().getCommunicationSpi();
+        assertEquals(0,commSpi.messageCount(GridNearAtomicUpdateRequest.class));
+      }
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

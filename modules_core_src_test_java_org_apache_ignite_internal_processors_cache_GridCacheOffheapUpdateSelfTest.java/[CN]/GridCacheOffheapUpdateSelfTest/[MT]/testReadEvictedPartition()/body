@@ -1,0 +1,25 @@
+{
+  try {
+    Ignite grid=startGrid(0);
+    GridCache<Object,Object> cache=grid.cache(null);
+    for (int i=0; i < 30; i++)     cache.put(i,0);
+    startGrid(1);
+    awaitPartitionMapExchange();
+    for (int i=0; i < 30; i++)     grid(1).cache(null).put(i,10);
+    int key=0;
+    ClusterNode locNode=grid.cluster().localNode();
+    for (; key < 30; key++) {
+      if (!cache.affinity().isPrimary(locNode,key) && !cache.affinity().isBackup(locNode,key))       break;
+    }
+    assertEquals(10,cache.get(key));
+    try (IgniteTx ignored=cache.txStart(OPTIMISTIC,REPEATABLE_READ)){
+      assertEquals(10,cache.get(key));
+    }
+     try (IgniteTx ignored=cache.txStart(PESSIMISTIC,READ_COMMITTED)){
+      assertEquals(10,cache.get(key));
+    }
+   }
+  finally {
+    stopAllGrids();
+  }
+}

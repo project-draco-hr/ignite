@@ -1,0 +1,36 @@
+{
+  Map<Integer,String> tst=new ConcurrentLinkedHashMap<>();
+  Map<Integer,String> map=new LinkedHashMap<>(10,0.75f);
+  for (int i=0; i < INSERTS_COUNT; i++) {
+    int key=rnd.nextInt(KEYS_UPPER_BOUND);
+    if (rnd.nextBoolean()) {
+      tst.put(key,"value" + key);
+      map.put(key,"value" + key);
+    }
+ else {
+      tst.remove(key);
+      map.remove(key);
+    }
+  }
+  if (update) {
+    Iterator<Map.Entry<Integer,String>> tstIt=tst.entrySet().iterator();
+    for (Iterator<Map.Entry<Integer,String>> mapIt=map.entrySet().iterator(); mapIt.hasNext(); ) {
+      Map.Entry<Integer,String> entry=mapIt.next();
+      assertTrue("No enough elements in key set",tstIt.hasNext());
+      Map.Entry<Integer,String> tstEntry=tstIt.next();
+      assertEquals("Key mismatch",tstEntry.getKey(),entry.getKey());
+      assertEquals("Value mismatch",tstEntry.getValue(),entry.getValue());
+      if (entry.getKey() % 2 == 0) {
+        mapIt.remove();
+        tstIt.remove();
+      }
+    }
+  }
+  Iterator<Map.Entry<Integer,String>> tstIt=tst.entrySet().iterator();
+  for (  Map.Entry<Integer,String> entry : map.entrySet()) {
+    assertTrue("No enough elements in key set after removal",tstIt.hasNext());
+    Map.Entry<Integer,String> tstEntry=tstIt.next();
+    assertEquals("Key mismatch after removal",tstEntry.getKey(),entry.getKey());
+    assertEquals("Value mismatch after removal",tstEntry.getValue(),entry.getValue());
+  }
+}

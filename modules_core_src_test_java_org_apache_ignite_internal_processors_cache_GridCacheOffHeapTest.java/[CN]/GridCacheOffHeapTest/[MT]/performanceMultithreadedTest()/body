@@ -1,0 +1,28 @@
+{
+  Ignite g=startGrid();
+  try {
+    final GridCache<Integer,Integer> c=g.cache(null);
+    final long start=System.currentTimeMillis();
+    final AtomicInteger keyGen=new AtomicInteger();
+    final int reserveSize=1024 * 1024;
+    multithreaded(new Callable<Object>(){
+      @SuppressWarnings("InfiniteLoopStatement") @Override public Object call() throws Exception {
+        while (true) {
+          int val=keyGen.addAndGet(reserveSize);
+          for (int i=val - reserveSize; i < val; i++) {
+            c.put(i,i);
+            if (i % 500000 == 0) {
+              long dur=System.currentTimeMillis() - start;
+              long keySize=c.size() + c.offHeapEntriesCount();
+              info("Stats [size=" + keySize + ", time="+ dur+ ", throughput="+ (keySize * 1000f / dur)+ " ops/sec, onheapCnt="+ c.size()+ ", offheapCnt="+ c.offHeapEntriesCount()+ "]");
+            }
+          }
+        }
+      }
+    }
+,Runtime.getRuntime().availableProcessors());
+  }
+  finally {
+    stopAllGrids();
+  }
+}

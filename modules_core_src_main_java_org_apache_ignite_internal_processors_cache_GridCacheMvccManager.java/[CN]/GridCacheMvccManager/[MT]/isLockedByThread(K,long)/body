@@ -1,0 +1,16 @@
+{
+  if (threadId < 0) {
+    for (    GridCacheExplicitLockSpan<K> span : pendingExplicit.values()) {
+      GridCacheMvccCandidate<K> cand=span.candidate(key,null);
+      if (cand != null && cand.owner())       return true;
+    }
+  }
+ else {
+    GridCacheExplicitLockSpan<K> span=pendingExplicit.get(threadId);
+    if (span != null) {
+      GridCacheMvccCandidate<K> cand=span.candidate(key,null);
+      return cand != null && cand.owner();
+    }
+  }
+  return false;
+}

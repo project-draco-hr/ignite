@@ -1,0 +1,19 @@
+{
+  A.notNull(keys,"keys",entryProcessor,"entryProcessor");
+  if (keyCheck)   validateCacheKeys(keys);
+  ctx.denyOnLocalRead();
+  return syncOp(new SyncOp<Map<K,EntryProcessorResult<T>>>(keys.size() == 1){
+    @Nullable @Override public Map<K,EntryProcessorResult<T>> op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
+      Map<? extends K,EntryProcessor<K,V,Object>> invokeMap=F.viewAsMap(keys,new C1<K,EntryProcessor<K,V,Object>>(){
+        @Override public EntryProcessor apply(        K k){
+          return entryProcessor;
+        }
+      }
+);
+      IgniteFuture<GridCacheReturn<Map<K,EntryProcessorResult<T>>>> fut=tx.invokeAsync(ctx,invokeMap,args);
+      Map<K,EntryProcessorResult<T>> res=fut.get().value();
+      return res != null ? res : Collections.<K,EntryProcessorResult<T>>emptyMap();
+    }
+  }
+);
+}

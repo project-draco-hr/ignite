@@ -1,0 +1,49 @@
+{
+  long now=System.currentTimeMillis();
+  if (lastPrint.get() + PRINT_FREQ < now && lastPrint.setIfGreater(now)) {
+    Map<String,Long> maxes=new HashMap<>();
+    Set<CacheAffinityKey<String>> keys=null;
+    for (    Map.Entry<Thread,ConcurrentMap<String,T5<Long,Long,Long,IgniteUuid,Object>>> e1 : timers.entrySet()) {
+      for (      Map.Entry<String,T5<Long,Long,Long,IgniteUuid,Object>> e2 : e1.getValue().entrySet()) {
+        T5<Long,Long,Long,IgniteUuid,Object> t=e2.getValue();
+        long start=t.get1();
+        long end=t.get2();
+        IgniteUuid xid=t.get4();
+        long duration=end == 0 ? now - start : end - start;
+        long max=t.get3() == null ? duration : t.get3();
+        if (duration < 0)         duration=now - start;
+        if (duration > MAX) {
+          X.println("Maxed out timer [name=" + e2.getKey() + ", key="+ t.get5()+ ", duration="+ duration+ ", ongoing="+ (end == 0)+ ", thread="+ e1.getKey().getName()+ ", xid="+ xid+ ']');
+          CacheAffinityKey<String> key=(CacheAffinityKey<String>)t.get5();
+          if (key != null) {
+            if (keys == null)             keys=new LinkedHashSet<>();
+            keys.add(key);
+          }
+        }
+        Long cmax=maxes.get(e2.getKey());
+        if (cmax == null || max > cmax)         maxes.put(e2.getKey(),max);
+        t.set3(null);
+      }
+    }
+    if (!F.isEmpty(keys)) {
+      for (      Ignite g : G.allGrids()) {
+        if (g.name().contains("server")) {
+          GridNearCacheAdapter<CacheAffinityKey<String>,Object> near=(GridNearCacheAdapter<CacheAffinityKey<String>,Object>)((GridKernal)g).<CacheAffinityKey<String>,Object>internalCache();
+          GridDhtCacheAdapter<CacheAffinityKey<String>,Object> dht=near.dht();
+          for (          CacheAffinityKey<String> k : keys) {
+            GridNearCacheEntry<?,?> nearEntry=near.peekExx(k);
+            GridDhtCacheEntry<?,?> dhtEntry=dht.peekExx(k);
+            X.println("Near entry [grid=" + g.name() + ", key="+ k+ ", entry="+ nearEntry);
+            X.println("DHT entry [grid=" + g.name() + ", key="+ k+ ", entry="+ dhtEntry);
+            GridCacheMvccCandidate<?> nearCand=nearEntry == null ? null : F.first(nearEntry.localCandidates());
+            if (nearCand != null)             X.println("Near futures: " + nearEntry.context().mvcc().futures(nearCand.version()));
+            GridCacheMvccCandidate<?> dhtCand=dhtEntry == null ? null : F.first(dhtEntry.localCandidates());
+            if (dhtCand != null)             X.println("Dht futures: " + dhtEntry.context().mvcc().futures(dhtCand.version()));
+          }
+        }
+      }
+    }
+    for (    Map.Entry<String,Long> e : maxes.entrySet())     X.println("Timer [name=" + e.getKey() + ", maxTime="+ e.getValue()+ ']');
+    X.println(">>>>");
+  }
+}

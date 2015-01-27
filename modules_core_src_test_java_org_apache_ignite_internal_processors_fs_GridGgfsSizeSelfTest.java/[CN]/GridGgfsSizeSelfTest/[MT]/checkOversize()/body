@@ -1,0 +1,30 @@
+{
+  ggfsMaxData=BLOCK_SIZE;
+  startUp();
+  final IgniteFsPath path=new IgniteFsPath("/file");
+  IgniteFsOutputStream os=ggfs(0).create(path,false);
+  os.write(chunk(BLOCK_SIZE - 1));
+  os.close();
+  os=ggfs(0).append(path,false);
+  os.write(chunk(1));
+  os.close();
+  GridTestUtils.assertThrows(log(),new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      IgniteFsOutputStream osErr=ggfs(0).append(path,false);
+      try {
+        osErr.write(chunk(BLOCK_SIZE));
+        osErr.close();
+        return null;
+      }
+ catch (      IOException e) {
+        Throwable e0=e;
+        while (e0.getCause() != null)         e0=e0.getCause();
+        throw (Exception)e0;
+      }
+ finally {
+        U.closeQuiet(osErr);
+      }
+    }
+  }
+,IgniteFsOutOfSpaceException.class,"Failed to write data block (GGFS maximum data size exceeded) [used=" + ggfsMaxData + ", allowed="+ ggfsMaxData+ ']');
+}

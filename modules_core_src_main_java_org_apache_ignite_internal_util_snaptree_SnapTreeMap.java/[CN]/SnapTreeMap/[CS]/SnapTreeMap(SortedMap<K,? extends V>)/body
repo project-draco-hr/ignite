@@ -1,0 +1,24 @@
+{
+  this.comparator=source.comparator();
+  if (source instanceof SnapTreeMap) {
+    final SnapTreeMap<K,V> s=(SnapTreeMap<K,V>)source;
+    this.holderRef=(COWMgr<K,V>)s.holderRef.clone();
+  }
+ else {
+    int size=0;
+    final RootHolder<K,V> holder=new RootHolder<K,V>();
+    for (    Map.Entry<K,? extends V> e : source.entrySet()) {
+      final K k=e.getKey();
+      final V v=e.getValue();
+      if (k == null) {
+        throw new NullPointerException("source map contained a null key");
+      }
+      if (!AllowNullValues && v == null) {
+        throw new NullPointerException("source map contained a null value");
+      }
+      updateUnderRoot(k,comparable(k),UpdateAlways,null,encodeNull(v),holder);
+      ++size;
+    }
+    this.holderRef=new COWMgr<K,V>(holder,size);
+  }
+}

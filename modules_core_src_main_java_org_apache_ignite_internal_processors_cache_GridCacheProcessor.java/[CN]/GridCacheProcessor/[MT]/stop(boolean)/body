@@ -1,0 +1,35 @@
+{
+  if (ctx.config().isDaemon())   return;
+  for (  GridCacheAdapter<?,?> cache : stopSeq) {
+    cache.stop();
+    GridCacheContext ctx=cache.context();
+    if (isNearEnabled(ctx)) {
+      GridDhtCacheAdapter dht=ctx.near().dht();
+      if (dht != null) {
+        dht.stop();
+        GridCacheContext<?,?> dhtCtx=dht.context();
+        List<GridCacheManager> dhtMgrs=dhtManagers(dhtCtx);
+        for (ListIterator<GridCacheManager> it=dhtMgrs.listIterator(dhtMgrs.size()); it.hasPrevious(); ) {
+          GridCacheManager mgr=it.previous();
+          mgr.stop(cancel);
+        }
+      }
+    }
+    List<GridCacheManager> mgrs=ctx.managers();
+    Collection<GridCacheManager> excludes=dhtExcludes(ctx);
+    for (ListIterator<GridCacheManager> it=mgrs.listIterator(mgrs.size()); it.hasPrevious(); ) {
+      GridCacheManager mgr=it.previous();
+      if (!excludes.contains(mgr))       mgr.stop(cancel);
+    }
+    U.stopLifecycleAware(log,lifecycleAwares(cache.configuration(),ctx.jta().tmLookup()));
+    if (log.isInfoEnabled())     log.info("Stopped cache: " + cache.name());
+    cleanup(ctx);
+  }
+  List<? extends GridCacheSharedManager<?,?>> mgrs=sharedCtx.managers();
+  for (ListIterator<? extends GridCacheSharedManager<?,?>> it=mgrs.listIterator(mgrs.size()); it.hasPrevious(); ) {
+    GridCacheSharedManager<?,?> mgr=it.previous();
+    mgr.stop(cancel);
+  }
+  sharedCtx.cleanup();
+  if (log.isDebugEnabled())   log.debug("Stopped cache processor.");
+}

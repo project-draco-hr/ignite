@@ -1,0 +1,23 @@
+{
+  boolean wasEx=false;
+  IgniteTx tx=null;
+  try {
+    GridCache<Integer,String> cache=ignite.cache(null);
+    tx=cache.txStart(concurrency,isolation,50,0);
+    cache.put(1,"1");
+    Thread.sleep(100);
+    cache.put(1,"2");
+    tx.commit();
+  }
+ catch (  IgniteTxOptimisticException e) {
+    info("Received expected optimistic exception: " + e.getMessage());
+    wasEx=true;
+    tx.rollback();
+  }
+catch (  IgniteTxTimeoutException e) {
+    info("Received expected timeout exception: " + e.getMessage());
+    wasEx=true;
+    tx.rollback();
+  }
+  assert wasEx;
+}

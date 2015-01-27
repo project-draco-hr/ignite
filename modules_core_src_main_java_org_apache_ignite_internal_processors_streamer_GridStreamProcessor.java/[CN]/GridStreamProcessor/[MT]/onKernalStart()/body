@@ -1,0 +1,50 @@
+{
+  if (ctx.config().isDaemon())   return;
+  super.onKernalStart();
+  if (!getBoolean(GG_SKIP_CONFIGURATION_CONSISTENCY_CHECK)) {
+    for (    ClusterNode n : ctx.discovery().remoteNodes())     checkStreamer(n);
+  }
+  for (  IgniteStreamerImpl s : map.values()) {
+    try {
+      mBeans.add(U.registerMBean(mBeanSrv,ctx.gridName(),U.maskName(s.name()),"Streamer",new StreamerMBeanAdapter(s),StreamerMBean.class));
+      if (log.isDebugEnabled())       log.debug("Registered MBean for streamer: " + s.name());
+    }
+ catch (    JMException e) {
+      U.error(log,"Failed to register streamer MBean: " + s.name(),e);
+    }
+    for (    StreamerStage stage : s.configuration().getStages()) {
+      try {
+        mBeans.add(U.registerMBean(mBeanSrv,ctx.gridName(),U.maskName(s.name()),"Stage-" + stage.name(),new StreamerStageMBeanAdapter(stage.name(),stage.getClass().getName(),s),StreamerStageMBean.class));
+        if (log.isDebugEnabled())         log.debug("Registered MBean for streamer stage [streamer=" + s.name() + ", stage="+ stage.name()+ ']');
+      }
+ catch (      JMException e) {
+        U.error(log,"Failed to register streamer stage MBean [streamer=" + s.name() + ", stage="+ stage.name()+ ']',e);
+      }
+    }
+    for (    StreamerWindow win : s.configuration().getWindows()) {
+      try {
+        if (hasInterface(win.getClass(),StreamerWindowMBean.class)) {
+          mBeans.add(U.registerMBean(mBeanSrv,ctx.gridName(),U.maskName(s.name()),"Window-" + win.name(),(StreamerWindowMBean)win,StreamerWindowMBean.class));
+          if (log.isDebugEnabled())           log.debug("Registered MBean for streamer window [streamer=" + s.name() + ", window="+ win.name()+ ']');
+        }
+      }
+ catch (      JMException e) {
+        U.error(log,"Failed to register streamer window MBean [streamer=" + s.name() + ", window="+ win.name()+ ']',e);
+      }
+      if (win instanceof StreamerWindowAdapter) {
+        StreamerIndexProvider[] idxs=((StreamerWindowAdapter)win).indexProviders();
+        if (idxs != null && idxs.length > 0) {
+          for (          StreamerIndexProvider idx : idxs) {
+            try {
+              mBeans.add(U.registerMBean(mBeanSrv,ctx.gridName(),U.maskName(s.name()),"Window-" + win.name() + "-index-"+ idx.name(),idx,StreamerIndexProviderMBean.class));
+              if (log.isDebugEnabled())               log.debug("Registered MBean for streamer window index [streamer=" + s.name() + ", window="+ win.name()+ ", index="+ idx.name()+ ']');
+            }
+ catch (            JMException e) {
+              U.error(log,"Failed to register streamer index MBean [streamer=" + s.name() + ", window="+ win.name()+ ", index="+ idx.name()+ ']',e);
+            }
+          }
+        }
+      }
+    }
+  }
+}

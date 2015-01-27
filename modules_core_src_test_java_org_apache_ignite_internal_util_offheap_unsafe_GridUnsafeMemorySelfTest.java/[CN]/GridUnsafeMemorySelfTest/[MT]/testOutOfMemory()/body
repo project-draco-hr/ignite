@@ -1,0 +1,25 @@
+{
+  int cap=64;
+  int block=9;
+  int allowed=cap / block;
+  Collection<Long> addrs=new ArrayList<>(allowed);
+  GridUnsafeMemory mem=new GridUnsafeMemory(cap);
+  try {
+    boolean oom=false;
+    for (int i=0; i <= allowed; i++) {
+      boolean reserved=mem.reserve(block);
+      long addr=mem.allocate(block,true,true);
+      addrs.add(addr);
+      if (!reserved) {
+        assertEquals(i,allowed);
+        oom=true;
+        break;
+      }
+    }
+    assertTrue(oom);
+  }
+  finally {
+    for (    Long addr : addrs)     mem.release(addr,block);
+  }
+  assertEquals(mem.allocatedSize(),0);
+}

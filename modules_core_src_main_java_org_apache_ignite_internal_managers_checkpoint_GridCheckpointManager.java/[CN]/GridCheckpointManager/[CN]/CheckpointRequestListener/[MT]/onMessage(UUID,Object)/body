@@ -1,0 +1,24 @@
+{
+  GridCheckpointRequest req=(GridCheckpointRequest)msg;
+  if (log.isDebugEnabled())   log.debug("Received checkpoint request: " + req);
+  IgniteUuid sesId=req.getSessionId();
+  if (closedSess.contains(sesId)) {
+    getSpi(req.getCheckpointSpi()).removeCheckpoint(req.getKey());
+    return;
+  }
+  Set<String> keys=keyMap.get(sesId);
+  if (keys == null) {
+    GridTaskSessionImpl ses=ctx.session().getSession(sesId);
+    if (ses == null) {
+      getSpi(req.getCheckpointSpi()).removeCheckpoint(req.getKey());
+      return;
+    }
+    Set<String> old=keyMap.putIfAbsent(sesId,(CheckpointSet)(keys=new CheckpointSet(ses)));
+    if (old != null)     keys=old;
+  }
+  keys.add(req.getKey());
+  if (closedSess.contains(sesId)) {
+    keyMap.remove(sesId,keys);
+    getSpi(req.getCheckpointSpi()).removeCheckpoint(req.getKey());
+  }
+}

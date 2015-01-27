@@ -1,0 +1,15 @@
+{
+  try {
+    IgniteBiTuple<String,String> t=stash.get();
+    GridKernal grid=GridGainEx.gridx(t.get1());
+    GridCacheAdapter<K,V> cache=grid.internalCache(t.get2());
+    if (cache == null)     throw new IllegalStateException("Failed to find cache for name: " + t.get2());
+    return cache.context();
+  }
+ catch (  IllegalStateException e) {
+    throw U.withCause(new InvalidObjectException(e.getMessage()),e);
+  }
+ finally {
+    stash.remove();
+  }
+}

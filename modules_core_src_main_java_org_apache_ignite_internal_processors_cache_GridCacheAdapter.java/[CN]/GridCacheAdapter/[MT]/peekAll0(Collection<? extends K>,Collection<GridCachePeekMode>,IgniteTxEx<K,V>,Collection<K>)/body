@@ -1,0 +1,16 @@
+{
+  if (F.isEmpty(keys))   return emptyMap();
+  if (keyCheck)   validateCacheKeys(keys);
+  Map<K,V> ret=new HashMap<>(keys.size(),1.0f);
+  for (  K k : keys) {
+    try {
+      GridTuple<V> val=peek0(skipped != null,k,modes,tx);
+      if (val != null)       ret.put(k,val.get());
+    }
+ catch (    GridCacheFilterFailedException ignored) {
+      if (log.isDebugEnabled())       log.debug("Filter validation failed for key: " + k);
+      if (skipped != null)       skipped.add(k);
+    }
+  }
+  return ret;
+}

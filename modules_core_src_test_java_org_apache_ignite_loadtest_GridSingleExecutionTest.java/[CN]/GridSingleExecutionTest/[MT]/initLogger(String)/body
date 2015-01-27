@@ -1,0 +1,31 @@
+{
+  Logger impl=Logger.getRootLogger();
+  impl.removeAllAppenders();
+  String fileName=U.getGridGainHome() + "/work/log/" + log;
+  RollingFileAppender fileApp;
+  String fmt="[%d{ABSOLUTE}][%-5p][%t][%c{1}] %m%n";
+  try {
+    fileApp=new RollingFileAppender(new PatternLayout(fmt),fileName);
+    fileApp.setMaxBackupIndex(0);
+    fileApp.rollOver();
+  }
+ catch (  IOException e) {
+    throw new IgniteCheckedException("Unable to initialize file appender.",e);
+  }
+  LevelRangeFilter lvlFilter=new LevelRangeFilter();
+  lvlFilter.setLevelMin(Level.DEBUG);
+  fileApp.addFilter(lvlFilter);
+  impl.addAppender(fileApp);
+  ConsoleAppender conApp=new ConsoleAppender(new PatternLayout(fmt),ConsoleAppender.SYSTEM_OUT);
+  lvlFilter=new LevelRangeFilter();
+  lvlFilter.setLevelMin(Level.INFO);
+  lvlFilter.setLevelMax(Level.INFO);
+  conApp.addFilter(lvlFilter);
+  impl.addAppender(conApp);
+  conApp=new ConsoleAppender(new PatternLayout(fmt),ConsoleAppender.SYSTEM_ERR);
+  conApp.setThreshold(Level.WARN);
+  impl.addAppender(conApp);
+  impl.setLevel(Level.INFO);
+  Logger.getLogger("org.gridgain").setLevel(Level.DEBUG);
+  return new GridTestLog4jLogger(false);
+}

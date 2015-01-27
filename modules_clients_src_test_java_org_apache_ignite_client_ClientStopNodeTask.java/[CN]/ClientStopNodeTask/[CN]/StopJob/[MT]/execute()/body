@@ -1,0 +1,19 @@
+{
+  log.info(">>> Stop node [nodeId=" + ignite.cluster().localNode().id() + ", name='"+ ignite.name()+ "']");
+  String prefix=ClientStartNodeTask.getConfig(gridType).getGridName() + " (";
+  if (!ignite.name().startsWith(prefix)) {
+    int stoppedCnt=0;
+    for (    Ignite g : G.allGrids())     if (g.name().startsWith(prefix)) {
+      try {
+        log.info(">>> Grid stopping [nodeId=" + g.cluster().localNode().id() + ", name='"+ g.name()+ "']");
+        G.stop(g.name(),true);
+        stoppedCnt++;
+      }
+ catch (      IllegalStateException e) {
+        log.warning("Failed to stop grid.",e);
+      }
+    }
+    return stoppedCnt;
+  }
+  return 0;
+}

@@ -1,0 +1,28 @@
+{
+  if (log.isDebugEnabled())   log.debug("Committing near local tx: " + this);
+  prepareAsync();
+  GridNearTxFinishFuture<K,V> fut=commitFut.get();
+  if (fut == null && !commitFut.compareAndSet(null,fut=new GridNearTxFinishFuture<>(cctx,this,true)))   return commitFut.get();
+  cctx.mvcc().addFuture(fut);
+  IgniteFuture<IgniteTxEx<K,V>> prepareFut=prepFut.get();
+  prepareFut.listenAsync(new CI1<IgniteFuture<IgniteTxEx<K,V>>>(){
+    @Override public void apply(    IgniteFuture<IgniteTxEx<K,V>> f){
+      GridNearTxFinishFuture<K,V> fut0=commitFut.get();
+      try {
+        f.get();
+        if (finish(true))         fut0.finish();
+ else         fut0.onError(new IgniteCheckedException("Failed to commit transaction: " + CU.txString(GridNearTxLocal.this)));
+      }
+ catch (      Error|RuntimeException e) {
+        commitErr.compareAndSet(null,e);
+        throw e;
+      }
+catch (      IgniteCheckedException e) {
+        commitErr.compareAndSet(null,e);
+        fut0.onError(e);
+      }
+    }
+  }
+);
+  return fut;
+}

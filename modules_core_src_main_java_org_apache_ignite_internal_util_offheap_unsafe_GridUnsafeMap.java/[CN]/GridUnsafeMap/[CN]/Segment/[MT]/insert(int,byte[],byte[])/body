@@ -1,0 +1,26 @@
+{
+  if (cnt + 1 > threshold)   rehash();
+  int size=HEADER + keyBytes.length + valBytes.length;
+  boolean poll=!mem.reserve(size);
+  long addr=mem.allocate(size,false,true);
+  Entry.write(addr,hash,keyBytes,valBytes,mem);
+  long binAddr=writeLock(hash);
+  try {
+    long first=Bin.first(binAddr,mem);
+    Entry.nextAddress(addr,first,mem);
+    Bin.first(binAddr,addr,mem);
+    long qAddr=lru == null ? 0 : lru.offer(part,addr,hash);
+    Entry.queueAddress(addr,qAddr,mem);
+    cnt++;
+    totalCnt.increment();
+  }
+ catch (  GridOffHeapOutOfMemoryException e) {
+    mem.release(addr,size);
+    throw e;
+  }
+ finally {
+    writeUnlock();
+    if (poll)     lruPoller.lruPoll(size);
+    if (cnt > threshold)     rehash();
+  }
+}
