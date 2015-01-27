@@ -1,6 +1,7 @@
 {
   if (Thread.interrupted())   throw new InterruptedException();
   if (time <= 0)   return tryLock();
+  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
     IgniteFuture<Boolean> fut=delegate.lockAllAsync(keys,unit.toMillis(time));
     try {
@@ -23,5 +24,8 @@
   }
  catch (  IgniteCheckedException e) {
     throw new CacheException(e.getMessage(),e);
+  }
+ finally {
+    gate.leave(prev);
   }
 }
