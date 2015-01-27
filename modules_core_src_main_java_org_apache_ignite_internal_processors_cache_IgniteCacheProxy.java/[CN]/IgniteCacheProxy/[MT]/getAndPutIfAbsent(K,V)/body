@@ -2,7 +2,11 @@
   try {
     GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
     try {
-      return delegate.putIfAbsent(key,val);
+      if (isAsync()) {
+        curFut.set(delegate.putIfAbsentAsync(key,val));
+        return null;
+      }
+ else       return delegate.putIfAbsent(key,val);
     }
   finally {
       gate.leave(prev);
