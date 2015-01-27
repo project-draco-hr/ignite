@@ -1,0 +1,14 @@
+{
+  Iterator<Cache.Entry> iter=jcache.iterator();
+  while (iter.hasNext()) {
+    Cache.Entry entry=iter.next();
+    UUID node1=testAff.mapKeyToNode(entry.getKey()).id();
+    UUID node2=aff.mapKeyToNode(entry.getKey()).id();
+    assertEquals(node1,node2);
+    Collection<ClusterNode> nodes1=testAff.mapKeyToPrimaryAndBackups(entry.getKey());
+    Collection<ClusterNode> nodes2=aff.mapKeyToPrimaryAndBackups(entry.getKey());
+    checkEqualCollection(nodes1,nodes2);
+    int part=aff.partition(entry.getKey());
+    assertEquals(testAff.mapPartitionToNode(part).id(),aff.mapPartitionToNode(part).id());
+  }
+}
