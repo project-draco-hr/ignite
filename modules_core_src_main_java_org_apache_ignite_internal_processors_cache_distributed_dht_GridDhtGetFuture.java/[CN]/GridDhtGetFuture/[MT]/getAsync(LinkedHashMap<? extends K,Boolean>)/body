@@ -31,14 +31,14 @@
   IgniteFuture<Map<K,V>> fut;
   if (txFut == null || txFut.isDone()) {
     if (reload && cctx.readThrough() && cctx.store().configured()) {
-      fut=cache().reloadAllAsync(keys.keySet(),true,subjId,taskName);
+      fut=cache().reloadAllAsync(keys.keySet(),true,skipVals,subjId,taskName);
     }
  else {
       if (tx == null) {
-        fut=cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,deserializePortable,expiryPlc);
+        fut=cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,deserializePortable,expiryPlc,skipVals);
       }
  else {
-        fut=tx.getAllAsync(cctx,keys.keySet(),null,deserializePortable);
+        fut=tx.getAllAsync(cctx,keys.keySet(),null,deserializePortable,skipVals);
       }
     }
   }
@@ -47,14 +47,14 @@
       @Override public IgniteFuture<Map<K,V>> apply(      Boolean b,      Exception e){
         if (e != null)         throw new GridClosureException(e);
         if (reload && cctx.readThrough() && cctx.store().configured()) {
-          return cache().reloadAllAsync(keys.keySet(),true,subjId,taskName);
+          return cache().reloadAllAsync(keys.keySet(),true,skipVals,subjId,taskName);
         }
  else {
           if (tx == null) {
-            return cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,deserializePortable,expiryPlc);
+            return cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,deserializePortable,expiryPlc,skipVals);
           }
  else {
-            return tx.getAllAsync(cctx,keys.keySet(),null,deserializePortable);
+            return tx.getAllAsync(cctx,keys.keySet(),null,deserializePortable,skipVals);
           }
         }
       }

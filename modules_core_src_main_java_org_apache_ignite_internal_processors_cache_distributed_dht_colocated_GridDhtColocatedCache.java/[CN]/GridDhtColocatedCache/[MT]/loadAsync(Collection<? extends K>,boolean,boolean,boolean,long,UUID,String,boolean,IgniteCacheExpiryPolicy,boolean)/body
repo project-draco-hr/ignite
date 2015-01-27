@@ -1,0 +1,56 @@
+{
+  if (keys == null || keys.isEmpty())   return new GridFinishedFuture<>(ctx.kernalContext(),Collections.<K,V>emptyMap());
+  if (keyCheck)   validateCacheKeys(keys);
+  if (expiryPlc == null)   expiryPlc=accessExpiryPolicy(ctx.expiry());
+  if (!reload && !forcePrimary) {
+    Map<K,V> locVals=U.newHashMap(keys.size());
+    boolean success=true;
+    for (    K key : keys) {
+      GridCacheEntryEx<K,V> entry=null;
+      while (true) {
+        try {
+          entry=ctx.isSwapOrOffheapEnabled() ? entryEx(key) : peekEx(key);
+          if (entry != null) {
+            boolean isNew=entry.isNewLocked();
+            V v=entry.innerGet(null,true,false,true,true,true,true,false,subjId,null,taskName,expiryPlc);
+            if (v == null) {
+              GridCacheVersion obsoleteVer=context().versions().next();
+              if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(key);
+              success=false;
+            }
+ else {
+              if (ctx.portableEnabled() && !skipVals)               v=(V)ctx.unwrapPortableIfNeeded(v,!deserializePortable);
+              locVals.put(key,(V)CU.skipValue(v,skipVals));
+            }
+          }
+ else           success=false;
+          break;
+        }
+ catch (        GridCacheEntryRemovedException ignored) {
+        }
+catch (        GridCacheFilterFailedException ignored) {
+          break;
+        }
+catch (        GridDhtInvalidPartitionException ignored) {
+          success=false;
+          break;
+        }
+catch (        IgniteCheckedException e) {
+          return new GridFinishedFuture<>(ctx.kernalContext(),e);
+        }
+ finally {
+          if (entry != null)           context().evicts().touch(entry,topVer);
+        }
+      }
+      if (!success)       break;
+    }
+    if (success) {
+      sendTtlUpdateRequest(expiryPlc);
+      return ctx.wrapCloneMap(new GridFinishedFuture<>(ctx.kernalContext(),locVals));
+    }
+  }
+  if (expiryPlc != null)   expiryPlc.reset();
+  GridPartitionedGetFuture<K,V> fut=new GridPartitionedGetFuture<>(ctx,keys,topVer,readThrough,reload,forcePrimary,subjId,taskName,deserializePortable,expiryPlc,skipVals);
+  fut.init();
+  return ctx.wrapCloneMap(fut);
+}
