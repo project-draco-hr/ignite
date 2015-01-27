@@ -1,10 +1,12 @@
 {
+  final boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  final long start=statsEnabled ? System.nanoTime() : 0L;
   A.notNull(key,"key",oldVal,"oldVal",newVal,"newVal");
   if (keyCheck)   validateCacheKey(key);
   validateCacheValue(oldVal);
   validateCacheValue(newVal);
   ctx.denyOnLocalRead();
-  return asyncOp(new AsyncOp<Boolean>(key){
+  IgniteFuture<Boolean> fut=asyncOp(new AsyncOp<Boolean>(key){
     @Override public IgniteFuture<Boolean> op(    IgniteTxLocalAdapter<K,V> tx){
       if (ctx.deploymentEnabled()) {
         try {
@@ -21,4 +23,6 @@
     }
   }
 );
+  if (statsEnabled)   fut.listenAsync(new UpdatePutAndGetTimeStatClosure<Boolean>(metrics0(),start));
+  return fut;
 }

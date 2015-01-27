@@ -1,3 +1,7 @@
 {
-  return putxAsync(key,val,null,-1,filter);
+  final boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  final long start=statsEnabled ? System.nanoTime() : 0L;
+  IgniteFuture<Boolean> fut=putxAsync(key,val,null,-1,filter);
+  if (statsEnabled)   fut.listenAsync(new UpdatePutTimeStatClosure<Boolean>(metrics0(),start));
+  return fut;
 }
