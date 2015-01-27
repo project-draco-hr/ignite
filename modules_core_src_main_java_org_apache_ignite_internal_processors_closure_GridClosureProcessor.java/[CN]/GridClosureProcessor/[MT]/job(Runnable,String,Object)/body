@@ -1,36 +1,4 @@
 {
   A.notNull(r,"job");
-  if (r instanceof ComputeJobMasterLeaveAware) {
-    return new GridMasterLeaveAwareComputeJobAdapter(){
-      /** 
- */
-      @CacheName private final String cn=cacheName;
-      /** 
- */
-      @CacheAffinityKeyMapped private final Object ak=affKey;
-      @Nullable @Override public Object execute(){
-        r.run();
-        return null;
-      }
-      @Override public void onMasterNodeLeft(      ComputeTaskSession ses) throws IgniteCheckedException {
-        ((ComputeJobMasterLeaveAware)r).onMasterNodeLeft(ses);
-      }
-    }
-;
-  }
- else {
-    return new ComputeJobAdapter(){
-      /** 
- */
-      @CacheName private final String cn=cacheName;
-      /** 
- */
-      @CacheAffinityKeyMapped private final Object ak=affKey;
-      @Nullable @Override public Object execute(){
-        r.run();
-        return null;
-      }
-    }
-;
-  }
+  return r instanceof ComputeJobMasterLeaveAware ? new C5MLA(r,cacheName,affKey) : new C5(r,cacheName,affKey);
 }
