@@ -1,17 +1,11 @@
 {
-  if (log.isDebugEnabled())   log.debug("Removing key from cache query index [locId=" + ignite.configuration().getNodeId() + ", key="+ key+ ']');
-  localSpi.set(this);
-  try {
-    for (    TableDescriptor tbl : tables(schema(spaceName))) {
-      if (tbl.type().keyClass().equals(key.getClass()) || !isIndexFixedTyping(spaceName)) {
-        if (tbl.tbl.update(key,null,0)) {
-          if (tbl.luceneIdx != null)           tbl.luceneIdx.remove(key);
-          return;
-        }
+  if (log.isDebugEnabled())   log.debug("Removing key from cache query index [locId=" + nodeId + ", key="+ key+ ']');
+  for (  TableDescriptor tbl : tables(schema(spaceName))) {
+    if (tbl.type().keyClass().equals(key.getClass()) || !isIndexFixedTyping(spaceName)) {
+      if (tbl.tbl.update(key,null,0)) {
+        if (tbl.luceneIdx != null)         tbl.luceneIdx.remove(key);
+        return;
       }
     }
-  }
-  finally {
-    localSpi.remove();
   }
 }
