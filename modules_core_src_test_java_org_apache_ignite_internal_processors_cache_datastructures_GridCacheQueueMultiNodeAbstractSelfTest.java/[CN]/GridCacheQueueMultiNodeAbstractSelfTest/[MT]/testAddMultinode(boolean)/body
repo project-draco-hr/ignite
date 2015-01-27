@@ -9,8 +9,9 @@
       final int idx=i;
       futs.add(GridTestUtils.runMultiThreadedAsync(new Callable<Void>(){
         @Override public Void call() throws Exception {
-          GridCache cache=grid(idx).cache(null);
-          IgniteQueue<Integer> queue=cache.dataStructures().queue(queueName,0,collocated,true);
+          IgniteCollectionConfiguration colCfg=collectionConfiguration();
+          colCfg.setCollocated(collocated);
+          IgniteQueue<Integer> queue=grid(idx).queue(queueName,colCfg,0,true);
           for (int i=0; i < ITEMS_PER_THREAD; i++)           assertTrue(queue.add(i));
           return null;
         }
@@ -18,8 +19,7 @@
 ,THREADS_PER_NODE,"testPutMultiNode"));
     }
     for (    IgniteFuture fut : futs)     fut.get();
-    GridCache cache=grid(0).cache(null);
-    IgniteQueue<Integer> queue=cache.dataStructures().queue(queueName,0,collocated,true);
+    IgniteQueue<Integer> queue=grid(0).queue(queueName,null,0,false);
     assertEquals(THREADS_PER_NODE * ITEMS_PER_THREAD * GRID_CNT,queue.size());
     int[] items=new int[ITEMS_PER_THREAD];
     Integer item;
@@ -27,6 +27,6 @@
     for (int i=0; i < ITEMS_PER_THREAD; i++)     assertEquals(THREADS_PER_NODE * GRID_CNT,items[i]);
   }
   finally {
-    grid(0).cache(null).dataStructures().removeQueue(queueName);
+    grid(0).queue(queueName,null,0,false).close();
   }
 }

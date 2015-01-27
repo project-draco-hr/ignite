@@ -1,11 +1,11 @@
 {
   String queueName=UUID.randomUUID().toString();
   info("Queue name: " + queueName);
-  IgniteQueue<String> queue=grid(0).cache(null).dataStructures().queue(queueName,QUEUE_CAPACITY,false,true);
+  IgniteQueue<String> queue=grid(0).queue(queueName,collectionConfiguration(),QUEUE_CAPACITY,true);
   assertTrue(queue.isEmpty());
   String val=UUID.randomUUID().toString();
   queue.put(val);
   grid(0).compute().call(new GetJob(queueName,RETRIES,val));
   assertEquals(1,queue.size());
-  grid(0).cache(null).dataStructures().removeQueue(queueName);
+  queue.close();
 }

@@ -1,20 +1,7 @@
 {
   String queueName=UUID.randomUUID().toString();
-  IgniteQueue<Integer> queue=grid(0).cache(null).dataStructures().queue(queueName,QUEUE_CAPACITY,false,true);
+  IgniteQueue<Integer> queue=grid(0).queue(queueName,collectionConfiguration(),QUEUE_CAPACITY,true);
   assertTrue(queue.isEmpty());
   grid(0).compute().broadcast(new PutJob(queueName,RETRIES));
   assertEquals(GRID_CNT * RETRIES,queue.size());
-  for (int i=0; i < GRID_CNT; i++) {
-    assertTrue(grid(i).cache(null).isEmpty());
-    assertEquals(0,grid(i).cache(null).size());
-    assertEquals(0,grid(i).cache(null).primarySize());
-    assertEquals(0,grid(i).cache(null).values().size());
-    assertEquals(0,grid(i).cache(null).primaryValues().size());
-    assertEquals(0,grid(i).cache(null).keySet().size());
-    assertEquals(0,grid(i).cache(null).primaryKeySet().size());
-    assertEquals(0,grid(i).cache(null).entrySet().size());
-    assertEquals(0,grid(i).cache(null).primaryEntrySet().size());
-    assertEquals(0,grid(i).cache(null).globalSize());
-    assertEquals(0,grid(i).cache(null).globalPrimarySize());
-  }
 }
