@@ -1,0 +1,14 @@
+{
+  final CountDownLatch nodesStartedLatch=new CountDownLatch(1);
+  grid().events().localListen(new IgnitePredicate<IgniteEvent>(){
+    @Override public boolean apply(    IgniteEvent gridEvt){
+      if (nodesStarted())       nodesStartedLatch.countDown();
+      return true;
+    }
+  }
+,EVT_NODE_JOINED);
+  if (!nodesStarted()) {
+    println(cfg,"Waiting for " + (args.nodes() - 1) + " nodes to start...");
+    nodesStartedLatch.await();
+  }
+}
