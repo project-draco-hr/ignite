@@ -1,25 +1,36 @@
 {
   final IgniteCache<Integer,String> cache=ignite.jcache(null);
-  Lock lock2=cache.lock(2);
-  lock2.lock();
-  final AtomicBoolean isOk=new AtomicBoolean(false);
-  Thread t=new Thread(new Runnable(){
-    @Override public void run(){
-      try {
-        cache.lockAll(Arrays.asList(1,2)).tryLock(5000,MILLISECONDS);
-      }
- catch (      InterruptedException ignored) {
-        isOk.set(true);
+  startGrid(1);
+  try {
+    final List<Integer> keys=primaryKeys(grid(1).jcache(null),2,1);
+    Lock lock1=cache.lock(keys.get(1));
+    lock1.lock();
+    final AtomicBoolean isOk=new AtomicBoolean(false);
+    Thread t=new Thread(new Runnable(){
+      @Override public void run(){
+        try {
+          cache.lockAll(Arrays.asList(keys.get(0),keys.get(1))).tryLock(50000,MILLISECONDS);
+        }
+ catch (        InterruptedException ignored) {
+          isOk.set(true);
+        }
       }
     }
-  }
 );
-  t.start();
-  Thread.sleep(100);
-  t.interrupt();
-  t.join();
-  lock2.unlock();
-  assertFalse(cache.isLocalLocked(1,false));
-  assertFalse(cache.isLocalLocked(2,false));
-  assertTrue(isOk.get());
+    t.start();
+    JOptionPane.showConfirmDialog(null,"wait");
+    Thread.sleep(100);
+    t.interrupt();
+    t.join();
+    lock1.unlock();
+    Thread.sleep(1000);
+    assertFalse(cache.isLocalLocked(keys.get(0),false));
+    assertFalse(cache.isLocalLocked(keys.get(1),false));
+    assertFalse(grid(1).jcache(null).isLocalLocked(keys.get(0),false));
+    assertFalse(grid(1).jcache(null).isLocalLocked(keys.get(1),false));
+    assertTrue(isOk.get());
+  }
+  finally {
+    stopGrid(1);
+  }
 }
