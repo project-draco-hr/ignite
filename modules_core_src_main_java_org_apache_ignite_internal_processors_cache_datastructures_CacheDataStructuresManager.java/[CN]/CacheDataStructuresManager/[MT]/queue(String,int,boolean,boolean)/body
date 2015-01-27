@@ -1,0 +1,45 @@
+{
+  waitInitialization();
+  cctx.gate().enter();
+  try {
+    GridCacheQueueHeaderKey key=new GridCacheQueueHeaderKey(name);
+    GridCacheQueueHeader hdr;
+    if (create) {
+      hdr=new GridCacheQueueHeader(IgniteUuid.randomUuid(),cap,colloc,0,0,null);
+      GridCacheQueueHeader old=queueHdrView.putIfAbsent(key,hdr);
+      if (old != null) {
+        if (old.capacity() != cap || old.collocated() != colloc)         throw new IgniteCheckedException("Failed to create queue, queue with the same name but different " + "configuration already exists [name=" + name + ']');
+        hdr=old;
+      }
+    }
+ else     hdr=queueHdrView.get(key);
+    if (hdr == null)     return null;
+    if (queueQryGuard.compareAndSet(false,true)) {
+      queueQry=(GridCacheContinuousQueryAdapter)cctx.cache().queries().createContinuousQuery();
+      queueQry.filter(new QueueHeaderPredicate());
+      queueQry.localCallback(new IgniteBiPredicate<UUID,Collection<GridCacheContinuousQueryEntry>>(){
+        @Override public boolean apply(        UUID id,        Collection<GridCacheContinuousQueryEntry> entries){
+          if (!busyLock.enterBusy())           return false;
+          try {
+            for (            GridCacheContinuousQueryEntry e : entries) {
+              GridCacheQueueHeaderKey key=(GridCacheQueueHeaderKey)e.getKey();
+              GridCacheQueueHeader hdr=(GridCacheQueueHeader)e.getValue();
+              GridCacheQueueHeader oldHdr=(GridCacheQueueHeader)e.getOldValue();
+              cctx.kernalContext().dataStructures().onQueueUpdated(key,hdr,oldHdr);
+            }
+            return true;
+          }
+  finally {
+            busyLock.leaveBusy();
+          }
+        }
+      }
+);
+      queueQry.execute(cctx.isLocal() || cctx.isReplicated() ? cctx.grid().forLocal() : null,true,false,false,true);
+    }
+    return hdr;
+  }
+  finally {
+    cctx.gate().leave();
+  }
+}

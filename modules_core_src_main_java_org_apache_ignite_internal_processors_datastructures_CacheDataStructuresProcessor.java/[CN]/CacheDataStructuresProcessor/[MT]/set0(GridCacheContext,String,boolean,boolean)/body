@@ -1,18 +1,24 @@
 {
-  GridCacheSetHeaderKey key=new GridCacheSetHeaderKey(name);
-  GridCacheSetHeader hdr;
-  GridCacheAdapter cache=cctx.cache();
-  if (create) {
-    hdr=new GridCacheSetHeader(IgniteUuid.randomUuid(),collocated);
-    GridCacheSetHeader old=retryPutIfAbsent(cache,key,hdr);
-    if (old != null)     hdr=old;
+  cctx.gate().enter();
+  try {
+    GridCacheSetHeaderKey key=new GridCacheSetHeaderKey(name);
+    GridCacheSetHeader hdr;
+    GridCacheAdapter cache=cctx.cache();
+    if (create) {
+      hdr=new GridCacheSetHeader(IgniteUuid.randomUuid(),collocated);
+      GridCacheSetHeader old=retryPutIfAbsent(cache,key,hdr);
+      if (old != null)       hdr=old;
+    }
+ else     hdr=(GridCacheSetHeader)cache.get(key);
+    if (hdr == null)     return null;
+    GridCacheSetProxy<T> set=setsMap.get(hdr.id());
+    if (set == null) {
+      GridCacheSetProxy<T> old=setsMap.putIfAbsent(hdr.id(),set=new GridCacheSetProxy<>(cctx,new GridCacheSetImpl<T>(cctx,name,hdr)));
+      if (old != null)       set=old;
+    }
+    return set;
   }
- else   hdr=(GridCacheSetHeader)cache.get(key);
-  if (hdr == null)   return null;
-  GridCacheSetProxy<T> set=setsMap.get(hdr.id());
-  if (set == null) {
-    GridCacheSetProxy<T> old=setsMap.putIfAbsent(hdr.id(),set=new GridCacheSetProxy<>(cctx,new GridCacheSetImpl<T>(cctx,name,hdr)));
-    if (old != null)     set=old;
+  finally {
+    cctx.gate().leave();
   }
-  return set;
 }

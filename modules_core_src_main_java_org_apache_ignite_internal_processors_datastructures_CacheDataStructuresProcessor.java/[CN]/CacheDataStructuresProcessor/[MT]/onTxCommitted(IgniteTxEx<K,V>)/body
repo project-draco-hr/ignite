@@ -1,13 +1,6 @@
 {
-  if (atomicsCtx == null)   return;
-  if (!atomicsCtx.isDht() && tx.internal() && (!atomicsCtx.isColocated() || atomicsCtx.isReplicated())) {
-    try {
-      waitInitialization();
-    }
- catch (    IgniteCheckedException e) {
-      U.error(log,"Failed to wait for manager initialization.",e);
-      return;
-    }
+  if (atomicsCacheCtx == null)   return;
+  if (!atomicsCacheCtx.isDht() && tx.internal() && (!atomicsCacheCtx.isColocated() || atomicsCacheCtx.isReplicated())) {
     Collection<IgniteTxEntry<K,V>> entries=tx.writeEntries();
     if (log.isDebugEnabled())     log.debug("Committed entries: " + entries);
     for (    IgniteTxEntry<K,V> entry : entries) {
@@ -20,7 +13,7 @@
             GridCacheCountDownLatchEx latch0=(GridCacheCountDownLatchEx)latch;
             latch0.onUpdate(val.get());
             if (val.get() == 0 && val.autoDelete()) {
-              entry.cached().markObsolete(atomicsCtx.versions().next());
+              entry.cached().markObsolete(atomicsCacheCtx.versions().next());
               dsMap.remove(key);
               latch.onRemoved();
             }

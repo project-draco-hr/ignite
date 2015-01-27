@@ -1,2 +1,22 @@
 {
+  String atomicName1=UUID.randomUUID().toString();
+  String atomicName2=UUID.randomUUID().toString();
+  String initVal="1";
+  IgniteAtomicReference<String> atomic1=grid(0).atomicReference(atomicName1,initVal,true);
+  IgniteAtomicReference<String> atomic2=grid(0).atomicReference(atomicName2,null,true);
+  assertNotNull(atomic1);
+  assertNotNull(atomic2);
+  atomic1.close();
+  atomic2.close();
+  atomic1.close();
+  atomic2.close();
+  assertNull(grid(0).atomicReference(atomicName1,null,false));
+  assertNull(grid(0).atomicReference(atomicName2,null,false));
+  try {
+    atomic1.get();
+    fail();
+  }
+ catch (  IgniteCheckedException e) {
+    info("Caught expected exception: " + e.getMessage());
+  }
 }
