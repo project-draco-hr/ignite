@@ -1,4 +1,5 @@
 {
+  String type=key ? pojo.keyClassName() : pojo.valueClassName();
   File out=new File(pkgFolder,type + ".java");
   if (out.exists()) {
     MessageBox.Result choice=askOverwrite.confirm(out.getName());
@@ -36,9 +37,11 @@
   add1(src,"/** */");
   add1(src,"private static final long serialVersionUID = 0L;");
   add0(src,"");
+  Collection<PojoField> fields=key ? pojo.keyFields() : pojo.valueFields(includeKeys);
   for (  PojoField field : fields) {
     String fldName=field.javaName();
     add1(src,"/** Value for " + fldName + ". */");
+    if (key && field.affinityKey())     add1(src,"@CacheAffinityKeyMapped");
     add1(src,"private " + javaTypeName(field) + " "+ fldName+ ";");
     add0(src,"");
   }
