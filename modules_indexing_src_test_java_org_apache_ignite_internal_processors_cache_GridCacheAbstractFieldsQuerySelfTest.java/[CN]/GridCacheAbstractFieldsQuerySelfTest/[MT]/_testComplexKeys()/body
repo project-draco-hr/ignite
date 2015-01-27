@@ -1,2 +1,23 @@
 {
+  IgniteCache<Object,Object> cache=grid(0).jcache(CACHE_COMPLEX_KEYS);
+  UUID id=UUID.randomUUID();
+  PersonKey key=new PersonKey(id);
+  Person val=new Person("John",20,1);
+  cache.put(key,val);
+  Collection<List<?>> res=cache.queryFields(new QuerySqlPredicate<>("select * from Person")).getAll();
+  assertEquals(1,res.size());
+  int cnt=0;
+  for (  Collection<?> row : res) {
+    cnt=0;
+    for (    Object fieldVal : row) {
+      if (cnt == 0)       assertEquals(key,fieldVal);
+ else       if (cnt == 1)       assertEquals(val,fieldVal);
+ else       if (cnt == 2)       assertEquals(id,fieldVal);
+ else       if (cnt == 3)       assertEquals("John",fieldVal);
+ else       if (cnt == 4)       assertEquals(20,fieldVal);
+ else       if (cnt == 5)       assertEquals(1,fieldVal);
+      cnt++;
+    }
+  }
+  cache.removeAll();
 }
