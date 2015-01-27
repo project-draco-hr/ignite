@@ -1,18 +1,34 @@
 {
-  for (int i=0; i < gridCount(); i++)   assertNull(cache(i).dataStructures().set(SET_NAME,collocated,false));
-  IgniteSet<Integer> set0=cache().dataStructures().set(SET_NAME,collocated,true);
+  for (int i=0; i < gridCount(); i++)   assertNull(grid(i).set(SET_NAME,null,false));
+  IgniteCollectionConfiguration colCfg0=collectionConfiguration();
+  colCfg0.setCollocated(collocated);
+  IgniteSet<Integer> set0=grid(0).set(SET_NAME,colCfg0,true);
   assertNotNull(set0);
   for (int i=0; i < gridCount(); i++) {
-    IgniteSet<Integer> set=cache().dataStructures().set(SET_NAME,collocated,true);
+    IgniteCollectionConfiguration colCfg=collectionConfiguration();
+    colCfg.setCollocated(collocated);
+    IgniteSet<Integer> set=grid(i).set(SET_NAME,colCfg,true);
     assertNotNull(set);
     assertTrue(set.isEmpty());
     assertEquals(0,set.size());
     assertEquals(SET_NAME,set.name());
-    if (cacheMode() == PARTITIONED)     assertEquals(collocated,set.collocated());
+    if (collectionCacheMode() == PARTITIONED)     assertEquals(collocated,set.collocated());
   }
-  assertTrue(cache().dataStructures().removeSet(SET_NAME));
-  for (int i=0; i < gridCount(); i++) {
-    assertNull(cache(i).dataStructures().set(SET_NAME,collocated,false));
-    assertFalse(cache(i).dataStructures().removeSet(SET_NAME));
+  set0.close();
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      try {
+        for (int i=0; i < gridCount(); i++) {
+          if (grid(i).set(SET_NAME,null,false) != null)           return false;
+        }
+        return true;
+      }
+ catch (      Exception e) {
+        fail("Unexpected exception: " + e);
+        return true;
+      }
+    }
   }
+,1000);
+  for (int i=0; i < gridCount(); i++)   assertNull(grid(i).set(SET_NAME,null,false));
 }
