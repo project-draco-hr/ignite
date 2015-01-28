@@ -4,51 +4,48 @@
     ExecutorService pool=Executors.newFixedThreadPool(maxPoolSz);
     Collection<Future<?>> futs=new ArrayList<>();
     if (args != null && args.length > 0) {
-      if (args.length % 2 != 0)       throw new CacheLoaderException("Wrong argument count");
-      if (log.isDebugEnabled())       log.debug("Start loading entries from db using queries from arguments");
+      if (args.length % 2 != 0)       throw new CacheLoaderException("Expected even number of arguments, but found: " + args.length);
+      if (log.isDebugEnabled())       log.debug("Start loading entries from db using user queries from arguments");
       for (int i=0; i < args.length; i+=2) {
         String keyType=args[i].toString();
-        final String selQry=args[i + 1].toString();
-        CacheStoreSession ses=session();
-        Object typeId=keyId(keyType);
-        final EntryMapping m=typeMapping.get(new IgniteBiTuple<>(ses.cacheName(),typeId));
-        if (m == null)         throw new CacheWriterException("Failed to find mapping description for key: " + keyType);
-        futs.add(pool.submit(new LoadCacheCustomQueryWorker<>(m,selQry,clo)));
+        String selQry=args[i + 1].toString();
+        EntryMapping em=entryMapping(keyId(keyType),keyType);
+        futs.add(pool.submit(new LoadCacheCustomQueryWorker<>(em,selQry,clo)));
       }
     }
  else {
-      if (log.isDebugEnabled())       log.debug("Start loading all types entries from db");
-      for (      EntryMapping m : typeMapping.values()) {
+      if (log.isDebugEnabled())       log.debug("Start loading all cache types entries from db");
+      for (      EntryMapping em : entryMappings.values()) {
         if (parallelLoadCacheMinThreshold > 0) {
           Connection conn=null;
           try {
             conn=connection();
-            PreparedStatement stmt=conn.prepareStatement(m.loadCacheSelRangeQry);
+            PreparedStatement stmt=conn.prepareStatement(em.loadCacheSelRangeQry);
             stmt.setInt(1,parallelLoadCacheMinThreshold);
             ResultSet rs=stmt.executeQuery();
             if (rs.next()) {
-              int keyCnt=m.keyCols.size();
+              int keyCnt=em.keyCols.size();
               Object[] upperBound=new Object[keyCnt];
               for (int i=0; i < keyCnt; i++)               upperBound[i]=rs.getObject(i + 1);
-              futs.add(pool.submit(loadCacheRange(m,clo,null,upperBound)));
+              futs.add(pool.submit(loadCacheRange(em,clo,null,upperBound)));
               while (rs.next()) {
                 Object[] lowerBound=upperBound;
                 upperBound=new Object[keyCnt];
                 for (int i=0; i < keyCnt; i++)                 upperBound[i]=rs.getObject(i + 1);
-                futs.add(pool.submit(loadCacheRange(m,clo,lowerBound,upperBound)));
+                futs.add(pool.submit(loadCacheRange(em,clo,lowerBound,upperBound)));
               }
-              futs.add(pool.submit(loadCacheRange(m,clo,upperBound,null)));
+              futs.add(pool.submit(loadCacheRange(em,clo,upperBound,null)));
             }
- else             futs.add(pool.submit(loadCacheFull(m,clo)));
+ else             futs.add(pool.submit(loadCacheFull(em,clo)));
           }
  catch (          SQLException ignored) {
-            futs.add(pool.submit(loadCacheFull(m,clo)));
+            futs.add(pool.submit(loadCacheFull(em,clo)));
           }
  finally {
             U.closeQuiet(conn);
           }
         }
- else         futs.add(pool.submit(loadCacheFull(m,clo)));
+ else         futs.add(pool.submit(loadCacheFull(em,clo)));
       }
     }
     for (    Future<?> fut : futs)     U.get(fut);
