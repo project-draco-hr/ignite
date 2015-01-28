@@ -1,6 +1,5 @@
 {
-  String drvCls=jdbcDrvClsTf.getText();
-  Driver drv=drivers.get(drvCls);
+  Driver drv=drivers.get(jdbcDrvCls);
   if (drv == null) {
     if (jdbcDrvJarPath.isEmpty())     throw new IllegalStateException("Driver jar file name is not specified");
     File drvJar=new File(jdbcDrvJarPath);
@@ -8,19 +7,14 @@
     try {
       URL u=new URL("jar:" + drvJar.toURI() + "!/");
       URLClassLoader ucl=URLClassLoader.newInstance(new URL[]{u});
-      drv=(Driver)Class.forName(drvCls,true,ucl).newInstance();
-      drivers.put(drvCls,drv);
+      drv=(Driver)Class.forName(jdbcDrvCls,true,ucl).newInstance();
+      drivers.put(jdbcDrvCls,drv);
     }
  catch (    Throwable e) {
       throw new IllegalStateException(e);
     }
   }
-  String user=userTf.getText().trim();
-  String pwd=pwdTf.getText().trim();
-  Properties info=new Properties();
-  if (!user.isEmpty())   info.put("user",user);
-  if (!pwd.isEmpty())   info.put("password",pwd);
-  Connection conn=drv.connect(jdbcUrlTf.getText(),info);
+  Connection conn=drv.connect(jdbcUrl,jdbcInfo);
   if (conn == null)   throw new IllegalStateException("Connection was not established (JDBC driver returned null value).");
   return conn;
 }

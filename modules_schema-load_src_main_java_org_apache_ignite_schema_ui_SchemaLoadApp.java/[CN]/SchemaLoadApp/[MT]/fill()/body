@@ -1,6 +1,13 @@
 {
   lockUI(connLayerPnl,connPnl,nextBtn);
   final String jdbcDrvJarPath=jdbcDrvJarTf.getText().trim();
+  final String jdbcDrvCls=jdbcDrvClsCb.getValue();
+  final String jdbcUrl=jdbcUrlCb.getValue();
+  String user=userTf.getText().trim();
+  String pwd=pwdTf.getText().trim();
+  final Properties jdbcInfo=new Properties();
+  if (!user.isEmpty())   jdbcInfo.put("user",user);
+  if (!pwd.isEmpty())   jdbcInfo.put("password",pwd);
   final boolean tblsOnly=parseCb.getSelectionModel().getSelectedIndex() == 0;
   Runnable task=new Task<Void>(){
     /** 
@@ -8,8 +15,8 @@
  */
     @Override protected Void call() throws Exception {
       long started=System.currentTimeMillis();
-      try (Connection conn=connect(jdbcDrvJarPath)){
-        pojos=DatabaseMetadataParser.parse(conn);
+      try (Connection conn=connect(jdbcDrvJarPath,jdbcDrvCls,jdbcUrl,jdbcInfo)){
+        pojos=DatabaseMetadataParser.parse(conn,tblsOnly);
       }
        perceptualDelay(started);
       return null;
