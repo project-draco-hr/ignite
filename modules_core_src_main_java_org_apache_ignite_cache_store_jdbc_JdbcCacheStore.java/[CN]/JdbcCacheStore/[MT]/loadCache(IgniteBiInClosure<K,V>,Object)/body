@@ -1,40 +1,59 @@
 {
   try {
     init();
-    if (log.isDebugEnabled())     log.debug("Loading all values from db");
+    ExecutorService pool=Executors.newFixedThreadPool(maxPoolSz);
     Collection<Future<?>> futs=new ArrayList<>();
-    for (    final EntryMapping type : typeMeta.values())     futs.add(exec.submit(new Callable<Void>(){
-      @Override public Void call() throws Exception {
-        Connection conn=null;
-        try {
-          PreparedStatement stmt=null;
-          try {
-            conn=connection();
-            stmt=conn.prepareStatement(type.loadCacheQry);
-            ResultSet rs=stmt.executeQuery();
-            while (rs.next()) {
-              K key=buildObject(type.keyType(),type.keyDescriptors(),rs);
-              V val=buildObject(type.valueType(),type.valueDescriptors(),rs);
-              clo.apply(key,val);
-            }
-          }
- catch (          SQLException e) {
-            throw new IgniteCheckedException("Failed to load cache",e);
-          }
- finally {
-            U.closeQuiet(stmt);
-          }
-        }
-  finally {
-          U.closeQuiet(conn);
-        }
-        return null;
+    if (args != null && args.length > 0) {
+      if (args.length % 2 != 0)       throw new CacheLoaderException("Wrong argument count");
+      if (log.isDebugEnabled())       log.debug("Start loading entries from db using queries from arguments");
+      for (int i=0; i < args.length; i+=2) {
+        String keyType=args[i].toString();
+        final String selQry=args[i + 1].toString();
+        CacheStoreSession ses=session();
+        Object typeId=keyId(keyType);
+        final EntryMapping m=typeMapping.get(new IgniteBiTuple<>(ses.cacheName(),typeId));
+        if (m == null)         throw new CacheWriterException("Failed to find mapping description for key: " + keyType);
+        futs.add(pool.submit(new LoadCacheCustomQueryWorker<>(m,selQry,clo)));
       }
     }
-));
+ else {
+      if (log.isDebugEnabled())       log.debug("Start loading all types entries from db");
+      for (      EntryMapping m : typeMapping.values()) {
+        if (parallelLoadCacheMinThreshold > 0) {
+          Connection conn=null;
+          try {
+            conn=connection();
+            PreparedStatement stmt=conn.prepareStatement(m.loadCacheSelRangeQry);
+            stmt.setInt(1,parallelLoadCacheMinThreshold);
+            ResultSet rs=stmt.executeQuery();
+            if (rs.next()) {
+              int keyCnt=m.keyCols.size();
+              Object[] upperBound=new Object[keyCnt];
+              for (int i=0; i < keyCnt; i++)               upperBound[i]=rs.getObject(i + 1);
+              futs.add(pool.submit(loadCacheRange(m,clo,null,upperBound)));
+              while (rs.next()) {
+                Object[] lowerBound=upperBound;
+                upperBound=new Object[keyCnt];
+                for (int i=0; i < keyCnt; i++)                 upperBound[i]=rs.getObject(i + 1);
+                futs.add(pool.submit(loadCacheRange(m,clo,lowerBound,upperBound)));
+              }
+              futs.add(pool.submit(loadCacheRange(m,clo,upperBound,null)));
+            }
+ else             futs.add(pool.submit(loadCacheFull(m,clo)));
+          }
+ catch (          SQLException ignored) {
+            futs.add(pool.submit(loadCacheFull(m,clo)));
+          }
+ finally {
+            U.closeQuiet(conn);
+          }
+        }
+ else         futs.add(pool.submit(loadCacheFull(m,clo)));
+      }
+    }
     for (    Future<?> fut : futs)     U.get(fut);
   }
- catch (  Exception e) {
-    throw new CacheException(e);
+ catch (  IgniteCheckedException e) {
+    throw new CacheLoaderException("Failed to load cache",e.getCause());
   }
 }
