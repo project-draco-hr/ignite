@@ -7,8 +7,8 @@
       cache0.put(i,i);
       cache0.get(i);
       key=i;
-      info("Writes: " + cache0.metrics().writes());
-      info("Reads: " + cache0.metrics().reads());
+      info("Puts: " + cache0.metrics().getCachePuts());
+      info("Reads: " + cache0.metrics().getCacheGets());
       info("Affinity nodes: " + U.nodes2names(cache0.affinity().mapKeyToPrimaryAndBackups(i)));
       break;
     }
@@ -16,19 +16,19 @@
   for (int j=0; j < gridCount(); j++) {
     Ignite g=grid(j);
     info("Checking grid: " + g.name());
-    info("Writes: " + g.cache(null).metrics().writes());
-    info("Reads: " + g.cache(null).metrics().reads());
-    if (g.cache(null).affinity().isPrimaryOrBackup(g.cluster().localNode(),key))     assertEquals(1,g.cache(null).metrics().writes());
- else     assertEquals(0,g.cache(null).metrics().writes());
+    info("Puts: " + g.cache(null).metrics().getCachePuts());
+    info("Reads: " + g.cache(null).metrics().getCacheGets());
+    if (g.cache(null).affinity().isPrimaryOrBackup(g.cluster().localNode(),key))     assertEquals(1,g.cache(null).metrics().getCachePuts());
+ else     assertEquals(0,g.cache(null).metrics().getCachePuts());
     if (g.cache(null).affinity().isPrimary(g.cluster().localNode(),key)) {
-      assertEquals(2,g.cache(null).metrics().reads());
-      assertEquals(1,g.cache(null).metrics().hits());
-      assertEquals(1,g.cache(null).metrics().misses());
+      assertEquals(2,g.cache(null).metrics().getCacheGets());
+      assertEquals(1,g.cache(null).metrics().getCacheHits());
+      assertEquals(1,g.cache(null).metrics().getCacheHits());
     }
  else {
-      assertEquals(0,g.cache(null).metrics().reads());
-      assertEquals(0,g.cache(null).metrics().hits());
-      assertEquals(0,g.cache(null).metrics().misses());
+      assertEquals(0,g.cache(null).metrics().getCacheGets());
+      assertEquals(0,g.cache(null).metrics().getCacheHits());
+      assertEquals(0,g.cache(null).metrics().getCacheMisses());
     }
   }
 }
