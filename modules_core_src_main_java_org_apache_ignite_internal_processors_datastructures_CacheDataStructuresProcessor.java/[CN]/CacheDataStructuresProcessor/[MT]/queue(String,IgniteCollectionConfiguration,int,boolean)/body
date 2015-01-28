@@ -5,15 +5,5 @@
     if (cap <= 0)     cap=Integer.MAX_VALUE;
   }
   GridCacheAdapter cache=cacheForCollection(cfg);
-  GridCacheContext cctx=cache.context();
-  final boolean colloc=create && (cctx.cache().configuration().getCacheMode() != PARTITIONED || cfg.isCollocated());
-  GridCacheQueueHeader hdr=cctx.dataStructures().queue(name,cap,colloc,create);
-  if (hdr == null)   return null;
-  GridCacheQueueProxy queue=queuesMap.get(hdr.id());
-  if (queue == null) {
-    queue=new GridCacheQueueProxy(cctx,cctx.atomic() ? new GridAtomicCacheQueueImpl<>(name,hdr,cctx) : new GridTransactionalCacheQueueImpl<>(name,hdr,cctx));
-    GridCacheQueueProxy old=queuesMap.putIfAbsent(hdr.id(),queue);
-    if (old != null)     queue=old;
-  }
-  return queue;
+  return cache.context().dataStructures().queue(name,cap,create && cfg.isCollocated(),create);
 }
