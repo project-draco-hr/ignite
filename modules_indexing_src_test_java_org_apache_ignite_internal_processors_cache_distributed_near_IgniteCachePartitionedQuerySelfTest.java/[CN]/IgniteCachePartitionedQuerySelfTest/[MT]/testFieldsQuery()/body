@@ -1,0 +1,21 @@
+{
+  Person p1=new Person("Jon",1500);
+  Person p2=new Person("Jane",2000);
+  Person p3=new Person("Mike",1800);
+  Person p4=new Person("Bob",1900);
+  Ignite ignite0=grid(0);
+  IgniteCache<UUID,Person> cache0=ignite0.jcache(null);
+  cache0.put(p1.id(),p1);
+  cache0.put(p2.id(),p2);
+  cache0.put(p3.id(),p3);
+  cache0.put(p4.id(),p4);
+  assertEquals(4,cache0.size());
+  QueryCursor<List<?>> qry=cache0.queryFields(new QuerySqlPredicate<UUID,Person>("select name from Person where salary > ?",1600));
+  Collection<List<?>> res=qry.getAll();
+  assertEquals(3,res.size());
+  qry=cache0.queryFields(new QuerySqlPredicate<UUID,Person>("select count(*) from Person"));
+  res=qry.getAll();
+  int cnt=0;
+  for (  List<?> row : res)   cnt+=(Long)row.get(0);
+  assertEquals(4,cnt);
+}

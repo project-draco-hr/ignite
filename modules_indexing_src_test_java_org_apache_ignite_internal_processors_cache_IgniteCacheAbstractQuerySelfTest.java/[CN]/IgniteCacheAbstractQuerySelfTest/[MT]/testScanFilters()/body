@@ -1,0 +1,25 @@
+{
+  IgniteCache<Integer,Integer> cache=ignite.jcache(null);
+  for (int i=0; i < 50; i++)   cache.put(i,i);
+  QueryCursor<Cache.Entry<Integer,Integer>> q=cache.query(new QueryPredicate<Integer,Integer>(){
+    @Override public boolean apply(    Cache.Entry<Integer,Integer> e){
+      assertNotNull(e.getKey());
+      assertNotNull(e.getValue());
+      return e.getKey() >= 20 && e.getValue() < 40;
+    }
+  }
+);
+  List<Cache.Entry<Integer,Integer>> list=new ArrayList<>(q.getAll());
+  Collections.sort(list,new Comparator<Cache.Entry<Integer,Integer>>(){
+    @Override public int compare(    Cache.Entry<Integer,Integer> e1,    Cache.Entry<Integer,Integer> e2){
+      return e1.getKey().compareTo(e2.getKey());
+    }
+  }
+);
+  assertEquals(20,list.size());
+  for (int i=20; i < 40; i++) {
+    Cache.Entry<Integer,Integer> e=list.get(i - 20);
+    assertEquals(i,(int)e.getKey());
+    assertEquals(i,(int)e.getValue());
+  }
+}

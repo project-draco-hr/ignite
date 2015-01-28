@@ -1,0 +1,46 @@
+{
+  int threadCnt=150;
+  final int keyCnt=2000;
+  final int valCnt=10000;
+  final Ignite g=grid(0);
+  final IgniteCache<Integer,Object> c=g.jcache(null);
+  assertEquals(0,g.jcache(null).size());
+  assertEquals(0,c.query(new QuerySqlPredicate<Integer,Object>("1 = 1")).getAll().size());
+  Random rnd=new Random();
+  for (int i=0; i < keyCnt; i+=1 + rnd.nextInt(3)) {
+    c.put(i,rnd.nextBoolean() ? (long)rnd.nextInt(valCnt) : String.valueOf(rnd.nextInt(valCnt)));
+    if (evictsEnabled() && rnd.nextBoolean())     c.localEvict(Arrays.asList(i));
+  }
+  final AtomicBoolean done=new AtomicBoolean();
+  IgniteFuture<?> fut=multithreadedAsync(new CAX(){
+    @Override public void applyx() throws IgniteCheckedException {
+      Random rnd=new Random();
+      while (!done.get()) {
+        int key=rnd.nextInt(keyCnt);
+switch (rnd.nextInt(5)) {
+case 0:
+          c.put(key,rnd.nextBoolean() ? (long)rnd.nextInt(valCnt) : String.valueOf(rnd.nextInt(valCnt)));
+        break;
+case 1:
+      if (evictsEnabled())       c.localEvict(Arrays.asList(key));
+    break;
+case 2:
+  c.remove(key);
+break;
+case 3:
+c.get(key);
+break;
+case 4:
+int from=rnd.nextInt(valCnt);
+Collection<Cache.Entry<Integer,Object>> res=c.query(new QuerySqlPredicate<Integer,Object>("_val between ? and ?",from,from + 250)).getAll();
+for (Cache.Entry<Integer,Object> ignored : res) {
+}
+}
+}
+}
+}
+,threadCnt);
+Thread.sleep(DURATION);
+done.set(true);
+fut.get();
+}

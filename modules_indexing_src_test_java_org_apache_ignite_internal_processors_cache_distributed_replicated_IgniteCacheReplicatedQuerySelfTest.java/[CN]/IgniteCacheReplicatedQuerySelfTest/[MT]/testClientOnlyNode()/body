@@ -1,0 +1,19 @@
+{
+  try {
+    Ignite g=startGrid("client");
+    IgniteCache<Integer,Integer> c=g.jcache(null);
+    for (int i=0; i < 10; i++)     c.put(i,i);
+    assertEquals(0,c.size());
+    Collection<Cache.Entry<Integer,Integer>> res=c.query(new QuerySqlPredicate<Integer,Integer>("_key >= 5 order by _key")).getAll();
+    assertEquals(5,res.size());
+    int i=5;
+    for (    Cache.Entry<Integer,Integer> e : res) {
+      assertEquals(i,e.getKey().intValue());
+      assertEquals(i,e.getValue().intValue());
+      i++;
+    }
+  }
+  finally {
+    stopGrid("client");
+  }
+}
