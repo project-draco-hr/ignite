@@ -1,25 +1,24 @@
 {
   GridCache<Integer,Integer> cache=grid(0).cache(null);
-  if (cache.configuration().getCacheMode() == CacheMode.REPLICATED)   return;
   int keyCnt=keyCount();
   int expReads=0;
   for (int i=0; i < keyCnt; i++) {
     assertNull("Value is not null for key: " + i,cache.get(i));
-    if (cache.affinity().isPrimary(grid(0).localNode(),i))     expReads++;
+    if (cache.configuration().getCacheMode() == CacheMode.REPLICATED || cache.affinity().isPrimary(grid(0).localNode(),i))     expReads++;
  else     expReads+=2;
   }
-  long writes=0;
+  long puts=0;
   long reads=0;
   long hits=0;
   long misses=0;
   for (int i=0; i < gridCount(); i++) {
     CacheMetrics m=grid(i).cache(null).metrics();
-    writes+=m.writes();
-    reads+=m.reads();
-    hits+=m.hits();
-    misses+=m.misses();
+    puts+=m.getCachePuts();
+    reads+=m.getCacheGets();
+    hits+=m.getCacheHits();
+    misses+=m.getCacheMisses();
   }
-  assertEquals(0,writes);
+  assertEquals(0,puts);
   assertEquals(expReads,reads);
   assertEquals(0,hits);
   assertEquals(expReads,misses);

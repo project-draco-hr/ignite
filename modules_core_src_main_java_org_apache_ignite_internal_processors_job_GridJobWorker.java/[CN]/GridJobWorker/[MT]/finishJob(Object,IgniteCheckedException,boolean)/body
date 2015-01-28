@@ -1,2 +1,69 @@
 {
+  if (!finishing.compareAndSet(false,true))   return;
+  if (sndReply)   sndReply=!sysCancelled;
+  ClusterNode sndNode=ctx.discovery().node(taskNode.id());
+  finishTime=U.currentTimeMillis();
+  Collection<IgniteBiTuple<Integer,String>> evts=null;
+  try {
+    if (ses.isFullSupport())     evtLsnr.onBeforeJobResponseSent(this);
+    if (!isTimedOut()) {
+      if (sndReply) {
+        if (sndNode == null) {
+          onMasterNodeLeft();
+          U.warn(log,"Failed to reply to sender node because it left grid [nodeId=" + taskNode.id() + ", ses="+ ses+ ", jobId="+ ses.getJobId()+ ", job="+ job+ ']');
+          if (!internal && ctx.event().isRecordable(EVT_JOB_FAILED))           evts=addEvent(evts,EVT_JOB_FAILED,"Job reply failed (task node left grid): " + job);
+        }
+ else {
+          try {
+            if (ex != null) {
+              if (isStarted) {
+                if (!internal && ctx.event().isRecordable(EVT_JOB_FAILED))                 evts=addEvent(evts,EVT_JOB_FAILED,"Job failed due to exception [ex=" + ex + ", job="+ job+ ']');
+              }
+ else               if (!internal && ctx.event().isRecordable(EVT_JOB_REJECTED))               evts=addEvent(evts,EVT_JOB_REJECTED,"Job has not been started " + "[ex=" + ex + ", job="+ job+ ']');
+            }
+ else             if (!internal && ctx.event().isRecordable(EVT_JOB_FINISHED))             evts=addEvent(evts,EVT_JOB_FINISHED,null);
+            boolean loc=ctx.localNodeId().equals(sndNode.id()) && !ctx.config().isMarshalLocalJobs();
+            Map<Object,Object> attrs=jobCtx.getAttributes();
+            GridJobExecuteResponse jobRes=new GridJobExecuteResponse(ctx.localNodeId(),ses.getId(),ses.getJobId(),loc ? null : marsh.marshal(ex),loc ? ex : null,loc ? null : marsh.marshal(res),loc ? res : null,loc ? null : marsh.marshal(attrs),loc ? attrs : null,isCancelled());
+            long timeout=ses.getEndTime() - U.currentTimeMillis();
+            if (timeout <= 0)             timeout=1;
+            if (ses.isFullSupport()) {
+              ctx.io().sendOrderedMessage(sndNode,taskTopic,jobRes,internal ? MANAGEMENT_POOL : SYSTEM_POOL,timeout,false);
+            }
+ else             if (ctx.localNodeId().equals(sndNode.id()))             ctx.task().processJobExecuteResponse(ctx.localNodeId(),jobRes);
+ else             ctx.io().send(sndNode,TOPIC_TASK,jobRes,internal ? MANAGEMENT_POOL : SYSTEM_POOL);
+          }
+ catch (          IgniteCheckedException e) {
+            if (isDeadNode(taskNode.id())) {
+              onMasterNodeLeft();
+              U.warn(log,"Failed to reply to sender node because it left grid " + "[nodeId=" + taskNode.id() + ", jobId="+ ses.getJobId()+ ", ses="+ ses+ ", job="+ job+ ']');
+            }
+ else             U.error(log,"Error sending reply for job [nodeId=" + sndNode.id() + ", jobId="+ ses.getJobId()+ ", ses="+ ses+ ", job="+ job+ ']',e);
+            if (!internal && ctx.event().isRecordable(EVT_JOB_FAILED))             evts=addEvent(evts,EVT_JOB_FAILED,"Failed to send reply for job [nodeId=" + taskNode.id() + ", job="+ job+ ']');
+          }
+catch (          Exception e) {
+            String msg="Failed to send reply for job [nodeId=" + taskNode.id() + ", job="+ job+ ']';
+            U.error(log,msg,e);
+            if (!internal && ctx.event().isRecordable(EVT_JOB_FAILED))             evts=addEvent(evts,EVT_JOB_FAILED,msg);
+          }
+        }
+      }
+ else {
+        if (ex != null) {
+          if (isStarted) {
+            if (!internal && ctx.event().isRecordable(EVT_JOB_FAILED))             evts=addEvent(evts,EVT_JOB_FAILED,"Job failed due to exception [ex=" + ex + ", job="+ job+ ']');
+          }
+ else           if (!internal && ctx.event().isRecordable(EVT_JOB_REJECTED))           evts=addEvent(evts,EVT_JOB_REJECTED,"Job has not been started [ex=" + ex + ", job="+ job+ ']');
+        }
+ else         if (!internal && ctx.event().isRecordable(EVT_JOB_FINISHED))         evts=addEvent(evts,EVT_JOB_FINISHED,null);
+      }
+    }
+ else     if (!internal && ctx.event().isRecordable(EVT_JOB_FAILED))     evts=addEvent(evts,EVT_JOB_FAILED,"Job failed due to timeout: " + job);
+  }
+  finally {
+    if (evts != null) {
+      for (      IgniteBiTuple<Integer,String> t : evts)       recordEvent(t.get1(),t.get2());
+    }
+    evtLsnr.onJobFinished(this);
+  }
 }
