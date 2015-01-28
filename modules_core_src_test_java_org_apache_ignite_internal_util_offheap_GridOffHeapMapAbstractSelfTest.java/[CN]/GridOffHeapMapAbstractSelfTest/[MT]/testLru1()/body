@@ -1,0 +1,24 @@
+{
+  lruStripes=1;
+  mem=10;
+  final AtomicInteger evictCnt=new AtomicInteger();
+  evictLsnr=new GridOffHeapEvictListener(){
+    @Override public void onEvict(    int part,    int hash,    byte[] keyBytes,    byte[] valBytes){
+      String key=new String(keyBytes);
+      info("Evicted key: " + key);
+      evictCnt.incrementAndGet();
+    }
+  }
+;
+  map=newMap();
+  for (int i=0; i < 10; i++) {
+    String key=string();
+    byte[] keyBytes=key.getBytes();
+    byte[] valBytes=bytes(100);
+    map.insert(hash(key),keyBytes,valBytes);
+    info("Evicted: " + evictCnt);
+    assertEquals(1,evictCnt.get());
+    assertEquals(0,map.size());
+    assertTrue(evictCnt.compareAndSet(1,0));
+  }
+}

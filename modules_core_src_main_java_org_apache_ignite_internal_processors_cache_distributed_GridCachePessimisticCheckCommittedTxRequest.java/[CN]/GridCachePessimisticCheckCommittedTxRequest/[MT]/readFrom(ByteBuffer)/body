@@ -1,0 +1,35 @@
+{
+  commState.setBuffer(buf);
+  if (!super.readFrom(buf))   return false;
+switch (commState.idx) {
+case 8:
+    IgniteUuid futId0=commState.getGridUuid();
+  if (futId0 == GRID_UUID_NOT_READ)   return false;
+futId=futId0;
+commState.idx++;
+case 9:
+IgniteUuid miniId0=commState.getGridUuid();
+if (miniId0 == GRID_UUID_NOT_READ) return false;
+miniId=miniId0;
+commState.idx++;
+case 10:
+GridCacheVersion nearXidVer0=commState.getCacheVersion();
+if (nearXidVer0 == CACHE_VER_NOT_READ) return false;
+nearXidVer=nearXidVer0;
+commState.idx++;
+case 11:
+UUID originatingNodeId0=commState.getUuid();
+if (originatingNodeId0 == UUID_NOT_READ) return false;
+originatingNodeId=originatingNodeId0;
+commState.idx++;
+case 12:
+if (buf.remaining() < 8) return false;
+originatingThreadId=commState.getLong();
+commState.idx++;
+case 13:
+if (buf.remaining() < 1) return false;
+nearOnlyCheck=commState.getBoolean();
+commState.idx++;
+}
+return true;
+}

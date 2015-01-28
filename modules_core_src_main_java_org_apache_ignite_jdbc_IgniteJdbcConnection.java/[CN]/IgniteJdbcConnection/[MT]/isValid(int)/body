@@ -1,0 +1,13 @@
+{
+  ensureNotClosed();
+  if (timeout < 0)   throw new SQLException("Invalid timeout: " + timeout);
+  try {
+    return client.compute().<Boolean>executeAsync(VALID_TASK_NAME,cacheName).get(timeout,SECONDS);
+  }
+ catch (  GridClientDisconnectedException|GridClientFutureTimeoutException e) {
+    throw new SQLException("Failed to establish connection.",e);
+  }
+catch (  GridClientException ignored) {
+    return false;
+  }
+}

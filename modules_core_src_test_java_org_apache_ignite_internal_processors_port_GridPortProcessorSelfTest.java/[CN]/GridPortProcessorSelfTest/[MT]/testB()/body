@@ -1,0 +1,33 @@
+{
+  final AtomicInteger ai=new AtomicInteger();
+  ctx.ports().addPortListener(new GridPortListener(){
+    @Override public void onPortChange(){
+      ai.incrementAndGet();
+    }
+  }
+);
+  final int cnt=5;
+  final CountDownLatch beginLatch=new CountDownLatch(1);
+  final CountDownLatch finishLatch=new CountDownLatch(cnt);
+  for (int i=1; i <= cnt; i++) {
+    final int k=i * cnt;
+    new Thread(){
+      @Override public void run(){
+        try {
+          beginLatch.await();
+        }
+ catch (        InterruptedException ignore) {
+          assertTrue(false);
+        }
+        for (int j=1; j <= cnt; j++)         ctx.ports().registerPort(j + k,TCP,TcpCommunicationSpi.class);
+        finishLatch.countDown();
+      }
+    }
+.start();
+  }
+  beginLatch.countDown();
+  finishLatch.await();
+  int i=cnt * cnt;
+  assertEquals(i,ctx.ports().records().size());
+  assertEquals(i,ai.get());
+}

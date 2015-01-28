@@ -1,0 +1,88 @@
+{
+  assertFalse(keys.isEmpty());
+  final Collection<GridKernal> grids=new ArrayList<>();
+  ClusterNode txNode=grid(originatingNode()).localNode();
+  for (int i=1; i < gridCount(); i++)   grids.add((GridKernal)grid(i));
+  failingNodeId=grid(0).localNode().id();
+  final Map<Integer,String> map=new HashMap<>();
+  final String initVal="initialValue";
+  for (  Integer key : keys) {
+    grid(originatingNode()).cache(null).put(key,initVal);
+    map.put(key,String.valueOf(key));
+  }
+  Map<Integer,Collection<ClusterNode>> nodeMap=new HashMap<>();
+  GridCacheAdapter<Integer,String> cache=((GridKernal)grid(1)).internalCache();
+  info("Node being checked: " + grid(1).localNode().id());
+  for (  Integer key : keys) {
+    Collection<ClusterNode> nodes=new ArrayList<>();
+    nodes.addAll(cache.affinity().mapKeyToPrimaryAndBackups(key));
+    nodes.remove(txNode);
+    nodeMap.put(key,nodes);
+  }
+  info("Starting tx [values=" + map + ", topVer="+ ((GridKernal)grid(1)).context().discovery().topologyVersion()+ ']');
+  if (fullFailure)   ignoreMessages(ignoreMessageClasses(),allNodeIds());
+ else   ignoreMessages(ignoreMessageClasses(),F.asList(grid(1).localNode().id()));
+  final GridEx originatingNodeGrid=grid(originatingNode());
+  GridTestUtils.runAsync(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      GridCache<Integer,String> cache=originatingNodeGrid.cache(null);
+      assertNotNull(cache);
+      IgniteTx tx=cache.txStart();
+      try {
+        cache.putAll(map);
+        info("Before commitAsync");
+        tx=(IgniteTx)tx.withAsync();
+        tx.commit();
+        IgniteFuture<IgniteTx> fut=tx.future();
+        info("Got future for commitAsync().");
+        fut.get(3,TimeUnit.SECONDS);
+      }
+ catch (      IgniteFutureTimeoutException ignored) {
+        info("Failed to wait for commit future completion [fullFailure=" + fullFailure + ']');
+      }
+      return null;
+    }
+  }
+).get();
+  info(">>> Stopping originating node " + txNode);
+  G.stop(grid(originatingNode()).name(),true);
+  ignoreMessages(Collections.<Class<?>>emptyList(),Collections.<UUID>emptyList());
+  info(">>> Stopped originating node: " + txNode.id());
+  boolean txFinished=GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      for (      GridKernal g : grids) {
+        GridCacheAdapter<?,?> cache=g.internalCache();
+        IgniteTxManager txMgr=cache.isNear() ? ((GridNearCacheAdapter)cache).dht().context().tm() : cache.context().tm();
+        int txNum=txMgr.idMapSize();
+        if (txNum != 0)         return false;
+      }
+      return true;
+    }
+  }
+,10000);
+  assertTrue(txFinished);
+  info("Transactions finished.");
+  for (  Map.Entry<Integer,Collection<ClusterNode>> e : nodeMap.entrySet()) {
+    final Integer key=e.getKey();
+    final String val=map.get(key);
+    assertFalse(e.getValue().isEmpty());
+    for (    ClusterNode node : e.getValue()) {
+      final UUID checkNodeId=node.id();
+      compute(G.ignite(checkNodeId).cluster().forNode(node)).call(new Callable<Void>(){
+        /** 
+ */
+        @IgniteInstanceResource private Ignite ignite;
+        @Override public Void call() throws Exception {
+          GridCache<Integer,String> cache=ignite.cache(null);
+          assertNotNull(cache);
+          assertEquals("Failed to check entry value on node: " + checkNodeId,fullFailure ? initVal : val,cache.peek(key));
+          return null;
+        }
+      }
+);
+    }
+  }
+  for (  Map.Entry<Integer,String> e : map.entrySet()) {
+    for (    Ignite g : G.allGrids())     assertEquals(fullFailure ? initVal : e.getValue(),g.cache(null).get(e.getKey()));
+  }
+}

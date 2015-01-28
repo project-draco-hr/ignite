@@ -1,0 +1,20 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi disc=new TcpDiscoverySpi();
+  disc.setIpFinder(IP_FINDER);
+  cfg.setDiscoverySpi(disc);
+  CacheConfiguration ccfg1=defaultCacheConfiguration();
+  ccfg1.setName(CACHE_NAME);
+  CacheConfiguration ccfg2=defaultCacheConfiguration();
+  ccfg2.setName(null);
+  CacheDistributionMode distrMode;
+  if (gridName.equals(getTestGridName(1)))   distrMode=NEAR_ONLY;
+ else   if (gridName.equals(getTestGridName(2)))   distrMode=NEAR_PARTITIONED;
+ else   distrMode=PARTITIONED_ONLY;
+  ccfg1.setCacheMode(PARTITIONED);
+  ccfg2.setCacheMode(PARTITIONED);
+  ccfg1.setDistributionMode(distrMode);
+  ccfg2.setDistributionMode(distrMode);
+  cfg.setCacheConfiguration(ccfg1,ccfg2);
+  return cfg;
+}

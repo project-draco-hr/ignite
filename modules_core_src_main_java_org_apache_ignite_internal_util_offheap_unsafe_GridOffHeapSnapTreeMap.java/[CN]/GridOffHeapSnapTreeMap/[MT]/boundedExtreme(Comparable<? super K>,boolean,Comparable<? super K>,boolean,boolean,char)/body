@@ -1,0 +1,38 @@
+{
+  K resultKey;
+  Object result;
+  if ((dir == Left && minCmp == null) || (dir == Right && maxCmp == null)) {
+    result=extreme(returnKey,dir);
+    if (result == null) {
+      return null;
+    }
+    resultKey=returnKey ? (K)result : ((SimpleImmutableEntry<K,V>)result).getKey();
+  }
+ else {
+    long holder=holderRef;
+    final long node=(dir == Left) ? boundedMin(right(holder),minCmp,minIncl) : boundedMax(right(holder),maxCmp,maxIncl);
+    if (node == 0) {
+      return null;
+    }
+    resultKey=key(node);
+    if (returnKey) {
+      result=resultKey;
+    }
+ else {
+      result=new SimpleImmutableEntry<K,V>(key(node),vOpt(node));
+    }
+  }
+  if (dir == Left && maxCmp != null) {
+    final int c=maxCmp.compareTo(resultKey);
+    if (c < 0 || (c == 0 && !maxIncl)) {
+      return null;
+    }
+  }
+  if (dir == Right && minCmp != null) {
+    final int c=minCmp.compareTo(resultKey);
+    if (c > 0 || (c == 0 && !minIncl)) {
+      return null;
+    }
+  }
+  return result;
+}

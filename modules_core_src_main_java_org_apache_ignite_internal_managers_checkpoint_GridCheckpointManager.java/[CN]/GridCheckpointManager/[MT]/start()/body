@@ -1,0 +1,14 @@
+{
+  if (ctx.config().isDaemon())   return;
+  for (  CheckpointSpi spi : getSpis()) {
+    spi.setCheckpointListener(new CheckpointListener(){
+      @Override public void onCheckpointRemoved(      String key){
+        record(EVT_CHECKPOINT_REMOVED,key);
+      }
+    }
+);
+  }
+  startSpi();
+  ctx.io().addMessageListener(TOPIC_CHECKPOINT,lsnr);
+  if (log.isDebugEnabled())   log.debug(startInfo());
+}

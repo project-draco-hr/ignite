@@ -1,0 +1,18 @@
+{
+  if (!offheapEnabled && !swapEnabled)   return null;
+  checkIteratorQueue();
+  final int part=cctx.affinity().partition(key);
+  if (offheapEnabled) {
+    byte[] entryBytes=offheap.remove(spaceName,part,key,keyBytes);
+    if (entryBytes != null) {
+      GridCacheSwapEntry<V> entry=swapEntry(unmarshalSwapEntry(entryBytes));
+      if (entry == null)       return null;
+      onOffHeaped(part,key,keyBytes,entry);
+      if (cctx.events().isRecordable(EVT_CACHE_OBJECT_FROM_OFFHEAP))       cctx.events().addEvent(part,key,cctx.nodeId(),(IgniteUuid)null,null,EVT_CACHE_OBJECT_FROM_OFFHEAP,null,false,null,true,null,null,null);
+      GridCacheQueryManager<K,V> qryMgr=cctx.queries();
+      if (qryMgr != null)       qryMgr.onUnswap(key,entry.value(),entry.valueBytes());
+      return entry;
+    }
+  }
+  return readAndRemoveSwap(key,part,keyBytes);
+}

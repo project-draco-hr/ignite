@@ -1,0 +1,14 @@
+{
+  ctx.denyOnLocalRead();
+  if (F.isEmpty(drMap))   return new GridFinishedFuture<Object>(ctx.kernalContext());
+  ctx.dr().onReceiveCacheEntriesReceived(drMap.size());
+  return asyncOp(new AsyncInOp(drMap.keySet()){
+    @Override public IgniteFuture<?> inOp(    IgniteTxLocalAdapter<K,V> tx){
+      return tx.removeAllDrAsync(ctx,drMap);
+    }
+    @Override public String toString(){
+      return "removeAllDrASync [drMap=" + drMap + ']';
+    }
+  }
+);
+}

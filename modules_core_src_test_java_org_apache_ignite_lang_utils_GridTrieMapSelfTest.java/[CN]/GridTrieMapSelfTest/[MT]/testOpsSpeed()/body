@@ -1,0 +1,35 @@
+{
+  info("Test operations without clone: ");
+  for (int i=0; i < MAIN_ITER_CNT; i++) {
+    map=new TrieMap<>();
+    info("Trie map ops time: " + runOps(OPS_CNT,THREAD_CNT,null));
+    map=new ConcurrentHashMap8<>();
+    info("New map ops time: " + runOps(OPS_CNT,THREAD_CNT,null));
+    map=new ConcurrentHashMap<>();
+    info("Jdk6 map ops time: " + runOps(OPS_CNT,THREAD_CNT,null));
+  }
+  info("Test operations with clone: ");
+  for (int i=0; i < MAIN_ITER_CNT; i++) {
+    map=new TrieMap<>();
+    info("Trie map ops time: " + runOps(OPS_CNT,THREAD_CNT,new C1<Map,Map>(){
+      @Override public Map apply(      Map e){
+        return ((TrieMap)e).readOnlySnapshot();
+      }
+    }
+));
+    map=new ConcurrentHashMap8<>();
+    info("New map ops time: " + runOps(OPS_CNT,THREAD_CNT,new C1<Map,Map>(){
+      @Override public Map apply(      Map e){
+        return new ConcurrentHashMap8(e);
+      }
+    }
+));
+    map=new ConcurrentHashMap<>();
+    info("Jdk6 map ops time: " + runOps(OPS_CNT,THREAD_CNT,new C1<Map,Map>(){
+      @Override public Map apply(      Map e){
+        return new ConcurrentHashMap(e);
+      }
+    }
+));
+  }
+}

@@ -1,0 +1,32 @@
+{
+  int deleted=0;
+  int notDeleted=0;
+  try {
+    IgniteFs ggfs=g.fileSystem(arg);
+    Path logsDir=resolveGgfsProfilerLogsDir(ggfs);
+    if (logsDir != null) {
+      PathMatcher matcher=FileSystems.getDefault().getPathMatcher("glob:ggfs-log-" + arg + "-*.csv");
+      try (DirectoryStream<Path> dirStream=Files.newDirectoryStream(logsDir)){
+        for (        Path p : dirStream) {
+          if (matcher.matches(p.getFileName())) {
+            try {
+              Files.delete(p);
+              if (Files.exists(p))               notDeleted++;
+ else               deleted++;
+            }
+ catch (            NoSuchFileException ignored) {
+            }
+catch (            IOException io) {
+              notDeleted++;
+              g.log().warning("Profiler log file was not deleted: " + p,io);
+            }
+          }
+        }
+      }
+     }
+  }
+ catch (  IOException|IllegalArgumentException ioe) {
+    throw new IgniteCheckedException("Failed to clear profiler logs for GGFS: " + arg,ioe);
+  }
+  return new IgniteBiTuple<>(deleted,notDeleted);
+}

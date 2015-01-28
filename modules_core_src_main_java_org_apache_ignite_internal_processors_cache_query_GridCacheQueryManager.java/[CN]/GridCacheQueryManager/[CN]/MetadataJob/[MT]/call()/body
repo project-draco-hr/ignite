@@ -1,0 +1,50 @@
+{
+  final GridKernalContext ctx=((GridKernal)ignite).context();
+  Collection<String> cacheNames=F.viewReadOnly(ctx.cache().caches(),new C1<GridCache<?,?>,String>(){
+    @Override public String apply(    GridCache<?,?> c){
+      return c.name();
+    }
+  }
+,new P1<GridCache<?,?>>(){
+    @Override public boolean apply(    GridCache<?,?> c){
+      return !CU.UTILITY_CACHE_NAME.equals(c.name());
+    }
+  }
+);
+  return F.transform(cacheNames,new C1<String,CacheSqlMetadata>(){
+    @Override public CacheSqlMetadata apply(    String cacheName){
+      Collection<GridQueryTypeDescriptor> types=ctx.query().types(cacheName);
+      Collection<String> names=U.newHashSet(types.size());
+      Map<String,String> keyClasses=U.newHashMap(types.size());
+      Map<String,String> valClasses=U.newHashMap(types.size());
+      Map<String,Map<String,String>> fields=U.newHashMap(types.size());
+      Map<String,Collection<GridCacheSqlIndexMetadata>> indexes=U.newHashMap(types.size());
+      for (      GridQueryTypeDescriptor type : types) {
+        if (type.name().startsWith("GridCache"))         continue;
+        names.add(type.name());
+        keyClasses.put(type.name(),type.keyClass().getName());
+        valClasses.put(type.name(),type.valueClass().getName());
+        int size=2 + type.keyFields().size() + type.valueFields().size();
+        Map<String,String> fieldsMap=U.newLinkedHashMap(size);
+        fieldsMap.put("_KEY",type.keyClass().getName());
+        fieldsMap.put("_VAL",type.valueClass().getName());
+        for (        Map.Entry<String,Class<?>> e : type.keyFields().entrySet())         fieldsMap.put(e.getKey().toUpperCase(),e.getValue().getName());
+        for (        Map.Entry<String,Class<?>> e : type.valueFields().entrySet())         fieldsMap.put(e.getKey().toUpperCase(),e.getValue().getName());
+        fields.put(type.name(),fieldsMap);
+        Collection<GridCacheSqlIndexMetadata> indexesCol=new ArrayList<>(type.indexes().size());
+        for (        Map.Entry<String,GridQueryIndexDescriptor> e : type.indexes().entrySet()) {
+          GridQueryIndexDescriptor desc=e.getValue();
+          if (desc.type() == GridQueryIndexType.SORTED) {
+            Collection<String> idxFields=e.getValue().fields();
+            Collection<String> descendings=new LinkedList<>();
+            for (            String idxField : idxFields)             if (desc.descending(idxField))             descendings.add(idxField);
+            indexesCol.add(new CacheSqlIndexMetadata(e.getKey().toUpperCase(),idxFields,descendings,false));
+          }
+        }
+        indexes.put(type.name(),indexesCol);
+      }
+      return new CacheSqlMetadata(cacheName,names,keyClasses,valClasses,fields,indexes);
+    }
+  }
+);
+}

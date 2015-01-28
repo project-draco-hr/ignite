@@ -1,0 +1,35 @@
+{
+  cacheEnabled=true;
+  cacheMode=LOCAL;
+  initCache=new C1<CacheConfiguration,Void>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @SuppressWarnings("unchecked") @Override public Void apply(    CacheConfiguration cfg){
+      cfg.setAffinity(new CacheConsistentHashAffinityFunction(){
+      }
+);
+      cfg.setEvictionPolicy(new CacheFifoEvictionPolicy());
+      cfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(new TestStore()));
+      cfg.setReadThrough(true);
+      cfg.setWriteThrough(true);
+      cfg.setLoadPreviousValue(true);
+      return null;
+    }
+  }
+;
+  startGrid(1);
+  initCache=new C1<CacheConfiguration,Void>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public Void apply(    CacheConfiguration cfg){
+      cfg.setAffinity(new CacheConsistentHashAffinityFunction());
+      cfg.setEvictionPolicy(new CacheLruEvictionPolicy());
+      cfg.setCacheStoreFactory(null);
+      return null;
+    }
+  }
+;
+  startGrid(2);
+}

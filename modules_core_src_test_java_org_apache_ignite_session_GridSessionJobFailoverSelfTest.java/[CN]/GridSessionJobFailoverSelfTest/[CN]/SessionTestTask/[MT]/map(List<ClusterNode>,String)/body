@@ -1,0 +1,42 @@
+{
+  ses.setAttribute("fail",true);
+  for (int i=0; i < 10; i++) {
+    for (int ii=0; ii < 10; ii++)     ses.setAttribute("test.task.attr." + i,ii);
+  }
+  return Collections.singletonMap(new ComputeJobAdapter(arg){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public Serializable execute() throws IgniteCheckedException {
+      boolean fail;
+      try {
+        fail=ses.waitForAttribute("fail",0);
+      }
+ catch (      InterruptedException e) {
+        throw new IgniteCheckedException("Got interrupted while waiting for attribute to be set.",e);
+      }
+      if (fail) {
+        ses.setAttribute("fail",false);
+        for (int i=0; i < 10; i++) {
+          for (int ii=0; ii < 10; ii++)           ses.setAttribute("test.job.attr." + i,ii);
+        }
+        throw new IgniteCheckedException("Job exception.");
+      }
+      try {
+        for (int i=0; i < 10; i++) {
+          boolean attr=ses.waitForAttribute("test.task.attr." + i,9,100000);
+          assert attr;
+        }
+        for (int i=0; i < 10; i++) {
+          boolean attr=ses.waitForAttribute("test.job.attr." + i,9,100000);
+          assert attr;
+        }
+      }
+ catch (      InterruptedException e) {
+        throw new IgniteCheckedException("Got interrupted while waiting for attribute to be set.",e);
+      }
+      return Integer.parseInt(this.<String>argument(0));
+    }
+  }
+,subgrid.get(0));
+}

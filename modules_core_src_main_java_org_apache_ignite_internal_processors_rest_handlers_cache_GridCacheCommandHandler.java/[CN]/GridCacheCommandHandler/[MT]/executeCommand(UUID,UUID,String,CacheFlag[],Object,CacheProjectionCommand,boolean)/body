@@ -1,0 +1,14 @@
+{
+  final boolean locExec=destId == null || destId.equals(ctx.localNodeId()) || replicatedCacheAvailable(cacheName);
+  if (locExec) {
+    CacheProjection<?,?> prj=localCache(cacheName).forSubjectId(clientId).flagsOn(flags);
+    if (keepPortable)     prj=prj.keepPortable();
+    return op.apply((CacheProjection<Object,Object>)prj,ctx).chain(resultWrapper((CacheProjection<Object,Object>)prj,key));
+  }
+ else {
+    ClusterGroup prj=ctx.grid().forPredicate(F.nodeForNodeId(destId));
+    IgniteCompute comp=ctx.grid().compute(prj).withNoFailover().withAsync();
+    comp.call(new FlaggedCacheOperationCallable(clientId,cacheName,flags,op,key,keepPortable));
+    return comp.future();
+  }
+}
