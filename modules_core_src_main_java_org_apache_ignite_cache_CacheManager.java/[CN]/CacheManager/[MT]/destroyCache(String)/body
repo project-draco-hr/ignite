@@ -1,24 +1,18 @@
 {
   ensureNotClosed();
   if (cacheName == null)   throw new NullPointerException();
-  IgniteBiTuple<Ignite,IgniteCacheMXBean> tuple;
+  Ignite ignite;
 synchronized (igniteMap) {
-    tuple=igniteMap.remove(cacheName);
+    ignite=igniteMap.remove(cacheName);
   }
-  if (tuple != null) {
+  if (ignite != null) {
     try {
-      tuple.get1().close();
+      ignite.close();
     }
  catch (    Exception ignored) {
     }
-    ObjectName objName=getObjectName(cacheName);
-    MBeanServer mBeanSrv=tuple.get1().configuration().getMBeanServer();
-    for (    ObjectName n : mBeanSrv.queryNames(objName,null)) {
-      try {
-        mBeanSrv.unregisterMBean(n);
-      }
- catch (      Exception ignored) {
-      }
-    }
+    MBeanServer mBeanSrv=ignite.configuration().getMBeanServer();
+    unregisterCacheObject(mBeanSrv,cacheName,CACHE_STATISTICS);
+    unregisterCacheObject(mBeanSrv,cacheName,CACHE_CONFIGURATION);
   }
 }

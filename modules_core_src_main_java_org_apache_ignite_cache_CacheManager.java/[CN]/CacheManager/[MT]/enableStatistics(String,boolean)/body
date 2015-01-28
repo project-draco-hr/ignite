@@ -1,5 +1,19 @@
 {
   ensureNotClosed();
   if (cacheName == null)   throw new NullPointerException();
-  throw new UnsupportedOperationException();
+  Ignite ignite;
+synchronized (igniteMap) {
+    ignite=igniteMap.get(cacheName);
+  }
+  IgniteCache<Object,Object> cache=ignite.jcache(cacheName);
+  CacheConfiguration cfg=cache.getConfiguration(CacheConfiguration.class);
+  MBeanServer mBeanSrv=ignite.configuration().getMBeanServer();
+  if (enabled) {
+    registerCacheObject(mBeanSrv,cache.mxBean(),cacheName,CACHE_STATISTICS);
+    cfg.setStatisticsEnabled(true);
+  }
+ else {
+    unregisterCacheObject(mBeanSrv,cacheName,CACHE_STATISTICS);
+    cfg.setStatisticsEnabled(false);
+  }
 }
