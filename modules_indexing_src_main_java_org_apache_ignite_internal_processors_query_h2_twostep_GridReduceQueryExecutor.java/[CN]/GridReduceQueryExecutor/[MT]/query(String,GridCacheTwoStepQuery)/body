@@ -1,0 +1,37 @@
+{
+  long qryReqId=reqIdGen.incrementAndGet();
+  QueryRun r=new QueryRun();
+  r.tbls=new ArrayList<>(qry.mapQueries().size());
+  try {
+    r.conn=h2.connectionForSpace(space);
+  }
+ catch (  IgniteCheckedException e) {
+    return new GridFinishedFutureEx<>(e);
+  }
+  Collection<ClusterNode> nodes=ctx.grid().cluster().nodes();
+  for (  GridCacheSqlQuery mapQry : qry.mapQueries()) {
+    GridMergeTable tbl;
+    try {
+      tbl=createTable(r.conn,mapQry);
+    }
+ catch (    IgniteCheckedException e) {
+      return new GridFinishedFutureEx<>(e);
+    }
+    tbl.getScanIndex(null).setNumberOfSources(nodes.size());
+    r.tbls.add(tbl);
+  }
+  r.latch=new CountDownLatch(r.tbls.size() * nodes.size());
+  this.runs.put(qryReqId,r);
+  try {
+    ctx.io().sendUserMessage(nodes,new GridQueryRequest(qryReqId,1000,qry.mapQueries()),GridTopic.TOPIC_QUERY,false,0);
+    r.latch.await();
+    GridCacheSqlQuery rdc=qry.reduceQuery();
+    final ResultSet res=h2.executeSqlQueryWithTimer(r.conn,rdc.query(),F.asList(rdc.parameters()));
+    for (    GridMergeTable tbl : r.tbls)     dropTable(r.conn,tbl.getName());
+    return new GridFinishedFuture(ctx,new Iter(res));
+  }
+ catch (  IgniteCheckedException|InterruptedException|SQLException e) {
+    U.closeQuiet(r.conn);
+    return new GridFinishedFuture<>(ctx,e);
+  }
+}
