@@ -3,10 +3,8 @@
     if (initGuard.compareAndSet(false,true)) {
       if (log.isDebugEnabled())       log.debug("Initializing cache store.");
       if (dataSrc == null && F.isEmpty(connUrl))       throw new CacheException("Failed to initialize cache store (connection is not provided).");
-      if (dialect == null)       dialect=resolveDialect();
       try {
-        if (typeMetadata == null)         throw new CacheException("Failed to initialize cache store (mapping description is not provided).");
-        buildTypeCache();
+        if (dialect == null)         dialect=resolveDialect();
         initOk=true;
       }
   finally {
@@ -22,4 +20,20 @@
     }
   }
   if (!initOk)   throw new CacheException("Cache store was not properly initialized.");
+  Integer cacheKey=cacheKeyId();
+  if (!cacheMappings.containsKey(cacheKey)) {
+    initLock.lock();
+    try {
+      if (!cacheMappings.containsKey(cacheKey)) {
+        Collection<CacheQueryTypeMetadata> typeMetadata=ignite().cache(session().cacheName()).configuration().getQueryConfiguration().getTypeMetadata();
+        Map<Object,EntryMapping> entryMappings=U.newHashMap(typeMetadata.size());
+        for (        CacheQueryTypeMetadata type : typeMetadata)         entryMappings.put(keyId(type.getKeyType()),new EntryMapping(dialect,type));
+        cacheMappings.put(cacheKey,Collections.unmodifiableMap(entryMappings));
+        buildTypeCache(typeMetadata);
+      }
+    }
+  finally {
+      initLock.unlock();
+    }
+  }
 }
