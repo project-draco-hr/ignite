@@ -1,0 +1,22 @@
+{
+  fillCaches();
+  GridCacheQueriesEx<Integer,FactPurchase> qx=(GridCacheQueriesEx<Integer,FactPurchase>)ignite.<Integer,FactPurchase>cache("partitioned").queries();
+  Set<Integer> set1=new HashSet<>();
+  X.println("___ simple");
+  for (  List<?> o : qx.executeTwoStepQuery("partitioned","select f.productId, p.name, f.price " + "from FactPurchase f, \"replicated\".DimProduct p where p.id = f.productId ").get()) {
+    X.println("___ -> " + o);
+    set1.add((Integer)o.get(0));
+  }
+  Set<Integer> set0=new HashSet<>();
+  X.println("___ GROUP BY");
+  for (  List<?> o : qx.executeTwoStepQuery("partitioned","select productId from FactPurchase group by productId").get()) {
+    X.println("___ -> " + o);
+    assertTrue(set0.add((Integer)o.get(0)));
+  }
+  assertFalse(set1.isEmpty());
+  assertEquals(set0,set1);
+  X.println("___ AVG MIN MAX SUM COUNT(*) COUNT(x)");
+  for (  List<?> o : qx.executeTwoStepQuery("partitioned","select p.name, avg(f.price), min(f.price), max(f.price), sum(f.price), count(*), " + "count(nullif(f.price, 5)) " + "from FactPurchase f, \"replicated\".DimProduct p "+ "where p.id = f.productId "+ "group by f.productId, p.name").get()) {
+    X.println("___ -> " + o);
+  }
+}

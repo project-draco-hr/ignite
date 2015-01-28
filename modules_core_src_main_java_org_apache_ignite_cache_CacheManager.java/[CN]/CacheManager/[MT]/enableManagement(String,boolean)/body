@@ -1,23 +1,17 @@
 {
   ensureNotClosed();
   if (cacheName == null)   throw new NullPointerException();
-  IgniteBiTuple<Ignite,IgniteCacheMXBean> tuple;
+  Ignite ignite;
 synchronized (igniteMap) {
-    tuple=igniteMap.get(cacheName);
+    ignite=igniteMap.get(cacheName);
   }
-  ObjectName objName=getObjectName(cacheName);
-  MBeanServer mBeanSrv=tuple.get1().configuration().getMBeanServer();
-  try {
-    if (enabled) {
-      if (mBeanSrv.queryNames(objName,null).isEmpty())       mBeanSrv.registerMBean(tuple.get2(),objName);
-    }
+  MBeanServer mBeanSrv=ignite.configuration().getMBeanServer();
+  if (enabled) {
+    registerCacheObject(mBeanSrv,ignite.jcache(cacheName).mxBean(),cacheName,CACHE_CONFIGURATION);
+    ignite.cache(cacheName).configuration().setManagementEnabled(true);
+  }
  else {
-      for (      ObjectName n : mBeanSrv.queryNames(objName,null))       mBeanSrv.unregisterMBean(n);
-    }
-  }
- catch (  InstanceAlreadyExistsException|InstanceNotFoundException ignored) {
-  }
-catch (  MBeanRegistrationException|NotCompliantMBeanException e) {
-    throw new CacheException(e);
+    unregisterCacheObject(mBeanSrv,cacheName,CACHE_CONFIGURATION);
+    ignite.cache(cacheName).configuration().setManagementEnabled(false);
   }
 }
