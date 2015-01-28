@@ -6,9 +6,11 @@
     Lock lock1=cache.lock(keys.get(1));
     lock1.lock();
     final AtomicBoolean isOk=new AtomicBoolean(false);
+    final CountDownLatch latch=new CountDownLatch(1);
     Thread t=new Thread(new Runnable(){
       @Override public void run(){
         try {
+          latch.countDown();
           cache.lockAll(Arrays.asList(keys.get(0),keys.get(1))).tryLock(50000,MILLISECONDS);
         }
  catch (        InterruptedException ignored) {
@@ -18,8 +20,8 @@
     }
 );
     t.start();
-    JOptionPane.showConfirmDialog(null,"wait");
-    Thread.sleep(100);
+    latch.await();
+    Thread.sleep(300);
     t.interrupt();
     t.join();
     lock1.unlock();
