@@ -56,13 +56,11 @@
   pojoConstructorCh=genPnl.add(checkBox("Generate constructors for POJOs","If selected then generate empty and full constructors for POJOs",false),3);
   xmlSingleFileCh=genPnl.add(checkBox("Write all configurations to a single XML file","If selected then all configurations will be saved into the file 'Ignite.xml'",true),3);
   openFolderCh=genPnl.add(checkBox("Reveal output folder","Open output folder in system file manager after generation complete",true),3);
-  genPnl.add(new Separator(),3);
-  GridPaneEx regexPnl=paneEx(0,0,0,0);
+  GridPaneEx regexPnl=paneEx(5,5,5,5);
   regexPnl.addColumn();
   regexPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
   regexPnl.addColumn();
   regexPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
-  regexPnl.add(label("Replace \"Key class name\", \"Value class name\" or  \"Java name\" for selected tables:"),4);
   regexTf=regexPnl.addLabeled("  Regexp:",textField("Regular expression. For example: (\\w+)"));
   replaceTf=regexPnl.addLabeled("  Replace with:",textField("Replace text. For example: $1_SomeText"));
   final ComboBox<String> replaceCb=regexPnl.addLabeled("  Replace:",comboBox("Replacement target","Key class names","Value class names","Java names"));
@@ -82,45 +80,63 @@
       String regex=regexTf.getText();
       String replace=replaceTf.getText();
       try {
-        for (        PojoDescriptor pojo : selItems)         for (        PojoField field : pojo.fields())         field.javaName(field.javaName().replaceAll(regex,replace));
-      }
- catch (      Exception e) {
-        MessageBox.errorDialog(owner,"Failed to rename " + target + "!",e);
-      }
-    }
-  }
+switch (replaceCb.getSelectionModel().getSelectedIndex()) {
+case 0:
+          renameKeyClassNames(regex,replace);
+        break;
+case 1:
+      renameValueClassNames(regex,replace);
+    break;
+default :
+  renameJavaNames(regex,replace);
+}
+}
+ catch (Exception e) {
+MessageBox.errorDialog(owner,"Failed to rename " + target + "!",e);
+}
+}
+}
 ),button("Reset Selected","Revert changes for selected items to initial values",new EventHandler<ActionEvent>(){
-    @Override public void handle(    ActionEvent evt){
-      Collection<PojoDescriptor> selItems=selectedItems();
-      String sel=replaceCb.getSelectionModel().getSelectedItem();
-      boolean renFields="Java names".equals(sel);
-      String src=(renFields ? "fields" : "tables");
-      String target="\"" + sel + "\"";
-      if (selItems.isEmpty()) {
-        MessageBox.warningDialog(owner,"Please select " + src + "to revert "+ target+ "!");
-        return;
-      }
-      if (!MessageBox.confirmDialog(owner,"Are you sure you want to revert " + target + " for all selected "+ src+ "?"))       return;
-      for (      PojoDescriptor pojo : selItems)       pojo.revertJavaNames();
-    }
-  }
+@Override public void handle(ActionEvent evt){
+Collection<PojoDescriptor> selItems=selectedItems();
+String sel=replaceCb.getSelectionModel().getSelectedItem();
+boolean renFields="Java names".equals(sel);
+String src=(renFields ? "fields" : "tables");
+String target="\"" + sel + "\"";
+if (selItems.isEmpty()) {
+MessageBox.warningDialog(owner,"Please select " + src + "to revert "+ target+ "!");
+return;
+}
+if (!MessageBox.confirmDialog(owner,"Are you sure you want to revert " + target + " for all selected "+ src+ "?")) return;
+switch (replaceCb.getSelectionModel().getSelectedIndex()) {
+case 0:
+revertKeyClassNames();
+break;
+case 1:
+revertValueClassNames();
+break;
+default :
+revertJavaNames();
+}
+}
+}
 )),2).setPadding(new Insets(0,0,0,10));
-  pojosTbl.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<PojoDescriptor>(){
-    @Override public void changed(    ObservableValue<? extends PojoDescriptor> val,    PojoDescriptor oldVal,    PojoDescriptor newItem){
-      if (newItem != null && newItem.parent() != null) {
-        curPojo=newItem;
-        fieldsTbl.setItems(curPojo.fields());
-        fieldsTbl.getSelectionModel().clearAndSelect(0);
-        keyValPnl.setDisable(false);
-      }
+pojosTbl.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<PojoDescriptor>(){
+@Override public void changed(ObservableValue<? extends PojoDescriptor> val,PojoDescriptor oldVal,PojoDescriptor newItem){
+if (newItem != null && newItem.parent() != null) {
+curPojo=newItem;
+fieldsTbl.setItems(curPojo.fields());
+fieldsTbl.getSelectionModel().clearSelection();
+keyValPnl.setDisable(false);
+}
  else {
-        curPojo=null;
-        fieldsTbl.setItems(NO_FIELDS);
-        keyValPnl.setDisable(true);
-      }
-    }
-  }
+curPojo=null;
+fieldsTbl.setItems(NO_FIELDS);
+keyValPnl.setDisable(true);
+}
+}
+}
 );
-  genPnl.add(regexPnl,3);
-  genLayerPnl=stackPane(genPnl);
+genPnl.add(titledPane("Rename \"Key class name\", \"Value class name\" or  \"Java name\" for selected tables",regexPnl),3);
+genLayerPnl=stackPane(genPnl);
 }
