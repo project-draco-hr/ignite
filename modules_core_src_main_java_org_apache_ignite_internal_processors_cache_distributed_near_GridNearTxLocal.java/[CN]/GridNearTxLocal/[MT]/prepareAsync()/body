@@ -1,37 +1,31 @@
 {
-  IgniteFuture<IgniteTxEx<K,V>> fut=prepFut.get();
+  GridNearTxPrepareFuture<K,V> fut=(GridNearTxPrepareFuture<K,V>)prepFut.get();
   if (fut == null) {
-    fut=pessimistic() ? new PessimisticPrepareFuture<>(cctx.kernalContext(),this) : new GridNearTxPrepareFuture<>(cctx,this);
+    fut=new GridNearTxPrepareFuture<>(cctx,this);
     if (!prepFut.compareAndSet(null,fut))     return prepFut.get();
   }
  else   return fut;
   mapExplicitLocks();
   if (pessimistic()) {
-    PessimisticPrepareFuture<K,V> pessimisticFut=(PessimisticPrepareFuture<K,V>)fut;
     if (!state(PREPARING)) {
       if (setRollbackOnly()) {
-        if (timedOut())         pessimisticFut.onError(new IgniteTxTimeoutException("Transaction timed out and was " + "rolled back: " + this));
- else         pessimisticFut.onError(new IgniteCheckedException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
+        if (timedOut())         fut.onError(new IgniteTxTimeoutException("Transaction timed out and was " + "rolled back: " + this));
+ else         fut.onError(new IgniteCheckedException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
       }
- else       pessimisticFut.onError(new IgniteTxRollbackException("Invalid transaction state for prepare " + "[state=" + state() + ", tx="+ this+ ']'));
+ else       fut.onError(new IgniteTxRollbackException("Invalid transaction state for prepare " + "[state=" + state() + ", tx="+ this+ ']'));
       return fut;
     }
     try {
       userPrepare();
-      if (!state(PREPARED)) {
-        setRollbackOnly();
-        pessimisticFut.onError(new IgniteCheckedException("Invalid transaction state for commit [state=" + state() + ", tx="+ this+ ']'));
-        return fut;
-      }
-      pessimisticFut.complete();
+      cctx.mvcc().addFuture(fut);
+      fut.prepare();
     }
  catch (    IgniteCheckedException e) {
-      pessimisticFut.onError(e);
+      fut.onError(e);
     }
   }
  else {
-    GridNearTxPrepareFuture<K,V> pf=(GridNearTxPrepareFuture<K,V>)prepFut.get();
-    pf.prepare();
+    fut.prepare();
   }
   return fut;
 }

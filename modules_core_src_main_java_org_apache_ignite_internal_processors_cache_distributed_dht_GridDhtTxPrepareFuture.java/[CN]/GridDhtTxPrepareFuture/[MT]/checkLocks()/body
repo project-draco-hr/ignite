@@ -3,9 +3,17 @@
     while (true) {
       GridCacheEntryEx<K,V> cached=txEntry.cached();
       try {
-        if (!cached.lockedLocally(tx.xidVersion())) {
-          if (log.isDebugEnabled())           log.debug("Transaction entry is not locked by transaction (will wait) [entry=" + cached + ", tx="+ tx+ ']');
-          return false;
+        if (txEntry.explicitVersion() == null) {
+          if (!cached.lockedLocally(tx.xidVersion())) {
+            if (log.isDebugEnabled())             log.debug("Transaction entry is not locked by transaction (will wait) [entry=" + cached + ", tx="+ tx+ ']');
+            return false;
+          }
+        }
+ else {
+          if (!cached.lockedBy(txEntry.explicitVersion())) {
+            if (log.isDebugEnabled())             log.debug("Transaction entry is not locked by explicit version (will wait) [entry=" + cached + ", tx="+ tx+ ']');
+            return false;
+          }
         }
         break;
       }

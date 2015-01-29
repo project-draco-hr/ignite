@@ -27,11 +27,21 @@
   try (IgniteTx tx=cache.txStart()){
     cache.getAll(keys);
     cache.putAll(map);
-    info(">>> Stopping primary node " + primaryNode);
-    G.stop(G.ignite(primaryNode.id()).name(),true);
-    info(">>> Stopped originating node, finishing transaction: " + primaryNode.id());
-    if (commmit)     tx.commit();
- else     tx.rollback();
+    IgniteTxProxyImpl txProxy=(IgniteTxProxyImpl)tx;
+    IgniteTxEx txEx=txProxy.tx();
+    if (commmit) {
+      txEx.prepare();
+      info(">>> Stopping primary node " + primaryNode);
+      G.stop(Ignition.ignite(primaryNode.id()).name(),true);
+      info(">>> Stopped originating node, finishing transaction: " + primaryNode.id());
+      tx.commit();
+    }
+ else {
+      info(">>> Stopping primary node " + primaryNode);
+      G.stop(G.ignite(primaryNode.id()).name(),true);
+      info(">>> Stopped originating node, finishing transaction: " + primaryNode.id());
+      tx.rollback();
+    }
   }
    boolean txFinished=GridTestUtils.waitForCondition(new GridAbsPredicate(){
     @Override public boolean apply(){
