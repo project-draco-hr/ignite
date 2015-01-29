@@ -1,10 +1,14 @@
 {
   int key=nextRandom(0,args.range() / 2);
-  try (IgniteTx tx=grid().transactions().txStart()){
+  ignite().log().debug("IgnitePutGetTxBenchmark - key: " + key);
+  try (IgniteTx tx=ignite().transactions().txStart()){
+    ignite().log().debug("IgnitePutGetTxBenchmark: txStart()");
     Object val=cache.get(key);
+    ignite().log().debug("IgnitePutGetTxBenchmark - get():" + val);
     if (val != null)     key=nextRandom(args.range() / 2,args.range());
     cache.put(key,new SampleValue(key));
     tx.commit();
+    ignite().log().debug("IgnitePutGetTxBenchmark - txCommit");
   }
    return true;
 }
