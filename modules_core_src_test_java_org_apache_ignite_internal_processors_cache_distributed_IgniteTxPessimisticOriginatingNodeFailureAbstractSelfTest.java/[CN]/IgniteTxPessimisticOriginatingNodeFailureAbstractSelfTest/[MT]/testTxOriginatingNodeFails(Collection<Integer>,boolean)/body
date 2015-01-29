@@ -1,8 +1,8 @@
 {
   assertFalse(keys.isEmpty());
-  final Collection<GridKernal> grids=new ArrayList<>();
+  final Collection<IgniteKernal> grids=new ArrayList<>();
   ClusterNode txNode=grid(originatingNode()).localNode();
-  for (int i=1; i < gridCount(); i++)   grids.add((GridKernal)grid(i));
+  for (int i=1; i < gridCount(); i++)   grids.add((IgniteKernal)grid(i));
   failingNodeId=grid(0).localNode().id();
   final Map<Integer,String> map=new HashMap<>();
   final String initVal="initialValue";
@@ -11,7 +11,7 @@
     map.put(key,String.valueOf(key));
   }
   Map<Integer,Collection<ClusterNode>> nodeMap=new HashMap<>();
-  GridCacheAdapter<Integer,String> cache=((GridKernal)grid(1)).internalCache();
+  GridCacheAdapter<Integer,String> cache=((IgniteKernal)grid(1)).internalCache();
   info("Node being checked: " + grid(1).localNode().id());
   for (  Integer key : keys) {
     Collection<ClusterNode> nodes=new ArrayList<>();
@@ -19,10 +19,10 @@
     nodes.remove(txNode);
     nodeMap.put(key,nodes);
   }
-  info("Starting tx [values=" + map + ", topVer="+ ((GridKernal)grid(1)).context().discovery().topologyVersion()+ ']');
+  info("Starting tx [values=" + map + ", topVer="+ ((IgniteKernal)grid(1)).context().discovery().topologyVersion()+ ']');
   if (fullFailure)   ignoreMessages(ignoreMessageClasses(),allNodeIds());
  else   ignoreMessages(ignoreMessageClasses(),F.asList(grid(1).localNode().id()));
-  final GridEx originatingNodeGrid=grid(originatingNode());
+  final IgniteEx originatingNodeGrid=grid(originatingNode());
   GridTestUtils.runAsync(new Callable<Void>(){
     @Override public Void call() throws Exception {
       GridCache<Integer,String> cache=originatingNodeGrid.cache(null);
@@ -50,7 +50,7 @@
   info(">>> Stopped originating node: " + txNode.id());
   boolean txFinished=GridTestUtils.waitForCondition(new GridAbsPredicate(){
     @Override public boolean apply(){
-      for (      GridKernal g : grids) {
+      for (      IgniteKernal g : grids) {
         GridCacheAdapter<?,?> cache=g.internalCache();
         IgniteTxManager txMgr=cache.isNear() ? ((GridNearCacheAdapter)cache).dht().context().tm() : cache.context().tm();
         int txNum=txMgr.idMapSize();
