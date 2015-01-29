@@ -1,18 +1,14 @@
 {
-  List<PojoDescriptor> pojos=DatabaseMetadataParser.parse(conn,true);
-  ConfirmCallable askOverwrite=new ConfirmCallable(null,""){
-    @Override public MessageBox.Result confirm(    String msg){
-      return YES_TO_ALL;
-    }
-  }
-;
   String pkg="org.apache.ignite.schema.load.model";
-  String intPath="org" + PS + "apache"+ PS+ "ignite"+ PS+ "schema"+ PS+ "load"+ PS+ "model";
-  for (  PojoDescriptor pojo : pojos) {
-    if (!pojo.valueClassName().isEmpty()) {
+  String intPath="org/apache/ignite/schema/load/model";
+  Boolean containsSchema=false;
+  for (  PojoDescriptor pojo : pojoLst) {
+    if (pojo.valueClassName().isEmpty())     containsSchema=true;
+ else {
       PojoGenerator.generate(pojo,OUT_DIR_PATH,pkg,true,true,askOverwrite);
-      assertTrue("Generated POJO files does not accordance to predefined for type " + pojo.keyClassName(),compareFiles(pojo.keyClassName(),intPath));
-      assertTrue("Generated POJO files does not accordance to predefined for type " + pojo.valueClassName(),compareFiles(pojo.valueClassName(),intPath));
+      assertTrue("Generated key class POJO content is differ from expected for type " + pojo.keyClassName(),compareFiles(pojo.keyClassName(),intPath,GEN_PTRN));
+      assertTrue("Generated value class POJO content is differ from expected for type " + pojo.valueClassName(),compareFiles(pojo.valueClassName(),intPath,GEN_PTRN));
     }
   }
+  assertTrue("Generated POJOs does not contains schema.",containsSchema);
 }
