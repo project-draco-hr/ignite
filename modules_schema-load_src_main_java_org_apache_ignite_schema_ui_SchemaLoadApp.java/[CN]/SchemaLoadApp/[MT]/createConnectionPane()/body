@@ -5,6 +5,7 @@
   connPnl.addColumn(35,35,35,Priority.NEVER);
   connPnl.add(text("This utility is designed to automatically generate configuration XML files and" + " POGO classes from database schema information.",550),3);
   connPnl.wrap();
+  ComboBox<String> rdbmsCb=connPnl.addLabeled("DB Server type:",comboBox("tt",RDBMS_NAMES),2);
   jdbcDrvJarTf=connPnl.addLabeled("Driver JAR:",textField("Path to driver jar"));
   connPnl.add(button("...","Select JDBC driver jar or zip",new EventHandler<ActionEvent>(){
     /** 
@@ -18,8 +19,17 @@
     }
   }
 ));
-  jdbcDrvClsCb=connPnl.addLabeled("JDBC Driver:",comboBoxEditable("Enter ??lass name for JDBC driver","org.h2.Driver","com.ibm.db2.jcc.DB2Driver","oracle.jdbc.OracleDriver","com.microsoft.sqlserver.jdbc.SQLServerDriver"),2);
-  jdbcUrlCb=connPnl.addLabeled("JDBC URL:",comboBoxEditable("JDBC URL of the database connection string","jdbc:h2:_path_to_db_","jdbc:db2://server_name_or_ip:port/some_db","jdbc:oracle:thin:@server_name_or_ip:port:some_db","jdbc:sqlserver://server_name_or_ip:port;databaseName=some_db"),2);
+  jdbcDrvClsTf=connPnl.addLabeled("JDBC Driver:",textField("Enter ??lass name for JDBC driver"),2);
+  jdbcUrlTf=connPnl.addLabeled("JDBC URL:",textField("JDBC URL of the database connection string"),2);
+  rdbmsCb.getSelectionModel().selectedIndexProperty().addListener(new ChangeListener<Number>(){
+    @Override public void changed(    ObservableValue<? extends Number> observable,    Number oldIdx,    Number newIdx){
+      int idx=newIdx.intValue();
+      jdbcDrvJarTf.setText(JDBC_JAR[idx]);
+      jdbcDrvClsTf.setText(JDBC_DRIVERS[idx]);
+      jdbcUrlTf.setText(JDBC_URLS[idx]);
+    }
+  }
+);
   userTf=connPnl.addLabeled("User:",textField("User name"),2);
   pwdTf=connPnl.addLabeled("Password:",passwordField("User password"),2);
   parseCb=connPnl.addLabeled("Parse:",comboBox("Type of tables to parse","Tables only","Tables and Views"),2);
