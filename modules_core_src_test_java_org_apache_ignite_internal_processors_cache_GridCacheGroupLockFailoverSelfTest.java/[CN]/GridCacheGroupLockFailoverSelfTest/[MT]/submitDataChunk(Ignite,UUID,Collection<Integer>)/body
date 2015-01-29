@@ -1,10 +1,10 @@
 {
   ClusterGroup prj=master.cluster().forPredicate(workerNodesFilter);
-  IgniteCompute comp=master.compute(prj).enableAsync();
+  IgniteCompute comp=master.compute(prj).withAsync();
   comp.execute(new GridCacheGroupLockPutTask(preferredNodeId,CACHE_NAME,optimisticTx()),dataChunk);
   ComputeTaskFuture<Void> fut=comp.future();
-  fut.listenAsync(new CI1<IgniteFuture<Void>>(){
-    @Override public void apply(    IgniteFuture<Void> f){
+  fut.listenAsync(new CI1<IgniteInternalFuture<Void>>(){
+    @Override public void apply(    IgniteInternalFuture<Void> f){
       ComputeTaskFuture taskFut=(ComputeTaskFuture)f;
       boolean fail=false;
       try {

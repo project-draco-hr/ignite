@@ -1,10 +1,10 @@
 {
   Collection<Integer> keys=new ArrayList<>(20);
   for (int i=0; i < 20; i++)   keys.add(i);
-  final Collection<GridKernal> grids=new ArrayList<>();
+  final Collection<IgniteKernal> grids=new ArrayList<>();
   ClusterNode primaryNode=grid(1).localNode();
   for (int i=0; i < gridCount(); i++) {
-    if (i != 1)     grids.add((GridKernal)grid(i));
+    if (i != 1)     grids.add((IgniteKernal)grid(i));
   }
   failingNodeId=primaryNode.id();
   final Map<Integer,String> map=new HashMap<>();
@@ -22,7 +22,7 @@
     nodes.remove(primaryNode);
     nodeMap.put(key,nodes);
   }
-  info("Starting tx [values=" + map + ", topVer="+ ((GridKernal)grid(1)).context().discovery().topologyVersion()+ ']');
+  info("Starting tx [values=" + map + ", topVer="+ ((IgniteKernal)grid(1)).context().discovery().topologyVersion()+ ']');
   assertNotNull(cache);
   try (IgniteTx tx=cache.txStart()){
     cache.getAll(keys);
@@ -35,7 +35,7 @@
   }
    boolean txFinished=GridTestUtils.waitForCondition(new GridAbsPredicate(){
     @Override public boolean apply(){
-      for (      GridKernal g : grids) {
+      for (      IgniteKernal g : grids) {
         GridCacheAdapter<?,?> cache=g.internalCache();
         IgniteTxManager txMgr=cache.isNear() ? ((GridNearCacheAdapter)cache).dht().context().tm() : cache.context().tm();
         int txNum=txMgr.idMapSize();

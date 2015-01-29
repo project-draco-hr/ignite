@@ -4,17 +4,17 @@
   assertNotNull(queue);
   assertTrue(queue.isEmpty());
   PutJob putJob=new PutJob(queueName);
-  IgniteCompute comp=compute(grid(0).forLocal()).enableAsync();
+  IgniteCompute comp=compute(grid(0).forLocal()).withAsync();
   comp.run(putJob);
-  IgniteFuture<?> fut=comp.future();
-  Collection<IgniteFuture<?>> futs=new ArrayList<>(GRID_CNT - 1);
+  IgniteInternalFuture<?> fut=comp.future();
+  Collection<IgniteInternalFuture<?>> futs=new ArrayList<>(GRID_CNT - 1);
   Collection<TakeJob> jobs=new ArrayList<>(GRID_CNT - 1);
   int itemsLeft=ITEMS_CNT;
   for (int i=1; i < GRID_CNT; i++) {
     int cnt=ITEMS_CNT / (GRID_CNT - 1);
     TakeJob job=new TakeJob(queueName,cnt,10);
     jobs.add(job);
-    comp=compute(grid(i).forLocal()).enableAsync();
+    comp=compute(grid(i).forLocal()).withAsync();
     comp.call(job);
     futs.add(comp.future());
     itemsLeft-=cnt;
@@ -28,7 +28,7 @@
   Integer polled=forLocal(joined).call(joinedJob);
   assertNotNull("Joined node should poll item",polled);
   info(">>> Joined node polled " + polled);
-  for (  IgniteFuture<?> f : futs)   f.cancel();
+  for (  IgniteInternalFuture<?> f : futs)   f.cancel();
   putJob.stop(true);
   fut.get();
   for (  TakeJob job : jobs)   job.awaitDone();

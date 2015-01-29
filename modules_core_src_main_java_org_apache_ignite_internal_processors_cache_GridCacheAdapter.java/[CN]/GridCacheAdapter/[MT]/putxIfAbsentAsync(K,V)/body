@@ -1,15 +1,19 @@
 {
+  final boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  final long start=statsEnabled ? System.nanoTime() : 0L;
   A.notNull(key,"key",val,"val");
   if (keyCheck)   validateCacheKey(key);
   validateCacheValue(val);
   ctx.denyOnLocalRead();
-  return asyncOp(new AsyncOp<Boolean>(key){
-    @Override public IgniteFuture<Boolean> op(    IgniteTxLocalAdapter<K,V> tx){
-      return tx.putAllAsync(ctx,F.t(key,val),false,null,-1,ctx.noPeekArray()).chain((IgniteClosure<IgniteFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
+  IgniteInternalFuture<Boolean> fut=asyncOp(new AsyncOp<Boolean>(key){
+    @Override public IgniteInternalFuture<Boolean> op(    IgniteTxLocalAdapter<K,V> tx){
+      return tx.putAllAsync(ctx,F.t(key,val),false,null,-1,ctx.noPeekArray()).chain((IgniteClosure<IgniteInternalFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
     }
     @Override public String toString(){
       return "putxIfAbsentAsync [key=" + key + ", val="+ val+ ']';
     }
   }
 );
+  if (statsEnabled)   fut.listenAsync(new UpdatePutTimeStatClosure<Boolean>(metrics0(),start));
+  return fut;
 }
