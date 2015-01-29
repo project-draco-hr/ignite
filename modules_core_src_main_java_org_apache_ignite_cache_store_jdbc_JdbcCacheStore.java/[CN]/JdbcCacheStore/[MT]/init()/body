@@ -22,18 +22,18 @@
   if (!initOk)   throw new CacheException("Cache store was not properly initialized.");
   Integer cacheKey=cacheKeyId();
   if (!cacheMappings.containsKey(cacheKey)) {
-    initLock.lock();
+    buildMetaCacheLock.lock();
     try {
       if (!cacheMappings.containsKey(cacheKey)) {
         Collection<CacheQueryTypeMetadata> typeMetadata=ignite().cache(session().cacheName()).configuration().getQueryConfiguration().getTypeMetadata();
         Map<Object,EntryMapping> entryMappings=U.newHashMap(typeMetadata.size());
         for (        CacheQueryTypeMetadata type : typeMetadata)         entryMappings.put(keyId(type.getKeyType()),new EntryMapping(dialect,type));
         cacheMappings.put(cacheKey,Collections.unmodifiableMap(entryMappings));
-        buildTypeCache(typeMetadata);
+        prepareBuilders(typeMetadata);
       }
     }
   finally {
-      initLock.unlock();
+      buildMetaCacheLock.unlock();
     }
   }
 }
