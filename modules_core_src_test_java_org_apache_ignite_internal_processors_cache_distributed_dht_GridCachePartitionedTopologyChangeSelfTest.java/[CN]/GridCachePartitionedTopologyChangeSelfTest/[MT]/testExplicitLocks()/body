@@ -1,10 +1,10 @@
 {
   try {
     startGridsMultiThreaded(2);
-    GridKernal[] nodes=new GridKernal[]{(GridKernal)grid(0),(GridKernal)grid(1)};
-    Collection<IgniteFuture> futs=new ArrayList<>();
+    IgniteKernal[] nodes=new IgniteKernal[]{(IgniteKernal)grid(0),(IgniteKernal)grid(1)};
+    Collection<IgniteInternalFuture> futs=new ArrayList<>();
     final CountDownLatch startLatch=new CountDownLatch(1);
-    for (    final GridKernal node : nodes) {
+    for (    final IgniteKernal node : nodes) {
       List<Integer> parts=partitions(node,PARTITION_PRIMARY);
       Map<Integer,Integer> keyMap=keysFor(node,parts);
       for (      final Integer key : keyMap.values()) {
@@ -36,7 +36,7 @@ catch (            InterruptedException ignored) {
 ,1));
       }
     }
-    IgniteFuture<?> startFut=multithreadedAsync(new Runnable(){
+    IgniteInternalFuture<?> startFut=multithreadedAsync(new Runnable(){
       @Override public void run(){
         try {
           startGrid(2);
@@ -52,7 +52,7 @@ catch (            InterruptedException ignored) {
     assertFalse(startFut.isDone());
     info(">>> Waiting for all locks to be released.");
     startLatch.countDown();
-    for (    IgniteFuture fut : futs)     fut.get(1000);
+    for (    IgniteInternalFuture fut : futs)     fut.get(1000);
     startFut.get();
   }
   finally {
