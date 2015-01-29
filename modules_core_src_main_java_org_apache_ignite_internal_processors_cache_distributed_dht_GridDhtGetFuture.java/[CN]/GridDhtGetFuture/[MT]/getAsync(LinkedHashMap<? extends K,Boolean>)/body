@@ -11,7 +11,7 @@
       try {
         GridCacheEntryInfo<K,V> info=e.info();
         if (info == null)         continue;
-        IgniteFuture<Boolean> f=(!e.deleted() && k.getValue()) ? e.addReader(reader,msgId,topVer) : null;
+        IgniteInternalFuture<Boolean> f=(!e.deleted() && k.getValue()) ? e.addReader(reader,msgId,topVer) : null;
         if (f != null) {
           if (txFut == null)           txFut=new GridCompoundFuture<>(cctx.kernalContext(),CU.boolReducer());
           txFut.add(f);
@@ -28,7 +28,7 @@
     }
   }
   if (txFut != null)   txFut.markInitialized();
-  IgniteFuture<Map<K,V>> fut;
+  IgniteInternalFuture<Map<K,V>> fut;
   if (txFut == null || txFut.isDone()) {
     if (reload && cctx.readThrough() && cctx.store().configured()) {
       fut=cache().reloadAllAsync(keys.keySet(),true,subjId,taskName,filters);
@@ -43,8 +43,8 @@
     }
   }
  else {
-    fut=new GridEmbeddedFuture<>(txFut,new C2<Boolean,Exception,IgniteFuture<Map<K,V>>>(){
-      @Override public IgniteFuture<Map<K,V>> apply(      Boolean b,      Exception e){
+    fut=new GridEmbeddedFuture<>(txFut,new C2<Boolean,Exception,IgniteInternalFuture<Map<K,V>>>(){
+      @Override public IgniteInternalFuture<Map<K,V>> apply(      Boolean b,      Exception e){
         if (e != null)         throw new GridClosureException(e);
         if (reload && cctx.readThrough() && cctx.store().configured()) {
           return cache().reloadAllAsync(keys.keySet(),true,subjId,taskName,filters);
