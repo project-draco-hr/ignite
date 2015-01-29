@@ -1,0 +1,64 @@
+{
+  GridFutureAdapter<String> fut0=new GridFutureAdapter<>(new GridTestKernalContext(log),true);
+  IgniteFutureImpl<String> fut=new IgniteFutureImpl<>(fut0);
+  fut.syncNotify(true);
+  assertTrue(fut.syncNotify());
+  fut.syncNotify(false);
+  assertFalse(fut.syncNotify());
+  fut.concurrentNotify(true);
+  assertTrue(fut.concurrentNotify());
+  fut.concurrentNotify(false);
+  assertFalse(fut.concurrentNotify());
+  fut.syncNotify(true);
+  assertTrue(fut.syncNotify());
+  final AtomicInteger lsnr1Cnt=new AtomicInteger();
+  IgniteInClosure<? super IgniteFuture<String>> lsnr1=new CI1<IgniteFuture<String>>(){
+    @Override public void apply(    IgniteFuture<String> fut){
+      assertEquals("test",fut.get());
+      lsnr1Cnt.incrementAndGet();
+    }
+  }
+;
+  final AtomicInteger lsnr2Cnt=new AtomicInteger();
+  IgniteInClosure<? super IgniteFuture<String>> lsnr2=new CI1<IgniteFuture<String>>(){
+    @Override public void apply(    IgniteFuture<String> fut){
+      assertEquals("test",fut.get());
+      lsnr2Cnt.incrementAndGet();
+    }
+  }
+;
+  assertFalse(fut.isDone());
+  fut.listenAsync(lsnr1);
+  fut.listenAsync(lsnr2);
+  U.sleep(100);
+  assertEquals(0,lsnr1Cnt.get());
+  assertEquals(0,lsnr2Cnt.get());
+  fut0.onDone("test");
+  assertEquals(1,lsnr1Cnt.get());
+  assertEquals(1,lsnr2Cnt.get());
+  lsnr1Cnt.set(0);
+  lsnr2Cnt.set(0);
+{
+    fut0=new GridFutureAdapter<>(new GridTestKernalContext(log),true);
+    fut=new IgniteFutureImpl<>(fut0);
+    fut.syncNotify(true);
+    fut.listenAsync(lsnr1);
+    fut.listenAsync(lsnr2);
+    fut.stopListenAsync(lsnr2);
+    fut0.onDone("test");
+    assertEquals(1,lsnr1Cnt.get());
+    assertEquals(0,lsnr2Cnt.get());
+    lsnr1Cnt.set(0);
+  }
+{
+    fut0=new GridFutureAdapter<>(new GridTestKernalContext(log),true);
+    fut=new IgniteFutureImpl<>(fut0);
+    fut.syncNotify(true);
+    fut.listenAsync(lsnr1);
+    fut.listenAsync(lsnr2);
+    fut.stopListenAsync(lsnr2,lsnr1);
+    fut0.onDone("test");
+    assertEquals(0,lsnr1Cnt.get());
+    assertEquals(0,lsnr2Cnt.get());
+  }
+}
