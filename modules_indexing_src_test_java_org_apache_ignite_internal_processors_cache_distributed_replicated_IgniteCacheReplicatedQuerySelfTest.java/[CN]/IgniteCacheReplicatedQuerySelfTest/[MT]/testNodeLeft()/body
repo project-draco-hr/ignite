@@ -5,7 +5,7 @@
     for (int i=0; i < 1000; i++)     cache.put(i,i);
     QueryCursor<Cache.Entry<Integer,Integer>> q=cache.query(new QuerySqlPredicate<Integer,Integer>("_key >= 0 order by _key",50,new Object[0]));
     assertEquals(0,(int)q.iterator().next().getKey());
-    final ConcurrentMap<UUID,Map<Long,GridFutureAdapter<GridCloseableIterator<IgniteBiTuple<Integer,Integer>>>>> map=U.field(((GridKernal)grid(0)).internalCache().context().queries(),"qryIters");
+    final ConcurrentMap<UUID,Map<Long,GridFutureAdapter<GridCloseableIterator<IgniteBiTuple<Integer,Integer>>>>> map=U.field(((IgniteKernal)grid(0)).internalCache().context().queries(),"qryIters");
     assertTrue(GridTestUtils.waitForCondition(new PA(){
       @Override public boolean apply(){
         return map.size() == 1;
@@ -14,7 +14,7 @@
 ,getTestTimeout()));
     Map<Long,GridFutureAdapter<GridCloseableIterator<IgniteBiTuple<Integer,Integer>>>> futs=map.get(g.cluster().localNode().id());
     assertEquals(1,futs.size());
-    GridCloseableIterator<IgniteBiTuple<Integer,Integer>> iter=(GridCloseableIterator<IgniteBiTuple<Integer,Integer>>)((IgniteFuture)F.first(futs.values()).get()).get();
+    GridCloseableIterator<IgniteBiTuple<Integer,Integer>> iter=(GridCloseableIterator<IgniteBiTuple<Integer,Integer>>)((IgniteInternalFuture)F.first(futs.values()).get()).get();
     ResultSet rs=U.field(iter,"data");
     assertFalse(rs.isClosed());
     final UUID nodeId=g.cluster().localNode().id();
