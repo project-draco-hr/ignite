@@ -1,0 +1,24 @@
+{
+  System.out.println("Starting server ...");
+  U.setWorkDirectory(null,U.getGridGainHome());
+  X.println(GridJavaProcess.PID_MSG_PREFIX + U.jvmPid());
+  InputStream is=null;
+  try {
+    IpcServerEndpoint srv=new IpcSharedMemoryServerEndpoint();
+    new GridTestResources().inject(srv);
+    srv.start();
+    IpcEndpoint clientEndpoint=srv.accept();
+    is=clientEndpoint.inputStream();
+    for (; ; ) {
+      X.println("Before read.");
+      is.read();
+      Thread.sleep(IpcSharedMemoryCrashDetectionSelfTest.RW_SLEEP_TIMEOUT);
+    }
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+  }
+ finally {
+    U.closeQuiet(is);
+  }
+}

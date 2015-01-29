@@ -1,0 +1,12 @@
+{
+  if (!closed.compareAndSet(false,true))   return;
+  IpcSharedMemoryUtils.ipcClose(shmemPtr);
+  lock.writeLock().lock();
+  try {
+    IpcSharedMemoryUtils.freeSystemResources(tokFileName,shmemPtr,force);
+  }
+  finally {
+    lock.writeLock().unlock();
+  }
+  if (DEBUG && log.isDebugEnabled())   log.debug("Shared memory space has been closed: " + this);
+}

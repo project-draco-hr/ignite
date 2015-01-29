@@ -7,11 +7,10 @@
       if (cctx.isNear() || !CU.isNearEnabled(cctx))       ((LifecycleAware)store).start();
     }
   }
-  if (!cctx.config().isKeepPortableInStore()) {
-    if (cctx.config().isPortableEnabled()) {
-      if (store instanceof GridInteropAware)       ((GridInteropAware)store).configure(true);
- else       convertPortable=true;
-    }
- else     U.warn(log,"GridCacheConfiguration.isKeepPortableInStore() configuration property will " + "be ignored because portable mode is not enabled for cache: " + cctx.namex());
+  boolean convertPortable=!cctx.config().isKeepPortableInStore();
+  if (cctx.config().isPortableEnabled()) {
+    if (store instanceof GridInteropAware)     ((GridInteropAware)store).configure(cctx.cache().name(),convertPortable);
+ else     this.convertPortable=convertPortable;
   }
+ else   if (convertPortable)   U.warn(log,"GridCacheConfiguration.isKeepPortableInStore() configuration property will " + "be ignored because portable mode is not enabled for cache: " + cctx.namex());
 }

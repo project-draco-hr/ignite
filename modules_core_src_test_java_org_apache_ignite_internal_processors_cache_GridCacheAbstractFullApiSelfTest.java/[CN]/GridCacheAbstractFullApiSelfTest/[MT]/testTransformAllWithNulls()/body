@@ -15,15 +15,22 @@
   }
 ,NullPointerException.class,null);
 {
-    Map<String,Integer> m=new HashMap<>(2);
-    m.put("key1",1);
-    m.put(null,2);
-    cache.putAll(m);
-  }
-{
-    Set<String> keys=new HashSet<>(2);
+    final Set<String> keys=new LinkedHashSet<>(2);
     keys.add("key1");
     keys.add(null);
-    cache.invokeAll(keys,INCR_PROCESSOR);
+    GridTestUtils.assertThrows(log,new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        cache.invokeAll(keys,INCR_PROCESSOR);
+        return null;
+      }
+    }
+,NullPointerException.class,null);
+    GridTestUtils.assertThrows(log,new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        cache.invokeAll(F.asSet("key1"),null);
+        return null;
+      }
+    }
+,NullPointerException.class,null);
   }
 }
