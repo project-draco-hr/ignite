@@ -4,7 +4,7 @@
   genPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
   genPnl.addColumn(35,35,35,Priority.NEVER);
   genPnl.addRow(100,100,Double.MAX_VALUE,Priority.ALWAYS);
-  genPnl.addRows(8);
+  genPnl.addRows(7);
   TableColumn<PojoDescriptor,Boolean> useCol=customColumn("Schema / Table","use","If checked then this table will be used for XML and POJOs generation",PojoDescriptorCell.cellFactory());
   TableColumn<PojoDescriptor,String> keyClsCol=textColumn("Key Class Name","keyClassName","Key class name",new TextColumnValidator<PojoDescriptor>(){
     @Override public boolean valid(    PojoDescriptor rowVal,    String newVal){
@@ -47,6 +47,12 @@
   genPnl.add(button("...","Select output folder",new EventHandler<ActionEvent>(){
     @Override public void handle(    ActionEvent evt){
       DirectoryChooser dc=new DirectoryChooser();
+      try {
+        File outFolder=new File(outFolderTf.getText());
+        if (outFolder.exists())         dc.setInitialDirectory(outFolder);
+      }
+ catch (      Throwable ignored) {
+      }
       File folder=dc.showDialog(owner);
       if (folder != null)       outFolderTf.setText(folder.getAbsolutePath());
     }
@@ -55,7 +61,6 @@
   pojoIncludeKeysCh=genPnl.add(checkBox("Include key fields into value POJOs","If selected then include key fields into value object",true),3);
   pojoConstructorCh=genPnl.add(checkBox("Generate constructors for POJOs","If selected then generate empty and full constructors for POJOs",false),3);
   xmlSingleFileCh=genPnl.add(checkBox("Write all configurations to a single XML file","If selected then all configurations will be saved into the file 'Ignite.xml'",true),3);
-  openFolderCh=genPnl.add(checkBox("Reveal output folder","Open output folder in system file manager after generation complete",true),3);
   GridPaneEx regexPnl=paneEx(5,5,5,5);
   regexPnl.addColumn();
   regexPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
