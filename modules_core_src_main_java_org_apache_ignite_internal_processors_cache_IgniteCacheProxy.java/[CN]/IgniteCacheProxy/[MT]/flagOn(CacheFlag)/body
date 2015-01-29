@@ -1,10 +1,14 @@
 {
   GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
-    Set<CacheFlag> res=EnumSet.noneOf(CacheFlag.class);
+    Set<CacheFlag> res;
     Set<CacheFlag> flags0=prj != null ? prj.flags() : null;
-    if (flags0 != null && !flags0.isEmpty())     res.addAll(flags0);
-    res.addAll(EnumSet.copyOf(F.asList(flags)));
+    if (flags0 != null) {
+      if (flags0.contains(flag))       return this;
+      res=EnumSet.copyOf(flags0);
+    }
+ else     res=EnumSet.noneOf(CacheFlag.class);
+    res.add(flag);
     GridCacheProjectionImpl<K,V> prj0=new GridCacheProjectionImpl<>((prj != null ? prj : delegate),ctx,null,null,res,prj != null ? prj.subjectId() : null,true,prj != null ? prj.expiry() : null);
     return new IgniteCacheProxy<>(ctx,prj0,prj0,isAsync());
   }
