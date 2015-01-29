@@ -10,9 +10,11 @@
   String val2=Integer.toString(key2);
   assertEquals(grid(1).localNode(),F.first(aff.nodes(aff.partition(key2),grid(1).nodes())));
   IgniteCache<Integer,String> cache=jcache(0);
-  cache.lock(key1).lock();
+  Lock lock1=cache.lock(key1);
+  lock1.lock();
   try {
-    cache.lock(key2).lock();
+    Lock lock2=cache.lock(key2);
+    lock2.lock();
     try {
       assertNull(cache.getAndPut(key1,val1));
       assertEquals(val1,dht(0).peek(key1));
@@ -48,10 +50,10 @@
       assertNull(near(2).peekEx(key2));
     }
   finally {
-      cache.lock(key2).lock();
+      lock2.lock();
     }
   }
   finally {
-    cache.lock(key1).unlock();
+    lock1.unlock();
   }
 }

@@ -1,8 +1,14 @@
 {
+  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
-    return delegate.lockAll(keys,-1);
+    boolean res=delegate.lockAll(keys,-1);
+    if (res)     incrementLockCounter();
+    return res;
   }
  catch (  IgniteCheckedException e) {
     throw new CacheException(e.getMessage(),e);
+  }
+ finally {
+    gate.leave(prev);
   }
 }
