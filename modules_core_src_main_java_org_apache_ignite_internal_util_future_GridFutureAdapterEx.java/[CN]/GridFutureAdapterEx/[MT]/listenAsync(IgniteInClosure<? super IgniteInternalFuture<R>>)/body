@@ -1,0 +1,26 @@
+{
+  if (lsnr != null) {
+    checkValid();
+    boolean done;
+    IgniteInClosure<? super IgniteInternalFuture<R>> lsnr0=lsnr;
+    done=isDone();
+    if (!done) {
+      lsnr0=new IgniteInClosure<IgniteInternalFuture<R>>(){
+        private final AtomicBoolean called=new AtomicBoolean();
+        @Override public void apply(        IgniteInternalFuture<R> t){
+          if (called.compareAndSet(false,true))           lsnr.apply(t);
+        }
+        @Override public boolean equals(        Object o){
+          return o != null && (o == this || o == lsnr || o.equals(lsnr));
+        }
+        @Override public String toString(){
+          return lsnr.toString();
+        }
+      }
+;
+      lsnrs.add(lsnr0);
+      done=isDone();
+    }
+    if (done)     notifyListener(lsnr0);
+  }
+}

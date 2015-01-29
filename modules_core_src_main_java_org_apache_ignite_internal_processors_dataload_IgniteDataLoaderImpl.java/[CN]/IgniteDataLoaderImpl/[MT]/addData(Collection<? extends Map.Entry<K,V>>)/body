@@ -3,10 +3,13 @@
   enterBusy();
   try {
     GridFutureAdapter<Object> resFut=new GridFutureAdapter<>(ctx);
-    activeFuts.add(resFut);
     resFut.listenAsync(rmvActiveFut);
-    Collection<K> keys=new GridConcurrentHashSet<>(entries.size(),1.0f,16);
-    for (    Map.Entry<K,V> entry : entries)     keys.add(entry.getKey());
+    activeFuts.add(resFut);
+    Collection<K> keys=null;
+    if (entries.size() > 1) {
+      keys=new GridConcurrentHashSet<>(entries.size(),U.capacity(entries.size()),1);
+      for (      Map.Entry<K,V> entry : entries)       keys.add(entry.getKey());
+    }
     load0(entries,resFut,keys,0);
     return resFut;
   }
