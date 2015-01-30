@@ -1,0 +1,18 @@
+{
+  init();
+  IgniteTx tx=transaction();
+  if (log.isDebugEnabled())   log.debug("Store load [key=" + key + ", tx="+ tx+ ']');
+  Session ses=session(tx);
+  try {
+    CacheHibernateBlobStoreEntry entry=(CacheHibernateBlobStoreEntry)ses.get(CacheHibernateBlobStoreEntry.class,toBytes(key));
+    if (entry == null)     return null;
+    return fromBytes(entry.getValue());
+  }
+ catch (  IgniteCheckedException|HibernateException e) {
+    rollback(ses,tx);
+    throw new CacheLoaderException("Failed to load value from cache store with key: " + key,e);
+  }
+ finally {
+    end(ses,tx);
+  }
+}
