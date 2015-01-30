@@ -21,7 +21,7 @@
   pojosTbl=tableView("Tables not found in database",useCol,keyClsCol,valClsCol);
   TableColumn<PojoField,Boolean> useFldCol=booleanColumn("Use","use","Check to use this field for XML and POJO generation");
   TableColumn<PojoField,Boolean> keyCol=booleanColumn("Key","key","??heck to include this field into key object");
-  TableColumn<PojoField,Boolean> akCol=booleanColumn("AK","affinityKey","Check to annotate filed with @CacheAffinityKeyMapped annotation in generated POJO class\n" + "Note that a class can have only one field annotated with @CacheAffinityKeyMapped annotation");
+  TableColumn<PojoField,Boolean> akCol=booleanColumn("AK","affinityKey","Check to annotate key filed with @CacheAffinityKeyMapped annotation in generated POJO class\n" + "Note that a class can have only one key field annotated with @CacheAffinityKeyMapped annotation");
   TableColumn<PojoField,String> dbNameCol=tableColumn("DB Name","dbName","Field name in database");
   TableColumn<PojoField,String> dbTypeNameCol=tableColumn("DB Type","dbTypeName","Field type in database");
   TableColumn<PojoField,String> javaNameCol=textColumn("Java Name","javaName","Field name in POJO class",new TextColumnValidator<PojoField>(){
@@ -76,8 +76,8 @@
       boolean renFields="Java names".equals(sel);
       String src=(renFields ? "fields" : "tables");
       String target="\"" + sel + "\"";
-      Collection<PojoDescriptor> selItems=selectedItems();
-      if (selItems.isEmpty()) {
+      Collection<PojoDescriptor> selPojos=pojosTbl.getSelectionModel().getSelectedItems();
+      if (selPojos.isEmpty()) {
         MessageBox.warningDialog(owner,"Please select " + src + " to rename "+ target+ "!");
         return;
       }
@@ -87,13 +87,13 @@
       try {
 switch (replaceCb.getSelectionModel().getSelectedIndex()) {
 case 0:
-          renameKeyClassNames(regex,replace);
+          renameKeyClassNames(selPojos,regex,replace);
         break;
 case 1:
-      renameValueClassNames(regex,replace);
+      renameValueClassNames(selPojos,regex,replace);
     break;
 default :
-  renameJavaNames(regex,replace);
+  renameJavaNames(selPojos,regex,replace);
 }
 }
  catch (Exception e) {
@@ -103,25 +103,25 @@ MessageBox.errorDialog(owner,"Failed to rename " + target + "!",e);
 }
 ),button("Reset Selected","Revert changes for selected items to initial values",new EventHandler<ActionEvent>(){
 @Override public void handle(ActionEvent evt){
-Collection<PojoDescriptor> selItems=selectedItems();
 String sel=replaceCb.getSelectionModel().getSelectedItem();
 boolean renFields="Java names".equals(sel);
 String src=(renFields ? "fields" : "tables");
 String target="\"" + sel + "\"";
-if (selItems.isEmpty()) {
+Collection<PojoDescriptor> selPojos=pojosTbl.getSelectionModel().getSelectedItems();
+if (selPojos.isEmpty()) {
 MessageBox.warningDialog(owner,"Please select " + src + "to revert "+ target+ "!");
 return;
 }
 if (!MessageBox.confirmDialog(owner,"Are you sure you want to revert " + target + " for all selected "+ src+ "?")) return;
 switch (replaceCb.getSelectionModel().getSelectedIndex()) {
 case 0:
-revertKeyClassNames();
+revertKeyClassNames(selPojos);
 break;
 case 1:
-revertValueClassNames();
+revertValueClassNames(selPojos);
 break;
 default :
-revertJavaNames();
+revertJavaNames(selPojos);
 }
 }
 }

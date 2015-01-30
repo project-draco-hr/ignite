@@ -1,0 +1,22 @@
+{
+  IgniteEx grid=grid(0);
+  TestStore firstStore=(TestStore)grid(0).configuration().getCacheConfiguration()[1].getCacheStoreFactory().create();
+  Collection<String> evts=firstStore.events();
+  try (IgniteTx tx=grid.transactions().txStart()){
+    GridCache<Object,Object> cacheA=grid.cache("cacheA");
+    GridCache<Object,Object> cacheB=grid.cache("cacheB");
+    cacheA.put("1","1");
+    cacheA.put("2","2");
+    cacheB.put("1","1");
+    cacheB.put("2","2");
+    cacheA.remove("3");
+    cacheA.remove("4");
+    cacheB.remove("3");
+    cacheB.remove("4");
+    cacheA.put("5","5");
+    cacheA.remove("6");
+    cacheB.put("7","7");
+    tx.commit();
+  }
+   assertEqualsCollections(F.asList("writeAll cacheA 2","writeAll cacheB 2","deleteAll cacheA 2","deleteAll cacheB 2","write cacheA","delete cacheA","write cacheB","txEnd true"),evts);
+}
