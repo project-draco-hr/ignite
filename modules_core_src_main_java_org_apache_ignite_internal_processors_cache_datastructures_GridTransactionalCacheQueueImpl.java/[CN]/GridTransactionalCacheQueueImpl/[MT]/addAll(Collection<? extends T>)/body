@@ -4,8 +4,8 @@
     boolean retVal;
     int cnt=0;
     while (true) {
-      try (IgniteTx tx=txs.txStart(PESSIMISTIC,REPEATABLE_READ)){
-        Long idx=(Long)cache.invoke(queueKey,new AddProcessor(id,items.size()));
+      try (IgniteTxEx tx=cache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
+        Long idx=(Long)cache.invoke(queueKey,new AddProcessor(id,items.size())).get();
         if (idx != null) {
           checkRemoved(idx);
           Map<GridCacheQueueItemKey,T> putMap=new HashMap<>();
@@ -13,23 +13,20 @@
             putMap.put(itemKey(idx),item);
             idx++;
           }
-          cache.putAll(putMap);
+          cache.putAll(putMap,null);
           retVal=true;
         }
  else         retVal=false;
         tx.commit();
         break;
       }
- catch (      CacheException e) {
-        if (e.getCause() instanceof ClusterGroupEmptyCheckedException)         throw e;
-        if (e.getCause() instanceof ClusterTopologyCheckedException) {
-          if (cnt++ == MAX_UPDATE_RETRIES)           throw e;
+ catch (      ClusterTopologyCheckedException e) {
+        if (e instanceof ClusterGroupEmptyCheckedException)         throw e;
+        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
  else {
-            U.warn(log,"Failed to add item, will retry [err=" + e + ']');
-            U.sleep(RETRY_DELAY);
-          }
+          U.warn(log,"Failed to add item, will retry [err=" + e + ']');
+          U.sleep(RETRY_DELAY);
         }
- else         throw e;
       }
     }
     return retVal;
