@@ -4,7 +4,13 @@
     A.notNull(lsnrCfg,"lsnrCfg");
     Factory<CacheEntryListener<? super K,? super V>> factory=lsnrCfg.getCacheEntryListenerFactory();
     A.notNull(factory,"cacheEntryListenerFactory");
-    CacheEntryListener lsnr=factory.create();
+    CacheEntryListener lsnr;
+    if (cctx.gridConfig().getClassLoader() == null)     lsnr=factory.create();
+ else {
+      IgniteMarshaller marsh=cctx.gridConfig().getMarshaller();
+      byte[] bytes=marsh.marshal(factory);
+      lsnr=((Factory<CacheEntryListener<? super K,? super V>>)marsh.unmarshal(bytes,cctx.gridConfig().getClassLoader())).create();
+    }
     A.notNull(lsnr,"lsnr");
     IgniteCacheProxy<K,V> cache=cctx.kernalContext().cache().jcache(cctx.name());
     EntryListenerCallback cb=new EntryListenerCallback(cache,lsnr);

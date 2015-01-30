@@ -1,0 +1,12 @@
+{
+  UsersClassLoader classLdr=(UsersClassLoader)ignite(0).configuration().getClassLoader();
+  IgniteCache<Object,Object> cache=ignite(0).jcache(null);
+  Set<Integer> keys=new TreeSet<>();
+  for (int i=0; i < ITERATIONS; i++) {
+    cache.put(i,i);
+    keys.add(i);
+  }
+  Map<Object,EntryProcessorResult<Object>> res=cache.invokeAll(keys,this.<EntryProcessor<Object,Object,Object>>loadClass(classLdr,ENTRY_PROCESSOR_CLASS));
+  assertEquals(ITERATIONS,res.size());
+  for (  EntryProcessorResult<Object> val : res.values())   assertEquals(42,(long)val.get());
+}
