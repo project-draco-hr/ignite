@@ -1,0 +1,21 @@
+{
+  try {
+    IgniteFsProcessorAdapter ggfsProc=((IgniteKernal)g).context().ggfs();
+    for (    IgniteFs ggfs : ggfsProc.ggfss()) {
+      long start0=U.currentTimeMillis();
+      try {
+        Collection<IpcServerEndpoint> endPoints=ggfsProc.endpoints(ggfs.name());
+        if (endPoints != null) {
+          for (          IpcServerEndpoint ep : endPoints)           if (ep.isManagement())           res.ggfsEndpoints().add(new VisorGgfsEndpoint(ggfs.name(),g.name(),ep.getHost(),ep.getPort()));
+        }
+        res.ggfss().add(VisorGgfs.from(ggfs));
+      }
+  finally {
+        if (debug)         log(g.log(),"Collected GGFS: " + ggfs.name(),getClass(),start0);
+      }
+    }
+  }
+ catch (  Throwable ggfssEx) {
+    res.ggfssEx(ggfssEx);
+  }
+}

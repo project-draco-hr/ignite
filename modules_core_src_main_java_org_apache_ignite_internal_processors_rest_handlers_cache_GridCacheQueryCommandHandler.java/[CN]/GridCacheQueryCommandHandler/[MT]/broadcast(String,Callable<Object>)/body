@@ -1,0 +1,22 @@
+{
+  IgniteCompute comp=ctx.grid().compute(ctx.grid().forCache(cacheName)).withNoFailover().withAsync();
+  try {
+    comp.broadcast(c);
+    IgniteInternalFuture<Collection<Object>> fut=comp.future();
+    return fut.chain(new C1<IgniteInternalFuture<Collection<Object>>,GridRestResponse>(){
+      @Override public GridRestResponse apply(      IgniteInternalFuture<Collection<Object>> fut){
+        try {
+          fut.get();
+          return new GridRestResponse();
+        }
+ catch (        IgniteCheckedException e) {
+          throw new GridClosureException(e);
+        }
+      }
+    }
+);
+  }
+ catch (  IgniteCheckedException e) {
+    return new GridFinishedFutureEx<>(e);
+  }
+}

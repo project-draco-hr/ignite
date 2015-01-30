@@ -1,0 +1,90 @@
+{
+  commState.setBuffer(buf);
+  if (!super.readFrom(buf))   return false;
+switch (commState.idx) {
+case 3:
+    errBytes=commState.getByteArray("errBytes");
+  if (!commState.lastRead())   return false;
+commState.idx++;
+case 4:
+failedKeysBytes=commState.getByteArray("failedKeysBytes");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 5:
+futVer=commState.getCacheVersion("futVer");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 6:
+remapKeysBytes=commState.getByteArray("remapKeysBytes");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 7:
+retValBytes=commState.getByteArray("retValBytes");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 8:
+if (commState.readSize == -1) {
+commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
+}
+if (commState.readSize >= 0) {
+if (nearSkipIdxs == null) nearSkipIdxs=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+int _val=commState.getInt(null);
+if (!commState.lastRead()) return false;
+nearSkipIdxs.add((Integer)_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 9:
+if (commState.readSize == -1) {
+commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
+}
+if (commState.readSize >= 0) {
+if (nearValBytes == null) nearValBytes=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+GridCacheValueBytes _val=commState.getValueBytes(null);
+if (!commState.lastRead()) return false;
+nearValBytes.add((GridCacheValueBytes)_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 10:
+if (commState.readSize == -1) {
+commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
+}
+if (commState.readSize >= 0) {
+if (nearValsIdxs == null) nearValsIdxs=new ArrayList<>(commState.readSize);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+int _val=commState.getInt(null);
+if (!commState.lastRead()) return false;
+nearValsIdxs.add((Integer)_val);
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 11:
+nearVer=commState.getCacheVersion("nearVer");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 12:
+nearExpireTimes=commState.getLongList("nearExpireTimes");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 13:
+nearTtls=commState.getLongList("nearTtls");
+if (!commState.lastRead()) return false;
+commState.idx++;
+}
+return true;
+}

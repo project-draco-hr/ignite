@@ -1,0 +1,80 @@
+{
+  commState.setBuffer(buf);
+switch (commState.idx) {
+case 0:
+    cacheName=commState.getString("cacheName");
+  if (!commState.lastRead())   return false;
+commState.idx++;
+case 1:
+clsLdrId=commState.getGridUuid("clsLdrId");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 2:
+colBytes=commState.getByteArray("colBytes");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 3:
+byte depMode0=commState.getByte("depMode");
+if (!commState.lastRead()) return false;
+depMode=IgniteDeploymentMode.fromOrdinal(depMode0);
+commState.idx++;
+case 4:
+forceLocDep=commState.getBoolean("forceLocDep");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 5:
+ignoreDepOwnership=commState.getBoolean("ignoreDepOwnership");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 6:
+if (commState.readSize == -1) {
+commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
+}
+if (commState.readSize >= 0) {
+if (ldrParticipants == null) ldrParticipants=new HashMap<>(commState.readSize,1.0f);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+if (!commState.keyDone) {
+UUID _val=commState.getUuid(null);
+if (!commState.lastRead()) return false;
+commState.cur=_val;
+commState.keyDone=true;
+}
+IgniteUuid _val=commState.getGridUuid(null);
+if (!commState.lastRead()) return false;
+ldrParticipants.put((UUID)commState.cur,_val);
+commState.keyDone=false;
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.cur=null;
+commState.idx++;
+case 7:
+reqId=commState.getLong("reqId");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 8:
+resTopicBytes=commState.getByteArray("resTopicBytes");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 9:
+sampleClsName=commState.getString("sampleClsName");
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 10:
+if (buf.remaining() < 1) return false;
+skipStore=commState.getBoolean(null);
+commState.idx++;
+case 11:
+byte[] updaterBytes0=commState.getByteArray(null);
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 12:
+String userVer0=commState.getString(null);
+if (!commState.lastRead()) return false;
+commState.idx++;
+}
+return true;
+}

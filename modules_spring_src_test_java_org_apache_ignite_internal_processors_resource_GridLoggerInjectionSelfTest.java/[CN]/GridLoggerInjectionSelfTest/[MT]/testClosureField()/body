@@ -1,0 +1,15 @@
+{
+  Ignite ignite=grid(0);
+  ignite.compute().call(new IgniteCallable<Object>(){
+    @IgniteLoggerResource(categoryClass=GridLoggerInjectionSelfTest.class) private IgniteLogger log;
+    @Override public Object call() throws Exception {
+      if (log instanceof GridLoggerProxy) {
+        Object category=U.field(log,"ctgr");
+        assertTrue("Logger created for the wrong category.",category.toString().contains(GridLoggerInjectionSelfTest.class.getName()));
+      }
+ else       fail("This test should be run with proxy logger.");
+      return null;
+    }
+  }
+);
+}

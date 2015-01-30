@@ -1,0 +1,51 @@
+{
+  if (e != null) {
+    setRollbackOnly();
+    if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteInternalFuture<IgniteTx>,T>(){
+      @Override public T apply(      IgniteInternalFuture<IgniteTx> f){
+        throw new GridClosureException(e);
+      }
+    }
+);
+    throw new GridClosureException(e);
+  }
+  if (!locked) {
+    setRollbackOnly();
+    final GridClosureException ex=new GridClosureException(new IgniteTxTimeoutException("Failed to " + "acquire lock within provided timeout for transaction [timeout=" + timeout() + ", tx="+ this+ ']'));
+    if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteInternalFuture<IgniteTx>,T>(){
+      @Override public T apply(      IgniteInternalFuture<IgniteTx> f){
+        throw ex;
+      }
+    }
+);
+    throw ex;
+  }
+  boolean rollback=true;
+  try {
+    final T r=postLock(arg);
+    if (commit && commitAfterLock()) {
+      rollback=false;
+      return commitAsync().chain(new CX1<IgniteInternalFuture<IgniteTx>,T>(){
+        @Override public T applyx(        IgniteInternalFuture<IgniteTx> f) throws IgniteCheckedException {
+          f.get();
+          return r;
+        }
+      }
+);
+    }
+    rollback=false;
+    return new GridFinishedFuture<>(cctx.kernalContext(),r);
+  }
+ catch (  final IgniteCheckedException ex) {
+    if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteInternalFuture<IgniteTx>,T>(){
+      @Override public T apply(      IgniteInternalFuture<IgniteTx> f){
+        throw new GridClosureException(ex);
+      }
+    }
+);
+    throw new GridClosureException(ex);
+  }
+ finally {
+    if (rollback)     setRollbackOnly();
+  }
+}

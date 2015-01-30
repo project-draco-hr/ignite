@@ -1,0 +1,24 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(discoSpi);
+  ExecutorService mgmtExecutor=Executors.newFixedThreadPool(10,new ThreadFactory(){
+    /** 
+ * Counter for unique thread names. 
+ */
+    private AtomicLong ctr=new AtomicLong();
+    /** 
+ * {@inheritDoc} 
+ */
+    @SuppressWarnings("NullableProblems") @Override public Thread newThread(    Runnable r){
+      Thread t=new Thread(r);
+      t.setName(MGMT_THREAD_PREFIX + ctr.getAndIncrement());
+      return t;
+    }
+  }
+);
+  cfg.setManagementExecutorService(mgmtExecutor);
+  cfg.setManagementExecutorServiceShutdown(true);
+  return cfg;
+}

@@ -1,0 +1,73 @@
+{
+  Collection<Integer> keys=new ArrayList<>(20);
+  for (int i=0; i < 20; i++)   keys.add(i);
+  final Collection<IgniteKernal> grids=new ArrayList<>();
+  ClusterNode primaryNode=grid(1).localNode();
+  for (int i=0; i < gridCount(); i++) {
+    if (i != 1)     grids.add((IgniteKernal)grid(i));
+  }
+  failingNodeId=primaryNode.id();
+  final Map<Integer,String> map=new HashMap<>();
+  final String initVal="initialValue";
+  for (  Integer key : keys) {
+    grid(originatingNode()).cache(null).put(key,initVal);
+    map.put(key,String.valueOf(key));
+  }
+  Map<Integer,Collection<ClusterNode>> nodeMap=new HashMap<>();
+  GridCache<Integer,String> cache=grid(0).cache(null);
+  info("Failing node ID: " + grid(1).localNode().id());
+  for (  Integer key : keys) {
+    Collection<ClusterNode> nodes=new ArrayList<>();
+    nodes.addAll(cache.affinity().mapKeyToPrimaryAndBackups(key));
+    nodes.remove(primaryNode);
+    nodeMap.put(key,nodes);
+  }
+  info("Starting tx [values=" + map + ", topVer="+ ((IgniteKernal)grid(1)).context().discovery().topologyVersion()+ ']');
+  assertNotNull(cache);
+  try (IgniteTx tx=cache.txStart()){
+    cache.getAll(keys);
+    cache.putAll(map);
+    info(">>> Stopping primary node " + primaryNode);
+    G.stop(G.ignite(primaryNode.id()).name(),true);
+    info(">>> Stopped originating node, finishing transaction: " + primaryNode.id());
+    if (commmit)     tx.commit();
+ else     tx.rollback();
+  }
+   boolean txFinished=GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      for (      IgniteKernal g : grids) {
+        GridCacheAdapter<?,?> cache=g.internalCache();
+        IgniteTxManager txMgr=cache.isNear() ? ((GridNearCacheAdapter)cache).dht().context().tm() : cache.context().tm();
+        int txNum=txMgr.idMapSize();
+        if (txNum != 0)         return false;
+      }
+      return true;
+    }
+  }
+,10000);
+  assertTrue(txFinished);
+  info("Transactions finished.");
+  for (  Map.Entry<Integer,Collection<ClusterNode>> e : nodeMap.entrySet()) {
+    final Integer key=e.getKey();
+    final String val=map.get(key);
+    assertFalse(e.getValue().isEmpty());
+    for (    ClusterNode node : e.getValue()) {
+      final UUID checkNodeId=node.id();
+      compute(G.ignite(checkNodeId).cluster().forNode(node)).call(new Callable<Void>(){
+        /** 
+ */
+        @IgniteInstanceResource private Ignite ignite;
+        @Override public Void call() throws Exception {
+          GridCache<Integer,String> cache=ignite.cache(null);
+          assertNotNull(cache);
+          assertEquals("Failed to check entry value on node: " + checkNodeId,!commmit ? initVal : val,cache.peek(key));
+          return null;
+        }
+      }
+);
+    }
+  }
+  for (  Map.Entry<Integer,String> e : map.entrySet()) {
+    for (    Ignite g : G.allGrids())     assertEquals(!commmit ? initVal : e.getValue(),g.cache(null).get(e.getKey()));
+  }
+}

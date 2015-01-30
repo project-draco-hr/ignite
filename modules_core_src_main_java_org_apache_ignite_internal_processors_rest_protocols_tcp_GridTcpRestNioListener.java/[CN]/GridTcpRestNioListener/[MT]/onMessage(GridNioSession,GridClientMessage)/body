@@ -1,0 +1,67 @@
+{
+  if (msg instanceof GridMemcachedMessage)   memcachedLsnr.onMessage(ses,(GridMemcachedMessage)msg);
+ else {
+    if (msg == GridClientPingPacket.PING_MESSAGE)     ses.send(new GridClientPingPacketWrapper());
+ else     if (msg instanceof GridClientHandshakeRequest) {
+      GridClientHandshakeRequest hs=(GridClientHandshakeRequest)msg;
+      short ver=hs.version();
+      if (!SUPP_VERS.contains(ver)) {
+        U.error(log,"Client protocol version is not supported [ses=" + ses + ", ver="+ ver+ ", supported="+ SUPP_VERS+ ']');
+        ses.close();
+      }
+ else {
+        byte marshId=hs.marshallerId();
+        if (marshMapLatch.getCount() > 0)         U.awaitQuiet(marshMapLatch);
+        GridClientMarshaller marsh=marshMap.get(marshId);
+        if (marsh == null) {
+          U.error(log,"Client marshaller ID is invalid. Note that .NET and C++ clients " + "are supported only in enterprise edition [ses=" + ses + ", marshId="+ marshId+ ']');
+          ses.close();
+        }
+ else {
+          ses.addMeta(MARSHALLER.ordinal(),marsh);
+          ses.send(new GridClientHandshakeResponseWrapper(CODE_OK));
+        }
+      }
+    }
+ else {
+      final GridRestRequest req=createRestRequest(ses,msg);
+      if (req != null)       hnd.handleAsync(req).listenAsync(new CI1<IgniteInternalFuture<GridRestResponse>>(){
+        @Override public void apply(        IgniteInternalFuture<GridRestResponse> fut){
+          GridClientResponse res=new GridClientResponse();
+          res.requestId(msg.requestId());
+          res.clientId(msg.clientId());
+          try {
+            GridRestResponse restRes=fut.get();
+            res.sessionToken(restRes.sessionTokenBytes());
+            res.successStatus(restRes.getSuccessStatus());
+            res.errorMessage(restRes.getError());
+            Object o=restRes.getResponse();
+            if (o instanceof GridCacheRestMetrics)             o=((GridCacheRestMetrics)o).map();
+            res.result(o);
+          }
+ catch (          IgniteCheckedException e) {
+            U.error(log,"Failed to process client request: " + msg,e);
+            res.successStatus(GridClientResponse.STATUS_FAILED);
+            res.errorMessage("Failed to process client request: " + e.getMessage());
+          }
+          GridClientMessageWrapper wrapper=new GridClientMessageWrapper();
+          wrapper.requestId(msg.requestId());
+          wrapper.clientId(msg.clientId());
+          try {
+            ByteBuffer bytes=proto.marshaller(ses).marshal(res,0);
+            wrapper.message(bytes);
+            wrapper.messageSize(bytes.remaining() + 40);
+          }
+ catch (          IOException e) {
+            U.error(log,"Failed to marshal response: " + res,e);
+            ses.close();
+            return;
+          }
+          ses.send(wrapper);
+        }
+      }
+);
+ else       U.error(log,"Failed to process client request (unknown packet type) [ses=" + ses + ", msg="+ msg+ ']');
+    }
+  }
+}

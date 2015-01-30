@@ -1,0 +1,16 @@
+{
+  long ram=ctx.discovery().localNode().attribute(ATTR_PHY_RAM);
+  if (ram != -1) {
+    String macs=ctx.discovery().localNode().attribute(ATTR_MACS);
+    long totalHeap=0;
+    for (    ClusterNode node : ctx.discovery().allNodes()) {
+      if (macs.equals(node.attribute(ATTR_MACS))) {
+        long heap=node.metrics().getHeapMemoryMaximum();
+        if (heap != -1)         totalHeap+=heap;
+      }
+    }
+    if (totalHeap > ram) {
+      U.quietAndWarn(log,"Attempting to start more nodes than physical RAM " + "available on current host (this can cause significant slowdown)");
+    }
+  }
+}

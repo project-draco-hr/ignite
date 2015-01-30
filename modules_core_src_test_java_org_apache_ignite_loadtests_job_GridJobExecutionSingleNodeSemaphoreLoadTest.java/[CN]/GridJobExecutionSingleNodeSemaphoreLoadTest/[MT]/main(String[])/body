@@ -1,0 +1,62 @@
+{
+  GridFileLock fileLock=GridLoadTestUtils.fileLock();
+  fileLock.lock();
+  try {
+    int threadCnt=args.length > 0 ? Integer.parseInt(args[0]) : Runtime.getRuntime().availableProcessors() / 2;
+    int taskCnt=args.length > 1 ? Integer.parseInt(args[1]) : 1024;
+    final int duration=args.length > 2 ? Integer.parseInt(args[2]) : 0;
+    final String outputFileName=args.length > 3 ? args[3] : null;
+    final LongAdder execCnt=new LongAdder();
+    try {
+      final Ignite g=G.start("modules/tests/config/grid-job-load.xml");
+      X.println("Thread count: " + threadCnt);
+      X.println("Task count: " + taskCnt);
+      X.println("Duration: " + duration);
+      X.println("Warming up...");
+      g.compute().execute(GridJobExecutionLoadTestTask.class,null);
+      g.compute().execute(GridJobExecutionLoadTestTask.class,null);
+      runTest(g,threadCnt,taskCnt,WARM_UP_DURATION,execCnt);
+      System.gc();
+      execCnt.reset();
+      X.println("Running main test.");
+      IgniteInternalFuture<Void> collectorFut=GridTestUtils.runAsync(new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          GridCumulativeAverage avgTasksPerSec=new GridCumulativeAverage();
+          try {
+            while (!Thread.currentThread().isInterrupted()) {
+              U.sleep(UPDATE_INTERVAL_SEC * 1000);
+              long curTasksPerSec=execCnt.sumThenReset() / UPDATE_INTERVAL_SEC;
+              X.println(">>> Tasks/s: " + curTasksPerSec);
+              avgTasksPerSec.update(curTasksPerSec);
+            }
+          }
+ catch (          IgniteInterruptedException ignored) {
+            X.println(">>> Interrupted.");
+            Thread.currentThread().interrupt();
+          }
+          X.println(">>> Average tasks/s: " + avgTasksPerSec);
+          if (outputFileName != null) {
+            X.println("Writing test results to a file: " + outputFileName);
+            try {
+              GridLoadTestUtils.appendLineToFile(outputFileName,"%s,%d",GridLoadTestUtils.DATE_TIME_FORMAT.format(new Date()),avgTasksPerSec.get());
+            }
+ catch (            IOException e) {
+              X.error("Failed to output to a file",e);
+            }
+          }
+          return null;
+        }
+      }
+);
+      runTest(g,threadCnt,taskCnt,duration * 1000,execCnt);
+      X.println("All done, stopping.");
+      collectorFut.cancel();
+    }
+  finally {
+      G.stopAll(true);
+    }
+  }
+  finally {
+    fileLock.close();
+  }
+}

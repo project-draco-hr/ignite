@@ -1,0 +1,24 @@
+{
+  final IgniteInternalFuture<?> fut1=GridTestUtils.runMultiThreadedAsync(new CAX(){
+    @Override public void applyx() throws IgniteCheckedException {
+      while (true) {
+        int i=cnt.getAndIncrement();
+        if (i >= PUT_CNT)         break;
+        cache().put("key" + i,i);
+        set.add(i);
+        if (i > 10)         guard.compareAndSet(false,true);
+      }
+    }
+  }
+,WRITE_THREAD_CNT,WRITE_THREAD_NAME);
+  IgniteInternalFuture<?> fut2=GridTestUtils.runMultiThreadedAsync(new CA(){
+    @Override public void apply(){
+      GridCache<String,Integer> cache=cache();
+      while (!fut1.isDone())       if (guard.get())       c.apply(cache);
+    }
+  }
+,READ_THREAD_CNT,READ_THREAD_NAME);
+  fut1.get();
+  fut2.get();
+  checkConsistency();
+}

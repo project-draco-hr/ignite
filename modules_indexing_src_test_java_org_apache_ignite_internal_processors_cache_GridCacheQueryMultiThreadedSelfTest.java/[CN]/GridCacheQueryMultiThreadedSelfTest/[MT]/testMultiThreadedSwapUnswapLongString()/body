@@ -1,0 +1,50 @@
+{
+  int threadCnt=150;
+  final int keyCnt=2000;
+  final int valCnt=10000;
+  final Ignite g=grid(0);
+  final GridCache<Integer,Object> c=g.cache(null);
+  assertEquals(0,g.cache(null).size());
+  assertEquals(0,c.offHeapEntriesCount());
+  assertEquals(0,c.queries().createSqlQuery(String.class,"1 = 1").execute().get().size());
+  assertEquals(0,c.queries().createSqlQuery(Long.class,"1 = 1").execute().get().size());
+  Random rnd=new Random();
+  for (int i=0; i < keyCnt; i+=1 + rnd.nextInt(3)) {
+    c.putx(i,rnd.nextBoolean() ? (long)rnd.nextInt(valCnt) : String.valueOf(rnd.nextInt(valCnt)));
+    if (evictsEnabled() && rnd.nextBoolean())     assertTrue(c.evict(i));
+  }
+  final AtomicBoolean done=new AtomicBoolean();
+  IgniteInternalFuture<?> fut=multithreadedAsync(new CAX(){
+    @Override public void applyx() throws IgniteCheckedException {
+      Random rnd=new Random();
+      while (!done.get()) {
+        int key=rnd.nextInt(keyCnt);
+switch (rnd.nextInt(5)) {
+case 0:
+          c.putx(key,rnd.nextBoolean() ? (long)rnd.nextInt(valCnt) : String.valueOf(rnd.nextInt(valCnt)));
+        break;
+case 1:
+      if (evictsEnabled())       c.evict(key);
+    break;
+case 2:
+  c.remove(key);
+break;
+case 3:
+c.get(key);
+break;
+case 4:
+CacheQuery<Map.Entry<Integer,Object>> qry=c.queries().createSqlQuery(rnd.nextBoolean() ? Long.class : String.class,"_val between ? and ?");
+int from=rnd.nextInt(valCnt);
+CacheQueryFuture<Map.Entry<Integer,Object>> f=qry.execute(from,from + 250);
+Collection<Map.Entry<Integer,Object>> res=f.get();
+for (Map.Entry<Integer,Object> ignored : res) {
+}
+}
+}
+}
+}
+,threadCnt);
+Thread.sleep(DURATION);
+done.set(true);
+fut.get();
+}

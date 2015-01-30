@@ -1,0 +1,22 @@
+{
+  A.notEmpty(entries,"entries");
+  enterBusy();
+  try {
+    GridFutureAdapter<Object> resFut=new GridFutureAdapter<>(ctx);
+    resFut.listenAsync(rmvActiveFut);
+    activeFuts.add(resFut);
+    Collection<K> keys=null;
+    if (entries.size() > 1) {
+      keys=new GridConcurrentHashSet<>(entries.size(),U.capacity(entries.size()),1);
+      for (      Map.Entry<K,V> entry : entries)       keys.add(entry.getKey());
+    }
+    load0(entries,resFut,keys,0);
+    return resFut;
+  }
+ catch (  IgniteException e) {
+    return new GridFinishedFuture<>(ctx,e);
+  }
+ finally {
+    leaveBusy();
+  }
+}

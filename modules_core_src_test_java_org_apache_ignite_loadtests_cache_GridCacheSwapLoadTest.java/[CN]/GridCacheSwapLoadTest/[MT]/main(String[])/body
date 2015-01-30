@@ -1,0 +1,30 @@
+{
+  parseArgs(args);
+  try (Ignite g=G.start("modules/core/src/test/config/spring-cache-swap.xml")){
+    g.events().localListen(new IgnitePredicate<IgniteEvent>(){
+      private final AtomicInteger cnt=new AtomicInteger(0);
+      private final AtomicBoolean getRmvStartedGuard=new AtomicBoolean(false);
+      @Override public boolean apply(      IgniteEvent evt){
+        int cnt=this.cnt.incrementAndGet();
+        if (cnt % LOG_MOD == 0)         X.println(">>> Swap count: " + cnt);
+        if (getRmvEnabled) {
+          IgniteCacheEvent ce=(IgniteCacheEvent)evt;
+          Integer key=ce.key();
+          swappedKeys.add(key);
+          if (swappedKeys.size() > keyCnt * getRmvRatio && getRmvStartedGuard.compareAndSet(false,true)) {
+            getRemoveStartedLatch.countDown();
+            X.println(">>> Started get/remove.");
+          }
+        }
+        return true;
+      }
+    }
+,EVT_CACHE_OBJECT_SWAPPED);
+    Collection<IgniteInternalFuture<?>> futs=new ArrayList<>(3);
+    long start=System.currentTimeMillis();
+    futs.add(doPut(g));
+    if (getRmvEnabled)     futs.addAll(doGetRemove(g));
+    wait(futs);
+    X.println("Test finished in: " + (System.currentTimeMillis() - start));
+  }
+ }

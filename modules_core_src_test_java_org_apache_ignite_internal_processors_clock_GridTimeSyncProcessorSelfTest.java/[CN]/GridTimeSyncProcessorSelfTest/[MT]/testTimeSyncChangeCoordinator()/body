@@ -1,0 +1,34 @@
+{
+  startGrids(GRID_CNT);
+  try {
+    for (int i=0; i < GRID_CNT; i++) {
+      stopGrid(i);
+      startGrid(i);
+    }
+    final IgniteKernal kernal=(IgniteKernal)grid(0);
+    assertEquals(6,kernal.localNode().order());
+    GridTestUtils.waitForCondition(new PA(){
+      @Override public boolean apply(){
+        NavigableMap<GridClockDeltaVersion,GridClockDeltaSnapshot> hist=kernal.context().clockSync().timeSyncHistory();
+        info("Checking time sync history: " + hist);
+        for (        GridClockDeltaVersion ver : hist.keySet()) {
+          if (ver.topologyVersion() == 12)           return true;
+        }
+        return false;
+      }
+    }
+,10000);
+    NavigableMap<GridClockDeltaVersion,GridClockDeltaSnapshot> history=kernal.context().clockSync().timeSyncHistory();
+    GridClockDeltaSnapshot snap=history.lastEntry().getValue();
+    assertEquals(3,snap.deltas().size());
+    for (int i=1; i < GRID_CNT; i++) {
+      Long delta=snap.deltas().get(grid(i).localNode().id());
+      int idealDelta=-i * 2000;
+      int threshold=100;
+      assertTrue("Invalid time delta for node [expected=" + idealDelta + ", "+ "actual="+ delta+ ", threshold="+ threshold,delta <= idealDelta + threshold && delta >= idealDelta - threshold);
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

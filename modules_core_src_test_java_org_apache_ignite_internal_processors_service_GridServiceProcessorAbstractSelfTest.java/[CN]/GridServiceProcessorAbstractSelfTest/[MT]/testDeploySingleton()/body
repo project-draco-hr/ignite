@@ -1,0 +1,16 @@
+{
+  Ignite g=randomGrid();
+  String name="serviceSingleton";
+  CountDownLatch latch=new CountDownLatch(1);
+  DummyService.exeLatch(name,latch);
+  IgniteManaged svcs=g.managed().withAsync();
+  svcs.deployClusterSingleton(name,new DummyService());
+  IgniteInternalFuture<?> fut=svcs.future();
+  info("Deployed service: " + name);
+  fut.get();
+  info("Finished waiting for service future: " + name);
+  latch.await();
+  assertEquals(name,1,DummyService.started(name));
+  assertEquals(name,0,DummyService.cancelled(name));
+  checkCount(name,g.managed().deployedServices(),1);
+}

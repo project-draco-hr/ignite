@@ -1,0 +1,54 @@
+{
+  commState.setBuffer(buf);
+  if (!super.writeTo(buf))   return false;
+  if (!commState.typeWritten) {
+    if (!commState.putByte(null,directType()))     return false;
+    commState.typeWritten=true;
+  }
+switch (commState.idx) {
+case 3:
+    if (!commState.putByteArray("candsByIdxBytes",candsByIdxBytes))     return false;
+  commState.idx++;
+case 4:
+if (!commState.putByteArray("candsByKeyBytes",candsByKeyBytes)) return false;
+commState.idx++;
+case 5:
+if (committedVers != null) {
+if (commState.it == null) {
+if (!commState.putInt(null,committedVers.size())) return false;
+commState.it=committedVers.iterator();
+}
+while (commState.it.hasNext() || commState.cur != NULL) {
+if (commState.cur == NULL) commState.cur=commState.it.next();
+if (!commState.putCacheVersion(null,(GridCacheVersion)commState.cur)) return false;
+commState.cur=NULL;
+}
+commState.it=null;
+}
+ else {
+if (!commState.putInt(null,-1)) return false;
+}
+commState.idx++;
+case 6:
+if (rolledbackVers != null) {
+if (commState.it == null) {
+if (!commState.putInt(null,rolledbackVers.size())) return false;
+commState.it=rolledbackVers.iterator();
+}
+while (commState.it.hasNext() || commState.cur != NULL) {
+if (commState.cur == NULL) commState.cur=commState.it.next();
+if (!commState.putCacheVersion(null,(GridCacheVersion)commState.cur)) return false;
+commState.cur=NULL;
+}
+commState.it=null;
+}
+ else {
+if (!commState.putInt(null,-1)) return false;
+}
+commState.idx++;
+case 7:
+if (!commState.putCacheVersion("ver",ver)) return false;
+commState.idx++;
+}
+return true;
+}

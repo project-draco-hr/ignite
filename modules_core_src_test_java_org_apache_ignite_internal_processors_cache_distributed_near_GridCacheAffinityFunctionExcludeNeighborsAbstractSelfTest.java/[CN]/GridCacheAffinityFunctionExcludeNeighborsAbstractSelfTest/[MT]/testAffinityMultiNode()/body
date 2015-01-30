@@ -1,0 +1,30 @@
+{
+  int grids=9;
+  startGrids(grids);
+  try {
+    Object key=12345;
+    int copies=backups + 1;
+    for (int i=0; i < grids; i++) {
+      final Ignite g=grid(i);
+      CacheAffinity<Object> aff=affinity(g);
+      List<TcpDiscoveryNode> top=new ArrayList<>();
+      for (      ClusterNode node : g.cluster().nodes())       top.add((TcpDiscoveryNode)node);
+      Collections.sort(top);
+      assertEquals(grids,top.size());
+      int idx=1;
+      for (      ClusterNode n : top) {
+        assertEquals(idx,n.order());
+        idx++;
+      }
+      Collection<? extends ClusterNode> affNodes=nodes(aff,key);
+      info("Affinity picture for grid [i=" + i + ", aff="+ U.toShortString(affNodes));
+      assertEquals(copies,affNodes.size());
+      Set<String> macs=new HashSet<>();
+      for (      ClusterNode node : affNodes)       macs.add((String)node.attribute(GridNodeAttributes.ATTR_MACS));
+      assertEquals(copies,macs.size());
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

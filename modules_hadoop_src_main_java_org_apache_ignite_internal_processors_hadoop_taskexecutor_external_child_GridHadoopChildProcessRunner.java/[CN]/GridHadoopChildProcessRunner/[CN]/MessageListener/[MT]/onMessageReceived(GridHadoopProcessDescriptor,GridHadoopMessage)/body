@@ -1,0 +1,32 @@
+{
+  if (msg instanceof GridHadoopTaskExecutionRequest) {
+    if (validateNodeMessage(desc,msg))     runTasks((GridHadoopTaskExecutionRequest)msg);
+  }
+ else   if (msg instanceof GridHadoopJobInfoUpdateRequest) {
+    if (validateNodeMessage(desc,msg))     updateTasks((GridHadoopJobInfoUpdateRequest)msg);
+  }
+ else   if (msg instanceof GridHadoopPrepareForJobRequest) {
+    if (validateNodeMessage(desc,msg))     prepareProcess((GridHadoopPrepareForJobRequest)msg);
+  }
+ else   if (msg instanceof GridHadoopShuffleMessage) {
+    if (log.isTraceEnabled())     log.trace("Received shuffle message [desc=" + desc + ", msg="+ msg+ ']');
+    initFut.listenAsync(new CI1<IgniteInternalFuture<?>>(){
+      @Override public void apply(      IgniteInternalFuture<?> f){
+        try {
+          GridHadoopShuffleMessage m=(GridHadoopShuffleMessage)msg;
+          shuffleJob.onShuffleMessage(m);
+          comm.sendMessage(desc,new GridHadoopShuffleAck(m.id(),m.jobId()));
+        }
+ catch (        IgniteCheckedException e) {
+          U.error(log,"Failed to process hadoop shuffle message [desc=" + desc + ", msg="+ msg+ ']',e);
+        }
+      }
+    }
+);
+  }
+ else   if (msg instanceof GridHadoopShuffleAck) {
+    if (log.isTraceEnabled())     log.trace("Received shuffle ack [desc=" + desc + ", msg="+ msg+ ']');
+    shuffleJob.onShuffleAck((GridHadoopShuffleAck)msg);
+  }
+ else   log.warning("Unknown message received (will ignore) [desc=" + desc + ", msg="+ msg+ ']');
+}

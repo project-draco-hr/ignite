@@ -1,0 +1,10 @@
+{
+  Field workerMapFld=GridGgfsImpl.class.getDeclaredField("workerMap");
+  workerMapFld.setAccessible(true);
+  Map<IgniteFsPath,GridGgfsFileWorker> workerMap=(Map<IgniteFsPath,GridGgfsFileWorker>)workerMapFld.get(ggfs);
+  for (  Map.Entry<IgniteFsPath,GridGgfsFileWorker> entry : workerMap.entrySet()) {
+    entry.getValue().cancel();
+    U.join(entry.getValue());
+  }
+  ggfs.format();
+}

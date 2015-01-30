@@ -1,0 +1,36 @@
+{
+  final AtomicBoolean run=new AtomicBoolean(true);
+  info(">>> Test grid concurrent linked hash map iterator...");
+  final Map<Integer,String> linkedMap=new ConcurrentLinkedHashMap<>();
+  Set<Integer> original=new HashSet<>();
+  final int keyCnt=10000;
+  for (int i=0; i < keyCnt; i++) {
+    linkedMap.put(i,"value" + i);
+    original.add(i);
+  }
+  long start=System.currentTimeMillis();
+  IgniteInternalFuture<?> fut=multithreadedAsync(new Callable<Object>(){
+    @Nullable @Override public Object call() throws Exception {
+      Random rnd=new Random();
+      while (run.get()) {
+        int key=rnd.nextInt(keyCnt);
+        linkedMap.put(key,"value" + key);
+      }
+      return null;
+    }
+  }
+,10,"updater");
+  try {
+    int iterCnt=10000;
+    for (int i=0; i < iterCnt; i++) {
+      Collection<Integer> cp=new HashSet<>(original);
+      cp.removeAll(linkedMap.keySet());
+      assertTrue("Keys disappeared from map: " + cp,cp.isEmpty());
+    }
+    info(">>> Iterator test complete [duration = " + (System.currentTimeMillis() - start) + ']');
+  }
+  finally {
+    run.set(false);
+    fut.get();
+  }
+}

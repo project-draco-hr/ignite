@@ -1,0 +1,9 @@
+{
+  Collection<IgniteInternalFuture<?>> futs=new ArrayList<>();
+  for (  CacheEntry<Object,Object> e : cache.entrySetx()) {
+    if (!(e.getKey() instanceof GridServiceDeploymentKey))     continue;
+    GridServiceDeployment dep=(GridServiceDeployment)e.getValue();
+    futs.add(cancel(dep.configuration().getName()));
+  }
+  return futs.isEmpty() ? new GridFinishedFuture<>(ctx) : new GridCompoundFuture(ctx,null,futs);
+}

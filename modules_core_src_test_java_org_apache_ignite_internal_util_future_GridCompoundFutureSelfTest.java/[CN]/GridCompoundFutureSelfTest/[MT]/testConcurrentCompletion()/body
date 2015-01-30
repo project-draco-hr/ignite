@@ -1,0 +1,20 @@
+{
+  GridTestKernalContext ctx=new GridTestKernalContext(log);
+  GridCompoundFuture<Boolean,Boolean> fut=new GridCompoundFuture<>(ctx,CU.boolReducer());
+  final ConcurrentLinkedDeque8<GridFutureAdapter<Boolean>> futs=new ConcurrentLinkedDeque8<>();
+  for (int i=0; i < 1000; i++) {
+    GridFutureAdapter<Boolean> part=new GridFutureAdapter<>(ctx,true);
+    fut.add(part);
+    futs.add(part);
+  }
+  fut.markInitialized();
+  IgniteInternalFuture<?> complete=multithreadedAsync(new Runnable(){
+    @Override public void run(){
+      GridFutureAdapter<Boolean> part;
+      while ((part=futs.poll()) != null)       part.onDone(true);
+    }
+  }
+,20);
+  complete.get();
+  assertTrue(fut.isDone());
+}

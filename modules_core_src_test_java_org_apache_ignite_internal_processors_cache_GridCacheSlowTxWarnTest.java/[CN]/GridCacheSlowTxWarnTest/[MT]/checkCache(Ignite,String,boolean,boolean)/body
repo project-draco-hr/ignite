@@ -1,0 +1,25 @@
+{
+  if (configureTimeout) {
+    GridCacheAdapter<Integer,Integer> cache=((IgniteKernal)g).internalCache(cacheName);
+    cache.context().tm().slowTxWarnTimeout(500);
+  }
+  GridCache<Object,Object> cache1=g.cache(cacheName);
+  IgniteTx tx=cache1.txStart();
+  try {
+    cache1.put(1,1);
+    if (simulateTimeout)     Thread.sleep(800);
+    tx.commit();
+  }
+  finally {
+    tx.close();
+  }
+  tx=cache1.txStart();
+  try {
+    cache1.put(1,1);
+    if (simulateTimeout)     Thread.sleep(800);
+    tx.rollback();
+  }
+  finally {
+    tx.close();
+  }
+}

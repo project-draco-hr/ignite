@@ -1,0 +1,18 @@
+{
+  final IgniteInClosure<IgniteInternalFuture<?>> lsnr=new CI1<IgniteInternalFuture<?>>(){
+    @Override public void apply(    IgniteInternalFuture<?> t){
+      tasksSem.release();
+    }
+  }
+;
+  ClusterGroup rmts=g.cluster().forRemotes();
+  IgniteCompute comp=g.compute(rmts).withAsync();
+  while (!finish) {
+    tasksSem.acquire();
+    comp.execute(GridJobExecutionLoadTestTask.class,null);
+    ComputeTaskFuture<Object> f=comp.future();
+    f.listenAsync(lsnr);
+    txCnt.increment();
+  }
+  return null;
+}

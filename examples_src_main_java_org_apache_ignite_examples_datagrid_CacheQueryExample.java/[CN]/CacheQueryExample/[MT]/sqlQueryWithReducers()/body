@@ -1,0 +1,25 @@
+{
+  CacheProjection<CacheAffinityKey<UUID>,Person> cache=Ignition.ignite().cache(CACHE_NAME);
+  CacheQuery<Map.Entry<CacheAffinityKey<UUID>,Person>> qry=cache.queries().createSqlQuery(Person.class,"from Person, Organization where Person.orgId = Organization.id and " + "lower(Organization.name) = lower(?)");
+  Collection<IgniteBiTuple<Double,Integer>> res=qry.execute(new IgniteReducer<Map.Entry<CacheAffinityKey<UUID>,Person>,IgniteBiTuple<Double,Integer>>(){
+    private double sum;
+    private int cnt;
+    @Override public boolean collect(    Map.Entry<CacheAffinityKey<UUID>,Person> e){
+      sum+=e.getValue().salary;
+      cnt++;
+      return true;
+    }
+    @Override public IgniteBiTuple<Double,Integer> reduce(){
+      return new IgniteBiTuple<>(sum,cnt);
+    }
+  }
+,"GridGain").get();
+  double sum=0.0d;
+  int cnt=0;
+  for (  IgniteBiTuple<Double,Integer> t : res) {
+    sum+=t.get1();
+    cnt+=t.get2();
+  }
+  double avg=sum / cnt;
+  print("Average salary for 'GridGain' employees: " + avg);
+}

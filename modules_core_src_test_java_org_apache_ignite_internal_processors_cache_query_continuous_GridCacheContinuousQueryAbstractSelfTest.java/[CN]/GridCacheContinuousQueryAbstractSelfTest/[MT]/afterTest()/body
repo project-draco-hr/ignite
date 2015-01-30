@@ -1,0 +1,38 @@
+{
+  GridTestUtils.waitForCondition(new PA(){
+    @Override public boolean apply(){
+      for (int i=0; i < gridCount(); i++) {
+        if (grid(i).nodes().size() != gridCount())         return false;
+      }
+      return true;
+    }
+  }
+,3000);
+  for (int i=0; i < gridCount(); i++)   assertEquals(gridCount(),grid(i).nodes().size());
+  for (int i=0; i < gridCount(); i++) {
+    for (int j=0; j < 5; j++) {
+      try {
+        grid(i).cache(null).removeAll();
+        break;
+      }
+ catch (      CachePartialUpdateCheckedException e) {
+        if (j == 4)         throw new Exception("Failed to clear cache for grid: " + i,e);
+        U.warn(log,"Failed to clear cache for grid (will retry in 500 ms) [gridIdx=" + i + ", err="+ e.getMessage()+ ']');
+        U.sleep(500);
+      }
+    }
+  }
+  for (int i=0; i < gridCount(); i++)   assertEquals("Cache is not empty: " + grid(i).cache(null).entrySet(),0,grid(i).cache(null).size());
+  for (int i=0; i < gridCount(); i++) {
+    GridContinuousProcessor proc=((IgniteKernal)grid(i)).context().continuous();
+    assertEquals(String.valueOf(i),2,((Map)U.field(proc,"locInfos")).size());
+    assertEquals(String.valueOf(i),0,((Map)U.field(proc,"rmtInfos")).size());
+    assertEquals(String.valueOf(i),0,((Map)U.field(proc,"startFuts")).size());
+    assertEquals(String.valueOf(i),0,((Map)U.field(proc,"waitForStartAck")).size());
+    assertEquals(String.valueOf(i),0,((Map)U.field(proc,"stopFuts")).size());
+    assertEquals(String.valueOf(i),0,((Map)U.field(proc,"waitForStopAck")).size());
+    assertEquals(String.valueOf(i),0,((Map)U.field(proc,"pending")).size());
+    GridCacheContinuousQueryManager mgr=((IgniteKernal)grid(i)).context().cache().internalCache().context().continuousQueries();
+    assertEquals(0,((Map)U.field(mgr,"lsnrs")).size());
+  }
+}

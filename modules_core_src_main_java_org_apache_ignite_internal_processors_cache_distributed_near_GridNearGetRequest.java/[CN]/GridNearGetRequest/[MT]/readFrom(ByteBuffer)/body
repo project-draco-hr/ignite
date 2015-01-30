@@ -1,0 +1,84 @@
+{
+  commState.setBuffer(buf);
+  if (!super.readFrom(buf))   return false;
+switch (commState.idx) {
+case 3:
+    if (buf.remaining() < 8)     return false;
+  accessTtl=commState.getLong();
+commState.idx++;
+case 4:
+if (commState.readSize == -1) {
+commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
+}
+if (commState.readSize >= 0) {
+if (filterBytes == null) filterBytes=new byte[commState.readSize][];
+for (int i=commState.readItems; i < commState.readSize; i++) {
+byte[] _val=commState.getByteArray(null);
+if (!commState.lastRead()) return false;
+filterBytes[i]=(byte[])_val;
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.idx++;
+case 5:
+IgniteUuid futId0=commState.getGridUuid(null);
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 6:
+if (commState.readSize == -1) {
+commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
+}
+if (commState.readSize >= 0) {
+if (keyBytes == null) keyBytes=new LinkedHashMap<>(commState.readSize,1.0f);
+for (int i=commState.readItems; i < commState.readSize; i++) {
+if (!commState.keyDone) {
+byte[] _val=commState.getByteArray(null);
+if (!commState.lastRead()) return false;
+commState.cur=_val;
+commState.keyDone=true;
+}
+boolean _val=commState.getBoolean(null);
+if (!commState.lastRead()) return false;
+keyBytes.put((byte[])commState.cur,_val);
+commState.keyDone=false;
+commState.readItems++;
+}
+}
+commState.readSize=-1;
+commState.readItems=0;
+commState.cur=null;
+commState.idx++;
+case 7:
+IgniteUuid miniId0=commState.getGridUuid(null);
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 8:
+if (buf.remaining() < 1) return false;
+readThrough=commState.getBoolean(null);
+commState.idx++;
+case 9:
+if (buf.remaining() < 1) return false;
+reload=commState.getBoolean(null);
+commState.idx++;
+case 10:
+if (buf.remaining() < 8) return false;
+commState.idx++;
+case 11:
+GridCacheVersion ver0=commState.getCacheVersion(null);
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 12:
+UUID subjId0=commState.getUuid(null);
+if (!commState.lastRead()) return false;
+commState.idx++;
+case 13:
+if (buf.remaining() < 4) return false;
+if (!commState.lastRead()) return false;
+commState.idx++;
+}
+return true;
+}

@@ -1,0 +1,15 @@
+{
+  while (true) {
+    DeferredResponseBuffer buf=pendingResponses.get(nodeId);
+    if (buf == null) {
+      buf=new DeferredResponseBuffer(nodeId);
+      DeferredResponseBuffer old=pendingResponses.putIfAbsent(nodeId,buf);
+      if (old == null) {
+        ctx.time().addTimeoutObject(buf);
+      }
+ else       buf=old;
+    }
+    if (!buf.addResponse(ver))     pendingResponses.remove(nodeId,buf);
+ else     break;
+  }
+}

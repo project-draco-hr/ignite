@@ -1,14 +1,15 @@
 {
   try {
-    GridCacheProjectionImpl<K,V> prev=gate.enter(null);
+    GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
     try {
-      delegate.putx(key,val,null);
+      if (isAsync())       curFut.set(delegate.putxAsync(key,val));
+ else       delegate.putx(key,val);
     }
   finally {
       gate.leave(prev);
     }
   }
  catch (  IgniteCheckedException e) {
-    throw new CacheException(e);
+    throw cacheException(e);
   }
 }

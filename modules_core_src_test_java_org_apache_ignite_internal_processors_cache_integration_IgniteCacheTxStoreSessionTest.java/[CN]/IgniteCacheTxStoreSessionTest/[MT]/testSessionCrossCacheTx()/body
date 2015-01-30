@@ -1,0 +1,24 @@
+{
+  IgniteCache<Object,Object> cache0=ignite(0).jcache(null);
+  IgniteCache<Object,Object> cache1=ignite(0).jcache(CACHE_NAME1);
+  Integer key1=primaryKey(cache0);
+  Integer key2=primaryKeys(cache1,1,key1 + 1).get(0);
+  try (IgniteTx tx=startTx(null,null)){
+    cache0.put(key1,1);
+    cache1.put(key2,0);
+    expData.add(new ExpectedData(true,"write",new HashMap<>(),null));
+    expData.add(new ExpectedData(true,"write",F.<Object,Object>asMap(0,"write"),CACHE_NAME1));
+    expData.add(new ExpectedData(true,"txEnd",F.<Object,Object>asMap(0,"write",1,"write"),null));
+    tx.commit();
+  }
+   assertEquals(0,expData.size());
+  try (IgniteTx tx=startTx(null,null)){
+    cache1.put(key1,1);
+    cache0.put(key2,0);
+    expData.add(new ExpectedData(true,"write",new HashMap<>(),CACHE_NAME1));
+    expData.add(new ExpectedData(true,"write",F.<Object,Object>asMap(0,"write"),null));
+    expData.add(new ExpectedData(true,"txEnd",F.<Object,Object>asMap(0,"write",1,"write"),null));
+    tx.commit();
+  }
+   assertEquals(0,expData.size());
+}

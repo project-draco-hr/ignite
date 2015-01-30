@@ -1,0 +1,12 @@
+{
+  IgniteConfiguration cfg=loadConfiguration("modules/core/src/test/config/spring-multicache.xml");
+  cfg.setGridName(gridName);
+  for (  CacheConfiguration cCfg : cfg.getCacheConfiguration()) {
+    if (cCfg.getCacheMode() == CacheMode.PARTITIONED) {
+      cCfg.setAffinity(new CacheConsistentHashAffinityFunction(2048,null));
+      cCfg.setBackups(1);
+    }
+  }
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(IP_FINDER);
+  return cfg;
+}

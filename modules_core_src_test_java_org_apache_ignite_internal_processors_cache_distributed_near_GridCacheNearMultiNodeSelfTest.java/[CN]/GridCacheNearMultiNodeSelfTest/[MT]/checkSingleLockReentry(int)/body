@@ -1,0 +1,37 @@
+{
+  if (!transactional())   return;
+  IgniteCache<Integer,String> near=jcache(0);
+  String val=Integer.toString(key);
+  Lock lock=near.lock(key);
+  lock.lock();
+  try {
+    near.put(key,val);
+    assertEquals(val,near.localPeek(key));
+    assertEquals(val,dht(primaryGrid(key)).peek(key));
+    assertTrue(near.isLocalLocked(key,false));
+    assertTrue(near.isLocalLocked(key,true));
+    lock.lock();
+    try {
+      assertEquals(val,near.get(key));
+      assertEquals(val,near.getAndRemove(key));
+      assertNull(near.localPeek(key));
+      assertNull(dht(primaryGrid(key)).peek(key));
+      assertTrue(near.isLocalLocked(key,false));
+      assertTrue(near.isLocalLocked(key,true));
+    }
+  finally {
+      lock.unlock();
+    }
+    assertTrue(near.isLocalLocked(key,false));
+    assertTrue(near.isLocalLocked(key,true));
+  }
+ catch (  Throwable t) {
+    error("Test failed.",t);
+    throw t;
+  }
+ finally {
+    lock.unlock();
+  }
+  assertFalse(near(0).isLockedNearOnly(key));
+  assertFalse(near.isLocalLocked(key,true));
+}

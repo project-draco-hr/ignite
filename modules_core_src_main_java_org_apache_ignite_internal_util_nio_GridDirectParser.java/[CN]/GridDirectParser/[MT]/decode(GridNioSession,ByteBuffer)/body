@@ -1,0 +1,12 @@
+{
+  if (msgFactory == null)   msgFactory=spi.getSpiContext().messageFactory();
+  GridTcpCommunicationMessageAdapter msg=ses.removeMeta(MSG_META_KEY);
+  if (msg == null && buf.hasRemaining())   msg=msgFactory.create(buf.get());
+  boolean finished=false;
+  if (buf.hasRemaining())   finished=msg.readFrom(buf);
+  if (finished)   return msg;
+ else {
+    ses.addMeta(MSG_META_KEY,msg);
+    return null;
+  }
+}

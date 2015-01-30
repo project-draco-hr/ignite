@@ -1,0 +1,10 @@
+{
+  if (F.isEmpty(writeEntries))   return;
+  Collection<IgniteTxEntry<K,V>> cp=new ArrayList<>(writeEntries.size());
+  for (  IgniteTxEntry<K,V> e : writeEntries) {
+    GridCacheContext<K,V> cacheCtx=e.context();
+    if (cacheCtx.isNear())     cp.add(e.cleanCopy(cacheCtx.nearTx().dht().context()));
+ else     cp.add(e);
+  }
+  writeEntries=cp;
+}

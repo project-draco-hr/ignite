@@ -1,0 +1,31 @@
+{
+  commState.setBuffer(buf);
+  if (!super.writeTo(buf))   return false;
+  if (!commState.typeWritten) {
+    if (!commState.putByte(null,directType()))     return false;
+    commState.typeWritten=true;
+  }
+switch (commState.idx) {
+case 0:
+    if (!commState.putGridUuid("fileId",fileId))     return false;
+  commState.idx++;
+case 1:
+if (fragmentRanges != null) {
+  if (commState.it == null) {
+    if (!commState.putInt(null,fragmentRanges.size()))     return false;
+    commState.it=fragmentRanges.iterator();
+  }
+  while (commState.it.hasNext() || commState.cur != NULL) {
+    if (commState.cur == NULL)     commState.cur=commState.it.next();
+    if (!commState.putMessage(null,(GridGgfsFileAffinityRange)commState.cur))     return false;
+    commState.cur=NULL;
+  }
+  commState.it=null;
+}
+ else {
+  if (!commState.putInt(null,-1))   return false;
+}
+commState.idx++;
+}
+return true;
+}

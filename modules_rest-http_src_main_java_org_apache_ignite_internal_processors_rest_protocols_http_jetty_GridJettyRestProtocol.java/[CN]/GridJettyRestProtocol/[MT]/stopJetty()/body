@@ -1,0 +1,21 @@
+{
+  try {
+    if (httpSrv != null) {
+      if (httpSrv.isStarted())       ctx.ports().deregisterPorts(getClass());
+      boolean interrupted=Thread.interrupted();
+      try {
+        httpSrv.stop();
+      }
+  finally {
+        if (interrupted)         Thread.currentThread().interrupt();
+      }
+    }
+  }
+ catch (  InterruptedException ignored) {
+    if (log.isDebugEnabled())     log.debug("Thread has been interrupted.");
+    Thread.currentThread().interrupt();
+  }
+catch (  Exception e) {
+    U.error(log,"Failed to stop Jetty HTTP server.",e);
+  }
+}

@@ -1,0 +1,39 @@
+{
+  try {
+    startGrid(0);
+    TreeSet<Integer> started=new TreeSet<>();
+    started.add(0);
+    int topVer=1;
+    for (    boolean start : seq) {
+      if (start) {
+        int nextIdx=nextIndex(started);
+        startGrid(nextIdx);
+        started.add(nextIdx);
+      }
+ else {
+        int idx=started.last();
+        stopGrid(idx);
+        started.remove(idx);
+      }
+      topVer++;
+      info("Grid 0: " + grid(0).localNode().id());
+      ((IgniteKernal)grid(0)).internalCache().context().affinity().affinityReadyFuture(topVer).get();
+      for (      int i : started) {
+        if (i != 0) {
+          IgniteEx grid=grid(i);
+          ((IgniteKernal)grid).internalCache().context().affinity().affinityReadyFuture(topVer).get();
+          info("Grid " + i + ": "+ grid.localNode().id());
+          for (int part=0; part < parts; part++) {
+            List<ClusterNode> firstNodes=(List<ClusterNode>)grid(0).cache(null).affinity().mapPartitionToPrimaryAndBackups(part);
+            List<ClusterNode> secondNodes=(List<ClusterNode>)grid.cache(null).affinity().mapPartitionToPrimaryAndBackups(part);
+            assertEquals(firstNodes.size(),secondNodes.size());
+            for (int n=0; n < firstNodes.size(); n++)             assertEquals(firstNodes.get(n),secondNodes.get(n));
+          }
+        }
+      }
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

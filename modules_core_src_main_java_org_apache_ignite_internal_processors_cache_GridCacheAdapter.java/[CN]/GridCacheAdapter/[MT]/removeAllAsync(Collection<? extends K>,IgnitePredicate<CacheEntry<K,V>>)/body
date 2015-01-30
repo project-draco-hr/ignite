@@ -1,0 +1,18 @@
+{
+  final boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  final long start=statsEnabled ? System.nanoTime() : 0L;
+  if (F.isEmpty(keys))   return new GridFinishedFuture<Object>(ctx.kernalContext());
+  if (keyCheck)   validateCacheKeys(keys);
+  ctx.denyOnLocalRead();
+  IgniteInternalFuture<Object> fut=asyncOp(new AsyncInOp(keys){
+    @Override public IgniteInternalFuture<?> inOp(    IgniteTxLocalAdapter<K,V> tx){
+      return tx.removeAllAsync(ctx,keys,null,false,filter);
+    }
+    @Override public String toString(){
+      return "removeAllAsync [keys=" + keys + ", filter="+ Arrays.toString(filter)+ ']';
+    }
+  }
+);
+  if (statsEnabled)   fut.listenAsync(new UpdateRemoveTimeStatClosure<>(metrics0(),start));
+  return fut;
+}

@@ -1,0 +1,33 @@
+{
+  Random rnd=new Random();
+  final IgniteKernal grid1=(IgniteKernal)grid(rnd.nextInt(NODES_CNT));
+  IgniteKernal grid2=(IgniteKernal)grid(NODES_CNT + rnd.nextInt(NODES_CNT));
+  assertEquals(NODES_CNT * 2,grid1.nodes().size());
+  assertEquals(NODES_CNT * 2,grid2.nodes().size());
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      grid1.cache(CACHE_NAME);
+      return null;
+    }
+  }
+,IllegalArgumentException.class,null);
+  GridCache<Integer,Integer> cache=grid2.cache(CACHE_NAME);
+  assertNotNull(cache);
+  GridAffinityProcessor affPrc1=grid1.context().affinity();
+  GridAffinityProcessor affPrc2=grid2.context().affinity();
+  Collection<Integer> keys=new ArrayList<>(1000);
+  for (int i=0; i < 1000; i++)   keys.add(i);
+  Map<ClusterNode,Collection<Integer>> node1Map=affPrc1.mapKeysToNodes(CACHE_NAME,keys);
+  Map<ClusterNode,Collection<Integer>> node2Map=affPrc2.mapKeysToNodes(CACHE_NAME,keys);
+  Map<ClusterNode,Collection<Integer>> cacheMap=cache.affinity().mapKeysToNodes(keys);
+  assertEquals(cacheMap.size(),node1Map.size());
+  assertEquals(cacheMap.size(),node2Map.size());
+  for (  Map.Entry<ClusterNode,Collection<Integer>> entry : cacheMap.entrySet()) {
+    ClusterNode node=entry.getKey();
+    Collection<Integer> mappedKeys=entry.getValue();
+    Collection<Integer> mapped1=node1Map.get(node);
+    Collection<Integer> mapped2=node2Map.get(node);
+    assertTrue(mappedKeys.containsAll(mapped1) && mapped1.containsAll(mappedKeys));
+    assertTrue(mappedKeys.containsAll(mapped2) && mapped2.containsAll(mappedKeys));
+  }
+}

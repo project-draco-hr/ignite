@@ -1,0 +1,23 @@
+{
+  Class<?>[] idxCustomFuncClss=cfg.getIndexCustomFunctionClasses();
+  if (F.isEmpty(idxCustomFuncClss))   return;
+  for (  Class<?> cls : idxCustomFuncClss) {
+    for (    Method m : cls.getDeclaredMethods()) {
+      CacheQuerySqlFunction ann=m.getAnnotation(CacheQuerySqlFunction.class);
+      if (ann != null) {
+        int modifiers=m.getModifiers();
+        if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers))         throw new IgniteCheckedException("Method " + m.getName() + " must be public static.");
+        String alias=ann.alias().isEmpty() ? m.getName() : ann.alias();
+        String clause="CREATE ALIAS " + alias + (ann.deterministic() ? " DETERMINISTIC FOR \"" : " FOR \"")+ cls.getName()+ '.'+ m.getName()+ '"';
+        Collection<String> schemas=new ArrayList<>(schemaNames);
+        if (!schemaNames.contains(schema(null)))         schemas.add(schema(null));
+        for (        String schema : schemas) {
+          Connection c=connectionForThread(schema);
+          Statement s=c.createStatement();
+          s.execute(clause);
+          s.close();
+        }
+      }
+    }
+  }
+}

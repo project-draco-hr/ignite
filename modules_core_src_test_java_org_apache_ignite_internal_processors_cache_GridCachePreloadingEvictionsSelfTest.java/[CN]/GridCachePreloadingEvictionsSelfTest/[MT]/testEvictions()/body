@@ -1,0 +1,49 @@
+{
+  try {
+    final Ignite ignite1=startGrid(1);
+    GridCache<Integer,Object> cache1=ignite1.cache(null);
+    for (int i=0; i < 5000; i++)     cache1.put(i,VALUE + i);
+    info("Finished data population.");
+    final AtomicBoolean done=new AtomicBoolean();
+    final CountDownLatch startLatch=new CountDownLatch(1);
+    int oldSize=cache1.size();
+    IgniteInternalFuture fut=multithreadedAsync(new Callable<Object>(){
+      @Nullable @Override public Object call() throws Exception {
+        startLatch.await();
+        info("Started evicting...");
+        for (int i=0; i < 3000 && !done.get(); i++) {
+          CacheEntry<Integer,Object> entry=randomEntry(ignite1);
+          if (entry != null)           entry.evict();
+ else           info("Entry is null.");
+        }
+        info("Finished evicting.");
+        return null;
+      }
+    }
+,1);
+    ignite1.events().localListen(new IgnitePredicate<IgniteEvent>(){
+      @Override public boolean apply(      IgniteEvent evt){
+        startLatch.countDown();
+        return true;
+      }
+    }
+,EVT_NODE_JOINED);
+    final Ignite ignite2=startGrid(2);
+    done.set(true);
+    fut.get();
+    sleepUntilCashesEqualize(ignite1,ignite2,oldSize);
+    checkCachesConsistency(ignite1,ignite2);
+    oldSize=cache1.size();
+    info("Evicting on constant topology.");
+    for (int i=0; i < 1000; i++) {
+      CacheEntry<Integer,Object> entry=randomEntry(ignite1);
+      if (entry != null)       entry.evict();
+ else       info("Entry is null.");
+    }
+    sleepUntilCashesEqualize(ignite1,ignite2,oldSize);
+    checkCachesConsistency(ignite1,ignite2);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

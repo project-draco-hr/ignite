@@ -1,0 +1,62 @@
+{
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public Object onBeforePut(    Object key,    @Nullable Object oldVal,    Object newVal){
+      return (Integer)newVal + 1;
+    }
+  }
+;
+  Map<String,Integer> map=new HashMap<>();
+  final String key1;
+  String key2;
+  String key3;
+  if (cacheMode() == LOCAL) {
+    key1="1";
+    key2="2";
+    key3="3";
+  }
+ else {
+    List<String> keys=primaryKeys(0,2);
+    key1=keys.get(0);
+    key2=keys.get(1);
+    key3=backupKey(0);
+  }
+  map.put(key1,1);
+  map.put(key2,2);
+  map.put(key3,3);
+  log.info("Batch update 1: " + op);
+  batchUpdate(0,op,map);
+  checkCacheValue(key1,2);
+  checkCacheValue(key2,3);
+  checkCacheValue(key3,4);
+  assertEquals(3,interceptor.beforePutMap.size());
+  assertBeforePutValue(key1,null,1);
+  assertBeforePutValue(key2,null,2);
+  assertBeforePutValue(key3,null,3);
+  assertEquals(3,interceptor.afterPutMap.size());
+  assertEquals(2,interceptor.afterPutMap.get(key1));
+  assertEquals(3,interceptor.afterPutMap.get(key2));
+  assertEquals(4,interceptor.afterPutMap.get(key3));
+  interceptor.reset();
+  interceptor.retInterceptor=new InterceptorAdapter(){
+    @Nullable @Override public Object onBeforePut(    Object key,    @Nullable Object oldVal,    Object newVal){
+      if (key.equals(key1))       return null;
+      return (Integer)newVal + 1;
+    }
+  }
+;
+  map.put(key1,100);
+  map.put(key2,200);
+  map.put(key3,300);
+  log.info("Batch update 2: " + op);
+  batchUpdate(0,op,map);
+  checkCacheValue(key1,2);
+  checkCacheValue(key2,201);
+  checkCacheValue(key3,301);
+  assertEquals(3,interceptor.beforePutMap.size());
+  assertBeforePutValue(key1,2,100);
+  assertBeforePutValue(key2,3,200);
+  assertBeforePutValue(key3,4,300);
+  assertEquals(2,interceptor.afterPutMap.size());
+  assertEquals(201,interceptor.afterPutMap.get(key2));
+  assertEquals(301,interceptor.afterPutMap.get(key3));
+}

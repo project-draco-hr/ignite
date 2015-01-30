@@ -24,7 +24,7 @@
           UUID rmtNodeId=t.get2();
           stats.onClientSocketInitialized(U.currentTimeMillis() - ts);
           locNode.clientRouterNodeId(rmtNodeId);
-          TcpDiscoveryAbstractMessage msg=recon ? new TcpDiscoveryClientReconnectMessage(locNodeId,rmtNodeId,lastMsgId) : new TcpDiscoveryJoinRequestMessage(locNode,null);
+          TcpDiscoveryAbstractMessage msg=recon ? new TcpDiscoveryClientReconnectMessage(ignite.configuration().getNodeId(),rmtNodeId,lastMsgId) : new TcpDiscoveryJoinRequestMessage(locNode,null);
           msg.client(true);
           writeToSocket(sock,msg);
           int res=readReceipt(sock,ackTimeout);
@@ -67,7 +67,7 @@ if (log.isDebugEnabled()) log.debug("Received unexpected response to join reques
 U.closeQuiet(sock);
 }
 }
- catch (GridInterruptedException ignored) {
+ catch (IgniteInterruptedException ignored) {
 if (log.isDebugEnabled()) log.debug("Joining thread was interrupted.");
 return false;
 }
@@ -82,7 +82,7 @@ U.warn(log,"Failed to connect to any address from IP finder (will retry to join 
 U.sleep(2000);
 }
 }
- catch (GridInterruptedException ignored) {
+ catch (IgniteInterruptedException ignored) {
 if (log.isDebugEnabled()) log.debug("Joining thread was interrupted.");
 }
 }

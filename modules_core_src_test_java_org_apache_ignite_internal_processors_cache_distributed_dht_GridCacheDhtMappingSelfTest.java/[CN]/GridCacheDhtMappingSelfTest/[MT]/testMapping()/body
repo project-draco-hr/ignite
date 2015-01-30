@@ -1,0 +1,17 @@
+{
+  int nodeCnt=5;
+  startGridsMultiThreaded(nodeCnt);
+  GridCache<Integer,Integer> cache=grid(nodeCnt - 1).cache(null);
+  int kv=1;
+  cache.put(kv,kv);
+  int cnt=0;
+  for (int i=0; i < nodeCnt; i++) {
+    Ignite g=grid(i);
+    GridDhtCacheAdapter<Integer,Integer> dht=((GridNearCacheAdapter<Integer,Integer>)((IgniteKernal)g).<Integer,Integer>internalCache()).dht();
+    if (dht.peek(kv) != null) {
+      info("Key found on node: " + g.cluster().localNode().id());
+      cnt++;
+    }
+  }
+  assertEquals(1 + BACKUPS,cnt);
+}

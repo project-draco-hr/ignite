@@ -1,0 +1,25 @@
+{
+  try {
+    atomicityMode=mode;
+    backups=b;
+    writeOrderMode=order;
+    distroMode=CacheDistributionMode.PARTITIONED_ONLY;
+    startGrids(2);
+    distroMode=CacheDistributionMode.CLIENT_ONLY;
+    startGrid(2);
+    failDeserialization=false;
+    IgniteCache<Integer,TestObject> cache=grid(2).jcache(null);
+    if (backups > 0 && atomicityMode == ATOMIC)     cache=((IgniteCacheProxy<Integer,TestObject>)cache).flagOn(FORCE_TRANSFORM_BACKUP);
+    for (int i=0; i < 100; i++)     cache.put(i,new TestObject());
+    failDeserialization=true;
+    info(">>>>>> Transforming");
+    for (int i=0; i < 200; i++)     cache.invoke(i,new Transform());
+    Set<Integer> keys=new HashSet<>();
+    for (int i=0; i < 300; i++)     keys.add(i);
+    cache.invokeAll(keys,new Transform());
+    failDeserialization=false;
+  }
+  finally {
+    stopAllGrids();
+  }
+}

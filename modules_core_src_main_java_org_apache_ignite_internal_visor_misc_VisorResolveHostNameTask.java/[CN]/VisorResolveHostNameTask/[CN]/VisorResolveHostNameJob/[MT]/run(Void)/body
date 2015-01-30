@@ -1,0 +1,26 @@
+{
+  Map<String,String> res=new HashMap<>();
+  try {
+    IgniteBiTuple<Collection<String>,Collection<String>> addrs=IgniteUtils.resolveLocalAddresses(InetAddress.getByName("0.0.0.0"));
+    assert(addrs.get1() != null);
+    assert(addrs.get2() != null);
+    Iterator<String> ipIt=addrs.get1().iterator();
+    Iterator<String> hostIt=addrs.get2().iterator();
+    while (ipIt.hasNext() && hostIt.hasNext()) {
+      String ip=ipIt.next();
+      String hostName=hostIt.next();
+      if (hostName == null || hostName.trim().isEmpty()) {
+        try {
+          if (InetAddress.getByName(ip).isLoopbackAddress())           res.put(ip,"localhost");
+        }
+ catch (        Exception ignore) {
+        }
+      }
+ else       if (!hostName.equals(ip))       res.put(ip,hostName);
+    }
+  }
+ catch (  Throwable e) {
+    throw new IgniteCheckedException("Failed to resolve host name",e);
+  }
+  return res;
+}

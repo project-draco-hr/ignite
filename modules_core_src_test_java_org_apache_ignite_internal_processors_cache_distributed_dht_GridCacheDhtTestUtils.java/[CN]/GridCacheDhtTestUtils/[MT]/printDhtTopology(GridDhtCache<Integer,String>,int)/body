@@ -1,0 +1,33 @@
+{
+  final CacheAffinity<Integer> aff=dht.affinity();
+  Ignite ignite=dht.context().grid();
+  ClusterNode locNode=ignite.cluster().localNode();
+  GridDhtPartitionTopology<Integer,String> top=dht.topology();
+  System.out.println("\nTopology of cache #" + idx + " ("+ locNode.id()+ ")"+ ":");
+  System.out.println("----------------------------------");
+  List<Integer> affParts=new LinkedList<>();
+  GridDhtPartitionMap map=dht.topology().partitions(locNode.id());
+  if (map != null)   for (  int p : map.keySet())   affParts.add(p);
+  Collections.sort(affParts);
+  System.out.println("Affinity partitions: " + affParts + "\n");
+  List<GridDhtLocalPartition> locals=new ArrayList<GridDhtLocalPartition>(top.localPartitions());
+  Collections.sort(locals);
+  for (  final GridDhtLocalPartition part : locals) {
+    Collection<ClusterNode> partNodes=aff.mapKeyToPrimaryAndBackups(part.id());
+    String ownStr=!partNodes.contains(dht.context().localNode()) ? "NOT AN OWNER" : F.eqNodes(CU.primary(partNodes),locNode) ? "PRIMARY" : "BACKUP";
+    Collection<Integer> keys=F.viewReadOnly(dht.keySet(),F.<Integer>identity(),new P1<Integer>(){
+      @Override public boolean apply(      Integer k){
+        return aff.partition(k) == part.id();
+      }
+    }
+);
+    System.out.println("Local partition: [" + part + "], [owning="+ ownStr+ ", keyCnt="+ keys.size()+ ", keys="+ keys+ "]");
+  }
+  System.out.println("\nNode map:");
+  for (  Map.Entry<UUID,GridDhtPartitionMap> e : top.partitionMap(false).entrySet()) {
+    List<Integer> list=new ArrayList<>(e.getValue().keySet());
+    Collections.sort(list);
+    System.out.println("[node=" + e.getKey() + ", parts="+ list+ "]");
+  }
+  System.out.println("");
+}

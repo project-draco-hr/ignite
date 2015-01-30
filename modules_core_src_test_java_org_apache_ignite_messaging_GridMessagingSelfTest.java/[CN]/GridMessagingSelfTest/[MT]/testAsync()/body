@@ -1,0 +1,57 @@
+{
+  final AtomicInteger msgCnt=new AtomicInteger();
+  assertFalse(ignite2.message().isAsync());
+  final IgniteMessaging msg=ignite2.message().withAsync();
+  assertTrue(msg.isAsync());
+  assertFalse(ignite2.message().isAsync());
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      msg.future();
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  final String topic="topic";
+  UUID id=msg.remoteListen(topic,new P2<UUID,Object>(){
+    @Override public boolean apply(    UUID nodeId,    Object msg){
+      System.out.println(Thread.currentThread().getName() + " Listener received new message [msg=" + msg+ ", senderNodeId="+ nodeId+ ']');
+      msgCnt.incrementAndGet();
+      return true;
+    }
+  }
+);
+  Assert.assertNull(id);
+  IgniteInternalFuture<UUID> fut=msg.future();
+  Assert.assertNotNull(fut);
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      msg.future();
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  id=fut.get();
+  Assert.assertNotNull(id);
+  message(ignite1.cluster().forRemotes()).send(topic,"msg1");
+  GridTestUtils.waitForCondition(new PA(){
+    @Override public boolean apply(){
+      return msgCnt.get() > 0;
+    }
+  }
+,5000);
+  assertEquals(1,msgCnt.get());
+  msg.stopRemoteListen(id);
+  IgniteInternalFuture<?> stopFut=msg.future();
+  Assert.assertNotNull(stopFut);
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      msg.future();
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  stopFut.get();
+  message(ignite1.cluster().forRemotes()).send(topic,"msg2");
+  U.sleep(1000);
+  assertEquals(1,msgCnt.get());
+}

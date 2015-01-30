@@ -1,0 +1,15 @@
+{
+  CacheConfiguration cfg=defaultCacheConfiguration();
+  cfg.setCacheMode(cacheName == null || CACHE_NAME.equals(cacheName) ? LOCAL : "replicated".equals(cacheName) ? REPLICATED : PARTITIONED);
+  cfg.setName(cacheName);
+  cfg.setWriteSynchronizationMode(FULL_SYNC);
+  HashMapStore cacheStore=cacheStores.get(cacheName);
+  if (cacheStore == null)   cacheStores.put(cacheName,cacheStore=new HashMapStore());
+  cfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(cacheStore));
+  cfg.setWriteThrough(true);
+  cfg.setReadThrough(true);
+  cfg.setLoadPreviousValue(true);
+  cfg.setSwapEnabled(true);
+  if (cfg.getCacheMode() == PARTITIONED)   cfg.setBackups(1);
+  return cfg;
+}

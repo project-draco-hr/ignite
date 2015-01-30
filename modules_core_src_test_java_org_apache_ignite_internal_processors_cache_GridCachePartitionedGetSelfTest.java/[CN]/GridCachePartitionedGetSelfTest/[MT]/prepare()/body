@@ -1,0 +1,21 @@
+{
+  for (int i=0; i < GRID_CNT; i++) {
+    Ignite g=grid(i);
+    CacheEntry<String,Integer> e=g.<String,Integer>cache(null).entry(KEY);
+    if (e.primary()) {
+      info("Primary node: " + g.cluster().localNode().id());
+      g.cache(null).put(KEY,VAL);
+      ((IgniteKernal)g).context().io().addMessageListener(TOPIC_CACHE,new GridMessageListener(){
+        @Override public void onMessage(        UUID nodeId,        Object msg){
+          info("Received message from node [nodeId=" + nodeId + ", msg="+ msg+ ']');
+          if (msg instanceof GridNearGetRequest) {
+            info("Setting flag: " + System.identityHashCode(received));
+            received.set(true);
+          }
+        }
+      }
+);
+      break;
+    }
+  }
+}

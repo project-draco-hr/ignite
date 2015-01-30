@@ -1,0 +1,21 @@
+{
+  IgniteCache<Integer,String> near=jcache();
+  Lock lock=near.lock(1);
+  lock.lock();
+  try {
+    near.put(1,"1");
+    assertEquals("1",near.localPeek(1));
+    assertEquals("1",dht().peek(1));
+    assertEquals("1",near.get(1));
+    assertEquals("1",near.getAndRemove(1));
+    assertNull(near.localPeek(1));
+    assertNull(dht().peek(1));
+    assertTrue(near.isLocalLocked(1,false));
+    assertTrue(near.isLocalLocked(1,true));
+  }
+  finally {
+    lock.unlock();
+  }
+  assertFalse(near.isLocalLocked(1,false));
+  assertFalse(near.isLocalLocked(1,true));
+}

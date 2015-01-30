@@ -1,0 +1,15 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  final int idx=cnt.getAndIncrement();
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi(){
+    @Override public void setNodeAttributes(    Map<String,Object> attrs,    IgniteProductVersion ver){
+      super.setNodeAttributes(attrs,ver);
+      if (idx % 2 == 0)       attrs.put(GridNodeAttributes.ATTR_BUILD_VER,firstNodeVer);
+ else       attrs.put(GridNodeAttributes.ATTR_BUILD_VER,secondNodeVer);
+    }
+  }
+;
+  discoSpi.setIpFinder(IP_FINDER);
+  cfg.setDiscoverySpi(discoSpi);
+  return cfg;
+}

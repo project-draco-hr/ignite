@@ -1,0 +1,42 @@
+{
+  GridDhtTxPrepareFuture<K,V> prepFut=this.prepFut.get();
+  final GridDhtTxFinishFuture<K,V> fut=new GridDhtTxFinishFuture<>(cctx,this,false);
+  cctx.mvcc().addFuture(fut);
+  if (prepFut == null) {
+    try {
+      if (finish(false) || state() == UNKNOWN)       fut.finish();
+ else       fut.onError(new IgniteCheckedException("Failed to commit transaction: " + CU.txString(this)));
+    }
+ catch (    IgniteTxOptimisticException e) {
+      if (log.isDebugEnabled())       log.debug("Failed optimistically to prepare transaction [tx=" + this + ", e="+ e+ ']');
+      fut.onError(e);
+    }
+catch (    IgniteCheckedException e) {
+      U.error(log,"Failed to rollback transaction (will make the best effort to rollback remote nodes): " + this,e);
+      fut.onError(e);
+    }
+  }
+ else {
+    prepFut.complete();
+    prepFut.listenAsync(new CI1<IgniteInternalFuture<IgniteTxEx<K,V>>>(){
+      @Override public void apply(      IgniteInternalFuture<IgniteTxEx<K,V>> f){
+        try {
+          f.get();
+        }
+ catch (        IgniteCheckedException e) {
+          if (log.isDebugEnabled())           log.debug("Failed to prepare or rollback transaction [tx=" + this + ", e="+ e+ ']');
+        }
+        try {
+          if (finish(false) || state() == UNKNOWN)           fut.finish();
+ else           fut.onError(new IgniteCheckedException("Failed to commit transaction: " + CU.txString(GridDhtTxLocal.this)));
+        }
+ catch (        IgniteCheckedException e) {
+          U.error(log,"Failed to gracefully rollback transaction: " + CU.txString(GridDhtTxLocal.this),e);
+          fut.onError(e);
+        }
+      }
+    }
+);
+  }
+  return fut;
+}

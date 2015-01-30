@@ -1,0 +1,35 @@
+{
+  qryProc=cctx.kernalContext().query();
+  space=cctx.name();
+  maxIterCnt=cctx.config().getMaximumQueryIteratorCount();
+  cctx.events().addListener(new GridLocalEventListener(){
+    @Override public void onEvent(    IgniteEvent evt){
+      UUID nodeId=((IgniteDiscoveryEvent)evt).eventNode().id();
+      Map<Long,GridFutureAdapter<QueryResult<K,V>>> futs=qryIters.remove(nodeId);
+      if (futs != null) {
+        for (        Map.Entry<Long,GridFutureAdapter<QueryResult<K,V>>> entry : futs.entrySet()) {
+          final Object recipient=recipient(nodeId,entry.getKey());
+          entry.getValue().listenAsync(new CIX1<IgniteInternalFuture<QueryResult<K,V>>>(){
+            @Override public void applyx(            IgniteInternalFuture<QueryResult<K,V>> f) throws IgniteCheckedException {
+              f.get().closeIfNotShared(recipient);
+            }
+          }
+);
+        }
+      }
+      Map<Long,GridFutureAdapter<FieldsResult>> fieldsFuts=fieldsQryRes.remove(nodeId);
+      if (fieldsFuts != null) {
+        for (        Map.Entry<Long,GridFutureAdapter<FieldsResult>> entry : fieldsFuts.entrySet()) {
+          final Object recipient=recipient(nodeId,entry.getKey());
+          entry.getValue().listenAsync(new CIX1<IgniteInternalFuture<FieldsResult>>(){
+            @Override public void applyx(            IgniteInternalFuture<FieldsResult> f) throws IgniteCheckedException {
+              f.get().closeIfNotShared(recipient);
+            }
+          }
+);
+        }
+      }
+    }
+  }
+,EVT_NODE_LEFT,EVT_NODE_FAILED);
+}

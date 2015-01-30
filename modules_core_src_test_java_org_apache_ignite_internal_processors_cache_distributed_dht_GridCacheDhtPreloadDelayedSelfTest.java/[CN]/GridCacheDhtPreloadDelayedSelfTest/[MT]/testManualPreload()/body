@@ -1,0 +1,46 @@
+{
+  delay=-1;
+  Ignite g0=startGrid(0);
+  int cnt=KEY_CNT;
+  GridCache<String,Integer> c0=g0.cache(null);
+  for (int i=0; i < cnt; i++)   c0.put(Integer.toString(i),i);
+  Ignite g1=startGrid(1);
+  Ignite g2=startGrid(2);
+  GridCache<String,Integer> c1=g1.cache(null);
+  GridCache<String,Integer> c2=g2.cache(null);
+  for (int i=0; i < cnt; i++)   assertNull(c1.peek(Integer.toString(i)));
+  for (int i=0; i < cnt; i++)   assertNull(c2.peek(Integer.toString(i)));
+  final CountDownLatch l1=new CountDownLatch(1);
+  final CountDownLatch l2=new CountDownLatch(1);
+  g1.events().localListen(new IgnitePredicate<IgniteEvent>(){
+    @Override public boolean apply(    IgniteEvent evt){
+      l1.countDown();
+      return true;
+    }
+  }
+,IgniteEventType.EVT_CACHE_PRELOAD_STOPPED);
+  g2.events().localListen(new IgnitePredicate<IgniteEvent>(){
+    @Override public boolean apply(    IgniteEvent evt){
+      l2.countDown();
+      return true;
+    }
+  }
+,IgniteEventType.EVT_CACHE_PRELOAD_STOPPED);
+  info("Beginning to wait for cache1 repartition.");
+  GridDhtCacheAdapter<String,Integer> d0=dht(0);
+  GridDhtCacheAdapter<String,Integer> d1=dht(1);
+  GridDhtCacheAdapter<String,Integer> d2=dht(2);
+  checkMaps(false,d0,d1,d2);
+  c1.forceRepartition();
+  l1.await();
+  info("Cache1 is repartitioned.");
+  checkMaps(false,d0,d1,d2);
+  info("Beginning to wait for cache2 repartition.");
+  c2.forceRepartition();
+  l2.await();
+  info("Cache2 is repartitioned.");
+  checkMaps(true,d0,d1,d2);
+  checkCache(c0,cnt);
+  checkCache(c1,cnt);
+  checkCache(c2,cnt);
+}

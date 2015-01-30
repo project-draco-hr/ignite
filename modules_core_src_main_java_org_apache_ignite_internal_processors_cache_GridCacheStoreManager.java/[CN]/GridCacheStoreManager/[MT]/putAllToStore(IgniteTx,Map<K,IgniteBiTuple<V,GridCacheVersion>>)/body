@@ -1,0 +1,35 @@
+{
+  if (F.isEmpty(map))   return true;
+  if (map.size() == 1) {
+    Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e=map.entrySet().iterator().next();
+    return putToStore(tx,e.getKey(),e.getValue().get1(),e.getValue().get2());
+  }
+ else {
+    if (store != null) {
+      EntriesView entries=new EntriesView(map);
+      if (log.isDebugEnabled())       log.debug("Storing values in cache store [entries=" + entries + ']');
+      initSession(tx);
+      try {
+        store.writeAll(entries);
+      }
+ catch (      ClassCastException e) {
+        handleClassCastException(e);
+      }
+catch (      Exception e) {
+        if (!entries.isEmpty()) {
+          List<Object> keys=new ArrayList<>(entries.size());
+          for (          Cache.Entry<?,?> entry : entries)           keys.add(entry.getKey());
+          throw new CacheStorePartialUpdateException(keys,e);
+        }
+        if (!(e instanceof CacheWriterException))         e=new CacheWriterException(e);
+        throw new IgniteCheckedException(e);
+      }
+ finally {
+        sesHolder.set(null);
+      }
+      if (log.isDebugEnabled())       log.debug("Stored value in cache store [entries=" + entries + ']');
+      return true;
+    }
+    return false;
+  }
+}

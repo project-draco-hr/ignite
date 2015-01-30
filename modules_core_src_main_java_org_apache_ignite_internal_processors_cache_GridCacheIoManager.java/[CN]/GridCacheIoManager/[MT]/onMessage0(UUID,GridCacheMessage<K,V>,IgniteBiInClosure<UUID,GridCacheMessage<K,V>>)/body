@@ -1,0 +1,48 @@
+{
+  rw.readLock();
+  try {
+    if (stopping) {
+      if (log.isDebugEnabled())       log.debug("Received cache communication message while stopping (will ignore) [nodeId=" + nodeId + ", msg="+ cacheMsg+ ']');
+      return;
+    }
+    if (depEnabled)     cctx.deploy().ignoreOwnership(true);
+    unmarshall(nodeId,cacheMsg);
+    if (cacheMsg.allowForStartup())     processMessage(nodeId,cacheMsg,c);
+ else {
+      IgniteInternalFuture<?> startFut=startFuture(cacheMsg);
+      if (startFut.isDone())       processMessage(nodeId,cacheMsg,c);
+ else {
+        if (log.isDebugEnabled())         log.debug("Waiting for start future to complete for message [nodeId=" + nodeId + ", locId="+ cctx.localNodeId()+ ", msg="+ cacheMsg+ ']');
+        startFut.listenAsync(new CI1<IgniteInternalFuture<?>>(){
+          @Override public void apply(          IgniteInternalFuture<?> f){
+            rw.readLock();
+            try {
+              if (stopping) {
+                if (log.isDebugEnabled())                 log.debug("Received cache communication message while stopping " + "(will ignore) [nodeId=" + nodeId + ", msg="+ cacheMsg+ ']');
+                return;
+              }
+              f.get();
+              if (log.isDebugEnabled())               log.debug("Start future completed for message [nodeId=" + nodeId + ", locId="+ cctx.localNodeId()+ ", msg="+ cacheMsg+ ']');
+              processMessage(nodeId,cacheMsg,c);
+            }
+ catch (            IgniteCheckedException e) {
+              if (startErr.compareAndSet(false,true))               U.error(log,"Failed to complete preload start future (will ignore message) " + "[fut=" + f + ", nodeId="+ nodeId+ ", msg="+ cacheMsg+ ']',e);
+            }
+ finally {
+              rw.readUnlock();
+            }
+          }
+        }
+);
+      }
+    }
+  }
+ catch (  Throwable e) {
+    if (X.hasCause(e,ClassNotFoundException.class))     U.error(log,"Failed to process message (note that distributed services " + "do not support peer class loading, if you deploy distributed service " + "you should have all required classes in CLASSPATH on all nodes in topology) "+ "[senderId=" + nodeId + ", err="+ X.cause(e,ClassNotFoundException.class).getMessage()+ ']');
+ else     U.error(log,"Failed to process message [senderId=" + nodeId + ']',e);
+  }
+ finally {
+    if (depEnabled)     cctx.deploy().ignoreOwnership(false);
+    rw.readUnlock();
+  }
+}

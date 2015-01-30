@@ -1,0 +1,20 @@
+{
+  IgniteConfiguration c=new IgniteConfiguration();
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(new TcpDiscoveryVmIpFinder(true));
+  c.setDiscoverySpi(disco);
+  FifoQueueCollisionSpi cols=new FifoQueueCollisionSpi();
+  cols.setParallelJobsNumber(Integer.MAX_VALUE);
+  c.setCollisionSpi(cols);
+  c.setExecutorService(new IgniteThreadPoolExecutor(THREADS / 2,THREADS / 2,0L,new LinkedBlockingQueue<Runnable>()));
+  c.setSystemExecutorService(new IgniteThreadPoolExecutor(THREADS * 2,THREADS * 2,0L,new LinkedBlockingQueue<Runnable>()));
+  CacheConfiguration cc=new CacheConfiguration();
+  cc.setCacheMode(PARTITIONED);
+  cc.setBackups(1);
+  cc.setNearEvictionPolicy(new CacheLruEvictionPolicy(10000));
+  cc.setEvictionPolicy(new CacheLruEvictionPolicy(300000));
+  cc.setSwapEnabled(false);
+  cc.setDistributionMode(PARTITIONED_ONLY);
+  c.setCacheConfiguration(cc);
+  G.start(c);
+}

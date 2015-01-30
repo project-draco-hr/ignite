@@ -1,0 +1,18 @@
+{
+  GridRestCommandHandler hnd=new GridCacheCommandHandler(((IgniteKernal)grid()).context());
+  String key=UUID.randomUUID().toString();
+  GridRestCacheRequest req=new GridRestCacheRequest();
+  req.command(append ? GridRestCommand.CACHE_APPEND : GridRestCommand.CACHE_PREPEND);
+  req.key(key);
+  req.value(newVal);
+  assertFalse("Expects failure due to no value in cache.",(Boolean)hnd.handleAsync(req).get().getResponse());
+  T res;
+  try {
+    cache().putx(key,curVal);
+    assertTrue("Expects succeed.",(Boolean)hnd.handleAsync(req).get().getResponse());
+  }
+  finally {
+    res=(T)cache().remove(key);
+  }
+  return res;
+}

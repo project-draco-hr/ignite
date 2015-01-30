@@ -1,0 +1,86 @@
+{
+  final CacheContinuousQuery<Object,Object> q=grid(0).cache(null).queries().createContinuousQuery();
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      q.bufferSize(-1);
+      return null;
+    }
+  }
+,IllegalArgumentException.class,null);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      q.bufferSize(0);
+      return null;
+    }
+  }
+,IllegalArgumentException.class,null);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      q.timeInterval(-1);
+      return null;
+    }
+  }
+,IllegalArgumentException.class,null);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      q.execute();
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  q.localCallback(new P2<UUID,Collection<CacheContinuousQueryEntry<Object,Object>>>(){
+    @Override public boolean apply(    UUID uuid,    Collection<CacheContinuousQueryEntry<Object,Object>> entries){
+      return true;
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      q.execute(grid(0).forPredicate(F.<ClusterNode>alwaysFalse()));
+      return null;
+    }
+  }
+,ClusterTopologyException.class,null);
+  q.execute();
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      q.localCallback(new P2<UUID,Collection<CacheContinuousQueryEntry<Object,Object>>>(){
+        @Override public boolean apply(        UUID uuid,        Collection<CacheContinuousQueryEntry<Object,Object>> entries){
+          return false;
+        }
+      }
+);
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      q.remoteFilter(null);
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      q.bufferSize(10);
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      q.timeInterval(10);
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  q.close();
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      q.execute();
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+}

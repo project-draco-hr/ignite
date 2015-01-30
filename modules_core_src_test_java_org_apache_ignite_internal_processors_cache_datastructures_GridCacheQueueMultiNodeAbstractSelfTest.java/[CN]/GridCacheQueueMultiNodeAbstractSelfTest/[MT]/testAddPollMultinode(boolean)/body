@@ -1,0 +1,57 @@
+{
+  final String queueName=UUID.randomUUID().toString();
+  info("Queue name: " + queueName + ", collocated: "+ collocated);
+  try {
+    Collection<IgniteInternalFuture> putFuts=new ArrayList<>();
+    Collection<IgniteInternalFuture> pollFuts=new ArrayList<>();
+    final int PUT_THREADS_PER_NODE=3;
+    final int POLL_THREADS_PER_NODE=2;
+    final int ITEMS_PER_THREAD=1000;
+    final AtomicBoolean stopPoll=new AtomicBoolean();
+    Collection<int[]> pollData=new ArrayList<>();
+    for (int i=0; i < GRID_CNT; i++) {
+      final int idx=i;
+      putFuts.add(GridTestUtils.runMultiThreadedAsync(new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          GridCache cache=grid(idx).cache(null);
+          CacheQueue<Integer> queue=cache.dataStructures().queue(queueName,0,collocated,true);
+          for (int i=0; i < ITEMS_PER_THREAD; i++)           assertTrue(queue.add(i));
+          return null;
+        }
+      }
+,PUT_THREADS_PER_NODE,"testAddPollMultinode"));
+      for (int j=0; j < POLL_THREADS_PER_NODE; j++) {
+        final int[] items=new int[ITEMS_PER_THREAD];
+        pollData.add(items);
+        pollFuts.add(GridTestUtils.runAsync(new Callable<Void>(){
+          @Override public Void call() throws Exception {
+            GridCache cache=grid(idx).cache(null);
+            CacheQueue<Integer> queue=cache.dataStructures().queue(queueName,0,collocated,true);
+            while (!stopPoll.get()) {
+              Integer val=queue.poll();
+              if (val != null)               items[val]++;
+            }
+            return null;
+          }
+        }
+));
+      }
+    }
+    for (    IgniteInternalFuture fut : putFuts)     fut.get();
+    stopPoll.set(true);
+    for (    IgniteInternalFuture fut : pollFuts)     fut.get();
+    GridCache cache=grid(0).cache(null);
+    CacheQueue<Integer> queue=cache.dataStructures().queue(queueName,0,collocated,true);
+    int[] resItems=new int[ITEMS_PER_THREAD];
+    Integer item;
+    while ((item=queue.poll()) != null)     resItems[item]++;
+    for (    int[] items : pollData) {
+      for (int i=0; i < ITEMS_PER_THREAD; i++)       resItems[i]+=items[i];
+    }
+    for (int i=0; i < ITEMS_PER_THREAD; i++)     assertEquals(PUT_THREADS_PER_NODE * GRID_CNT,resItems[i]);
+    assertTrue(queue.isEmpty());
+  }
+  finally {
+    grid(0).cache(null).dataStructures().removeQueue(queueName);
+  }
+}

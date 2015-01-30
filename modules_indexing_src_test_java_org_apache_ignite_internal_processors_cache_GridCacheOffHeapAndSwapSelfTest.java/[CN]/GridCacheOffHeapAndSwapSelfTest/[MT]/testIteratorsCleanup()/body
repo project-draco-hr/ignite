@@ -1,0 +1,44 @@
+{
+  final GridCache<Long,Long> cache=populate();
+  IgniteInternalFuture<?> offHeapFut=multithreadedAsync(new Runnable(){
+    @Override public void run(){
+      try {
+        Iterator<Map.Entry<Long,Long>> ohIt=cache.offHeapIterator();
+        int cnt=0;
+        while (ohIt.hasNext()) {
+          Map.Entry<Long,Long> e=ohIt.next();
+          assertEquals(e.getKey(),e.getValue());
+          cnt++;
+        }
+        assertEquals(cache.offHeapEntriesCount(),cnt);
+      }
+ catch (      IgniteCheckedException ignored) {
+        fail();
+      }
+    }
+  }
+,20);
+  IgniteInternalFuture<?> swapFut=multithreadedAsync(new Runnable(){
+    @Override public void run(){
+      try {
+        Iterator<Map.Entry<Long,Long>> ohIt=cache.swapIterator();
+        int cnt=0;
+        while (ohIt.hasNext()) {
+          Map.Entry<Long,Long> e=ohIt.next();
+          assertEquals(e.getKey(),e.getValue());
+          cnt++;
+        }
+        assertEquals(ENTRY_CNT - cache.offHeapEntriesCount(),cnt);
+      }
+ catch (      IgniteCheckedException ignored) {
+        fail();
+      }
+    }
+  }
+,20);
+  offHeapFut.get();
+  swapFut.get();
+  System.gc();
+  cache.get(1L + ENTRY_CNT);
+  assertEquals(0,((IgniteKernal)grid(0)).internalCache().context().swap().iteratorSetSize());
+}

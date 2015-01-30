@@ -1,0 +1,11 @@
+{
+  if (entry.detached()) {
+    GridCacheMvccCandidate<K> cand=cctx.mvcc().explicitLock(threadId(),entry.key());
+    if (cand != null && !xidVersion().equals(cand.version())) {
+      GridCacheVersion candVer=cand.version();
+      txEntry.explicitVersion(candVer);
+      if (candVer.isLess(minVer))       minVer=candVer;
+    }
+  }
+ else   super.updateExplicitVersion(txEntry,entry);
+}

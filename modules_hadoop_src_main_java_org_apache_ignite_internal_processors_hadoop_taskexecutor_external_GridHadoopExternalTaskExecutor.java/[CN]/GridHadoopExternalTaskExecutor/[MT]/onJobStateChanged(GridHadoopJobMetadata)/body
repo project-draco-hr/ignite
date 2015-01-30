@@ -1,0 +1,42 @@
+{
+  final HadoopProcess proc=runningProcsByJobId.get(meta.jobId());
+  if (proc != null) {
+    if (log.isDebugEnabled())     log.debug("Updating job information for remote task process [proc=" + proc + ", meta="+ meta+ ']');
+    if (meta.phase() == GridHadoopJobPhase.PHASE_COMPLETE) {
+      if (log.isDebugEnabled())       log.debug("Completed job execution, will terminate child process [jobId=" + meta.jobId() + ", proc="+ proc+ ']');
+      runningProcsByJobId.remove(meta.jobId());
+      runningProcsByProcId.remove(proc.descriptor().processId());
+      proc.terminate();
+      return;
+    }
+    if (proc.initFut.isDone()) {
+      if (!proc.initFut.isFailed())       sendJobInfoUpdate(proc,meta);
+ else       if (log.isDebugEnabled())       log.debug("Failed to initialize child process (will skip job state notification) " + "[jobId=" + meta.jobId() + ", meta="+ meta+ ']');
+    }
+ else {
+      proc.initFut.listenAsync(new CI1<IgniteInternalFuture<IgniteBiTuple<Process,GridHadoopProcessDescriptor>>>(){
+        @Override public void apply(        IgniteInternalFuture<IgniteBiTuple<Process,GridHadoopProcessDescriptor>> f){
+          try {
+            f.get();
+            sendJobInfoUpdate(proc,meta);
+          }
+ catch (          IgniteCheckedException e) {
+            if (log.isDebugEnabled())             log.debug("Failed to initialize child process (will skip job state notification) " + "[jobId=" + meta.jobId() + ", meta="+ meta+ ", err="+ e+ ']');
+          }
+        }
+      }
+);
+    }
+  }
+ else   if (ctx.isParticipating(meta)) {
+    GridHadoopJob job;
+    try {
+      job=jobTracker.job(meta.jobId(),meta.jobInfo());
+    }
+ catch (    IgniteCheckedException e) {
+      U.error(log,"Failed to get job: " + meta.jobId(),e);
+      return;
+    }
+    startProcess(job,meta.mapReducePlan());
+  }
+}
