@@ -1,8 +1,13 @@
 {
   if (!isTaskNode()) {
-    Collection<ComputeJobSibling> sibs=ctx.job().requestJobSiblings(this);
-    ses.setJobSiblings(sibs);
-    return sibs;
+    try {
+      Collection<ComputeJobSibling> sibs=ctx.job().requestJobSiblings(this);
+      ses.setJobSiblings(sibs);
+      return sibs;
+    }
+ catch (    IgniteCheckedException e) {
+      throw U.convertException(e);
+    }
   }
   if (!ses.isFullSupport()) {
     ComputeTaskFuture<Object> fut=ctx.task().taskFuture(ses.getId());

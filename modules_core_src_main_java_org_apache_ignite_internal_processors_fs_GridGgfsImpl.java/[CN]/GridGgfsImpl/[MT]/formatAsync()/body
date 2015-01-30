@@ -1,16 +1,21 @@
 {
-  IgniteUuid id=meta.softDelete(null,null,ROOT_ID);
-  if (id == null)   return new GridFinishedFuture<Object>(ggfsCtx.kernalContext());
+  try {
+    IgniteUuid id=meta.softDelete(null,null,ROOT_ID);
+    if (id == null)     return new GridFinishedFuture<Object>(ggfsCtx.kernalContext());
  else {
-    GridFutureAdapter<Object> fut=new GridFutureAdapter<>(ggfsCtx.kernalContext());
-    GridFutureAdapter<Object> oldFut=delFuts.putIfAbsent(id,fut);
-    if (oldFut != null)     return oldFut;
+      GridFutureAdapter<Object> fut=new GridFutureAdapter<>(ggfsCtx.kernalContext());
+      GridFutureAdapter<Object> oldFut=delFuts.putIfAbsent(id,fut);
+      if (oldFut != null)       return oldFut;
  else {
-      if (!meta.exists(id)) {
-        fut.onDone();
-        delFuts.remove(id,fut);
+        if (!meta.exists(id)) {
+          fut.onDone();
+          delFuts.remove(id,fut);
+        }
+        return fut;
       }
-      return fut;
     }
+  }
+ catch (  IgniteCheckedException e) {
+    return new GridFinishedFuture<Object>(ggfsCtx.kernalContext(),e);
   }
 }
