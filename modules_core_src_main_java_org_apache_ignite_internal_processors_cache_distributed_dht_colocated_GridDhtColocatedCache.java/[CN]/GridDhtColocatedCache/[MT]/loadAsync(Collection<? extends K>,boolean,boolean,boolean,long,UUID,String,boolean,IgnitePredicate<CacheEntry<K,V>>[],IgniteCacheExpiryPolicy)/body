@@ -6,13 +6,14 @@
     Map<K,V> locVals=new HashMap<>(keys.size(),1.0f);
     boolean success=true;
     for (    K key : keys) {
+      if (key == null)       throw new NullPointerException("Null key.");
       GridCacheEntryEx<K,V> entry=null;
       while (true) {
         try {
           entry=ctx.isSwapOrOffheapEnabled() ? entryEx(key) : peekEx(key);
           if (entry != null) {
             boolean isNew=entry.isNewLocked();
-            V v=entry.innerGet(null,true,false,true,true,true,true,false,subjId,null,taskName,filter,expiryPlc);
+            V v=entry.innerGet(null,true,false,true,true,false,true,false,subjId,null,taskName,filter,expiryPlc);
             if (v == null) {
               GridCacheVersion obsoleteVer=context().versions().next();
               if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(key);
@@ -43,6 +44,7 @@ catch (        IgniteCheckedException e) {
         }
       }
       if (!success)       break;
+ else       ctx.cache().metrics0().onRead(true);
     }
     if (success) {
       sendTtlUpdateRequest(expiryPlc);

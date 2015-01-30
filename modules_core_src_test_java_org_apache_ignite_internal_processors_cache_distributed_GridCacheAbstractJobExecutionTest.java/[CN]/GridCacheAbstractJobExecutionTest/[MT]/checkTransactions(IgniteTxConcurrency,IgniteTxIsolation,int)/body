@@ -4,8 +4,8 @@
   info("Grid 2: " + grid(2).localNode().id());
   info("Grid 3: " + grid(3).localNode().id());
   Ignite ignite=grid(0);
-  Collection<IgniteFuture<?>> futs=new LinkedList<>();
-  IgniteCompute comp=ignite.compute().enableAsync();
+  Collection<IgniteInternalFuture<?>> futs=new LinkedList<>();
+  IgniteCompute comp=ignite.compute().withAsync();
   for (int i=0; i < jobCnt; i++) {
     comp.apply(new CX1<Integer,Void>(){
       @IgniteInstanceResource private Ignite ignite;
@@ -26,7 +26,7 @@
 ,i);
     futs.add(comp.future());
   }
-  for (  IgniteFuture<?> fut : futs)   fut.get();
+  for (  IgniteInternalFuture<?> fut : futs)   fut.get();
   for (int i=0; i < GRID_CNT; i++) {
     CacheProjection<String,int[]> c=grid(i).cache(null).projection(String.class,int[].class);
     try (IgniteTx tx=c.txStart(concur,isolation)){

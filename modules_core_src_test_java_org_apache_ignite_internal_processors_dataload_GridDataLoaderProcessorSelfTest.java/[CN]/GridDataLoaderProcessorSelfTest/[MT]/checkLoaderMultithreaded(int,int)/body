@@ -12,9 +12,9 @@
     final AtomicBoolean done=new AtomicBoolean();
     try {
       final int totalPutCnt=50000;
-      IgniteFuture<?> fut1=multithreadedAsync(new Callable<Object>(){
+      IgniteInternalFuture<?> fut1=multithreadedAsync(new Callable<Object>(){
         @Override public Object call() throws Exception {
-          Collection<IgniteFuture<?>> futs=new ArrayList<>();
+          Collection<IgniteInternalFuture<?>> futs=new ArrayList<>();
           while (!done.get()) {
             int idx=idxGen.getAndIncrement();
             if (idx >= totalPutCnt) {
@@ -24,12 +24,12 @@
             futs.add(ldr.addData(idx,idx));
           }
           ldr.flush();
-          for (          IgniteFuture<?> fut : futs)           fut.get();
+          for (          IgniteInternalFuture<?> fut : futs)           fut.get();
           return null;
         }
       }
 ,5,"producer");
-      IgniteFuture<?> fut2=multithreadedAsync(new Callable<Object>(){
+      IgniteInternalFuture<?> fut2=multithreadedAsync(new Callable<Object>(){
         @Override public Object call() throws Exception {
           while (!done.get()) {
             ldr.flush();
@@ -40,7 +40,7 @@
       }
 ,1,"flusher");
       final int restartNodeIdx=nodesCntCache + nodesCntNoCache + 1;
-      IgniteFuture<?> fut3=multithreadedAsync(new Callable<Object>(){
+      IgniteInternalFuture<?> fut3=multithreadedAsync(new Callable<Object>(){
         @Override public Object call() throws Exception {
           try {
             for (int i=0; i < 5; i++) {

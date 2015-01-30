@@ -1,0 +1,23 @@
+{
+  String ggWork0=ggWork;
+  if (ggWork0 == null) {
+synchronized (IgniteUtils.class) {
+      ggWork0=ggWork;
+      if (ggWork0 != null)       return;
+      File workDir;
+      if (!F.isEmpty(userWorkDir))       workDir=new File(userWorkDir);
+ else       if (!F.isEmpty(GRIDGAIN_WORK_DIR))       workDir=new File(GRIDGAIN_WORK_DIR);
+ else       if (!F.isEmpty(userGgHome))       workDir=new File(userGgHome,"work");
+ else {
+        String tmpDirPath=System.getProperty("java.io.tmpdir");
+        if (tmpDirPath == null)         throw new IgniteCheckedException("Failed to create work directory in OS temp " + "(property 'java.io.tmpdir' is null).");
+        workDir=new File(tmpDirPath,"gridgain" + File.separator + "work");
+      }
+      if (!workDir.isAbsolute())       throw new IgniteCheckedException("Work directory path must be absolute: " + workDir);
+      if (!mkdirs(workDir))       throw new IgniteCheckedException("Work directory does not exist and cannot be created: " + workDir);
+      if (!workDir.canRead())       throw new IgniteCheckedException("Cannot read from work directory: " + workDir);
+      if (!workDir.canWrite())       throw new IgniteCheckedException("Cannot write to work directory: " + workDir);
+      ggWork=workDir.getAbsolutePath();
+    }
+  }
+}
