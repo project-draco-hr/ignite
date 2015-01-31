@@ -1,27 +1,3 @@
 {
-  for (  IgniteTxEntry<K,V> txEntry : tx.optimisticLockEntries()) {
-    while (true) {
-      GridCacheEntryEx<K,V> cached=txEntry.cached();
-      try {
-        if (txEntry.explicitVersion() == null) {
-          if (!cached.lockedLocally(tx.xidVersion())) {
-            if (log.isDebugEnabled())             log.debug("Transaction entry is not locked by transaction (will wait) [entry=" + cached + ", tx="+ tx+ ']');
-            return false;
-          }
-        }
- else {
-          if (!cached.lockedBy(txEntry.explicitVersion())) {
-            if (log.isDebugEnabled())             log.debug("Transaction entry is not locked by explicit version (will wait) [entry=" + cached + ", tx="+ tx+ ']');
-            return false;
-          }
-        }
-        break;
-      }
- catch (      GridCacheEntryRemovedException ignored) {
-        if (log.isDebugEnabled())         log.debug("Got removed entry in future onAllReplies method (will retry): " + txEntry);
-        txEntry.cached(txEntry.context().cache().entryEx(txEntry.key()),txEntry.keyBytes());
-      }
-    }
-  }
-  return true;
+  return locksReady && lockKeys.isEmpty();
 }

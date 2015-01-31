@@ -1,19 +1,2 @@
 {
-  if (log.isDebugEnabled())   log.debug("Marking all local candidates as ready: " + this);
-  Iterable<IgniteTxEntry<K,V>> checkEntries=tx.groupLock() ? Collections.singletonList(tx.groupLockEntry()) : writes;
-  for (  IgniteTxEntry<K,V> txEntry : checkEntries) {
-    if (txEntry.cached().isLocal())     continue;
-    while (true) {
-      GridDistributedCacheEntry<K,V> entry=(GridDistributedCacheEntry<K,V>)txEntry.cached();
-      try {
-        GridCacheMvccCandidate<K> c=entry.readyLock(tx.xidVersion());
-        if (log.isDebugEnabled())         log.debug("Current lock owner for entry [owner=" + c + ", entry="+ entry+ ']');
-        break;
-      }
- catch (      GridCacheEntryRemovedException ignored) {
-        if (log.isDebugEnabled())         log.debug("Got removed entry in future onAllReplies method (will retry): " + txEntry);
-        txEntry.cached(txEntry.context().cache().entryEx(txEntry.key()),txEntry.keyBytes());
-      }
-    }
-  }
 }
