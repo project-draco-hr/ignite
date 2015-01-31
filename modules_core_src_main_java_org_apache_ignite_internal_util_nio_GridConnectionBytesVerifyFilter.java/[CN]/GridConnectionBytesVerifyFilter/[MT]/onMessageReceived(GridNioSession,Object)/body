@@ -6,19 +6,19 @@
   if (!(msg instanceof ByteBuffer))   throw new GridNioException("Failed to decode incoming message (message should be a byte buffer, is " + "filter properly placed?): " + msg.getClass());
   ByteBuffer buf=(ByteBuffer)msg;
   Integer magic=ses.meta(MAGIC_META_KEY);
-  if (magic == null || magic < U.GG_HEADER.length) {
+  if (magic == null || magic < U.IGNITE_HEADER.length) {
     byte[] magicBuf=ses.meta(MAGIC_BUF_KEY);
-    if (magicBuf == null)     magicBuf=new byte[U.GG_HEADER.length];
+    if (magicBuf == null)     magicBuf=new byte[U.IGNITE_HEADER.length];
     int magicRead=magic == null ? 0 : magic;
     int cnt=buf.remaining();
-    buf.get(magicBuf,magicRead,Math.min(U.GG_HEADER.length - magicRead,cnt));
-    if (cnt + magicRead < U.GG_HEADER.length) {
+    buf.get(magicBuf,magicRead,Math.min(U.IGNITE_HEADER.length - magicRead,cnt));
+    if (cnt + magicRead < U.IGNITE_HEADER.length) {
       ses.addMeta(MAGIC_META_KEY,cnt + magicRead);
       ses.addMeta(MAGIC_BUF_KEY,magicBuf);
     }
- else     if (U.bytesEqual(magicBuf,0,U.GG_HEADER,0,U.GG_HEADER.length)) {
+ else     if (U.bytesEqual(magicBuf,0,U.IGNITE_HEADER,0,U.IGNITE_HEADER.length)) {
       ses.removeMeta(MAGIC_BUF_KEY);
-      ses.addMeta(MAGIC_META_KEY,U.GG_HEADER.length);
+      ses.addMeta(MAGIC_META_KEY,U.IGNITE_HEADER.length);
       proceedMessageReceived(ses,buf);
     }
  else {
