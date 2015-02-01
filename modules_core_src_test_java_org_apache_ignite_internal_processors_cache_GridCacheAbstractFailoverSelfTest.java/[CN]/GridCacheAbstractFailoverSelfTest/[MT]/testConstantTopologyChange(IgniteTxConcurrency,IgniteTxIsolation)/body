@@ -1,8 +1,8 @@
 {
   final boolean tx=concurrency != null && isolation != null;
-  if (tx)   put(cache(),ENTRY_CNT,concurrency,isolation);
- else   put(cache(),ENTRY_CNT);
-  check(cache(),ENTRY_CNT);
+  if (tx)   put(ignite(0),jcache(),ENTRY_CNT,concurrency,isolation);
+ else   put(jcache(),ENTRY_CNT);
+  check(jcache(),ENTRY_CNT);
   final int half=ENTRY_CNT / 2;
   IgniteInternalFuture<?> fut=GridTestUtils.runMultiThreadedAsync(new CA(){
     @Override public void apply(){
@@ -28,12 +28,12 @@
 ,TOP_CHANGE_THREAD_CNT,"topology-change-thread");
   while (!fut.isDone()) {
     if (tx) {
-      remove(cache(),half,concurrency,isolation);
-      put(cache(),half,concurrency,isolation);
+      remove(grid(0),jcache(),half,concurrency,isolation);
+      put(grid(0),jcache(),half,concurrency,isolation);
     }
  else {
-      remove(cache(),half);
-      put(cache(),half);
+      remove(jcache(),half);
+      put(jcache(),half);
     }
   }
   fut.get();

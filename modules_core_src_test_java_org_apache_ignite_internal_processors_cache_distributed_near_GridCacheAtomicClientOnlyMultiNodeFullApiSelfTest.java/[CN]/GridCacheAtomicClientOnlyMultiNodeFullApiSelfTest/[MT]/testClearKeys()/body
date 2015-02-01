@@ -1,5 +1,5 @@
 {
-  GridCache<String,Integer> nearCache=cache();
+  IgniteCache<String,Integer> nearCache=jcache();
   GridCache<String,Integer> primary=fullCache();
   Collection<String> keys=primaryKeysForCache(primary,3);
   for (  String key : keys)   assertNull(nearCache.get(key));
@@ -10,16 +10,10 @@
   int i=0;
   for (  String key : keys)   vals.put(key,i++);
   nearCache.putAll(vals);
-  for (  String subKey : subKeys)   nearCache.clear(subKey);
+  for (  String subKey : subKeys)   nearCache.clear(Collections.singleton(subKey));
   for (  String key : subKeys) {
-    assertNull(nearCache.peek(key));
+    assertNull(nearCache.localPeek(key));
     assertNotNull(primary.peek(key));
   }
-  assertEquals(null,nearCache.peek(lastKey));
-  nearCache.clearAll();
-  vals.put(lastKey,102);
-  nearCache.putAll(vals);
-  for (  String key : keys)   nearCache.projection(gte100).clear(key);
-  assertNull(nearCache.peek(lastKey));
-  for (  String key : subKeys)   assertEquals(null,nearCache.peek(key));
+  assertEquals(null,nearCache.localPeek(lastKey));
 }
