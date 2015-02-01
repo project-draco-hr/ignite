@@ -3,7 +3,7 @@
   try {
     stmt=conn.prepareStatement(m.loadQuery(keys.size()));
     int i=1;
-    for (    Object key : keys)     for (    CacheQueryTypeDescriptor field : m.keyDescriptors()) {
+    for (    Object key : keys)     for (    CacheQueryTableColumnMetadata field : m.keyColumns()) {
       Object fieldVal=extractField(m.keyType(),field.getJavaName(),key);
       if (fieldVal != null)       stmt.setObject(i++,fieldVal);
  else       stmt.setNull(i++,field.getDbType());
@@ -11,8 +11,8 @@
     ResultSet rs=stmt.executeQuery();
     Map<K1,V1> entries=U.newHashMap(keys.size());
     while (rs.next()) {
-      K1 key=buildObject(m.keyType(),m.keyDescriptors(),rs);
-      V1 val=buildObject(m.valueType(),m.valueDescriptors(),rs);
+      K1 key=buildObject(m.keyType(),m.keyColumns(),rs);
+      V1 val=buildObject(m.valueType(),m.valueColumns(),rs);
       entries.put(key,val);
     }
     return entries;

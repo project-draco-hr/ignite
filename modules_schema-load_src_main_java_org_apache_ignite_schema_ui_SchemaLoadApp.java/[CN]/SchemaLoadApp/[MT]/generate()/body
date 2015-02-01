@@ -9,8 +9,8 @@
   final String pkg=pkgTf.getText();
   final File destFolder=new File(outFolder);
   Runnable task=new Task<Void>(){
-    private void checkEmpty(    final PojoDescriptor pojo,    Collection<CacheQueryTypeDescriptor> descs,    String msg){
-      if (descs.isEmpty()) {
+    private void checkEmpty(    final PojoDescriptor pojo,    Collection<PojoField> fields,    String msg){
+      if (fields.isEmpty()) {
         Platform.runLater(new Runnable(){
           @Override public void run(){
             pojosTbl.getSelectionModel().select(pojo);
@@ -27,22 +27,21 @@
     @Override protected Void call() throws Exception {
       long started=System.currentTimeMillis();
       if (!destFolder.exists() && !destFolder.mkdirs())       throw new IOException("Failed to create output folder: " + destFolder);
-      Collection<CacheQueryTypeMetadata> all=new ArrayList<>();
+      Collection<PojoDescriptor> all=new ArrayList<>();
       boolean constructor=pojoConstructorCh.isSelected();
       boolean includeKeys=pojoIncludeKeysCh.isSelected();
       boolean singleXml=xmlSingleFileCh.isSelected();
       ConfirmCallable askOverwrite=new ConfirmCallable(owner,"File already exists: %s\nOverwrite?");
       for (      PojoDescriptor pojo : selPojos) {
         if (pojo.checked()) {
-          CacheQueryTypeMetadata meta=pojo.metadata(includeKeys);
-          checkEmpty(pojo,meta.getKeyDescriptors(),"No key fields specified for type: ");
-          checkEmpty(pojo,meta.getValueDescriptors(),"No value fields specified for type: ");
-          all.add(meta);
-          if (!singleXml)           XmlGenerator.generate(pkg,meta,new File(destFolder,meta.getType() + ".xml"),askOverwrite);
+          checkEmpty(pojo,pojo.keyFields(),"No key fields specified for type: ");
+          checkEmpty(pojo,pojo.valueFields(includeKeys),"No value fields specified for type: ");
+          all.add(pojo);
+          if (!singleXml)           XmlGenerator.generate(pkg,pojo,includeKeys,new File(destFolder,pojo.table() + ".xml"),askOverwrite);
           PojoGenerator.generate(pojo,outFolder,pkg,constructor,includeKeys,askOverwrite);
         }
       }
-      if (singleXml)       XmlGenerator.generate(pkg,all,new File(outFolder,"Ignite.xml"),askOverwrite);
+      if (singleXml)       XmlGenerator.generate(pkg,all,includeKeys,new File(outFolder,"Ignite.xml"),askOverwrite);
       perceptualDelay(started);
       return null;
     }
