@@ -6,13 +6,13 @@
   long ttl=500;
   grid(0).jcache(null).withExpiryPolicy(new TouchedExpiryPolicy(new Duration(MILLISECONDS,ttl))).put(key,1);
   Thread.sleep(ttl + 100);
-  cache.localEvict(Collections.<String>singleton(key));
+  cache.localEvict(Collections.singleton(key));
   assertNull(cache.localPeek(key));
   cache.localPromote(Collections.singleton(key));
   assertNull(cache.localPeek(key));
   assertTrue(cache.localSize() == 0);
   for (int i=0; i < gridCount(); i++) {
-    if (cache(i).entry(key).primary())     cache(i).reload(key);
+    if (ignite(i).affinity(null).isPrimary(ignite(i).cluster().localNode(),key))     jcache(i).loadAll(Collections.singleton(key),true,null);
   }
   cache.loadAll(Collections.singleton(key),true,null);
   assertEquals(null,cache.localPeek(key));

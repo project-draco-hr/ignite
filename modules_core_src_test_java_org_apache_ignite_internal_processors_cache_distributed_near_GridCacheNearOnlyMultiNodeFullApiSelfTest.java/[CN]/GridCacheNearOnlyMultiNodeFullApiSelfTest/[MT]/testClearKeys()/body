@@ -1,25 +1,19 @@
 {
-  GridCache<String,Integer> nearCache=cache();
-  GridCache<String,Integer> primary=fullCache();
+  IgniteCache<String,Integer> nearCache=jcache();
+  IgniteCache<String,Integer> primary=fullCache();
   Collection<String> keys=primaryKeysForCache(primary,3);
   for (  String key : keys)   assertNull(nearCache.get(key));
   String lastKey=F.last(keys);
   Collection<String> subKeys=new ArrayList<>(keys);
   subKeys.remove(lastKey);
-  Map<String,Integer> vals=new HashMap<>(keys.size());
+  Map<String,Integer> vals=new HashMap<>();
   int i=0;
   for (  String key : keys)   vals.put(key,i++);
   nearCache.putAll(vals);
-  for (  String subKey : subKeys)   nearCache.clear(subKey);
+  nearCache.clear(subKeys);
   for (  String key : subKeys) {
-    assertNull(nearCache.peek(key));
-    assertNotNull(primary.peek(key));
+    assertNull(nearCache.localPeek(key));
+    assertNotNull(primary.localPeek(key));
   }
-  assertEquals(vals.get(lastKey),nearCache.peek(lastKey));
-  nearCache.clearAll();
-  vals.put(lastKey,102);
-  nearCache.putAll(vals);
-  for (  String key : keys)   nearCache.projection(gte100).clear(key);
-  assertNull(nearCache.peek(lastKey));
-  for (  String key : subKeys)   assertEquals(vals.get(key),nearCache.peek(key));
+  assertEquals(vals.get(lastKey),nearCache.localPeek(lastKey));
 }
