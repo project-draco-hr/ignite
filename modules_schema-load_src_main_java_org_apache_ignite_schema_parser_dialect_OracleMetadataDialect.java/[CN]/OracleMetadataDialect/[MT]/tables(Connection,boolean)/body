@@ -1,3 +1,29 @@
 {
-  return null;
+  Collection<DbTable> tbls=new ArrayList<>();
+  try (Statement stmt=conn.createStatement()){
+    Collection<DbColumn> cols=new ArrayList<>();
+    try (ResultSet colsRs=stmt.executeQuery(String.format(SQL_COLUMNS,"TEST"))){
+      String prevSchema="";
+      String prevTbl="";
+      while (colsRs.next()) {
+        String schema=colsRs.getString("OWNER");
+        String tbl=colsRs.getString("TABLE_NAME");
+        if (prevSchema.isEmpty()) {
+          prevSchema=schema;
+          prevTbl=tbl;
+        }
+        if (schema.equals(prevSchema) && tbl.equals(prevTbl)) {
+          cols.add(new DbColumn(colsRs.getString("COLUMN_NAME"),decodeType(colsRs.getString("DATA_TYPE")),false,decodeNullable(colsRs.getString("NULLABLE"))));
+        }
+ else {
+          tbls.add(new DbTable(prevSchema,prevTbl,cols,Collections.<String>emptySet(),Collections.<String>emptySet(),null));
+          cols=new ArrayList<>();
+          prevSchema=schema;
+          prevTbl=tbl;
+        }
+      }
+      if (!cols.isEmpty())       tbls.add(new DbTable(prevSchema,prevTbl,cols,Collections.<String>emptySet(),Collections.<String>emptySet(),null));
+    }
+   }
+   return tbls;
 }
