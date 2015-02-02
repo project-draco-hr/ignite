@@ -2,12 +2,7 @@
   long qryReqId=reqIdGen.incrementAndGet();
   QueryRun r=new QueryRun();
   r.tbls=new ArrayList<>(qry.mapQueries().size());
-  try {
-    r.conn=h2.connectionForSpace(space);
-  }
- catch (  IgniteCheckedException e) {
-    return new GridFinishedFutureEx<>(e);
-  }
+  r.conn=h2.connectionForSpace(space);
   Collection<ClusterNode> nodes=ctx.grid().cluster().nodes();
   for (  GridCacheSqlQuery mapQry : qry.mapQueries()) {
     GridMergeTable tbl;
@@ -15,7 +10,7 @@
       tbl=createTable(r.conn,mapQry);
     }
  catch (    IgniteCheckedException e) {
-      return new GridFinishedFutureEx<>(e);
+      throw new IgniteException(e);
     }
     tbl.getScanIndex(null).setNumberOfSources(nodes.size());
     r.tbls.add(tbl);
@@ -28,10 +23,10 @@
     GridCacheSqlQuery rdc=qry.reduceQuery();
     final ResultSet res=h2.executeSqlQueryWithTimer(r.conn,rdc.query(),F.asList(rdc.parameters()));
     for (    GridMergeTable tbl : r.tbls)     dropTable(r.conn,tbl.getName());
-    return new GridFinishedFuture(ctx,new Iter(res));
+    return new QueryCursorImpl<>(new Iter(res));
   }
  catch (  IgniteCheckedException|InterruptedException|SQLException e) {
     U.closeQuiet(r.conn);
-    return new GridFinishedFuture<>(ctx,e);
+    throw new IgniteException(e);
   }
 }
