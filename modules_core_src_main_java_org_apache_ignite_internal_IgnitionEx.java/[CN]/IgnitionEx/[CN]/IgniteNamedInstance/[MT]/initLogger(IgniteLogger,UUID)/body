@@ -1,16 +1,16 @@
 {
   try {
-    boolean log4jInitFailed=false;
+    Exception log4jInitException=null;
     if (cfgLog == null) {
-      Class<?> log4jCls=null;
+      Class<?> log4jCls;
       try {
+        log4jCls=Class.forName("org.apache.ignite.logger.log4j.IgniteLog4jLogger");
+      }
+ catch (      ClassNotFoundException|NoClassDefFoundError ignored) {
+        log4jCls=null;
+      }
+      if (log4jCls != null) {
         try {
-          log4jCls=Class.forName("org.apache.ignite.logger.log4j.IgniteLog4jLogger");
-        }
- catch (        ClassNotFoundException|NoClassDefFoundError ignored) {
-          log4jCls=null;
-        }
-        if (log4jCls != null) {
           URL url=U.resolveGridGainUrl("config/ignite-log4j.xml");
           if (url == null) {
             File cfgFile=new File("config/ignite-log4j.xml");
@@ -33,14 +33,14 @@
           }
  else           cfgLog=(IgniteLogger)log4jCls.newInstance();
         }
+ catch (        Exception e) {
+          log4jInitException=e;
+        }
       }
- catch (      Exception e) {
-        System.out.println("[WARNING] Could not initialize log4j. Fallback to standard java logging.");
-        log4jInitFailed=true;
-      }
-      if (log4jCls == null || log4jInitFailed)       cfgLog=new IgniteJavaLogger();
+      if (log4jCls == null || log4jInitException != null)       cfgLog=new IgniteJavaLogger();
     }
     if (cfgLog instanceof IgniteLoggerNodeIdAware)     ((IgniteLoggerNodeIdAware)cfgLog).setNodeId(nodeId);
+    if (log4jInitException != null)     U.warn(cfgLog,"Failed to initialize IgniteLog4jLogger (falling back to standard java logging): " + log4jInitException.getCause());
     return cfgLog;
   }
  catch (  Exception e) {
