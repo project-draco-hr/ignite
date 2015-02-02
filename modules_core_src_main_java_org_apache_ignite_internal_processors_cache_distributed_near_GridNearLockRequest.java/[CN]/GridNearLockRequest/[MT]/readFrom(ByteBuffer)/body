@@ -3,23 +3,27 @@
   if (!super.readFrom(buf))   return false;
 switch (commState.idx) {
 case 24:
-    if (commState.readSize == -1) {
-      commState.readSize=commState.getInt(null);
-      if (!commState.lastRead())       return false;
-    }
-  if (commState.readSize >= 0) {
-    if (dhtVers == null)     dhtVers=new GridCacheVersion[commState.readSize];
-    for (int i=commState.readItems; i < commState.readSize; i++) {
-      GridCacheVersion _val=commState.getCacheVersion(null);
-      if (!commState.lastRead())       return false;
-      dhtVers[i]=(GridCacheVersion)_val;
-      commState.readItems++;
-    }
-  }
+    accessTtl=commState.getLong("accessTtl");
+  if (!commState.lastRead())   return false;
+commState.idx++;
+case 25:
+if (commState.readSize == -1) {
+commState.readSize=commState.getInt(null);
+if (!commState.lastRead()) return false;
+}
+if (commState.readSize >= 0) {
+if (dhtVers == null) dhtVers=new GridCacheVersion[commState.readSize];
+for (int i=commState.readItems; i < commState.readSize; i++) {
+GridCacheVersion _val=commState.getCacheVersion(null);
+if (!commState.lastRead()) return false;
+dhtVers[i]=(GridCacheVersion)_val;
+commState.readItems++;
+}
+}
 commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
-case 25:
+case 26:
 if (commState.readSize == -1) {
 commState.readSize=commState.getInt(null);
 if (!commState.lastRead()) return false;
@@ -36,46 +40,41 @@ commState.readItems++;
 commState.readSize=-1;
 commState.readItems=0;
 commState.idx++;
-case 26:
+case 27:
 implicitSingleTx=commState.getBoolean("implicitSingleTx");
 if (!commState.lastRead()) return false;
 commState.idx++;
-case 27:
+case 28:
 implicitTx=commState.getBoolean("implicitTx");
 if (!commState.lastRead()) return false;
 commState.idx++;
-case 28:
+case 29:
 miniId=commState.getGridUuid("miniId");
 if (!commState.lastRead()) return false;
 commState.idx++;
-case 29:
+case 30:
 onePhaseCommit=commState.getBoolean("onePhaseCommit");
 if (!commState.lastRead()) return false;
 commState.idx++;
-case 30:
+case 31:
 syncCommit=commState.getBoolean("syncCommit");
 if (!commState.lastRead()) return false;
 commState.idx++;
-case 31:
+case 32:
 topVer=commState.getLong("topVer");
 if (!commState.lastRead()) return false;
 commState.idx++;
-case 32:
+case 33:
 subjId=commState.getUuid("subjId");
 if (!commState.lastRead()) return false;
 commState.idx++;
-case 33:
+case 34:
 taskNameHash=commState.getInt("taskNameHash");
 if (!commState.lastRead()) return false;
 commState.idx++;
-case 34:
+case 35:
 hasTransforms=commState.getBoolean("hasTransforms");
 if (!commState.lastRead()) return false;
-syncCommit=commState.getBoolean(null);
-commState.idx++;
-case 35:
-if (buf.remaining() < 8) return false;
-accessTtl=commState.getLong(null);
 commState.idx++;
 }
 return true;
