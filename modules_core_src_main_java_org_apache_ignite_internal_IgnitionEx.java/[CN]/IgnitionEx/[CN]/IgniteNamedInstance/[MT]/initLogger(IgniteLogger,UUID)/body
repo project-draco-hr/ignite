@@ -1,0 +1,42 @@
+{
+  try {
+    if (cfgLog == null) {
+      Class<?> log4jCls;
+      try {
+        log4jCls=Class.forName("org.gridgain.grid.logger.log4j.GridLog4jLogger");
+      }
+ catch (      ClassNotFoundException|NoClassDefFoundError ignored) {
+        log4jCls=null;
+      }
+      if (log4jCls != null) {
+        URL url=U.resolveGridGainUrl("config/ignite-log4j.xml");
+        if (url == null) {
+          File cfgFile=new File("config/ignite-log4j.xml");
+          if (!cfgFile.exists())           cfgFile=new File("../config/ignite-log4j.xml");
+          if (cfgFile.exists()) {
+            try {
+              url=cfgFile.toURI().toURL();
+            }
+ catch (            MalformedURLException ignore) {
+            }
+          }
+        }
+        if (url != null) {
+          boolean configured=(Boolean)log4jCls.getMethod("isConfigured").invoke(null);
+          if (configured)           url=null;
+        }
+        if (url != null) {
+          Constructor<?> ctor=log4jCls.getConstructor(URL.class);
+          cfgLog=(IgniteLogger)ctor.newInstance(url);
+        }
+ else         cfgLog=(IgniteLogger)log4jCls.newInstance();
+      }
+ else       cfgLog=new IgniteJavaLogger();
+    }
+    if (cfgLog instanceof IgniteLoggerNodeIdAware)     ((IgniteLoggerNodeIdAware)cfgLog).setNodeId(nodeId);
+    return cfgLog;
+  }
+ catch (  Exception e) {
+    throw new IgniteCheckedException("Failed to create logger.",e);
+  }
+}

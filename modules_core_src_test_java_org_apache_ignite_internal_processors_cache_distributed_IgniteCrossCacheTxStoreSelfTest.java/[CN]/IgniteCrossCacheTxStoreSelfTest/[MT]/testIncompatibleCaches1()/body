@@ -1,0 +1,13 @@
+{
+  IgniteEx grid=grid(0);
+  try (IgniteTx ignored=grid.transactions().txStart()){
+    GridCache<Object,Object> cacheA=grid.cache("cacheA");
+    GridCache<Object,Object> cacheC=grid.cache("cacheC");
+    cacheA.put("1","2");
+    cacheC.put("1","2");
+    fail("Must not allow to enlist caches with different stores to one transaction");
+  }
+ catch (  IgniteCheckedException e) {
+    assertTrue(e.getMessage().startsWith("Failed to enlist new cache to existing transaction"));
+  }
+}
