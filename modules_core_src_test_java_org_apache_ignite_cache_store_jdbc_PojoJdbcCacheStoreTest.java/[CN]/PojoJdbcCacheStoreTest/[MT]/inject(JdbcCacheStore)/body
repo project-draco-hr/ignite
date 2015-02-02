@@ -12,14 +12,14 @@
     GenericApplicationContext springCtx=new GenericApplicationContext();
     new XmlBeanDefinitionReader(springCtx).loadBeanDefinitions(metaUrl);
     springCtx.refresh();
-    Collection<CacheQueryTypeMetadata> typeMetadata=springCtx.getBeansOfType(CacheQueryTypeMetadata.class).values();
-    Map<Integer,Map<Object,JdbcCacheStore.EntryMapping>> cacheMappings=new ConcurrentHashMap<>();
+    Collection<CacheQueryTypeMetadata> typeMeta=springCtx.getBeansOfType(CacheQueryTypeMetadata.class).values();
+    Map<Integer,Map<Object,JdbcCacheStore.EntryMapping>> cacheMappings=new HashMap<>();
     JdbcDialect dialect=store.resolveDialect();
     GridTestUtils.setFieldValue(store,JdbcCacheStore.class,"dialect",dialect);
-    Map<Object,JdbcCacheStore.EntryMapping> entryMappings=U.newHashMap(typeMetadata.size());
-    for (    CacheQueryTypeMetadata type : typeMetadata)     entryMappings.put(store.keyId(type.getKeyType()),new JdbcCacheStore.EntryMapping(dialect,type));
-    store.prepareBuilders(typeMetadata);
-    cacheMappings.put(0,Collections.unmodifiableMap(entryMappings));
+    Map<Object,JdbcCacheStore.EntryMapping> entryMappings=U.newHashMap(typeMeta.size());
+    for (    CacheQueryTypeMetadata type : typeMeta)     entryMappings.put(store.keyTypeId(type.getKeyType()),new JdbcCacheStore.EntryMapping(dialect,type));
+    store.prepareBuilders(null,typeMeta);
+    cacheMappings.put(null,Collections.unmodifiableMap(entryMappings));
     GridTestUtils.setFieldValue(store,JdbcCacheStore.class,"cacheMappings",cacheMappings);
   }
  catch (  BeansException e) {
