@@ -1,19 +1,19 @@
 {
   store.create(false);
-  GridCache<Integer,String> near=cache(0);
+  IgniteCache<Integer,String> near=jcache(0);
   int key=1;
-  assertTrue(near.putxIfAbsent(key,"1"));
-  assertFalse(near.putxIfAbsent(key,"1"));
-  assertEquals("1",near.putIfAbsent(key,"2"));
-  assertEquals("1",near.peek(key));
-  assertEquals(1,near.size());
-  assertEquals(1,near.size());
-  assertEquals("1",near.replace(key,"2"));
-  assertEquals("2",near.peek(key));
-  assertTrue(near.replacex(key,"2"));
-  assertEquals("2",near.peek(key));
-  assertEquals(1,near.size());
-  assertEquals(1,near.size());
+  assertTrue(near.putIfAbsent(key,"1"));
+  assertFalse(near.putIfAbsent(key,"1"));
+  assertEquals("1",near.getAndPutIfAbsent(key,"2"));
+  assertEquals("1",near.localPeek(key));
+  assertEquals(1,near.localSize());
+  assertEquals(1,near.localSize());
+  assertEquals("1",near.getAndReplace(key,"2"));
+  assertEquals("2",near.localPeek(key));
+  assertTrue(near.replace(key,"2"));
+  assertEquals("2",near.localPeek(key));
+  assertEquals(1,near.localSize());
+  assertEquals(1,near.localSize());
   assertTrue(near.remove(key,"2"));
-  assertEquals(0,near.size());
+  assertEquals(0,near.localSize());
 }

@@ -1,9 +1,9 @@
 {
-  GridCache<Integer,String> near=cache(0);
+  IgniteCache<Integer,String> near=jcache(0);
   if (transactional()) {
-    try (IgniteTx tx=near.txStart(OPTIMISTIC,REPEATABLE_READ,0,0)){
-      near.putx(2,"2");
-      String s=near.put(3,"3");
+    try (IgniteTx tx=grid(0).transactions().txStart(OPTIMISTIC,REPEATABLE_READ,0,0)){
+      near.put(2,"2");
+      String s=near.getAndPut(3,"3");
       assertNotNull(s);
       assertEquals("3",s);
       assertEquals("2",near.get(2));
@@ -15,15 +15,15 @@
     }
    }
  else {
-    near.putx(2,"2");
-    String s=near.put(3,"3");
+    near.put(2,"2");
+    String s=near.getAndPut(3,"3");
     assertNotNull(s);
     assertEquals("3",s);
   }
-  assertEquals("2",near.peek(2));
-  assertEquals("3",near.peek(3));
+  assertEquals("2",near.localPeek(2));
+  assertEquals("3",near.localPeek(3));
   assertEquals("2",dht(primaryGrid(2)).peek(2));
   assertEquals("3",dht(primaryGrid(3)).peek(3));
-  assertEquals(2,near.size());
-  assertEquals(2,near.size());
+  assertEquals(2,near.localSize());
+  assertEquals(2,near.localSize());
 }
