@@ -1,16 +1,6 @@
 {
-  if (e instanceof IgniteInterruptedCheckedException)   return new IgniteInterruptedException(e.getMessage(),(InterruptedException)e.getCause());
- else   if (e instanceof IgniteFutureCancelledCheckedException)   return new IgniteFutureCancelledException(e.getMessage(),e.getCause());
- else   if (e instanceof IgniteFutureTimeoutCheckedException)   return new IgniteFutureTimeoutException(e.getMessage(),e.getCause());
- else   if (e instanceof ClusterGroupEmptyCheckedException)   return new ClusterGroupEmptyException(e.getMessage(),e.getCause());
- else   if (e instanceof ClusterTopologyCheckedException)   return new ClusterTopologyException(e.getMessage(),e.getCause());
- else   if (e instanceof IgniteDeploymentCheckedException)   return new IgniteDeploymentException(e.getMessage(),e.getCause());
- else   if (e instanceof ComputeTaskTimeoutCheckedException)   return new ComputeTaskTimeoutException(e.getMessage(),e.getCause());
- else   if (e instanceof ComputeTaskCancelledCheckedException)   return new ComputeTaskCancelledException(e.getMessage(),e.getCause());
- else   if (e instanceof IgniteTxRollbackCheckedException)   return new IgniteTxRollbackException(e.getMessage(),e.getCause());
- else   if (e instanceof IgniteTxHeuristicCheckedException)   return new IgniteTxHeuristicException(e.getMessage(),e.getCause());
- else   if (e instanceof IgniteTxTimeoutCheckedException)   return new IgniteTxTimeoutException(e.getMessage(),e.getCause());
- else   if (e instanceof IgniteTxOptimisticCheckedException)   return new IgniteTxOptimisticException(e.getMessage(),e.getCause());
- else   if (e.getCause() instanceof IgniteException)   return (IgniteException)e.getCause();
+  C1<IgniteCheckedException,IgniteException> converter=exceptionConverters.get(e.getClass());
+  if (converter != null)   return converter.apply(e);
+  if (e.getCause() instanceof IgniteException)   return (IgniteException)e.getCause();
   return new IgniteException(e.getMessage(),e);
 }
