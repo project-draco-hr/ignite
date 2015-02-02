@@ -1,14 +1,14 @@
 {
   int thrCnt=getIntProperty(THREADS_CNT,1);
   int dur=getIntProperty(TEST_DUR_SEC,60);
-  int winSize=getIntProperty("GG_WIN_SIZE",5000);
+  int winSize=getIntProperty("IGNITE_WIN_SIZE",5000);
   dumpProperties(System.out);
   final StreamerBoundedSizeWindow<Integer> win=new StreamerBoundedSizeWindow<>();
   win.setMaximumSize(winSize);
   win.setIndexes(idxCfg.indexProvider());
   win.start();
   final AtomicLong enqueueCntr=new AtomicLong();
-  IgniteFuture<Long> enqueueFut=runMultiThreadedAsync(new CAX(){
+  IgniteInternalFuture<Long> enqueueFut=runMultiThreadedAsync(new CAX(){
     @Override public void applyx() throws IgniteCheckedException {
       Random rnd=new Random();
       while (!Thread.currentThread().isInterrupted()) {
@@ -19,7 +19,7 @@
   }
 ,thrCnt,"generator");
   final AtomicLong evictCntr=new AtomicLong();
-  IgniteFuture<Long> evictFut=runMultiThreadedAsync(new CAX(){
+  IgniteInternalFuture<Long> evictFut=runMultiThreadedAsync(new CAX(){
     @Override public void applyx() throws IgniteCheckedException {
       while (!Thread.currentThread().isInterrupted()) {
         win.pollEvicted();
@@ -28,7 +28,7 @@
     }
   }
 ,thrCnt,"evictor");
-  IgniteFuture<Long> collFut=runMultiThreadedAsync(new CAX(){
+  IgniteInternalFuture<Long> collFut=runMultiThreadedAsync(new CAX(){
     @Override public void applyx(){
       int nSec=0;
       long prevEnqueue=enqueueCntr.get();
