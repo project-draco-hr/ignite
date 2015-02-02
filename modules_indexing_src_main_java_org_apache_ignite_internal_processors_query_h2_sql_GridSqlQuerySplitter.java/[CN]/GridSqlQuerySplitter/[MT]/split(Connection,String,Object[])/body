@@ -1,24 +1,36 @@
 {
   GridSqlSelect srcQry=GridSqlQueryParser.parse(conn,query);
-  if (srcQry.groups().isEmpty()) {
-    String tbl0=table(0);
-    GridCacheTwoStepQuery res=new GridCacheTwoStepQuery("select * from " + tbl0);
-    res.addMapQuery(tbl0,srcQry.getSQL(),params);
-    return res;
-  }
+  final String mergeTable=table(0);
+  GridSqlSelect mapQry=srcQry.clone();
+  GridSqlSelect rdcQry=new GridSqlSelect().from(table(mergeTable));
   List<GridSqlElement> mapExps=new ArrayList<>(srcQry.allExpressions());
   GridSqlElement[] rdcExps=new GridSqlElement[srcQry.select().size()];
   for (int i=0, len=mapExps.size(); i < len; i++)   splitSelectExpression(mapExps,rdcExps,i);
-  GridSqlSelect mapQry=srcQry.clone();
   mapQry.clearSelect();
   for (  GridSqlElement exp : mapExps)   mapQry.addSelectExpression(exp);
-  mapQry.clearGroups();
-  for (  int col : srcQry.groupColumns())   mapQry.addGroupExpression(column(((GridSqlAlias)mapExps.get(col)).alias()));
-  GridSqlSelect rdcQry=new GridSqlSelect();
   for (  GridSqlElement rdcExp : rdcExps)   rdcQry.addSelectExpression(rdcExp);
-  rdcQry.from(new GridSqlTable(null,table(0)));
-  for (  int col : srcQry.groupColumns())   rdcQry.addGroupExpression(column(((GridSqlAlias)mapExps.get(col)).alias()));
+  if (!srcQry.groups().isEmpty()) {
+    mapQry.clearGroups();
+    for (    int col : srcQry.groupColumns())     mapQry.addGroupExpression(column(((GridSqlAlias)mapExps.get(col)).alias()));
+    for (    int col : srcQry.groupColumns())     rdcQry.addGroupExpression(column(((GridSqlAlias)mapExps.get(col)).alias()));
+  }
+  if (srcQry.having() != null) {
+    rdcQry.whereAnd(column(columnName(srcQry.havingColumn())));
+    mapQry.having(null);
+  }
+  if (!srcQry.sort().isEmpty()) {
+    for (    GridSqlSortColumn sortCol : srcQry.sort().values())     rdcQry.addSort(column(((GridSqlAlias)mapExps.get(sortCol.column())).alias()),sortCol);
+  }
+  if (srcQry.limit() != null)   rdcQry.limit(srcQry.limit());
+  if (srcQry.offset() != null) {
+    mapQry.offset(null);
+    rdcQry.offset(srcQry.offset());
+  }
+  if (srcQry.distinct()) {
+    mapQry.distinct(false);
+    rdcQry.distinct(true);
+  }
   GridCacheTwoStepQuery res=new GridCacheTwoStepQuery(rdcQry.getSQL());
-  res.addMapQuery(table(0),mapQry.getSQL(),params);
+  res.addMapQuery(mergeTable,mapQry.getSQL(),params);
   return res;
 }

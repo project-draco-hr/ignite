@@ -21,17 +21,19 @@
   if (!sort.isEmpty()) {
     buff.append("\nORDER BY ");
     buff.resetCount();
-    for (    Map.Entry<GridSqlElement,Integer> entry : sort.entrySet()) {
+    for (    Map.Entry<GridSqlElement,GridSqlSortColumn> entry : sort.entrySet()) {
       buff.appendExceptFirst(", ");
       GridSqlElement expression=entry.getKey();
       int idx=select.indexOf(expression);
       if (idx >= 0)       buff.append(idx + 1);
  else       buff.append('=').append(StringUtils.unEnclose(expression.getSQL()));
-      int type=entry.getValue();
-      if ((type & SortOrder.DESCENDING) != 0)       buff.append(" DESC");
-      if ((type & SortOrder.NULLS_FIRST) != 0)       buff.append(" NULLS FIRST");
- else       if ((type & SortOrder.NULLS_LAST) != 0)       buff.append(" NULLS LAST");
+      GridSqlSortColumn type=entry.getValue();
+      if (!type.asc())       buff.append(" DESC");
+      if (type.nullsFirst())       buff.append(" NULLS FIRST");
+ else       if (type.nullsLast())       buff.append(" NULLS LAST");
     }
   }
+  if (limit != null)   buff.append(" LIMIT ").append(StringUtils.unEnclose(limit.getSQL()));
+  if (offset != null)   buff.append(" OFFSET ").append(StringUtils.unEnclose(offset.getSQL()));
   return buff.toString();
 }
