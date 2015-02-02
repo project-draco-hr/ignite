@@ -8,14 +8,14 @@
       for (int i=0; i < args.length; i+=2) {
         String keyType=args[i].toString();
         String selQry=args[i + 1].toString();
-        EntryMapping em=entryMapping(keyId(keyType),keyType);
+        EntryMapping em=entryMapping(keyTypeId(keyType),keyType);
         futs.add(pool.submit(new LoadCacheCustomQueryWorker<>(em,selQry,clo)));
       }
     }
  else {
-      init();
+      Collection<EntryMapping> entryMappings=cacheMappings(session().cacheName()).values();
       if (log.isDebugEnabled())       log.debug("Start loading all cache types entries from db");
-      for (      EntryMapping em : cacheMappings.get(cacheKeyId()).values()) {
+      for (      EntryMapping em : entryMappings) {
         if (parallelLoadCacheMinThreshold > 0) {
           Connection conn=null;
           try {

@@ -2,7 +2,8 @@
   Collection<DbTable> tbls=new ArrayList<>();
   try (Statement stmt=conn.createStatement()){
     Collection<DbColumn> cols=new ArrayList<>();
-    try (ResultSet colsRs=stmt.executeQuery(String.format(SQL_COLUMNS,"TEST"))){
+    String sql=String.format(SQL_COLUMNS,tblsOnly ? "INNER JOIN all_tables b on a.table_name = b.table_name" : "","TEST");
+    try (ResultSet colsRs=stmt.executeQuery(sql)){
       String prevSchema="";
       String prevTbl="";
       while (colsRs.next()) {
@@ -12,17 +13,15 @@
           prevSchema=schema;
           prevTbl=tbl;
         }
-        if (schema.equals(prevSchema) && tbl.equals(prevTbl)) {
-          cols.add(new DbColumn(colsRs.getString("COLUMN_NAME"),decodeType(colsRs.getString("DATA_TYPE")),false,decodeNullable(colsRs.getString("NULLABLE"))));
-        }
- else {
+        if (!schema.equals(prevSchema) || !tbl.equals(prevTbl)) {
           tbls.add(new DbTable(prevSchema,prevTbl,cols,Collections.<String>emptySet(),Collections.<String>emptySet(),null));
-          cols=new ArrayList<>();
           prevSchema=schema;
           prevTbl=tbl;
+          cols=new ArrayList<>();
         }
+        cols.add(new DbColumn(colsRs.getString("COLUMN_NAME"),decodeType(colsRs.getString("DATA_TYPE")),false,decodeNullable(colsRs.getString("NULLABLE"))));
       }
-      if (!cols.isEmpty())       tbls.add(new DbTable(prevSchema,prevTbl,cols,Collections.<String>emptySet(),Collections.<String>emptySet(),null));
+      if (!cols.isEmpty())       tbls.add(new DbTable(prevSchema,prevTbl,cols,Collections.<String>emptySet(),Collections.<String>emptySet(),Collections.<String,Map<String,Boolean>>emptyMap()));
     }
    }
    return tbls;
