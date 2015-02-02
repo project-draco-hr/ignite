@@ -4,21 +4,21 @@
   Collection<DbTable> tbls=new ArrayList<>();
   try (ResultSet schemasRs=dbMeta.getSchemas()){
     while (schemasRs.next()) {
-      String schema=schemasRs.getString("TABLE_SCHEM");
+      String schema=schemasRs.getString(SCHEMA_NAME_IDX);
       if (sys.contains(schema))       continue;
-      String catalog=schemasRs.getString("TABLE_CATALOG");
+      String catalog=schemasRs.getString(SCHEMA_CATALOG_IDX);
       try (ResultSet tblsRs=dbMeta.getTables(catalog,schema,"%",tblsOnly ? TABLES_ONLY : TABLES_AND_VIEWS)){
         while (tblsRs.next()) {
-          String tblName=tblsRs.getString("TABLE_NAME");
+          String tblName=tblsRs.getString(TABLE_NAME_IDX);
           Set<String> pkCols=new HashSet<>();
           try (ResultSet pkRs=dbMeta.getPrimaryKeys(catalog,schema,tblName)){
-            while (pkRs.next())             pkCols.add(pkRs.getString("COLUMN_NAME"));
+            while (pkRs.next())             pkCols.add(pkRs.getString(PK_COLUMN_NAME_IDX));
           }
            List<DbColumn> cols=new ArrayList<>();
           try (ResultSet colsRs=dbMeta.getColumns(catalog,schema,tblName,null)){
             while (colsRs.next()) {
-              String colName=colsRs.getString("COLUMN_NAME");
-              cols.add(new DbColumn(colName,colsRs.getInt("DATA_TYPE"),pkCols.contains(colName),colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable));
+              String colName=colsRs.getString(COLUMN_NAME_IDX);
+              cols.add(new DbColumn(colName,colsRs.getInt(COLUMN_DATA_TYPE_IDX),pkCols.contains(colName),colsRs.getInt(COLUMN_NULLABLE_IDX) == DatabaseMetaData.columnNullable));
             }
           }
            Set<String> ascCols=new HashSet<>();
