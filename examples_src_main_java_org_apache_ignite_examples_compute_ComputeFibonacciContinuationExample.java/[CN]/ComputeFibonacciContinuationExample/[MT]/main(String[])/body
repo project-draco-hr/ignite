@@ -1,17 +1,17 @@
 {
-  try (Ignite g=Ignition.start("examples/config/example-compute.xml")){
+  try (Ignite ignite=Ignition.start("examples/config/example-compute.xml")){
     System.out.println();
     System.out.println("Compute Fibonacci continuation example started.");
     long N=100;
-    final UUID exampleNodeId=g.cluster().localNode().id();
+    final UUID exampleNodeId=ignite.cluster().localNode().id();
     final IgnitePredicate<ClusterNode> nodeFilter=new IgnitePredicate<ClusterNode>(){
       @Override public boolean apply(      ClusterNode n){
-        return g.cluster().forRemotes().nodes().isEmpty() || !n.id().equals(exampleNodeId);
+        return ignite.cluster().forRemotes().nodes().isEmpty() || !n.id().equals(exampleNodeId);
       }
     }
 ;
     long start=System.currentTimeMillis();
-    BigInteger fib=g.compute(g.cluster().forPredicate(nodeFilter)).apply(new FibonacciClosure(nodeFilter),N);
+    BigInteger fib=ignite.compute(ignite.cluster().forPredicate(nodeFilter)).apply(new FibonacciClosure(nodeFilter),N);
     long duration=System.currentTimeMillis() - start;
     System.out.println();
     System.out.println(">>> Finished executing Fibonacci for '" + N + "' in "+ duration+ " ms.");

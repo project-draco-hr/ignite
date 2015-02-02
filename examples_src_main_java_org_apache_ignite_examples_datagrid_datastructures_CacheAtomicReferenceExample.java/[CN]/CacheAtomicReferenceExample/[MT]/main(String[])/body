@@ -1,20 +1,20 @@
 {
-  try (Ignite g=Ignition.start("examples/config/example-cache.xml")){
+  try (Ignite ignite=Ignition.start("examples/config/example-cache.xml")){
     System.out.println();
     System.out.println(">>> Cache atomic reference example started.");
     final String refName=UUID.randomUUID().toString();
     String val=UUID.randomUUID().toString();
-    CacheAtomicReference<String> ref=g.cache(CACHE_NAME).dataStructures().atomicReference(refName,val,true);
+    CacheAtomicReference<String> ref=ignite.cache(CACHE_NAME).dataStructures().atomicReference(refName,val,true);
     System.out.println("Atomic reference initial value : " + ref.get() + '.');
     Runnable c=new ReferenceClosure(CACHE_NAME,refName);
-    g.compute().run(c);
+    ignite.compute().run(c);
     String newVal=UUID.randomUUID().toString();
     System.out.println("Try to change value of atomic reference with wrong expected value.");
     ref.compareAndSet("WRONG EXPECTED VALUE",newVal);
-    g.compute().run(c);
+    ignite.compute().run(c);
     System.out.println("Try to change value of atomic reference with correct expected value.");
     ref.compareAndSet(val,newVal);
-    g.compute().run(c);
+    ignite.compute().run(c);
   }
    System.out.println();
   System.out.println("Finished atomic reference example...");

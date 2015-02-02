@@ -1,10 +1,10 @@
 {
-  try (Ignite g=Ignition.start("examples/config/example-compute.xml")){
-    if (!ExamplesUtils.checkMinTopologySize(g.cluster(),2))     return;
+  try (Ignite ignite=Ignition.start("examples/config/example-compute.xml")){
+    if (!ExamplesUtils.checkMinTopologySize(ignite.cluster(),2))     return;
     System.out.println();
     System.out.println(">>> Messaging ping-pong example started.");
-    ClusterGroup nodeB=g.cluster().forRemotes().forRandom();
-    g.message(nodeB).remoteListen(null,new IgniteBiPredicate<UUID,String>(){
+    ClusterGroup nodeB=ignite.cluster().forRemotes().forRandom();
+    ignite.message(nodeB).remoteListen(null,new IgniteBiPredicate<UUID,String>(){
       /** 
  * This will be injected on node listener comes to. 
  */
@@ -26,16 +26,16 @@
 );
     int MAX_PLAYS=10;
     final CountDownLatch cnt=new CountDownLatch(MAX_PLAYS);
-    g.message().localListen(null,new IgniteBiPredicate<UUID,String>(){
+    ignite.message().localListen(null,new IgniteBiPredicate<UUID,String>(){
       @Override public boolean apply(      UUID nodeId,      String rcvMsg){
         System.out.println("Received message [msg=" + rcvMsg + ", sender="+ nodeId+ ']');
         try {
           if (cnt.getCount() == 1) {
-            g.message(g.cluster().forNodeId(nodeId)).send(null,"STOP");
+            ignite.message(ignite.cluster().forNodeId(nodeId)).send(null,"STOP");
             cnt.countDown();
             return false;
           }
- else           if ("PONG".equals(rcvMsg))           g.message(g.cluster().forNodeId(nodeId)).send(null,"PING");
+ else           if ("PONG".equals(rcvMsg))           ignite.message(ignite.cluster().forNodeId(nodeId)).send(null,"PING");
  else           throw new RuntimeException("Received unexpected message: " + rcvMsg);
           cnt.countDown();
           return true;
@@ -46,7 +46,7 @@
       }
     }
 );
-    g.message(nodeB).send(null,"PING");
+    ignite.message(nodeB).send(null,"PING");
     try {
       cnt.await();
     }
