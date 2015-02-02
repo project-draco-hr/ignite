@@ -1,8 +1,8 @@
 {
   if (e != null) {
     setRollbackOnly();
-    if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteInternalFuture<IgniteTxEx>,T>(){
-      @Override public T apply(      IgniteInternalFuture<IgniteTxEx> f){
+    if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteInternalFuture<IgniteInternalTx>,T>(){
+      @Override public T apply(      IgniteInternalFuture<IgniteInternalTx> f){
         throw new GridClosureException(e);
       }
     }
@@ -12,8 +12,8 @@
   if (!locked) {
     setRollbackOnly();
     final GridClosureException ex=new GridClosureException(new IgniteTxTimeoutCheckedException("Failed to " + "acquire lock within provided timeout for transaction [timeout=" + timeout() + ", tx="+ this+ ']'));
-    if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteInternalFuture<IgniteTxEx>,T>(){
-      @Override public T apply(      IgniteInternalFuture<IgniteTxEx> f){
+    if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteInternalFuture<IgniteInternalTx>,T>(){
+      @Override public T apply(      IgniteInternalFuture<IgniteInternalTx> f){
         throw ex;
       }
     }
@@ -25,8 +25,8 @@
     final T r=postLock(arg);
     if (commit && commitAfterLock()) {
       rollback=false;
-      return commitAsync().chain(new CX1<IgniteInternalFuture<IgniteTxEx>,T>(){
-        @Override public T applyx(        IgniteInternalFuture<IgniteTxEx> f) throws IgniteCheckedException {
+      return commitAsync().chain(new CX1<IgniteInternalFuture<IgniteInternalTx>,T>(){
+        @Override public T applyx(        IgniteInternalFuture<IgniteInternalTx> f) throws IgniteCheckedException {
           f.get();
           return r;
         }
@@ -37,8 +37,8 @@
     return new GridFinishedFuture<>(cctx.kernalContext(),r);
   }
  catch (  final IgniteCheckedException ex) {
-    if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteInternalFuture<IgniteTxEx>,T>(){
-      @Override public T apply(      IgniteInternalFuture<IgniteTxEx> f){
+    if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteInternalFuture<IgniteInternalTx>,T>(){
+      @Override public T apply(      IgniteInternalFuture<IgniteInternalTx> f){
         throw new GridClosureException(ex);
       }
     }

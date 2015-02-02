@@ -23,7 +23,7 @@
  else     U.warn(log,"Failed to create local transaction (was transaction rolled back?) [xid=" + tx.xid() + ", req="+ req+ ']');
   }
   if (tx != null) {
-    IgniteInternalFuture<IgniteTxEx<K,V>> fut=tx.prepareAsync(req.reads(),req.writes(),req.dhtVersions(),req.messageId(),req.miniId(),req.transactionNodes(),req.last(),req.lastBackups());
+    IgniteInternalFuture<IgniteInternalTx<K,V>> fut=tx.prepareAsync(req.reads(),req.writes(),req.dhtVersions(),req.messageId(),req.miniId(),req.transactionNodes(),req.last(),req.lastBackups());
     if (tx.isRollbackOnly()) {
       try {
         tx.rollback();
@@ -33,8 +33,8 @@
       }
     }
     final GridDhtTxLocal<K,V> tx0=tx;
-    fut.listenAsync(new CI1<IgniteInternalFuture<IgniteTxEx<K,V>>>(){
-      @Override public void apply(      IgniteInternalFuture<IgniteTxEx<K,V>> txFut){
+    fut.listenAsync(new CI1<IgniteInternalFuture<IgniteInternalTx<K,V>>>(){
+      @Override public void apply(      IgniteInternalFuture<IgniteInternalTx<K,V>> txFut){
         try {
           txFut.get();
         }
@@ -47,5 +47,5 @@
 );
     return fut;
   }
- else   return new GridFinishedFuture<>(ctx.kernalContext(),(IgniteTxEx<K,V>)null);
+ else   return new GridFinishedFuture<>(ctx.kernalContext(),(IgniteInternalTx<K,V>)null);
 }
