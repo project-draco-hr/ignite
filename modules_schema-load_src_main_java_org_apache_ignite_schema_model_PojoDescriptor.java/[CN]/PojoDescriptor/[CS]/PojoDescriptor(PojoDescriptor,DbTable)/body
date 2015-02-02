@@ -1,0 +1,37 @@
+{
+  parent=prn;
+  this.tbl=tbl;
+  fullDbName=tbl.schema() + "." + tbl.table();
+  valClsNamePrev=toJavaClassName(tbl.table());
+  valClsNameProp=new SimpleStringProperty(valClsNamePrev);
+  keyClsNamePrev=valClsNamePrev.isEmpty() ? "" : valClsNamePrev + "Key";
+  keyClsNameProp=new SimpleStringProperty(keyClsNamePrev);
+  useProp=new SimpleBooleanProperty(true);
+  useProp.addListener(new ChangeListener<Boolean>(){
+    @Override public void changed(    ObservableValue<? extends Boolean> val,    Boolean oldVal,    Boolean newVal){
+      for (      PojoDescriptor child : children)       child.useProp.set(newVal);
+      if (parent != null && !parent.children.isEmpty()) {
+        Iterator<PojoDescriptor> it=parent.children.iterator();
+        boolean parentIndeterminate=false;
+        boolean first=it.next().useProp.get();
+        while (it.hasNext()) {
+          if (it.next().useProp.get() != first) {
+            parentIndeterminate=true;
+            break;
+          }
+        }
+        parent.indeterminateProp.set(parentIndeterminate);
+        if (!parentIndeterminate)         parent.useProp.set(first);
+      }
+    }
+  }
+);
+  Collection<DbColumn> cols=tbl.columns();
+  List<PojoField> flds=new ArrayList<>(cols.size());
+  for (  DbColumn col : cols) {
+    PojoField fld=new PojoField(col.name(),col.type(),toJavaFieldName(col.name()),toJavaType(col.type(),col.nullable()).getName(),col.key(),col.nullable());
+    fld.owner(this);
+    flds.add(fld);
+  }
+  fields=FXCollections.observableList(flds);
+}

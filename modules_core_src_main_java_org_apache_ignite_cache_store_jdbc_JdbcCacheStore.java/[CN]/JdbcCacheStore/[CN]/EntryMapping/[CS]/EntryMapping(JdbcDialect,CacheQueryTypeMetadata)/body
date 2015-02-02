@@ -1,16 +1,17 @@
 {
   this.dialect=dialect;
-  this.typeMetadata=typeMetadata;
-  final Collection<CacheQueryTypeDescriptor> keyFields=typeMetadata.getKeyDescriptors();
-  Collection<CacheQueryTypeDescriptor> valFields=typeMetadata.getValueDescriptors();
-  uniqValFields=F.view(typeMetadata.getValueDescriptors(),new IgnitePredicate<CacheQueryTypeDescriptor>(){
-    @Override public boolean apply(    CacheQueryTypeDescriptor desc){
-      return !keyFields.contains(desc);
+  this.typeMeta=typeMeta;
+  tblMeta=typeMeta.getTableMetadata();
+  final Collection<CacheQueryTableColumnMetadata> keyFields=tblMeta.getKeyColumns();
+  Collection<CacheQueryTableColumnMetadata> valFields=tblMeta.getValueColumns();
+  uniqValFields=F.view(valFields,new IgnitePredicate<CacheQueryTableColumnMetadata>(){
+    @Override public boolean apply(    CacheQueryTableColumnMetadata col){
+      return !keyFields.contains(col);
     }
   }
 );
-  String schema=typeMetadata.getSchema();
-  String tblName=typeMetadata.getTableName();
+  String schema=tblMeta.getSchema();
+  String tblName=tblMeta.getTableName();
   keyCols=databaseColumns(keyFields);
   Collection<String> valCols=databaseColumns(valFields);
   Collection<String> uniqValCols=databaseColumns(uniqValFields);
