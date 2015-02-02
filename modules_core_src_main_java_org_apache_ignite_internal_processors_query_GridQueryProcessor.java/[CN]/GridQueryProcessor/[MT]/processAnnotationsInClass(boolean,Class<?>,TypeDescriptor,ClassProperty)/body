@@ -2,19 +2,19 @@
   if (U.isJdk(cls))   return;
   if (parent != null && parent.knowsClass(cls))   throw new IgniteCheckedException("Recursive reference found in type: " + cls.getName());
   if (parent == null) {
-    CacheQueryTextField txtAnnCls=cls.getAnnotation(CacheQueryTextField.class);
+    QueryTextField txtAnnCls=cls.getAnnotation(QueryTextField.class);
     if (txtAnnCls != null)     type.valueTextIndex(true);
-    CacheQueryGroupIndex grpIdx=cls.getAnnotation(CacheQueryGroupIndex.class);
+    QueryGroupIndex grpIdx=cls.getAnnotation(QueryGroupIndex.class);
     if (grpIdx != null)     type.addIndex(grpIdx.name(),SORTED);
-    CacheQueryGroupIndex.List grpIdxList=cls.getAnnotation(CacheQueryGroupIndex.List.class);
+    QueryGroupIndex.List grpIdxList=cls.getAnnotation(QueryGroupIndex.List.class);
     if (grpIdxList != null && !F.isEmpty(grpIdxList.value())) {
-      for (      CacheQueryGroupIndex idx : grpIdxList.value())       type.addIndex(idx.name(),SORTED);
+      for (      QueryGroupIndex idx : grpIdxList.value())       type.addIndex(idx.name(),SORTED);
     }
   }
   for (Class<?> c=cls; c != null && !c.equals(Object.class); c=c.getSuperclass()) {
     for (    Field field : c.getDeclaredFields()) {
-      CacheQuerySqlField sqlAnn=field.getAnnotation(CacheQuerySqlField.class);
-      CacheQueryTextField txtAnn=field.getAnnotation(CacheQueryTextField.class);
+      QuerySqlField sqlAnn=field.getAnnotation(QuerySqlField.class);
+      QueryTextField txtAnn=field.getAnnotation(QueryTextField.class);
       if (sqlAnn != null || txtAnn != null) {
         ClassProperty prop=new ClassProperty(field);
         prop.parent(parent);
@@ -23,8 +23,8 @@
       }
     }
     for (    Method mtd : c.getDeclaredMethods()) {
-      CacheQuerySqlField sqlAnn=mtd.getAnnotation(CacheQuerySqlField.class);
-      CacheQueryTextField txtAnn=mtd.getAnnotation(CacheQueryTextField.class);
+      QuerySqlField sqlAnn=mtd.getAnnotation(QuerySqlField.class);
+      QueryTextField txtAnn=mtd.getAnnotation(QueryTextField.class);
       if (sqlAnn != null || txtAnn != null) {
         if (mtd.getParameterTypes().length != 0)         throw new IgniteCheckedException("Getter with CacheQuerySqlField " + "annotation cannot have parameters: " + mtd);
         ClassProperty prop=new ClassProperty(mtd);
