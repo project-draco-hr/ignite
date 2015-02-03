@@ -9,16 +9,16 @@
       long stop=0;
       while (true) {
         try {
-          T data=(T)cache.getAndRemove(key);
+          T data=(T)cache.remove(key,null);
           if (data != null)           return data;
           if (stop == 0)           stop=U.currentTimeMillis() + RETRY_TIMEOUT;
           while (U.currentTimeMillis() < stop) {
-            data=(T)cache.getAndRemove(key);
+            data=(T)cache.remove(key,null);
             if (data != null)             return data;
           }
           break;
         }
- catch (        CachePartialUpdateException e) {
+ catch (        CachePartialUpdateCheckedException e) {
           if (cnt++ == MAX_UPDATE_RETRIES)           throw e;
  else {
             U.warn(log,"Failed to remove queue item, will retry [err=" + e + ']');
@@ -30,6 +30,6 @@
     }
   }
  catch (  IgniteCheckedException e) {
-    throw new IgniteException(e);
+    throw U.convertException(e);
   }
 }

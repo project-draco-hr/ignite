@@ -3,7 +3,7 @@
     client=createClient(cfg);
   }
  catch (  GridClientException e) {
-    throw new IgniteCheckedException("Failed to initialise embedded client.",e);
+    throw new IgniteException("Failed to initialise embedded client.",e);
   }
   GridNioServerListener<GridClientMessage> lsnr;
   try {
@@ -16,7 +16,7 @@
     lsnr=new GridTcpRouterNioListenerOsImpl(log,client);
   }
 catch (  NoSuchMethodException|IllegalAccessException|InstantiationException|InvocationTargetException e) {
-    throw new IgniteCheckedException("Failed to create NIO listener.",e);
+    throw new IgniteException("Failed to create NIO listener.",e);
   }
   parser=new GridTcpRouterNioParser();
   final InetAddress hostAddr;
@@ -24,7 +24,7 @@ catch (  NoSuchMethodException|IllegalAccessException|InstantiationException|Inv
     hostAddr=InetAddress.getByName(cfg.getHost());
   }
  catch (  UnknownHostException e) {
-    throw new IgniteCheckedException("Failed to resolve grid address for configured host: " + cfg.getHost(),e);
+    throw new IgniteException("Failed to resolve grid address for configured host: " + cfg.getHost(),e);
   }
   SSLContext sslCtx;
   try {
@@ -32,7 +32,7 @@ catch (  NoSuchMethodException|IllegalAccessException|InstantiationException|Inv
     sslCtx=sslCtxFactory == null ? null : sslCtxFactory.createSslContext();
   }
  catch (  SSLException e) {
-    throw new IgniteCheckedException("Failed to create SSL context.",e);
+    throw new IgniteException("Failed to create SSL context.",e);
   }
   for (int port=cfg.getPort(), last=port + cfg.getPortRange(); port <= last; port++) {
     if (startTcpServer(hostAddr,port,lsnr,parser,cfg.isNoDelay(),sslCtx,cfg.isSslClientAuth(),cfg.isSslClientAuth())) {
@@ -43,7 +43,7 @@ catch (  NoSuchMethodException|IllegalAccessException|InstantiationException|Inv
     }
  else     U.warn(log,"TCP REST router failed to start on endpoint: " + hostAddr.getHostAddress() + ":"+ port+ ". Will try next port within allowed port range.");
   }
-  if (bindPort == 0)   throw new IgniteCheckedException("Failed to bind TCP router server (possibly all ports in range " + "are in use) [firstPort=" + cfg.getPort() + ", lastPort="+ (cfg.getPort() + cfg.getPortRange())+ ", addr="+ hostAddr+ ']');
+  if (bindPort == 0)   throw new IgniteException("Failed to bind TCP router server (possibly all ports in range " + "are in use) [firstPort=" + cfg.getPort() + ", lastPort="+ (cfg.getPort() + cfg.getPortRange())+ ", addr="+ hostAddr+ ']');
   try {
     ObjectName objName=U.registerMBean(ManagementFactory.getPlatformMBeanServer(),"Router","TCP Router " + id,getClass().getSimpleName(),this,GridTcpRouterMBean.class);
     if (log.isDebugEnabled())     log.debug("Registered MBean: " + objName);

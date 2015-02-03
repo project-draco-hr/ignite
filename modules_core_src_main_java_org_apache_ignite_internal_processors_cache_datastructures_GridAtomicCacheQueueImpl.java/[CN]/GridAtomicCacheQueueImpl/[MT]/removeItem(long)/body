@@ -1,5 +1,5 @@
 {
-  Long idx=(Long)cache.invoke(queueKey,new RemoveProcessor(id,rmvIdx));
+  Long idx=(Long)cache.invoke(queueKey,new RemoveProcessor(id,rmvIdx)).get();
   if (idx != null) {
     checkRemoved(idx);
     GridCacheQueueItemKey key=itemKey(idx);
@@ -7,14 +7,14 @@
     long stop=0;
     while (true) {
       try {
-        if (cache.remove(key))         return;
+        if (cache.removex(key,null))         return;
         if (stop == 0)         stop=U.currentTimeMillis() + RETRY_TIMEOUT;
         while (U.currentTimeMillis() < stop) {
-          if (cache.remove(key))           return;
+          if (cache.removex(key,null))           return;
         }
         break;
       }
- catch (      CachePartialUpdateException e) {
+ catch (      CachePartialUpdateCheckedException e) {
         if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
  else {
           U.warn(log,"Failed to add items, will retry [err=" + e + ']');
