@@ -1,17 +1,17 @@
 {
   ses.setAttribute("fail",true);
   return Collections.singletonMap(new ComputeJobAdapter(arg){
-    @SuppressWarnings({"RedundantTypeArguments"}) @Override public Serializable execute() throws IgniteCheckedException {
+    @SuppressWarnings({"RedundantTypeArguments"}) @Override public Serializable execute(){
       boolean fail;
       try {
         fail=ses.<String,Boolean>waitForAttribute("fail",0);
       }
  catch (      InterruptedException e) {
-        throw new IgniteCheckedException("Got interrupted while waiting for attribute to be set.",e);
+        throw new IgniteException("Got interrupted while waiting for attribute to be set.",e);
       }
       if (fail) {
         ses.setAttribute("fail",false);
-        throw new IgniteCheckedException("Job exception.");
+        throw new IgniteException("Job exception.");
       }
       return Integer.parseInt(this.<String>argument(0));
     }
