@@ -1,2 +1,50 @@
 {
+  Map<IgniteBiTuple<ClusterNode,Boolean>,GridDistributedTxMapping<K,V>> mappings=new HashMap<>();
+  long topVer=tx.topologyVersion();
+  txMapping=new GridDhtTxMapping<>();
+  for (  IgniteTxEntry<K,V> txEntry : tx.allEntries()) {
+    GridCacheContext<K,V> cacheCtx=txEntry.context();
+    List<ClusterNode> nodes=cacheCtx.affinity().nodes(txEntry.key(),topVer);
+    ClusterNode primary=F.first(nodes);
+    boolean near=cacheCtx.isNear();
+    IgniteBiTuple<ClusterNode,Boolean> key=F.t(primary,near);
+    GridDistributedTxMapping<K,V> nodeMapping=mappings.get(key);
+    if (nodeMapping == null) {
+      nodeMapping=new GridDistributedTxMapping<>(primary);
+      nodeMapping.near(cacheCtx.isNear());
+      mappings.put(key,nodeMapping);
+    }
+    txEntry.nodeId(primary.id());
+    nodeMapping.add(txEntry);
+    txMapping.addMapping(nodes);
+  }
+  tx.transactionNodes(txMapping.transactionNodes());
+  checkOnePhase();
+  for (  final GridDistributedTxMapping<K,V> m : mappings.values()) {
+    final ClusterNode node=m.node();
+    GridNearTxPrepareRequest<K,V> req=new GridNearTxPrepareRequest<>(futId,tx.topologyVersion(),tx,m.reads(),m.writes(),null,false,m.near(),txMapping.transactionNodes(),true,txMapping.transactionNodes().get(node.id()),tx.onePhaseCommit(),tx.needReturnValue() && tx.implicit(),tx.implicitSingle(),tx.subjectId(),tx.taskNameHash());
+    for (    IgniteTxEntry<K,V> txEntry : m.writes()) {
+      if (txEntry.op() == TRANSFORM)       req.addDhtVersion(txEntry.txKey(),null);
+    }
+    final MiniFuture fut=new MiniFuture(m,null);
+    req.miniId(fut.futureId());
+    add(fut);
+    if (node.isLocal()) {
+      cctx.tm().txHandler().prepareTx(node.id(),tx,req,new CI1<GridNearTxPrepareResponse<K,V>>(){
+        @Override public void apply(        GridNearTxPrepareResponse<K,V> res){
+          fut.onResult(node.id(),res);
+        }
+      }
+);
+    }
+ else {
+      try {
+        cctx.io().send(node,req);
+      }
+ catch (      IgniteCheckedException e) {
+        fut.onResult(e);
+      }
+    }
+  }
+  markInitialized();
 }
