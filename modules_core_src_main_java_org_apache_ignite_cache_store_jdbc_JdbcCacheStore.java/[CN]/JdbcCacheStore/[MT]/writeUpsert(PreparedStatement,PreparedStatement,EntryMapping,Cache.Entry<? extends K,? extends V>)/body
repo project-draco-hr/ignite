@@ -1,0 +1,19 @@
+{
+  for (int attempt=0; attempt < MAX_ATTEMPT_WRITE_COUNT; attempt++) {
+    int i=fillValueParameters(updStmt,1,em,entry.getValue());
+    fillKeyParameters(updStmt,i,em,entry.getKey());
+    if (updStmt.executeUpdate() == 0) {
+      i=fillKeyParameters(insStmt,em,entry.getKey());
+      fillValueParameters(insStmt,i,em,entry.getValue());
+      try {
+        insStmt.executeUpdate();
+      }
+ catch (      SQLException e) {
+        if (e.getErrorCode() == 23505)         continue;
+        throw e;
+      }
+    }
+    return;
+  }
+  throw new CacheWriterException("Failed write entry to database: " + entry);
+}
