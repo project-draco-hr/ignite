@@ -1,6 +1,6 @@
 {
-  final CX1<IgniteFuture<Object>,Object> passThrough=new CX1<IgniteFuture<Object>,Object>(){
-    @Override public Object applyx(    IgniteFuture<Object> f) throws IgniteCheckedException {
+  final CX1<IgniteInternalFuture<Object>,Object> passThrough=new CX1<IgniteInternalFuture<Object>,Object>(){
+    @Override public Object applyx(    IgniteInternalFuture<Object> f) throws IgniteCheckedException {
       return f.get();
     }
   }
@@ -12,26 +12,26 @@
   ctx.start();
   try {
     GridFutureAdapter<Object> fut=new GridFutureAdapter<>(ctx);
-    IgniteFuture<Object> chain=fut.chain(passThrough);
+    IgniteInternalFuture<Object> chain=fut.chain(passThrough);
     assertFalse(fut.isDone());
     assertFalse(chain.isDone());
     try {
       chain.get(20);
       fail("Expects timeout exception.");
     }
- catch (    IgniteFutureTimeoutException e) {
+ catch (    IgniteFutureTimeoutCheckedException e) {
       info("Expected timeout exception: " + e.getMessage());
     }
     fut.onDone("result");
     assertEquals("result",chain.get(1));
     fut=new GridFutureAdapter<>(ctx);
     chain=fut.chain(passThrough);
-    fut.onDone(new ClusterGroupEmptyException("test exception"));
+    fut.onDone(new ClusterGroupEmptyCheckedException("test exception"));
     try {
       chain.get();
       fail("Expects failed with exception.");
     }
- catch (    ClusterGroupEmptyException e) {
+ catch (    ClusterGroupEmptyCheckedException e) {
       info("Expected exception: " + e.getMessage());
     }
     fut=new GridFutureAdapter<>(ctx);

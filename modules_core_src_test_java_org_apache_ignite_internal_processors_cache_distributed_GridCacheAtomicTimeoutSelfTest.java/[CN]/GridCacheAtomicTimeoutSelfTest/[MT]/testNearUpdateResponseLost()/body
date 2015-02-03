@@ -5,7 +5,7 @@
   cache.put(key,0);
   TestCommunicationSpi commSpi=(TestCommunicationSpi)grid(1).configuration().getCommunicationSpi();
   commSpi.skipNearResponse=true;
-  IgniteFuture<Object> fut=cache.putAsync(key,1);
+  IgniteInternalFuture<Object> fut=cache.putAsync(key,1);
   Map<UUID,GridCommunicationClient> clients=U.field(commSpi,"clients");
   GridTcpNioCommunicationClient client=(GridTcpNioCommunicationClient)clients.get(grid(0).localNode().id());
   client.session().close().get();
@@ -13,6 +13,6 @@
     fut.get();
     fail();
   }
- catch (  CacheAtomicUpdateTimeoutException ignore) {
+ catch (  CacheAtomicUpdateTimeoutCheckedException ignore) {
   }
 }

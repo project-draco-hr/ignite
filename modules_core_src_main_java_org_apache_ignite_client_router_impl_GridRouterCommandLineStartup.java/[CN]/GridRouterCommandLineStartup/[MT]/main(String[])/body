@@ -1,5 +1,5 @@
 {
-  X.println("   __________  ________________ ","  /  _/ ___/ |/ /  _/_  __/ __/ "," _/ // (_ /    // /  / / / _/   ","/___/\\___/_/|_/___/ /_/ /___/  "," ","GridGain Router Command Line Loader","ver. " + ACK_VER,COPYRIGHT," ");
+  X.println("   __________  ________________ ","  /  _/ ___/ |/ /  _/_  __/ __/ "," _/ // (_ /    // /  / / / _/   ","/___/\\___/_/|_/___/ /_/ /___/  "," ","Ignite Router Command Line Loader","ver. " + ACK_VER,COPYRIGHT," ");
   IgniteSpringProcessor spring=SPRING.create(false);
   if (args.length < 1) {
     X.error("Missing XML configuration path.");
@@ -8,14 +8,21 @@
   String cfgPath=args[0];
   URL cfgUrl=U.resolveGridGainUrl(cfgPath);
   if (cfgUrl == null) {
-    X.error("Spring XML file not found (is GRIDGAIN_HOME set?): " + cfgPath);
+    X.error("Spring XML file not found (is IGNITE_HOME set?): " + cfgPath);
     System.exit(1);
   }
   boolean isLog4jUsed=U.gridClassLoader().getResource("org/apache/log4j/Appender.class") != null;
   IgniteBiTuple<Object,Object> t=null;
   Collection<Handler> savedHnds=null;
-  if (isLog4jUsed)   t=U.addLog4jNoOpLogger();
- else   savedHnds=U.addJavaNoOpLogger();
+  if (isLog4jUsed) {
+    try {
+      t=U.addLog4jNoOpLogger();
+    }
+ catch (    Exception e) {
+      isLog4jUsed=false;
+    }
+  }
+  if (!isLog4jUsed)   savedHnds=U.addJavaNoOpLogger();
   Map<Class<?>,Object> beans;
   try {
     beans=spring.loadBeans(cfgUrl,IgniteLogger.class,GridTcpRouterConfiguration.class);

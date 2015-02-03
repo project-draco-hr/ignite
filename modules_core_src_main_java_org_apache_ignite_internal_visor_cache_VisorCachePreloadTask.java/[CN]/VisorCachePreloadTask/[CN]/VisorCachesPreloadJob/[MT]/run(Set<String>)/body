@@ -1,8 +1,13 @@
 {
-  Collection<IgniteFuture<?>> futs=new ArrayList<>();
-  for (  GridCache c : g.cachesx()) {
-    if (cacheNames.contains(c.name()))     futs.add(c.forceRepartition());
+  try {
+    Collection<IgniteInternalFuture<?>> futs=new ArrayList<>();
+    for (    GridCache c : g.cachesx()) {
+      if (cacheNames.contains(c.name()))       futs.add(c.forceRepartition());
+    }
+    for (    IgniteInternalFuture f : futs)     f.get();
+    return null;
   }
-  for (  IgniteFuture f : futs)   f.get();
-  return null;
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
 }

@@ -4,7 +4,7 @@
   final AtomicReference<Exception> err=new AtomicReference<>();
   ggfs.create(FILE,false).close();
   int threadCnt=5;
-  IgniteFuture<?> fut=multithreadedAsync(new Runnable(){
+  IgniteInternalFuture<?> fut=multithreadedAsync(new Runnable(){
     @Override public void run(){
       while (!stop.get()) {
         IgniteFsOutputStream os=null;
@@ -15,11 +15,11 @@
           os.close();
           chunksCtr.incrementAndGet();
         }
- catch (        IgniteCheckedException ignore) {
+ catch (        IgniteInterruptedCheckedException|IgniteException ignore) {
           try {
             U.sleep(10);
           }
- catch (          IgniteInterruptedException ignored) {
+ catch (          IgniteInterruptedCheckedException ignored) {
           }
         }
 catch (        IOException e) {
