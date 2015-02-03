@@ -9,7 +9,13 @@
         insStmt.executeUpdate();
       }
  catch (      SQLException e) {
-        if (e.getErrorCode() == 23505)         continue;
+        String sqlState=e.getSQLState();
+        SQLException nested=e.getNextException();
+        while (sqlState == null && nested != null) {
+          sqlState=nested.getSQLState();
+          nested=nested.getNextException();
+        }
+        if (sqlState != null && Integer.valueOf(sqlState) == 23505)         continue;
         throw e;
       }
     }
