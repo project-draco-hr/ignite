@@ -1,7 +1,5 @@
 {
   ClusterGroup nodes=ctx.kernalContext().grid().cluster().forCacheNodes(ctx.name());
-  IgniteCompute comp=ctx.kernalContext().grid().compute(nodes).withNoFailover();
-  comp=comp.withAsync();
-  comp.broadcast(new LoadCacheClosure<>(ctx.name(),p,args));
-  return comp.future();
+  ctx.kernalContext().task().setThreadContext(TC_NO_FAILOVER,true);
+  return ctx.kernalContext().closure().callAsync(BROADCAST,Arrays.asList(new LoadCacheClosure<>(ctx.name(),p,args)),nodes.nodes());
 }

@@ -4,7 +4,7 @@
   if (fut != null)   return fut;
   if (!rollbackFut.compareAndSet(null,fut=new GridNearTxFinishFuture<>(cctx,this,false)))   return rollbackFut.get();
   cctx.mvcc().addFuture(fut);
-  IgniteInternalFuture<IgniteTxEx<K,V>> prepFut=this.prepFut.get();
+  IgniteInternalFuture<IgniteInternalTx<K,V>> prepFut=this.prepFut.get();
   if (prepFut == null || prepFut.isDone()) {
     try {
       if (prepFut != null)       prepFut.get();
@@ -21,8 +21,8 @@
     }
   }
  else {
-    prepFut.listenAsync(new CI1<IgniteInternalFuture<IgniteTxEx<K,V>>>(){
-      @Override public void apply(      IgniteInternalFuture<IgniteTxEx<K,V>> f){
+    prepFut.listenAsync(new CI1<IgniteInternalFuture<IgniteInternalTx<K,V>>>(){
+      @Override public void apply(      IgniteInternalFuture<IgniteInternalTx<K,V>> f){
         try {
           f.get();
         }
