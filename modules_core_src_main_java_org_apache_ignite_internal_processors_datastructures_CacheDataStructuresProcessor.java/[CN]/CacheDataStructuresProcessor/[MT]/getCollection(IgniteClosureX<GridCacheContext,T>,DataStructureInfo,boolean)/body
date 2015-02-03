@@ -1,0 +1,32 @@
+{
+  Map<String,DataStructureInfo> dsMap=utilityCache.get(DATA_STRUCTURES_KEY);
+  if (!create && (dsMap == null || !dsMap.containsKey(dsInfo.name)))   return null;
+  IgniteCheckedException err=validateDataStructure(dsMap,dsInfo,create);
+  if (err != null)   throw err;
+  T col;
+  try (IgniteInternalTx tx=utilityCache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
+    final String cacheName;
+    if (create) {
+      T2<String,IgniteCheckedException> res=utilityCache.invoke(DATA_STRUCTURES_KEY,new AddCollectionProcessor(dsInfo)).get();
+      err=res.get2();
+      if (err != null)       throw err;
+      cacheName=res.get1();
+    }
+ else {
+      T3<Boolean,String,IgniteCheckedException> res=utilityCache.invoke(DATA_STRUCTURES_KEY,new ContainsCollectionProcessor(dsInfo)).get();
+      err=res.get3();
+      if (err != null)       throw err;
+      if (!res.get1())       return null;
+      cacheName=res.get2();
+    }
+    final GridCacheContext cacheCtx=ctx.cache().internalCache(cacheName).context();
+    col=ctx.closure().callLocalSafe(new Callable<T>(){
+      @Override public T call() throws Exception {
+        return c.applyx(cacheCtx);
+      }
+    }
+,false).get();
+    tx.commit();
+  }
+   return col;
+}

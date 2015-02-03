@@ -5,26 +5,12 @@
     if (cap <= 0)     cap=Integer.MAX_VALUE;
     if (ctx.cache().publicCache(cfg.getCacheName()) == null)     throw new IgniteCheckedException("Cache for collection is not configured: " + cfg.getCacheName());
   }
-  Map<String,DataStructureInfo> dsMap=utilityCache.get(DATA_STRUCTURES_KEY);
-  if (!create && (dsMap == null || !dsMap.containsKey(name)))   return null;
-  DataStructureInfo dsInfo=new DataStructureInfo(name,DataStructureType.QUEUE,create ? new QueueInfo(cfg.isCollocated(),cap,cfg.getCacheName()) : null);
-  IgniteCheckedException err=validateDataStructure(utilityCache.get(DATA_STRUCTURES_KEY),dsInfo,create);
-  if (err != null)   throw err;
-  try (IgniteInternalTx tx=utilityCache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
-    dsMap=utilityCache.get(DATA_STRUCTURES_KEY);
-    validateDataStructure(dsMap,dsInfo,create);
-    String cacheName;
-    if (create) {
-      if (dsMap == null) {
-        dsMap=new HashMap<>();
-        dsMap.put(name,dsInfo);
-      }
-      DataStructureInfo info=dsMap.get(name);
-      if (info == null)       dsMap.put(name,info);
+  DataStructureInfo dsInfo=new DataStructureInfo(name,DataStructureType.QUEUE,create ? new QueueInfo(cfg.getCacheName(),cfg.isCollocated(),cap) : null);
+  final int cap0=cap;
+  return getCollection(new IgniteClosureX<GridCacheContext,IgniteQueue<T>>(){
+    @Override public IgniteQueue<T> applyx(    GridCacheContext ctx) throws IgniteCheckedException {
+      return ctx.dataStructures().queue(name,cap0,create && cfg.isCollocated(),create);
     }
- else     if (dsMap == null || !dsMap.containsKey(name))     return null;
-    tx.commit();
   }
-   GridCacheAdapter cache=cacheForCollection(cfg);
-  return cache.context().dataStructures().queue(name,cap,create && cfg.isCollocated(),create);
+,dsInfo,create);
 }

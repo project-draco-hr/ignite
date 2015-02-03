@@ -1,0 +1,20 @@
+{
+  if (type != dsInfo.type) {
+    return new IgniteCheckedException("Another data structure with the same name already created " + "[name=" + name + ", newType="+ dsInfo.type.className()+ ", existingType="+ type.className()+ ']');
+  }
+  if (create) {
+    if (type == DataStructureType.QUEUE || type == DataStructureType.SET) {
+      CollectionInfo oldInfo=(CollectionInfo)info;
+      CollectionInfo newInfo=(CollectionInfo)dsInfo.info;
+      if (oldInfo.collocated != newInfo.collocated) {
+        return new IgniteCheckedException("Another collection with the same name but different " + "configuration already created [name=" + name + ", newCollocated="+ newInfo.collocated+ ", existingCollocated="+ newInfo.collocated+ ']');
+      }
+      if (type == DataStructureType.QUEUE) {
+        if (((QueueInfo)oldInfo).cap != ((QueueInfo)newInfo).cap) {
+          return new IgniteCheckedException("Another queue with the same name but different " + "configuration already created [name=" + name + ", newCapacity="+ ((QueueInfo)newInfo).cap+ ", existingCapacity="+ ((QueueInfo)oldInfo).cap+ ']');
+        }
+      }
+    }
+  }
+  return null;
+}

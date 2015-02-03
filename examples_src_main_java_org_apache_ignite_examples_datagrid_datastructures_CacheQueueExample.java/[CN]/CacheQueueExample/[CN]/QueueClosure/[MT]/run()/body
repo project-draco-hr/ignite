@@ -1,20 +1,15 @@
 {
-  try {
-    IgniteQueue<String> queue=Ignition.ignite().queue(queueName,null,0,false);
-    if (put) {
-      UUID locId=Ignition.ignite().cluster().localNode().id();
-      for (int i=0; i < RETRIES; i++) {
-        String item=locId + "_" + Integer.toString(i);
-        queue.put(item);
-        System.out.println("Queue item has been added: " + item);
-      }
-    }
- else {
-      for (int i=0; i < RETRIES; i++)       System.out.println("Queue item has been read from queue head: " + queue.take());
-      for (int i=0; i < RETRIES; i++)       System.out.println("Queue item has been read from queue head: " + queue.poll());
+  IgniteQueue<String> queue=Ignition.ignite().queue(queueName,null,0,false);
+  if (put) {
+    UUID locId=Ignition.ignite().cluster().localNode().id();
+    for (int i=0; i < RETRIES; i++) {
+      String item=locId + "_" + Integer.toString(i);
+      queue.put(item);
+      System.out.println("Queue item has been added: " + item);
     }
   }
- catch (  IgniteCheckedException e) {
-    throw new RuntimeException(e);
+ else {
+    for (int i=0; i < RETRIES; i++)     System.out.println("Queue item has been read from queue head: " + queue.take());
+    for (int i=0; i < RETRIES; i++)     System.out.println("Queue item has been read from queue head: " + queue.poll());
   }
 }

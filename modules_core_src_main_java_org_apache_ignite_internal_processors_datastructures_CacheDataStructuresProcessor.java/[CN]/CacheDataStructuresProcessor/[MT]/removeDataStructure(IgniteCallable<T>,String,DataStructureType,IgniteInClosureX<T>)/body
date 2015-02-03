@@ -1,0 +1,20 @@
+{
+  Map<String,DataStructureInfo> dsMap=utilityCache.get(DATA_STRUCTURES_KEY);
+  if (dsMap == null || !dsMap.containsKey(name))   return;
+  DataStructureInfo dsInfo=new DataStructureInfo(name,type,null);
+  IgniteCheckedException err=validateDataStructure(dsMap,dsInfo,false);
+  if (err != null)   throw err;
+  T rmvInfo;
+  try (IgniteInternalTx tx=utilityCache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
+    T2<Boolean,IgniteCheckedException> res=utilityCache.invoke(DATA_STRUCTURES_KEY,new RemoveDataStructureProcessor(dsInfo)).get();
+    err=res.get2();
+    if (err != null)     throw err;
+    if (!res.get1()) {
+      tx.commit();
+      return;
+    }
+    rmvInfo=ctx.closure().callLocalSafe(c,false).get();
+    tx.commit();
+  }
+   if (afterRmv != null && rmvInfo != null)   afterRmv.applyx(rmvInfo);
+}
