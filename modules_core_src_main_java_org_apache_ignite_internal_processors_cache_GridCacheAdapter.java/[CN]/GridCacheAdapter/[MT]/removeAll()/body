@@ -1,12 +1,11 @@
 {
   try {
-    if (F.isEmptyOrNulls(filter))     filter=ctx.trueArray();
     long topVer;
     do {
       topVer=ctx.affinity().affinityTopologyVersion();
       Collection<ClusterNode> nodes=ctx.grid().forCache(name()).nodes();
       IgniteFuture<Object> fut=null;
-      if (!nodes.isEmpty())       fut=ctx.closures().callAsyncNoFailover(BROADCAST,new GlobalRemoveAllCallable<>(name(),topVer,REMOVE_ALL_BATCH_SIZE,filter),nodes,true);
+      if (!nodes.isEmpty())       fut=ctx.closures().callAsyncNoFailover(BROADCAST,new GlobalRemoveAllCallable<>(name(),topVer,REMOVE_ALL_BATCH_SIZE),nodes,true);
       if (fut != null)       fut.get();
     }
  while (ctx.affinity().affinityTopologyVersion() > topVer);
