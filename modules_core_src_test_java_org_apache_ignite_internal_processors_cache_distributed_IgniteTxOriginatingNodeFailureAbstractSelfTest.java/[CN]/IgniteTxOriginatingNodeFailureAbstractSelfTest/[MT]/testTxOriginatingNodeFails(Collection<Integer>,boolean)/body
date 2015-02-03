@@ -1,8 +1,8 @@
 {
   assertFalse(keys.isEmpty());
-  final Collection<GridKernal> grids=new ArrayList<>();
+  final Collection<IgniteKernal> grids=new ArrayList<>();
   ClusterNode txNode=grid(originatingNode()).localNode();
-  for (int i=1; i < gridCount(); i++)   grids.add((GridKernal)grid(i));
+  for (int i=1; i < gridCount(); i++)   grids.add((IgniteKernal)grid(i));
   final Map<Integer,String> map=new HashMap<>();
   final String initVal="initialValue";
   for (  Integer key : keys) {
@@ -10,7 +10,7 @@
     map.put(key,String.valueOf(key));
   }
   Map<Integer,Collection<ClusterNode>> nodeMap=new HashMap<>();
-  GridCacheAdapter<Integer,String> cache=((GridKernal)grid(1)).internalCache();
+  GridCacheAdapter<Integer,String> cache=((IgniteKernal)grid(1)).internalCache();
   info("Node being checked: " + grid(1).localNode().id());
   for (  Integer key : keys) {
     Collection<ClusterNode> nodes=new ArrayList<>();
@@ -18,7 +18,7 @@
     nodes.remove(txNode);
     nodeMap.put(key,nodes);
   }
-  info("Starting tx [values=" + map + ", topVer="+ ((GridKernal)grid(1)).context().discovery().topologyVersion()+ ']');
+  info("Starting tx [values=" + map + ", topVer="+ ((IgniteKernal)grid(1)).context().discovery().topologyVersion()+ ']');
   if (partial)   ignoreMessages(grid(1).localNode().id(),ignoreMessageClass());
   final Ignite txIgniteNode=G.ignite(txNode.id());
   GridTestUtils.runAsync(new Callable<Object>(){
@@ -26,12 +26,12 @@
       GridCache<Integer,String> cache=txIgniteNode.cache(null);
       assertNotNull(cache);
       IgniteTxProxyImpl tx=(IgniteTxProxyImpl)cache.txStart();
-      IgniteTxEx txEx=GridTestUtils.getFieldValue(tx,"tx");
+      IgniteInternalTx txEx=GridTestUtils.getFieldValue(tx,"tx");
       cache.putAll(map);
       try {
         txEx.prepareAsync().get(3,TimeUnit.SECONDS);
       }
- catch (      IgniteFutureTimeoutException ignored) {
+ catch (      IgniteFutureTimeoutCheckedException ignored) {
         info("Failed to wait for prepare future completion: " + partial);
       }
       return null;
@@ -43,7 +43,7 @@
   info("Stopped grid, waiting for transactions to complete.");
   boolean txFinished=GridTestUtils.waitForCondition(new GridAbsPredicate(){
     @Override public boolean apply(){
-      for (      GridKernal g : grids) {
+      for (      IgniteKernal g : grids) {
         GridCacheSharedContext<Object,Object> ctx=g.context().cache().context();
         int txNum=ctx.tm().idMapSize();
         if (txNum != 0)         return false;

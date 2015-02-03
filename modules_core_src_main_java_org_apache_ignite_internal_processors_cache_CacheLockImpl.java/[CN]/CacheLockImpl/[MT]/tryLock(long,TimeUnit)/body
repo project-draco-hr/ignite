@@ -3,13 +3,13 @@
   if (time <= 0)   return tryLock();
   GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
-    IgniteFuture<Boolean> fut=delegate.lockAllAsync(keys,unit.toMillis(time));
+    IgniteInternalFuture<Boolean> fut=delegate.lockAllAsync(keys,unit.toMillis(time));
     try {
       boolean res=fut.get();
       if (res)       incrementLockCounter();
       return res;
     }
- catch (    IgniteInterruptedException e) {
+ catch (    IgniteInterruptedCheckedException e) {
       if (!fut.cancel()) {
         if (fut.isDone()) {
           Boolean res=fut.get();

@@ -23,7 +23,7 @@
  else     U.warn(log,"Failed to create local transaction (was transaction rolled back?) [xid=" + tx.xid() + ", req="+ req+ ']');
   }
   if (tx != null) {
-    IgniteFuture<IgniteTxEx<K,V>> fut=tx.prepareAsync(req.reads(),req.writes(),req.dhtVersions(),req.messageId(),req.miniId(),req.transactionNodes(),req.last(),req.lastBackups());
+    IgniteInternalFuture<IgniteInternalTx<K,V>> fut=tx.prepareAsync(req.reads(),req.writes(),req.dhtVersions(),req.messageId(),req.miniId(),req.transactionNodes(),req.last(),req.lastBackups());
     if (tx.isRollbackOnly()) {
       try {
         tx.rollback();
@@ -33,19 +33,19 @@
       }
     }
     final GridDhtTxLocal<K,V> tx0=tx;
-    fut.listenAsync(new CI1<IgniteFuture<IgniteTxEx<K,V>>>(){
-      @Override public void apply(      IgniteFuture<IgniteTxEx<K,V>> txFut){
+    fut.listenAsync(new CI1<IgniteInternalFuture<IgniteInternalTx<K,V>>>(){
+      @Override public void apply(      IgniteInternalFuture<IgniteInternalTx<K,V>> txFut){
         try {
           txFut.get();
         }
  catch (        IgniteCheckedException e) {
           tx0.setRollbackOnly();
-          if (!(e instanceof IgniteTxOptimisticException))           U.error(log,"Failed to prepare DHT transaction: " + tx0,e);
+          if (!(e instanceof IgniteTxOptimisticCheckedException))           U.error(log,"Failed to prepare DHT transaction: " + tx0,e);
         }
       }
     }
 );
     return fut;
   }
- else   return new GridFinishedFuture<>(ctx.kernalContext(),(IgniteTxEx<K,V>)null);
+ else   return new GridFinishedFuture<>(ctx.kernalContext(),(IgniteInternalTx<K,V>)null);
 }

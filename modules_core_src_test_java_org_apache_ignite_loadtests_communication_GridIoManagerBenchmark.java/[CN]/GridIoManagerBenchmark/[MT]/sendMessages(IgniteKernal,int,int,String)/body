@@ -1,0 +1,53 @@
+{
+  X.println(">>> Sending messages.");
+  g.context().io().addMessageListener(TEST_TOPIC,new SenderMessageListener());
+  Thread collector=startDaemon(new Runnable(){
+    @Override public void run(){
+      final long initTs=System.currentTimeMillis();
+      long ts=initTs;
+      long queries=msgCntr.sum();
+      GridCumulativeAverage qpsAvg=new GridCumulativeAverage();
+      try {
+        while (!Thread.currentThread().isInterrupted()) {
+          U.sleep(10000);
+          long newTs=System.currentTimeMillis();
+          long newQueries=msgCntr.sum();
+          long executed=newQueries - queries;
+          long time=newTs - ts;
+          long qps=executed * 1000 / time;
+          boolean recordAvg=ts - initTs > WARM_UP_DUR;
+          if (recordAvg)           qpsAvg.update(qps);
+          X.println("Communication benchmark [qps=" + qps + (recordAvg ? ", qpsAvg=" + qpsAvg : "")+ ", executed="+ executed+ ", time="+ time+ ']');
+          ts=newTs;
+          queries=newQueries;
+        }
+      }
+ catch (      IgniteInterruptedCheckedException ignored) {
+      }
+      X.println("Average QPS: " + qpsAvg);
+      if (outputFilename != null) {
+        try {
+          X.println("Saving results to output file: " + outputFilename);
+          appendLineToFile(outputFilename,"%s,%d",GridLoadTestUtils.DATE_TIME_FORMAT.format(new Date()),qpsAvg.get());
+        }
+ catch (        IOException e) {
+          X.println("Failed to record results to a file: " + e.getMessage());
+        }
+      }
+    }
+  }
+);
+  Collection<SendThread> sndThreads=new ArrayList<>(threads);
+  for (int i=0; i < threads; i++) {
+    SendThread t=new SendThread(g);
+    sndThreads.add(t);
+    t.start();
+  }
+  try {
+    U.sleep(duration > 0 ? duration * 1000 + WARM_UP_DUR : Long.MAX_VALUE);
+  }
+ catch (  IgniteInterruptedCheckedException ignored) {
+  }
+  collector.interrupt();
+  for (  SendThread t : sndThreads)   t.interrupt();
+}

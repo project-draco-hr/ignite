@@ -2,8 +2,8 @@
   final String queueName=UUID.randomUUID().toString();
   info("Queue name: " + queueName + ", collocated: "+ collocated);
   try {
-    Collection<IgniteFuture> putFuts=new ArrayList<>();
-    Collection<IgniteFuture> pollFuts=new ArrayList<>();
+    Collection<IgniteInternalFuture> putFuts=new ArrayList<>();
+    Collection<IgniteInternalFuture> pollFuts=new ArrayList<>();
     final int PUT_THREADS_PER_NODE=3;
     final int POLL_THREADS_PER_NODE=2;
     final int ITEMS_PER_THREAD=1000;
@@ -39,9 +39,9 @@
 ));
       }
     }
-    for (    IgniteFuture fut : putFuts)     fut.get();
+    for (    IgniteInternalFuture fut : putFuts)     fut.get();
     stopPoll.set(true);
-    for (    IgniteFuture fut : pollFuts)     fut.get();
+    for (    IgniteInternalFuture fut : pollFuts)     fut.get();
     IgniteCollectionConfiguration colCfg=collectionConfiguration();
     colCfg.setCollocated(collocated);
     IgniteQueue<Integer> queue=grid(0).queue(queueName,colCfg,0,true);
