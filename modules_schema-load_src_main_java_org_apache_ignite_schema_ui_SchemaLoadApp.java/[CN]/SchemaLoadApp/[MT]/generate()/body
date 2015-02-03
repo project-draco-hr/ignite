@@ -1,5 +1,5 @@
 {
-  final Collection<PojoDescriptor> selPojos=chekedPojos();
+  final Collection<PojoDescriptor> selPojos=checkedPojos();
   if (selPojos.isEmpty()) {
     MessageBox.warningDialog(owner,"Please select tables to generate XML and POJOs files!");
     return;
@@ -8,13 +8,18 @@
   final String outFolder=outFolderTf.getText();
   final String pkg=pkgTf.getText();
   final File destFolder=new File(outFolder);
+  final boolean constructor=pojoConstructorCh.isSelected();
+  final boolean includeKeys=pojoIncludeKeysCh.isSelected();
+  final boolean singleXml=xmlSingleFileCh.isSelected();
   Runnable task=new Task<Void>(){
-    private void checkEmpty(    final PojoDescriptor pojo,    Collection<PojoField> fields,    String msg){
-      if (fields.isEmpty()) {
+    private void checkEmpty(    final PojoDescriptor pojo,    boolean selected,    String msg){
+      if (!selected) {
         Platform.runLater(new Runnable(){
           @Override public void run(){
-            pojosTbl.getSelectionModel().select(pojo);
-            pojosTbl.scrollTo(pojosTbl.getSelectionModel().getSelectedIndex());
+            TableView.TableViewSelectionModel<PojoDescriptor> selMdl=pojosTbl.getSelectionModel();
+            selMdl.clearSelection();
+            selMdl.select(pojo);
+            pojosTbl.scrollTo(selMdl.getSelectedIndex());
           }
         }
 );
@@ -28,18 +33,18 @@
       long started=System.currentTimeMillis();
       if (!destFolder.exists() && !destFolder.mkdirs())       throw new IOException("Failed to create output folder: " + destFolder);
       Collection<PojoDescriptor> all=new ArrayList<>();
-      boolean constructor=pojoConstructorCh.isSelected();
-      boolean includeKeys=pojoIncludeKeysCh.isSelected();
-      boolean singleXml=xmlSingleFileCh.isSelected();
       ConfirmCallable askOverwrite=new ConfirmCallable(owner,"File already exists: %s\nOverwrite?");
       for (      PojoDescriptor pojo : selPojos) {
         if (pojo.checked()) {
-          checkEmpty(pojo,pojo.keyFields(),"No key fields specified for type: ");
-          checkEmpty(pojo,pojo.valueFields(includeKeys),"No value fields specified for type: ");
+          checkEmpty(pojo,pojo.hasFields(),"No fields selected for type: ");
+          checkEmpty(pojo,pojo.hasKeyFields(),"No key fields selected for type: ");
+          checkEmpty(pojo,pojo.hasValueFields(includeKeys),"No value fields selected for type: ");
           all.add(pojo);
-          if (!singleXml)           XmlGenerator.generate(pkg,pojo,includeKeys,new File(destFolder,pojo.table() + ".xml"),askOverwrite);
-          PojoGenerator.generate(pojo,outFolder,pkg,constructor,includeKeys,askOverwrite);
         }
+      }
+      for (      PojoDescriptor pojo : all) {
+        if (!singleXml)         XmlGenerator.generate(pkg,pojo,includeKeys,new File(destFolder,pojo.table() + ".xml"),askOverwrite);
+        PojoGenerator.generate(pojo,outFolder,pkg,constructor,includeKeys,askOverwrite);
       }
       if (singleXml)       XmlGenerator.generate(pkg,all,includeKeys,new File(outFolder,"Ignite.xml"),askOverwrite);
       perceptualDelay(started);
