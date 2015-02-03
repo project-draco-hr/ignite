@@ -1,0 +1,27 @@
+{
+  this.dialect=dialect;
+  this.typeMeta=typeMeta;
+  final Collection<CacheTypeFieldMetadata> keyFields=typeMeta.getKeyFields();
+  Collection<CacheTypeFieldMetadata> valFields=typeMeta.getValueFields();
+  uniqValFields=F.view(valFields,new IgnitePredicate<CacheTypeFieldMetadata>(){
+    @Override public boolean apply(    CacheTypeFieldMetadata col){
+      return !keyFields.contains(col);
+    }
+  }
+);
+  String schema=typeMeta.getDatabaseSchema();
+  String tblName=typeMeta.getDatabaseTable();
+  keyCols=databaseColumns(keyFields);
+  Collection<String> valCols=databaseColumns(valFields);
+  Collection<String> uniqValCols=databaseColumns(uniqValFields);
+  cols=F.concat(false,keyCols,uniqValCols);
+  loadCacheQry=dialect.loadCacheQuery(schema,tblName,cols);
+  loadCacheSelRangeQry=dialect.loadCacheSelectRangeQuery(schema,tblName,keyCols);
+  loadQrySingle=dialect.loadQuery(schema,tblName,keyCols,valCols,1);
+  maxKeysPerStmt=dialect.getMaxParamsCnt() / keyCols.size();
+  loadQry=dialect.loadQuery(schema,tblName,keyCols,uniqValCols,maxKeysPerStmt);
+  insQry=dialect.insertQuery(schema,tblName,keyCols,uniqValCols);
+  updQry=dialect.updateQuery(schema,tblName,keyCols,uniqValCols);
+  mergeQry=dialect.mergeQuery(schema,tblName,keyCols,uniqValCols);
+  remQry=dialect.removeQuery(schema,tblName,keyCols);
+}

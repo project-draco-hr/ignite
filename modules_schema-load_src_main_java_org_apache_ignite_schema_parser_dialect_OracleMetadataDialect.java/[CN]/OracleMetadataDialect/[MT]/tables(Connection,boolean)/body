@@ -1,6 +1,5 @@
 {
   Collection<DbTable> tbls=new ArrayList<>();
-  PreparedStatement stmtIdxs=conn.prepareStatement(SQL_INDEXES);
   try (Statement stmt=conn.createStatement()){
     Collection<DbColumn> cols=new ArrayList<>();
     String sql=String.format(SQL_COLUMNS,tblsOnly ? "INNER JOIN all_tables b on a.table_name = b.table_name" : "","TEST");
@@ -8,21 +7,21 @@
       String prevSchema="";
       String prevTbl="";
       while (colsRs.next()) {
-        String schema=colsRs.getString(SQL_COLS_OWNER);
-        String tbl=colsRs.getString(SQL_COLS_TAB_NAME);
+        String schema=colsRs.getString(OWNER_IDX);
+        String tbl=colsRs.getString(TABLE_NAME_IDX);
         if (prevSchema.isEmpty()) {
           prevSchema=schema;
           prevTbl=tbl;
         }
         if (!schema.equals(prevSchema) || !tbl.equals(prevTbl)) {
-          tbls.add(new DbTable(prevSchema,prevTbl,cols,Collections.<String>emptySet(),Collections.<String>emptySet(),null));
+          tbls.add(new DbTable(prevSchema,prevTbl,cols));
           prevSchema=schema;
           prevTbl=tbl;
           cols=new ArrayList<>();
         }
-        cols.add(new DbColumn(colsRs.getString(SQL_COLS_COL_NAME),decodeType(colsRs.getString(SQL_COLS_DATA_TYPE)),false,decodeNullable(colsRs.getString(SQL_COLS_NULLABLE))));
+        cols.add(new DbColumn(colsRs.getString(COLUMN_NAME_IDX),decodeType(colsRs.getString(DATA_TYPE_IDX)),false,decodeNullable(colsRs.getString(NULLABLE_IDX))));
       }
-      if (!cols.isEmpty())       tbls.add(new DbTable(prevSchema,prevTbl,cols,Collections.<String>emptySet(),Collections.<String>emptySet(),Collections.<String,Map<String,Boolean>>emptyMap()));
+      if (!cols.isEmpty())       tbls.add(new DbTable(prevSchema,prevTbl,cols));
     }
    }
    return tbls;
