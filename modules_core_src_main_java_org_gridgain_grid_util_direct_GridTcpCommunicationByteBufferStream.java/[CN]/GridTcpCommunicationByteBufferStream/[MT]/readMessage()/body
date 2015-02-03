@@ -1,6 +1,9 @@
 {
   if (!msgTypeDone) {
-    if (!buf.hasRemaining())     return null;
+    if (!buf.hasRemaining()) {
+      lastFinished=false;
+      return null;
+    }
     byte type=readByte();
     msg=type == Byte.MIN_VALUE ? null : msgFactory.create(type);
     msgTypeDone=true;
@@ -9,7 +12,11 @@
     GridTcpCommunicationMessageAdapter msg0=msg;
     msgTypeDone=false;
     msg=null;
+    lastFinished=true;
     return msg0;
   }
- else   return null;
+ else {
+    lastFinished=false;
+    return null;
+  }
 }
