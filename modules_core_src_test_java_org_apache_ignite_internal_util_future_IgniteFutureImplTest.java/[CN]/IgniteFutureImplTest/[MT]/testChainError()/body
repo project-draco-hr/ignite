@@ -1,0 +1,110 @@
+{
+{
+    GridFutureAdapter<String> fut0=new GridFutureAdapter<>(new GridTestKernalContext(log),true);
+    IgniteFutureImpl<String> fut=new IgniteFutureImpl<>(fut0);
+    final IgniteException err0=new IgniteException("test error");
+    final AtomicBoolean chainedPassed=new AtomicBoolean();
+    IgniteFuture<Integer> chained=fut.chain(new C1<IgniteFuture<String>,Integer>(){
+      @Override public Integer apply(      IgniteFuture<String> fut){
+        try {
+          fut.get();
+          fail();
+          return -1;
+        }
+ catch (        IgniteException err) {
+          assertEquals(err0,err);
+          chainedPassed.set(true);
+          throw err;
+        }
+      }
+    }
+);
+    assertTrue(chained.syncNotify());
+    final AtomicBoolean lsnrPassed=new AtomicBoolean();
+    IgniteInClosure<? super IgniteFuture<Integer>> lsnr1=new CI1<IgniteFuture<Integer>>(){
+      @Override public void apply(      IgniteFuture<Integer> fut){
+        try {
+          fut.get();
+          fail();
+        }
+ catch (        IgniteException err) {
+          assertEquals(err0,err);
+          lsnrPassed.set(true);
+        }
+      }
+    }
+;
+    chained.listenAsync(lsnr1);
+    fut0.onDone(err0);
+    assertTrue(chainedPassed.get());
+    assertTrue(lsnrPassed.get());
+    try {
+      chained.get();
+      fail();
+    }
+ catch (    IgniteException err) {
+      assertEquals(err0,err);
+    }
+    try {
+      fut.get();
+      fail();
+    }
+ catch (    IgniteException err) {
+      assertEquals(err0,err);
+    }
+  }
+{
+    GridFutureAdapter<String> fut0=new GridFutureAdapter<>(new GridTestKernalContext(log),true);
+    IgniteFutureImpl<String> fut=new IgniteFutureImpl<>(fut0);
+    final IgniteCheckedException err0=new IgniteCheckedException("test error");
+    final AtomicBoolean chainedPassed=new AtomicBoolean();
+    IgniteFuture<Integer> chained=fut.chain(new C1<IgniteFuture<String>,Integer>(){
+      @Override public Integer apply(      IgniteFuture<String> fut){
+        try {
+          fut.get();
+          fail();
+          return -1;
+        }
+ catch (        IgniteException err) {
+          assertEquals(err0,err.getCause());
+          chainedPassed.set(true);
+          throw err;
+        }
+      }
+    }
+);
+    assertTrue(chained.syncNotify());
+    final AtomicBoolean lsnrPassed=new AtomicBoolean();
+    IgniteInClosure<? super IgniteFuture<Integer>> lsnr1=new CI1<IgniteFuture<Integer>>(){
+      @Override public void apply(      IgniteFuture<Integer> fut){
+        try {
+          fut.get();
+          fail();
+        }
+ catch (        IgniteException err) {
+          assertEquals(err0,err.getCause());
+          lsnrPassed.set(true);
+        }
+      }
+    }
+;
+    chained.listenAsync(lsnr1);
+    fut0.onDone(err0);
+    assertTrue(chainedPassed.get());
+    assertTrue(lsnrPassed.get());
+    try {
+      chained.get();
+      fail();
+    }
+ catch (    IgniteException err) {
+      assertEquals(err0,err.getCause());
+    }
+    try {
+      fut.get();
+      fail();
+    }
+ catch (    IgniteException err) {
+      assertEquals(err0,err.getCause());
+    }
+  }
+}
