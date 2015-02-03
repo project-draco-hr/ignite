@@ -1,14 +1,24 @@
 {
   Collection<DbTable> tbls=new ArrayList<>();
-  try (Statement stmt=conn.createStatement()){
+  PreparedStatement pkStmt=conn.prepareStatement(SQL_PRIMARY_KEYS);
+  try (Statement colsStmt=conn.createStatement()){
     Collection<DbColumn> cols=new ArrayList<>();
-    String sql=String.format(SQL_COLUMNS,tblsOnly ? "INNER JOIN all_tables b on a.table_name = b.table_name" : "","TEST");
-    try (ResultSet colsRs=stmt.executeQuery(sql)){
+    Set<String> pkCols=new HashSet<>();
+    String owner=conn.getMetaData().getUserName().toUpperCase();
+    String sql=String.format(SQL_COLUMNS,tblsOnly ? "INNER JOIN all_tables b on a.table_name = b.table_name" : "",owner);
+    try (ResultSet colsRs=colsStmt.executeQuery(sql)){
       String prevSchema="";
       String prevTbl="";
       while (colsRs.next()) {
         String schema=colsRs.getString(OWNER_IDX);
         String tbl=colsRs.getString(TABLE_NAME_IDX);
+        if (!prevSchema.equals(schema) || !prevTbl.equals(tbl)) {
+          pkCols.clear();
+          pkStmt.setString(1,tbl);
+          try (ResultSet pkRs=pkStmt.executeQuery()){
+            while (pkRs.next())             pkCols.add(pkRs.getString(1));
+          }
+         }
         if (prevSchema.isEmpty()) {
           prevSchema=schema;
           prevTbl=tbl;
@@ -19,7 +29,8 @@
           prevTbl=tbl;
           cols=new ArrayList<>();
         }
-        cols.add(new DbColumn(colsRs.getString(COLUMN_NAME_IDX),decodeType(colsRs.getString(DATA_TYPE_IDX)),false,decodeNullable(colsRs.getString(NULLABLE_IDX))));
+        String colName=colsRs.getString(COLUMN_NAME_IDX);
+        cols.add(new DbColumn(colName,decodeType(colsRs),pkCols.contains(colName),!"N".equals(colsRs.getString(NULLABLE_IDX))));
       }
       if (!cols.isEmpty())       tbls.add(new DbTable(prevSchema,prevTbl,cols));
     }
