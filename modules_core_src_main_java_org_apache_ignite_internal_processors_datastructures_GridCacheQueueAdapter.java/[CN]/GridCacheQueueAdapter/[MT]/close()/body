@@ -1,7 +1,12 @@
 {
   if (rmvd)   return;
-  GridCacheQueueHeader hdr=(GridCacheQueueHeader)cache.getAndRemove(new GridCacheQueueHeaderKey(queueName));
-  rmvd=true;
-  if (hdr == null || hdr.empty())   return;
-  removeKeys(hdr.id(),queueName,hdr.collocated(),hdr.head(),hdr.tail(),0);
+  try {
+    GridCacheQueueHeader hdr=(GridCacheQueueHeader)cache.remove(new GridCacheQueueHeaderKey(queueName),null);
+    rmvd=true;
+    if (hdr == null || hdr.empty())     return;
+    removeKeys(hdr.id(),queueName,hdr.collocated(),hdr.head(),hdr.tail(),0);
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
 }
