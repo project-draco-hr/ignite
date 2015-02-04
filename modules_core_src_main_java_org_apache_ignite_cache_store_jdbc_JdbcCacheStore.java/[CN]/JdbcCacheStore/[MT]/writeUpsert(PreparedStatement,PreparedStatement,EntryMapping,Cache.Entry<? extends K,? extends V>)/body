@@ -1,25 +1,38 @@
 {
-  for (int attempt=0; attempt < MAX_ATTEMPT_WRITE_COUNT; attempt++) {
-    int i=fillValueParameters(updStmt,1,em,entry.getValue());
-    fillKeyParameters(updStmt,i,em,entry.getKey());
-    if (updStmt.executeUpdate() == 0) {
-      i=fillKeyParameters(insStmt,em,entry.getKey());
-      fillValueParameters(insStmt,i,em,entry.getValue());
-      try {
-        insStmt.executeUpdate();
-      }
- catch (      SQLException e) {
-        String sqlState=e.getSQLState();
-        SQLException nested=e.getNextException();
-        while (sqlState == null && nested != null) {
-          sqlState=nested.getSQLState();
-          nested=nested.getNextException();
+  try {
+    CacheWriterException we=null;
+    for (int attempt=0; attempt < MAX_ATTEMPT_WRITE_COUNT; attempt++) {
+      int i=fillValueParameters(updStmt,1,em,entry.getValue());
+      fillKeyParameters(updStmt,i,em,entry.getKey());
+      if (updStmt.executeUpdate() == 0) {
+        i=fillKeyParameters(insStmt,em,entry.getKey());
+        fillValueParameters(insStmt,i,em,entry.getValue());
+        try {
+          insStmt.executeUpdate();
+          if (i > 0)           U.warn(log,"Entry was inserted in database on second try [table=" + em.fullTableName() + ", entry="+ entry+ "]");
         }
-        if (sqlState != null && Integer.valueOf(sqlState) == 23505)         continue;
-        throw e;
+ catch (        SQLException e) {
+          String sqlState=e.getSQLState();
+          SQLException nested=e.getNextException();
+          while (sqlState == null && nested != null) {
+            sqlState=nested.getSQLState();
+            nested=nested.getNextException();
+          }
+          if (sqlState != null && Integer.valueOf(sqlState) == 23505) {
+            if (we == null)             we=new CacheWriterException("Failed insert entry in database, violate a unique" + " index or primary key [table=" + em.fullTableName() + ", entry="+ entry+ "]");
+            we.addSuppressed(e);
+            U.warn(log,"Failed insert entry in database, violate a unique index or primary key" + " [table=" + em.fullTableName() + ", entry="+ entry+ "]");
+            continue;
+          }
+          throw new CacheWriterException("Failed insert entry in database [table=" + em.fullTableName() + ", entry="+ entry,e);
+        }
       }
+      if (i > 0)       U.warn(log,"Entry was updated in database on second try [table=" + em.fullTableName() + ", entry="+ entry+ "]");
+      return;
     }
-    return;
+    throw we;
   }
-  throw new CacheWriterException("Failed write entry to database: " + entry);
+ catch (  SQLException e) {
+    throw new CacheWriterException("Failed update entry in database [table=" + em.fullTableName() + ", entry="+ entry+ "]",e);
+  }
 }
