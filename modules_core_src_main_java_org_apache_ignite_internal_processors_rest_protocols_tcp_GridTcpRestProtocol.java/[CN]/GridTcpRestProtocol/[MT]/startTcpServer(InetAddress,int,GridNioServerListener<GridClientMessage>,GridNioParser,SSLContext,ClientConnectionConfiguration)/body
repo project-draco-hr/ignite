@@ -5,14 +5,14 @@
     if (sslCtx != null) {
       GridNioSslFilter sslFilter=new GridNioSslFilter(sslCtx,log);
       sslFilter.directMode(true);
-      boolean auth=cfg.isRestTcpSslClientAuth();
+      boolean auth=cfg.isSslClientAuth();
       sslFilter.wantClientAuth(auth);
       sslFilter.needClientAuth(auth);
       filters=new GridNioFilter[]{codec,sslFilter};
     }
  else     filters=new GridNioFilter[]{codec};
-    srv=GridNioServer.<GridClientMessage>builder().address(hostAddr).port(port).listener(lsnr).logger(log).selectorCount(cfg.getRestTcpSelectorCount()).gridName(ctx.gridName()).tcpNoDelay(cfg.isRestTcpNoDelay()).directBuffer(cfg.isRestTcpDirectBuffer()).byteOrder(ByteOrder.nativeOrder()).socketSendBufferSize(cfg.getRestTcpSendBufferSize()).socketReceiveBufferSize(cfg.getRestTcpReceiveBufferSize()).sendQueueLimit(cfg.getRestTcpSendQueueLimit()).filters(filters).directMode(true).messageWriter(msgWriter).build();
-    srv.idleTimeout(cfg.getRestIdleTimeout());
+    srv=GridNioServer.<GridClientMessage>builder().address(hostAddr).port(port).listener(lsnr).logger(log).selectorCount(cfg.getSelectorCount()).gridName(ctx.gridName()).tcpNoDelay(cfg.isNoDelay()).directBuffer(cfg.isDirectBuffer()).byteOrder(ByteOrder.nativeOrder()).socketSendBufferSize(cfg.getSendBufferSize()).socketReceiveBufferSize(cfg.getReceiveBufferSize()).sendQueueLimit(cfg.getSendQueueLimit()).filters(filters).directMode(true).messageWriter(msgWriter).build();
+    srv.idleTimeout(cfg.getIdleTimeout());
     srv.start();
     ctx.ports().registerPort(port,IgnitePortProtocol.TCP,getClass());
     return true;
