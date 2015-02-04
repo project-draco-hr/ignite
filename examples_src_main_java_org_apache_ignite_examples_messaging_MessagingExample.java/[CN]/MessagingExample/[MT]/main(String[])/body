@@ -1,17 +1,17 @@
 {
-  try (Ignite g=Ignition.start("examples/config/example-compute.xml")){
-    if (!ExamplesUtils.checkMinTopologySize(g.cluster(),2))     return;
+  try (Ignite ignite=Ignition.start("examples/config/example-compute.xml")){
+    if (!ExamplesUtils.checkMinTopologySize(ignite.cluster(),2))     return;
     System.out.println();
     System.out.println(">>> Messaging example started.");
-    ClusterGroup rmtPrj=g.cluster().forRemotes();
+    ClusterGroup rmtPrj=ignite.cluster().forRemotes();
     int msgCnt=rmtPrj.nodes().size() * MESSAGES_NUM;
     CountDownLatch orderedLatch=new CountDownLatch(msgCnt);
     CountDownLatch unorderedLatch=new CountDownLatch(msgCnt);
-    localListen(g.message(g.cluster().forLocal()),orderedLatch,unorderedLatch);
-    startListening(g.message(rmtPrj));
-    for (int i=0; i < MESSAGES_NUM; i++)     g.message(rmtPrj).send(TOPIC.UNORDERED,Integer.toString(i));
+    localListen(ignite.message(ignite.cluster().forLocal()),orderedLatch,unorderedLatch);
+    startListening(ignite.message(rmtPrj));
+    for (int i=0; i < MESSAGES_NUM; i++)     ignite.message(rmtPrj).send(TOPIC.UNORDERED,Integer.toString(i));
     System.out.println(">>> Finished sending unordered messages.");
-    for (int i=0; i < MESSAGES_NUM; i++)     g.message(rmtPrj).sendOrdered(TOPIC.ORDERED,Integer.toString(i),0);
+    for (int i=0; i < MESSAGES_NUM; i++)     ignite.message(rmtPrj).sendOrdered(TOPIC.ORDERED,Integer.toString(i),0);
     System.out.println(">>> Finished sending ordered messages.");
     System.out.println(">>> Check output on all nodes for message printouts.");
     System.out.println(">>> Will wait for messages acknowledgements from all remote nodes.");
