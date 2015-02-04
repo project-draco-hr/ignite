@@ -1,7 +1,7 @@
 {
   Collection<String> cols=F.concat(false,keyCols,uniqCols);
   String colsLst=mkString(cols,", ");
-  String selCols=mkString(uniqCols,new C1<String,String>(){
+  String selCols=mkString(cols,new C1<String,String>(){
     @Override public String apply(    String col){
       return String.format("? AS %s",col);
     }
@@ -12,7 +12,7 @@
       return String.format("t.%s=v.%s",col,col);
     }
   }
-,"",", ","");
+,"("," AND ",")");
   String setCols=mkString(uniqCols,new C1<String,String>(){
     @Override public String apply(    String col){
       return String.format("t.%s = v.%s",col,col);
@@ -25,5 +25,5 @@
     }
   }
 ,"",", ","");
-  return String.format("MERGE INTO %s.%s t" + " USING (SELECT %s FROM dual) AS v" + "  ON %s"+ " WHEN MATCHED THEN"+ "  UPDATE SET %s"+ " WHEN NOT MATCHED THEN"+ "  INSERT (%s) VALUES (%s)",schema,tblName,selCols,match,setCols,colsLst,valuesCols);
+  return String.format("MERGE INTO %s.%s t" + " USING (SELECT %s FROM dual) v" + "  ON %s"+ " WHEN MATCHED THEN"+ "  UPDATE SET %s"+ " WHEN NOT MATCHED THEN"+ "  INSERT (%s) VALUES (%s)",schema,tblName,selCols,match,setCols,colsLst,valuesCols);
 }
