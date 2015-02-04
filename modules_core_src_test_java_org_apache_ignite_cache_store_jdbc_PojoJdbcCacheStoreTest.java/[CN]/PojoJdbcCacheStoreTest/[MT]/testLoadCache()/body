@@ -1,6 +1,5 @@
 {
-  Connection conn=DriverManager.getConnection(DFLT_CONN_URL,"sa","");
-  Statement stmt=conn.createStatement();
+  Connection conn=store.openConnection(false);
   PreparedStatement orgStmt=conn.prepareStatement("INSERT INTO Organization(id, name, city) VALUES (?, ?, ?)");
   for (int i=0; i < ORGANIZATION_CNT; i++) {
     orgStmt.setInt(1,i);
@@ -9,6 +8,7 @@
     orgStmt.addBatch();
   }
   orgStmt.executeBatch();
+  U.closeQuiet(orgStmt);
   conn.commit();
   PreparedStatement prnStmt=conn.prepareStatement("INSERT INTO Person(id, org_id, name) VALUES (?, ?, ?)");
   for (int i=0; i < PERSON_CNT; i++) {
@@ -19,7 +19,7 @@
   }
   prnStmt.executeBatch();
   conn.commit();
-  U.closeQuiet(stmt);
+  U.closeQuiet(prnStmt);
   U.closeQuiet(conn);
   final Collection<OrganizationKey> orgKeys=new ConcurrentLinkedQueue<>();
   final Collection<PersonKey> prnKeys=new ConcurrentLinkedQueue<>();

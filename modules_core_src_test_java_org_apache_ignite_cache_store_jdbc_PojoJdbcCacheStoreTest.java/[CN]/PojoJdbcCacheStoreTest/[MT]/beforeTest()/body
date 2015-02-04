@@ -1,15 +1,19 @@
 {
   super.beforeTest();
-  Connection conn=DriverManager.getConnection(DFLT_CONN_URL,"sa","");
+  Connection conn=store.openConnection(false);
   Statement stmt=conn.createStatement();
-  stmt.executeUpdate("DROP TABLE IF EXISTS Organization");
-  stmt.executeUpdate("DROP TABLE IF EXISTS Person");
-  stmt.executeUpdate("CREATE TABLE Organization (id integer PRIMARY KEY, name varchar(50), city varchar(50))");
-  stmt.executeUpdate("CREATE TABLE Person (id integer PRIMARY KEY, org_id integer, name varchar(50))");
-  stmt.executeUpdate("CREATE INDEX Org_Name_IDX On Organization (name)");
-  stmt.executeUpdate("CREATE INDEX Org_Name_City_IDX On Organization (name, city)");
-  stmt.executeUpdate("CREATE INDEX Person_Name_IDX1 On Person (name)");
-  stmt.executeUpdate("CREATE INDEX Person_Name_IDX2 On Person (name desc)");
+  try {
+    stmt.executeUpdate("delete from Organization");
+  }
+ catch (  SQLException ignore) {
+  }
+  try {
+    stmt.executeUpdate("delete from Person");
+  }
+ catch (  SQLException ignore) {
+  }
+  stmt.executeUpdate("CREATE TABLE IF NOT EXISTS Organization (id integer not null, name varchar(50), city varchar(50), PRIMARY KEY(id))");
+  stmt.executeUpdate("CREATE TABLE IF NOT EXISTS Person (id integer not null, org_id integer, name varchar(50), PRIMARY KEY(id))");
   conn.commit();
   U.closeQuiet(stmt);
   U.closeQuiet(conn);
