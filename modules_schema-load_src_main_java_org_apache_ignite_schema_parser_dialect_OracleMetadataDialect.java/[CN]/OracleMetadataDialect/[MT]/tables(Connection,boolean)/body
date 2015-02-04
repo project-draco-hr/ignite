@@ -1,38 +1,37 @@
 {
   Collection<DbTable> tbls=new ArrayList<>();
   PreparedStatement pkStmt=conn.prepareStatement(SQL_PRIMARY_KEYS);
+  PreparedStatement idxStmt=conn.prepareStatement(SQL_INDEXES);
   try (Statement colsStmt=conn.createStatement()){
     Collection<DbColumn> cols=new ArrayList<>();
-    Set<String> pkCols=new HashSet<>();
-    String owner=conn.getMetaData().getUserName().toUpperCase();
-    String sql=String.format(SQL_COLUMNS,tblsOnly ? "INNER JOIN all_tables b on a.table_name = b.table_name" : "",owner);
+    Set<String> pkCols=Collections.emptySet();
+    Map<String,Map<String,Boolean>> idxs=Collections.emptyMap();
+    String user=conn.getMetaData().getUserName().toUpperCase();
+    String sql=String.format(SQL_COLUMNS,tblsOnly ? "INNER JOIN all_tables b on a.table_name = b.table_name" : "",user);
     try (ResultSet colsRs=colsStmt.executeQuery(sql)){
       String prevSchema="";
       String prevTbl="";
       while (colsRs.next()) {
-        String schema=colsRs.getString(OWNER_IDX);
-        String tbl=colsRs.getString(TABLE_NAME_IDX);
-        if (!prevSchema.equals(schema) || !prevTbl.equals(tbl)) {
-          pkCols.clear();
-          pkStmt.setString(1,tbl);
-          try (ResultSet pkRs=pkStmt.executeQuery()){
-            while (pkRs.next())             pkCols.add(pkRs.getString(1));
-          }
-         }
+        String owner=colsRs.getString(OWNER_IDX);
+        String tbl=colsRs.getString(TBL_NAME_IDX);
+        if (!prevSchema.equals(owner) || !prevTbl.equals(tbl)) {
+          pkCols=primaryKeys(pkStmt,owner,tbl);
+          idxs=indexes(idxStmt,owner,tbl);
+        }
         if (prevSchema.isEmpty()) {
-          prevSchema=schema;
+          prevSchema=owner;
           prevTbl=tbl;
         }
-        if (!schema.equals(prevSchema) || !tbl.equals(prevTbl)) {
-          tbls.add(new DbTable(prevSchema,prevTbl,cols));
-          prevSchema=schema;
+        if (!owner.equals(prevSchema) || !tbl.equals(prevTbl)) {
+          tbls.add(new DbTable(prevSchema,prevTbl,cols,null,null,null));
+          prevSchema=owner;
           prevTbl=tbl;
           cols=new ArrayList<>();
         }
-        String colName=colsRs.getString(COLUMN_NAME_IDX);
+        String colName=colsRs.getString(COL_NAME_IDX);
         cols.add(new DbColumn(colName,decodeType(colsRs),pkCols.contains(colName),!"N".equals(colsRs.getString(NULLABLE_IDX))));
       }
-      if (!cols.isEmpty())       tbls.add(new DbTable(prevSchema,prevTbl,cols));
+      if (!cols.isEmpty())       tbls.add(table(prevSchema,prevTbl,cols,idxs));
     }
    }
    return tbls;
