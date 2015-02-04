@@ -1,0 +1,13 @@
+{
+  ClusterGroup empty=ignite(0).cluster().forNodeId(UUID.randomUUID());
+  assertEquals(0,empty.nodes().size());
+  IgniteCompute comp=ignite(0).compute(empty).withAsync();
+  comp.affinityRun(null,1,new FailRunnable());
+  checkFutureFails(comp);
+  comp.apply(new FailClosure(),new Object());
+  checkFutureFails(comp);
+  comp.affinityCall(null,1,new FailCallable());
+  checkFutureFails(comp);
+  comp.broadcast(new FailCallable());
+  checkFutureFails(comp);
+}

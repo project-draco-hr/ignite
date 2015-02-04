@@ -1,9 +1,9 @@
 {
-  try (Ignite g=Ignition.start("examples/config/example-cache.xml")){
+  try (Ignite ignite=Ignition.start("examples/config/example-cache.xml")){
     System.out.println();
     System.out.println(">>> Cache events example started.");
-    final GridCache<Integer,String> cache=g.cache(CACHE_NAME);
-    cache.globalClearAll(0);
+    final IgniteCache<Integer,String> cache=ignite.jcache(CACHE_NAME);
+    cache.clear();
     IgniteBiPredicate<UUID,IgniteCacheEvent> locLsnr=new IgniteBiPredicate<UUID,IgniteCacheEvent>(){
       @Override public boolean apply(      UUID uuid,      IgniteCacheEvent evt){
         System.out.println("Received event [evt=" + evt.name() + ", key="+ evt.key()+ ", oldVal="+ evt.oldValue()+ ", newVal="+ evt.newValue());
@@ -15,12 +15,12 @@
       @Override public boolean apply(      IgniteCacheEvent evt){
         System.out.println("Cache event [name=" + evt.name() + ", key="+ evt.key()+ ']');
         int key=evt.key();
-        return key >= 10 && cache.affinity().isPrimary(g.cluster().localNode(),key);
+        return key >= 10 && ignite.affinity(CACHE_NAME).isPrimary(ignite.cluster().localNode(),key);
       }
     }
 ;
-    g.events(g.cluster().forCache(CACHE_NAME)).remoteListen(locLsnr,rmtLsnr,EVT_CACHE_OBJECT_PUT,EVT_CACHE_OBJECT_READ,EVT_CACHE_OBJECT_REMOVED);
-    for (int i=0; i < 20; i++)     cache.putx(i,Integer.toString(i));
+    ignite.events(ignite.cluster().forCacheNodes(CACHE_NAME)).remoteListen(locLsnr,rmtLsnr,EVT_CACHE_OBJECT_PUT,EVT_CACHE_OBJECT_READ,EVT_CACHE_OBJECT_REMOVED);
+    for (int i=0; i < 20; i++)     cache.put(i,Integer.toString(i));
     Thread.sleep(2000);
   }
  }

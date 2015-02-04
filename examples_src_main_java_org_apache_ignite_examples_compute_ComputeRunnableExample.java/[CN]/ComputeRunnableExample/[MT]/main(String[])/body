@@ -1,22 +1,22 @@
 {
-  try (Ignite g=Ignition.start("examples/config/example-compute.xml")){
+  try (Ignite ignite=Ignition.start("examples/config/example-compute.xml")){
     System.out.println();
     System.out.println("Compute runnable example started.");
-    Collection<IgniteInternalFuture> futs=new ArrayList<>();
-    IgniteCompute compute=g.compute().withAsync();
+    Collection<IgniteFuture> futs=new ArrayList<>();
+    IgniteCompute compute=ignite.compute().withAsync();
     for (    final String word : "Print words using runnable".split(" ")) {
       compute.run(new IgniteRunnable(){
         @Override public void run(){
           System.out.println();
-          System.out.println(">>> Printing '" + word + "' on this node from grid job.");
+          System.out.println(">>> Printing '" + word + "' on this node from ignite job.");
         }
       }
 );
       futs.add(compute.future());
     }
-    for (    IgniteInternalFuture<?> f : futs)     f.get();
+    for (    IgniteFuture<?> f : futs)     f.get();
     System.out.println();
     System.out.println(">>> Finished printing words using runnable execution.");
-    System.out.println(">>> Check all nodes for output (this node is also part of the grid).");
+    System.out.println(">>> Check all nodes for output (this node is also part of the cluster).");
   }
  }
