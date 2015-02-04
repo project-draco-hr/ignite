@@ -1,0 +1,32 @@
+{
+  TableDescriptor tblDesc=tableDescriptor(type,space);
+  if (tblDesc == null)   return new QueryCursorImpl<>(Collections.<Cache.Entry<K,V>>emptyIterator());
+  String qry;
+  try {
+    qry=generateQuery(sqlQry,tblDesc);
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+  final QueryCursor<List<?>> res=queryTwoStep(space,qry,params);
+  final Iterator<List<?>> iter0=res.iterator();
+  Iterator<Cache.Entry<K,V>> iter=new Iterator<Cache.Entry<K,V>>(){
+    @Override public boolean hasNext(){
+      return iter0.hasNext();
+    }
+    @Override public Cache.Entry<K,V> next(){
+      List<?> l=iter0.next();
+      return new CacheEntryImpl<>((K)l.get(0),(V)l.get(1));
+    }
+    @Override public void remove(){
+      throw new UnsupportedOperationException();
+    }
+  }
+;
+  return new QueryCursorImpl<Cache.Entry<K,V>>(iter){
+    @Override public void close(){
+      res.close();
+    }
+  }
+;
+}
