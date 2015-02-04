@@ -1,14 +1,14 @@
 {
   IgniteConfiguration cfg=CacheNodeWithStoreStartup.configure();
-  try (Ignite g=Ignition.start(cfg)){
+  try (Ignite ignite=Ignition.start(cfg)){
     System.out.println();
     System.out.println(">>> Cache store example started.");
-    GridCache<Long,Person> cache=g.cache(null);
-    cache.clear(0);
-    try (IgniteTx tx=cache.txStart()){
+    IgniteCache<Long,Person> cache=ignite.jcache(null);
+    cache.clear();
+    try (IgniteTx tx=ignite.transactions().txStart()){
       Person val=cache.get(id);
       System.out.println("Read value: " + val);
-      val=cache.put(id,person(id,"Isaac","Newton"));
+      val=cache.getAndPut(id,person(id,"Isaac","Newton"));
       System.out.println("Overwrote old value: " + val);
       val=cache.get(id);
       System.out.println("Read value: " + val);

@@ -1,24 +1,24 @@
 {
-  try (Ignite g=Ignition.start("examples/config/example-compute.xml")){
+  try (Ignite ignite=Ignition.start("examples/config/example-compute.xml")){
     System.out.println();
     System.out.println("Compute Fibonacci continuation example started.");
     long N=100;
-    final UUID exampleNodeId=g.cluster().localNode().id();
+    final UUID exampleNodeId=ignite.cluster().localNode().id();
     final IgnitePredicate<ClusterNode> nodeFilter=new IgnitePredicate<ClusterNode>(){
       @Override public boolean apply(      ClusterNode n){
-        return g.cluster().forRemotes().nodes().isEmpty() || !n.id().equals(exampleNodeId);
+        return ignite.cluster().forRemotes().nodes().isEmpty() || !n.id().equals(exampleNodeId);
       }
     }
 ;
     long start=System.currentTimeMillis();
-    BigInteger fib=g.compute(g.cluster().forPredicate(nodeFilter)).apply(new FibonacciClosure(nodeFilter),N);
+    BigInteger fib=ignite.compute(ignite.cluster().forPredicate(nodeFilter)).apply(new FibonacciClosure(nodeFilter),N);
     long duration=System.currentTimeMillis() - start;
     System.out.println();
     System.out.println(">>> Finished executing Fibonacci for '" + N + "' in "+ duration+ " ms.");
     System.out.println(">>> Fibonacci sequence for input number '" + N + "' is '"+ fib+ "'.");
     System.out.println(">>> If you re-run this example w/o stopping remote nodes - the performance will");
     System.out.println(">>> increase since intermediate results are pre-cache on remote nodes.");
-    System.out.println(">>> You should see prints out every recursive Fibonacci execution on grid nodes.");
+    System.out.println(">>> You should see prints out every recursive Fibonacci execution on cluster nodes.");
     System.out.println(">>> Check remote nodes for output.");
   }
  }
