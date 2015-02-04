@@ -1,4 +1,14 @@
 {
   A.notNull(filter,"filter");
-  return null;
+  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+  try {
+    if (filter instanceof QuerySqlPredicate) {
+      QuerySqlPredicate p=(QuerySqlPredicate)filter;
+      return new QueryCursorImpl<>(ctx.kernalContext().query().<K,V>queryLocal(ctx.name(),p.getType(),p.getSql(),p.getArgs()));
+    }
+    return query(filter,ctx.kernalContext().grid().forLocal());
+  }
+  finally {
+    gate.leave(prev);
+  }
 }

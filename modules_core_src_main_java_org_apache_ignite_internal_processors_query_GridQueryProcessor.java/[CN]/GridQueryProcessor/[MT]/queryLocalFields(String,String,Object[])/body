@@ -1,0 +1,12 @@
+{
+  if (!busyLock.enterBusy())   throw new IllegalStateException("Failed to execute query (grid is stopping).");
+  try {
+    return idx.queryFields(space,sql,F.asList(args),idx.backupFilter()).iterator();
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+ finally {
+    busyLock.leaveBusy();
+  }
+}

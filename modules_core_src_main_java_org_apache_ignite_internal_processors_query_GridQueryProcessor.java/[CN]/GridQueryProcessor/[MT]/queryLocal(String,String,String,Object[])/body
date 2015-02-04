@@ -1,0 +1,30 @@
+{
+  if (!busyLock.enterBusy())   throw new IllegalStateException("Failed to execute query (grid is stopping).");
+  try {
+    TypeDescriptor typeDesc=typesByName.get(new TypeName(space,type));
+    if (typeDesc == null || !typeDesc.registered())     return new GridEmptyCloseableIterator<>();
+    final GridCloseableIterator<IgniteBiTuple<K,V>> i=idx.query(space,sqlQry,F.asList(params),typeDesc,idx.backupFilter());
+    return new ClIter<Cache.Entry<K,V>>(){
+      @Override public void close() throws Exception {
+        i.close();
+      }
+      @Override public boolean hasNext(){
+        return i.hasNext();
+      }
+      @Override public Cache.Entry<K,V> next(){
+        IgniteBiTuple<K,V> t=i.next();
+        return new CacheEntryImpl<>(t.getKey(),t.getValue());
+      }
+      @Override public void remove(){
+        throw new UnsupportedOperationException();
+      }
+    }
+;
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+ finally {
+    busyLock.leaveBusy();
+  }
+}
