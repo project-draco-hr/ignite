@@ -1,0 +1,31 @@
+{
+  GridFutureAdapter<String> fut0=new GridFutureAdapter<>();
+  final IgniteFutureImpl<String> fut=new IgniteFutureImpl<>(fut0);
+  assertFalse(fut.isDone());
+  assertTrue(fut.startTime() > 0);
+  U.sleep(100);
+  assertTrue(fut.duration() > 0);
+  IgniteCheckedException err0=new IgniteCheckedException("test error");
+  fut0.onDone(err0);
+  IgniteException err=(IgniteException)GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      fut.get();
+      return null;
+    }
+  }
+,IgniteException.class,"test error");
+  assertEquals(err0,err.getCause());
+  assertTrue(fut.isDone());
+  assertTrue(fut.duration() > 0);
+  long dur0=fut.duration();
+  U.sleep(100);
+  assertEquals(dur0,fut.duration());
+  err=(IgniteException)GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      fut.get();
+      return null;
+    }
+  }
+,IgniteException.class,null);
+  assertEquals(err0,err.getCause());
+}
