@@ -2,5 +2,10 @@
   GridCacheAdapter<Object,Object> cache=cctx.kernalContext().cache().internalCache(cacheName);
   if (cache == null)   throw new IllegalArgumentException("Failed to find cache with given name (cache is not configured): " + cacheName);
   Object grpLockKey=cache.context().affinity().partitionAffinityKey(partId);
-  return txStartGroupLock(cache.context(),grpLockKey,concurrency,isolation,true,timeout,txSize,false);
+  try {
+    return txStartGroupLock(cache.context(),grpLockKey,concurrency,isolation,true,timeout,txSize,false).proxy();
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
 }

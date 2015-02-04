@@ -1,2 +1,51 @@
 {
+  A.notNull(tasks,"tasks != null");
+  A.ensure(!tasks.isEmpty(),"!tasks.isEmpty()");
+  A.ensure(timeout >= 0,"timeout >= 0");
+  A.notNull(unit,"unit != null");
+  long now=System.currentTimeMillis();
+  timeout=TimeUnit.MILLISECONDS.convert(timeout,unit);
+  long end=timeout == 0 ? Long.MAX_VALUE : timeout + now;
+  if (end < 0)   end=Long.MAX_VALUE;
+  checkShutdown();
+  Collection<IgniteInternalFuture<T>> taskFuts=new ArrayList<>();
+  for (  Callable<T> cmd : tasks) {
+    IgniteInternalFuture<T> fut;
+    ctx.gateway().readLock();
+    try {
+      fut=ctx.closure().callAsync(BALANCE,cmd,prj.nodes());
+    }
+  finally {
+      ctx.gateway().readUnlock();
+    }
+    taskFuts.add(fut);
+  }
+  T res=null;
+  boolean isInterrupted=false;
+  boolean isResRcvd=false;
+  int errCnt=0;
+  for (  IgniteInternalFuture<T> fut : taskFuts) {
+    now=U.currentTimeMillis();
+    boolean cancel=false;
+    if (!isInterrupted && !isResRcvd && now < end) {
+      try {
+        res=fut.get(end - now);
+        isResRcvd=true;
+        continue;
+      }
+ catch (      IgniteFutureTimeoutCheckedException ignored) {
+        if (log.isDebugEnabled())         log.debug("Timeout occurred during getting task result: " + fut);
+        cancel=true;
+      }
+catch (      IgniteCheckedException e) {
+        if (e.getCause() instanceof InterruptedException)         isInterrupted=true;
+ else         errCnt++;
+      }
+    }
+    if ((isInterrupted || isResRcvd || cancel) && !fut.isDone())     cancelFuture(fut);
+  }
+  if (isInterrupted)   throw new InterruptedException("Got interrupted while waiting for tasks invocation.");
+  if (!isResRcvd && taskFuts.size() == errCnt)   throw new ExecutionException("Failed to get any task completion.",null);
+  if (!isResRcvd)   throw new TimeoutException("Timeout occurred during tasks invocation.");
+  return res;
 }
