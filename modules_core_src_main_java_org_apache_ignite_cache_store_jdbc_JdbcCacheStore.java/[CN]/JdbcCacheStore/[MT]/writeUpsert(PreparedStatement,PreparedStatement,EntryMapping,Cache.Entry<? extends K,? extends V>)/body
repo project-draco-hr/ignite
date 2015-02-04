@@ -2,14 +2,14 @@
   try {
     CacheWriterException we=null;
     for (int attempt=0; attempt < MAX_ATTEMPT_WRITE_COUNT; attempt++) {
-      int i=fillValueParameters(updStmt,1,em,entry.getValue());
-      fillKeyParameters(updStmt,i,em,entry.getKey());
+      int paramIdx=fillValueParameters(updStmt,1,em,entry.getValue());
+      fillKeyParameters(updStmt,paramIdx,em,entry.getKey());
       if (updStmt.executeUpdate() == 0) {
-        i=fillKeyParameters(insStmt,em,entry.getKey());
-        fillValueParameters(insStmt,i,em,entry.getValue());
+        paramIdx=fillKeyParameters(insStmt,em,entry.getKey());
+        fillValueParameters(insStmt,paramIdx,em,entry.getValue());
         try {
           insStmt.executeUpdate();
-          if (i > 0)           U.warn(log,"Entry was inserted in database on second try [table=" + em.fullTableName() + ", entry="+ entry+ "]");
+          if (attempt > 0)           U.warn(log,"Entry was inserted in database on second try [table=" + em.fullTableName() + ", entry="+ entry+ "]");
         }
  catch (        SQLException e) {
           String sqlState=e.getSQLState();
@@ -27,7 +27,7 @@
           throw new CacheWriterException("Failed insert entry in database [table=" + em.fullTableName() + ", entry="+ entry,e);
         }
       }
-      if (i > 0)       U.warn(log,"Entry was updated in database on second try [table=" + em.fullTableName() + ", entry="+ entry+ "]");
+      if (attempt > 0)       U.warn(log,"Entry was updated in database on second try [table=" + em.fullTableName() + ", entry="+ entry+ "]");
       return;
     }
     throw we;
