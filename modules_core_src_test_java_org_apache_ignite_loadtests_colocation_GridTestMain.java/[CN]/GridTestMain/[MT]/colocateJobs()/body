@@ -2,7 +2,7 @@
   X.println("Collocating jobs...");
   Ignite g=G.ignite();
   final GridCache<GridTestKey,Long> cache=g.cache("partitioned");
-  final BlockingQueue<IgniteInternalFuture> q=new ArrayBlockingQueue<>(400);
+  final BlockingQueue<IgniteFuture> q=new ArrayBlockingQueue<>(400);
   long start=System.currentTimeMillis();
   IgniteCompute comp=g.compute().withAsync();
   for (long i=0; i < GridTestConstants.ENTRY_COUNT; i++) {
@@ -14,10 +14,10 @@
       }
     }
 );
-    final IgniteInternalFuture<?> f=comp.future();
+    final IgniteFuture<?> f=comp.future();
     q.put(f);
-    f.listenAsync(new CI1<IgniteInternalFuture<?>>(){
-      @Override public void apply(      IgniteInternalFuture<?> o){
+    f.listenAsync(new CI1<IgniteFuture<?>>(){
+      @Override public void apply(      IgniteFuture<?> o){
         q.poll();
       }
     }

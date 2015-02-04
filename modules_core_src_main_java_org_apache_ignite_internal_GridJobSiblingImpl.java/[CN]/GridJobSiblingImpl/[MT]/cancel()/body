@@ -2,7 +2,14 @@
   GridTaskSessionImpl ses=ctx.session().getSession(sesId);
   if (ses == null) {
     Collection<ClusterNode> nodes=ctx.discovery().remoteNodes();
-    if (!nodes.isEmpty())     ctx.io().send(nodes,TOPIC_JOB_CANCEL,new GridJobCancelRequest(sesId,jobId),SYSTEM_POOL);
+    if (!nodes.isEmpty()) {
+      try {
+        ctx.io().send(nodes,TOPIC_JOB_CANCEL,new GridJobCancelRequest(sesId,jobId),SYSTEM_POOL);
+      }
+ catch (      IgniteCheckedException e) {
+        throw U.convertException(e);
+      }
+    }
     ctx.job().cancelJob(sesId,jobId,false);
     return;
   }

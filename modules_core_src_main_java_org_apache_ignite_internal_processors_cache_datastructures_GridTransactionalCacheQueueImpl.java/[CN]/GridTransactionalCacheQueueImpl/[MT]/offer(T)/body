@@ -5,8 +5,8 @@
     int cnt=0;
     while (true) {
       try {
-        try (IgniteTx tx=txs.txStart(PESSIMISTIC,REPEATABLE_READ)){
-          Long idx=(Long)cache.invoke(queueKey,new AddProcessor(id,1));
+        try (IgniteInternalTx tx=cache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
+          Long idx=(Long)cache.invoke(queueKey,new AddProcessor(id,1)).get();
           if (idx != null) {
             checkRemoved(idx);
             cache.put(itemKey(idx),item);
@@ -17,21 +17,18 @@
           break;
         }
        }
- catch (      CacheException e) {
-        if (e.getCause() instanceof ClusterGroupEmptyException)         throw e;
-        if (e.getCause() instanceof ClusterTopologyException) {
-          if (cnt++ == MAX_UPDATE_RETRIES)           throw e;
+ catch (      ClusterTopologyCheckedException e) {
+        if (e instanceof ClusterGroupEmptyCheckedException)         throw e;
+        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
  else {
-            U.warn(log,"Failed to add item, will retry [err=" + e + ']');
-            U.sleep(RETRY_DELAY);
-          }
+          U.warn(log,"Failed to add item, will retry [err=" + e + ']');
+          U.sleep(RETRY_DELAY);
         }
- else         throw e;
       }
     }
     return retVal;
   }
  catch (  IgniteCheckedException e) {
-    throw new IgniteException(e);
+    throw U.convertException(e);
   }
 }
