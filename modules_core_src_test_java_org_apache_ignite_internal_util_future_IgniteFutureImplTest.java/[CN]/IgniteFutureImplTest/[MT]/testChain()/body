@@ -1,0 +1,32 @@
+{
+  GridFutureAdapter<String> fut0=new GridFutureAdapter<>(new GridTestKernalContext(log),true);
+  IgniteFutureImpl<String> fut=new IgniteFutureImpl<>(fut0);
+  IgniteFuture<Integer> chained=fut.chain(new C1<IgniteFuture<String>,Integer>(){
+    @Override public Integer apply(    IgniteFuture<String> fut){
+      return Integer.valueOf(fut.get());
+    }
+  }
+);
+  assertFalse(chained.isDone());
+  assertTrue(chained.startTime() > 0);
+  U.sleep(100);
+  assertTrue(chained.duration() > 0);
+  final AtomicInteger lsnrCnt=new AtomicInteger();
+  chained.listenAsync(new CI1<IgniteFuture<Integer>>(){
+    @Override public void apply(    IgniteFuture<Integer> fut){
+      assertEquals(10,(int)fut.get());
+      lsnrCnt.incrementAndGet();
+    }
+  }
+);
+  fut0.onDone("10");
+  assertTrue(chained.isDone());
+  assertTrue(chained.duration() > 0);
+  long dur0=chained.duration();
+  U.sleep(100);
+  assertEquals(dur0,chained.duration());
+  assertEquals(10,(int)chained.get());
+  assertEquals(1,lsnrCnt.get());
+  assertTrue(fut.isDone());
+  assertEquals("10",fut.get());
+}
