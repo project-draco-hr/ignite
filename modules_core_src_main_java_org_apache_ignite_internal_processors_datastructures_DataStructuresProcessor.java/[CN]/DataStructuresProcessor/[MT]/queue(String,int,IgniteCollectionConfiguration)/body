@@ -1,12 +1,12 @@
 {
   A.notNull(name,"name");
-  if (create) {
-    A.notNull(cfg,"cfg");
+  if (cfg != null) {
     if (cap <= 0)     cap=Integer.MAX_VALUE;
     if (ctx.cache().publicCache(cfg.getCacheName()) == null)     throw new IgniteCheckedException("Cache for collection is not configured: " + cfg.getCacheName());
   }
-  DataStructureInfo dsInfo=new DataStructureInfo(name,QUEUE,create ? new QueueInfo(cfg.getCacheName(),cfg.isCollocated(),cap) : null);
+  DataStructureInfo dsInfo=new DataStructureInfo(name,QUEUE,cfg != null ? new QueueInfo(cfg.getCacheName(),cfg.isCollocated(),cap) : null);
   final int cap0=cap;
+  final boolean create=cfg != null;
   return getCollection(new IgniteClosureX<GridCacheContext,IgniteQueue<T>>(){
     @Override public IgniteQueue<T> applyx(    GridCacheContext ctx) throws IgniteCheckedException {
       return ctx.dataStructures().queue(name,cap0,create && cfg.isCollocated(),create);

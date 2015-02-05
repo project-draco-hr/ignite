@@ -14,7 +14,7 @@
       putFuts.add(GridTestUtils.runMultiThreadedAsync(new Callable<Void>(){
         @Override public Void call() throws Exception {
           IgniteCollectionConfiguration colCfg=config(collocated);
-          IgniteQueue<Integer> queue=grid(idx).queue(queueName,colCfg,0,true);
+          IgniteQueue<Integer> queue=grid(idx).queue(queueName,0,colCfg);
           for (int i=0; i < ITEMS_PER_THREAD; i++)           assertTrue(queue.add(i));
           return null;
         }
@@ -26,7 +26,7 @@
         pollFuts.add(GridTestUtils.runAsync(new Callable<Void>(){
           @Override public Void call() throws Exception {
             IgniteCollectionConfiguration colCfg=config(collocated);
-            IgniteQueue<Integer> queue=grid(idx).queue(queueName,colCfg,0,true);
+            IgniteQueue<Integer> queue=grid(idx).queue(queueName,0,colCfg);
             while (!stopPoll.get()) {
               Integer val=queue.poll();
               if (val != null)               items[val]++;
@@ -41,7 +41,7 @@
     stopPoll.set(true);
     for (    IgniteInternalFuture fut : pollFuts)     fut.get();
     IgniteCollectionConfiguration colCfg=config(collocated);
-    IgniteQueue<Integer> queue=grid(0).queue(queueName,colCfg,0,true);
+    IgniteQueue<Integer> queue=grid(0).queue(queueName,0,colCfg);
     int[] resItems=new int[ITEMS_PER_THREAD];
     Integer item;
     while ((item=queue.poll()) != null)     resItems[item]++;
@@ -52,6 +52,6 @@
     assertTrue(queue.isEmpty());
   }
   finally {
-    grid(0).queue(queueName,null,0,false).close();
+    grid(0).queue(queueName,0,null).close();
   }
 }

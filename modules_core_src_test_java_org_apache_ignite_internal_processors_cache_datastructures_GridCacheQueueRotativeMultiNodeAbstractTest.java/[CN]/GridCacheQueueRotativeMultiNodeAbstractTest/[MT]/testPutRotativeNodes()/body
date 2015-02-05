@@ -1,12 +1,12 @@
 {
   String queueName=UUID.randomUUID().toString();
-  IgniteQueue<Integer> queue=grid(0).queue(queueName,config(true),QUEUE_CAPACITY,true);
+  IgniteQueue<Integer> queue=grid(0).queue(queueName,QUEUE_CAPACITY,config(true));
   assertTrue(queue.isEmpty());
   for (int i=GRID_CNT; i < GRID_CNT * 3; i++) {
     startGrid(i);
     forLocal(grid(i)).call(new PutJob(queueName,config(true),RETRIES));
     if (i < (GRID_CNT * 3) - 1)     stopGrid(i);
   }
-  queue=grid((GRID_CNT * 3) - 1).queue(queueName,null,0,false);
+  queue=grid((GRID_CNT * 3) - 1).queue(queueName,0,null);
   assertEquals(RETRIES * GRID_CNT * 2,queue.size());
 }

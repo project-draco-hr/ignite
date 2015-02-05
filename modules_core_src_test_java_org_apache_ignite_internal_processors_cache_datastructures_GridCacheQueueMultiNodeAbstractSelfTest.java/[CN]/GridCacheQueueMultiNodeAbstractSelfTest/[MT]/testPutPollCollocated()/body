@@ -2,13 +2,13 @@
   try {
     final String queueName=UUID.randomUUID().toString();
     info("Queue name: " + queueName);
-    grid(0).queue(queueName,config(true),5,true);
+    grid(0).queue(queueName,5,config(true));
     final CountDownLatch latch=new CountDownLatch(1);
     final Ignite g=startGrid(GRID_CNT + 1);
     IgniteInternalFuture<Object> fut1=GridTestUtils.runAsync(new Callable<Object>(){
       @Override public Object call() throws Exception {
         info(">>> Executing put callable [node=" + g.cluster().localNode().id() + ", thread="+ Thread.currentThread().getName()+ ']');
-        IgniteQueue<Integer> q=g.queue(queueName,config(true),5,true);
+        IgniteQueue<Integer> q=g.queue(queueName,5,config(true));
         assertTrue(q.isEmpty());
         for (int i=0; i < ITEMS_CNT; i++) {
           if (i == q.capacity()) {
@@ -28,7 +28,7 @@
       @SuppressWarnings("BusyWait") @Override public Object call() throws Exception {
         try {
           info(">>> Executing poll callable [node=" + g1.cluster().localNode().id() + ", thread="+ Thread.currentThread().getName()+ ']');
-          IgniteQueue<Integer> q=g1.queue(queueName,config(true),5,true);
+          IgniteQueue<Integer> q=g1.queue(queueName,5,config(true));
           int cnt=0;
           int nullCnt=0;
           do {
@@ -56,7 +56,7 @@
 );
     fut1.get();
     fut2.get();
-    grid(0).queue(queueName,null,0,false).close();
+    grid(0).queue(queueName,0,null).close();
   }
   finally {
     stopGrid(GRID_CNT + 1);
