@@ -1,15 +1,23 @@
 {
   GridCacheAdapter<K,V> cacheAdapter=((IgniteKernal)ignite).context().cache().internalCache(cacheName);
   final GridCacheContext<K,V> ctx=cacheAdapter.context();
-  if (ctx.affinity().affinityTopologyVersion() != topVer)   return null;
-  if (cacheAdapter instanceof GridNearCacheAdapter)   cacheAdapter=((GridNearCacheAdapter<K,V>)cacheAdapter).dht();
-  GridDhtCacheAdapter<K,V> dht=(GridDhtCacheAdapter<K,V>)cacheAdapter;
-  IgniteDataLoader<K,V> dataLdr=ignite.dataLoader(cacheName);
-  for (  GridDhtLocalPartition<K,V> locPart : dht.topology().currentLocalPartitions()) {
-    if (!locPart.isEmpty() && locPart.primary(topVer)) {
-      for (      GridDhtCacheEntry<K,V> o : locPart.entries())       dataLdr.removeData(o.key());
+  ctx.affinity().affinityReadyFuture(topVer).get();
+  ctx.gate().enter();
+  try {
+    if (ctx.affinity().affinityTopologyVersion() != topVer)     return null;
+    GridDhtCacheAdapter<K,V> dht;
+    if (cacheAdapter instanceof GridNearCacheAdapter)     dht=((GridNearCacheAdapter<K,V>)cacheAdapter).dht();
+ else     dht=(GridDhtCacheAdapter<K,V>)cacheAdapter;
+    try (IgniteDataLoader<K,V> dataLdr=ignite.dataLoader(cacheName)){
+      for (      GridDhtLocalPartition<K,V> locPart : dht.topology().currentLocalPartitions()) {
+        if (!locPart.isEmpty() && locPart.primary(topVer)) {
+          for (          GridDhtCacheEntry<K,V> o : locPart.entries())           dataLdr.removeData(o.key());
+        }
+      }
     }
+   }
+  finally {
+    ctx.gate().leave();
   }
-  dataLdr.close();
   return null;
 }
