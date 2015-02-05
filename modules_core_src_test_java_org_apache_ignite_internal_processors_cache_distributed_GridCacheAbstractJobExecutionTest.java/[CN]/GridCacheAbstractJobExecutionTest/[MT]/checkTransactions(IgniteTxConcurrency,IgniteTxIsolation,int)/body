@@ -28,6 +28,12 @@
   }
   for (  IgniteInternalFuture<?> fut : futs)   fut.get();
   for (int i=0; i < GRID_CNT; i++) {
+    info("Running iteration: " + i);
+    for (int g=0; g < GRID_CNT; g++) {
+      info("Will check grid: " + g);
+      GridCacheEntryEx<Object,Object> testEntry=((IgniteKernal)grid(i)).internalCache(null).peekEx("TestKey");
+      info("Entry: " + testEntry);
+    }
     CacheProjection<String,int[]> c=grid(i).cache(null).projection(String.class,int[].class);
     try (IgniteTx tx=c.txStart(concur,isolation)){
       int[] arr=c.get("TestKey");
