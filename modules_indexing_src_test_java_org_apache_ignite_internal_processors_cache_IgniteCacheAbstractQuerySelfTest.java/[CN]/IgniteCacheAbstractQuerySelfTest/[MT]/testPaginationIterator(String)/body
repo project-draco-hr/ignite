@@ -1,7 +1,9 @@
 {
   IgniteCache<Integer,Integer> cache=ignite.jcache(cacheName);
   for (int i=0; i < 50; i++)   cache.put(i,i);
-  QueryCursor<Cache.Entry<Integer,Integer>> q=cache.query(new QuerySqlPredicate<Integer,Integer>("_key >= 0",10,new Object[0]));
+  QuerySqlPredicate qry=new QuerySqlPredicate(Integer.class,"_key >= 0");
+  qry.setPageSize(10);
+  QueryCursor<Cache.Entry<Integer,Integer>> q=cache.query(qry);
   int cnt=0;
   for (  Cache.Entry<Integer,Integer> e : q) {
     assertTrue(e.getKey() >= 0 && e.getKey() < 50);

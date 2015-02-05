@@ -3,7 +3,7 @@
     Ignite g=startGrid();
     IgniteCache<Integer,Integer> cache=g.jcache(null);
     for (int i=0; i < 1000; i++)     cache.put(i,i);
-    QueryCursor<Cache.Entry<Integer,Integer>> q=cache.query(new QuerySqlPredicate<Integer,Integer>("_key >= 0 order by _key",50,new Object[0]));
+    QueryCursor<Cache.Entry<Integer,Integer>> q=cache.query(new QuerySqlPredicate(Integer.class,"_key >= 0 order by _key"));
     assertEquals(0,(int)q.iterator().next().getKey());
     final ConcurrentMap<UUID,Map<Long,GridFutureAdapter<GridCloseableIterator<IgniteBiTuple<Integer,Integer>>>>> map=U.field(((IgniteKernal)grid(0)).internalCache().context().queries(),"qryIters");
     assertTrue(GridTestUtils.waitForCondition(new PA(){
