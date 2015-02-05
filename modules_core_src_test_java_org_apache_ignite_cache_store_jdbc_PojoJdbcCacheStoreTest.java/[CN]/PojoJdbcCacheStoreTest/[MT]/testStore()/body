@@ -1,0 +1,23 @@
+{
+  IgniteTx tx=new DummyTx();
+  ses.newSession(tx);
+  OrganizationKey k1=new OrganizationKey(1);
+  Organization v1=new Organization(1,"Name1","City1");
+  OrganizationKey k2=new OrganizationKey(2);
+  Organization v2=new Organization(2,"Name2","City2");
+  store.write(new CacheEntryImpl<>(k1,v1));
+  store.write(new CacheEntryImpl<>(k2,v2));
+  store.txEnd(true);
+  ses.newSession(null);
+  assertEquals(v1,store.load(k1));
+  assertEquals(v2,store.load(k2));
+  ses.newSession(tx);
+  OrganizationKey k3=new OrganizationKey(3);
+  assertNull(store.load(k3));
+  store.delete(k1);
+  store.txEnd(true);
+  assertNull(store.load(k1));
+  assertEquals(v2,store.load(k2));
+  ses.newSession(null);
+  assertNull(store.load(k3));
+}
