@@ -1,0 +1,20 @@
+{
+  Map<Object,EntryMapping> entryMappings=cacheMappings.get(cacheName);
+  if (entryMappings != null)   return entryMappings;
+  cacheMappingsLock.lock();
+  try {
+    entryMappings=cacheMappings.get(cacheName);
+    if (entryMappings != null)     return entryMappings;
+    Collection<CacheTypeMetadata> types=ignite().cache(session().cacheName()).configuration().getTypeMetadata();
+    entryMappings=U.newHashMap(types.size());
+    for (    CacheTypeMetadata type : types)     entryMappings.put(keyTypeId(type.getKeyType()),new EntryMapping(dialect,type));
+    Map<String,Map<Object,EntryMapping>> mappings=new HashMap<>(cacheMappings);
+    mappings.put(cacheName,entryMappings);
+    prepareBuilders(cacheName,types);
+    cacheMappings=mappings;
+    return entryMappings;
+  }
+  finally {
+    cacheMappingsLock.unlock();
+  }
+}

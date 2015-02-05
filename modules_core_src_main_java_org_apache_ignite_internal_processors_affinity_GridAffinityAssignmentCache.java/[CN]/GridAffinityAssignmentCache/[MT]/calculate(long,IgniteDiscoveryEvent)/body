@@ -1,26 +1,2 @@
 {
-  if (log.isDebugEnabled())   log.debug("Calculating affinity [topVer=" + topVer + ", locNodeId="+ ctx.localNodeId()+ ", discoEvt="+ discoEvt+ ']');
-  GridAffinityAssignment prev=affCache.get(topVer - 1);
-  List<ClusterNode> sorted;
-  if (ctx.isLocal())   sorted=Collections.singletonList(ctx.localNode());
- else {
-    Collection<ClusterNode> nodes=ctx.discovery().cacheAffinityNodes(cacheName,topVer);
-    sorted=sort(nodes);
-  }
-  List<List<ClusterNode>> prevAssignment=prev == null ? null : prev.assignment();
-  List<List<ClusterNode>> assignment=aff.assignPartitions(new GridCacheAffinityFunctionContextImpl(sorted,prevAssignment,discoEvt,topVer,backups));
-  GridAffinityAssignment updated=new GridAffinityAssignment(topVer,assignment);
-  updated=F.addIfAbsent(affCache,topVer,updated);
-  while (true) {
-    GridAffinityAssignment headItem=head.get();
-    if (headItem.topologyVersion() >= topVer)     break;
-    if (head.compareAndSet(headItem,updated))     break;
-  }
-  for (  Map.Entry<Long,AffinityReadyFuture> entry : readyFuts.entrySet()) {
-    if (entry.getKey() <= topVer) {
-      if (log.isDebugEnabled())       log.debug("Completing topology ready future (calculated affinity) [locNodeId=" + ctx.localNodeId() + ", futVer="+ entry.getKey()+ ", topVer="+ topVer+ ']');
-      entry.getValue().onDone(topVer);
-    }
-  }
-  return updated.assignment();
 }

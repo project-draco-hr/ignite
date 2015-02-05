@@ -1,6 +1,13 @@
 {
   IgniteEx grid=grid(0);
-  TestStore firstStore=(TestStore)grid(0).configuration().getCacheConfiguration()[1].getCacheStoreFactory().create();
+  TestStore firstStore=null;
+  for (  CacheConfiguration ccfg : grid(0).configuration().getCacheConfiguration()) {
+    if (ccfg.getCacheStoreFactory() != null) {
+      firstStore=(TestStore)ccfg.getCacheStoreFactory().create();
+      break;
+    }
+  }
+  assertNotNull(firstStore);
   Collection<String> evts=firstStore.events();
   try (IgniteTx tx=grid.transactions().txStart()){
     GridCache<Object,Object> cacheA=grid.cache("cacheA");
