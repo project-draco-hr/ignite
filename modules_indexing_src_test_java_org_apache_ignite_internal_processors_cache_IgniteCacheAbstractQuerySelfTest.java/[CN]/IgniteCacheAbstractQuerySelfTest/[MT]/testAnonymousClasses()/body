@@ -1,0 +1,20 @@
+{
+  IgniteCache<Integer,Object> cache=ignite.jcache(null);
+  Object val=new Object(){
+    @QuerySqlField private int field1=10;
+    @Override public String toString(){
+      return "Test anonymous object.";
+    }
+  }
+;
+  assertTrue(val.getClass().getName().endsWith("GridCacheAbstractQuerySelfTest$16"));
+  cache.put(1,val);
+  QueryCursor<Cache.Entry<Integer,Object>> q=cache.query(new QuerySqlPredicate<Integer,Object>("_key >= 0"));
+  Collection<Cache.Entry<Integer,Object>> res=q.getAll();
+  assertEquals(1,res.size());
+  QueryCursor<List<?>> fieldsRes=cache.queryFields(new QuerySqlPredicate<Integer,Object>("select field1 from GridCacheAbstractQuerySelfTest_16"));
+  assertEquals(1,fieldsRes.getAll());
+  List<?> fields=F.first(fieldsRes.getAll());
+  assertEquals(1,fields.size());
+  assertEquals(10,fields.get(0));
+}
