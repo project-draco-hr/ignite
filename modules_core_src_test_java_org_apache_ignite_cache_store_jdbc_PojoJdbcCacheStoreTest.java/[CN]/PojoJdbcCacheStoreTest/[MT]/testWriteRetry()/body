@@ -1,0 +1,33 @@
+{
+  BasicJdbcDialect dialect=new BasicJdbcDialect(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public String updateQuery(    String tblName,    Collection<String> keyCols,    Iterable<String> valCols){
+      return super.updateQuery(tblName,keyCols,valCols) + " AND 1 = 0";
+    }
+  }
+;
+  store.setDialect(dialect);
+  Map<String,Map<Object,JdbcCacheStore.EntryMapping>> cacheMappings=GridTestUtils.getFieldValue(store,JdbcCacheStore.class,"cacheMappings");
+  JdbcCacheStore.EntryMapping em=cacheMappings.get(null).get(OrganizationKey.class);
+  CacheTypeMetadata typeMeta=GridTestUtils.getFieldValue(em,JdbcCacheStore.EntryMapping.class,"typeMeta");
+  cacheMappings.get(null).put(OrganizationKey.class,new JdbcCacheStore.EntryMapping(dialect,typeMeta));
+  Connection conn=store.openConnection(false);
+  PreparedStatement orgStmt=conn.prepareStatement("INSERT INTO Organization(id, name, city) VALUES (?, ?, ?)");
+  orgStmt.setInt(1,1);
+  orgStmt.setString(2,"name" + 1);
+  orgStmt.setString(3,"city" + 1);
+  orgStmt.executeUpdate();
+  U.closeQuiet(orgStmt);
+  conn.commit();
+  OrganizationKey k1=new OrganizationKey(1);
+  Organization v1=new Organization(1,"Name1","City1");
+  ses.newSession(null);
+  try {
+    store.write(new CacheEntryImpl<>(k1,v1));
+  }
+ catch (  CacheWriterException e) {
+    if (!e.getMessage().startsWith("Failed insert entry in database, violate a unique index or primary key") || e.getSuppressed().length != 2)     throw e;
+  }
+}
