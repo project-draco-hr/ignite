@@ -1,0 +1,19 @@
+{
+  FileSwapSpaceSpi swap=(FileSwapSpaceSpi)ignite(nodeIdx).configuration().getSwapSpaceSpi();
+  final String spaceName="gg-swap-cache-dflt";
+  IgniteSpiCloseableIterator<Integer> it=swap.keyIterator(spaceName,null);
+  assertNotNull(it);
+  CacheAffinity aff=ignite(nodeIdx).affinity(null);
+  ClusterNode node=ignite(nodeIdx).cluster().localNode();
+  int primary=0;
+  int backups=0;
+  while (it.hasNext()) {
+    Integer key=it.next();
+    if (aff.isPrimary(node,key))     primary++;
+ else {
+      assertTrue(aff.isBackup(node,key));
+      backups++;
+    }
+  }
+  return new T2<>(primary,backups);
+}

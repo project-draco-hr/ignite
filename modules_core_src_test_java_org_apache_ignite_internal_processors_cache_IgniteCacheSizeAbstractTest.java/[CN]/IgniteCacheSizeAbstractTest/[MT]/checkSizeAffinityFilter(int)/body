@@ -69,8 +69,21 @@
       assertEquals(primary + backups,cache.localSize(BACKUP,PRIMARY));
       assertEquals(primary + backups,cache.localSize(ALL));
     }
+    cache0.remove(keys.get(0));
+    checkPrimarySize(PUT_KEYS - 1);
+    if (cacheMode() == REPLICATED) {
+      assertEquals(PUT_KEYS - 1,cache0.localSize());
+      assertEquals(0,cache0.localSize(PRIMARY));
+      assertEquals(PUT_KEYS - 1,cache0.localSize(BACKUP));
+    }
+ else {
+      boolean hasNearCache=nodeIdx == 0;
+      if (hasNearCache)       assertEquals(PUT_KEYS - 1,cache0.localSize());
+ else       assertEquals(0,cache0.localSize());
+    }
   }
   finally {
     if (keys != null)     cache0.removeAll(new HashSet<>(keys));
   }
+  checkEmpty();
 }

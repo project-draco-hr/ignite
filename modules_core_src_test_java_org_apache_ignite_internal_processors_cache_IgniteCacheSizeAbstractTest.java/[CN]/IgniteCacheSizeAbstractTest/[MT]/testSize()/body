@@ -1,13 +1,5 @@
 {
-  for (int i=0; i < gridCount(); i++) {
-    IgniteCache<Integer,String> cache=jcache(i);
-    assertEquals(0,cache.localSize());
-    assertEquals(0,cache.size());
-    for (    CachePeekMode peekMode : CachePeekMode.values()) {
-      assertEquals(0,cache.localSize(peekMode));
-      assertEquals(0,cache.size(peekMode));
-    }
-  }
+  checkEmpty();
   if (cacheMode() == LOCAL) {
     IgniteCache<Integer,String> cache0=jcache(0);
     IgniteCache<Integer,String> cacheAsync0=cache0.withAsync();
@@ -29,9 +21,50 @@
       cacheAsync0.size(PRIMARY);
       assertEquals(size,cacheAsync0.future().get());
     }
+    for (int i=0; i < HEAP_ENTRIES; i++) {
+      cache0.remove(i,String.valueOf(i));
+      final int size=HEAP_ENTRIES - i - 1;
+      assertEquals(size,cache0.localSize());
+      assertEquals(size,cache0.localSize(PRIMARY));
+      assertEquals(size,cache0.localSize(BACKUP));
+      assertEquals(size,cache0.localSize(NEAR));
+      assertEquals(size,cache0.localSize(ALL));
+      assertEquals(size,cache0.size());
+      assertEquals(size,cache0.size(PRIMARY));
+      assertEquals(size,cache0.size(BACKUP));
+      assertEquals(size,cache0.size(NEAR));
+      assertEquals(size,cache0.size(ALL));
+      cacheAsync0.size();
+      assertEquals(size,cacheAsync0.future().get());
+    }
+    checkEmpty();
+    for (int i=0; i < 200; i++)     cache0.put(i,"test_val");
+    int totalKeys=200;
+    T2<Integer,Integer> swapKeys=swapKeys(0);
+    T2<Integer,Integer> offheapKeys=offheapKeys(0);
+    int totalSwap=swapKeys.get1() + swapKeys.get2();
+    int totalOffheap=offheapKeys.get1() + offheapKeys.get2();
+    log.info("Keys [total=" + totalKeys + ", offheap="+ offheapKeys+ ", swap="+ swapKeys+ ']');
+    assertTrue(totalSwap + totalOffheap < totalKeys);
+    assertEquals(totalKeys,cache0.localSize());
+    assertEquals(totalKeys,cache0.localSize(ALL));
+    assertEquals(totalOffheap,cache0.localSize(OFFHEAP));
+    assertEquals(totalSwap,cache0.localSize(SWAP));
+    assertEquals(totalKeys - (totalSwap + totalOffheap),cache0.localSize(ONHEAP));
+    assertEquals(totalOffheap,cache0.size(OFFHEAP));
+    assertEquals(totalSwap,cache0.size(SWAP));
+    assertEquals(totalKeys - (totalSwap + totalOffheap),cache0.size(ONHEAP));
+    assertEquals(totalOffheap,cache0.localSize(OFFHEAP,PRIMARY));
+    assertEquals(totalSwap,cache0.localSize(SWAP,PRIMARY));
+    assertEquals(totalKeys - (totalSwap + totalOffheap),cache0.localSize(ONHEAP,PRIMARY));
+    assertEquals(totalOffheap,cache0.localSize(OFFHEAP,BACKUP));
+    assertEquals(totalSwap,cache0.localSize(SWAP,BACKUP));
+    assertEquals(totalKeys - (totalSwap + totalOffheap),cache0.localSize(ONHEAP,BACKUP));
   }
  else {
     checkSizeAffinityFilter(0);
     checkSizeAffinityFilter(1);
+    checkSizeStorageFilter(0);
+    checkSizeStorageFilter(1);
   }
 }
