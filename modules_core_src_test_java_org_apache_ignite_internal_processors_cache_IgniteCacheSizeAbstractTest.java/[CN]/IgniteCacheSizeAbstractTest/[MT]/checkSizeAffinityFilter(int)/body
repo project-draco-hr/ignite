@@ -1,0 +1,76 @@
+{
+  IgniteCache<Integer,String> cache0=jcache(nodeIdx);
+  final int PUT_KEYS=10;
+  List<Integer> keys=null;
+  try {
+    if (cacheMode() == REPLICATED) {
+      keys=backupKeys(cache0,10,0);
+      for (      Integer key : keys)       cache0.put(key,String.valueOf(key));
+      assertEquals(PUT_KEYS,cache0.localSize());
+      assertEquals(PUT_KEYS,cache0.localSize(BACKUP));
+      assertEquals(PUT_KEYS,cache0.localSize(ALL));
+      assertEquals(0,cache0.localSize(PRIMARY));
+      assertEquals(0,cache0.localSize(NEAR));
+      for (int i=0; i < gridCount(); i++) {
+        IgniteCache<Integer,String> cache=jcache(i);
+        assertEquals(0,cache.size(NEAR));
+        assertEquals(PUT_KEYS,cache.size(PRIMARY));
+        assertEquals(PUT_KEYS * (gridCount() - 1),cache.size(BACKUP));
+        assertEquals(PUT_KEYS * gridCount(),cache.size(PRIMARY,BACKUP));
+        assertEquals(PUT_KEYS * gridCount(),cache.size());
+      }
+    }
+ else {
+      keys=nearKeys(cache0,PUT_KEYS,0);
+      for (      Integer key : keys)       cache0.put(key,String.valueOf(key));
+      boolean hasNearCache=nodeIdx == 0;
+      if (hasNearCache) {
+        assertEquals(PUT_KEYS,cache0.localSize());
+        assertEquals(PUT_KEYS,cache0.localSize(ALL));
+        assertEquals(PUT_KEYS,cache0.localSize(NEAR));
+        for (int i=0; i < gridCount(); i++) {
+          IgniteCache<Integer,String> cache=jcache(i);
+          assertEquals(PUT_KEYS,cache.size(NEAR));
+          assertEquals(PUT_KEYS,cache.size(BACKUP));
+          assertEquals(PUT_KEYS * 2,cache.size(PRIMARY,BACKUP));
+          assertEquals(PUT_KEYS * 2 + PUT_KEYS,cache.size());
+        }
+      }
+ else {
+        assertEquals(0,cache0.localSize());
+        assertEquals(0,cache0.localSize(ALL));
+        assertEquals(0,cache0.localSize(NEAR));
+        for (int i=0; i < gridCount(); i++) {
+          IgniteCache<Integer,String> cache=jcache(i);
+          assertEquals(0,cache.size(NEAR));
+          assertEquals(PUT_KEYS,cache.size(BACKUP));
+          assertEquals(PUT_KEYS * 2,cache.size(PRIMARY,BACKUP));
+          assertEquals(PUT_KEYS * 2,cache.size());
+        }
+      }
+      assertEquals(0,cache0.localSize(BACKUP));
+      assertEquals(0,cache0.localSize(PRIMARY));
+    }
+    checkPrimarySize(PUT_KEYS);
+    CacheAffinity<Integer> aff=ignite(0).affinity(null);
+    for (int i=0; i < gridCount(); i++) {
+      if (i == nodeIdx)       continue;
+      ClusterNode node=ignite(i).cluster().localNode();
+      int primary=0;
+      int backups=0;
+      for (      Integer key : keys) {
+        if (aff.isPrimary(node,key))         primary++;
+ else         if (aff.isBackup(node,key))         backups++;
+      }
+      IgniteCache<Integer,String> cache=jcache(i);
+      assertEquals(primary,cache.localSize(PRIMARY));
+      assertEquals(backups,cache.localSize(BACKUP));
+      assertEquals(primary + backups,cache.localSize(PRIMARY,BACKUP));
+      assertEquals(primary + backups,cache.localSize(BACKUP,PRIMARY));
+      assertEquals(primary + backups,cache.localSize(ALL));
+    }
+  }
+  finally {
+    if (keys != null)     cache0.removeAll(new HashSet<>(keys));
+  }
+}

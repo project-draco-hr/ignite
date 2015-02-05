@@ -1,0 +1,37 @@
+{
+  for (int i=0; i < gridCount(); i++) {
+    IgniteCache<Integer,String> cache=jcache(i);
+    assertEquals(0,cache.localSize());
+    assertEquals(0,cache.size());
+    for (    CachePeekMode peekMode : CachePeekMode.values()) {
+      assertEquals(0,cache.localSize(peekMode));
+      assertEquals(0,cache.size(peekMode));
+    }
+  }
+  if (cacheMode() == LOCAL) {
+    IgniteCache<Integer,String> cache0=jcache(0);
+    IgniteCache<Integer,String> cacheAsync0=cache0.withAsync();
+    for (int i=0; i < HEAP_ENTRIES; i++) {
+      cache0.put(i,String.valueOf(i));
+      final int size=i + 1;
+      assertEquals(size,cache0.localSize());
+      assertEquals(size,cache0.localSize(PRIMARY));
+      assertEquals(size,cache0.localSize(BACKUP));
+      assertEquals(size,cache0.localSize(NEAR));
+      assertEquals(size,cache0.localSize(ALL));
+      assertEquals(size,cache0.size());
+      assertEquals(size,cache0.size(PRIMARY));
+      assertEquals(size,cache0.size(BACKUP));
+      assertEquals(size,cache0.size(NEAR));
+      assertEquals(size,cache0.size(ALL));
+      cacheAsync0.size();
+      assertEquals(size,cacheAsync0.future().get());
+      cacheAsync0.size(PRIMARY);
+      assertEquals(size,cacheAsync0.future().get());
+    }
+  }
+ else {
+    checkSizeAffinityFilter(0);
+    checkSizeAffinityFilter(1);
+  }
+}
