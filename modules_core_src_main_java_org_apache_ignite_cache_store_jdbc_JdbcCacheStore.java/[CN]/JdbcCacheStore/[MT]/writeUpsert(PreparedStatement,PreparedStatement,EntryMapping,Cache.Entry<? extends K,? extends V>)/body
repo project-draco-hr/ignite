@@ -1,0 +1,38 @@
+{
+  try {
+    CacheWriterException we=null;
+    for (int attempt=0; attempt < MAX_ATTEMPT_WRITE_COUNT; attempt++) {
+      int paramIdx=fillValueParameters(updStmt,1,em,entry.getValue());
+      fillKeyParameters(updStmt,paramIdx,em,entry.getKey());
+      if (updStmt.executeUpdate() == 0) {
+        paramIdx=fillKeyParameters(insStmt,em,entry.getKey());
+        fillValueParameters(insStmt,paramIdx,em,entry.getValue());
+        try {
+          insStmt.executeUpdate();
+          if (attempt > 0)           U.warn(log,"Entry was inserted in database on second try [table=" + em.fullTableName() + ", entry="+ entry+ "]");
+        }
+ catch (        SQLException e) {
+          String sqlState=e.getSQLState();
+          SQLException nested=e.getNextException();
+          while (sqlState == null && nested != null) {
+            sqlState=nested.getSQLState();
+            nested=nested.getNextException();
+          }
+          if ("23505".equals(sqlState) || "23000".equals(sqlState)) {
+            if (we == null)             we=new CacheWriterException("Failed insert entry in database, violate a unique" + " index or primary key [table=" + em.fullTableName() + ", entry="+ entry+ "]");
+            we.addSuppressed(e);
+            U.warn(log,"Failed insert entry in database, violate a unique index or primary key" + " [table=" + em.fullTableName() + ", entry="+ entry+ "]");
+            continue;
+          }
+          throw new CacheWriterException("Failed insert entry in database [table=" + em.fullTableName() + ", entry="+ entry,e);
+        }
+      }
+      if (attempt > 0)       U.warn(log,"Entry was updated in database on second try [table=" + em.fullTableName() + ", entry="+ entry+ "]");
+      return;
+    }
+    throw we;
+  }
+ catch (  SQLException e) {
+    throw new CacheWriterException("Failed update entry in database [table=" + em.fullTableName() + ", entry="+ entry+ "]",e);
+  }
+}

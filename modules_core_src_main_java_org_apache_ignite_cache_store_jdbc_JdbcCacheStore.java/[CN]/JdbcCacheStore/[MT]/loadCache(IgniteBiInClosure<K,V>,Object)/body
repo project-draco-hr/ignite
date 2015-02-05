@@ -1,0 +1,56 @@
+{
+  try {
+    ExecutorService pool=Executors.newFixedThreadPool(maxPoolSz);
+    Collection<Future<?>> futs=new ArrayList<>();
+    if (args != null && args.length > 0) {
+      if (args.length % 2 != 0)       throw new CacheLoaderException("Expected even number of arguments, but found: " + args.length);
+      if (log.isDebugEnabled())       log.debug("Start loading entries from db using user queries from arguments");
+      for (int i=0; i < args.length; i+=2) {
+        String keyType=args[i].toString();
+        String selQry=args[i + 1].toString();
+        EntryMapping em=entryMapping(keyTypeId(keyType),keyType);
+        futs.add(pool.submit(new LoadCacheCustomQueryWorker<>(em,selQry,clo)));
+      }
+    }
+ else {
+      Collection<EntryMapping> entryMappings=cacheMappings(session().cacheName()).values();
+      if (log.isDebugEnabled())       log.debug("Start loading all cache types entries from db");
+      for (      EntryMapping em : entryMappings) {
+        if (parallelLoadCacheMinThreshold > 0) {
+          Connection conn=null;
+          try {
+            conn=connection();
+            PreparedStatement stmt=conn.prepareStatement(em.loadCacheSelRangeQry);
+            stmt.setInt(1,parallelLoadCacheMinThreshold);
+            ResultSet rs=stmt.executeQuery();
+            if (rs.next()) {
+              int keyCnt=em.keyCols.size();
+              Object[] upperBound=new Object[keyCnt];
+              for (int i=0; i < keyCnt; i++)               upperBound[i]=rs.getObject(i + 1);
+              futs.add(pool.submit(loadCacheRange(em,clo,null,upperBound)));
+              while (rs.next()) {
+                Object[] lowerBound=upperBound;
+                upperBound=new Object[keyCnt];
+                for (int i=0; i < keyCnt; i++)                 upperBound[i]=rs.getObject(i + 1);
+                futs.add(pool.submit(loadCacheRange(em,clo,lowerBound,upperBound)));
+              }
+              futs.add(pool.submit(loadCacheRange(em,clo,upperBound,null)));
+            }
+ else             futs.add(pool.submit(loadCacheFull(em,clo)));
+          }
+ catch (          SQLException ignored) {
+            futs.add(pool.submit(loadCacheFull(em,clo)));
+          }
+ finally {
+            U.closeQuiet(conn);
+          }
+        }
+ else         futs.add(pool.submit(loadCacheFull(em,clo)));
+      }
+    }
+    for (    Future<?> fut : futs)     U.get(fut);
+  }
+ catch (  IgniteCheckedException e) {
+    throw new CacheLoaderException("Failed to load cache",e.getCause());
+  }
+}
