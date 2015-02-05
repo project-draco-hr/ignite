@@ -54,7 +54,7 @@
     processCmdFiles(hadoopDir,"bin","sbin","libexec");
   }
   File gridgainLibs=new File(new File(gridgainHome),"libs");
-  if (!gridgainLibs.exists())   exit("GridGain 'libs' folder is not found.",null);
+  if (!gridgainLibs.exists())   exit("Ignite 'libs' folder is not found.",null);
   Collection<File> jarFiles=new ArrayList<>();
   addJarsInFolder(jarFiles,gridgainLibs);
   addJarsInFolder(jarFiles,new File(gridgainLibs,"gridgain-hadoop"));
@@ -65,9 +65,9 @@
     if (!jarsLinksCorrect)     break;
   }
   if (!jarsLinksCorrect) {
-    if (ask("GridGain JAR files are not found in Hadoop 'lib' directory. " + "Create appropriate symbolic links?")) {
+    if (ask("Ignite JAR files are not found in Hadoop 'lib' directory. " + "Create appropriate symbolic links?")) {
       File[] oldGridGainJarFiles=hadoopCommonLibDir.listFiles(IGNITE_JARS);
-      if (oldGridGainJarFiles.length > 0 && ask("The Hadoop 'lib' directory contains JARs from other GridGain " + "installation. They must be deleted to continue. Continue?")) {
+      if (oldGridGainJarFiles.length > 0 && ask("The Hadoop 'lib' directory contains JARs from other Ignite " + "installation. They must be deleted to continue. Continue?")) {
         for (        File file : oldGridGainJarFiles) {
           println("Deleting file '" + file.getAbsolutePath() + "'.");
           if (!file.delete())           exit("Failed to delete file '" + file.getPath() + "'.",null);
@@ -89,23 +89,23 @@
         }
       }
     }
- else     println("Ok. But Hadoop client will not be able to talk to GridGain cluster without those JARs in classpath...");
+ else     println("Ok. But Hadoop client will not be able to talk to Ignite cluster without those JARs in classpath...");
   }
   File hadoopEtc=new File(hadoopDir,"etc" + File.separator + "hadoop");
   File gridgainDocs=new File(gridgainHome,"docs");
-  if (!gridgainDocs.canRead())   exit("Failed to read GridGain 'docs' folder at '" + gridgainDocs.getAbsolutePath() + "'.",null);
+  if (!gridgainDocs.canRead())   exit("Failed to read Ignite 'docs' folder at '" + gridgainDocs.getAbsolutePath() + "'.",null);
   if (hadoopEtc.canWrite()) {
     if (ask("Replace 'core-site.xml' and 'mapred-site.xml' files with preconfigured templates " + "(existing files will be backed up)?")) {
       replaceWithBackup(new File(gridgainDocs,"core-site.ignite.xml"),new File(hadoopEtc,"core-site.xml"));
       replaceWithBackup(new File(gridgainDocs,"mapred-site.ignite.xml"),new File(hadoopEtc,"mapred-site.xml"));
     }
- else     println("Ok. You can configure them later, the templates are available at GridGain's 'docs' directory...");
+ else     println("Ok. You can configure them later, the templates are available at Ignite's 'docs' directory...");
   }
   if (!F.isEmpty(hiveHome)) {
     File hiveConfDir=new File(hiveHome + File.separator + "conf");
-    if (!hiveConfDir.canWrite())     warn("Can not write to '" + hiveConfDir.getAbsolutePath() + "'. To run Hive queries you have to "+ "configure 'hive-site.xml' manually. The template is available at GridGain's 'docs' directory.");
+    if (!hiveConfDir.canWrite())     warn("Can not write to '" + hiveConfDir.getAbsolutePath() + "'. To run Hive queries you have to "+ "configure 'hive-site.xml' manually. The template is available at Ignite's 'docs' directory.");
  else     if (ask("Replace 'hive-site.xml' with preconfigured template (existing file will be backed up)?"))     replaceWithBackup(new File(gridgainDocs,"hive-site.ignite.xml"),new File(hiveConfDir,"hive-site.xml"));
- else     println("Ok. You can configure it later, the template is available at GridGain's 'docs' directory...");
+ else     println("Ok. You can configure it later, the template is available at Ignite's 'docs' directory...");
   }
   println("Apache Hadoop setup is complete.");
 }
