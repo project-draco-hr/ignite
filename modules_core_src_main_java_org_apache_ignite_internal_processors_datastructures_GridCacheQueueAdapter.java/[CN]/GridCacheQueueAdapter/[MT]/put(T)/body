@@ -1,0 +1,19 @@
+{
+  A.notNull(item,"item");
+  if (!bounded()) {
+    boolean offer=offer(item);
+    assert offer;
+    return;
+  }
+  while (true) {
+    try {
+      writeSem.acquire();
+    }
+ catch (    InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IgniteInterruptedException("Queue put interrupted.",e);
+    }
+    checkStopping();
+    if (offer(item))     return;
+  }
+}
