@@ -1,0 +1,45 @@
+{
+switch (rs.getString(DATA_TYPE_IDX)) {
+case "CHAR":
+case "NCHAR":
+    return CHAR;
+case "VARCHAR2":
+case "NVARCHAR2":
+  return VARCHAR;
+case "LONG":
+return LONGVARCHAR;
+case "LONG RAW":
+return LONGVARBINARY;
+case "FLOAT":
+return FLOAT;
+case "NUMBER":
+int precision=rs.getInt(DATA_PRECISION_IDX);
+int scale=rs.getInt(DATA_SCALE_IDX);
+if (scale > 0) {
+if (scale < 4 && precision < 19) return FLOAT;
+if (scale > 4 || precision > 19) return DOUBLE;
+return NUMERIC;
+}
+ else {
+if (precision < 1) return INTEGER;
+if (precision < 2) return BOOLEAN;
+if (precision < 4) return TINYINT;
+if (precision < 6) return SMALLINT;
+if (precision < 11) return INTEGER;
+if (precision < 20) return BIGINT;
+return NUMERIC;
+}
+case "DATE":
+return DATE;
+case "TIMESTAMP":
+return TIMESTAMP;
+case "BFILE":
+case "BLOB":
+return BLOB;
+case "CLOB":
+case "NCLOB":
+case "XMLTYPE":
+return CLOB;
+}
+return OTHER;
+}

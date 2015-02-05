@@ -1,15 +1,15 @@
 {
-  try (Ignite g=Ignition.start("examples/config/example-cache.xml")){
+  try (Ignite ignite=Ignition.start("examples/config/example-cache.xml")){
     System.out.println();
     System.out.println(">>> Cache atomic countdown latch example started.");
     final String latchName=UUID.randomUUID().toString();
-    CacheCountDownLatch latch=g.cache(CACHE_NAME).dataStructures().countDownLatch(latchName,INITIAL_COUNT,false,true);
+    CacheCountDownLatch latch=ignite.cache(CACHE_NAME).dataStructures().countDownLatch(latchName,INITIAL_COUNT,false,true);
     System.out.println("Latch initial value: " + latch.count());
-    for (int i=0; i < INITIAL_COUNT; i++)     g.compute().run(new LatchClosure(CACHE_NAME,latchName));
+    for (int i=0; i < INITIAL_COUNT; i++)     ignite.compute().run(new LatchClosure(CACHE_NAME,latchName));
     latch.await();
     System.out.println("All latch closures have completed.");
   }
    System.out.println();
   System.out.println("Finished count down latch example...");
-  System.out.println("Check all nodes for output (this node is also part of the grid).");
+  System.out.println("Check all nodes for output (this node is also part of the cluster).");
 }

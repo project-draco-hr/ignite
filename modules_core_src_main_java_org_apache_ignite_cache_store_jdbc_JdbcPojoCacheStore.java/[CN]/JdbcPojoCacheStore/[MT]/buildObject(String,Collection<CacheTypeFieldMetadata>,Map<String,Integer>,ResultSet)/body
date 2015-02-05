@@ -1,0 +1,15 @@
+{
+  PojoMethodsCache mc=mtdsCache.get(session().cacheName()).get(typeName);
+  Object obj=mc.newInstance();
+  try {
+    for (    CacheTypeFieldMetadata field : fields) {
+      Method setter=mc.setters.get(field.getJavaName());
+      Integer colIdx=loadColIdxs.get(field.getDatabaseName());
+      setter.invoke(obj,getColumnValue(rs,colIdx,field.getJavaType()));
+    }
+    return (R)obj;
+  }
+ catch (  Exception e) {
+    throw new CacheLoaderException("Failed to read object of class: " + typeName,e);
+  }
+}

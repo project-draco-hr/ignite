@@ -1,0 +1,32 @@
+{
+  File outFolder=out.getParentFile();
+  if (outFolder == null)   throw new IllegalStateException("Invalid output file: " + out);
+  if (!outFolder.exists() && !outFolder.mkdirs())   throw new IllegalStateException("Failed to create output folder for XML file: " + outFolder);
+  try {
+    if (out.exists()) {
+      MessageBox.Result choice=askOverwrite.confirm(out.getName());
+      if (CANCEL == choice)       throw new IllegalStateException("XML generation was canceled!");
+      if (NO == choice || NO_TO_ALL == choice)       return;
+    }
+    DocumentBuilderFactory docFactory=DocumentBuilderFactory.newInstance();
+    DocumentBuilder docBuilder=docFactory.newDocumentBuilder();
+    Document doc=docBuilder.newDocument();
+    doc.setXmlStandalone(true);
+    addComment(doc);
+    Element beans=addElement(doc,doc,"beans");
+    beans.setAttribute("xmlns","http://www.springframework.org/schema/beans");
+    beans.setAttribute("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance");
+    beans.setAttribute("xsi:schemaLocation","http://www.springframework.org/schema/beans " + "http://www.springframework.org/schema/beans/spring-beans.xsd");
+    for (    PojoDescriptor pojo : pojos)     addTypeMetadata(doc,beans,pkg,pojo,includeKeys);
+    TransformerFactory transformerFactory=TransformerFactory.newInstance();
+    Transformer transformer=transformerFactory.newTransformer();
+    transformer.setOutputProperty(OutputKeys.INDENT,"yes");
+    transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount","4");
+    ByteArrayOutputStream baos=new ByteArrayOutputStream(65536);
+    transformer.transform(new DOMSource(doc),new StreamResult(baos));
+    Files.write(out.toPath(),baos.toString().replaceAll("><",">\n<").replaceAll("\" xmlns","\"\n       xmlns").replaceAll("\" xsi","\"\n       xsi").replaceAll(" http://www.springframework"," \n                           http://www.springframework").getBytes());
+  }
+ catch (  ParserConfigurationException|TransformerException|IOException e) {
+    throw new IllegalStateException(e);
+  }
+}
