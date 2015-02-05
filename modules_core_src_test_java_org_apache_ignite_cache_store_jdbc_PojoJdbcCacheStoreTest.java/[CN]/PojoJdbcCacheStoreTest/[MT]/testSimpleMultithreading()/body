@@ -1,0 +1,71 @@
+{
+  final Random rnd=new Random();
+  final Queue<OrganizationKey> queue=new LinkedBlockingQueue<>();
+  multithreaded(new Callable<Object>(){
+    @Nullable @Override public Object call() throws Exception {
+      for (int i=0; i < 1000; i++) {
+        IgniteTx tx=rnd.nextBoolean() ? new DummyTx() : null;
+        ses.newSession(tx);
+        int op=rnd.nextInt(10);
+        boolean queueEmpty=false;
+        if (op < 4) {
+          OrganizationKey key=queue.poll();
+          if (key == null)           queueEmpty=true;
+ else {
+            if (rnd.nextBoolean())             assertNotNull(store.load(key));
+ else {
+              Map<Object,Object> loaded=store.loadAll(Collections.singleton(key));
+              assertEquals(1,loaded.size());
+              Map.Entry<Object,Object> e=loaded.entrySet().iterator().next();
+              OrganizationKey k=(OrganizationKey)e.getKey();
+              Organization v=(Organization)e.getValue();
+              assertTrue(k.getId().equals(v.getId()));
+            }
+            if (tx != null)             store.txEnd(true);
+            queue.add(key);
+          }
+        }
+ else         if (op < 6) {
+          OrganizationKey key=queue.poll();
+          if (key == null)           queueEmpty=true;
+ else {
+            if (rnd.nextBoolean())             store.delete(key);
+ else             store.deleteAll(Collections.singleton(key));
+            if (tx != null)             store.txEnd(true);
+          }
+        }
+ else {
+          OrganizationKey key=queue.poll();
+          if (key == null)           queueEmpty=true;
+ else {
+            Organization val=new Organization(key.getId(),"Name" + key.getId(),"City" + key.getId());
+            Cache.Entry<OrganizationKey,Organization> entry=new CacheEntryImpl<>(key,val);
+            if (rnd.nextBoolean())             store.write(entry);
+ else {
+              Collection<Cache.Entry<?,?>> col=new ArrayList<>();
+              col.add(entry);
+              store.writeAll(col);
+            }
+            if (tx != null)             store.txEnd(true);
+            queue.add(key);
+          }
+        }
+        if (queueEmpty) {
+          OrganizationKey key=new OrganizationKey(rnd.nextInt());
+          Organization val=new Organization(key.getId(),"Name" + key.getId(),"City" + key.getId());
+          Cache.Entry<OrganizationKey,Organization> entry=new CacheEntryImpl<>(key,val);
+          if (rnd.nextBoolean())           store.write(entry);
+ else {
+            Collection<Cache.Entry<?,?>> col=new ArrayList<>();
+            col.add(entry);
+            store.writeAll(col);
+          }
+          if (tx != null)           store.txEnd(true);
+          queue.add(key);
+        }
+      }
+      return null;
+    }
+  }
+,37);
+}

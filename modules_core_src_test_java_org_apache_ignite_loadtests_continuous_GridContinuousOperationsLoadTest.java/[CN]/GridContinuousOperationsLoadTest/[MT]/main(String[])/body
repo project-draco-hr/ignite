@@ -32,16 +32,16 @@
     for (int i=0; i < parallelCnt; i++) {
       if (useQry) {
         CacheContinuousQuery<Object,Object> qry=cache.queries().createContinuousQuery();
-        qry.callback(new PX2<UUID,Collection<Map.Entry<Object,Object>>>(){
-          @Override public boolean applyx(          UUID uuid,          Collection<Map.Entry<Object,Object>> entries) throws IgniteInterruptedCheckedException {
+        qry.localCallback(new PX2<UUID,Collection<CacheContinuousQueryEntry<Object,Object>>>(){
+          @Override public boolean applyx(          UUID uuid,          Collection<CacheContinuousQueryEntry<Object,Object>> entries) throws IgniteInterruptedCheckedException {
             if (cbSleepMs > 0)             U.sleep(cbSleepMs);
             cbCntr.addAndGet(entries.size());
             return true;
           }
         }
 );
-        qry.filter(new PX2<Object,Object>(){
-          @Override public boolean applyx(          Object key,          Object val) throws IgniteInterruptedCheckedException {
+        qry.remoteFilter(new IgnitePredicateX<CacheContinuousQueryEntry<Object,Object>>(){
+          @Override public boolean applyx(          CacheContinuousQueryEntry e) throws IgniteInterruptedCheckedException {
             if (filterSleepMs > 0)             U.sleep(filterSleepMs);
             return Math.random() * 100 >= filterSkipProb;
           }
