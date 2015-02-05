@@ -35,7 +35,7 @@
   }
 );
   TableColumn<PojoField,String> javaTypeNameCol=customColumn("Java Type","javaTypeName","Field java type in POJO class",JavaTypeCell.cellFactory());
-  final TableView<PojoField> fieldsTbl=tableView("Select table to see table columns",useFldCol,keyCol,akCol,dbNameCol,dbTypeNameCol,javaNameCol,javaTypeNameCol);
+  fieldsTbl=tableView("Select table to see table columns",useFldCol,keyCol,akCol,dbNameCol,dbTypeNameCol,javaNameCol,javaTypeNameCol);
   genPnl.add(splitPane(pojosTbl,fieldsTbl,0.6),3);
   final GridPaneEx keyValPnl=paneEx(0,0,0,0);
   keyValPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
@@ -73,10 +73,10 @@
     @Override public void handle(    ActionEvent evt){
       if (checkInput(regexTf,false,"Regular expression should not be empty!"))       return;
       String sel=replaceCb.getSelectionModel().getSelectedItem();
-      boolean renFields="Java names".equals(sel);
-      String src=(renFields ? "fields" : "tables");
+      boolean isFields="Java names".equals(sel) && curTbl == fieldsTbl;
+      String src=isFields ? "fields" : "tables";
       String target="\"" + sel + "\"";
-      Collection<PojoDescriptor> selPojos=pojosTbl.getSelectionModel().getSelectedItems();
+      Collection<PojoDescriptor> selPojos=isFields ? Collections.singleton(curPojo) : pojosTbl.getSelectionModel().getSelectedItems();
       if (selPojos.isEmpty()) {
         MessageBox.warningDialog(owner,"Please select " + src + " to rename "+ target+ "!");
         return;
@@ -105,7 +105,7 @@ MessageBox.errorDialog(owner,"Failed to rename " + target + "!",e);
 @Override public void handle(ActionEvent evt){
 String sel=replaceCb.getSelectionModel().getSelectedItem();
 boolean renFields="Java names".equals(sel);
-String src=(renFields ? "fields" : "tables");
+String src=(renFields && curTbl == fieldsTbl ? "fields" : "tables");
 String target="\"" + sel + "\"";
 Collection<PojoDescriptor> selPojos=pojosTbl.getSelectionModel().getSelectedItems();
 if (selPojos.isEmpty()) {
@@ -139,6 +139,32 @@ curPojo=null;
 fieldsTbl.setItems(NO_FIELDS);
 keyValPnl.setDisable(true);
 }
+}
+}
+);
+pojosTbl.focusedProperty().addListener(new ChangeListener<Boolean>(){
+@Override public void changed(ObservableValue<? extends Boolean> val,Boolean oldVal,Boolean newVal){
+if (newVal) curTbl=pojosTbl;
+}
+}
+);
+fieldsTbl.getSelectionModel().selectedIndexProperty().addListener(new ChangeListener<Number>(){
+@Override public void changed(ObservableValue<? extends Number> val,Number oldVal,Number newVal){
+if (curPojo != null) {
+TableView.TableViewSelectionModel<PojoDescriptor> selMdl=pojosTbl.getSelectionModel();
+List<Integer> idxs=new ArrayList<>(selMdl.getSelectedIndices());
+if (idxs.size() > 1) {
+for (Integer idx : idxs) {
+if (pojos.get(idx) != curPojo) selMdl.clearSelection(idx);
+}
+}
+}
+}
+}
+);
+fieldsTbl.focusedProperty().addListener(new ChangeListener<Boolean>(){
+@Override public void changed(ObservableValue<? extends Boolean> val,Boolean oldVal,Boolean newVal){
+if (newVal) curTbl=fieldsTbl;
 }
 }
 );
