@@ -1,10 +1,11 @@
 {
   if (txEnabled()) {
-    GridCache<String,Integer> cache=primaryCache("key");
+    Ignite ignite=primaryIgnite("key");
+    IgniteCache<String,Integer> cache=ignite.jcache(null);
     cache.put("key",1);
-    try (IgniteTx tx=cache.txStart(concurrency,READ_COMMITTED)){
+    try (IgniteTx tx=ignite.transactions().txStart(concurrency,READ_COMMITTED)){
       cache.remove("key");
-      assertNull(cache.peek("key"));
+      assertNull(cache.localPeek("key"));
       tx.commit();
     }
    }
