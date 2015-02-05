@@ -1,2 +1,16 @@
 {
+  String locSeqName1=UUID.randomUUID().toString();
+  String locSeqName2=UUID.randomUUID().toString();
+  IgniteAtomicSequence locSeq1=grid().atomicSequence(locSeqName1,0,true);
+  locSeq1.batchSize(1);
+  long initVal=-1500;
+  IgniteAtomicSequence locSeq2=grid().atomicSequence(locSeqName2,initVal,true);
+  locSeq2.batchSize(7);
+  for (int i=0; i < MAX_LOOPS_NUM; i++) {
+    integrity(locSeq1,i * 4);
+    integrity(locSeq2,(i * 4) + initVal);
+    if (i % 100 == 0)     info("Finished iteration: " + i);
+  }
+  removeSequence(locSeqName1);
+  removeSequence(locSeqName2);
 }

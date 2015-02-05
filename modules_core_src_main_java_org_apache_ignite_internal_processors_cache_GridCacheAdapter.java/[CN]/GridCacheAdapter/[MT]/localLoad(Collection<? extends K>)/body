@@ -2,13 +2,17 @@
   final boolean replicate=ctx.isDrEnabled();
   final long topVer=ctx.affinity().affinityTopologyVersion();
   if (ctx.store().isLocalStore()) {
-    try (final IgniteDataLoader<K,V> ldr=ctx.kernalContext().<K,V>dataLoad().dataLoader(ctx.namex(),false)){
+    IgniteDataLoaderImpl<K,V> ldr=ctx.kernalContext().<K,V>dataLoad().dataLoader(ctx.namex(),false);
+    try {
       ldr.updater(new GridDrDataLoadCacheUpdater<K,V>());
       LocalStoreLoadClosure c=new LocalStoreLoadClosure(null,ldr,0);
       ctx.store().localStoreLoadAll(null,keys,c);
       c.onDone();
     }
-   }
+  finally {
+      ldr.closeEx(false);
+    }
+  }
  else {
     final GridCacheVersion ver0=ctx.versions().nextForLoad();
     ctx.store().loadAllFromStore(null,keys,new CI2<K,V>(){

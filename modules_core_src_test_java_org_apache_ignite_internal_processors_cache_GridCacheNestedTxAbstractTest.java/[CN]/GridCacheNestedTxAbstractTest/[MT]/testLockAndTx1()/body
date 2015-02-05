@@ -7,8 +7,9 @@
     info("*** Init lock thread: " + i);
     threads.add(new Thread(new Runnable(){
       @Override public void run(){
+        Lock lock=c.lock(CNTR_KEY);
         try {
-          c.lock(CNTR_KEY).lock();
+          lock.lock();
           int cntr=c.get(CNTR_KEY);
           info("*** Cntr in lock thread: " + cntr);
           IgniteTx tx=grid(0).transactions().txStart(OPTIMISTIC,READ_COMMITTED);
@@ -21,7 +22,7 @@
             c1.putAll(data);
             tx.commit();
           }
- catch (          IgniteCheckedException e) {
+ catch (          IgniteException e) {
             error("Failed tx thread",e);
           }
           c.put(CNTR_KEY,++cntr);
@@ -30,7 +31,7 @@
           error("Failed lock thread",e);
         }
  finally {
-          c.lock(CNTR_KEY).unlock();
+          lock.unlock();
         }
       }
     }

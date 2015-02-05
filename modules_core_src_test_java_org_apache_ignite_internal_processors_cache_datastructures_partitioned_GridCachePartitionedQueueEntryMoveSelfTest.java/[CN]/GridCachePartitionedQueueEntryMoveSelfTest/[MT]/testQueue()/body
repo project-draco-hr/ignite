@@ -4,10 +4,10 @@
     final String queueName="queue-name-" + UUID.randomUUID();
     System.out.println(U.filler(20,'\n'));
     final CountDownLatch latch1=new CountDownLatch(1);
-    IgniteFuture<?> fut1=GridTestUtils.runAsync(new Callable<Void>(){
+    IgniteInternalFuture<?> fut1=GridTestUtils.runAsync(new Callable<Void>(){
       @Override public Void call() throws IgniteCheckedException {
         Ignite ignite=grid(0);
-        CacheQueue<Integer> queue=ignite.cache(null).dataStructures().queue(queueName,QUEUE_CAP,true,true);
+        IgniteQueue<Integer> queue=ignite.queue(queueName,QUEUE_CAP,config(true));
         for (int i=0; i < QUEUE_CAP * 2; i++) {
           if (i == QUEUE_CAP) {
             latch1.countDown();
@@ -29,10 +29,10 @@
     latch1.await();
     startAdditionalNodes(BACKUP_CNT + 2,queueName);
     System.out.println(U.filler(20,'\n'));
-    IgniteFuture<?> fut2=GridTestUtils.runAsync(new Callable<Void>(){
+    IgniteInternalFuture<?> fut2=GridTestUtils.runAsync(new Callable<Void>(){
       @Override public Void call() throws IgniteCheckedException {
         Ignite ignite=grid(GRID_CNT);
-        CacheQueue<Integer> queue=ignite.cache(null).dataStructures().queue(queueName,Integer.MAX_VALUE,true,true);
+        IgniteQueue<Integer> queue=ignite.queue(queueName,Integer.MAX_VALUE,config(true));
         int cnt=0;
         do {
           try {

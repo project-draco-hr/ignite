@@ -1,6 +1,6 @@
 {
   ClusterGroup prj=master.cluster().forPredicate(workerNodesFilter);
-  IgniteCompute comp=master.compute(prj).enableAsync();
+  IgniteCompute comp=master.compute(prj).withAsync();
   comp.execute(new GridCacheGroupLockPutTask(preferredNodeId,CACHE_NAME,optimisticTx()),dataChunk);
   ComputeTaskFuture<Void> fut=comp.future();
   fut.listenAsync(new CI1<IgniteFuture<Void>>(){
@@ -10,7 +10,7 @@
       try {
         f.get();
       }
- catch (      IgniteCheckedException ignore) {
+ catch (      IgniteException ignore) {
         info("Put task failed, going to remap keys: " + dataChunk.size());
         fail=true;
       }

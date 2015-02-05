@@ -7,8 +7,7 @@
   }
  else {
     ClusterGroup prj=ctx.grid().forPredicate(F.nodeForNodeId(destId));
-    IgniteCompute comp=ctx.grid().compute(prj).withNoFailover().enableAsync();
-    comp.call(new FlaggedCacheOperationCallable(clientId,cacheName,flags,op,key,keepPortable));
-    return comp.future();
+    ctx.task().setThreadContext(TC_NO_FAILOVER,true);
+    return ctx.closure().callAsync(BALANCE,new FlaggedCacheOperationCallable(clientId,cacheName,flags,op,key,keepPortable),prj.nodes());
   }
 }

@@ -1,0 +1,22 @@
+{
+  final CountDownLatch srvReady=new CountDownLatch(1);
+  final CountDownLatch isKilledLatch=new CountDownLatch(1);
+  GridJavaProcess proc=GridJavaProcess.exec(GgfsSharedMemoryTestServer.class,null,log,new CI1<String>(){
+    @Override public void apply(    String str){
+      info("Server process prints: " + str);
+      if (str.contains("IPC shared memory server endpoint started"))       srvReady.countDown();
+    }
+  }
+,new CA(){
+    @Override public void apply(){
+      info("Server is killed");
+      isKilledLatch.countDown();
+    }
+  }
+,null,System.getProperty("surefire.test.class.path"));
+  srvReady.await();
+  ProcessStartResult res=new ProcessStartResult();
+  res.proc(proc);
+  res.isKilledLatch(isKilledLatch);
+  return res;
+}

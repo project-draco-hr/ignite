@@ -1,0 +1,30 @@
+{
+  return new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      Connection conn=null;
+      PreparedStatement stmt=null;
+      try {
+        conn=openConnection(true);
+        stmt=conn.prepareStatement(lowerBound == null && upperBound == null ? em.loadCacheQry : em.loadCacheRangeQuery(lowerBound != null,upperBound != null));
+        int ix=1;
+        if (lowerBound != null)         for (int i=lowerBound.length; i > 0; i--)         for (int j=0; j < i; j++)         stmt.setObject(ix++,lowerBound[j]);
+        if (upperBound != null)         for (int i=upperBound.length; i > 0; i--)         for (int j=0; j < i; j++)         stmt.setObject(ix++,upperBound[j]);
+        ResultSet rs=stmt.executeQuery();
+        while (rs.next()) {
+          K key=buildObject(em.keyType(),em.keyColumns(),em.loadColIdxs,rs);
+          V val=buildObject(em.valueType(),em.valueColumns(),em.loadColIdxs,rs);
+          clo.apply(key,val);
+        }
+      }
+ catch (      SQLException e) {
+        throw new IgniteCheckedException("Failed to load cache",e);
+      }
+ finally {
+        U.closeQuiet(stmt);
+        U.closeQuiet(conn);
+      }
+      return null;
+    }
+  }
+;
+}

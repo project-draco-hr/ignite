@@ -1,11 +1,13 @@
 {
+  final boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  final long start=statsEnabled ? System.nanoTime() : 0L;
   A.notNull(key,"key",oldVal,"oldVal",newVal,"newVal");
   if (keyCheck)   validateCacheKey(key);
   validateCacheValue(oldVal);
   validateCacheValue(newVal);
   ctx.denyOnLocalRead();
-  return asyncOp(new AsyncOp<Boolean>(key){
-    @Override public IgniteFuture<Boolean> op(    IgniteTxLocalAdapter<K,V> tx){
+  IgniteInternalFuture<Boolean> fut=asyncOp(new AsyncOp<Boolean>(key){
+    @Override public IgniteInternalFuture<Boolean> op(    IgniteTxLocalAdapter<K,V> tx){
       if (ctx.deploymentEnabled()) {
         try {
           ctx.deploy().registerClass(oldVal);
@@ -14,11 +16,13 @@
           return new GridFinishedFuture<>(ctx.kernalContext(),e);
         }
       }
-      return tx.putAllAsync(ctx,F.t(key,newVal),false,null,-1,ctx.equalsPeekArray(oldVal)).chain((IgniteClosure<IgniteFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
+      return tx.putAllAsync(ctx,F.t(key,newVal),false,null,-1,ctx.equalsPeekArray(oldVal)).chain((IgniteClosure<IgniteInternalFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
     }
     @Override public String toString(){
       return "replaceAsync [key=" + key + ", oldVal="+ oldVal+ ", newVal="+ newVal+ ']';
     }
   }
 );
+  if (statsEnabled)   fut.listenAsync(new UpdatePutAndGetTimeStatClosure<Boolean>(metrics0(),start));
+  return fut;
 }

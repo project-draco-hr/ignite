@@ -1,10 +1,10 @@
 {
   String queueName=UUID.randomUUID().toString();
-  CacheQueue<Integer> queue=grid(0).cache(null).dataStructures().queue(queueName,0,true,true);
+  IgniteQueue<Integer> queue=grid(0).queue(queueName,0,config(true));
   assertNotNull(queue);
   assertTrue(queue.isEmpty());
   PutJob putJob=new PutJob(queueName);
-  IgniteCompute comp=compute(grid(0).forLocal()).enableAsync();
+  IgniteCompute comp=compute(grid(0).forLocal()).withAsync();
   comp.run(putJob);
   IgniteFuture<?> fut=comp.future();
   Collection<IgniteFuture<?>> futs=new ArrayList<>(GRID_CNT - 1);
@@ -14,7 +14,7 @@
     int cnt=ITEMS_CNT / (GRID_CNT - 1);
     TakeJob job=new TakeJob(queueName,cnt,10);
     jobs.add(job);
-    comp=compute(grid(i).forLocal()).enableAsync();
+    comp=compute(grid(i).forLocal()).withAsync();
     comp.call(job);
     futs.add(comp.future());
     itemsLeft-=cnt;

@@ -1,10 +1,12 @@
 {
+  final boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  final long start=statsEnabled ? System.nanoTime() : 0L;
   ctx.denyOnLocalRead();
   A.notNull(key,"key",val,"val");
   if (keyCheck)   validateCacheKey(key);
   validateCacheValue(val);
-  return asyncOp(new AsyncOp<Boolean>(key){
-    @Override public IgniteFuture<Boolean> op(    IgniteTxLocalAdapter<K,V> tx){
+  IgniteInternalFuture<Boolean> fut=asyncOp(new AsyncOp<Boolean>(key){
+    @Override public IgniteInternalFuture<Boolean> op(    IgniteTxLocalAdapter<K,V> tx){
       if (ctx.deploymentEnabled()) {
         try {
           ctx.deploy().registerClass(val);
@@ -22,11 +24,13 @@
           return new GridFinishedFuture<>(ctx.kernalContext(),e);
         }
       }
-      return tx.removeAllAsync(ctx,Collections.singletonList(key0),null,false,ctx.vararg(F.<K,V>cacheContainsPeek(val))).chain((IgniteClosure<IgniteFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
+      return tx.removeAllAsync(ctx,Collections.singletonList(key0),null,false,ctx.vararg(F.<K,V>cacheContainsPeek(val))).chain((IgniteClosure<IgniteInternalFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
     }
     @Override public String toString(){
       return "removeAsync [key=" + key + ", val="+ val+ ']';
     }
   }
 );
+  if (statsEnabled)   fut.listenAsync(new UpdateRemoveTimeStatClosure<Boolean>(metrics0(),start));
+  return fut;
 }

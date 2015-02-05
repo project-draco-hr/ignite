@@ -9,17 +9,20 @@
     Integer k1=forPrimary(g1);
     Integer k2=forPrimary(g2);
     IgniteCache<Object,Object> cache=jcache(0);
-    cache.lock(k0).lock();
-    cache.lock(k1).lock();
-    cache.lock(k2).lock();
+    Lock lock0=cache.lock(k0);
+    Lock lock1=cache.lock(k1);
+    Lock lock2=cache.lock(k2);
+    lock0.lock();
+    lock1.lock();
+    lock2.lock();
     cache.put(k0,"val0");
     cache.putAll(F.asMap(k1,"val1",k2,"val2"));
     assertEquals("val0",cache.get(k0));
     assertEquals("val1",cache.get(k1));
     assertEquals("val2",cache.get(k2));
-    cache.lock(k0).unlock();
-    cache.lock(k1).unlock();
-    cache.lock(k2).unlock();
+    lock0.unlock();
+    lock1.unlock();
+    lock2.unlock();
   }
   finally {
     stopAllGrids();

@@ -7,7 +7,7 @@
       if (finish(false) || state() == UNKNOWN)       fut.finish();
  else       fut.onError(new IgniteCheckedException("Failed to commit transaction: " + CU.txString(this)));
     }
- catch (    IgniteTxOptimisticException e) {
+ catch (    IgniteTxOptimisticCheckedException e) {
       if (log.isDebugEnabled())       log.debug("Failed optimistically to prepare transaction [tx=" + this + ", e="+ e+ ']');
       fut.onError(e);
     }
@@ -18,8 +18,8 @@ catch (    IgniteCheckedException e) {
   }
  else {
     prepFut.complete();
-    prepFut.listenAsync(new CI1<IgniteFuture<IgniteTxEx<K,V>>>(){
-      @Override public void apply(      IgniteFuture<IgniteTxEx<K,V>> f){
+    prepFut.listenAsync(new CI1<IgniteInternalFuture<IgniteInternalTx<K,V>>>(){
+      @Override public void apply(      IgniteInternalFuture<IgniteInternalTx<K,V>> f){
         try {
           f.get();
         }

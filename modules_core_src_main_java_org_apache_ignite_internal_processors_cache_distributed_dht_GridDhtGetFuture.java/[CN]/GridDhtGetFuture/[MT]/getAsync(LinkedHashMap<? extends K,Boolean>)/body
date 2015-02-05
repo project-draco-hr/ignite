@@ -28,7 +28,7 @@
     }
   }
   if (txFut != null)   txFut.markInitialized();
-  IgniteFuture<Map<K,V>> fut;
+  IgniteInternalFuture<Map<K,V>> fut;
   if (txFut == null || txFut.isDone()) {
     if (reload && cctx.readThrough() && cctx.store().configured()) {
       fut=cache().reloadAllAsync(keys.keySet(),true,skipVals,subjId,taskName);
@@ -43,8 +43,8 @@
     }
   }
  else {
-    fut=new GridEmbeddedFuture<>(txFut,new C2<Boolean,Exception,IgniteFuture<Map<K,V>>>(){
-      @Override public IgniteFuture<Map<K,V>> apply(      Boolean b,      Exception e){
+    fut=new GridEmbeddedFuture<>(txFut,new C2<Boolean,Exception,IgniteInternalFuture<Map<K,V>>>(){
+      @Override public IgniteInternalFuture<Map<K,V>> apply(      Boolean b,      Exception e){
         if (e != null)         throw new GridClosureException(e);
         if (reload && cctx.readThrough() && cctx.store().configured()) {
           return cache().reloadAllAsync(keys.keySet(),true,skipVals,subjId,taskName);

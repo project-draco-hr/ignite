@@ -1,21 +1,21 @@
 {
   final GridDhtForceKeysFuture<K,V> fut=new GridDhtForceKeysFuture<>(cctx,topVer,keys,this);
-  IgniteFuture<?> topReadyFut=cctx.affinity().affinityReadyFuturex(topVer);
+  IgniteInternalFuture<?> topReadyFut=cctx.affinity().affinityReadyFuturex(topVer);
   if (startFut.isDone() && topReadyFut == null)   fut.init();
  else {
-    if (topReadyFut == null)     startFut.listenAsync(new CI1<IgniteFuture<?>>(){
-      @Override public void apply(      IgniteFuture<?> syncFut){
+    if (topReadyFut == null)     startFut.listenAsync(new CI1<IgniteInternalFuture<?>>(){
+      @Override public void apply(      IgniteInternalFuture<?> syncFut){
         fut.init();
       }
     }
 );
  else {
       GridCompoundFuture<Object,Object> compound=new GridCompoundFuture<>(cctx.kernalContext());
-      compound.add((IgniteFuture<Object>)startFut);
-      compound.add((IgniteFuture<Object>)topReadyFut);
+      compound.add((IgniteInternalFuture<Object>)startFut);
+      compound.add((IgniteInternalFuture<Object>)topReadyFut);
       compound.markInitialized();
-      compound.listenAsync(new CI1<IgniteFuture<?>>(){
-        @Override public void apply(        IgniteFuture<?> syncFut){
+      compound.listenAsync(new CI1<IgniteInternalFuture<?>>(){
+        @Override public void apply(        IgniteInternalFuture<?> syncFut){
           fut.init();
         }
       }
