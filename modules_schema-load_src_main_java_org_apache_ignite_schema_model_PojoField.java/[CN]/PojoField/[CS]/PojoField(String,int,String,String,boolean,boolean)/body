@@ -1,0 +1,30 @@
+{
+  dbNameProp=new SimpleStringProperty(dbName);
+  this.dbType=dbType;
+  dbTypeNameProp=new SimpleStringProperty(jdbcTypeName(dbType));
+  javaNamePrev=javaName;
+  javaNameProp=new SimpleStringProperty(javaNamePrev);
+  javaTypeNamePrev=javaTypeName;
+  javaTypeNameProp=new SimpleStringProperty(javaTypeNamePrev);
+  useProp=new SimpleBooleanProperty(true);
+  keyPrev=key;
+  keyProp=new SimpleBooleanProperty(keyPrev);
+  this.nullable=nullable;
+  akProp=new SimpleBooleanProperty(false);
+  conversions=conversions(dbType,nullable,javaNamePrev);
+  keyProp.addListener(new ChangeListener<Boolean>(){
+    @Override public void changed(    ObservableValue<? extends Boolean> val,    Boolean oldVal,    Boolean newVal){
+      if (!newVal)       akProp.set(false);
+    }
+  }
+);
+  akProp.addListener(new ChangeListener<Boolean>(){
+    @Override public void changed(    ObservableValue<? extends Boolean> val,    Boolean oldVal,    Boolean newVal){
+      if (newVal && owner != null) {
+        keyProperty().set(true);
+        for (        PojoField field : owner.fields())         if (field != PojoField.this && field.affinityKey())         field.akProp.set(false);
+      }
+    }
+  }
+);
+}
