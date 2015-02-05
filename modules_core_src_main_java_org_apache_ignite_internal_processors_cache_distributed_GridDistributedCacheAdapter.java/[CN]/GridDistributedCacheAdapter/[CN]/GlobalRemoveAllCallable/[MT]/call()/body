@@ -6,18 +6,12 @@
   if (ctx.affinity().affinityTopologyVersion() != topVer)   return null;
   if (cacheAdapter instanceof GridNearCacheAdapter)   cacheAdapter=((GridNearCacheAdapter<K,V>)cacheAdapter).dht();
   GridDhtCacheAdapter<K,V> dht=(GridDhtCacheAdapter<K,V>)cacheAdapter;
-  Collection<K> keys=new ArrayList<>();
+  IgniteDataLoader<K,V> dataLdr=grid.dataLoader(cacheName);
   for (  GridDhtLocalPartition<K,V> locPart : dht.topology().currentLocalPartitions()) {
     if (!locPart.isEmpty() && locPart.primary(topVer)) {
-      for (      GridDhtCacheEntry<K,V> o : locPart.entries()) {
-        keys.add(o.key());
-        if (keys.size() >= REMOVE_ALL_BATCH_SIZE) {
-          cache.removeAll(keys);
-          keys.clear();
-        }
-      }
+      for (      GridDhtCacheEntry<K,V> o : locPart.entries())       dataLdr.removeData(o.key());
     }
   }
-  if (!keys.isEmpty())   cache.removeAll(keys);
+  dataLdr.close();
   return null;
 }
