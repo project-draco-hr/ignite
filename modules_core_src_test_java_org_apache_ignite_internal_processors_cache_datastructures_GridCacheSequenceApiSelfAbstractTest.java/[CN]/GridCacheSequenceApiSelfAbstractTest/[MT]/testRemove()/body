@@ -1,13 +1,13 @@
 {
   String locSeqName=UUID.randomUUID().toString();
-  CacheAtomicSequence seq=grid().cache(null).dataStructures().atomicSequence(locSeqName,0,true);
+  IgniteAtomicSequence seq=grid().atomicSequence(locSeqName,0,true);
   seq.addAndGet(153);
-  grid().cache(null).dataStructures().removeAtomicSequence(locSeqName);
+  seq.close();
   try {
     seq.addAndGet(153);
     fail("Exception expected.");
   }
- catch (  IgniteCheckedException e) {
+ catch (  DataStructureRemovedException e) {
     info("Caught expected exception: " + e);
   }
 }
