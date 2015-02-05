@@ -1,0 +1,45 @@
+{
+  connPnl=paneEx(10,10,0,10);
+  connPnl.addColumn();
+  connPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
+  connPnl.addColumn(35,35,35,Priority.NEVER);
+  connPnl.add(text("This utility is designed to automatically generate configuration XML files and" + " POJO classes from database schema information.",550),3);
+  connPnl.wrap();
+  rdbmsCb=connPnl.addLabeled("DB Server preset:",comboBox("Select database server to get predefined settings",RDBMS_NAMES),2);
+  jdbcDrvJarTf=connPnl.addLabeled("Driver JAR:",textField("Path to driver jar"));
+  connPnl.add(button("...","Select JDBC driver jar or zip",new EventHandler<ActionEvent>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void handle(    ActionEvent evt){
+      FileChooser fc=new FileChooser();
+      try {
+        File jarFolder=new File(jdbcDrvJarTf.getText()).getParentFile();
+        if (jarFolder.exists())         fc.setInitialDirectory(jarFolder);
+      }
+ catch (      Throwable ignored) {
+      }
+      jdbcDrvJarTf.getText();
+      fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("JDBC Drivers (*.jar)","*.jar"),new FileChooser.ExtensionFilter("ZIP archives (*.zip)","*.zip"));
+      File drvJar=fc.showOpenDialog(owner);
+      if (drvJar != null)       jdbcDrvJarTf.setText(drvJar.getAbsolutePath());
+    }
+  }
+));
+  jdbcDrvClsTf=connPnl.addLabeled("JDBC Driver:",textField("Enter class name for JDBC driver"),2);
+  jdbcUrlTf=connPnl.addLabeled("JDBC URL:",textField("JDBC URL of the database connection string"),2);
+  rdbmsCb.getSelectionModel().selectedIndexProperty().addListener(new ChangeListener<Number>(){
+    @Override public void changed(    ObservableValue<? extends Number> observable,    Number oldIdx,    Number newIdx){
+      int idx=newIdx.intValue();
+      jdbcDrvJarTf.setText(JDBC_JAR[idx]);
+      jdbcDrvClsTf.setText(JDBC_DRIVERS[idx]);
+      jdbcUrlTf.setText(JDBC_URLS[idx]);
+    }
+  }
+);
+  userTf=connPnl.addLabeled("User:",textField("User name"),2);
+  pwdTf=connPnl.addLabeled("Password:",passwordField("User password"),2);
+  parseCb=connPnl.addLabeled("Parse:",comboBox("Type of tables to parse","Tables only","Tables and Views"),2);
+  connLayerPnl=stackPane(connPnl);
+  return connLayerPnl;
+}

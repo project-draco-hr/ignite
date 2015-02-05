@@ -1,0 +1,23 @@
+{
+  PreparedStatement stmt=null;
+  try {
+    stmt=conn.prepareStatement(em.loadQuery(keys.size()));
+    int i=1;
+    for (    Object key : keys)     for (    CacheTypeFieldMetadata field : em.keyColumns()) {
+      Object fieldVal=extractField(em.keyType(),field.getJavaName(),key);
+      if (fieldVal != null)       stmt.setObject(i++,fieldVal);
+ else       stmt.setNull(i++,field.getDatabaseType());
+    }
+    ResultSet rs=stmt.executeQuery();
+    Map<K1,V1> entries=U.newHashMap(keys.size());
+    while (rs.next()) {
+      K1 key=buildObject(em.keyType(),em.keyColumns(),em.loadColIdxs,rs);
+      V1 val=buildObject(em.valueType(),em.valueColumns(),em.loadColIdxs,rs);
+      entries.put(key,val);
+    }
+    return entries;
+  }
+  finally {
+    U.closeQuiet(stmt);
+  }
+}

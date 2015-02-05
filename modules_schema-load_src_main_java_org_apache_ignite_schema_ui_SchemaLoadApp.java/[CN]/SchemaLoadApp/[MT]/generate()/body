@@ -1,0 +1,85 @@
+{
+  final Collection<PojoDescriptor> selPojos=checkedPojos();
+  if (selPojos.isEmpty()) {
+    MessageBox.warningDialog(owner,"Please select tables to generate XML and POJOs files!");
+    return;
+  }
+  lockUI(genLayerPnl,genPnl,prevBtn,nextBtn);
+  final String outFolder=outFolderTf.getText();
+  final String pkg=pkgTf.getText();
+  final File destFolder=new File(outFolder);
+  final boolean constructor=pojoConstructorCh.isSelected();
+  final boolean includeKeys=pojoIncludeKeysCh.isSelected();
+  final boolean singleXml=xmlSingleFileCh.isSelected();
+  Runnable task=new Task<Void>(){
+    private void checkEmpty(    final PojoDescriptor pojo,    boolean selected,    String msg){
+      if (!selected) {
+        Platform.runLater(new Runnable(){
+          @Override public void run(){
+            TableView.TableViewSelectionModel<PojoDescriptor> selMdl=pojosTbl.getSelectionModel();
+            selMdl.clearSelection();
+            selMdl.select(pojo);
+            pojosTbl.scrollTo(selMdl.getSelectedIndex());
+          }
+        }
+);
+        throw new IllegalStateException(msg + pojo.table());
+      }
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected Void call() throws Exception {
+      long started=System.currentTimeMillis();
+      if (!destFolder.exists() && !destFolder.mkdirs())       throw new IOException("Failed to create output folder: " + destFolder);
+      Collection<PojoDescriptor> all=new ArrayList<>();
+      ConfirmCallable askOverwrite=new ConfirmCallable(owner,"File already exists: %s\nOverwrite?");
+      for (      PojoDescriptor pojo : selPojos) {
+        if (pojo.checked()) {
+          checkEmpty(pojo,pojo.hasFields(),"No fields selected for type: ");
+          checkEmpty(pojo,pojo.hasKeyFields(),"No key fields selected for type: ");
+          checkEmpty(pojo,pojo.hasValueFields(includeKeys),"No value fields selected for type: ");
+          all.add(pojo);
+        }
+      }
+      for (      PojoDescriptor pojo : all) {
+        if (!singleXml)         XmlGenerator.generate(pkg,pojo,includeKeys,new File(destFolder,pojo.table() + ".xml"),askOverwrite);
+        PojoGenerator.generate(pojo,outFolder,pkg,constructor,includeKeys,askOverwrite);
+      }
+      if (singleXml)       XmlGenerator.generate(pkg,all,includeKeys,new File(outFolder,"Ignite.xml"),askOverwrite);
+      perceptualDelay(started);
+      return null;
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void succeeded(){
+      super.succeeded();
+      unlockUI(genLayerPnl,genPnl,prevBtn,nextBtn);
+      if (MessageBox.confirmDialog(owner,"Generation complete!\n\n" + "Reveal output folder in system default file browser?"))       try {
+        java.awt.Desktop.getDesktop().open(destFolder);
+      }
+ catch (      IOException e) {
+        MessageBox.errorDialog(owner,"Failed to open folder with results.",e);
+      }
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void cancelled(){
+      super.cancelled();
+      unlockUI(genLayerPnl,genPnl,prevBtn,nextBtn);
+      MessageBox.warningDialog(owner,"Generation canceled.");
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void failed(){
+      super.succeeded();
+      unlockUI(genLayerPnl,genPnl,prevBtn,nextBtn);
+      MessageBox.errorDialog(owner,"Generation failed.",getException());
+    }
+  }
+;
+  exec.submit(task);
+}
