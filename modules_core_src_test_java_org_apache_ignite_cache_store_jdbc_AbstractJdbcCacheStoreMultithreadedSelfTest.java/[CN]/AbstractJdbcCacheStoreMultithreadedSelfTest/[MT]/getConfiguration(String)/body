@@ -1,0 +1,35 @@
+{
+  IgniteConfiguration c=super.getConfiguration(gridName);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(IP_FINDER);
+  c.setDiscoverySpi(disco);
+  CacheConfiguration cc=defaultCacheConfiguration();
+  cc.setCacheMode(PARTITIONED);
+  cc.setAtomicityMode(ATOMIC);
+  cc.setSwapEnabled(false);
+  cc.setWriteBehindEnabled(false);
+  UrlResource metaUrl;
+  try {
+    metaUrl=new UrlResource(new File("modules/core/src/test/config/store/jdbc/Ignite.xml").toURI().toURL());
+  }
+ catch (  MalformedURLException e) {
+    throw new IgniteCheckedException("Failed to resolve metadata path [err=" + e.getMessage() + ']',e);
+  }
+  try {
+    GenericApplicationContext springCtx=new GenericApplicationContext();
+    new XmlBeanDefinitionReader(springCtx).loadBeanDefinitions(metaUrl);
+    springCtx.refresh();
+    Collection<CacheTypeMetadata> tp=springCtx.getBeansOfType(CacheTypeMetadata.class).values();
+    cc.setTypeMetadata(tp);
+  }
+ catch (  BeansException e) {
+    if (X.hasCause(e,ClassNotFoundException.class))     throw new IgniteCheckedException("Failed to instantiate Spring XML application context " + "(make sure all classes used in Spring configuration are present at CLASSPATH) " + "[springUrl=" + metaUrl + ']',e);
+ else     throw new IgniteCheckedException("Failed to instantiate Spring XML application context [springUrl=" + metaUrl + ", err="+ e.getMessage()+ ']',e);
+  }
+  cc.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+  cc.setReadThrough(true);
+  cc.setWriteThrough(true);
+  cc.setLoadPreviousValue(true);
+  c.setCacheConfiguration(cc);
+  return c;
+}

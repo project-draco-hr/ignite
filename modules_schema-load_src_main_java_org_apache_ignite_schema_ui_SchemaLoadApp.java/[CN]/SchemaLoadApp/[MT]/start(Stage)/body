@@ -1,0 +1,43 @@
+{
+  owner=primaryStage;
+  primaryStage.setTitle("Apache Ignite Auto Schema Load Utility");
+  primaryStage.getIcons().addAll(image("ignite",16),image("ignite",24),image("ignite",32),image("ignite",48),image("ignite",64),image("ignite",128));
+  pi=progressIndicator(50);
+  createGeneratePane();
+  hdrPane=createHeaderPane();
+  rootPane=borderPane(hdrPane,createConnectionPane(),createButtonsPane(),null,null);
+  primaryStage.setScene(scene(rootPane));
+  primaryStage.setWidth(650);
+  primaryStage.setMinWidth(650);
+  primaryStage.setHeight(650);
+  primaryStage.setMinHeight(650);
+  prev();
+  Preferences userPrefs=Preferences.userNodeForPackage(getClass());
+  if (userPrefs.get("window.x",null) != null) {
+    double x=userPrefs.getDouble("window.x",100);
+    double y=userPrefs.getDouble("window.y",100);
+    double w=userPrefs.getDouble("window.width",650);
+    double h=userPrefs.getDouble("window.height",650);
+    if (!Screen.getScreensForRectangle(x,y,w,h).isEmpty()) {
+      if (x > 0)       primaryStage.setX(x);
+      if (y > 0)       primaryStage.setY(y);
+      primaryStage.setWidth(w);
+      primaryStage.setHeight(h);
+    }
+  }
+ else   primaryStage.centerOnScreen();
+  String userHome=System.getProperty("user.home").replace('\\','/');
+  rdbmsCb.getSelectionModel().select(userPrefs.getInt("jdbc.db.preset",0));
+  jdbcDrvJarTf.setText(userPrefs.get("jdbc.driver.jar","h2.jar"));
+  jdbcDrvClsTf.setText(userPrefs.get("jdbc.driver.class","org.h2.Driver"));
+  jdbcUrlTf.setText(userPrefs.get("jdbc.url","jdbc:h2:" + userHome + "/ignite-schema-load/db"));
+  userTf.setText(userPrefs.get("jdbc.user","sa"));
+  outFolderTf.setText(userPrefs.get("out.folder",userHome + "/ignite-schema-load/out"));
+  pkgTf.setText(userPrefs.get("pojo.package","org.apache.ignite"));
+  pojoIncludeKeysCh.setSelected(userPrefs.getBoolean("pojo.include",true));
+  pojoConstructorCh.setSelected(userPrefs.getBoolean("pojo.constructor",false));
+  xmlSingleFileCh.setSelected(userPrefs.getBoolean("xml.single",true));
+  regexTf.setText(userPrefs.get("naming.pattern","(\\w+)"));
+  replaceTf.setText(userPrefs.get("naming.replace","$1_SomeText"));
+  primaryStage.show();
+}
