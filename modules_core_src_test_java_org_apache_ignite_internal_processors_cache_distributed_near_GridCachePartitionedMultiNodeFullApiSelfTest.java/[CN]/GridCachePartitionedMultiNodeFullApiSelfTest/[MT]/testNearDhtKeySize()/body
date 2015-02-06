@@ -1,35 +1,38 @@
 {
   List<String> keys=new ArrayList<>(5);
   info("Generating keys for test...");
+  GridCache<String,Integer> cache0=cache(0);
   for (int i=0; i < 5; i++) {
     while (true) {
       String key=UUID.randomUUID().toString();
-      if (cache().affinity().isPrimary(grid(0).localNode(),key) && cache().affinity().isBackup(grid(1).localNode(),key)) {
+      if (ignite(0).affinity(null).isPrimary(grid(0).localNode(),key) && ignite(0).affinity(null).isBackup(grid(1).localNode(),key)) {
         keys.add(key);
-        assertTrue(cache(0).putx(key,i));
+        assertTrue(cache0.putx(key,i));
         break;
       }
     }
   }
   info("Finished generating keys for test.");
-  assertEquals(Integer.valueOf(0),cache(2).get(keys.get(0)));
-  assertEquals(Integer.valueOf(1),cache(2).get(keys.get(1)));
-  assertEquals(0,cache(0).nearSize());
-  assertEquals(5,cache(0).size() - cache(0).nearSize());
-  assertEquals(0,cache(1).nearSize());
-  assertEquals(5,cache(1).size() - cache(1).nearSize());
-  assertEquals(nearEnabled() ? 2 : 0,cache(2).nearSize());
-  assertEquals(0,cache(2).size() - cache(2).nearSize());
+  GridCache<String,Integer> cache2=cache(2);
+  assertEquals(Integer.valueOf(0),cache2.get(keys.get(0)));
+  assertEquals(Integer.valueOf(1),cache2.get(keys.get(1)));
+  assertEquals(0,cache0.nearSize());
+  assertEquals(5,cache0.size() - cache0.nearSize());
+  GridCache<String,Integer> cache1=cache(1);
+  assertEquals(0,cache1.nearSize());
+  assertEquals(5,cache1.size() - cache1.nearSize());
+  assertEquals(nearEnabled() ? 2 : 0,cache2.nearSize());
+  assertEquals(0,cache2.size() - cache2.nearSize());
   IgniteBiPredicate<String,Integer> prjFilter=new P2<String,Integer>(){
     @Override public boolean apply(    String key,    Integer val){
       return val >= 1 && val <= 3;
     }
   }
 ;
-  assertEquals(0,cache(0).projection(prjFilter).nearSize());
-  assertEquals(3,cache(0).projection(prjFilter).size() - cache(0).projection(prjFilter).nearSize());
-  assertEquals(0,cache(1).projection(prjFilter).nearSize());
-  assertEquals(3,cache(1).projection(prjFilter).size() - cache(1).projection(prjFilter).nearSize());
-  assertEquals(nearEnabled() ? 1 : 0,cache(2).projection(prjFilter).nearSize());
-  assertEquals(0,cache(2).projection(prjFilter).size() - cache(2).projection(prjFilter).nearSize());
+  assertEquals(0,cache0.projection(prjFilter).nearSize());
+  assertEquals(3,cache0.projection(prjFilter).size() - cache0.projection(prjFilter).nearSize());
+  assertEquals(0,cache1.projection(prjFilter).nearSize());
+  assertEquals(3,cache1.projection(prjFilter).size() - cache1.projection(prjFilter).nearSize());
+  assertEquals(nearEnabled() ? 1 : 0,cache2.projection(prjFilter).nearSize());
+  assertEquals(0,cache2.projection(prjFilter).size() - cache2.projection(prjFilter).nearSize());
 }
