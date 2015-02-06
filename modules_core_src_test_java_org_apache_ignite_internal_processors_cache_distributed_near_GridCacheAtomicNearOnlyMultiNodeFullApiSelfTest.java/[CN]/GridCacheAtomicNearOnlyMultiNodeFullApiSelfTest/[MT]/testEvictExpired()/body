@@ -7,13 +7,13 @@
   grid(0).jcache(null).withExpiryPolicy(new TouchedExpiryPolicy(new Duration(MILLISECONDS,ttl))).put(key,1);
   Thread.sleep(ttl + 100);
   cache.localEvict(Collections.<String>singleton(key));
-  assertNull(cache.localPeek(key));
+  assertNull(cache.localPeek(key,CachePeekMode.ONHEAP));
   cache.localPromote(Collections.singleton(key));
-  assertNull(cache.localPeek(key));
+  assertNull(cache.localPeek(key,CachePeekMode.ONHEAP));
   assertTrue(cache.localSize() == 0);
   for (int i=0; i < gridCount(); i++) {
     if (ignite(i).affinity(null).isPrimary(ignite(i).cluster().localNode(),key))     load(jcache(i),key,true);
   }
   load(cache,key,true);
-  assertEquals((Integer)1,cache.localPeek(key));
+  assertEquals((Integer)1,cache.localPeek(key,CachePeekMode.ONHEAP));
 }

@@ -10,18 +10,18 @@
     vals.put(key,i);
     i++;
   }
-  for (  String key : keys)   assertEquals(vals.get(key),nearCache.localPeek(key));
+  for (  String key : keys)   assertEquals(vals.get(key),nearCache.localPeek(key,CachePeekMode.ONHEAP));
   nearCache.clear();
-  for (  String key : keys)   assertNull(nearCache.localPeek(key));
+  for (  String key : keys)   assertNull(nearCache.localPeek(key,CachePeekMode.ONHEAP));
   for (  Map.Entry<String,Integer> entry : vals.entrySet())   nearCache.put(entry.getKey(),entry.getValue());
-  for (  String key : keys)   assertEquals(vals.get(key),nearCache.localPeek(key));
+  for (  String key : keys)   assertEquals(vals.get(key),nearCache.localPeek(key,CachePeekMode.ONHEAP));
   String first=F.first(keys);
   Lock lock=nearCache.lock(first);
   lock.lock();
   try {
     nearCache.clear();
-    assertEquals(vals.get(first),nearCache.localPeek(first));
-    assertEquals(vals.get(first),primary.localPeek(first));
+    assertEquals(vals.get(first),nearCache.localPeek(first,CachePeekMode.ONHEAP));
+    assertEquals(vals.get(first),primary.localPeek(first,CachePeekMode.ONHEAP));
   }
   finally {
     lock.unlock();
