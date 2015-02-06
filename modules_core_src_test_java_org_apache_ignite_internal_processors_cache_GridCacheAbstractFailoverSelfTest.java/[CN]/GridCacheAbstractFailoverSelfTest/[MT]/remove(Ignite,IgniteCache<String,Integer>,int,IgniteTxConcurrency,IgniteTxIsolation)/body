@@ -1,0 +1,15 @@
+{
+  try {
+    info("Removing values form cache [0," + cnt + ')');
+    CU.inTx(g,cache,concurrency,isolation,new CIX1<IgniteCache<String,Integer>>(){
+      @Override public void applyx(      IgniteCache<String,Integer> cache){
+        for (int i=0; i < cnt; i++)         cache.remove("key" + i);
+      }
+    }
+);
+  }
+ catch (  IgniteCheckedException e) {
+    if (!X.hasCause(e,ClusterTopologyCheckedException.class))     throw e;
+ else     info("Failed to remove values from cache due to topology exception [0," + cnt + ')');
+  }
+}
