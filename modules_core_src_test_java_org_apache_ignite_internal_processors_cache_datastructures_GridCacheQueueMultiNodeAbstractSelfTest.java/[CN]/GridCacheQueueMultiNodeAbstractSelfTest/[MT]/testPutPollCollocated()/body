@@ -1,2 +1,67 @@
 {
+  try {
+    final String queueName=UUID.randomUUID().toString();
+    info("Queue name: " + queueName);
+    grid(0).queue(queueName,5,config(true));
+    final CountDownLatch latch=new CountDownLatch(1);
+    final Ignite g=startGrid(GRID_CNT + 1);
+    IgniteInternalFuture<Object> fut1=GridTestUtils.runAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        info(">>> Executing put callable [node=" + g.cluster().localNode().id() + ", thread="+ Thread.currentThread().getName()+ ']');
+        IgniteQueue<Integer> q=g.queue(queueName,5,config(true));
+        assertTrue(q.isEmpty());
+        for (int i=0; i < ITEMS_CNT; i++) {
+          if (i == q.capacity()) {
+            info(">>> Opening latch...");
+            latch.countDown();
+          }
+          put(q,i);
+        }
+        info(">>> Finished put callable on node: " + g.cluster().localNode().id());
+        return null;
+      }
+    }
+);
+    latch.await();
+    final Ignite g1=startGrid(GRID_CNT + 2);
+    IgniteInternalFuture<Object> fut2=GridTestUtils.runAsync(new Callable<Object>(){
+      @SuppressWarnings("BusyWait") @Override public Object call() throws Exception {
+        try {
+          info(">>> Executing poll callable [node=" + g1.cluster().localNode().id() + ", thread="+ Thread.currentThread().getName()+ ']');
+          IgniteQueue<Integer> q=g1.queue(queueName,5,config(true));
+          int cnt=0;
+          int nullCnt=0;
+          do {
+            Integer i=q.poll();
+            info("Polled value: " + i);
+            if (i != null) {
+              cnt++;
+              nullCnt=0;
+            }
+ else {
+              if (nullCnt == 3)               throw new Exception("Failed to poll non-null value within 3 attempts.");
+              nullCnt++;
+              Thread.sleep(1000);
+            }
+          }
+ while (cnt < ITEMS_CNT);
+          info("Finished poll callable on node: " + g1.cluster().localNode().id());
+          return null;
+        }
+  finally {
+          info("Poll callable finished.");
+        }
+      }
+    }
+);
+    fut1.get();
+    fut2.get();
+    grid(0).queue(queueName,0,null).close();
+  }
+  finally {
+    stopGrid(GRID_CNT + 1);
+    stopGrid(GRID_CNT + 2);
+    checkTopology(GRID_CNT);
+    awaitPartitionMapExchange();
+  }
 }

@@ -1,5 +1,5 @@
 {
-  GridCache<Integer,String> cache=cache(0);
+  IgniteCache<Object,Object> cache=jcache(0);
   String val=Integer.toString(key);
   cache.put(key,val);
   assertEquals(val,dht(0).peek(key));
@@ -7,15 +7,15 @@
   assertNull(near(0).peekNearOnly(key));
   assertNull(near(1).peekNearOnly(key));
   if (transactional()) {
-    try (IgniteTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ)){
+    try (IgniteTx tx=grid(0).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
       assertEquals(val,cache.get(key));
-      assertTrue(cache.removex(key));
+      assertTrue(cache.remove(key));
       tx.commit();
     }
    }
  else {
     assertEquals(val,cache.get(key));
-    assertTrue(cache.removex(key));
+    assertTrue(cache.remove(key));
   }
   assertNull(dht(0).peek(key));
   assertNull(dht(1).peek(key));
