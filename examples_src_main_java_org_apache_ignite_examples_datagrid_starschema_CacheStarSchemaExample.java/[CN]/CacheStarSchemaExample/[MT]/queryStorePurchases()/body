@@ -1,5 +1,5 @@
 {
-  GridCache<Integer,FactPurchase> factCache=Ignition.ignite().cache(PARTITIONED_CACHE_NAME);
-  CacheQuery<Map.Entry<Integer,FactPurchase>> storePurchases=factCache.queries().createSqlQuery(FactPurchase.class,"from \"replicated\".DimStore, \"partitioned\".FactPurchase " + "where DimStore.id=FactPurchase.storeId and DimStore.name=?");
-  printQueryResults("All purchases made at store1:",storePurchases.execute("Store1").get());
+  IgniteCache<Integer,FactPurchase> factCache=Ignition.ignite().jcache(PARTITIONED_CACHE_NAME);
+  QueryCursor<Cache.Entry<Integer,FactPurchase>> storePurchases=factCache.query(new QuerySqlPredicate(FactPurchase.class,"from \"replicated\".DimStore, \"partitioned\".FactPurchase " + "where DimStore.id=FactPurchase.storeId and DimStore.name=?","Store1"));
+  printQueryResults("All purchases made at store1:",storePurchases.getAll());
 }
