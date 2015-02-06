@@ -1,2 +1,42 @@
 {
+  return new Iterator<Cache.Entry<K,V>>(){
+{
+      advance();
+    }
+    /** 
+ */
+    private Cache.Entry<K,V> next;
+    @Override public boolean hasNext(){
+      return next != null;
+    }
+    @Override public Cache.Entry<K,V> next(){
+      if (next == null)       throw new NoSuchElementException();
+      Cache.Entry<K,V> e=next;
+      advance();
+      return e;
+    }
+    @Override public void remove(){
+      throw new UnsupportedOperationException();
+    }
+    /** 
+ * Switch to next entry.
+ */
+    private void advance(){
+      next=null;
+      while (it.hasNext()) {
+        GridCacheEntryEx<K,V> entry=it.next();
+        try {
+          next=toCacheEntry(entry,deserializePortable);
+          if (next == null)           continue;
+          break;
+        }
+ catch (        IgniteCheckedException e) {
+          throw U.convertToCacheException(e);
+        }
+catch (        GridCacheEntryRemovedException ignore) {
+        }
+      }
+    }
+  }
+;
 }
