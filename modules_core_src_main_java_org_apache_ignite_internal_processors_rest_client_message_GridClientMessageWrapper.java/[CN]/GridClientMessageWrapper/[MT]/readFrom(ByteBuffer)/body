@@ -1,25 +1,27 @@
 {
-  commState.setBuffer(buf);
+  stream.setBuffer(buf);
 switch (commState.idx) {
 case 0:
-    msgSize=commState.getInt("msgSize");
-  if (!commState.lastRead())   return false;
+    if (stream.remaining() < 4)     return false;
+  msgSize=stream.readInt();
+if (msgSize == 0) return true;
 commState.idx++;
 case 1:
-reqId=commState.getLong("reqId");
-if (!commState.lastRead()) return false;
+if (stream.remaining() < 8) return false;
+reqId=stream.readLong();
 commState.idx++;
 case 2:
-clientId=commState.getUuid("clientId");
-if (!commState.lastRead()) return false;
+if (stream.remaining() < 16) return false;
+clientId=U.bytesToUuid(stream.readByteArray(16),0);
 commState.idx++;
 case 3:
-destId=commState.getUuid("destId");
-if (!commState.lastRead()) return false;
+if (stream.remaining() < 16) return false;
+destId=U.bytesToUuid(stream.readByteArray(16),0);
 commState.idx++;
 case 4:
-msg=commState.getByteBuffer("msg");
-if (!commState.lastRead()) return false;
+byte[] msg0=stream.readByteArray(msgSize);
+if (!stream.lastFinished()) return false;
+msg=ByteBuffer.wrap(msg0);
 commState.idx++;
 }
 return true;

@@ -1,24 +1,29 @@
 {
-  commState.setBuffer(buf);
+  stream.setBuffer(buf);
   if (!commState.typeWritten) {
-    if (!commState.putByte(null,directType()))     return false;
+    if (stream.remaining() < 1)     return false;
+    stream.writeByte(directType());
     commState.typeWritten=true;
   }
 switch (commState.idx) {
 case 0:
-    if (!commState.putInt("msgSize",msgSize))     return false;
-  commState.idx++;
+    if (stream.remaining() < 4)     return false;
+  stream.writeInt(msgSize);
+commState.idx++;
 case 1:
-if (!commState.putLong("reqId",reqId)) return false;
+if (stream.remaining() < 8) return false;
+stream.writeLong(reqId);
 commState.idx++;
 case 2:
-if (!commState.putUuid("clientId",clientId)) return false;
+if (stream.remaining() < 16) return false;
+stream.writeByteArray(U.uuidToBytes(clientId),0,16);
 commState.idx++;
 case 3:
-if (!commState.putUuid("destId",destId)) return false;
+if (stream.remaining() < 16) return false;
+stream.writeByteArray(U.uuidToBytes(destId),0,16);
 commState.idx++;
 case 4:
-if (!commState.putByteBuffer("msg",msg)) return false;
+stream.writeByteArray(msg.array(),msg.position(),msg.remaining());
 commState.idx++;
 }
 return true;
