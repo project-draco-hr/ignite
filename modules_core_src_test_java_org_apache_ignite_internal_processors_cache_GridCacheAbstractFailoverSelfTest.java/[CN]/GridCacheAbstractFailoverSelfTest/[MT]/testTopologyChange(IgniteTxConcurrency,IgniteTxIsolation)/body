@@ -1,18 +1,18 @@
 {
   boolean tx=concurrency != null && isolation != null;
-  if (tx)   put(cache(),ENTRY_CNT,concurrency,isolation);
- else   put(cache(),ENTRY_CNT);
+  if (tx)   put(ignite(0),jcache(),ENTRY_CNT,concurrency,isolation);
+ else   put(jcache(),ENTRY_CNT);
   Ignite g=startGrid(NEW_GRID_NAME);
   check(cache(g),ENTRY_CNT);
   int half=ENTRY_CNT / 2;
   if (tx) {
-    remove(cache(g),half,concurrency,isolation);
-    put(cache(g),half,concurrency,isolation);
+    remove(g,cache(g),half,concurrency,isolation);
+    put(g,cache(g),half,concurrency,isolation);
   }
  else {
     remove(cache(g),half);
     put(cache(g),half);
   }
   stopGrid(NEW_GRID_NAME);
-  check(cache(),ENTRY_CNT);
+  check(jcache(),ENTRY_CNT);
 }
