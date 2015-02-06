@@ -1,9 +1,9 @@
 {
-  final List<IgniteEvent> evtList=new ArrayList<>();
+  final List<Event> evtList=new ArrayList<>();
   final int evtsCnt=3 + 4 + 1;
   final CountDownLatch latch=new CountDownLatch(evtsCnt);
-  grid(1).events().localListen(lsnr=new IgnitePredicate<IgniteEvent>(){
-    @Override public boolean apply(    IgniteEvent evt){
+  grid(1).events().localListen(lsnr=new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
       log.info("Received event [evt=" + evt + ']');
       evtList.add(evt);
       latch.countDown();
@@ -32,32 +32,32 @@
   assertEquals(EVT_GGFS_FILE_CLOSED_WRITE,evt.type());
   assertEquals(file1,evt.path());
   assertEquals(0,evt.dataSize());
-  assertOneToOne(evtList.subList(3,8),new P1<IgniteEvent>(){
-    @Override public boolean apply(    IgniteEvent e){
+  assertOneToOne(evtList.subList(3,8),new P1<Event>(){
+    @Override public boolean apply(    Event e){
       IgniteFsEvent e0=(IgniteFsEvent)e;
       return e0.type() == EVT_GGFS_FILE_DELETED && e0.path().equals(file1);
     }
   }
-,new P1<IgniteEvent>(){
-    @Override public boolean apply(    IgniteEvent e){
+,new P1<Event>(){
+    @Override public boolean apply(    Event e){
       IgniteFsEvent e0=(IgniteFsEvent)e;
       return e0.type() == EVT_GGFS_FILE_PURGED && e0.path().equals(file1);
     }
   }
-,new P1<IgniteEvent>(){
-    @Override public boolean apply(    IgniteEvent e){
+,new P1<Event>(){
+    @Override public boolean apply(    Event e){
       IgniteFsEvent e0=(IgniteFsEvent)e;
       return e0.type() == EVT_GGFS_FILE_CREATED && e0.path().equals(file1);
     }
   }
-,new P1<IgniteEvent>(){
-    @Override public boolean apply(    IgniteEvent e){
+,new P1<Event>(){
+    @Override public boolean apply(    Event e){
       IgniteFsEvent e0=(IgniteFsEvent)e;
       return e0.type() == EVT_GGFS_FILE_OPENED_WRITE && e0.path().equals(file1);
     }
   }
-,new P1<IgniteEvent>(){
-    @Override public boolean apply(    IgniteEvent e){
+,new P1<Event>(){
+    @Override public boolean apply(    Event e){
       IgniteFsEvent e0=(IgniteFsEvent)e;
       return e0.type() == EVT_GGFS_FILE_CLOSED_WRITE && e0.path().equals(file1);
     }
