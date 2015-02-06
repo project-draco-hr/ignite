@@ -1,8 +1,8 @@
 {
   super.onKernalStart();
   CacheContinuousQuery<GridHadoopJobId,GridHadoopJobMetadata> qry=jobMetaCache().queries().createContinuousQuery();
-  qry.callback(new IgniteBiPredicate<UUID,Collection<Map.Entry<GridHadoopJobId,GridHadoopJobMetadata>>>(){
-    @Override public boolean apply(    UUID nodeId,    final Collection<Map.Entry<GridHadoopJobId,GridHadoopJobMetadata>> evts){
+  qry.localCallback(new IgniteBiPredicate<UUID,Collection<CacheContinuousQueryEntry<GridHadoopJobId,GridHadoopJobMetadata>>>(){
+    @Override public boolean apply(    UUID nodeId,    final Collection<CacheContinuousQueryEntry<GridHadoopJobId,GridHadoopJobMetadata>> evts){
       if (!busyLock.tryReadLock())       return false;
       try {
         evtProcSvc.submit(new EventHandler(){
@@ -19,7 +19,7 @@
     }
   }
 );
-  qry.execute();
+  qry.execute(ctx.kernalContext().grid().forLocal());
   ctx.kernalContext().event().addLocalEventListener(new GridLocalEventListener(){
     @Override public void onEvent(    final IgniteEvent evt){
       if (!busyLock.tryReadLock())       return;
