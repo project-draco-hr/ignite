@@ -1,0 +1,20 @@
+{
+  multithreaded(new Callable<Object>(){
+    private final Random rnd=new Random();
+    @Nullable @Override public Object call() throws Exception {
+      for (int i=0; i < TX_CNT; i++) {
+        int cnt=rnd.nextInt(BATCH_CNT);
+        Map<Object,Object> map=U.newHashMap(cnt);
+        for (int j=0; j < cnt; j++) {
+          int id=rnd.nextInt();
+          if (rnd.nextBoolean())           map.put(new OrganizationKey(id),new Organization(id,"Name" + id,"City" + id));
+ else           map.put(new PersonKey(id),new Person(id,rnd.nextInt(),"Name" + id));
+        }
+        GridCache<Object,Object> cache=cache();
+        cache.putAll(map);
+      }
+      return null;
+    }
+  }
+,8,"putAll");
+}
