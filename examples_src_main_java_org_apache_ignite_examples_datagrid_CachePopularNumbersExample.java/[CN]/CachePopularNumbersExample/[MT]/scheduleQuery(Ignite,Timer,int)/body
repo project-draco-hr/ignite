@@ -1,11 +1,9 @@
 {
   TimerTask task=new TimerTask(){
-    private CacheQuery<List<?>> qry;
     @Override public void run(){
-      GridCache<Integer,Long> cache=ignite.cache(CACHE_NAME);
-      if (qry == null)       qry=cache.queries().createSqlFieldsQuery("select _key, _val from Long order by _val desc limit " + cnt);
+      IgniteCache<Integer,Long> cache=ignite.jcache(CACHE_NAME);
       try {
-        List<List<?>> results=new ArrayList<>(qry.execute().get());
+        List<List<?>> results=new ArrayList<>(cache.queryFields(new QuerySqlPredicate("select _key, _val from Long order by _val desc limit " + cnt)).getAll());
         Collections.sort(results,new Comparator<List<?>>(){
           @Override public int compare(          List<?> r1,          List<?> r2){
             long cnt1=(Long)r1.get(1);
@@ -20,7 +18,7 @@
         }
         System.out.println("----------------");
       }
- catch (      IgniteCheckedException e) {
+ catch (      Exception e) {
         e.printStackTrace();
       }
     }
