@@ -5,14 +5,14 @@
  else   offheapIt=internalCache.context().swap().lazyOffHeapIterator();
   CacheAffinity aff=ignite(nodeIdx).affinity(null);
   ClusterNode node=ignite(nodeIdx).cluster().localNode();
-  int primary=0;
-  int backups=0;
+  List<Integer> primary=new ArrayList<>();
+  List<Integer> backups=new ArrayList<>();
   while (offheapIt.hasNext()) {
     Map.Entry<Integer,String> e=offheapIt.next();
-    if (aff.isPrimary(node,e.getKey()))     primary++;
+    if (aff.isPrimary(node,e.getKey()))     primary.add(e.getKey());
  else {
       assertTrue(aff.isBackup(node,e.getKey()));
-      backups++;
+      backups.add(e.getKey());
     }
   }
   return new T2<>(primary,backups);

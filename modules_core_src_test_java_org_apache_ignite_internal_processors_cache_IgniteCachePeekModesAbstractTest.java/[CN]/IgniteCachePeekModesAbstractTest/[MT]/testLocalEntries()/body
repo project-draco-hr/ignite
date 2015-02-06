@@ -1,0 +1,67 @@
+{
+  if (cacheMode() == LOCAL) {
+    IgniteCache<Integer,String> cache0=jcache(0);
+    Set<Integer> keys=new HashSet<>();
+    try {
+      for (int i=0; i < HEAP_ENTRIES; i++) {
+        cache0.put(i,String.valueOf(i));
+        keys.add(i);
+      }
+      checkLocalEntries(cache0.localEntries(),keys);
+      checkLocalEntries(cache0.localEntries(ALL),keys);
+      checkLocalEntries(cache0.localEntries(NEAR),keys);
+      checkLocalEntries(cache0.localEntries(PRIMARY),keys);
+      checkLocalEntries(cache0.localEntries(BACKUP),keys);
+    }
+  finally {
+      cache0.removeAll(keys);
+    }
+    checkLocalEntries(cache0.localEntries());
+    final String val="test-val-";
+    keys=new HashSet<>();
+    for (int i=0; i < 200; i++) {
+      cache0.put(i,val + i);
+      keys.add(i);
+    }
+    try {
+      int totalKeys=200;
+      T2<List<Integer>,List<Integer>> swapKeys=swapKeys(0);
+      T2<List<Integer>,List<Integer>> offheapKeys=offheapKeys(0);
+      List<Integer> swap=new ArrayList<>();
+      swap.addAll(swapKeys.get1());
+      swap.addAll(swapKeys.get2());
+      assertFalse(swap.isEmpty());
+      List<Integer> offheap=new ArrayList<>();
+      offheap.addAll(offheapKeys.get1());
+      offheap.addAll(offheapKeys.get2());
+      assertFalse(offheap.isEmpty());
+      log.info("Keys [total=" + totalKeys + ", offheap="+ offheap.size()+ ", swap="+ swap.size()+ ']');
+      assertTrue(swap.size() + offheap.size() < totalKeys);
+      List<Integer> heap=new ArrayList<>(keys);
+      heap.removeAll(swap);
+      heap.removeAll(offheap);
+      assertFalse(heap.isEmpty());
+      checkLocalEntries(cache0.localEntries(),val,keys);
+      checkLocalEntries(cache0.localEntries(ALL),val,keys);
+      checkLocalEntries(cache0.localEntries(OFFHEAP),val,offheap);
+      checkLocalEntries(cache0.localEntries(SWAP),val,swap);
+      checkLocalEntries(cache0.localEntries(ONHEAP),val,heap);
+      checkLocalEntries(cache0.localEntries(OFFHEAP,PRIMARY),val,offheap);
+      checkLocalEntries(cache0.localEntries(SWAP,PRIMARY),val,swap);
+      checkLocalEntries(cache0.localEntries(ONHEAP,PRIMARY),val,heap);
+      checkLocalEntries(cache0.localEntries(OFFHEAP,BACKUP),val,offheap);
+      checkLocalEntries(cache0.localEntries(SWAP,BACKUP),val,swap);
+      checkLocalEntries(cache0.localEntries(ONHEAP,BACKUP),val,heap);
+      checkLocalEntries(cache0.localEntries(OFFHEAP,NEAR),val,offheap);
+      checkLocalEntries(cache0.localEntries(SWAP,NEAR),val,swap);
+      checkLocalEntries(cache0.localEntries(ONHEAP,NEAR),val,heap);
+    }
+  finally {
+      cache0.removeAll(keys);
+    }
+  }
+ else {
+    checkLocalEntriesStorageFilter(0);
+    checkLocalEntriesStorageFilter(1);
+  }
+}
