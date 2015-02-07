@@ -1,11 +1,11 @@
 {
-  GridCache<Integer,String> cache=cache();
+  IgniteCache<Object,Object> cache=jcache();
   cache.put(1,"val1");
   assertEquals("val1",dht().peek(1));
   assertNull(near().peekNearOnly(1));
-  IgniteTx tx=cache.txStart(PESSIMISTIC,REPEATABLE_READ);
+  IgniteTx tx=grid().transactions().txStart(PESSIMISTIC,REPEATABLE_READ);
   assertEquals("val1",cache.get(1));
-  assertTrue(cache.removex(1));
+  assertTrue(cache.remove(1));
   tx.commit();
   assertNull(dht().peek(1));
   assertNull(near().peekNearOnly(1));

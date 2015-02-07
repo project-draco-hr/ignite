@@ -1,0 +1,20 @@
+{
+  OptimizedObjectOutputStream out=null;
+  OptimizedObjectInputStream in=null;
+  try {
+    out=OptimizedObjectStreamRegistry.out();
+    out.requireSerializable(true);
+    out.writeObject(obj);
+    byte[] arr=out.out().array();
+    in=OptimizedObjectStreamRegistry.in();
+    in.classLoader(getClass().getClassLoader());
+    in.in().bytes(arr,arr.length);
+    Object obj0=in.readObject();
+    checkHandles(out,in);
+    return (T)obj0;
+  }
+  finally {
+    OptimizedObjectStreamRegistry.closeOut(out);
+    OptimizedObjectStreamRegistry.closeIn(in);
+  }
+}
