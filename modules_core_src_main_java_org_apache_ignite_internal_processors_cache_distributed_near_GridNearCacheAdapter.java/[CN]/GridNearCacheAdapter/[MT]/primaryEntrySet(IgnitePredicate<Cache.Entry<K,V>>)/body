@@ -1,0 +1,25 @@
+{
+  final long topVer=ctx.affinity().affinityTopologyVersion();
+  Collection<Cache.Entry<K,V>> entries=F.flatCollections(F.viewReadOnly(dht().topology().currentLocalPartitions(),new C1<GridDhtLocalPartition<K,V>,Collection<Cache.Entry<K,V>>>(){
+    @Override public Collection<Cache.Entry<K,V>> apply(    GridDhtLocalPartition<K,V> p){
+      return F.viewReadOnly(p.entries(),new C1<GridDhtCacheEntry<K,V>,Cache.Entry<K,V>>(){
+        @Override public Cache.Entry<K,V> apply(        GridDhtCacheEntry<K,V> e){
+          return e.wrap();
+        }
+      }
+,new P1<GridDhtCacheEntry<K,V>>(){
+        @Override public boolean apply(        GridDhtCacheEntry<K,V> e){
+          return !e.obsoleteOrDeleted();
+        }
+      }
+);
+    }
+  }
+,new P1<GridDhtLocalPartition<K,V>>(){
+    @Override public boolean apply(    GridDhtLocalPartition<K,V> p){
+      return p.primary(topVer);
+    }
+  }
+));
+  return new GridCacheEntrySet<>(ctx,entries,filter);
+}
