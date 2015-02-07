@@ -1,14 +1,14 @@
 {
   IgniteCache<Integer,Integer> cache=ignite.jcache(null);
   for (int i=0; i < 50; i++)   cache.put(i,i);
-  QueryCursor<Cache.Entry<Integer,Integer>> q=cache.query(new QueryScanPredicate<Integer,Integer>(){
+  QueryCursor<Cache.Entry<Integer,Integer>> q=cache.query(scan(new IgniteBiPredicate<Integer,Integer>(){
     @Override public boolean apply(    Integer k,    Integer v){
       assertNotNull(k);
       assertNotNull(v);
       return k >= 20 && v < 40;
     }
   }
-);
+));
   List<Cache.Entry<Integer,Integer>> list=new ArrayList<>(q.getAll());
   Collections.sort(list,new Comparator<Cache.Entry<Integer,Integer>>(){
     @Override public int compare(    Cache.Entry<Integer,Integer> e1,    Cache.Entry<Integer,Integer> e2){
