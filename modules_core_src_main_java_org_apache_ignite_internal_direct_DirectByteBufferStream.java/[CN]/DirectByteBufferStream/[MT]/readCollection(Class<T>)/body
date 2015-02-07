@@ -1,0 +1,20 @@
+{
+  if (readSize == -1) {
+    int size=readInt();
+    if (!lastFinished)     return null;
+    readSize=size;
+  }
+  if (readSize >= 0) {
+    if (col == null)     col=new ArrayList<>(readSize);
+    IgniteOutClosure<Object> itemReader=READERS.get(itemCls);
+    for (int i=readItems; i < readSize; i++) {
+      Object item=itemReader.apply();
+      if (!lastFinished)       return null;
+      col.add(item);
+      readItems++;
+    }
+  }
+  readSize=-1;
+  readItems=0;
+  return (Collection<T>)col;
+}
