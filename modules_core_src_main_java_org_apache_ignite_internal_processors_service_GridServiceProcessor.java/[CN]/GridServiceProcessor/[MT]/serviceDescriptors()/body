@@ -1,0 +1,19 @@
+{
+  Collection<ServiceDescriptor> descs=new ArrayList<>();
+  for (  CacheEntry<Object,Object> e : cache.entrySetx()) {
+    if (!(e.getKey() instanceof GridServiceDeploymentKey))     continue;
+    GridServiceDeployment dep=(GridServiceDeployment)e.getValue();
+    ServiceDescriptorImpl desc=new ServiceDescriptorImpl(dep);
+    try {
+      GridServiceAssignments assigns=(GridServiceAssignments)cache.get(new GridServiceAssignmentsKey(dep.configuration().getName()));
+      if (assigns != null) {
+        desc.topologySnapshot(assigns.assigns());
+        descs.add(desc);
+      }
+    }
+ catch (    IgniteCheckedException ex) {
+      log.error("Failed to get assignments from replicated cache for service: " + dep.configuration().getName(),ex);
+    }
+  }
+  return descs;
+}
