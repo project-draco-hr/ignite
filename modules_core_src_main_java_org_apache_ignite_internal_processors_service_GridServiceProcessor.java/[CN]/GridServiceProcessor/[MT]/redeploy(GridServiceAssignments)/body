@@ -2,8 +2,8 @@
   String svcName=assigns.name();
   Integer assignCnt=assigns.assigns().get(ctx.localNodeId());
   if (assignCnt == null)   assignCnt=0;
-  ManagedService svc=assigns.service();
-  Collection<ManagedServiceContextImpl> ctxs;
+  Service svc=assigns.service();
+  Collection<ServiceContextImpl> ctxs;
 synchronized (locSvcs) {
     ctxs=locSvcs.get(svcName);
     if (ctxs == null)     locSvcs.put(svcName,ctxs=new ArrayList<>());
@@ -16,9 +16,9 @@ synchronized (ctxs) {
  else     if (ctxs.size() < assignCnt) {
       int createCnt=assignCnt - ctxs.size();
       for (int i=0; i < createCnt; i++) {
-        final ManagedService cp=copyAndInject(svc);
+        final Service cp=copyAndInject(svc);
         final ExecutorService exe=Executors.newSingleThreadExecutor(threadFactory);
-        final ManagedServiceContextImpl svcCtx=new ManagedServiceContextImpl(assigns.name(),UUID.randomUUID(),assigns.cacheName(),assigns.affinityKey(),cp,exe);
+        final ServiceContextImpl svcCtx=new ServiceContextImpl(assigns.name(),UUID.randomUUID(),assigns.cacheName(),assigns.affinityKey(),cp,exe);
         ctxs.add(svcCtx);
         try {
           cp.init(svcCtx);

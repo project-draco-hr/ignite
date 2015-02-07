@@ -3,7 +3,7 @@
   String name="serviceMultiple1";
   CountDownLatch latch=new CountDownLatch(nodeCount() * 2);
   DummyService.exeLatch(name,latch);
-  IgniteManaged svcs=g.managed().withAsync();
+  IgniteServices svcs=g.services().withAsync();
   svcs.deployMultiple(name,new DummyService(),nodeCount() * 2,3);
   IgniteFuture<?> fut=svcs.future();
   info("Deployed service: " + name);
@@ -12,5 +12,5 @@
   latch.await();
   assertEquals(name,nodeCount() * 2,DummyService.started(name));
   assertEquals(name,0,DummyService.cancelled(name));
-  checkCount(name,g.managed().deployedServices(),nodeCount() * 2);
+  checkCount(name,g.services().serviceDescriptors(),nodeCount() * 2);
 }
