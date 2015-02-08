@@ -1,14 +1,14 @@
 {
   int cnt=10;
-  Collection<String> keys=new ArrayList<>();
+  Set<String> keys=new HashSet<>();
   for (int i=0; i < cnt; i++)   keys.add(String.valueOf(i));
-  cache().removeAll(keys);
+  jcache().removeAll(keys);
   for (  String key : keys)   putToStore(key,Integer.parseInt(key));
   for (int g=0; g < gridCount(); g++)   grid(g).jcache(null).localLoadCache(null);
   for (int g=0; g < gridCount(); g++) {
     for (int i=0; i < cnt; i++) {
       String key=String.valueOf(i);
-      if (cache().affinity().mapKeyToPrimaryAndBackups(key).contains(grid(g).localNode()))       assertEquals((Integer)i,cache(g).peek(key));
+      if (grid(0).affinity(null).mapKeyToPrimaryAndBackups(key).contains(grid(g).localNode()))       assertEquals((Integer)i,cache(g).peek(key));
  else       assertNull(cache(g).peek(key));
     }
   }
