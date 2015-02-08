@@ -2,7 +2,8 @@
   final CacheQuery<Map.Entry<K,V>> qry;
   final CacheQueryFuture<Map.Entry<K,V>> fut;
   if (filter instanceof QueryScan) {
-    qry=delegate.queries().createScanQuery((IgniteBiPredicate<K,V>)filter);
+    IgniteBiPredicate<K,V> p=((QueryScan)filter).getFilter();
+    qry=delegate.queries().createScanQuery(p != null ? p : ACCEPT_ALL);
     if (grp != null)     qry.projection(grp);
     fut=qry.execute();
   }
