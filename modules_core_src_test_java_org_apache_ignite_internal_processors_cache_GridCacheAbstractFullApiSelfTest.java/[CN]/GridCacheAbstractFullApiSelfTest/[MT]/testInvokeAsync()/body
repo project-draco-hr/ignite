@@ -2,18 +2,18 @@
   IgniteCache<String,Integer> cache=jcache();
   cache.put("key2",1);
   cache.put("key3",3);
-  IgniteCache<String,Integer> asyncCache=cache.withAsync();
-  assertNull(asyncCache.invoke("key1",INCR_PROCESSOR));
-  IgniteFuture<?> fut0=asyncCache.future();
-  assertNull(asyncCache.invoke("key2",INCR_PROCESSOR));
-  IgniteFuture<?> fut1=asyncCache.future();
-  assertNull(asyncCache.invoke("key3",RMV_PROCESSOR));
-  IgniteFuture<?> fut2=asyncCache.future();
+  IgniteCache<String,Integer> cacheAsync=cache.withAsync();
+  assertNull(cacheAsync.invoke("key1",INCR_PROCESSOR));
+  IgniteFuture<?> fut0=cacheAsync.future();
+  assertNull(cacheAsync.invoke("key2",INCR_PROCESSOR));
+  IgniteFuture<?> fut1=cacheAsync.future();
+  assertNull(cacheAsync.invoke("key3",RMV_PROCESSOR));
+  IgniteFuture<?> fut2=cacheAsync.future();
   fut0.get();
   fut1.get();
   fut2.get();
   assertEquals((Integer)1,cache.get("key1"));
   assertEquals((Integer)2,cache.get("key2"));
   assertNull(cache.get("key3"));
-  for (int i=0; i < gridCount(); i++)   assertNull(cache(i).peek("key3"));
+  for (int i=0; i < gridCount(); i++)   assertNull(jcache(i).localPeek("key3",CachePeekMode.ONHEAP));
 }
