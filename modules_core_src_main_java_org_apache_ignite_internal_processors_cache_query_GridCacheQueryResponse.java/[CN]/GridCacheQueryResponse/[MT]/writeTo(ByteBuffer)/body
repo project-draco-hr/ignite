@@ -1,57 +1,29 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(null,directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 3:
-    if (dataBytes != null) {
-      if (commState.it == null) {
-        if (!commState.putInt(null,dataBytes.size()))         return false;
-        commState.it=dataBytes.iterator();
-      }
-      while (commState.it.hasNext() || commState.cur != NULL) {
-        if (commState.cur == NULL)         commState.cur=commState.it.next();
-        if (!commState.putByteArray(null,(byte[])commState.cur))         return false;
-        commState.cur=NULL;
-      }
-      commState.it=null;
-    }
- else {
-      if (!commState.putInt(null,-1))       return false;
-    }
-  commState.idx++;
+    if (!writer.writeCollection("dataBytes",dataBytes,byte[].class))     return false;
+  state++;
 case 4:
-if (!commState.putByteArray("errBytes",errBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("errBytes",errBytes)) return false;
+state++;
 case 5:
-if (!commState.putBoolean("fields",fields)) return false;
-commState.idx++;
+if (!writer.writeBoolean("fields",fields)) return false;
+state++;
 case 6:
-if (!commState.putBoolean("finished",finished)) return false;
-commState.idx++;
+if (!writer.writeBoolean("finished",finished)) return false;
+state++;
 case 7:
-if (metaDataBytes != null) {
-if (commState.it == null) {
-if (!commState.putInt(null,metaDataBytes.size())) return false;
-commState.it=metaDataBytes.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putByteArray(null,(byte[])commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(null,-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("metaDataBytes",metaDataBytes,byte[].class)) return false;
+state++;
 case 8:
-if (!commState.putLong("reqId",reqId)) return false;
-commState.idx++;
+if (!writer.writeLong("reqId",reqId)) return false;
+state++;
 }
 return true;
 }

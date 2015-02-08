@@ -1,40 +1,20 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(null,directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 0:
-    if (blocks != null) {
-      if (commState.it == null) {
-        if (!commState.putInt(null,blocks.size()))         return false;
-        commState.it=blocks.entrySet().iterator();
-      }
-      while (commState.it.hasNext() || commState.cur != NULL) {
-        if (commState.cur == NULL)         commState.cur=commState.it.next();
-        Map.Entry<GridGgfsBlockKey,byte[]> e=(Map.Entry<GridGgfsBlockKey,byte[]>)commState.cur;
-        if (!commState.keyDone) {
-          if (!commState.putMessage(null,e.getKey()))           return false;
-          commState.keyDone=true;
-        }
-        if (!commState.putByteArray(null,e.getValue()))         return false;
-        commState.keyDone=false;
-        commState.cur=NULL;
-      }
-      commState.it=null;
-    }
- else {
-      if (!commState.putInt(null,-1))       return false;
-    }
-  commState.idx++;
+    if (!writer.writeMap("blocks",blocks,GridGgfsBlockKey.class,byte[].class))     return false;
+  state++;
 case 1:
-if (!commState.putGridUuid("fileId",fileId)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("fileId",fileId)) return false;
+state++;
 case 2:
-if (!commState.putLong("id",id)) return false;
-commState.idx++;
+if (!writer.writeLong("id",id)) return false;
+state++;
 }
 return true;
 }

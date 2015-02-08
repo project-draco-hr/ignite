@@ -1,200 +1,87 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 3:
-    drExpireTimes=commState.getLongList("drExpireTimes");
-  if (!commState.lastRead())   return false;
-commState.idx++;
+    drExpireTimes=reader.readMessage("drExpireTimes");
+  if (!reader.isLastRead())   return false;
+state++;
 case 4:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (drVers == null) drVers=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-GridCacheVersion _val=commState.getCacheVersion(null);
-if (!commState.lastRead()) return false;
-drVers.add((GridCacheVersion)_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+drVers=reader.readCollection("drVers",GridCacheVersion.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 5:
-futVer=commState.getCacheVersion("futVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+entryProcessorsBytes=reader.readCollection("entryProcessorsBytes",byte[].class);
+if (!reader.isLastRead()) return false;
+state++;
 case 6:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (invokeArgsBytes == null) invokeArgsBytes=new byte[commState.readSize][];
-for (int i=commState.readItems; i < commState.readSize; i++) {
-byte[] _val=commState.getByteArray(null);
-if (!commState.lastRead()) return false;
-invokeArgsBytes[i]=(byte[])_val;
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+forceTransformBackups=reader.readBoolean("forceTransformBackups");
+if (!reader.isLastRead()) return false;
+state++;
 case 7:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (keyBytes == null) keyBytes=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-byte[] _val=commState.getByteArray(null);
-if (!commState.lastRead()) return false;
-keyBytes.add((byte[])_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+futVer=reader.readMessage("futVer");
+if (!reader.isLastRead()) return false;
+state++;
 case 8:
-nearExpireTimes=commState.getLongList("nearExpireTimes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+invokeArgsBytes=reader.readObjectArray("invokeArgsBytes",byte[].class);
+if (!reader.isLastRead()) return false;
+state++;
 case 9:
-nearTtls=commState.getLongList("nearTtls");
-if (!commState.lastRead()) return false;
-commState.idx++;
+keyBytes=reader.readCollection("keyBytes",byte[].class);
+if (!reader.isLastRead()) return false;
+state++;
 case 10:
-nodeId=commState.getUuid("nodeId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nearEntryProcessorsBytes=reader.readCollection("nearEntryProcessorsBytes",byte[].class);
+if (!reader.isLastRead()) return false;
+state++;
 case 11:
-byte syncMode0=commState.getByte("syncMode");
-if (!commState.lastRead()) return false;
-syncMode=CacheWriteSynchronizationMode.fromOrdinal(syncMode0);
-commState.idx++;
+nearExpireTimes=reader.readMessage("nearExpireTimes");
+if (!reader.isLastRead()) return false;
+state++;
 case 12:
-topVer=commState.getLong("topVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nearKeyBytes=reader.readCollection("nearKeyBytes",byte[].class);
+if (!reader.isLastRead()) return false;
+state++;
 case 13:
-ttls=commState.getLongList("ttls");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nearTtls=reader.readMessage("nearTtls");
+if (!reader.isLastRead()) return false;
+state++;
 case 14:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (valBytes == null) valBytes=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-GridCacheValueBytes _val=commState.getValueBytes(null);
-if (!commState.lastRead()) return false;
-valBytes.add((GridCacheValueBytes)_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+nearValBytes=reader.readCollection("nearValBytes",GridCacheValueBytes.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 15:
-writeVer=commState.getCacheVersion("writeVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nodeId=reader.readUuid("nodeId");
+if (!reader.isLastRead()) return false;
+state++;
 case 16:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (nearKeyBytes == null) nearKeyBytes=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-byte[] _val=commState.getByteArray(null);
-if (!commState.lastRead()) return false;
-nearKeyBytes.add((byte[])_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+subjId=reader.readUuid("subjId");
+if (!reader.isLastRead()) return false;
+state++;
 case 17:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (nearValBytes == null) nearValBytes=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-GridCacheValueBytes _val=commState.getValueBytes(null);
-if (!commState.lastRead()) return false;
-nearValBytes.add((GridCacheValueBytes)_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+syncMode=reader.readEnum("syncMode",CacheWriteSynchronizationMode.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 18:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (entryProcessorsBytes == null) entryProcessorsBytes=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-byte[] _val=commState.getByteArray(null);
-if (!commState.lastRead()) return false;
-entryProcessorsBytes.add((byte[])_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+taskNameHash=reader.readInt("taskNameHash");
+if (!reader.isLastRead()) return false;
+state++;
 case 19:
-forceTransformBackups=commState.getBoolean("forceTransformBackups");
-if (!commState.lastRead()) return false;
-commState.idx++;
+topVer=reader.readLong("topVer");
+if (!reader.isLastRead()) return false;
+state++;
 case 20:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (nearEntryProcessorsBytes == null) nearEntryProcessorsBytes=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-byte[] _val=commState.getByteArray(null);
-if (!commState.lastRead()) return false;
-nearEntryProcessorsBytes.add((byte[])_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+ttls=reader.readMessage("ttls");
+if (!reader.isLastRead()) return false;
+state++;
 case 21:
-subjId=commState.getUuid("subjId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+valBytes=reader.readCollection("valBytes",GridCacheValueBytes.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 22:
-taskNameHash=commState.getInt("taskNameHash");
-if (!commState.lastRead()) return false;
-commState.idx++;
+writeVer=reader.readMessage("writeVer");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

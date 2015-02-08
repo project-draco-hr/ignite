@@ -1,23 +1,22 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    dataBytes=commState.getByteArray("dataBytes");
-  if (!commState.lastRead())   return false;
-commState.idx++;
+    dataBytes=reader.readByteArray("dataBytes");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-futId=commState.getGridUuid("futId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+futId=reader.readIgniteUuid("futId");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-routineId=commState.getUuid("routineId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+routineId=reader.readUuid("routineId");
+if (!reader.isLastRead()) return false;
+state++;
 case 3:
-byte type0=commState.getByte("type");
-if (!commState.lastRead()) return false;
-type=GridContinuousMessageType.fromOrdinal(type0);
-commState.idx++;
+type=reader.readEnum("type",GridContinuousMessageType.class);
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

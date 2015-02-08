@@ -1,65 +1,42 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    clsLdrId=commState.getGridUuid("clsLdrId");
-  if (!commState.lastRead())   return false;
-commState.idx++;
+    clsLdrId=reader.readIgniteUuid("clsLdrId");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-byte depMode0=commState.getByte("depMode");
-if (!commState.lastRead()) return false;
-depMode=DeploymentMode.fromOrdinal(depMode0);
-commState.idx++;
+depMode=reader.readEnum("depMode",DeploymentMode.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-evtsBytes=commState.getByteArray("evtsBytes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+evtsBytes=reader.readByteArray("evtsBytes");
+if (!reader.isLastRead()) return false;
+state++;
 case 3:
-exBytes=commState.getByteArray("exBytes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+exBytes=reader.readByteArray("exBytes");
+if (!reader.isLastRead()) return false;
+state++;
 case 4:
-filter=commState.getByteArray("filter");
-if (!commState.lastRead()) return false;
-commState.idx++;
+filter=reader.readByteArray("filter");
+if (!reader.isLastRead()) return false;
+state++;
 case 5:
-filterClsName=commState.getString("filterClsName");
-if (!commState.lastRead()) return false;
-commState.idx++;
+filterClsName=reader.readString("filterClsName");
+if (!reader.isLastRead()) return false;
+state++;
 case 6:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (ldrParties == null) ldrParties=new HashMap<>(commState.readSize,1.0f);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-if (!commState.keyDone) {
-UUID _val=commState.getUuid(null);
-if (!commState.lastRead()) return false;
-commState.cur=_val;
-commState.keyDone=true;
-}
-IgniteUuid _val=commState.getGridUuid(null);
-if (!commState.lastRead()) return false;
-ldrParties.put((UUID)commState.cur,_val);
-commState.keyDone=false;
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.cur=null;
-commState.idx++;
+ldrParties=reader.readMap("ldrParties",UUID.class,IgniteUuid.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 7:
-resTopicBytes=commState.getByteArray("resTopicBytes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+resTopicBytes=reader.readByteArray("resTopicBytes");
+if (!reader.isLastRead()) return false;
+state++;
 case 8:
-userVer=commState.getString("userVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+userVer=reader.readString("userVer");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

@@ -1,34 +1,20 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(null,directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 8:
-    if (!commState.putByteArray("errBytes",errBytes))     return false;
-  commState.idx++;
+    if (!writer.writeByteArray("errBytes",errBytes))     return false;
+  state++;
 case 9:
-if (!commState.putGridUuid("futId",futId)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("futId",futId)) return false;
+state++;
 case 10:
-if (valBytes != null) {
-if (commState.it == null) {
-if (!commState.putInt(null,valBytes.size())) return false;
-commState.it=valBytes.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putValueBytes(null,(GridCacheValueBytes)commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(null,-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("valBytes",valBytes,GridCacheValueBytes.class)) return false;
+state++;
 }
 return true;
 }

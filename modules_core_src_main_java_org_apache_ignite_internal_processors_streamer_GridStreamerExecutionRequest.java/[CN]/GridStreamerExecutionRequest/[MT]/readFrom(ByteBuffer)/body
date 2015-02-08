@@ -1,57 +1,34 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    batchBytes=commState.getByteArray("batchBytes");
-  if (!commState.lastRead())   return false;
-commState.idx++;
+    batchBytes=reader.readByteArray("batchBytes");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-clsLdrId=commState.getGridUuid("clsLdrId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+clsLdrId=reader.readIgniteUuid("clsLdrId");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-byte depMode0=commState.getByte("depMode");
-if (!commState.lastRead()) return false;
-depMode=DeploymentMode.fromOrdinal(depMode0);
-commState.idx++;
+depMode=reader.readEnum("depMode",DeploymentMode.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 3:
-forceLocDep=commState.getBoolean("forceLocDep");
-if (!commState.lastRead()) return false;
-commState.idx++;
+forceLocDep=reader.readBoolean("forceLocDep");
+if (!reader.isLastRead()) return false;
+state++;
 case 4:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (ldrParticipants == null) ldrParticipants=new HashMap<>(commState.readSize,1.0f);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-if (!commState.keyDone) {
-UUID _val=commState.getUuid(null);
-if (!commState.lastRead()) return false;
-commState.cur=_val;
-commState.keyDone=true;
-}
-IgniteUuid _val=commState.getGridUuid(null);
-if (!commState.lastRead()) return false;
-ldrParticipants.put((UUID)commState.cur,_val);
-commState.keyDone=false;
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.cur=null;
-commState.idx++;
+ldrParticipants=reader.readMap("ldrParticipants",UUID.class,IgniteUuid.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 5:
-sampleClsName=commState.getString("sampleClsName");
-if (!commState.lastRead()) return false;
-commState.idx++;
+sampleClsName=reader.readString("sampleClsName");
+if (!reader.isLastRead()) return false;
+state++;
 case 6:
-userVer=commState.getString("userVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+userVer=reader.readString("userVer");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

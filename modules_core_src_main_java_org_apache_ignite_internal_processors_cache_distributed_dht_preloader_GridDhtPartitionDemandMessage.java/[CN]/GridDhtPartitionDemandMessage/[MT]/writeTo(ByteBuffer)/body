@@ -1,43 +1,29 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(null,directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 3:
-    if (parts != null) {
-      if (commState.it == null) {
-        if (!commState.putInt(null,parts.size()))         return false;
-        commState.it=parts.iterator();
-      }
-      while (commState.it.hasNext() || commState.cur != NULL) {
-        if (commState.cur == NULL)         commState.cur=commState.it.next();
-        if (!commState.putInt(null,(int)commState.cur))         return false;
-        commState.cur=NULL;
-      }
-      commState.it=null;
-    }
- else {
-      if (!commState.putInt(null,-1))       return false;
-    }
-  commState.idx++;
+    if (!writer.writeCollection("parts",parts,int.class))     return false;
+  state++;
 case 4:
-if (!commState.putLong("timeout",timeout)) return false;
-commState.idx++;
+if (!writer.writeLong("timeout",timeout)) return false;
+state++;
 case 5:
-if (!commState.putLong("topVer",topVer)) return false;
-commState.idx++;
+if (!writer.writeLong("topVer",topVer)) return false;
+state++;
 case 6:
-if (!commState.putByteArray("topicBytes",topicBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("topicBytes",topicBytes)) return false;
+state++;
 case 7:
-if (!commState.putLong("updateSeq",updateSeq)) return false;
-commState.idx++;
+if (!writer.writeLong("updateSeq",updateSeq)) return false;
+state++;
 case 8:
-if (!commState.putInt("workerId",workerId)) return false;
-commState.idx++;
+if (!writer.writeInt("workerId",workerId)) return false;
+state++;
 }
 return true;
 }

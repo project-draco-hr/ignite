@@ -1,87 +1,59 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(null,directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 8:
-    if (drVersByIdx != null) {
-      if (commState.it == null) {
-        if (!commState.putInt(null,drVersByIdx.length))         return false;
-        commState.it=arrayIterator(drVersByIdx);
-      }
-      while (commState.it.hasNext() || commState.cur != NULL) {
-        if (commState.cur == NULL)         commState.cur=commState.it.next();
-        if (!commState.putCacheVersion(null,(GridCacheVersion)commState.cur))         return false;
-        commState.cur=NULL;
-      }
-      commState.it=null;
-    }
- else {
-      if (!commState.putInt(null,-1))       return false;
-    }
-  commState.idx++;
+    if (!writer.writeObjectArray("drVersByIdx",drVersByIdx,GridCacheVersion.class))     return false;
+  state++;
 case 9:
-if (!commState.putGridUuid("futId",futId)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("futId",futId)) return false;
+state++;
 case 10:
-if (!commState.putByteArray("grpLockKeyBytes",grpLockKeyBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("grpLockKeyBytes",grpLockKeyBytes)) return false;
+state++;
 case 11:
-if (!commState.putBoolean("isInTx",isInTx)) return false;
-commState.idx++;
+if (!writer.writeBoolean("isInTx",isInTx)) return false;
+state++;
 case 12:
-if (!commState.putBoolean("isInvalidate",isInvalidate)) return false;
-commState.idx++;
+if (!writer.writeBoolean("isInvalidate",isInvalidate)) return false;
+state++;
 case 13:
-if (!commState.putBoolean("isRead",isRead)) return false;
-commState.idx++;
+if (!writer.writeBoolean("isRead",isRead)) return false;
+state++;
 case 14:
-if (!commState.putEnum("isolation",isolation)) return false;
-commState.idx++;
+if (!writer.writeEnum("isolation",isolation)) return false;
+state++;
 case 15:
-if (keyBytes != null) {
-if (commState.it == null) {
-if (!commState.putInt(null,keyBytes.size())) return false;
-commState.it=keyBytes.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putByteArray(null,(byte[])commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(null,-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("keyBytes",keyBytes,byte[].class)) return false;
+state++;
 case 16:
-if (!commState.putCacheVersion("nearXidVer",nearXidVer)) return false;
-commState.idx++;
+if (!writer.writeMessage("nearXidVer",nearXidVer != null ? nearXidVer.clone() : null)) return false;
+state++;
 case 17:
-if (!commState.putUuid("nodeId",nodeId)) return false;
-commState.idx++;
+if (!writer.writeUuid("nodeId",nodeId)) return false;
+state++;
 case 18:
-if (!commState.putBoolean("partLock",partLock)) return false;
-commState.idx++;
+if (!writer.writeBoolean("partLock",partLock)) return false;
+state++;
 case 19:
-if (!commState.putBooleanArray("retVals",retVals)) return false;
-commState.idx++;
+if (!writer.writeBooleanArray("retVals",retVals)) return false;
+state++;
 case 20:
-if (!commState.putLong("threadId",threadId)) return false;
-commState.idx++;
+if (!writer.writeLong("threadId",threadId)) return false;
+state++;
 case 21:
-if (!commState.putLong("timeout",timeout)) return false;
-commState.idx++;
+if (!writer.writeLong("timeout",timeout)) return false;
+state++;
 case 22:
-if (!commState.putInt("txSize",txSize)) return false;
-commState.idx++;
+if (!writer.writeInt("txSize",txSize)) return false;
+state++;
 case 23:
-if (!commState.putByteArray("writeEntriesBytes",writeEntriesBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("writeEntriesBytes",writeEntriesBytes)) return false;
+state++;
 }
 return true;
 }

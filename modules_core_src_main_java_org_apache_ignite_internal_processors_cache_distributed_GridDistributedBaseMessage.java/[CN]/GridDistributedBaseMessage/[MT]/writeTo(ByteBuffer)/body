@@ -1,54 +1,26 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(null,directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 3:
-    if (!commState.putByteArray("candsByIdxBytes",candsByIdxBytes))     return false;
-  commState.idx++;
+    if (!writer.writeByteArray("candsByIdxBytes",candsByIdxBytes))     return false;
+  state++;
 case 4:
-if (!commState.putByteArray("candsByKeyBytes",candsByKeyBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("candsByKeyBytes",candsByKeyBytes)) return false;
+state++;
 case 5:
-if (committedVers != null) {
-if (commState.it == null) {
-if (!commState.putInt(null,committedVers.size())) return false;
-commState.it=committedVers.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putCacheVersion(null,(GridCacheVersion)commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(null,-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("committedVers",committedVers,GridCacheVersion.class)) return false;
+state++;
 case 6:
-if (rolledbackVers != null) {
-if (commState.it == null) {
-if (!commState.putInt(null,rolledbackVers.size())) return false;
-commState.it=rolledbackVers.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putCacheVersion(null,(GridCacheVersion)commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(null,-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("rolledbackVers",rolledbackVers,GridCacheVersion.class)) return false;
+state++;
 case 7:
-if (!commState.putCacheVersion("ver",ver)) return false;
-commState.idx++;
+if (!writer.writeMessage("ver",ver != null ? ver.clone() : null)) return false;
+state++;
 }
 return true;
 }

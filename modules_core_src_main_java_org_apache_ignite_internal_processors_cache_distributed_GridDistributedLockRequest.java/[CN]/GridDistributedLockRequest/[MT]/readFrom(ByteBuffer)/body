@@ -1,100 +1,71 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 8:
-    if (commState.readSize == -1) {
-      int _val=commState.getInt(null);
-      if (!commState.lastRead())       return false;
-      commState.readSize=_val;
-    }
-  if (commState.readSize >= 0) {
-    if (drVersByIdx == null)     drVersByIdx=new GridCacheVersion[commState.readSize];
-    for (int i=commState.readItems; i < commState.readSize; i++) {
-      GridCacheVersion _val=commState.getCacheVersion(null);
-      if (!commState.lastRead())       return false;
-      drVersByIdx[i]=(GridCacheVersion)_val;
-      commState.readItems++;
-    }
-  }
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+    drVersByIdx=reader.readObjectArray("drVersByIdx",GridCacheVersion.class);
+  if (!reader.isLastRead())   return false;
+state++;
 case 9:
-futId=commState.getGridUuid("futId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+futId=reader.readIgniteUuid("futId");
+if (!reader.isLastRead()) return false;
+state++;
 case 10:
-grpLockKeyBytes=commState.getByteArray("grpLockKeyBytes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+grpLockKeyBytes=reader.readByteArray("grpLockKeyBytes");
+if (!reader.isLastRead()) return false;
+state++;
 case 11:
-isInTx=commState.getBoolean("isInTx");
-if (!commState.lastRead()) return false;
-commState.idx++;
+isInTx=reader.readBoolean("isInTx");
+if (!reader.isLastRead()) return false;
+state++;
 case 12:
-isInvalidate=commState.getBoolean("isInvalidate");
-if (!commState.lastRead()) return false;
-commState.idx++;
+isInvalidate=reader.readBoolean("isInvalidate");
+if (!reader.isLastRead()) return false;
+state++;
 case 13:
-isRead=commState.getBoolean("isRead");
-if (!commState.lastRead()) return false;
-commState.idx++;
+isRead=reader.readBoolean("isRead");
+if (!reader.isLastRead()) return false;
+state++;
 case 14:
-byte isolation0=commState.getByte("isolation");
-if (!commState.lastRead()) return false;
-isolation=IgniteTxIsolation.fromOrdinal(isolation0);
-commState.idx++;
+isolation=reader.readEnum("isolation",IgniteTxIsolation.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 15:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (keyBytes == null) keyBytes=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-byte[] _val=commState.getByteArray(null);
-if (!commState.lastRead()) return false;
-keyBytes.add((byte[])_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+keyBytes=reader.readCollection("keyBytes",byte[].class);
+if (!reader.isLastRead()) return false;
+state++;
 case 16:
-nearXidVer=commState.getCacheVersion("nearXidVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nearXidVer=reader.readMessage("nearXidVer");
+if (!reader.isLastRead()) return false;
+state++;
 case 17:
-nodeId=commState.getUuid("nodeId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nodeId=reader.readUuid("nodeId");
+if (!reader.isLastRead()) return false;
+state++;
 case 18:
-partLock=commState.getBoolean("partLock");
-if (!commState.lastRead()) return false;
-commState.idx++;
+partLock=reader.readBoolean("partLock");
+if (!reader.isLastRead()) return false;
+state++;
 case 19:
-retVals=commState.getBooleanArray("retVals");
-if (!commState.lastRead()) return false;
-commState.idx++;
+retVals=reader.readBooleanArray("retVals");
+if (!reader.isLastRead()) return false;
+state++;
 case 20:
-threadId=commState.getLong("threadId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+threadId=reader.readLong("threadId");
+if (!reader.isLastRead()) return false;
+state++;
 case 21:
-timeout=commState.getLong("timeout");
-if (!commState.lastRead()) return false;
-commState.idx++;
+timeout=reader.readLong("timeout");
+if (!reader.isLastRead()) return false;
+state++;
 case 22:
-txSize=commState.getInt("txSize");
-if (!commState.lastRead()) return false;
-commState.idx++;
+txSize=reader.readInt("txSize");
+if (!reader.isLastRead()) return false;
+state++;
 case 23:
-writeEntriesBytes=commState.getByteArray("writeEntriesBytes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+writeEntriesBytes=reader.readByteArray("writeEntriesBytes");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

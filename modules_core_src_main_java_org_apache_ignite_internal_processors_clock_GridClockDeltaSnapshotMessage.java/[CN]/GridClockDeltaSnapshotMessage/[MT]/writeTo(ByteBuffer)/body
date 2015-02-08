@@ -1,36 +1,16 @@
 {
-  commState.setBuffer(buf);
-  if (!commState.typeWritten) {
-    if (!commState.putByte(null,directType()))     return false;
-    commState.typeWritten=true;
+  writer.setBuffer(buf);
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 0:
-    if (deltas != null) {
-      if (commState.it == null) {
-        if (!commState.putInt(null,deltas.size()))         return false;
-        commState.it=deltas.entrySet().iterator();
-      }
-      while (commState.it.hasNext() || commState.cur != NULL) {
-        if (commState.cur == NULL)         commState.cur=commState.it.next();
-        Map.Entry<UUID,Long> e=(Map.Entry<UUID,Long>)commState.cur;
-        if (!commState.keyDone) {
-          if (!commState.putUuid(null,e.getKey()))           return false;
-          commState.keyDone=true;
-        }
-        if (!commState.putLong(null,e.getValue()))         return false;
-        commState.keyDone=false;
-        commState.cur=NULL;
-      }
-      commState.it=null;
-    }
- else {
-      if (!commState.putInt(null,-1))       return false;
-    }
-  commState.idx++;
+    if (!writer.writeMap("deltas",deltas,UUID.class,long.class))     return false;
+  state++;
 case 1:
-if (!commState.putClockDeltaVersion("snapVer",snapVer)) return false;
-commState.idx++;
+if (!writer.writeMessage("snapVer",snapVer != null ? snapVer.clone() : null)) return false;
+state++;
 }
 return true;
 }

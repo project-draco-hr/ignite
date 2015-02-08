@@ -1,53 +1,39 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 22:
-    futId=commState.getGridUuid("futId");
-  if (!commState.lastRead())   return false;
-commState.idx++;
+    futId=reader.readIgniteUuid("futId");
+  if (!reader.isLastRead())   return false;
+state++;
 case 23:
-last=commState.getBoolean("last");
-if (!commState.lastRead()) return false;
-commState.idx++;
+last=reader.readBoolean("last");
+if (!reader.isLastRead()) return false;
+state++;
 case 24:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (lastBackups == null) lastBackups=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-UUID _val=commState.getUuid(null);
-if (!commState.lastRead()) return false;
-lastBackups.add((UUID)_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+lastBackups=reader.readCollection("lastBackups",UUID.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 25:
-miniId=commState.getGridUuid("miniId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+miniId=reader.readIgniteUuid("miniId");
+if (!reader.isLastRead()) return false;
+state++;
 case 26:
-near=commState.getBoolean("near");
-if (!commState.lastRead()) return false;
-commState.idx++;
+near=reader.readBoolean("near");
+if (!reader.isLastRead()) return false;
+state++;
 case 27:
-topVer=commState.getLong("topVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+subjId=reader.readUuid("subjId");
+if (!reader.isLastRead()) return false;
+state++;
 case 28:
-subjId=commState.getUuid("subjId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+taskNameHash=reader.readInt("taskNameHash");
+if (!reader.isLastRead()) return false;
+state++;
 case 29:
-taskNameHash=commState.getInt("taskNameHash");
-if (!commState.lastRead()) return false;
-commState.idx++;
+topVer=reader.readLong("topVer");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

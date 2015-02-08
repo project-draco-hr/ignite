@@ -1,57 +1,43 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 24:
-    accessTtl=commState.getLong("accessTtl");
-  if (!commState.lastRead())   return false;
-commState.idx++;
+    accessTtl=reader.readLong("accessTtl");
+  if (!reader.isLastRead())   return false;
+state++;
 case 25:
-invalidateEntries=commState.getBitSet("invalidateEntries");
-if (!commState.lastRead()) return false;
-commState.idx++;
+invalidateEntries=reader.readBitSet("invalidateEntries");
+if (!reader.isLastRead()) return false;
+state++;
 case 26:
-miniId=commState.getGridUuid("miniId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+miniId=reader.readIgniteUuid("miniId");
+if (!reader.isLastRead()) return false;
+state++;
 case 27:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (nearKeyBytes == null) nearKeyBytes=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-byte[] _val=commState.getByteArray(null);
-if (!commState.lastRead()) return false;
-nearKeyBytes.add((byte[])_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+nearKeyBytes=reader.readCollection("nearKeyBytes",byte[].class);
+if (!reader.isLastRead()) return false;
+state++;
 case 28:
-ownedBytes=commState.getByteArray("ownedBytes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+ownedBytes=reader.readByteArray("ownedBytes");
+if (!reader.isLastRead()) return false;
+state++;
 case 29:
-topVer=commState.getLong("topVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+preloadKeys=reader.readBitSet("preloadKeys");
+if (!reader.isLastRead()) return false;
+state++;
 case 30:
-subjId=commState.getUuid("subjId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+subjId=reader.readUuid("subjId");
+if (!reader.isLastRead()) return false;
+state++;
 case 31:
-taskNameHash=commState.getInt("taskNameHash");
-if (!commState.lastRead()) return false;
-commState.idx++;
+taskNameHash=reader.readInt("taskNameHash");
+if (!reader.isLastRead()) return false;
+state++;
 case 32:
-preloadKeys=commState.getBitSet("preloadKeys");
-if (!commState.lastRead()) return false;
-commState.idx++;
+topVer=reader.readLong("topVer");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

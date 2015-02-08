@@ -1,34 +1,20 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(null,directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 3:
-    if (!commState.putBoolean("err",err))     return false;
-  commState.idx++;
+    if (!writer.writeBoolean("err",err))     return false;
+  state++;
 case 4:
-if (!commState.putLong("futId",futId)) return false;
-commState.idx++;
+if (!writer.writeLong("futId",futId)) return false;
+state++;
 case 5:
-if (rejectedKeyBytes != null) {
-if (commState.it == null) {
-if (!commState.putInt(null,rejectedKeyBytes.size())) return false;
-commState.it=rejectedKeyBytes.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putByteArray(null,(byte[])commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(null,-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("rejectedKeyBytes",rejectedKeyBytes,byte[].class)) return false;
+state++;
 }
 return true;
 }

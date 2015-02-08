@@ -1,41 +1,19 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 0:
-    if (commState.readSize == -1) {
-      int _val=commState.getInt(null);
-      if (!commState.lastRead())       return false;
-      commState.readSize=_val;
-    }
-  if (commState.readSize >= 0) {
-    if (blocks == null)     blocks=new HashMap<>(commState.readSize,1.0f);
-    for (int i=commState.readItems; i < commState.readSize; i++) {
-      if (!commState.keyDone) {
-        GridGgfsBlockKey _val=(GridGgfsBlockKey)commState.getMessage(null);
-        if (!commState.lastRead())         return false;
-        commState.cur=_val;
-        commState.keyDone=true;
-      }
-      byte[] _val=commState.getByteArray(null);
-      if (!commState.lastRead())       return false;
-      blocks.put((GridGgfsBlockKey)commState.cur,_val);
-      commState.keyDone=false;
-      commState.readItems++;
-    }
-  }
-commState.readSize=-1;
-commState.readItems=0;
-commState.cur=null;
-commState.idx++;
+    blocks=reader.readMap("blocks",GridGgfsBlockKey.class,byte[].class);
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-fileId=commState.getGridUuid("fileId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+fileId=reader.readIgniteUuid("fileId");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-id=commState.getLong("id");
-if (!commState.lastRead()) return false;
-commState.idx++;
+id=reader.readLong("id");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

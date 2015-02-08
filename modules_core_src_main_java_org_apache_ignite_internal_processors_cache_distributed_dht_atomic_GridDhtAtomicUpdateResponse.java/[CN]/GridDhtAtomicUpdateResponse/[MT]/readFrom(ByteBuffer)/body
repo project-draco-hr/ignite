@@ -1,37 +1,23 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 3:
-    errBytes=commState.getByteArray("errBytes");
-  if (!commState.lastRead())   return false;
-commState.idx++;
+    errBytes=reader.readByteArray("errBytes");
+  if (!reader.isLastRead())   return false;
+state++;
 case 4:
-failedKeysBytes=commState.getByteArray("failedKeysBytes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+failedKeysBytes=reader.readByteArray("failedKeysBytes");
+if (!reader.isLastRead()) return false;
+state++;
 case 5:
-futVer=commState.getCacheVersion("futVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+futVer=reader.readMessage("futVer");
+if (!reader.isLastRead()) return false;
+state++;
 case 6:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (nearEvictedBytes == null) nearEvictedBytes=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-byte[] _val=commState.getByteArray(null);
-if (!commState.lastRead()) return false;
-nearEvictedBytes.add((byte[])_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+nearEvictedBytes=reader.readCollection("nearEvictedBytes",byte[].class);
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

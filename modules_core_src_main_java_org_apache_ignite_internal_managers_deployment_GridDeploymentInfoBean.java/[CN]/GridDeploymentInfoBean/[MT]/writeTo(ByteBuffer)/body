@@ -1,45 +1,25 @@
 {
-  commState.setBuffer(buf);
-  if (!commState.typeWritten) {
-    if (!commState.putByte(null,directType()))     return false;
-    commState.typeWritten=true;
+  writer.setBuffer(buf);
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 0:
-    if (!commState.putGridUuid("clsLdrId",clsLdrId))     return false;
-  commState.idx++;
+    if (!writer.writeIgniteUuid("clsLdrId",clsLdrId))     return false;
+  state++;
 case 1:
-if (!commState.putEnum("depMode",depMode)) return false;
-commState.idx++;
+if (!writer.writeEnum("depMode",depMode)) return false;
+state++;
 case 2:
-if (!commState.putBoolean("locDepOwner",locDepOwner)) return false;
-commState.idx++;
+if (!writer.writeBoolean("locDepOwner",locDepOwner)) return false;
+state++;
 case 3:
-if (participants != null) {
-if (commState.it == null) {
-if (!commState.putInt(null,participants.size())) return false;
-commState.it=participants.entrySet().iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-Map.Entry<UUID,IgniteUuid> e=(Map.Entry<UUID,IgniteUuid>)commState.cur;
-if (!commState.keyDone) {
-if (!commState.putUuid(null,e.getKey())) return false;
-commState.keyDone=true;
-}
-if (!commState.putGridUuid(null,e.getValue())) return false;
-commState.keyDone=false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(null,-1)) return false;
-}
-commState.idx++;
+if (!writer.writeMap("participants",participants,UUID.class,IgniteUuid.class)) return false;
+state++;
 case 4:
-if (!commState.putString("userVer",userVer)) return false;
-commState.idx++;
+if (!writer.writeString("userVer",userVer)) return false;
+state++;
 }
 return true;
 }

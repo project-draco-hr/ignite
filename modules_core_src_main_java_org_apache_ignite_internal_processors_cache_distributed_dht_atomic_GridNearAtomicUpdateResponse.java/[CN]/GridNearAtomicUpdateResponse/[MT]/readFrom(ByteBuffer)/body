@@ -1,93 +1,51 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 3:
-    errBytes=commState.getByteArray("errBytes");
-  if (!commState.lastRead())   return false;
-commState.idx++;
+    errBytes=reader.readByteArray("errBytes");
+  if (!reader.isLastRead())   return false;
+state++;
 case 4:
-failedKeysBytes=commState.getByteArray("failedKeysBytes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+failedKeysBytes=reader.readByteArray("failedKeysBytes");
+if (!reader.isLastRead()) return false;
+state++;
 case 5:
-futVer=commState.getCacheVersion("futVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+futVer=reader.readMessage("futVer");
+if (!reader.isLastRead()) return false;
+state++;
 case 6:
-nearExpireTimes=commState.getLongList("nearExpireTimes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nearExpireTimes=reader.readMessage("nearExpireTimes");
+if (!reader.isLastRead()) return false;
+state++;
 case 7:
-nearTtls=commState.getLongList("nearTtls");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nearSkipIdxs=reader.readCollection("nearSkipIdxs",int.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 8:
-remapKeysBytes=commState.getByteArray("remapKeysBytes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nearTtls=reader.readMessage("nearTtls");
+if (!reader.isLastRead()) return false;
+state++;
 case 9:
-retValBytes=commState.getByteArray("retValBytes");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nearValBytes=reader.readCollection("nearValBytes",GridCacheValueBytes.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 10:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (nearSkipIdxs == null) nearSkipIdxs=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-nearSkipIdxs.add((Integer)_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+nearValsIdxs=reader.readCollection("nearValsIdxs",int.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 11:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (nearValBytes == null) nearValBytes=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-GridCacheValueBytes _val=commState.getValueBytes(null);
-if (!commState.lastRead()) return false;
-nearValBytes.add((GridCacheValueBytes)_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+nearVer=reader.readMessage("nearVer");
+if (!reader.isLastRead()) return false;
+state++;
 case 12:
-if (commState.readSize == -1) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-commState.readSize=_val;
-}
-if (commState.readSize >= 0) {
-if (nearValsIdxs == null) nearValsIdxs=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-int _val=commState.getInt(null);
-if (!commState.lastRead()) return false;
-nearValsIdxs.add((Integer)_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+remapKeysBytes=reader.readByteArray("remapKeysBytes");
+if (!reader.isLastRead()) return false;
+state++;
 case 13:
-nearVer=commState.getCacheVersion("nearVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+retValBytes=reader.readByteArray("retValBytes");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

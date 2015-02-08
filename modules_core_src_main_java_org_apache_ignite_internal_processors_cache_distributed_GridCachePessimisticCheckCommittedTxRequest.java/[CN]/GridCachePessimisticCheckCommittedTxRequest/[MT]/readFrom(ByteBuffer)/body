@@ -1,31 +1,31 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 8:
-    futId=commState.getGridUuid("futId");
-  if (!commState.lastRead())   return false;
-commState.idx++;
+    futId=reader.readIgniteUuid("futId");
+  if (!reader.isLastRead())   return false;
+state++;
 case 9:
-miniId=commState.getGridUuid("miniId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+miniId=reader.readIgniteUuid("miniId");
+if (!reader.isLastRead()) return false;
+state++;
 case 10:
-nearXidVer=commState.getCacheVersion("nearXidVer");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nearOnlyCheck=reader.readBoolean("nearOnlyCheck");
+if (!reader.isLastRead()) return false;
+state++;
 case 11:
-originatingNodeId=commState.getUuid("originatingNodeId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+nearXidVer=reader.readMessage("nearXidVer");
+if (!reader.isLastRead()) return false;
+state++;
 case 12:
-originatingThreadId=commState.getLong("originatingThreadId");
-if (!commState.lastRead()) return false;
-commState.idx++;
+originatingNodeId=reader.readUuid("originatingNodeId");
+if (!reader.isLastRead()) return false;
+state++;
 case 13:
-nearOnlyCheck=commState.getBoolean("nearOnlyCheck");
-if (!commState.lastRead()) return false;
-commState.idx++;
+originatingThreadId=reader.readLong("originatingThreadId");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

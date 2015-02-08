@@ -1,28 +1,28 @@
 {
   stream.setBuffer(buf);
-switch (commState.idx) {
+switch (state) {
 case 0:
     if (stream.remaining() < 4)     return false;
   msgSize=stream.readInt();
 if (msgSize == 0) return true;
-commState.idx++;
+state++;
 case 1:
 if (stream.remaining() < 8) return false;
 reqId=stream.readLong();
-commState.idx++;
+state++;
 case 2:
 if (stream.remaining() < 16) return false;
 clientId=U.bytesToUuid(stream.readByteArray(16),0);
-commState.idx++;
+state++;
 case 3:
 if (stream.remaining() < 16) return false;
 destId=U.bytesToUuid(stream.readByteArray(16),0);
-commState.idx++;
+state++;
 case 4:
 byte[] msg0=stream.readByteArray(msgSize);
 if (!stream.lastFinished()) return false;
 msg=ByteBuffer.wrap(msg0);
-commState.idx++;
+state++;
 }
 return true;
 }
