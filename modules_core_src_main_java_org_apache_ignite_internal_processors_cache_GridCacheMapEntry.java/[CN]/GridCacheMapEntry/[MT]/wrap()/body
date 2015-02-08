@@ -1,17 +1,20 @@
 {
   try {
-    IgniteInternalTx tx=cctx.tm().userTx();
+    IgniteInternalTx<K,V> tx=cctx.tm().userTx();
     V val;
     if (tx != null) {
-      val=(V)tx.writeMap().get(txKey());
-      if (val == null)       val=(V)tx.readMap().get(txKey());
+      GridTuple<V> peek=tx.peek(cctx,false,key,null);
+      val=peek == null ? rawGetOrUnmarshal(false) : peek.get();
     }
  else     val=rawGetOrUnmarshal(false);
     CacheEntryImpl<K,V> entry=new CacheEntryImpl<>(key,val);
     entry.version(ver);
     return entry;
   }
- catch (  IgniteCheckedException e) {
+ catch (  GridCacheFilterFailedException ignored) {
+    throw new IgniteException("Should never happen.");
+  }
+catch (  IgniteCheckedException e) {
     throw new IgniteException("Failed to wrap entry: " + this,e);
   }
 }
