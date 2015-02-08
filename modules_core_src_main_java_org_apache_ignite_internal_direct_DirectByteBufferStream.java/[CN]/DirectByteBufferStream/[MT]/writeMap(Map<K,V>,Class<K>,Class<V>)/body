@@ -8,8 +8,19 @@
     Type keyType=type(keyCls);
     Type valType=type(valCls);
     while (it.hasNext() || cur != NULL) {
-      if (cur == NULL)       cur=it.next();
-      Map.Entry<K,V> e=(Map.Entry<K,V>)cur;
+      Map.Entry<K,V> e;
+      if (cur == NULL) {
+        cur=it.next();
+        e=(Map.Entry<K,V>)cur;
+        if (keyType == Type.MSG || valType == Type.MSG) {
+          K k=e.getKey();
+          V v=e.getValue();
+          if (k != null && keyType == Type.MSG)           k=(K)((MessageAdapter)k).clone();
+          if (v != null && valType == Type.MSG)           v=(V)((MessageAdapter)v).clone();
+          cur=e=F.t(k,v);
+        }
+      }
+ else       e=(Map.Entry<K,V>)cur;
       if (!keyDone) {
         write(keyType,e.getKey());
         if (!lastFinished)         return;
