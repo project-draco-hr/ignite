@@ -1,12 +1,9 @@
 {
-  A.notNull(filter,"filter");
+  A.notNull(qry,"qry");
   GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
-    if (filter instanceof SqlQuery) {
-      SqlQuery p=(SqlQuery)filter;
-      return new QueryCursorImpl<>(ctx.kernalContext().query().<K,V>queryLocal(ctx.name(),p.getType(),p.getSql(),p.getArgs()));
-    }
-    return query(filter,ctx.kernalContext().grid().forLocal());
+    if (qry instanceof SqlQuery)     return doLocalQuery((SqlQuery)qry);
+    return query(qry,ctx.kernalContext().grid().forLocal());
   }
  catch (  Exception e) {
     if (e instanceof CacheException)     throw e;

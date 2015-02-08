@@ -1,8 +1,9 @@
 {
-  A.notNull(filter,"filter");
+  A.notNull(qry,"qry");
   GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
-    return ctx.kernalContext().query().queryTwoStep(ctx.name(),filter.getSql(),filter.getArgs());
+    if (ctx.isReplicated())     return doLocalFieldsQuery(qry);
+    return ctx.kernalContext().query().queryTwoStep(ctx.name(),qry.getSql(),qry.getArgs());
   }
  catch (  Exception e) {
     if (e instanceof CacheException)     throw e;
