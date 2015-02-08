@@ -28,8 +28,8 @@
   }
   for (  ComputeTaskFuture<?> fut : futs)   fut.get();
   for (int i=0; i < GRID_CNT; i++) {
-    CacheProjection<String,int[]> c=grid(i).cache(null).projection(String.class,int[].class);
-    try (IgniteTx tx=c.txStart(concur,isolation)){
+    IgniteCache<String,int[]> c=grid(i).jcache(null);
+    try (IgniteTx tx=grid(i).transactions().txStart(concur,isolation)){
       int[] arr=c.get("TestKey");
       assertNotNull(arr);
       assertEquals(jobCnt,arr.length);
