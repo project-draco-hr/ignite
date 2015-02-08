@@ -1,7 +1,13 @@
 {
   StatementBuilder buff=new StatementBuilder();
   buff.append(leftTable().getSQL());
-  buff.append(leftJoin() ? " \n LEFT JOIN " : " \n INNER JOIN ");
+  buff.append(leftOuter ? " \n LEFT OUTER JOIN " : " \n INNER JOIN ");
   buff.append(rightTable().getSQL());
+  GridSqlElement on=on();
+  if (on != null) {
+    String onSql=on.getSQL();
+    if (onSql.charAt(0) == '(' && onSql.charAt(onSql.length() - 1) == ')')     onSql=onSql.substring(1,onSql.length() - 1);
+    buff.append(" \n ON ").append(onSql);
+  }
   return buff.toString();
 }

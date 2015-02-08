@@ -8,12 +8,15 @@
       assert0(qry instanceof Select,qry);
       res=new GridSqlSubquery(parse((Select)qry));
     }
+ else     if (tbl instanceof FunctionTable) {
+      res=parseExpression(FUNC_EXPR.get((FunctionTable)tbl));
+    }
  else     if (tbl instanceof RangeTable) {
       res=new GridSqlFunction("SYSTEM_RANGE");
       res.addChild(parseExpression(RANGE_MIN.get((RangeTable)tbl)));
       res.addChild(parseExpression(RANGE_MAX.get((RangeTable)tbl)));
     }
- else     throw new IgniteException("Unsupported query: " + filter);
+ else     assert0(false,filter.getSelect().getSQL());
     String alias=ALIAS.get(filter);
     if (alias != null)     res=new GridSqlAlias(alias,res,false);
     h2ObjToGridObj.put(filter,res);
