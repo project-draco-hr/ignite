@@ -1,0 +1,18 @@
+{
+  A.notNull(filter,"filter");
+  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+  try {
+    if (filter instanceof QuerySql) {
+      QuerySql p=(QuerySql)filter;
+      return new QueryCursorImpl<>(ctx.kernalContext().query().<K,V>queryLocal(ctx.name(),p.getType(),p.getSql(),p.getArgs()));
+    }
+    return query(filter,ctx.kernalContext().grid().forLocal());
+  }
+ catch (  Exception e) {
+    if (e instanceof CacheException)     throw e;
+    throw new CacheException(e);
+  }
+ finally {
+    gate.leave(prev);
+  }
+}
