@@ -1,3 +1,7 @@
 {
-  U.error(log,"Failed to execute query.",msg.error());
+  QueryRun r=runs.get(msg.queryRequestId());
+  if (r != null && r.latch.getCount() != 0) {
+    r.rmtErr=msg.error();
+    while (r.latch.getCount() > 0)     r.latch.countDown();
+  }
 }

@@ -3,7 +3,7 @@
   QueryRun r=new QueryRun();
   r.tbls=new ArrayList<>(qry.mapQueries().size());
   r.conn=h2.connectionForSpace(space);
-  Collection<ClusterNode> nodes=ctx.grid().cluster().nodes();
+  Collection<ClusterNode> nodes=ctx.grid().cluster().forCacheNodes(space).nodes();
   for (  GridCacheSqlQuery mapQry : qry.mapQueries()) {
     GridMergeTable tbl;
     try {
@@ -20,13 +20,18 @@
   try {
     ctx.io().sendUserMessage(nodes,new GridQueryRequest(qryReqId,1000,qry.mapQueries()),GridTopic.TOPIC_QUERY,false,0);
     r.latch.await();
+    if (r.rmtErr != null)     throw new CacheException("Failed to run map query remotely.",r.rmtErr);
     GridCacheSqlQuery rdc=qry.reduceQuery();
     final ResultSet res=h2.executeSqlQueryWithTimer(r.conn,rdc.query(),F.asList(rdc.parameters()));
     for (    GridMergeTable tbl : r.tbls)     dropTable(r.conn,tbl.getName());
     return new QueryCursorImpl<>(new Iter(res));
   }
- catch (  IgniteCheckedException|InterruptedException|SQLException e) {
+ catch (  IgniteCheckedException|InterruptedException|SQLException|RuntimeException e) {
     U.closeQuiet(r.conn);
-    throw new IgniteException(e);
+    if (e instanceof CacheException)     throw (CacheException)e;
+    throw new CacheException("Failed to run reduce query locally.",e);
+  }
+ finally {
+    if (!runs.remove(qryReqId,r))     U.warn(log,"Query run was removed: " + qryReqId);
   }
 }
