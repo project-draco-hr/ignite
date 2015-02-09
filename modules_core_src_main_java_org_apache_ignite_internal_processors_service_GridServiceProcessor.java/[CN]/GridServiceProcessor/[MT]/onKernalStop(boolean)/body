@@ -14,16 +14,16 @@
  catch (  IgniteCheckedException e) {
     log.error("Failed to unsubscribe service assignment notifications.",e);
   }
-  Collection<ManagedServiceContextImpl> ctxs=new ArrayList<>();
+  Collection<ServiceContextImpl> ctxs=new ArrayList<>();
 synchronized (locSvcs) {
-    for (    Collection<ManagedServiceContextImpl> ctxs0 : locSvcs.values())     ctxs.addAll(ctxs0);
+    for (    Collection<ServiceContextImpl> ctxs0 : locSvcs.values())     ctxs.addAll(ctxs0);
   }
-  for (  ManagedServiceContextImpl ctx : ctxs) {
+  for (  ServiceContextImpl ctx : ctxs) {
     ctx.setCancelled(true);
     ctx.service().cancel(ctx);
     ctx.executor().shutdownNow();
   }
-  for (  ManagedServiceContextImpl ctx : ctxs) {
+  for (  ServiceContextImpl ctx : ctxs) {
     try {
       if (log.isInfoEnabled() && !ctxs.isEmpty())       log.info("Shutting down distributed service [name=" + ctx.name() + ", execId8="+ U.id8(ctx.executionId())+ ']');
       ctx.executor().awaitTermination(Long.MAX_VALUE,TimeUnit.MILLISECONDS);

@@ -1,14 +1,15 @@
 {
   if (cacheMode() != LOCAL && cacheMode() != REPLICATED) {
     int cnt=3;
-    for (int i=0; i < cnt; i++)     cache().put(String.valueOf(i),i);
-    for (int i=0; i < cnt; i++)     cache().remove(String.valueOf(i));
+    IgniteCache<String,Integer> cache=jcache();
+    for (int i=0; i < cnt; i++)     cache.put(String.valueOf(i),i);
+    for (int i=0; i < cnt; i++)     cache.remove(String.valueOf(i));
     for (int g=0; g < gridCount(); g++) {
       for (int i=0; i < cnt; i++) {
         String key=String.valueOf(i);
         GridCacheContext<String,Integer> cctx=context(g);
         GridCacheEntryEx<String,Integer> entry=cctx.isNear() ? cctx.near().dht().peekEx(key) : cctx.cache().peekEx(key);
-        if (cache().affinity().mapKeyToPrimaryAndBackups(key).contains(grid(g).localNode())) {
+        if (grid(0).affinity(null).mapKeyToPrimaryAndBackups(key).contains(grid(g).localNode())) {
           assertNotNull(entry);
           assertTrue(entry.deleted());
         }
