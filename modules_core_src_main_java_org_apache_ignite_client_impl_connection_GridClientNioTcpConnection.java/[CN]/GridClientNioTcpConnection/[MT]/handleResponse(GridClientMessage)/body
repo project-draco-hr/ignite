@@ -6,9 +6,18 @@
     return;
   }
   if (fut.forward()) {
+    removePending(res.requestId());
+    fut.onDone(res);
   }
  else {
-    if (res instanceof GridClientResponse)     handleClientResponse(fut,(GridClientResponse)res);
- else     log.warning("Unsupported response type received: " + res);
+    GridClientMessage res0=res;
+    if (res instanceof GridRouterResponse) {
+      res0=marsh.unmarshal(((GridRouterResponse)res).body());
+      res0.requestId(res.requestId());
+      res0.clientId(res.clientId());
+      res0.destinationId(res.destinationId());
+    }
+    if (res0 instanceof GridClientResponse)     handleClientResponse(fut,(GridClientResponse)res0);
+ else     log.warning("Unsupported response type received: " + res0);
   }
 }
