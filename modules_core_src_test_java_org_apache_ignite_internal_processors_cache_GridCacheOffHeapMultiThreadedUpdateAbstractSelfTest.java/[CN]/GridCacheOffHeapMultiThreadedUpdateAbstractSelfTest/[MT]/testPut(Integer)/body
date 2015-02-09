@@ -1,5 +1,5 @@
 {
-  final GridCache<Integer,Integer> cache=grid(0).cache(null);
+  final IgniteCache<Integer,Integer> cache=grid(0).jcache(null);
   cache.put(key,0);
   final int THREADS=5;
   final int ITERATIONS_PER_THREAD=iterations();
@@ -7,7 +7,7 @@
     @Override public Void call() throws Exception {
       for (int i=0; i < ITERATIONS_PER_THREAD && !failed; i++) {
         if (i % 500 == 0)         log.info("Iteration " + i);
-        Integer val=cache.put(key,i);
+        Integer val=cache.getAndPut(key,i);
         assertNotNull(val);
       }
       return null;
@@ -15,7 +15,7 @@
   }
 ,THREADS,"put");
   for (int i=0; i < gridCount(); i++) {
-    Integer val=(Integer)grid(i).cache(null).get(key);
+    Integer val=(Integer)grid(i).jcache(null).get(key);
     assertNotNull("Unexpected value for grid " + i,val);
   }
   assertFalse(failed);
