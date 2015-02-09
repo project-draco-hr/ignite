@@ -6,7 +6,8 @@
   }
 ;
   log.info("Get 1.");
-  assertEquals(null,cache(0).get(key));
+  IgniteCache<String,Integer> cache=jcache(0);
+  assertEquals(null,cache.get(key));
   assertEquals(1,interceptor.invokeCnt.get());
   assertEquals(0,interceptor.getMap.size());
   interceptor.reset();
@@ -17,12 +18,12 @@
   }
 ;
   log.info("Get 2.");
-  assertEquals((Integer)1,cache(0).get(key));
+  assertEquals((Integer)1,cache.get(key));
   assertEquals(1,interceptor.invokeCnt.get());
   assertEquals(0,interceptor.getMap.size());
   interceptor.reset();
   interceptor.disabled=true;
-  cache(0).put(key,100);
+  cache.put(key,100);
   interceptor.disabled=false;
   interceptor.retInterceptor=new InterceptorAdapter(){
     @Nullable @Override public Object onGet(    Object key,    Object val){
@@ -31,7 +32,7 @@
   }
 ;
   log.info("Get 3.");
-  assertEquals(null,cache(0).get(key));
+  assertEquals(null,cache.get(key));
   assertEquals(1,interceptor.invokeCnt.get());
   assertEquals(1,interceptor.getMap.size());
   assertEquals(100,interceptor.getMap.get(key));
@@ -44,7 +45,7 @@
   }
 ;
   log.info("Get 4.");
-  assertEquals((Integer)101,cache(0).get(key));
+  assertEquals((Integer)101,cache.get(key));
   assertEquals(1,interceptor.invokeCnt.get());
   assertEquals(1,interceptor.getMap.size());
   assertEquals(100,interceptor.getMap.get(key));
@@ -57,7 +58,9 @@
   }
 ;
   log.info("GetAsync 1.");
-  assertEquals((Integer)101,cache(0).getAsync(key).get());
+  IgniteCache<String,Integer> cacheAsync=cache.withAsync();
+  cacheAsync.get(key);
+  assertEquals((Integer)101,cacheAsync.<Integer>future().get());
   assertEquals(1,interceptor.invokeCnt.get());
   assertEquals(1,interceptor.getMap.size());
   assertEquals(100,interceptor.getMap.get(key));
