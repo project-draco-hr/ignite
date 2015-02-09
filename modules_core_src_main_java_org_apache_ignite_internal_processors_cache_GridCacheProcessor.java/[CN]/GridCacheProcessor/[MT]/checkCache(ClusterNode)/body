@@ -3,8 +3,8 @@
   GridCacheAttributes[] rmtAttrs=U.cacheAttributes(rmt);
   GridCacheAttributes[] locAttrs=U.cacheAttributes(ctx.discovery().localNode());
   if (F.isEmpty(rmtAttrs) || F.isEmpty(locAttrs))   return;
-  IgniteDeploymentMode locDepMode=ctx.config().getDeploymentMode();
-  IgniteDeploymentMode rmtDepMode=rmt.attribute(GridNodeAttributes.ATTR_DEPLOYMENT_MODE);
+  DeploymentMode locDepMode=ctx.config().getDeploymentMode();
+  DeploymentMode rmtDepMode=rmt.attribute(IgniteNodeAttributes.ATTR_DEPLOYMENT_MODE);
   for (  GridCacheAttributes rmtAttr : rmtAttrs) {
     for (    GridCacheAttributes locAttr : locAttrs) {
       if (F.eq(rmtAttr.cacheName(),locAttr.cacheName())) {
@@ -26,7 +26,6 @@
           }
           CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"cloner","Cache cloner",locAttr.clonerClassName(),rmtAttr.clonerClassName(),false);
           CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"transactionManagerLookup","Transaction manager lookup",locAttr.transactionManagerLookupClassName(),rmtAttr.transactionManagerLookupClassName(),false);
-          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"atomicSequenceReserveSize","Atomic sequence reserve size",locAttr.sequenceReserveSize(),rmtAttr.sequenceReserveSize(),false);
           CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"defaultLockTimeout","Default lock timeout",locAttr.defaultLockTimeout(),rmtAttr.defaultLockTimeout(),false);
           CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"defaultQueryTimeout","Default query timeout",locAttr.defaultQueryTimeout(),rmtAttr.defaultQueryTimeout(),false);
           CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"defaultTimeToLive","Default time to live",locAttr.defaultTimeToLive(),rmtAttr.defaultTimeToLive(),false);
@@ -43,9 +42,7 @@
           CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"queryIndexEnabled","Query index enabled",locAttr.queryIndexEnabled(),rmtAttr.queryIndexEnabled(),true);
           CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"storeValueBytes","Store value bytes",locAttr.storeValueBytes(),rmtAttr.storeValueBytes(),true);
           CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"queryIndexEnabled","Query index enabled",locAttr.queryIndexEnabled(),rmtAttr.queryIndexEnabled(),true);
-          Boolean locPortableEnabled=U.portableEnabled(ctx.discovery().localNode(),locAttr.cacheName());
-          Boolean rmtPortableEnabled=U.portableEnabled(rmt,locAttr.cacheName());
-          if (locPortableEnabled != null && rmtPortableEnabled != null)           CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"portableEnabled","Portables enabled",locPortableEnabled,rmtPortableEnabled,true);
+          CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"portableEnabled","Portables enabled",locAttr.portableEnabled(),rmtAttr.portableEnabled(),true);
           if (locAttr.cacheMode() == PARTITIONED) {
             CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"evictSynchronized","Eviction synchronized",locAttr.evictSynchronized(),rmtAttr.evictSynchronized(),true);
             CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"evictNearSynchronized","Eviction near synchronized",locAttr.evictNearSynchronized(),rmtAttr.evictNearSynchronized(),true);

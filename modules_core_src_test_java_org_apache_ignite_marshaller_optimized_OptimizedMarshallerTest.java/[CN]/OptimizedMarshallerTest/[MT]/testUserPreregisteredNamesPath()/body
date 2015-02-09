@@ -1,0 +1,15 @@
+{
+  Object obj=new SomeSerializable(null);
+  ((Map)U.staticField(OptimizedMarshallerUtils.class,"CLS_DESC_CACHE")).clear();
+  OptimizedClassResolver.userClasses(null,null);
+  Marshaller marsh=new OptimizedMarshaller();
+  int size1=marsh.marshal(obj).length;
+  ((Map)U.staticField(OptimizedMarshallerUtils.class,"CLS_DESC_CACHE")).clear();
+  OptimizedClassResolver.userClasses(null,null);
+  OptimizedMarshaller marshPreregistered=new OptimizedMarshaller();
+  File namesFile=File.createTempFile("gg-",null);
+  U.writeStringToFile(namesFile,SomeSerializable.class.getName(),"UTF-8");
+  marshPreregistered.setClassNamesPath(namesFile.getAbsolutePath());
+  int size2=marshPreregistered.marshal(obj).length;
+  assertTrue(size1 > size2);
+}

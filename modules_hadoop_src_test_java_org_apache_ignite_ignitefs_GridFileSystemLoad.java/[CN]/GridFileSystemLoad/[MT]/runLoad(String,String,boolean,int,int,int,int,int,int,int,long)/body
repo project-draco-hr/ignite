@@ -1,0 +1,45 @@
+{
+  Path fsPath=new Path(url);
+  Configuration cfg=new Configuration(true);
+  cfg.addResource(U.resolveIgniteUrl(hadoopCfg));
+  final FileSystem fs=FileSystem.get(fsPath.toUri(),cfg);
+  Path workDir=new Path(fsPath,"/fsload");
+  fs.delete(workDir,true);
+  fs.mkdirs(workDir,FsPermission.getDefault());
+  final Path[] dirs;
+  if (primaryOnly)   dirs=new Path[]{mkdir(fs,workDir,DIR_PRIMARY_MODE)};
+ else   dirs=new Path[]{mkdir(fs,workDir,DIR_PRIMARY_MODE),mkdir(fs,workDir,DIR_PROXY_MODE),mkdir(fs,workDir,DIR_DUAL_SYNC_MODE),mkdir(fs,workDir,DIR_DUAL_ASYNC_MODE)};
+  try {
+    ExecutorService exec=Executors.newFixedThreadPool(threads);
+    Collection<Future<?>> futs=new ArrayList<>(threads);
+    for (int i=0; i < threads; i++) {
+      final int filesPerThread;
+      if (i == 0 && files % threads != 0)       filesPerThread=files / threads + files % threads;
+ else       filesPerThread=files / threads;
+      futs.add(exec.submit(new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          runLoad(fs,dirs,filesPerThread,reads,writes,deletes,minSize,maxSize,delay);
+          return null;
+        }
+      }
+));
+    }
+    exec.shutdown();
+    for (    Future<?> fut : futs) {
+      try {
+        fut.get();
+      }
+ catch (      ExecutionException e) {
+        X.error("Error during execution: " + e);
+        e.getCause().printStackTrace();
+      }
+    }
+  }
+  finally {
+    try {
+      fs.delete(workDir,true);
+    }
+ catch (    IOException ignored) {
+    }
+  }
+}

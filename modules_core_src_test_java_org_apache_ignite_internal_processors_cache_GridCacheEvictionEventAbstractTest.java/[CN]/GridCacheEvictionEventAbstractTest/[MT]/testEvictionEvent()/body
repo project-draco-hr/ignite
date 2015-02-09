@@ -2,15 +2,15 @@
   Ignite g=grid();
   final CountDownLatch latch=new CountDownLatch(1);
   final AtomicReference<String> oldVal=new AtomicReference<>();
-  g.events().localListen(new IgnitePredicate<IgniteEvent>(){
-    @Override public boolean apply(    IgniteEvent evt){
-      IgniteCacheEvent e=(IgniteCacheEvent)evt;
+  g.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      CacheEvent e=(CacheEvent)evt;
       oldVal.set((String)e.oldValue());
       latch.countDown();
       return true;
     }
   }
-,IgniteEventType.EVT_CACHE_ENTRY_EVICTED);
+,EventType.EVT_CACHE_ENTRY_EVICTED);
   GridCache<String,String> c=g.cache(null);
   c.put("1","val1");
   c.evict("1");
