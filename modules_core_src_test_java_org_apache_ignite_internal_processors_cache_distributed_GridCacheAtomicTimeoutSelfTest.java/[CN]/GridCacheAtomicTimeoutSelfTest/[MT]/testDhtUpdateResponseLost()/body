@@ -1,11 +1,13 @@
 {
   Ignite ignite=grid(0);
-  GridCache<Object,Object> cache=ignite.cache(null);
+  IgniteCache<Object,Object> cache=ignite.jcache(null);
+  IgniteCache<Object,Object> cacheAsync=cache.withAsync();
   int key=keyForTest();
   cache.put(key,0);
   TestCommunicationSpi commSpi=(TestCommunicationSpi)grid(2).configuration().getCommunicationSpi();
   commSpi.skipDhtResponse=true;
-  IgniteInternalFuture<Object> fut=cache.putAsync(key,1);
+  cacheAsync.put(key,1);
+  IgniteFuture<Object> fut=cacheAsync.future();
   Map<UUID,GridCommunicationClient> clients=U.field(commSpi,"clients");
   GridTcpNioCommunicationClient client=(GridTcpNioCommunicationClient)clients.get(grid(1).localNode().id());
   client.session().close().get();
@@ -13,7 +15,7 @@
     fut.get();
     fail();
   }
- catch (  IgniteCheckedException e) {
+ catch (  IgniteException e) {
     assertTrue("Invalid exception thrown: " + e,X.hasCause(e,CacheAtomicUpdateTimeoutCheckedException.class) || X.hasSuppressed(e,CacheAtomicUpdateTimeoutCheckedException.class));
   }
 }
