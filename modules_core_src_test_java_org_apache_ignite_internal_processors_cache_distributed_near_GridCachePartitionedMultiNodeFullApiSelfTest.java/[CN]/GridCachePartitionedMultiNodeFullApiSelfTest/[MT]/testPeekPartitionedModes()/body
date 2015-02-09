@@ -1,2 +1,17 @@
 {
+  jcache().put("key",1);
+  for (int i=0; i < gridCount(); i++) {
+    boolean nearEnabled=nearEnabled(jcache(i));
+    Integer nearPeekVal=nearEnabled ? 1 : null;
+    IgniteCache<String,Integer> c=jcache(i);
+    if (c.unwrap(Ignite.class).affinity(null).isBackup(grid(i).localNode(),"key")) {
+      assertNull(c.localPeek("key",NEAR));
+      assertEquals((Integer)1,c.localPeek("key",BACKUP));
+    }
+ else     if (!c.unwrap(Ignite.class).affinity(null).isPrimaryOrBackup(grid(i).localNode(),"key")) {
+      assertEquals(nearPeekVal,c.localPeek("key",NEAR));
+      assertNull(c.localPeek("key",PRIMARY,BACKUP));
+      assertEquals((Integer)1,jcache(i).get("key"));
+    }
+  }
 }
