@@ -1,0 +1,59 @@
+{
+  if (!txEnabled())   return;
+  final IgniteCache<String,Integer> cache=jcache();
+  for (int i=0; i < 100; i++) {
+    final String key="key-" + i;
+    assertNull(cache.get(key));
+    GridTestUtils.assertThrows(log,new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        IgniteTransactions txs=transactions();
+        try (IgniteTx tx=txs.txStart()){
+          cache.put(key,1);
+          cache.put(null,2);
+          tx.commit();
+        }
+         return null;
+      }
+    }
+,NullPointerException.class,null);
+    assertNull(cache.get(key));
+    cache.put(key,1);
+    assertEquals(1,(int)cache.get(key));
+    GridTestUtils.assertThrows(log,new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        IgniteTransactions txs=transactions();
+        try (IgniteTx tx=txs.txStart()){
+          cache.put(key,2);
+          cache.remove(null);
+          tx.commit();
+        }
+         return null;
+      }
+    }
+,NullPointerException.class,null);
+    assertEquals(1,(int)cache.get(key));
+    cache.put(key,2);
+    assertEquals(2,(int)cache.get(key));
+    GridTestUtils.assertThrows(log,new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        IgniteTransactions txs=transactions();
+        Map<String,Integer> map=new LinkedHashMap<>();
+        map.put("k1",1);
+        map.put("k2",2);
+        map.put(null,3);
+        try (IgniteTx tx=txs.txStart()){
+          cache.put(key,1);
+          cache.putAll(map);
+          tx.commit();
+        }
+         return null;
+      }
+    }
+,NullPointerException.class,null);
+    assertNull(cache.get("k1"));
+    assertNull(cache.get("k2"));
+    assertEquals(2,(int)cache.get(key));
+    cache.put(key,3);
+    assertEquals(3,(int)cache.get(key));
+  }
+}
