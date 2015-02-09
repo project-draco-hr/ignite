@@ -2,14 +2,14 @@
   plc=new CacheFifoEvictionPolicy<Object,Object>(500);
   try {
     Ignite ignite=startGrid(1);
-    final GridCache<Integer,Integer> cache=ignite.cache(null);
+    final IgniteCache<Integer,Integer> cache=ignite.jcache(null);
     Collection<Integer> keys=new ArrayList<>(100);
     for (int i=0; i < 100; i++) {
       cache.put(i,i);
       keys.add(i);
     }
     assertEquals(100,((CacheFifoEvictionPolicy)plc).queue().size());
-    cache.evictAll(keys);
+    for (    Integer key : keys)     cache.evict(key);
     assertEquals(0,((CacheFifoEvictionPolicy)plc).queue().size());
     assertEquals(0,cache.size());
   }
