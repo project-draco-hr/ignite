@@ -1,18 +1,7 @@
 {
   GridArgumentCheck.notNull(key,"key");
-  if (key instanceof PortableObject) {
-    PortableObject po=(PortableObject)key;
-    try {
-      PortableMetadata meta=po.metaData();
-      if (meta != null) {
-        String affKeyFieldName=meta.affinityKeyFieldName();
-        if (affKeyFieldName != null)         return po.field(affKeyFieldName);
-      }
-    }
- catch (    PortableException e) {
-      U.error(log,"Failed to get affinity field from portable object: " + key,e);
-    }
-  }
+  IgniteKernal kernal=(IgniteKernal)ignite;
+  if (kernal.context().portable().isPortableObject(key))   return kernal.context().portable().affinityKey(key);
  else {
     try {
       Object o=reflectCache.firstFieldValue(key);
