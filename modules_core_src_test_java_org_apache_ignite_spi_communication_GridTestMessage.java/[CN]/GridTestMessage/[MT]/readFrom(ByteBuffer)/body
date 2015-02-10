@@ -1,22 +1,22 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    srcNodeId=commState.getUuid();
-  if (srcNodeId == UUID_NOT_READ)   return false;
-commState.idx++;
+    srcNodeId=reader.readUuid(null);
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-if (buf.remaining() < 8) return false;
-msgId=commState.getLong();
-commState.idx++;
+msgId=reader.readLong(null);
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-if (buf.remaining() < 8) return false;
-resId=commState.getLong();
-commState.idx++;
+resId=reader.readLong(null);
+if (!reader.isLastRead()) return false;
+state++;
 case 3:
-payload=commState.getByteArray();
-if (payload == BYTE_ARR_NOT_READ) return false;
-commState.idx++;
+payload=reader.readByteArray(null);
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

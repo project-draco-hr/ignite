@@ -1,21 +1,19 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 5:
-    byte[] affAssignmentBytes0=commState.getByteArray();
-  if (affAssignmentBytes0 == BYTE_ARR_NOT_READ)   return false;
-affAssignmentBytes=affAssignmentBytes0;
-commState.idx++;
+    affAssignmentBytes=reader.readByteArray("affAssignmentBytes");
+  if (!reader.isLastRead())   return false;
+state++;
 case 6:
-byte[] partsBytes0=commState.getByteArray();
-if (partsBytes0 == BYTE_ARR_NOT_READ) return false;
-partsBytes=partsBytes0;
-commState.idx++;
+partsBytes=reader.readByteArray("partsBytes");
+if (!reader.isLastRead()) return false;
+state++;
 case 7:
-if (buf.remaining() < 8) return false;
-topVer=commState.getLong();
-commState.idx++;
+topVer=reader.readLong("topVer");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }
