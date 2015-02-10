@@ -1,0 +1,29 @@
+{
+  final List<Event> evtList=new ArrayList<>();
+  final int evtsCnt=2 + 1;
+  final CountDownLatch latch=new CountDownLatch(evtsCnt);
+  grid(1).events().localListen(lsnr=new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      log.info("Received event [evt=" + evt + ']');
+      evtList.add(evt);
+      latch.countDown();
+      return true;
+    }
+  }
+,EVTS_GGFS);
+  IgniteFsPath dir=new IgniteFsPath("/dir1/dir2");
+  assertFalse(ggfs.exists(dir.parent()));
+  ggfs.mkdirs(dir);
+  assertTrue(ggfs.delete(dir.parent(),true));
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+  assertEquals(evtsCnt,evtList.size());
+  IgniteFsEvent evt=(IgniteFsEvent)evtList.get(0);
+  assertEquals(EVT_GGFS_DIR_CREATED,evt.type());
+  assertEquals(new IgniteFsPath("/dir1"),evt.path());
+  evt=(IgniteFsEvent)evtList.get(1);
+  assertEquals(EVT_GGFS_DIR_CREATED,evt.type());
+  assertEquals(new IgniteFsPath("/dir1/dir2"),evt.path());
+  evt=(IgniteFsEvent)evtList.get(2);
+  assertEquals(EVT_GGFS_DIR_DELETED,evt.type());
+  assertEquals(new IgniteFsPath("/dir1"),evt.path());
+}

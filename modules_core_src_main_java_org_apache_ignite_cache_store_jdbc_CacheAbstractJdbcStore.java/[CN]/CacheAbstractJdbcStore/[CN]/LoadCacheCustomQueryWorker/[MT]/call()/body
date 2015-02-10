@@ -1,0 +1,25 @@
+{
+  Connection conn=null;
+  PreparedStatement stmt=null;
+  try {
+    conn=openConnection(true);
+    stmt=conn.prepareStatement(qry);
+    ResultSet rs=stmt.executeQuery();
+    ResultSetMetaData meta=rs.getMetaData();
+    Map<String,Integer> colIdxs=U.newHashMap(meta.getColumnCount());
+    for (int i=1; i <= meta.getColumnCount(); i++)     colIdxs.put(meta.getColumnLabel(i),i);
+    while (rs.next()) {
+      K1 key=buildObject(em.keyType(),em.keyColumns(),colIdxs,rs);
+      V1 val=buildObject(em.valueType(),em.valueColumns(),colIdxs,rs);
+      clo.apply(key,val);
+    }
+    return null;
+  }
+ catch (  SQLException e) {
+    throw new CacheLoaderException("Failed to execute custom query for load cache",e);
+  }
+ finally {
+    U.closeQuiet(stmt);
+    U.closeQuiet(conn);
+  }
+}

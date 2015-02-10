@@ -1,29 +1,5 @@
 {
-  CacheProjection prj;
-  if (portableEnabled()) {
-    prj=cache.projection(new IgnitePredicate<CacheEntry<PortableObject,PortableObject>>(){
-      @Override public boolean apply(      CacheEntry<PortableObject,PortableObject> e){
-        Key key=e.getKey().deserialize();
-        Person val=e.peek().deserialize();
-        assertNotNull(e.version());
-        assertEquals(key.id,(Integer)val.salary);
-        return key.id % 100 != 0;
-      }
-    }
-);
-  }
- else {
-    prj=cache.projection(new IgnitePredicate<CacheEntry<Key,Person>>(){
-      @Override public boolean apply(      CacheEntry<Key,Person> e){
-        Key key=e.getKey();
-        Person val=e.peek();
-        assertNotNull(e.version());
-        assertEquals(key.id,(Integer)val.salary);
-        return key.id % 100 != 0;
-      }
-    }
-);
-  }
+  CacheProjection prj=createProjectionForFilter(cache);
   CacheQuery<Map.Entry<Key,Person>> qry=prj.queries().createScanQuery(new IgniteBiPredicate<Key,Person>(){
     @Override public boolean apply(    Key key,    Person p){
       assertEquals(key.id,(Integer)p.salary);

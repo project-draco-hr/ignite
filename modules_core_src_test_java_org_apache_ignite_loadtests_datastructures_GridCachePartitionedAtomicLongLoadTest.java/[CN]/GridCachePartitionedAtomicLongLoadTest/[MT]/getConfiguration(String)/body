@@ -1,7 +1,12 @@
 {
   IgniteConfiguration c=super.getConfiguration(gridName);
-  c.getTransactionsConfiguration().setDefaultTxConcurrency(PESSIMISTIC);
-  c.getTransactionsConfiguration().setDefaultTxIsolation(REPEATABLE_READ);
+  AtomicConfiguration atomicCfg=new AtomicConfiguration();
+  atomicCfg.setCacheMode(PARTITIONED);
+  atomicCfg.setBackups(1);
+  atomicCfg.setAtomicSequenceReserveSize(10);
+  c.setAtomicConfiguration(atomicCfg);
+  c.getTransactionConfiguration().setDefaultTxConcurrency(PESSIMISTIC);
+  c.getTransactionConfiguration().setDefaultTxIsolation(REPEATABLE_READ);
   CacheConfiguration cc=defaultCacheConfiguration();
   cc.setCacheMode(CacheMode.PARTITIONED);
   cc.setStartSize(200);
@@ -10,7 +15,6 @@
   cc.setEvictionPolicy(new CacheLruEvictionPolicy<>(1000));
   cc.setBackups(1);
   cc.setAffinity(new CacheConsistentHashAffinityFunction(true));
-  cc.setAtomicSequenceReserveSize(10);
   cc.setEvictSynchronized(true);
   cc.setEvictNearSynchronized(true);
   c.setCacheConfiguration(cc);

@@ -1,0 +1,82 @@
+{
+  String url=DFLT_URL;
+  int filesNum=DFLT_FILES_NUMBER;
+  int minFileSize=DFLT_MIN_FILE_SIZE;
+  int maxFileSize=DFLT_MAX_FILE_SIZE;
+  int readsNum=DFLT_READS_NUMBER;
+  int writesNum=DFLT_WRITES_NUMBER;
+  int deletesNum=DFLT_DELETES_NUMBER;
+  int threadsNum=DFLT_THREADS_NUMBER;
+  long delay=DFLT_DELAY;
+  String nodeCfg=DFLT_NODE_CFG;
+  String hadoopCfg=DFLT_HADOOP_CFG;
+  boolean startNode=DFLT_START_NODE;
+  boolean primaryOnly=DFLT_PRIMARY_ONLY;
+  for (int i=0; i < args.length; i++) {
+    String arg=args[i];
+switch (arg) {
+case "-u":
+      url=args[++i];
+    break;
+case "-hadoopCfg":
+  hadoopCfg=args[++i];
+break;
+case "-f":
+filesNum=Integer.parseInt(args[++i]);
+break;
+case "-r":
+readsNum=Integer.parseInt(args[++i]);
+break;
+case "-w":
+writesNum=Integer.parseInt(args[++i]);
+break;
+case "-minSize":
+minFileSize=Integer.parseInt(args[++i]);
+break;
+case "-maxSize":
+maxFileSize=Integer.parseInt(args[++i]);
+break;
+case "-d":
+deletesNum=Integer.parseInt(args[++i]);
+break;
+case "-t":
+threadsNum=Integer.parseInt(args[++i]);
+break;
+case "-delay":
+delay=Long.parseLong(args[++i]);
+break;
+case "-startNode":
+startNode=Boolean.parseBoolean(args[++i]);
+break;
+case "-nodeCfg":
+nodeCfg=args[++i];
+break;
+case "-primaryOnly":
+primaryOnly=Boolean.parseBoolean(args[++i]);
+break;
+}
+}
+X.println("File system URL: " + url);
+X.println("Hadoop configuration: " + hadoopCfg);
+X.println("Primary mode only: " + primaryOnly);
+X.println("Files number: " + filesNum);
+X.println("Reads number: " + readsNum);
+X.println("Writes number: " + writesNum);
+X.println("Deletes number: " + deletesNum);
+X.println("Min file size: " + minFileSize);
+X.println("Max file size: " + maxFileSize);
+X.println("Threads number: " + threadsNum);
+X.println("Delay: " + delay);
+if (minFileSize > maxFileSize) throw new IllegalArgumentException();
+Ignite ignite=null;
+if (startNode) {
+X.println("Starting node using configuration: " + nodeCfg);
+ignite=G.start(U.resolveIgniteUrl(nodeCfg));
+}
+try {
+new GridFileSystemLoad().runLoad(url,hadoopCfg,primaryOnly,threadsNum,filesNum,readsNum,writesNum,deletesNum,minFileSize,maxFileSize,delay);
+}
+  finally {
+if (ignite != null) G.stop(true);
+}
+}

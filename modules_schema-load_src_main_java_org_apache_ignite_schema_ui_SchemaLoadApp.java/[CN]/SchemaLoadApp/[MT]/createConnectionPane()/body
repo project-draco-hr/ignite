@@ -1,0 +1,57 @@
+{
+  connPnl=paneEx(10,10,0,10);
+  connPnl.addColumn();
+  connPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
+  connPnl.addColumn(35,35,35,Priority.NEVER);
+  connPnl.add(text("This utility is designed to automatically generate configuration XML files and" + " POJO classes from database schema information.",550),3);
+  connPnl.wrap();
+  GridPaneEx presetPnl=paneEx(0,0,0,0);
+  presetPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
+  presetPnl.addColumn();
+  rdbmsCb=presetPnl.add(comboBox("Select database server to get predefined settings",presets));
+  presetPnl.add(button("Save preset","Save current settings in preferences",new EventHandler<ActionEvent>(){
+    @Override public void handle(    ActionEvent evt){
+      Preset preset=rdbmsCb.getSelectionModel().getSelectedItem();
+      savePreset(preset);
+    }
+  }
+));
+  connPnl.add(label("DB Preset:"));
+  connPnl.add(presetPnl,2);
+  jdbcDrvJarTf=connPnl.addLabeled("Driver JAR:",textField("Path to driver jar"));
+  connPnl.add(button("...","Select JDBC driver jar or zip",new EventHandler<ActionEvent>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void handle(    ActionEvent evt){
+      FileChooser fc=new FileChooser();
+      try {
+        File jarFolder=new File(jdbcDrvJarTf.getText()).getParentFile();
+        if (jarFolder.exists())         fc.setInitialDirectory(jarFolder);
+      }
+ catch (      Throwable ignored) {
+      }
+      jdbcDrvJarTf.getText();
+      fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("JDBC Drivers (*.jar)","*.jar"),new FileChooser.ExtensionFilter("ZIP archives (*.zip)","*.zip"));
+      File drvJar=fc.showOpenDialog(owner);
+      if (drvJar != null)       jdbcDrvJarTf.setText(drvJar.getAbsolutePath());
+    }
+  }
+));
+  jdbcDrvClsTf=connPnl.addLabeled("JDBC Driver:",textField("Enter class name for JDBC driver"),2);
+  jdbcUrlTf=connPnl.addLabeled("JDBC URL:",textField("JDBC URL of the database connection string"),2);
+  rdbmsCb.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Preset>(){
+    @Override public void changed(    ObservableValue<? extends Preset> val,    Preset oldVal,    Preset newVal){
+      jdbcDrvJarTf.setText(newVal.jar);
+      jdbcDrvClsTf.setText(newVal.drv);
+      jdbcUrlTf.setText(newVal.url);
+      userTf.setText(newVal.user);
+    }
+  }
+);
+  userTf=connPnl.addLabeled("User:",textField("User name"),2);
+  pwdTf=connPnl.addLabeled("Password:",passwordField("User password"),2);
+  parseCb=connPnl.addLabeled("Parse:",comboBox("Type of tables to parse","Tables only","Tables and Views"),2);
+  connLayerPnl=stackPane(connPnl);
+  return connLayerPnl;
+}

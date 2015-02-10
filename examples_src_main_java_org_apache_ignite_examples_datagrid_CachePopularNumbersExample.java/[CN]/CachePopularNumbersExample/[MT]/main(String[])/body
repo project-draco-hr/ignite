@@ -1,16 +1,16 @@
 {
   Timer popularNumbersQryTimer=new Timer("numbers-query-worker");
-  try (Ignite g=Ignition.start("examples/config/example-cache.xml")){
+  try (Ignite ignite=Ignition.start("examples/config/example-cache.xml")){
     System.out.println();
     System.out.println(">>> Cache popular numbers example started.");
-    g.cache(CACHE_NAME).globalClearAll(0);
-    ClusterGroup prj=g.cluster().forCacheNodes(CACHE_NAME);
+    ignite.jcache(CACHE_NAME).clear();
+    ClusterGroup prj=ignite.cluster().forCacheNodes(CACHE_NAME);
     if (prj.nodes().isEmpty()) {
-      System.out.println("Grid does not have cache configured: " + CACHE_NAME);
+      System.out.println("Ignite does not have cache configured: " + CACHE_NAME);
       return;
     }
-    TimerTask task=scheduleQuery(g,popularNumbersQryTimer,POPULAR_NUMBERS_CNT);
-    streamData(g);
+    TimerTask task=scheduleQuery(ignite,popularNumbersQryTimer,POPULAR_NUMBERS_CNT);
+    streamData(ignite);
     task.run();
     popularNumbersQryTimer.cancel();
   }

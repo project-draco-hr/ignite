@@ -1,0 +1,24 @@
+{
+  enterBusy();
+  try {
+    gate.enter();
+    try {
+      if (cctx.transactional())       return CU.outTx(new Callable<Iterator<T>>(){
+        @Override public Iterator<T> call() throws Exception {
+          return delegate.iterator();
+        }
+      }
+,cctx);
+      return delegate.iterator();
+    }
+ catch (    IgniteCheckedException e) {
+      throw U.convertException(e);
+    }
+ finally {
+      gate.leave();
+    }
+  }
+  finally {
+    leaveBusy();
+  }
+}
