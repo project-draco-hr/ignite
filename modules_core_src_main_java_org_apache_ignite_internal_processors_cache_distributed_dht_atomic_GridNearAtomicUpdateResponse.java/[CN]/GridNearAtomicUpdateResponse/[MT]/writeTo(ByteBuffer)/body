@@ -1,86 +1,44 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 3:
-    if (!commState.putByteArray(errBytes))     return false;
-  commState.idx++;
+    if (!writer.writeByteArray("errBytes",errBytes))     return false;
+  state++;
 case 4:
-if (!commState.putByteArray(failedKeysBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("failedKeysBytes",failedKeysBytes)) return false;
+state++;
 case 5:
-if (!commState.putCacheVersion(futVer)) return false;
-commState.idx++;
+if (!writer.writeMessage("futVer",futVer)) return false;
+state++;
 case 6:
-if (!commState.putByteArray(remapKeysBytes)) return false;
-commState.idx++;
+if (!writer.writeMessage("nearExpireTimes",nearExpireTimes)) return false;
+state++;
 case 7:
-if (!commState.putByteArray(retValBytes)) return false;
-commState.idx++;
+if (!writer.writeCollection("nearSkipIdxs",nearSkipIdxs,int.class)) return false;
+state++;
 case 8:
-if (nearSkipIdxs != null) {
-if (commState.it == null) {
-if (!commState.putInt(nearSkipIdxs.size())) return false;
-commState.it=nearSkipIdxs.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putInt((int)commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+if (!writer.writeMessage("nearTtls",nearTtls)) return false;
+state++;
 case 9:
-if (nearValBytes != null) {
-if (commState.it == null) {
-if (!commState.putInt(nearValBytes.size())) return false;
-commState.it=nearValBytes.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putValueBytes((GridCacheValueBytes)commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("nearValBytes",nearValBytes,GridCacheValueBytes.class)) return false;
+state++;
 case 10:
-if (nearValsIdxs != null) {
-if (commState.it == null) {
-if (!commState.putInt(nearValsIdxs.size())) return false;
-commState.it=nearValsIdxs.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putInt((int)commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("nearValsIdxs",nearValsIdxs,int.class)) return false;
+state++;
 case 11:
-if (!commState.putCacheVersion(nearVer)) return false;
-commState.idx++;
+if (!writer.writeMessage("nearVer",nearVer)) return false;
+state++;
 case 12:
-if (!commState.putLongList(nearExpireTimes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("remapKeysBytes",remapKeysBytes)) return false;
+state++;
 case 13:
-if (!commState.putLongList(nearTtls)) return false;
-commState.idx++;
+if (!writer.writeByteArray("retValBytes",retValBytes)) return false;
+state++;
 }
 return true;
 }
