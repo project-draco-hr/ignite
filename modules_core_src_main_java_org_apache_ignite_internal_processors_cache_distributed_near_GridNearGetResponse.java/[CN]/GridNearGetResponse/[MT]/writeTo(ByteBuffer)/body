@@ -1,46 +1,32 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 3:
-    if (!commState.putByteArray(entriesBytes))     return false;
-  commState.idx++;
+    if (!writer.writeByteArray("entriesBytes",entriesBytes))     return false;
+  state++;
 case 4:
-if (!commState.putByteArray(errBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("errBytes",errBytes)) return false;
+state++;
 case 5:
-if (!commState.putGridUuid(futId)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("futId",futId)) return false;
+state++;
 case 6:
-if (invalidParts != null) {
-if (commState.it == null) {
-if (!commState.putInt(invalidParts.size())) return false;
-commState.it=invalidParts.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putInt((int)commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("invalidParts",invalidParts,int.class)) return false;
+state++;
 case 7:
-if (!commState.putGridUuid(miniId)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("miniId",miniId)) return false;
+state++;
 case 8:
-if (!commState.putLong(topVer)) return false;
-commState.idx++;
+if (!writer.writeLong("topVer",topVer)) return false;
+state++;
 case 9:
-if (!commState.putCacheVersion(ver)) return false;
-commState.idx++;
+if (!writer.writeMessage("ver",ver)) return false;
+state++;
 }
 return true;
 }

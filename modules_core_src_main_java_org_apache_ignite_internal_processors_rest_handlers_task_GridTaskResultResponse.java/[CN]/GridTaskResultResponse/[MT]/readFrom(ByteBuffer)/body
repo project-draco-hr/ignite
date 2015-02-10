@@ -1,24 +1,22 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    String err0=commState.getString();
-  if (err0 == STR_NOT_READ)   return false;
-err=err0;
-commState.idx++;
+    err=reader.readString("err");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-if (buf.remaining() < 1) return false;
-finished=commState.getBoolean();
-commState.idx++;
+finished=reader.readBoolean("finished");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-if (buf.remaining() < 1) return false;
-found=commState.getBoolean();
-commState.idx++;
+found=reader.readBoolean("found");
+if (!reader.isLastRead()) return false;
+state++;
 case 3:
-byte[] resBytes0=commState.getByteArray();
-if (resBytes0 == BYTE_ARR_NOT_READ) return false;
-resBytes=resBytes0;
-commState.idx++;
+resBytes=reader.readByteArray("resBytes");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

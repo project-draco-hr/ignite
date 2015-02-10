@@ -1,61 +1,47 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 22:
-    if (!commState.putGridUuid(futId))     return false;
-  commState.idx++;
+    if (!writer.writeIgniteUuid("futId",futId))     return false;
+  state++;
 case 23:
-if (!commState.putBitSet(invalidateNearEntries)) return false;
-commState.idx++;
+if (!writer.writeBitSet("invalidateNearEntries",invalidateNearEntries)) return false;
+state++;
 case 24:
-if (!commState.putBoolean(last)) return false;
-commState.idx++;
+if (!writer.writeBoolean("last",last)) return false;
+state++;
 case 25:
-if (!commState.putGridUuid(miniId)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("miniId",miniId)) return false;
+state++;
 case 26:
-if (!commState.putUuid(nearNodeId)) return false;
-commState.idx++;
+if (!writer.writeUuid("nearNodeId",nearNodeId)) return false;
+state++;
 case 27:
-if (nearWritesBytes != null) {
-if (commState.it == null) {
-if (!commState.putInt(nearWritesBytes.size())) return false;
-commState.it=nearWritesBytes.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putByteArray((byte[])commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("nearWritesBytes",nearWritesBytes,byte[].class)) return false;
+state++;
 case 28:
-if (!commState.putCacheVersion(nearXidVer)) return false;
-commState.idx++;
+if (!writer.writeMessage("nearXidVer",nearXidVer)) return false;
+state++;
 case 29:
-if (!commState.putByteArray(ownedBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("ownedBytes",ownedBytes)) return false;
+state++;
 case 30:
-if (!commState.putLong(topVer)) return false;
-commState.idx++;
+if (!writer.writeBitSet("preloadKeys",preloadKeys)) return false;
+state++;
 case 31:
-if (!commState.putUuid(subjId)) return false;
-commState.idx++;
+if (!writer.writeUuid("subjId",subjId)) return false;
+state++;
 case 32:
-if (!commState.putInt(taskNameHash)) return false;
-commState.idx++;
+if (!writer.writeInt("taskNameHash",taskNameHash)) return false;
+state++;
 case 33:
-if (!commState.putBitSet(preloadKeys)) return false;
-commState.idx++;
+if (!writer.writeLong("topVer",topVer)) return false;
+state++;
 }
 return true;
 }
