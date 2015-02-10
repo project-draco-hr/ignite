@@ -1,8 +1,8 @@
 {
   log.info("Check evict.");
   Ignite ignite0=grid(0);
-  GridCache<Integer,Integer> cache0=ignite0.cache(null);
-  CacheAffinity<Integer> aff=cache0.affinity();
+  IgniteCache<Integer,Integer> cache0=ignite0.jcache(null);
+  CacheAffinity<Integer> aff=ignite0.affinity(null);
   UUID id0=ignite0.cluster().localNode().id();
   Integer nearKey=key(ignite0,NOT_PRIMARY_AND_BACKUP);
   cache0.put(nearKey,1);
@@ -15,7 +15,7 @@
     UUID[] expReaders=aff.isPrimary(grid(i).localNode(),nearKey) ? new UUID[]{id0} : new UUID[]{};
     checkEntry(grid(i),nearKey,1,false,expReaders);
   }
-  GridCache<Integer,Integer> primaryCache=G.ignite((String)aff.mapKeyToNode(nearKey).attribute(ATTR_GRID_NAME)).cache(null);
+  IgniteCache<Integer,Integer> primaryCache=G.ignite((String)aff.mapKeyToNode(nearKey).attribute(ATTR_GRID_NAME)).jcache(null);
   delay();
   primaryCache.put(nearKey,2);
   for (int i=0; i < GRID_CNT; i++)   checkEntry(grid(i),nearKey,2,false);
