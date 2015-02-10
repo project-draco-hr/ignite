@@ -1,27 +1,26 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    IgniteUuid affKey0=commState.getGridUuid();
-  if (affKey0 == GRID_UUID_NOT_READ)   return false;
-affKey=affKey0;
-commState.idx++;
+    affKey=reader.readIgniteUuid("affKey");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-if (buf.remaining() < 1) return false;
-done=commState.getBoolean();
-commState.idx++;
+done=reader.readBoolean("done");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-if (buf.remaining() < 8) return false;
-endOff=commState.getLong();
-commState.idx++;
+endOff=reader.readLong("endOff");
+if (!reader.isLastRead()) return false;
+state++;
 case 3:
-if (buf.remaining() < 8) return false;
-startOff=commState.getLong();
-commState.idx++;
+startOff=reader.readLong("startOff");
+if (!reader.isLastRead()) return false;
+state++;
 case 4:
-if (buf.remaining() < 4) return false;
-status=commState.getInt();
-commState.idx++;
+status=reader.readInt("status");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }
