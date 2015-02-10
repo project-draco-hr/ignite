@@ -12,9 +12,9 @@
   cache.localPromote(Collections.singleton(key));
   assertNull(cache.localPeek(key,CachePeekMode.ONHEAP));
   assertTrue(cache.localSize() == 0);
-  for (int i=0; i < gridCount(); i++) {
-    if (cache(i).entry(key).primary())     load(jcache(i),key,true);
-  }
   load(cache,key,true);
-  assertEquals((Integer)1,peek(cache,key));
+  CacheAffinity<String> aff=ignite(0).affinity(null);
+  for (int i=0; i < gridCount(); i++) {
+    if (aff.isPrimaryOrBackup(grid(i).cluster().localNode(),key))     assertEquals((Integer)1,peek(jcache(i),key));
+  }
 }
