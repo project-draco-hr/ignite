@@ -1,51 +1,31 @@
 {
-  commState.setBuffer(buf);
-  if (!commState.typeWritten) {
-    if (!commState.putByte(directType()))     return false;
-    commState.typeWritten=true;
+  writer.setBuffer(buf);
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 0:
-    if (!commState.putByteArray(bodyBytes))     return false;
-  commState.idx++;
+    if (!writer.writeByteArray("bodyBytes",bodyBytes))     return false;
+  state++;
 case 1:
-if (!commState.putGridUuid(clsLdrId)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("clsLdrId",clsLdrId)) return false;
+state++;
 case 2:
-if (!commState.putString(depClsName)) return false;
-commState.idx++;
+if (!writer.writeString("depClsName",depClsName)) return false;
+state++;
 case 3:
-if (!commState.putEnum(depMode)) return false;
-commState.idx++;
+if (!writer.writeEnum("depMode",depMode)) return false;
+state++;
 case 4:
-if (ldrParties != null) {
-if (commState.it == null) {
-if (!commState.putInt(ldrParties.size())) return false;
-commState.it=ldrParties.entrySet().iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-Map.Entry<UUID,IgniteUuid> e=(Map.Entry<UUID,IgniteUuid>)commState.cur;
-if (!commState.keyDone) {
-if (!commState.putUuid(e.getKey())) return false;
-commState.keyDone=true;
-}
-if (!commState.putGridUuid(e.getValue())) return false;
-commState.keyDone=false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+if (!writer.writeMap("ldrParties",ldrParties,UUID.class,IgniteUuid.class)) return false;
+state++;
 case 5:
-if (!commState.putByteArray(topicBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("topicBytes",topicBytes)) return false;
+state++;
 case 6:
-if (!commState.putString(userVer)) return false;
-commState.idx++;
+if (!writer.writeString("userVer",userVer)) return false;
+state++;
 }
 return true;
 }
