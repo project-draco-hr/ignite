@@ -1,33 +1,31 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 21:
-    if (buf.remaining() < 1)     return false;
-  explicitLock=commState.getBoolean();
-commState.idx++;
+    explicitLock=reader.readBoolean("explicitLock");
+  if (!reader.isLastRead())   return false;
+state++;
 case 22:
-IgniteUuid miniId0=commState.getGridUuid();
-if (miniId0 == GRID_UUID_NOT_READ) return false;
-miniId=miniId0;
-commState.idx++;
+miniId=reader.readIgniteUuid("miniId");
+if (!reader.isLastRead()) return false;
+state++;
 case 23:
-if (buf.remaining() < 8) return false;
-topVer=commState.getLong();
-commState.idx++;
+storeEnabled=reader.readBoolean("storeEnabled");
+if (!reader.isLastRead()) return false;
+state++;
 case 24:
-UUID subjId0=commState.getUuid();
-if (subjId0 == UUID_NOT_READ) return false;
-subjId=subjId0;
-commState.idx++;
+subjId=reader.readUuid("subjId");
+if (!reader.isLastRead()) return false;
+state++;
 case 25:
-if (buf.remaining() < 4) return false;
-taskNameHash=commState.getInt();
-commState.idx++;
+taskNameHash=reader.readInt("taskNameHash");
+if (!reader.isLastRead()) return false;
+state++;
 case 26:
-if (buf.remaining() < 1) return false;
-storeEnabled=commState.getBoolean();
-commState.idx++;
+topVer=reader.readLong("topVer");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }
