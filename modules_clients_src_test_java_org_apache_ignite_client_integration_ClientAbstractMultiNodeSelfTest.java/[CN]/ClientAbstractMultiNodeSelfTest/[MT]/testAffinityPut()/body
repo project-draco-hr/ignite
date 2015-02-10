@@ -12,7 +12,7 @@
     assertEquals(primaryNodeId,partitioned.affinity(key));
     partitioned.put(key,"val" + key);
     for (    Map.Entry<UUID,Ignite> entry : gridsByLocNode.entrySet()) {
-      Object val=entry.getValue().jcache(PARTITIONED_CACHE_NAME).peek(key);
+      Object val=entry.getValue().jcache(PARTITIONED_CACHE_NAME).localPeek(key,CachePeekMode.ONHEAP);
       if (primaryNodeId.equals(entry.getKey()))       assertEquals("val" + key,val);
  else       assertNull(val);
     }
@@ -24,7 +24,7 @@
     GridClientNode node=compute.node(pinnedNodeId);
     partitioned.pinNodes(node).put(pinnedKey,"val" + pinnedKey);
     for (    Map.Entry<UUID,Ignite> entry : gridsByLocNode.entrySet()) {
-      Object val=entry.getValue().jcache(PARTITIONED_CACHE_NAME).peek(pinnedKey);
+      Object val=entry.getValue().jcache(PARTITIONED_CACHE_NAME).localPeek(pinnedKey,CachePeekMode.ONHEAP);
       if (primaryNodeId.equals(entry.getKey()) || pinnedNodeId.equals(entry.getKey()))       assertEquals("val" + pinnedKey,val);
  else       assertNull(val);
     }
