@@ -1,21 +1,19 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 0:
-    byte[] errBytes0=commState.getByteArray();
-  if (errBytes0 == BYTE_ARR_NOT_READ)   return false;
-errBytes=errBytes0;
-commState.idx++;
+    errBytes=reader.readByteArray("errBytes");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-IgniteUuid fileId0=commState.getGridUuid();
-if (fileId0 == GRID_UUID_NOT_READ) return false;
-fileId=fileId0;
-commState.idx++;
+fileId=reader.readIgniteUuid("fileId");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-if (buf.remaining() < 8) return false;
-id=commState.getLong();
-commState.idx++;
+id=reader.readLong("id");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

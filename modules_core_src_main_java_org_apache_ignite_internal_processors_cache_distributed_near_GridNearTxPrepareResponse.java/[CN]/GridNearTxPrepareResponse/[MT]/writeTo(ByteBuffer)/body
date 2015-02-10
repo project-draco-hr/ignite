@@ -1,71 +1,29 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 10:
-    if (!commState.putCacheVersion(dhtVer))     return false;
-  commState.idx++;
+    if (!writer.writeMessage("dhtVer",dhtVer))     return false;
+  state++;
 case 11:
-if (!commState.putGridUuid(futId)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("futId",futId)) return false;
+state++;
 case 12:
-if (invalidParts != null) {
-if (commState.it == null) {
-if (!commState.putInt(invalidParts.size())) return false;
-commState.it=invalidParts.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putInt((int)commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("invalidParts",invalidParts,int.class)) return false;
+state++;
 case 13:
-if (!commState.putGridUuid(miniId)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("miniId",miniId)) return false;
+state++;
 case 14:
-if (ownedValsBytes != null) {
-if (commState.it == null) {
-if (!commState.putInt(ownedValsBytes.size())) return false;
-commState.it=ownedValsBytes.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putByteArray((byte[])commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("ownedValsBytes",ownedValsBytes,byte[].class)) return false;
+state++;
 case 15:
-if (pending != null) {
-if (commState.it == null) {
-if (!commState.putInt(pending.size())) return false;
-commState.it=pending.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putCacheVersion((GridCacheVersion)commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+if (!writer.writeCollection("pending",pending,GridCacheVersion.class)) return false;
+state++;
 }
 return true;
 }
