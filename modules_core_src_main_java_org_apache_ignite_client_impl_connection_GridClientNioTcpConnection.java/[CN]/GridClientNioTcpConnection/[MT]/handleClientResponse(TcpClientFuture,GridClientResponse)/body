@@ -12,17 +12,7 @@ case TcpClientFuture.STATE_INITIAL:
         fut.retryState(TcpClientFuture.STATE_AUTH_RETRY);
         GridClientAuthenticationRequest req=buildAuthRequest();
         req.requestId(resp.requestId());
-        GridClientMessageWrapper wrapper;
-        try {
-          wrapper=messageWrapper(req);
-        }
- catch (        IOException e) {
-          log.log(Level.SEVERE,"Failed to marshal message: " + req,e);
-          removePending(resp.requestId());
-          fut.onDone(e);
-          return;
-        }
-        ses.send(wrapper);
+        ses.send(req);
         return;
       }
       break;
@@ -32,17 +22,7 @@ case TcpClientFuture.STATE_AUTH_RETRY:
     if (resp.successStatus() == GridClientResponse.STATUS_SUCCESS) {
       fut.retryState(TcpClientFuture.STATE_REQUEST_RETRY);
       src.sessionToken(sesTok);
-      GridClientMessageWrapper wrapper;
-      try {
-        wrapper=messageWrapper(src);
-      }
- catch (      IOException e) {
-        log.log(Level.SEVERE,"Failed to marshal message: " + src,e);
-        removePending(resp.requestId());
-        fut.onDone(e);
-        return;
-      }
-      ses.send(wrapper);
+      ses.send(src);
       return;
     }
     break;

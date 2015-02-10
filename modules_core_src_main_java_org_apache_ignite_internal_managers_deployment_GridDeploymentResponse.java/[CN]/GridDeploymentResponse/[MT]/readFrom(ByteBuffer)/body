@@ -1,20 +1,18 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    GridByteArrayList byteSrc0=commState.getByteArrayList();
-  if (byteSrc0 == BYTE_ARR_LIST_NOT_READ)   return false;
-byteSrc=byteSrc0;
-commState.idx++;
+    byteSrc=reader.readMessage("byteSrc");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-String errMsg0=commState.getString();
-if (errMsg0 == STR_NOT_READ) return false;
-errMsg=errMsg0;
-commState.idx++;
+errMsg=reader.readString("errMsg");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-if (buf.remaining() < 1) return false;
-success=commState.getBoolean();
-commState.idx++;
+success=reader.readBoolean("success");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

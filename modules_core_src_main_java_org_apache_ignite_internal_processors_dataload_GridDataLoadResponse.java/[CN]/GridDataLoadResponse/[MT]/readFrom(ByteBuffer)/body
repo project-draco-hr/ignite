@@ -1,19 +1,18 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    byte[] errBytes0=commState.getByteArray();
-  if (errBytes0 == BYTE_ARR_NOT_READ)   return false;
-errBytes=errBytes0;
-commState.idx++;
+    errBytes=reader.readByteArray("errBytes");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-if (buf.remaining() < 1) return false;
-forceLocDep=commState.getBoolean();
-commState.idx++;
+forceLocDep=reader.readBoolean("forceLocDep");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-if (buf.remaining() < 8) return false;
-reqId=commState.getLong();
-commState.idx++;
+reqId=reader.readLong("reqId");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }
