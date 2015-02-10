@@ -1,0 +1,23 @@
+{
+  try {
+    Ignite g1=startGrid(1);
+    startGrid(2);
+    startGrid(3);
+    final CountDownLatch cnt=new CountDownLatch(2);
+    g1.events().localListen(new IgnitePredicate<Event>(){
+      @Override public boolean apply(      Event evt){
+        cnt.countDown();
+        return true;
+      }
+    }
+,EVT_NODE_LEFT);
+    info("Nodes were started");
+    stopGrid(3);
+    stopGrid(2);
+    boolean res=cnt.await(1,SECONDS);
+    assert res;
+  }
+  finally {
+    stopAllGrids();
+  }
+}

@@ -1,17 +1,15 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 3:
-    GridDhtPartitionExchangeId exchId0=commState.getDhtPartitionExchangeId();
-  if (exchId0 == DHT_PART_EXCHANGE_ID_NOT_READ)   return false;
-exchId=exchId0;
-commState.idx++;
+    exchId=reader.readMessage("exchId");
+  if (!reader.isLastRead())   return false;
+state++;
 case 4:
-GridCacheVersion lastVer0=commState.getCacheVersion();
-if (lastVer0 == CACHE_VER_NOT_READ) return false;
-lastVer=lastVer0;
-commState.idx++;
+lastVer=reader.readMessage("lastVer");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

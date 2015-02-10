@@ -5,7 +5,19 @@
   connPnl.addColumn(35,35,35,Priority.NEVER);
   connPnl.add(text("This utility is designed to automatically generate configuration XML files and" + " POJO classes from database schema information.",550),3);
   connPnl.wrap();
-  rdbmsCb=connPnl.addLabeled("DB Server preset:",comboBox("Select database server to get predefined settings",RDBMS_NAMES),2);
+  GridPaneEx presetPnl=paneEx(0,0,0,0);
+  presetPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
+  presetPnl.addColumn();
+  rdbmsCb=presetPnl.add(comboBox("Select database server to get predefined settings",presets));
+  presetPnl.add(button("Save preset","Save current settings in preferences",new EventHandler<ActionEvent>(){
+    @Override public void handle(    ActionEvent evt){
+      Preset preset=rdbmsCb.getSelectionModel().getSelectedItem();
+      savePreset(preset);
+    }
+  }
+));
+  connPnl.add(label("DB Preset:"));
+  connPnl.add(presetPnl,2);
   jdbcDrvJarTf=connPnl.addLabeled("Driver JAR:",textField("Path to driver jar"));
   connPnl.add(button("...","Select JDBC driver jar or zip",new EventHandler<ActionEvent>(){
     /** 
@@ -28,12 +40,12 @@
 ));
   jdbcDrvClsTf=connPnl.addLabeled("JDBC Driver:",textField("Enter class name for JDBC driver"),2);
   jdbcUrlTf=connPnl.addLabeled("JDBC URL:",textField("JDBC URL of the database connection string"),2);
-  rdbmsCb.getSelectionModel().selectedIndexProperty().addListener(new ChangeListener<Number>(){
-    @Override public void changed(    ObservableValue<? extends Number> observable,    Number oldIdx,    Number newIdx){
-      int idx=newIdx.intValue();
-      jdbcDrvJarTf.setText(JDBC_JAR[idx]);
-      jdbcDrvClsTf.setText(JDBC_DRIVERS[idx]);
-      jdbcUrlTf.setText(JDBC_URLS[idx]);
+  rdbmsCb.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Preset>(){
+    @Override public void changed(    ObservableValue<? extends Preset> val,    Preset oldVal,    Preset newVal){
+      jdbcDrvJarTf.setText(newVal.jar);
+      jdbcDrvClsTf.setText(newVal.drv);
+      jdbcUrlTf.setText(newVal.url);
+      userTf.setText(newVal.user);
     }
   }
 );
