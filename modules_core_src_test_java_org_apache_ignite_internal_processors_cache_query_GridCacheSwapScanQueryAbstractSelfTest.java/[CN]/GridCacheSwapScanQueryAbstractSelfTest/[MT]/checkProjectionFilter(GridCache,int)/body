@@ -1,0 +1,12 @@
+{
+  CacheProjection prj=createProjectionForFilter(cache);
+  CacheQuery<Map.Entry<Key,Person>> qry=prj.queries().createScanQuery(new IgniteBiPredicate<Key,Person>(){
+    @Override public boolean apply(    Key key,    Person p){
+      assertEquals(key.id,(Integer)p.salary);
+      return key.id % 2 == 0;
+    }
+  }
+);
+  Collection<Map.Entry<Key,Person>> res=qry.execute().get();
+  assertEquals(expCnt,res.size());
+}
