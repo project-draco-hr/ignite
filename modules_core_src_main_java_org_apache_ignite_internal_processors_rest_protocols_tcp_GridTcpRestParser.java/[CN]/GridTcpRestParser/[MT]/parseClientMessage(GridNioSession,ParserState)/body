@@ -1,8 +1,14 @@
 {
-  GridClientMarshaller marsh=marshaller(ses);
-  GridClientMessage msg=marsh.unmarshal(state.buffer().toByteArray());
-  msg.requestId(state.header().reqId());
-  msg.clientId(state.header().clientId());
-  msg.destinationId(state.header().destinationId());
+  GridClientMessage msg;
+  if (routerClient) {
+    msg=new GridRouterResponse(state.buffer().toByteArray(),state.header().reqId(),state.header().clientId(),state.header().destinationId());
+  }
+ else {
+    GridClientMarshaller marsh=marshaller(ses);
+    msg=marsh.unmarshal(state.buffer().toByteArray());
+    msg.requestId(state.header().reqId());
+    msg.clientId(state.header().clientId());
+    msg.destinationId(state.header().destinationId());
+  }
   return msg;
 }

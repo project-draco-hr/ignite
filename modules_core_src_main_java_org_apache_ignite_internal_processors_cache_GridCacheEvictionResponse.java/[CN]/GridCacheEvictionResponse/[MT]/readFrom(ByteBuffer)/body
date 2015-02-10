@@ -1,32 +1,19 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 3:
-    if (buf.remaining() < 1)     return false;
-  err=commState.getBoolean();
-commState.idx++;
+    err=reader.readBoolean("err");
+  if (!reader.isLastRead())   return false;
+state++;
 case 4:
-if (buf.remaining() < 8) return false;
-futId=commState.getLong();
-commState.idx++;
+futId=reader.readLong("futId");
+if (!reader.isLastRead()) return false;
+state++;
 case 5:
-if (commState.readSize == -1) {
-if (buf.remaining() < 4) return false;
-commState.readSize=commState.getInt();
-}
-if (commState.readSize >= 0) {
-if (rejectedKeyBytes == null) rejectedKeyBytes=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-byte[] _val=commState.getByteArray();
-if (_val == BYTE_ARR_NOT_READ) return false;
-rejectedKeyBytes.add((byte[])_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+rejectedKeyBytes=reader.readCollection("rejectedKeyBytes",byte[].class);
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }
