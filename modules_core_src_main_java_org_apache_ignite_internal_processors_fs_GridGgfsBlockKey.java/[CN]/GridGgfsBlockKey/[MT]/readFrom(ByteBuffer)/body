@@ -1,24 +1,22 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    IgniteUuid affKey0=commState.getGridUuid();
-  if (affKey0 == GRID_UUID_NOT_READ)   return false;
-affKey=affKey0;
-commState.idx++;
+    affKey=reader.readIgniteUuid("affKey");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-if (buf.remaining() < 8) return false;
-blockId=commState.getLong();
-commState.idx++;
+blockId=reader.readLong("blockId");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-if (buf.remaining() < 1) return false;
-evictExclude=commState.getBoolean();
-commState.idx++;
+evictExclude=reader.readBoolean("evictExclude");
+if (!reader.isLastRead()) return false;
+state++;
 case 3:
-IgniteUuid fileId0=commState.getGridUuid();
-if (fileId0 == GRID_UUID_NOT_READ) return false;
-fileId=fileId0;
-commState.idx++;
+fileId=reader.readIgniteUuid("fileId");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }
