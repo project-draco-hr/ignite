@@ -1,15 +1,15 @@
 {
   try {
-    Ignite ignite=startGrid(1);
-    final GridCache<Integer,Integer> cache=ignite.cache(null);
+    final Ignite ignite=startGrid(1);
+    final IgniteCache<Integer,Integer> cache=ignite.jcache(null);
     long start=System.currentTimeMillis();
     IgniteInternalFuture<?> fut=multithreadedAsync(new Callable<Object>(){
       @Override public Object call() throws Exception {
         final Random rnd=new Random();
         for (int i=0; i < ITERATION_CNT; i++) {
           int j=rnd.nextInt(keyCnt);
-          try (IgniteTx tx=cache.txStart()){
-            if (rnd.nextBoolean())             cache.putx(j,j);
+          try (IgniteTx tx=ignite.transactions().txStart()){
+            if (rnd.nextBoolean())             cache.put(j,j);
  else             cache.remove(j);
             tx.commit();
           }
@@ -23,7 +23,7 @@
     Collection<EvictableEntry<Integer,Integer>> queue=internalQueue(plc);
     info("Test results [threadCnt=" + threadCnt + ", iterCnt="+ ITERATION_CNT+ ", cacheSize="+ cache.size()+ ", internalQueueSize"+ queue.size()+ ", duration="+ (System.currentTimeMillis() - start)+ ']');
     for (    Cache.Entry<Integer,Integer> e : queue) {
-      Integer rmv=cache.remove(e.getKey());
+      Integer rmv=cache.getAndRemove(e.getKey());
       if (rmv == null)       fail("Eviction policy contains key that is not present in cache: " + e);
  else       info("Entry removed: " + rmv);
     }
