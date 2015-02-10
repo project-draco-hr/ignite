@@ -1,0 +1,29 @@
+{
+  Collection<ClusterNode> nodes=ctx.grid().forDataNodes(name()).nodes();
+  if (!nodes.isEmpty()) {
+    IgniteInternalFuture<?> rmvFut=ctx.closures().callAsyncNoFailover(BROADCAST,new GlobalRemoveAllCallable<>(name(),topVer),nodes,true);
+    rmvFut.listenAsync(new IgniteInClosure<IgniteInternalFuture<?>>(){
+      @Override public void apply(      IgniteInternalFuture<?> fut){
+        try {
+          fut.get();
+          long topVer0=ctx.affinity().affinityTopologyVersion();
+          if (topVer0 == topVer)           opFut.onDone();
+ else           removeAllAsync(opFut,topVer0);
+        }
+ catch (        ClusterGroupEmptyCheckedException ignore) {
+          if (log.isDebugEnabled())           log.debug("All remote nodes left while cache remove [cacheName=" + name() + "]");
+          opFut.onDone();
+        }
+catch (        IgniteCheckedException e) {
+          opFut.onDone(e);
+        }
+catch (        Error e) {
+          opFut.onDone(e);
+          throw e;
+        }
+      }
+    }
+);
+  }
+ else   opFut.onDone();
+}
