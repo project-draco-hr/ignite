@@ -1,0 +1,23 @@
+{
+  lastMsgRcvTime=U.currentTimeMillis();
+  TcpClientFuture fut=pendingReqs.get(res.requestId());
+  if (fut == null) {
+    log.warning("Response for an unknown request is received, ignoring. " + "[res=" + res + ", ses="+ ses+ ']');
+    return;
+  }
+  if (fut.forward()) {
+    removePending(res.requestId());
+    fut.onDone(res);
+  }
+ else {
+    GridClientMessage res0=res;
+    if (res instanceof GridRouterResponse) {
+      res0=marsh.unmarshal(((GridRouterResponse)res).body());
+      res0.requestId(res.requestId());
+      res0.clientId(res.clientId());
+      res0.destinationId(res.destinationId());
+    }
+    if (res0 instanceof GridClientResponse)     handleClientResponse(fut,(GridClientResponse)res0);
+ else     log.warning("Unsupported response type received: " + res0);
+  }
+}

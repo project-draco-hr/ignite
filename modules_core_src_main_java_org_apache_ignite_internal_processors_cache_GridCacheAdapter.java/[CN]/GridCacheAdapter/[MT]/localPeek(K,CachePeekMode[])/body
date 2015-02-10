@@ -1,2 +1,63 @@
 {
+  A.notNull(key,"key");
+  if (keyCheck)   validateCacheKey(key);
+  ctx.checkSecurity(GridSecurityPermission.CACHE_READ);
+  PeekModes modes=parsePeekModes(peekModes);
+  try {
+    if (ctx.portableEnabled())     key=(K)ctx.marshalToPortable(key);
+    V val=null;
+    if (!ctx.isLocal()) {
+      long topVer=ctx.affinity().affinityTopologyVersion();
+      int part=ctx.affinity().partition(key);
+      boolean nearKey;
+      if (!(modes.near && modes.primary && modes.backup)) {
+        boolean keyPrimary=ctx.affinity().primary(ctx.localNode(),part,topVer);
+        if (keyPrimary) {
+          if (!modes.primary)           return null;
+          nearKey=false;
+        }
+ else {
+          boolean keyBackup=ctx.affinity().belongs(ctx.localNode(),part,topVer);
+          if (keyBackup) {
+            if (!modes.backup)             return null;
+            nearKey=false;
+          }
+ else {
+            if (!modes.near)             return null;
+            nearKey=true;
+            modes.offheap=false;
+            modes.swap=false;
+          }
+        }
+      }
+ else {
+        nearKey=!ctx.affinity().belongs(ctx.localNode(),part,topVer);
+        if (nearKey) {
+          modes.offheap=false;
+          modes.swap=false;
+        }
+      }
+      if (nearKey && !ctx.isNear())       return null;
+      if (modes.heap) {
+        GridCacheEntryEx<K,V> e=nearKey ? peekEx(key) : (ctx.isNear() ? ctx.near().dht().peekEx(key) : peekEx(key));
+        if (e != null) {
+          val=e.peek(modes.heap,modes.offheap,modes.swap,topVer);
+          modes.offheap=false;
+          modes.swap=false;
+        }
+      }
+      if (modes.offheap || modes.swap) {
+        GridCacheSwapManager<K,V> swapMgr=ctx.isNear() ? ctx.near().dht().context().swap() : ctx.swap();
+        GridCacheSwapEntry<V> swapEntry=swapMgr.read(key,modes.offheap,modes.swap);
+        val=swapEntry != null ? swapEntry.value() : null;
+      }
+    }
+ else     val=localCachePeek0(key,modes.heap,modes.offheap,modes.swap);
+    if (ctx.portableEnabled())     val=(V)ctx.unwrapPortableIfNeeded(val,ctx.keepPortable());
+    return val;
+  }
+ catch (  GridCacheEntryRemovedException ignore) {
+    if (log.isDebugEnabled())     log.debug("Got removed entry during 'peek': " + key);
+    return null;
+  }
 }
