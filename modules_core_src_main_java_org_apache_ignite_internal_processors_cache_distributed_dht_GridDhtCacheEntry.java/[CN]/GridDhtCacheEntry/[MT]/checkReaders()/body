@@ -1,20 +1,22 @@
 {
   checkObsolete();
-  if (!rdrs.isEmpty()) {
-    Collection<ReaderId> rmv=null;
-    for (    ReaderId reader : rdrs) {
-      if (!cctx.discovery().alive(reader.nodeId())) {
-        if (rmv == null)         rmv=new HashSet<>();
-        rmv.add(reader);
+  ReaderId<K,V>[] rdrs=this.rdrs;
+  if (rdrs.length == 0)   return Collections.emptySet();
+  List<ReaderId<K,V>> newRdrs=null;
+  for (int i=0; i < rdrs.length; i++) {
+    if (!cctx.discovery().alive(rdrs[i].nodeId())) {
+      if (newRdrs == null) {
+        newRdrs=new ArrayList<>(rdrs.length);
+        for (int k=0; k < i; k++)         newRdrs.add(rdrs[i]);
       }
     }
-    if (rmv != null) {
-      List<ReaderId<K,V>> rdrs=new ArrayList<>(this.rdrs.size() - rmv.size());
-      for (      ReaderId<K,V> rdr : this.rdrs) {
-        if (!rmv.contains(rdr))         rdrs.add(rdr);
-      }
-      this.rdrs=rdrs.isEmpty() ? Collections.<ReaderId<K,V>>emptyList() : Collections.unmodifiableList(rdrs);
+ else {
+      if (newRdrs != null)       newRdrs.add(rdrs[i]);
     }
   }
-  return rdrs;
+  if (newRdrs != null) {
+    rdrs=newRdrs.toArray(new ReaderId[newRdrs.size()]);
+    this.rdrs=rdrs;
+  }
+  return Arrays.asList(rdrs);
 }
