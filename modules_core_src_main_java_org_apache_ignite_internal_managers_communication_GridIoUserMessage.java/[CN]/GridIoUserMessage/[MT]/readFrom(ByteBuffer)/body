@@ -1,61 +1,34 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    byte[] bodyBytes0=commState.getByteArray();
-  if (bodyBytes0 == BYTE_ARR_NOT_READ)   return false;
-bodyBytes=bodyBytes0;
-commState.idx++;
+    bodyBytes=reader.readByteArray("bodyBytes");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-IgniteUuid clsLdrId0=commState.getGridUuid();
-if (clsLdrId0 == GRID_UUID_NOT_READ) return false;
-clsLdrId=clsLdrId0;
-commState.idx++;
+clsLdrId=reader.readIgniteUuid("clsLdrId");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-String depClsName0=commState.getString();
-if (depClsName0 == STR_NOT_READ) return false;
-depClsName=depClsName0;
-commState.idx++;
+depClsName=reader.readString("depClsName");
+if (!reader.isLastRead()) return false;
+state++;
 case 3:
-if (buf.remaining() < 1) return false;
-byte depMode0=commState.getByte();
-depMode=IgniteDeploymentMode.fromOrdinal(depMode0);
-commState.idx++;
+depMode=reader.readEnum("depMode",DeploymentMode.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 4:
-if (commState.readSize == -1) {
-if (buf.remaining() < 4) return false;
-commState.readSize=commState.getInt();
-}
-if (commState.readSize >= 0) {
-if (ldrParties == null) ldrParties=U.newHashMap(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-if (!commState.keyDone) {
-UUID _val=commState.getUuid();
-if (_val == UUID_NOT_READ) return false;
-commState.cur=_val;
-commState.keyDone=true;
-}
-IgniteUuid _val=commState.getGridUuid();
-if (_val == GRID_UUID_NOT_READ) return false;
-ldrParties.put((UUID)commState.cur,_val);
-commState.keyDone=false;
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.cur=null;
-commState.idx++;
+ldrParties=reader.readMap("ldrParties",UUID.class,IgniteUuid.class,false);
+if (!reader.isLastRead()) return false;
+state++;
 case 5:
-byte[] topicBytes0=commState.getByteArray();
-if (topicBytes0 == BYTE_ARR_NOT_READ) return false;
-topicBytes=topicBytes0;
-commState.idx++;
+topicBytes=reader.readByteArray("topicBytes");
+if (!reader.isLastRead()) return false;
+state++;
 case 6:
-String userVer0=commState.getString();
-if (userVer0 == STR_NOT_READ) return false;
-userVer=userVer0;
-commState.idx++;
+userVer=reader.readString("userVer");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

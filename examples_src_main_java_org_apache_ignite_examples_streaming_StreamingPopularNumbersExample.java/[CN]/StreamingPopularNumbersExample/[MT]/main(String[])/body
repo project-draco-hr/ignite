@@ -1,18 +1,18 @@
 {
   Timer popularNumbersQryTimer=new Timer("numbers-query-worker");
-  final Ignite g=Ignition.start("examples/config/example-streamer.xml");
+  final Ignite ignite=Ignition.start("examples/config/example-streamer.xml");
   System.out.println();
   System.out.println(">>> Streaming popular numbers example started.");
   try {
-    TimerTask task=scheduleQuery(g,popularNumbersQryTimer);
-    streamData(g);
+    TimerTask task=scheduleQuery(ignite,popularNumbersQryTimer);
+    streamData(ignite);
     task.run();
     popularNumbersQryTimer.cancel();
-    g.compute().broadcast(new Runnable(){
+    ignite.compute().broadcast(new IgniteRunnable(){
       @Override public void run(){
-        if (!ExamplesUtils.hasStreamer(g,"popular-numbers"))         System.err.println("Default streamer not found (is example-streamer.xml " + "configuration used on all nodes?)");
+        if (!ExamplesUtils.hasStreamer(ignite,"popular-numbers"))         System.err.println("Default streamer not found (is example-streamer.xml " + "configuration used on all nodes?)");
  else {
-          IgniteStreamer streamer=g.streamer("popular-numbers");
+          IgniteStreamer streamer=ignite.streamer("popular-numbers");
           System.out.println("Clearing number counters from streamer.");
           streamer.reset();
         }

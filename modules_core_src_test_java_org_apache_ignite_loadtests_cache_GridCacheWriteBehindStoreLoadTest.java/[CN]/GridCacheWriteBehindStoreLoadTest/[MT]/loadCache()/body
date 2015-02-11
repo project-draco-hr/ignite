@@ -1,2 +1,28 @@
 {
+  final AtomicBoolean running=new AtomicBoolean(true);
+  final IgniteCache<Object,Object> cache=jcache();
+  final AtomicLong keyCntr=new AtomicLong();
+  long start=System.currentTimeMillis();
+  IgniteInternalFuture<?> fut=multithreadedAsync(new Runnable(){
+    @SuppressWarnings({"NullableProblems"}) @Override public void run(){
+      Random rnd=new Random();
+      while (running.get()) {
+        long putNum=keyCntr.incrementAndGet();
+        long key=rndKeys ? rnd.nextInt(keysCnt) : putNum;
+        cache.put(key,"val" + key);
+      }
+    }
+  }
+,threadCnt,"put");
+  long prevPutCnt=0;
+  while (System.currentTimeMillis() - start < runTime) {
+    U.sleep(60 * 1000);
+    long cnt=keyCntr.get();
+    long secondsElapsed=(System.currentTimeMillis() - start) / 1000;
+    info(">>> Running for " + secondsElapsed + " seconds");
+    info(">>> Puts: [total=" + cnt + ", avg="+ (cnt / secondsElapsed)+ " (ops/sec), lastMinute="+ ((cnt - prevPutCnt) / 60)+ "(ops/sec)]");
+    prevPutCnt=cnt;
+  }
+  running.set(false);
+  fut.get();
 }

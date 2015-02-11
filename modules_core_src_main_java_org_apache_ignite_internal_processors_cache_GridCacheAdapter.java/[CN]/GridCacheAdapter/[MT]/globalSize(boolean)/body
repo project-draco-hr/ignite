@@ -1,6 +1,6 @@
 {
   try {
-    Collection<ClusterNode> nodes=ctx.grid().forCache(name()).forRemotes().nodes();
+    Collection<ClusterNode> nodes=ctx.grid().forCacheNodes(name()).forRemotes().nodes();
     IgniteInternalFuture<Collection<Integer>> fut=null;
     if (!nodes.isEmpty()) {
       ctx.kernalContext().task().setThreadContext(TC_TIMEOUT,gridCfg.getNetworkTimeout());
@@ -12,11 +12,11 @@
     }
     return globalSize;
   }
- catch (  ClusterGroupEmptyException ignore) {
-    if (log.isDebugEnabled())     log.debug("All remote nodes left while cache clear [cacheName=" + name() + "]");
+ catch (  ClusterGroupEmptyCheckedException ignore) {
+    if (log.isDebugEnabled())     log.debug("All remote nodes left while cache clearLocally [cacheName=" + name() + "]");
     return primaryOnly ? primarySize() : size();
   }
-catch (  ComputeTaskTimeoutException e) {
+catch (  ComputeTaskTimeoutCheckedException e) {
     U.warn(log,"Timed out waiting for remote nodes to finish cache clear (consider increasing " + "'networkTimeout' configuration property) [cacheName=" + name() + "]");
     throw e;
   }

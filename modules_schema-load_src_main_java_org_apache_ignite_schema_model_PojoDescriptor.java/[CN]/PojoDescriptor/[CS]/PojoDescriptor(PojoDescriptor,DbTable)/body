@@ -1,0 +1,43 @@
+{
+  parent=prn;
+  this.tbl=tbl;
+  fullDbName=tbl.schema() + "." + tbl.table();
+  valClsNamePrev=toJavaClassName(tbl.table());
+  valClsNameProp=new SimpleStringProperty(valClsNamePrev);
+  keyClsNamePrev=valClsNamePrev.isEmpty() ? "" : valClsNamePrev + "Key";
+  keyClsNameProp=new SimpleStringProperty(keyClsNamePrev);
+  Collection<DbColumn> cols=tbl.columns();
+  List<PojoField> flds=new ArrayList<>(cols.size());
+  fieldsMap=new HashMap<>(cols.size());
+  for (  DbColumn col : cols) {
+    String colName=col.name();
+    PojoField fld=new PojoField(colName,col.type(),toJavaFieldName(colName),toJavaType(col.type(),col.nullable()).getName(),col.key(),col.nullable());
+    fld.owner(this);
+    flds.add(fld);
+    fieldsMap.put(colName,fld);
+  }
+  fields=FXCollections.observableList(flds);
+  boolean isTbl=parent != null;
+  boolean hasKeys=!isTbl || !keyFields().isEmpty();
+  useProp=new SimpleBooleanProperty(hasKeys);
+  if (isTbl && !hasKeys && !parent.indeterminateProp.get())   parent.indeterminateProp.set(true);
+  useProp.addListener(new ChangeListener<Boolean>(){
+    @Override public void changed(    ObservableValue<? extends Boolean> val,    Boolean oldVal,    Boolean newVal){
+      for (      PojoDescriptor child : children)       child.useProp.set(newVal);
+      if (parent != null && !parent.children.isEmpty()) {
+        Iterator<PojoDescriptor> it=parent.children.iterator();
+        boolean parentIndeterminate=false;
+        boolean first=it.next().useProp.get();
+        while (it.hasNext()) {
+          if (it.next().useProp.get() != first) {
+            parentIndeterminate=true;
+            break;
+          }
+        }
+        parent.indeterminateProp.set(parentIndeterminate);
+        if (!parentIndeterminate)         parent.useProp.set(first);
+      }
+    }
+  }
+);
+}

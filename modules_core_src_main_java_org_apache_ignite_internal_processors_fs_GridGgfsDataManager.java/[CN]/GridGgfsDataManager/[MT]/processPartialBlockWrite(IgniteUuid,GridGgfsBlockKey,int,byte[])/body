@@ -3,7 +3,7 @@
     try {
       ggfs.awaitDeletesAsync().get(trashPurgeTimeout);
     }
- catch (    IgniteFutureTimeoutException ignore) {
+ catch (    IgniteFutureTimeoutCheckedException ignore) {
     }
     if (dataCachePrj.ggfsDataSpaceUsed() >= dataCachePrj.ggfsDataSpaceMax()) {
       final WriteCompletionFuture completionFut=pendingWrites.get(fileId);
@@ -11,7 +11,8 @@
         if (log.isDebugEnabled())         log.debug("Missing completion future for file write request (most likely exception occurred " + "which will be thrown upon stream close) [fileId=" + fileId + ']');
         return;
       }
-      completionFut.onLocalError(new IgniteFsOutOfSpaceException("Failed to write data block " + "(GGFS maximum data size exceeded) [used=" + dataCachePrj.ggfsDataSpaceUsed() + ", allowed="+ dataCachePrj.ggfsDataSpaceMax()+ ']'));
+      IgniteFsOutOfSpaceException e=new IgniteFsOutOfSpaceException("Failed to write data block " + "(GGFS maximum data size exceeded) [used=" + dataCachePrj.ggfsDataSpaceUsed() + ", allowed="+ dataCachePrj.ggfsDataSpaceMax()+ ']');
+      completionFut.onDone(new IgniteCheckedException("Failed to write data (not enough space on node): " + ggfsCtx.kernalContext().localNodeId(),e));
       return;
     }
   }
@@ -24,7 +25,7 @@
     return;
   }
   GridGgfsBlockKey key=new GridGgfsBlockKey(colocatedKey.getFileId(),null,colocatedKey.evictExclude(),colocatedKey.getBlockId());
-  try (IgniteTx tx=dataCachePrj.txStart(PESSIMISTIC,REPEATABLE_READ)){
+  try (IgniteInternalTx tx=dataCachePrj.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
     Map<GridGgfsBlockKey,byte[]> vals=dataCachePrj.getAll(F.asList(colocatedKey,key));
     boolean hasVal=false;
     UpdateProcessor transformClos=new UpdateProcessor(startOff,data);

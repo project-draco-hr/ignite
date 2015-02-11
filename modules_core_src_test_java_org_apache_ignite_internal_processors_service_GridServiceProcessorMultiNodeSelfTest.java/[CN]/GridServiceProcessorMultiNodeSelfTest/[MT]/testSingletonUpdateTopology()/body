@@ -3,9 +3,9 @@
   Ignite g=randomGrid();
   CountDownLatch latch=new CountDownLatch(1);
   DummyService.exeLatch(name,latch);
-  IgniteManaged svcs=g.managed().withAsync();
+  IgniteServices svcs=g.services().withAsync();
   svcs.deployClusterSingleton(name,new DummyService());
-  IgniteInternalFuture<?> fut=svcs.future();
+  IgniteFuture<?> fut=svcs.future();
   info("Deployed service: " + name);
   fut.get();
   info("Finished waiting for service future: " + name);
@@ -18,7 +18,7 @@
     TestCase.assertEquals(name,1,DummyService.started(name));
     TestCase.assertEquals(name,0,DummyService.cancelled(name));
     info(">>> Passed checks.");
-    checkCount(name,g.managed().deployedServices(),1);
+    checkCount(name,g.services().serviceDescriptors(),1);
   }
   finally {
     stopExtraNodes(nodeCnt);

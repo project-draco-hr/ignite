@@ -5,14 +5,14 @@
       node=nodeForService(name,sticky);
       if (node == null)       throw new IgniteException("Failed to find deployed service: " + name);
       if (node.isLocal()) {
-        ManagedServiceContextImpl svcCtx=ctx.service().serviceContext(name);
+        ServiceContextImpl svcCtx=ctx.service().serviceContext(name);
         if (svcCtx != null)         return mtd.invoke(svcCtx.service(),args);
       }
  else {
         return ctx.closure().callAsyncNoFailover(BALANCE,new ServiceProxyCallable(mtd.getName(),name,mtd.getParameterTypes(),args),Collections.singleton(node),false).get();
       }
     }
- catch (    GridServiceNotFoundException|ClusterTopologyException e) {
+ catch (    GridServiceNotFoundException|ClusterTopologyCheckedException e) {
       if (log.isDebugEnabled())       log.debug("Service was not found or topology changed (will retry): " + e.getMessage());
     }
 catch (    RuntimeException|Error e) {
