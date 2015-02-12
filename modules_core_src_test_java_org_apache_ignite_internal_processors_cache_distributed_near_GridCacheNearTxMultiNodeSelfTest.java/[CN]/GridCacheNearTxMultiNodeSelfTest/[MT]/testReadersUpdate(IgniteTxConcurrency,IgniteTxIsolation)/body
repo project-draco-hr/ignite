@@ -1,19 +1,20 @@
 {
-  GridCache<Integer,Integer> cache=grid(0).cache(null);
-  try (IgniteTx tx=cache.txStart(concurrency,isolation)){
+  Ignite ignite=grid(0);
+  IgniteCache<Integer,Integer> cache=ignite.jcache(null);
+  try (IgniteTx tx=ignite.transactions().txStart(concurrency,isolation)){
     for (int i=0; i < 100; i++)     cache.put(i,1);
     tx.commit();
   }
    for (int g=0; g < GRID_CNT; g++) {
-    GridCache<Integer,Integer> c=grid(g).cache(null);
+    IgniteCache<Integer,Integer> c=grid(g).jcache(null);
     for (int i=0; i < 100; i++)     assertEquals((Integer)1,c.get(i));
   }
-  try (IgniteTx tx=cache.txStart(concurrency,isolation)){
+  try (IgniteTx tx=ignite.transactions().txStart(concurrency,isolation)){
     for (int i=0; i < 100; i++)     cache.put(i,2);
     tx.commit();
   }
    for (int g=0; g < GRID_CNT; g++) {
-    GridCache<Integer,Integer> c=grid(g).cache(null);
+    IgniteCache<Integer,Integer> c=grid(g).jcache(null);
     for (int i=0; i < 100; i++)     assertEquals((Integer)2,c.get(i));
   }
 }

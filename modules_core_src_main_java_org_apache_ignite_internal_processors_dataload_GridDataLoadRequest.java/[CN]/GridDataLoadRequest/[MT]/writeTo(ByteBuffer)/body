@@ -1,69 +1,49 @@
 {
-  commState.setBuffer(buf);
-  if (!commState.typeWritten) {
-    if (!commState.putByte(directType()))     return false;
-    commState.typeWritten=true;
+  writer.setBuffer(buf);
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 0:
-    if (!commState.putString(cacheName))     return false;
-  commState.idx++;
+    if (!writer.writeString("cacheName",cacheName))     return false;
+  state++;
 case 1:
-if (!commState.putGridUuid(clsLdrId)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("clsLdrId",clsLdrId)) return false;
+state++;
 case 2:
-if (!commState.putByteArray(colBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("colBytes",colBytes)) return false;
+state++;
 case 3:
-if (!commState.putEnum(depMode)) return false;
-commState.idx++;
+if (!writer.writeEnum("depMode",depMode)) return false;
+state++;
 case 4:
-if (!commState.putBoolean(forceLocDep)) return false;
-commState.idx++;
+if (!writer.writeBoolean("forceLocDep",forceLocDep)) return false;
+state++;
 case 5:
-if (!commState.putBoolean(ignoreDepOwnership)) return false;
-commState.idx++;
+if (!writer.writeBoolean("ignoreDepOwnership",ignoreDepOwnership)) return false;
+state++;
 case 6:
-if (ldrParticipants != null) {
-if (commState.it == null) {
-if (!commState.putInt(ldrParticipants.size())) return false;
-commState.it=ldrParticipants.entrySet().iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-Map.Entry<UUID,IgniteUuid> e=(Map.Entry<UUID,IgniteUuid>)commState.cur;
-if (!commState.keyDone) {
-if (!commState.putUuid(e.getKey())) return false;
-commState.keyDone=true;
-}
-if (!commState.putGridUuid(e.getValue())) return false;
-commState.keyDone=false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+if (!writer.writeMap("ldrParticipants",ldrParticipants,UUID.class,IgniteUuid.class)) return false;
+state++;
 case 7:
-if (!commState.putLong(reqId)) return false;
-commState.idx++;
+if (!writer.writeLong("reqId",reqId)) return false;
+state++;
 case 8:
-if (!commState.putByteArray(resTopicBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("resTopicBytes",resTopicBytes)) return false;
+state++;
 case 9:
-if (!commState.putString(sampleClsName)) return false;
-commState.idx++;
+if (!writer.writeString("sampleClsName",sampleClsName)) return false;
+state++;
 case 10:
-if (!commState.putBoolean(skipStore)) return false;
-commState.idx++;
+if (!writer.writeBoolean("skipStore",skipStore)) return false;
+state++;
 case 11:
-if (!commState.putByteArray(updaterBytes)) return false;
-commState.idx++;
+if (!writer.writeByteArray("updaterBytes",updaterBytes)) return false;
+state++;
 case 12:
-if (!commState.putString(userVer)) return false;
-commState.idx++;
+if (!writer.writeString("userVer",userVer)) return false;
+state++;
 }
 return true;
 }

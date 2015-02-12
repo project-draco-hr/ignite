@@ -1,19 +1,19 @@
 {
   try {
     final Ignite ignite1=startGrid(1);
-    GridCache<Integer,Object> cache1=ignite1.cache(null);
+    IgniteCache<Integer,Object> cache1=ignite1.jcache(null);
     for (int i=0; i < 5000; i++)     cache1.put(i,VALUE + i);
     info("Finished data population.");
     final AtomicBoolean done=new AtomicBoolean();
     final CountDownLatch startLatch=new CountDownLatch(1);
-    int oldSize=cache1.size();
+    int oldSize=cache1.localSize();
     IgniteInternalFuture fut=multithreadedAsync(new Callable<Object>(){
       @Nullable @Override public Object call() throws Exception {
         startLatch.await();
         info("Started evicting...");
         for (int i=0; i < 3000 && !done.get(); i++) {
-          CacheEntry<Integer,Object> entry=randomEntry(ignite1);
-          if (entry != null)           entry.evict();
+          Cache.Entry<Integer,Object> entry=randomEntry(ignite1);
+          if (entry != null)           ignite1.jcache(null).localEvict(Collections.<Object>singleton(entry.getKey()));
  else           info("Entry is null.");
         }
         info("Finished evicting.");
@@ -21,8 +21,8 @@
       }
     }
 ,1);
-    ignite1.events().localListen(new IgnitePredicate<IgniteEvent>(){
-      @Override public boolean apply(      IgniteEvent evt){
+    ignite1.events().localListen(new IgnitePredicate<Event>(){
+      @Override public boolean apply(      Event evt){
         startLatch.countDown();
         return true;
       }
@@ -36,8 +36,8 @@
     oldSize=cache1.size();
     info("Evicting on constant topology.");
     for (int i=0; i < 1000; i++) {
-      CacheEntry<Integer,Object> entry=randomEntry(ignite1);
-      if (entry != null)       entry.evict();
+      Cache.Entry<Integer,Object> entry=randomEntry(ignite1);
+      if (entry != null)       cache1.localEvict(Collections.singleton(entry.getKey()));
  else       info("Entry is null.");
     }
     sleepUntilCashesEqualize(ignite1,ignite2,oldSize);

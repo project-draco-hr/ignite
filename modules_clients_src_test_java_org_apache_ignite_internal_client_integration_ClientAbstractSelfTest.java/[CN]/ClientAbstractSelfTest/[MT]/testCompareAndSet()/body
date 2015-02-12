@@ -1,0 +1,54 @@
+{
+  GridClientData[] datas=new GridClientData[]{client.data(),client.data(CACHE_NAME)};
+  assertNotNull(datas[0]);
+  assertNotNull(datas[1]);
+  IgniteCache[] caches=new IgniteCache[]{grid().jcache(null),grid().jcache(CACHE_NAME)};
+  for (int i=0; i < datas.length; i++) {
+    GridClientData data=datas[i];
+    IgniteCache<String,String> cache=(IgniteCache<String,String>)caches[i];
+    assertFalse(data.cas("key",null,null));
+    cache.put("key","val");
+    assertTrue(data.cas("key",null,null));
+    assertNull(cache.get("key"));
+    assertFalse(data.cas("key",null,"val"));
+    cache.put("key","val");
+    assertFalse(data.cas("key",null,"wrongVal"));
+    assertEquals("val",cache.get("key"));
+    assertTrue(data.cas("key",null,"val"));
+    assertNull(cache.get("key"));
+    assertTrue(data.cas("key","val",null));
+    assertEquals("val",cache.get("key"));
+    assertFalse(data.cas("key","newVal",null));
+    assertEquals("val",cache.get("key"));
+    cache.remove("key");
+    assertFalse(data.cas("key","val1","val2"));
+    cache.put("key","val2");
+    assertFalse(data.cas("key","val1","wrongVal"));
+    assertEquals("val2",cache.get("key"));
+    assertTrue(data.cas("key","val1","val2"));
+    assertEquals("val1",cache.get("key"));
+    cache.remove("key");
+    assertFalse(data.casAsync("key",null,null).get());
+    cache.put("key","val");
+    assertTrue(data.casAsync("key",null,null).get());
+    assertNull(cache.get("key"));
+    assertFalse(data.casAsync("key",null,"val").get());
+    cache.put("key","val");
+    assertFalse(data.casAsync("key",null,"wrongVal").get());
+    assertEquals("val",cache.get("key"));
+    assertTrue(data.casAsync("key",null,"val").get());
+    assertNull(cache.get("key"));
+    assertTrue(data.casAsync("key","val",null).get());
+    assertEquals("val",cache.get("key"));
+    assertFalse(data.casAsync("key","newVal",null).get());
+    assertEquals("val",cache.get("key"));
+    cache.remove("key");
+    assertFalse(data.casAsync("key","val1","val2").get());
+    cache.put("key","val2");
+    assertFalse(data.casAsync("key","val1","wrongVal").get());
+    assertEquals("val2",cache.get("key"));
+    assertTrue(data.casAsync("key","val1","val2").get());
+    assertEquals("val1",cache.get("key"));
+    cache.remove("key");
+  }
+}

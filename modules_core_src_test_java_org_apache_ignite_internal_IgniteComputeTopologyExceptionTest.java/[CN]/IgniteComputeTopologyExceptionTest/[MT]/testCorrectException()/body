@@ -1,0 +1,18 @@
+{
+  Ignite ignite=ignite(0);
+  IgniteCompute comp=ignite.compute(ignite.cluster().forRemotes()).withNoFailover();
+  stopGrid(1);
+  try {
+    comp.call(new IgniteCallable<Object>(){
+      @Override public Object call() throws Exception {
+        fail("Should not be called.");
+        return null;
+      }
+    }
+);
+    fail();
+  }
+ catch (  ClusterTopologyException e) {
+    log.info("Expected exception: " + e);
+  }
+}

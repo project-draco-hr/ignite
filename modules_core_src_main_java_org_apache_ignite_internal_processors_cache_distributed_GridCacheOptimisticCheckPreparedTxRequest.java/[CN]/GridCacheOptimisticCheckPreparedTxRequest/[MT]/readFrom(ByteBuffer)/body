@@ -1,26 +1,27 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 8:
-    IgniteUuid futId0=commState.getGridUuid();
-  if (futId0 == GRID_UUID_NOT_READ)   return false;
-futId=futId0;
-commState.idx++;
+    futId=reader.readIgniteUuid("futId");
+  if (!reader.isLastRead())   return false;
+state++;
 case 9:
-IgniteUuid miniId0=commState.getGridUuid();
-if (miniId0 == GRID_UUID_NOT_READ) return false;
-miniId=miniId0;
-commState.idx++;
+miniId=reader.readIgniteUuid("miniId");
+if (!reader.isLastRead()) return false;
+state++;
 case 10:
-GridCacheVersion nearXidVer0=commState.getCacheVersion();
-if (nearXidVer0 == CACHE_VER_NOT_READ) return false;
-nearXidVer=nearXidVer0;
-commState.idx++;
+nearXidVer=reader.readMessage("nearXidVer");
+if (!reader.isLastRead()) return false;
+state++;
 case 11:
-if (buf.remaining() < 4) return false;
-txNum=commState.getInt();
-commState.idx++;
+sys=reader.readBoolean("sys");
+if (!reader.isLastRead()) return false;
+state++;
+case 12:
+txNum=reader.readInt("txNum");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

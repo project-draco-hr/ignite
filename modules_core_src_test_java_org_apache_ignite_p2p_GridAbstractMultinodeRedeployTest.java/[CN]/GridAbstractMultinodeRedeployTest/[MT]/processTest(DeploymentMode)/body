@@ -1,0 +1,22 @@
+{
+  this.depMode=depMode;
+  try {
+    final Ignite ignite1=startGrid(1);
+    final Ignite ignite2=startGrid(2);
+    final Ignite ignite3=startGrid(3);
+    for (int i=0; i < ITERATIONS; i++) {
+      ignite1.compute().localDeployTask(loadTaskClass(),loadTaskClass().getClassLoader());
+      ignite2.compute().localDeployTask(loadTaskClass(),loadTaskClass().getClassLoader());
+      ComputeTaskFuture<Integer> fut1=executeAsync(ignite1.compute(),TASK_NAME,Arrays.asList(ignite1.cluster().localNode().id(),ignite2.cluster().localNode().id(),ignite3.cluster().localNode().id()));
+      ComputeTaskFuture<Integer> fut2=executeAsync(ignite2.compute(),TASK_NAME,Arrays.asList(ignite1.cluster().localNode().id(),ignite2.cluster().localNode().id(),ignite3.cluster().localNode().id()));
+      Integer res1=fut1.get();
+      Integer res2=fut2.get();
+      if (res1 == null || res2 == null)       throw new IgniteCheckedException("Received wrong result.");
+    }
+  }
+  finally {
+    stopGrid(1);
+    stopGrid(2);
+    stopGrid(3);
+  }
+}

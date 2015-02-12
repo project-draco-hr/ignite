@@ -1,76 +1,51 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
+switch (state) {
 case 3:
-    if (buf.remaining() < 8)     return false;
-  accessTtl=commState.getLong();
-commState.idx++;
+    accessTtl=reader.readLong("accessTtl");
+  if (!reader.isLastRead())   return false;
+state++;
 case 4:
-IgniteUuid futId0=commState.getGridUuid();
-if (futId0 == GRID_UUID_NOT_READ) return false;
-futId=futId0;
-commState.idx++;
+filterBytes=reader.readObjectArray("filterBytes",byte[].class);
+if (!reader.isLastRead()) return false;
+state++;
 case 5:
-if (commState.readSize == -1) {
-if (buf.remaining() < 4) return false;
-commState.readSize=commState.getInt();
-}
-if (commState.readSize >= 0) {
-if (keyBytes == null) keyBytes=new LinkedHashMap<>(commState.readSize,1.0f);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-if (!commState.keyDone) {
-byte[] _val=commState.getByteArray();
-if (_val == BYTE_ARR_NOT_READ) return false;
-commState.cur=_val;
-commState.keyDone=true;
-}
-if (buf.remaining() < 1) return false;
-boolean _val=commState.getBoolean();
-keyBytes.put((byte[])commState.cur,_val);
-commState.keyDone=false;
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.cur=null;
-commState.idx++;
+futId=reader.readIgniteUuid("futId");
+if (!reader.isLastRead()) return false;
+state++;
 case 6:
-IgniteUuid miniId0=commState.getGridUuid();
-if (miniId0 == GRID_UUID_NOT_READ) return false;
-miniId=miniId0;
-commState.idx++;
+keyBytes=reader.readMap("keyBytes",byte[].class,boolean.class,true);
+if (!reader.isLastRead()) return false;
+state++;
 case 7:
-if (buf.remaining() < 1) return false;
-readThrough=commState.getBoolean();
-commState.idx++;
+miniId=reader.readIgniteUuid("miniId");
+if (!reader.isLastRead()) return false;
+state++;
 case 8:
-if (buf.remaining() < 1) return false;
-reload=commState.getBoolean();
-commState.idx++;
+readThrough=reader.readBoolean("readThrough");
+if (!reader.isLastRead()) return false;
+state++;
 case 9:
-if (buf.remaining() < 8) return false;
-topVer=commState.getLong();
-commState.idx++;
+reload=reader.readBoolean("reload");
+if (!reader.isLastRead()) return false;
+state++;
 case 10:
-GridCacheVersion ver0=commState.getCacheVersion();
-if (ver0 == CACHE_VER_NOT_READ) return false;
-ver=ver0;
-commState.idx++;
+subjId=reader.readUuid("subjId");
+if (!reader.isLastRead()) return false;
+state++;
 case 11:
-UUID subjId0=commState.getUuid();
-if (subjId0 == UUID_NOT_READ) return false;
-subjId=subjId0;
-commState.idx++;
+taskNameHash=reader.readInt("taskNameHash");
+if (!reader.isLastRead()) return false;
+state++;
 case 12:
-if (buf.remaining() < 4) return false;
-taskNameHash=commState.getInt();
-commState.idx++;
+topVer=reader.readLong("topVer");
+if (!reader.isLastRead()) return false;
+state++;
 case 13:
-if (buf.remaining() < 1) return false;
-skipVals=commState.getBoolean();
-commState.idx++;
+ver=reader.readMessage("ver");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

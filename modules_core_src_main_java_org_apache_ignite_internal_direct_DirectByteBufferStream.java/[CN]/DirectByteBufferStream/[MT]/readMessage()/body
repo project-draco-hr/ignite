@@ -1,0 +1,19 @@
+{
+  if (!msgTypeDone) {
+    if (!buf.hasRemaining()) {
+      lastFinished=false;
+      return null;
+    }
+    byte type=readByte();
+    msg=type == Byte.MIN_VALUE ? null : msgFactory.create(type);
+    msgTypeDone=true;
+  }
+  lastFinished=msg == null || msg.readFrom(buf);
+  if (lastFinished) {
+    MessageAdapter msg0=msg;
+    msgTypeDone=false;
+    msg=null;
+    return (T)msg0;
+  }
+ else   return null;
+}

@@ -1,24 +1,24 @@
 {
-  IgniteEx grid=grid(0);
-  CacheDistributionMode distroMode=grid.cache(null).configuration().getDistributionMode();
+  IgniteEx ignite=grid(0);
+  CacheDistributionMode distroMode=ignite.jcache(null).getConfiguration(CacheConfiguration.class).getDistributionMode();
   if (distroMode == CacheDistributionMode.NEAR_ONLY || distroMode == CacheDistributionMode.CLIENT_ONLY) {
     if (gridCount() < 2)     return;
-    grid=grid(1);
+    ignite=grid(1);
   }
-  CacheProjection<Integer,Integer> cache=grid.cache(null).projection(Integer.class,Integer.class);
+  IgniteCache<Integer,Integer> cache=ignite.jcache(null);
   int key=0;
-  List<Integer> keys=new ArrayList<>();
+  Collection<Integer> keys=new ArrayList<>();
   for (int k=0; k < 2; k++) {
-    while (!grid.cache(null).affinity().isPrimary(grid.localNode(),key))     key++;
+    while (!ignite.affinity(null).isPrimary(ignite.localNode(),key))     key++;
     keys.add(key);
     key++;
   }
-  System.out.println(keys);
+  info("Keys: " + keys);
   for (  Integer k : keys)   cache.put(k,k);
   cache.clear();
   for (int g=0; g < gridCount(); g++) {
     Ignite grid0=grid(g);
-    grid0.cache(null).projection(Integer.class,Integer.class).removeAll();
-    assertTrue(grid0.cache(null).isEmpty());
+    grid0.jcache(null).removeAll();
+    assertTrue(grid0.jcache(null).localSize() == 0);
   }
 }

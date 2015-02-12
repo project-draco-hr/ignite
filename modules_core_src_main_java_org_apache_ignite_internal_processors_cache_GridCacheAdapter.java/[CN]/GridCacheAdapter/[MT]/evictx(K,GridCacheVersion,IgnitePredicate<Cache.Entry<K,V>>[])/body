@@ -1,0 +1,19 @@
+{
+  if (ctx.portableEnabled()) {
+    try {
+      key=(K)ctx.marshalToPortable(key);
+    }
+ catch (    IgniteException e) {
+      throw new IgniteException(e);
+    }
+  }
+  GridCacheEntryEx<K,V> entry=peekEx(key);
+  if (entry == null)   return true;
+  try {
+    return ctx.evicts().evict(entry,ver,true,filter);
+  }
+ catch (  IgniteCheckedException ex) {
+    U.error(log,"Failed to evict entry from cache: " + entry,ex);
+    return false;
+  }
+}

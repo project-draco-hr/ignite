@@ -1,0 +1,17 @@
+{
+  IgniteCache<String,Integer> cache=jcache();
+  Set<String> keys=new HashSet<>(primaryKeysForCache(cache,2));
+  for (  String key : keys)   assertNull(cache.localPeek(key,CachePeekMode.ONHEAP));
+  Map<String,Integer> vals=new HashMap<>();
+  int i=0;
+  for (  String key : keys) {
+    cache.put(key,i);
+    vals.put(key,i);
+    i++;
+  }
+  for (  String key : keys)   assertEquals(vals.get(key),cache.localPeek(key,CachePeekMode.ONHEAP));
+  cache.clear();
+  for (  String key : keys)   assertNull(cache.localPeek(key,CachePeekMode.ONHEAP));
+  loadAll(cache,keys,true);
+  for (  String key : keys)   assertEquals(vals.get(key),cache.localPeek(key,CachePeekMode.ONHEAP));
+}

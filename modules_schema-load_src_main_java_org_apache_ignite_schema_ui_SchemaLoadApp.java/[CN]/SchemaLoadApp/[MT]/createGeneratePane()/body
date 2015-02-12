@@ -8,18 +8,24 @@
   TableColumn<PojoDescriptor,Boolean> useCol=customColumn("Schema / Table","use","If checked then this table will be used for XML and POJOs generation",PojoDescriptorCell.cellFactory());
   TableColumn<PojoDescriptor,String> keyClsCol=textColumn("Key Class Name","keyClassName","Key class name",new TextColumnValidator<PojoDescriptor>(){
     @Override public boolean valid(    PojoDescriptor rowVal,    String newVal){
-      return checkClassName(rowVal,newVal,true);
+      boolean valid=checkClassName(rowVal,newVal,true);
+      if (valid)       rowVal.keyClassName(newVal);
+      return valid;
     }
   }
 );
   TableColumn<PojoDescriptor,String> valClsCol=textColumn("Value Class Name","valueClassName","Value class name",new TextColumnValidator<PojoDescriptor>(){
     @Override public boolean valid(    PojoDescriptor rowVal,    String newVal){
-      return checkClassName(rowVal,newVal,false);
+      boolean valid=checkClassName(rowVal,newVal,true);
+      if (valid)       rowVal.valueClassName(newVal);
+      return valid;
     }
   }
 );
   pojosTbl=tableView("Tables not found in database",useCol,keyClsCol,valClsCol);
   TableColumn<PojoField,Boolean> useFldCol=customColumn("Use","use","Check to use this field for XML and POJO generation\n" + "Note that NOT NULL columns cannot be unchecked",PojoFieldUseCell.cellFactory());
+  useFldCol.setMinWidth(50);
+  useFldCol.setMaxWidth(50);
   TableColumn<PojoField,Boolean> keyCol=booleanColumn("Key","key","Check to include this field into key object");
   TableColumn<PojoField,Boolean> akCol=booleanColumn("AK","affinityKey","Check to annotate key filed with @CacheAffinityKeyMapped annotation in generated POJO class\n" + "Note that a class can have only ONE key field annotated with @CacheAffinityKeyMapped annotation");
   TableColumn<PojoField,String> dbNameCol=tableColumn("DB Name","dbName","Field name in database");
@@ -30,6 +36,7 @@
         MessageBox.warningDialog(owner,"Java name must be unique!");
         return false;
       }
+      rowVal.javaName(newVal);
       return true;
     }
   }
@@ -76,8 +83,10 @@
       boolean isFields="Java names".equals(sel) && curTbl == fieldsTbl;
       String src=isFields ? "fields" : "tables";
       String target="\"" + sel + "\"";
-      Collection<PojoDescriptor> selPojos=isFields ? Collections.singleton(curPojo) : pojosTbl.getSelectionModel().getSelectedItems();
-      if (selPojos.isEmpty()) {
+      Collection<PojoDescriptor> selPojos=pojosTbl.getSelectionModel().getSelectedItems();
+      Collection<PojoField> selFields=fieldsTbl.getSelectionModel().getSelectedItems();
+      boolean isEmpty=isFields ? selFields.isEmpty() : selPojos.isEmpty();
+      if (isEmpty) {
         MessageBox.warningDialog(owner,"Please select " + src + " to rename "+ target+ "!");
         return;
       }
@@ -93,7 +102,8 @@ case 1:
       renameValueClassNames(selPojos,regex,replace);
     break;
 default :
-  renameJavaNames(selPojos,regex,replace);
+  if (isFields)   renameFieldsJavaNames(selFields,regex,replace);
+ else   renamePojosJavaNames(selPojos,regex,replace);
 }
 }
  catch (Exception e) {
@@ -101,14 +111,16 @@ MessageBox.errorDialog(owner,"Failed to rename " + target + "!",e);
 }
 }
 }
-),button("Reset Selected","Revert changes for selected items to initial values",new EventHandler<ActionEvent>(){
+),button("Reset Selected","Revert changes for selected items to initial auto-generated values",new EventHandler<ActionEvent>(){
 @Override public void handle(ActionEvent evt){
 String sel=replaceCb.getSelectionModel().getSelectedItem();
-boolean renFields="Java names".equals(sel);
-String src=(renFields && curTbl == fieldsTbl ? "fields" : "tables");
+boolean isFields="Java names".equals(sel) && curTbl == fieldsTbl;
+String src=isFields ? "fields" : "tables";
 String target="\"" + sel + "\"";
 Collection<PojoDescriptor> selPojos=pojosTbl.getSelectionModel().getSelectedItems();
-if (selPojos.isEmpty()) {
+Collection<PojoField> selFields=fieldsTbl.getSelectionModel().getSelectedItems();
+boolean isEmpty=isFields ? selFields.isEmpty() : selPojos.isEmpty();
+if (isEmpty) {
 MessageBox.warningDialog(owner,"Please select " + src + "to revert "+ target+ "!");
 return;
 }
@@ -121,7 +133,8 @@ case 1:
 revertValueClassNames(selPojos);
 break;
 default :
-revertJavaNames(selPojos);
+if (isFields) revertFieldsJavaNames(selFields);
+ else revertPojosJavaNames(selPojos);
 }
 }
 }

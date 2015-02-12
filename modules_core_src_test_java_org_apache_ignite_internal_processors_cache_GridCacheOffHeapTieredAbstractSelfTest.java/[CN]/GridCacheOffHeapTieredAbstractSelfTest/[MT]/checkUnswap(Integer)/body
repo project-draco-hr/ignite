@@ -1,18 +1,18 @@
 {
-  GridCache<Integer,Integer> c=grid(0).cache(null);
+  IgniteCache<Integer,Integer> c=grid(0).jcache(null);
   for (int i=0; i < gridCount(); i++) {
-    assertEquals("Unexpected entries for grid: " + i,0,grid(i).cache(null).offHeapEntriesCount());
-    assertEquals("Unexpected offheap size for grid: " + i,0,grid(i).cache(null).offHeapAllocatedSize());
+    assertEquals("Unexpected entries for grid: " + i,0,internalCache(i).offHeapEntriesCount());
+    assertEquals("Unexpected offheap size for grid: " + i,0,internalCache(i).offHeapAllocatedSize());
   }
-  assertNull(c.peek(key));
+  assertNull(c.localPeek(key,CachePeekMode.ONHEAP));
   c.put(key,key);
-  assertNull(c.peek(key));
+  assertNull(c.localPeek(key,CachePeekMode.ONHEAP));
   assertEquals(key,c.get(key));
-  assertNull(c.peek(key));
-  assertTrue(c.removex(key));
-  assertNull(c.peek(key));
+  assertNull(c.localPeek(key,CachePeekMode.ONHEAP));
+  assertTrue(c.remove(key));
+  assertNull(c.localPeek(key,CachePeekMode.ONHEAP));
   for (int i=0; i < gridCount(); i++) {
-    assertEquals("Unexpected entries for grid: " + i,0,grid(i).cache(null).offHeapEntriesCount());
-    assertEquals("Unexpected offheap size for grid: " + i,0,grid(i).cache(null).offHeapAllocatedSize());
+    assertEquals("Unexpected entries for grid: " + i,0,internalCache(i).offHeapEntriesCount());
+    assertEquals("Unexpected offheap size for grid: " + i,0,internalCache(i).offHeapAllocatedSize());
   }
 }

@@ -1,23 +1,26 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 8:
-    if (!commState.putGridUuid(futId))     return false;
-  commState.idx++;
+    if (!writer.writeIgniteUuid("futId",futId))     return false;
+  state++;
 case 9:
-if (!commState.putGridUuid(miniId)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("miniId",miniId)) return false;
+state++;
 case 10:
-if (!commState.putCacheVersion(nearXidVer)) return false;
-commState.idx++;
+if (!writer.writeMessage("nearXidVer",nearXidVer)) return false;
+state++;
 case 11:
-if (!commState.putInt(txNum)) return false;
-commState.idx++;
+if (!writer.writeBoolean("sys",sys)) return false;
+state++;
+case 12:
+if (!writer.writeInt("txNum",txNum)) return false;
+state++;
 }
 return true;
 }

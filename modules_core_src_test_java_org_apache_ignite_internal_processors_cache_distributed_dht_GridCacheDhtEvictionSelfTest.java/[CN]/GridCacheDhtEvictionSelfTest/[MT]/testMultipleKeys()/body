@@ -18,23 +18,20 @@
     assertEquals(val,dhtBackup.peek(key));
   }
   final AtomicInteger cntBackup=new AtomicInteger();
-  IgniteFuture<IgniteEvent> futBackup=waitForLocalEvent(backupIgnite.events(),new P1<IgniteEvent>(){
-    @Override public boolean apply(    IgniteEvent e){
+  IgniteFuture<Event> futBackup=waitForLocalEvent(backupIgnite.events(),new P1<Event>(){
+    @Override public boolean apply(    Event e){
       return e.node().id().equals(backupIgnite.cluster().localNode().id()) && cntBackup.incrementAndGet() == keyCnt;
     }
   }
 ,EVT_CACHE_ENTRY_EVICTED);
   final AtomicInteger cntPrimary=new AtomicInteger();
-  IgniteFuture<IgniteEvent> futPrimary=waitForLocalEvent(primaryIgnite.events(),new P1<IgniteEvent>(){
-    @Override public boolean apply(    IgniteEvent e){
+  IgniteFuture<Event> futPrimary=waitForLocalEvent(primaryIgnite.events(),new P1<Event>(){
+    @Override public boolean apply(    Event e){
       return e.node().id().equals(primaryIgnite.cluster().localNode().id()) && cntPrimary.incrementAndGet() == keyCnt;
     }
   }
 ,EVT_CACHE_ENTRY_EVICTED);
-  for (  Integer key : keys) {
-    boolean evicted=primaryIgnite.cache(null).evict(key);
-    assert evicted;
-  }
+  for (  Integer key : keys)   primaryIgnite.jcache(null).localEvict(Collections.<Object>singleton(key));
   futBackup.get(3000);
   futPrimary.get(3000);
   info("nearBackupSize: " + nearBackup.size());

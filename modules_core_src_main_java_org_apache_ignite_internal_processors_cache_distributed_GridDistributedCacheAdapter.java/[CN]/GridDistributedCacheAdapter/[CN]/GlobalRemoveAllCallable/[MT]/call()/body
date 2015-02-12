@@ -1,23 +1,30 @@
 {
-  final IgniteKernal grid=(IgniteKernal)ignite;
-  final GridCache<K,V> cache=grid.cachex(cacheName);
-  GridCacheAdapter<K,V> cacheAdapter=grid.context().cache().internalCache(cacheName);
+  GridCacheAdapter<K,V> cacheAdapter=((IgniteKernal)ignite).context().cache().internalCache(cacheName);
   final GridCacheContext<K,V> ctx=cacheAdapter.context();
-  if (ctx.affinity().affinityTopologyVersion() != topVer)   return null;
-  if (cacheAdapter instanceof GridNearCacheAdapter)   cacheAdapter=((GridNearCacheAdapter<K,V>)cacheAdapter).dht();
-  GridDhtCacheAdapter<K,V> dht=(GridDhtCacheAdapter<K,V>)cacheAdapter;
-  Collection<K> keys=new ArrayList<>();
-  for (  GridDhtLocalPartition<K,V> locPart : dht.topology().currentLocalPartitions()) {
-    if (!locPart.isEmpty() && locPart.primary(topVer)) {
-      for (      GridDhtCacheEntry<K,V> o : locPart.entries()) {
-        keys.add(o.key());
-        if (keys.size() >= REMOVE_ALL_BATCH_SIZE) {
-          cache.removeAll(keys);
-          keys.clear();
+  ctx.affinity().affinityReadyFuture(topVer).get();
+  ctx.gate().enter();
+  try {
+    if (ctx.affinity().affinityTopologyVersion() != topVer)     return null;
+    GridDhtCacheAdapter<K,V> dht;
+    if (cacheAdapter instanceof GridNearCacheAdapter)     dht=((GridNearCacheAdapter<K,V>)cacheAdapter).dht();
+ else     dht=(GridDhtCacheAdapter<K,V>)cacheAdapter;
+    try (IgniteDataLoader<K,V> dataLdr=ignite.dataLoader(cacheName)){
+      dataLdr.updater(GridDataLoadCacheUpdaters.<K,V>batched());
+      for (      GridDhtLocalPartition<K,V> locPart : dht.topology().currentLocalPartitions()) {
+        if (!locPart.isEmpty() && locPart.primary(topVer)) {
+          for (          GridDhtCacheEntry<K,V> o : locPart.entries()) {
+            if (!o.obsoleteOrDeleted())             dataLdr.removeData(o.key());
+          }
         }
       }
+      Iterator<Cache.Entry<K,V>> it=dht.context().swap().offheapIterator(true,false,topVer);
+      while (it.hasNext())       dataLdr.removeData(it.next().getKey());
+      it=dht.context().swap().swapIterator(true,false,topVer);
+      while (it.hasNext())       dataLdr.removeData(it.next().getKey());
     }
+   }
+  finally {
+    ctx.gate().leave();
   }
-  if (!keys.isEmpty())   cache.removeAll(keys);
   return null;
 }
