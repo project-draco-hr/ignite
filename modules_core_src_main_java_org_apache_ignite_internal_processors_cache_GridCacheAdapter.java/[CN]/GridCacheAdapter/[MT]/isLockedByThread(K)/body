@@ -1,6 +1,16 @@
 {
   A.notNull(key,"key");
   if (keyCheck)   validateCacheKey(key);
-  GridCacheEntryEx<K,V> entry=peekEx(key);
-  return entry != null && entry.wrap(false).isLockedByThread();
+  try {
+    GridCacheEntryEx<K,V> e=entry0(key,ctx.discovery().topologyVersion(),false,false);
+    if (e == null)     return false;
+    if (e.isDht() && CU.isNearEnabled(ctx)) {
+      GridCache<K,V> near=ctx.isDht() ? ctx.dht().near() : ctx.near();
+      return near.isLockedByThread(key) || e.lockedByThread();
+    }
+    return e.lockedByThread();
+  }
+ catch (  GridCacheEntryRemovedException ignore) {
+    return false;
+  }
 }
