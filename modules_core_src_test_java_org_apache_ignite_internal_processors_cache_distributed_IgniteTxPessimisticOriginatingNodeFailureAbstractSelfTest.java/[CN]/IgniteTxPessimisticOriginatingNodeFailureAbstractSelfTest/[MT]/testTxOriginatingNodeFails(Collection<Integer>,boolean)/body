@@ -7,7 +7,7 @@
   final Map<Integer,String> map=new HashMap<>();
   final String initVal="initialValue";
   for (  Integer key : keys) {
-    grid(originatingNode()).cache(null).put(key,initVal);
+    grid(originatingNode()).jcache(null).put(key,initVal);
     map.put(key,String.valueOf(key));
   }
   Map<Integer,Collection<ClusterNode>> nodeMap=new HashMap<>();
@@ -25,9 +25,9 @@
   final IgniteEx originatingNodeGrid=grid(originatingNode());
   GridTestUtils.runAsync(new Callable<Void>(){
     @Override public Void call() throws Exception {
-      GridCache<Integer,String> cache=originatingNodeGrid.cache(null);
+      IgniteCache<Integer,String> cache=originatingNodeGrid.jcache(null);
       assertNotNull(cache);
-      IgniteTx tx=cache.txStart();
+      IgniteTx tx=originatingNodeGrid.transactions().txStart();
       try {
         cache.putAll(map);
         info("Before commitAsync");
@@ -73,9 +73,9 @@
  */
         @IgniteInstanceResource private Ignite ignite;
         @Override public Void call() throws Exception {
-          GridCache<Integer,String> cache=ignite.cache(null);
+          IgniteCache<Integer,String> cache=ignite.jcache(null);
           assertNotNull(cache);
-          assertEquals("Failed to check entry value on node: " + checkNodeId,fullFailure ? initVal : val,cache.peek(key));
+          assertEquals("Failed to check entry value on node: " + checkNodeId,fullFailure ? initVal : val,cache.localPeek(key,CachePeekMode.ONHEAP));
           return null;
         }
       }
@@ -83,6 +83,6 @@
     }
   }
   for (  Map.Entry<Integer,String> e : map.entrySet()) {
-    for (    Ignite g : G.allGrids())     assertEquals(fullFailure ? initVal : e.getValue(),g.cache(null).get(e.getKey()));
+    for (    Ignite g : G.allGrids())     assertEquals(fullFailure ? initVal : e.getValue(),g.jcache(null).get(e.getKey()));
   }
 }

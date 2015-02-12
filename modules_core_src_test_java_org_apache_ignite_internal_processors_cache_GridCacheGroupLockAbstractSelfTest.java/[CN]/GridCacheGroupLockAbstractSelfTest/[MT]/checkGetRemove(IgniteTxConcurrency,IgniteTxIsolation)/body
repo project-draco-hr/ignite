@@ -4,17 +4,17 @@
   UUID affinityKey=primaryKeyForCache(grid(0));
   CacheAffinityKey<String> key1=new CacheAffinityKey<>("key1",affinityKey);
   CacheAffinityKey<String> key2=new CacheAffinityKey<>("key2",affinityKey);
-  GridCache<CacheAffinityKey<String>,String> cache=grid(0).cache(null);
+  IgniteCache<CacheAffinityKey<String>,String> cache=grid(0).jcache(null);
   cache.putAll(F.asMap(key1,"val1",key2,"val2"));
   for (int i=0; i < gridCount(); i++) {
     Ignite g=grid(i);
-    GridCache<Object,Object> gCache=g.cache(null);
-    if (gCache.affinity().isPrimaryOrBackup(g.cluster().localNode(),key1))     assertEquals("For index: " + i,"val1",gCache.peek(key1));
-    if (gCache.affinity().isPrimaryOrBackup(g.cluster().localNode(),key2))     assertEquals("For index: " + i,"val2",gCache.peek(key2));
+    IgniteCache<Object,Object> gCache=g.jcache(null);
+    if (g.affinity(null).isPrimaryOrBackup(g.cluster().localNode(),key1))     assertEquals("For index: " + i,"val1",gCache.localPeek(key1,CachePeekMode.ONHEAP));
+    if (g.affinity(null).isPrimaryOrBackup(g.cluster().localNode(),key2))     assertEquals("For index: " + i,"val2",gCache.localPeek(key2,CachePeekMode.ONHEAP));
   }
   grid(0).events().localListen(locks,EVT_CACHE_OBJECT_LOCKED);
   grid(0).events().localListen(unlocks,EVT_CACHE_OBJECT_UNLOCKED);
-  try (IgniteTx tx=cache.txStartAffinity(affinityKey,concurrency,isolation,0,2)){
+  try (IgniteTx tx=grid(0).transactions().txStartAffinity(null,affinityKey,concurrency,isolation,0,2)){
     if (concurrency == PESSIMISTIC)     assertTrue("Failed to wait for lock events: " + affinityKey,locks.awaitKeys(WAIT_TIMEOUT,affinityKey));
  else     assertEquals("Unexpected number of lock events: " + locks.affectedKeys(),0,locks.affectedKeys().size());
     assertEquals("Unexpected number of unlock events: " + unlocks.affectedKeys(),0,unlocks.affectedKeys().size());
