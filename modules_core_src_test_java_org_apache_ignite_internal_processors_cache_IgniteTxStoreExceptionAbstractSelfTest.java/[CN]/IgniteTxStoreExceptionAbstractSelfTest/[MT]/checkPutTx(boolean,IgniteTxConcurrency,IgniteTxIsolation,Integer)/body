@@ -1,11 +1,11 @@
 {
   assertTrue(keys.length > 0);
   info("Test transaction [concurrency=" + concurrency + ", isolation="+ isolation+ ']');
-  GridCache<Integer,Integer> cache=grid(0).cache(null);
+  IgniteCache<Integer,Integer> cache=grid(0).jcache(null);
   if (putBefore) {
     store.forceFail(false);
     info("Start transaction.");
-    try (IgniteTx tx=cache.txStart(concurrency,isolation)){
+    try (IgniteTx tx=grid(0).transactions().txStart(concurrency,isolation)){
       for (      Integer key : keys) {
         info("Put " + key);
         cache.put(key,1);
@@ -15,12 +15,12 @@
     }
    }
   for (int i=0; i < gridCount(); i++) {
-    for (    Integer key : keys)     grid(i).cache(null).get(key);
+    for (    Integer key : keys)     grid(i).jcache(null).get(key);
   }
   store.forceFail(true);
   try {
     info("Start transaction.");
-    try (IgniteTx tx=cache.txStart(concurrency,isolation)){
+    try (IgniteTx tx=grid(0).transactions().txStart(concurrency,isolation)){
       for (      Integer key : keys) {
         info("Put " + key);
         cache.put(key,2);

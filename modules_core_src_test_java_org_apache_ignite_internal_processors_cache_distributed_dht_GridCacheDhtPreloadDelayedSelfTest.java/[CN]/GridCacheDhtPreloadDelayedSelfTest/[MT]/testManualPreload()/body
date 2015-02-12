@@ -2,14 +2,14 @@
   delay=-1;
   Ignite g0=startGrid(0);
   int cnt=KEY_CNT;
-  GridCache<String,Integer> c0=g0.cache(null);
+  IgniteCache<String,Integer> c0=g0.jcache(null);
   for (int i=0; i < cnt; i++)   c0.put(Integer.toString(i),i);
   Ignite g1=startGrid(1);
   Ignite g2=startGrid(2);
-  GridCache<String,Integer> c1=g1.cache(null);
-  GridCache<String,Integer> c2=g2.cache(null);
-  for (int i=0; i < cnt; i++)   assertNull(c1.peek(Integer.toString(i)));
-  for (int i=0; i < cnt; i++)   assertNull(c2.peek(Integer.toString(i)));
+  IgniteCache<String,Integer> c1=g1.jcache(null);
+  IgniteCache<String,Integer> c2=g2.jcache(null);
+  for (int i=0; i < cnt; i++)   assertNull(c1.localPeek(Integer.toString(i),CachePeekMode.ONHEAP));
+  for (int i=0; i < cnt; i++)   assertNull(c2.localPeek(Integer.toString(i),CachePeekMode.ONHEAP));
   final CountDownLatch l1=new CountDownLatch(1);
   final CountDownLatch l2=new CountDownLatch(1);
   g1.events().localListen(new IgnitePredicate<Event>(){
@@ -31,12 +31,12 @@
   GridDhtCacheAdapter<String,Integer> d1=dht(1);
   GridDhtCacheAdapter<String,Integer> d2=dht(2);
   checkMaps(false,d0,d1,d2);
-  c1.forceRepartition();
+  internalCache(c1).forceRepartition();
   l1.await();
   info("Cache1 is repartitioned.");
   checkMaps(false,d0,d1,d2);
   info("Beginning to wait for cache2 repartition.");
-  c2.forceRepartition();
+  internalCache(c2).forceRepartition();
   l2.await();
   info("Cache2 is repartitioned.");
   checkMaps(true,d0,d1,d2);

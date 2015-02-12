@@ -4,17 +4,17 @@
     final int PUT_THREADS=50;
     final CountDownLatch stopLatch=new CountDownLatch(1);
     final CountDownLatch readyLatch=new CountDownLatch(PUT_THREADS);
-    final GridCache<Integer,Integer> cache=grid(0).cache(null);
+    final IgniteCache<Integer,Integer> cache=grid(0).jcache(null);
     assertNotNull(cache);
-    assertEquals(atomic ? ATOMIC : TRANSACTIONAL,cache.configuration().getAtomicityMode());
-    assertEquals(replicated ? REPLICATED : PARTITIONED,cache.configuration().getCacheMode());
+    assertEquals(atomic ? ATOMIC : TRANSACTIONAL,cache.getConfiguration(CacheConfiguration.class).getAtomicityMode());
+    assertEquals(replicated ? REPLICATED : PARTITIONED,cache.getConfiguration(CacheConfiguration.class).getCacheMode());
     Collection<IgniteInternalFuture<?>> putFuts=new ArrayList<>();
     for (int j=0; j < PUT_THREADS; j++) {
       final int key=j;
       putFuts.add(GridTestUtils.runAsync(new Callable<Void>(){
         @Override public Void call() throws Exception {
           if (startTx) {
-            try (IgniteTx tx=cache.txStart()){
+            try (IgniteTx tx=grid(0).transactions().txStart()){
               cache.put(key,key);
               readyLatch.countDown();
               stopLatch.await();
