@@ -69,8 +69,10 @@ synchronized (this) {
     }
     if (ret != null && expiryPlc != null) {
       long ttl=expiryPlc.forAccess();
-      updateTtl(ttl);
-      expiryPlc.ttlUpdated(key(),getOrMarshalKeyBytes(),version(),hasReaders() ? ((GridDhtCacheEntry)this).readers() : null);
+      if (ttl != CU.TTL_NOT_CHANGED) {
+        updateTtl(ttl);
+        expiryPlc.ttlUpdated(key(),getOrMarshalKeyBytes(),version(),hasReaders() ? ((GridDhtCacheEntry)this).readers() : null);
+      }
     }
   }
   if (!cctx.isAll(this,filter))   return CU.<V>failed(failFast,ret);
