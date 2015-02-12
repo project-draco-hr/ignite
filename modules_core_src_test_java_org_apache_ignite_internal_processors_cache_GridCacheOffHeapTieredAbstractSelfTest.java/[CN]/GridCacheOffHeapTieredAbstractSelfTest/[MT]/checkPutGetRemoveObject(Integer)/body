@@ -1,15 +1,15 @@
 {
-  GridCache<Integer,TestValue> c=grid(0).cache(null);
+  IgniteCache<Integer,TestValue> c=grid(0).jcache(null);
   checkValue(key,null);
   TestValue val=new TestValue(new byte[10]);
-  assertNull(c.put(key,val));
+  assertNull(c.getAndPut(key,val));
   checkValue(key,val);
   TestValue val2=new TestValue(new byte[10]);
   if (portableEnabled())   c.put(key,val);
- else   assertEquals(val,c.put(key,val));
+ else   assertEquals(val,c.getAndPut(key,val));
   checkValue(key,val2);
   if (portableEnabled())   c.remove(key);
- else   assertEquals(val2,c.remove(key));
+ else   assertEquals(val2,c.getAndRemove(key));
   checkValue(key,null);
   if (atomicityMode() == TRANSACTIONAL) {
     checkPutGetRemoveTx(key,PESSIMISTIC);

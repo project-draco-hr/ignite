@@ -1,16 +1,11 @@
 {
   A.notNull(o,"o");
   boolean rmv=false;
-  for (Iterator<CacheEntry<K,V>> it=map.values().iterator(); it.hasNext(); ) {
-    CacheEntry<K,V> e=it.next();
+  for (Iterator<Cache.Entry<K,V>> it=map.values().iterator(); it.hasNext(); ) {
+    Cache.Entry<K,V> e=it.next();
     if (F.isAll(e,filter) && F.eq(o,e.getValue())) {
       it.remove();
-      try {
-        e.removex();
-      }
- catch (      IgniteCheckedException ex) {
-        throw new IgniteException(ex);
-      }
+      ctx.grid().jcache(ctx.name()).remove(e.getKey(),e.getValue());
       rmv=true;
     }
   }

@@ -2,16 +2,16 @@
   GridClientData[] datas=new GridClientData[]{client.data(),client.data(CACHE_NAME)};
   assertNotNull(datas[0]);
   assertNotNull(datas[1]);
-  GridCache[] caches=new GridCache[]{grid().cache(null),grid().cache(CACHE_NAME)};
+  IgniteCache[] caches=new IgniteCache[]{grid().jcache(null),grid().jcache(CACHE_NAME)};
   for (int i=0; i < datas.length; i++) {
     GridClientData data=datas[i];
-    GridCache<String,String> cache=(GridCache<String,String>)caches[i];
+    IgniteCache<String,String> cache=(IgniteCache<String,String>)caches[i];
     assertFalse(data.cas("key",null,null));
-    assertTrue(cache.putx("key","val"));
+    cache.put("key","val");
     assertTrue(data.cas("key",null,null));
     assertNull(cache.get("key"));
     assertFalse(data.cas("key",null,"val"));
-    assertTrue(cache.putx("key","val"));
+    cache.put("key","val");
     assertFalse(data.cas("key",null,"wrongVal"));
     assertEquals("val",cache.get("key"));
     assertTrue(data.cas("key",null,"val"));
@@ -20,20 +20,20 @@
     assertEquals("val",cache.get("key"));
     assertFalse(data.cas("key","newVal",null));
     assertEquals("val",cache.get("key"));
-    assertTrue(cache.removex("key"));
+    cache.remove("key");
     assertFalse(data.cas("key","val1","val2"));
-    assertTrue(cache.putx("key","val2"));
+    cache.put("key","val2");
     assertFalse(data.cas("key","val1","wrongVal"));
     assertEquals("val2",cache.get("key"));
     assertTrue(data.cas("key","val1","val2"));
     assertEquals("val1",cache.get("key"));
-    assertTrue(cache.removex("key"));
+    cache.remove("key");
     assertFalse(data.casAsync("key",null,null).get());
-    assertTrue(cache.putx("key","val"));
+    cache.put("key","val");
     assertTrue(data.casAsync("key",null,null).get());
     assertNull(cache.get("key"));
     assertFalse(data.casAsync("key",null,"val").get());
-    assertTrue(cache.putx("key","val"));
+    cache.put("key","val");
     assertFalse(data.casAsync("key",null,"wrongVal").get());
     assertEquals("val",cache.get("key"));
     assertTrue(data.casAsync("key",null,"val").get());
@@ -42,13 +42,13 @@
     assertEquals("val",cache.get("key"));
     assertFalse(data.casAsync("key","newVal",null).get());
     assertEquals("val",cache.get("key"));
-    assertTrue(cache.removex("key"));
+    cache.remove("key");
     assertFalse(data.casAsync("key","val1","val2").get());
-    assertTrue(cache.putx("key","val2"));
+    cache.put("key","val2");
     assertFalse(data.casAsync("key","val1","wrongVal").get());
     assertEquals("val2",cache.get("key"));
     assertTrue(data.casAsync("key","val1","val2").get());
     assertEquals("val1",cache.get("key"));
-    assertTrue(cache.removex("key"));
+    cache.remove("key");
   }
 }

@@ -1,11 +1,11 @@
 {
-  GridCache<Integer,Integer> c=grid(0).cache(null);
-  IgniteTx tx=c.txStart(txConcurrency,REPEATABLE_READ);
-  assertNull(c.put(key,key));
+  IgniteCache<Integer,Integer> c=grid(0).jcache(null);
+  IgniteTx tx=grid(0).transactions().txStart(txConcurrency,REPEATABLE_READ);
+  assertNull(c.getAndPut(key,key));
   tx.commit();
   checkValue(key,key);
-  tx=c.txStart(txConcurrency,REPEATABLE_READ);
-  assertEquals(key,c.remove(key));
+  tx=grid(0).transactions().txStart(txConcurrency,REPEATABLE_READ);
+  assertEquals(key,c.getAndRemove(key));
   tx.commit();
   checkValue(key,null);
 }
