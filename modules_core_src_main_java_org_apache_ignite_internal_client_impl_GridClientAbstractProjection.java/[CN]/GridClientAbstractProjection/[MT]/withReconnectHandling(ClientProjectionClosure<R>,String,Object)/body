@@ -1,0 +1,36 @@
+{
+  GridClientDataAffinity affinity=client.affinity(cacheName);
+  if (nodes != null || affinity == null || affKey == null)   return withReconnectHandling(c);
+  try {
+    Collection<? extends GridClientNode> prjNodes=projectionNodes();
+    if (prjNodes.isEmpty())     throw new GridServerUnreachableException("Failed to get affinity node (no nodes in topology were " + "accepted by the filter): " + filter);
+    GridClientNode node=affinity.node(affKey,prjNodes);
+    for (int i=0; i < RETRY_CNT; i++) {
+      GridClientConnection conn=null;
+      try {
+        conn=client.connectionManager().connection(node);
+        return c.apply(conn,node.nodeId());
+      }
+ catch (      GridConnectionIdleClosedException e) {
+        client.connectionManager().terminateConnection(conn,node,e);
+      }
+catch (      GridClientConnectionResetException e) {
+        client.connectionManager().terminateConnection(conn,node,e);
+        if (!checkNodeAlive(node.nodeId()))         throw new GridServerUnreachableException("Failed to communicate with mapped grid node for " + "given affinity key (node left the grid) [nodeId=" + node.nodeId() + ", affKey="+ affKey+ ']',e);
+      }
+catch (      RuntimeException|Error e) {
+        if (conn != null)         client.connectionManager().terminateConnection(conn,node,e);
+        throw e;
+      }
+      U.sleep(RETRY_DELAY);
+    }
+    throw new GridServerUnreachableException("Failed to communicate with mapped grid node for given affinity " + "key (did node leave the grid?) [nodeId=" + node.nodeId() + ", affKey="+ affKey+ ']');
+  }
+ catch (  GridClientException e) {
+    return new GridClientFutureAdapter<>(e);
+  }
+catch (  IgniteInterruptedCheckedException|InterruptedException e) {
+    Thread.currentThread().interrupt();
+    return new GridClientFutureAdapter<>(new GridClientException("Interrupted when (re)trying to perform " + "request.",e));
+  }
+}

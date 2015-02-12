@@ -1,61 +1,59 @@
 {
-  commState.setBuffer(buf);
+  reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (commState.idx) {
-case 19:
-    if (buf.remaining() < 1)     return false;
-  byte isolation0=commState.getByte();
-isolation=IgniteTxIsolation.fromOrdinal(isolation0);
-commState.idx++;
-case 20:
-IgniteUuid miniId0=commState.getGridUuid();
-if (miniId0 == GRID_UUID_NOT_READ) return false;
-miniId=miniId0;
-commState.idx++;
+switch (state) {
 case 21:
-UUID nearNodeId0=commState.getUuid();
-if (nearNodeId0 == UUID_NOT_READ) return false;
-nearNodeId=nearNodeId0;
-commState.idx++;
+    isolation=reader.readEnum("isolation",IgniteTxIsolation.class);
+  if (!reader.isLastRead())   return false;
+state++;
 case 22:
-if (commState.readSize == -1) {
-if (buf.remaining() < 4) return false;
-commState.readSize=commState.getInt();
-}
-if (commState.readSize >= 0) {
-if (pendingVers == null) pendingVers=new ArrayList<>(commState.readSize);
-for (int i=commState.readItems; i < commState.readSize; i++) {
-GridCacheVersion _val=commState.getCacheVersion();
-if (_val == CACHE_VER_NOT_READ) return false;
-pendingVers.add((GridCacheVersion)_val);
-commState.readItems++;
-}
-}
-commState.readSize=-1;
-commState.readItems=0;
-commState.idx++;
+miniId=reader.readIgniteUuid("miniId");
+if (!reader.isLastRead()) return false;
+state++;
 case 23:
-if (buf.remaining() < 1) return false;
-sysInvalidate=commState.getBoolean();
-commState.idx++;
+nearNodeId=reader.readUuid("nearNodeId");
+if (!reader.isLastRead()) return false;
+state++;
 case 24:
-if (buf.remaining() < 8) return false;
-topVer=commState.getLong();
-commState.idx++;
+nearTtls=reader.readMessage("nearTtls");
+if (!reader.isLastRead()) return false;
+state++;
 case 25:
-GridCacheVersion writeVer0=commState.getCacheVersion();
-if (writeVer0 == CACHE_VER_NOT_READ) return false;
-writeVer=writeVer0;
-commState.idx++;
+nearWritesBytes=reader.readCollection("nearWritesBytes",byte[].class);
+if (!reader.isLastRead()) return false;
+state++;
 case 26:
-UUID subjId0=commState.getUuid();
-if (subjId0 == UUID_NOT_READ) return false;
-subjId=subjId0;
-commState.idx++;
+onePhaseCommit=reader.readBoolean("onePhaseCommit");
+if (!reader.isLastRead()) return false;
+state++;
 case 27:
-if (buf.remaining() < 4) return false;
-taskNameHash=commState.getInt();
-commState.idx++;
+pendingVers=reader.readCollection("pendingVers",GridCacheVersion.class);
+if (!reader.isLastRead()) return false;
+state++;
+case 28:
+subjId=reader.readUuid("subjId");
+if (!reader.isLastRead()) return false;
+state++;
+case 29:
+sysInvalidate=reader.readBoolean("sysInvalidate");
+if (!reader.isLastRead()) return false;
+state++;
+case 30:
+taskNameHash=reader.readInt("taskNameHash");
+if (!reader.isLastRead()) return false;
+state++;
+case 31:
+topVer=reader.readLong("topVer");
+if (!reader.isLastRead()) return false;
+state++;
+case 32:
+ttls=reader.readMessage("ttls");
+if (!reader.isLastRead()) return false;
+state++;
+case 33:
+writeVer=reader.readMessage("writeVer");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

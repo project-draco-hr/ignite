@@ -4,7 +4,7 @@
   info("Grid 2: " + grid(2).localNode().id());
   info("Grid 3: " + grid(3).localNode().id());
   Ignite ignite=grid(0);
-  Collection<IgniteInternalFuture<?>> futs=new LinkedList<>();
+  Collection<ComputeTaskFuture<?>> futs=new LinkedList<>();
   IgniteCompute comp=ignite.compute().withAsync();
   for (int i=0; i < jobCnt; i++) {
     comp.apply(new CX1<Integer,Void>(){
@@ -26,7 +26,7 @@
 ,i);
     futs.add(comp.future());
   }
-  for (  IgniteInternalFuture<?> fut : futs)   fut.get();
+  for (  ComputeTaskFuture<?> fut : futs)   fut.get();
   for (int i=0; i < GRID_CNT; i++) {
     info("Running iteration: " + i);
     for (int g=0; g < GRID_CNT; g++) {
@@ -34,8 +34,8 @@
       GridCacheEntryEx<Object,Object> testEntry=((IgniteKernal)grid(i)).internalCache(null).peekEx("TestKey");
       info("Entry: " + testEntry);
     }
-    CacheProjection<String,int[]> c=grid(i).cache(null).projection(String.class,int[].class);
-    try (IgniteTx tx=c.txStart(concur,isolation)){
+    IgniteCache<String,int[]> c=grid(i).jcache(null);
+    try (IgniteTx tx=grid(i).transactions().txStart(concur,isolation)){
       int[] arr=c.get("TestKey");
       assertNotNull(arr);
       assertEquals(jobCnt,arr.length);

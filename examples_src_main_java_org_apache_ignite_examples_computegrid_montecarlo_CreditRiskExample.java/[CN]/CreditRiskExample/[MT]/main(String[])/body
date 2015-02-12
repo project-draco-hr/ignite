@@ -1,0 +1,42 @@
+{
+  try (Ignite ignite=Ignition.start("examples/config/example-compute.xml")){
+    System.out.println();
+    System.out.println("Credit risk example started.");
+    Credit[] portfolio=new Credit[5000];
+    Random rnd=new Random();
+    for (int i=0; i < portfolio.length; i++) {
+      portfolio[i]=new Credit(50000 * rnd.nextDouble(),rnd.nextInt(1000),rnd.nextDouble() / 10,rnd.nextDouble() / 20 + 0.02);
+    }
+    int horizon=365;
+    int iter=10000;
+    double percentile=0.95;
+    long start=System.currentTimeMillis();
+    double crdRisk=ignite.compute().call(jobs(ignite.cluster().nodes().size(),portfolio,horizon,iter,percentile),new IgniteReducer<Double,Double>(){
+      /** 
+ * Collected values sum. 
+ */
+      private double sum;
+      /** 
+ * Collected values count. 
+ */
+      private int cnt;
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public synchronized boolean collect(      Double e){
+        sum+=e;
+        cnt++;
+        return true;
+      }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public synchronized Double reduce(){
+        return sum / cnt;
+      }
+    }
+);
+    System.out.println();
+    System.out.println("Credit risk [crdRisk=" + crdRisk + ", duration="+ (System.currentTimeMillis() - start)+ "ms]");
+  }
+ }

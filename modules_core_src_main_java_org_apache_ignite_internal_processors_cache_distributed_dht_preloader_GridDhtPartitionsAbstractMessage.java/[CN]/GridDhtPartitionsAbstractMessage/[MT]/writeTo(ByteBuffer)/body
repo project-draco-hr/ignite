@@ -1,17 +1,17 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
 case 3:
-    if (!commState.putDhtPartitionExchangeId(exchId))     return false;
-  commState.idx++;
+    if (!writer.writeMessage("exchId",exchId))     return false;
+  state++;
 case 4:
-if (!commState.putCacheVersion(lastVer)) return false;
-commState.idx++;
+if (!writer.writeMessage("lastVer",lastVer)) return false;
+state++;
 }
 return true;
 }

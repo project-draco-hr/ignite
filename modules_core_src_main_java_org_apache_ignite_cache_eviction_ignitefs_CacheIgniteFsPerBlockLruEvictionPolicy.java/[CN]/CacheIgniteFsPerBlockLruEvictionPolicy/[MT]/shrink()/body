@@ -1,0 +1,15 @@
+{
+  long maxSize=this.maxSize;
+  int maxBlocks=this.maxBlocks;
+  int cnt=queue.sizex();
+  for (int i=0; i < cnt && (maxBlocks > 0 && queue.sizex() > maxBlocks || maxSize > 0 && curSize.longValue() > maxSize); i++) {
+    EvictableEntry<GridGgfsBlockKey,byte[]> entry=queue.poll();
+    if (entry == null)     break;
+    byte[] val=peek(entry);
+    if (val != null)     changeSize(-val.length);
+    if (!entry.evict()) {
+      entry.removeMeta();
+      touch(entry);
+    }
+  }
+}

@@ -3,11 +3,11 @@
   useCache=true;
   try {
     Ignite g=startGrid();
-    final GridCache<Integer,Integer> c=g.cache(null);
+    final IgniteCache<Integer,Integer> c=g.jcache(null);
     final IgniteDataLoader<Integer,Integer> ldr=g.dataLoader(null);
     ldr.perNodeBufferSize(10);
     for (int i=0; i < 9; i++)     ldr.addData(i,i);
-    assertTrue(c.isEmpty());
+    assertTrue(c.localSize() == 0);
     multithreaded(new Callable<Void>(){
       @Override public Void call() throws Exception {
         ldr.flush();

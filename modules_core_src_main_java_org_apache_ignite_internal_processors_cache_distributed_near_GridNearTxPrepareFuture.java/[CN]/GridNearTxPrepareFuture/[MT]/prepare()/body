@@ -6,10 +6,10 @@
         try {
           if (!tx.state(PREPARING)) {
             if (tx.setRollbackOnly()) {
-              if (tx.timedOut())               onError(null,null,new IgniteTxTimeoutException("Transaction timed out and " + "was rolled back: " + this));
+              if (tx.timedOut())               onError(null,null,new IgniteTxTimeoutCheckedException("Transaction timed out and " + "was rolled back: " + this));
  else               onError(null,null,new IgniteCheckedException("Invalid transaction state for prepare " + "[state=" + tx.state() + ", tx="+ this+ ']'));
             }
- else             onError(null,null,new IgniteTxRollbackException("Invalid transaction state for " + "prepare [state=" + tx.state() + ", tx="+ this+ ']'));
+ else             onError(null,null,new IgniteTxRollbackCheckedException("Invalid transaction state for " + "prepare [state=" + tx.state() + ", tx="+ this+ ']'));
             return;
           }
           GridDiscoveryTopologySnapshot snapshot=topFut.topologySnapshot();
@@ -26,7 +26,7 @@ catch (        IgniteCheckedException e) {
           String msg="Failed to prepare transaction (will attempt rollback): " + this;
           U.error(log,msg,e);
           tx.rollbackAsync();
-          onError(null,null,new IgniteTxRollbackException(msg,e));
+          onError(null,null,new IgniteTxRollbackCheckedException(msg,e));
         }
       }
  else {

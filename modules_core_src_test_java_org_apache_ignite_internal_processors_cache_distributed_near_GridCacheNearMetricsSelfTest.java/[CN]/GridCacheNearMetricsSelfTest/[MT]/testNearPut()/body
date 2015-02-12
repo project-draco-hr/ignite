@@ -1,35 +1,36 @@
 {
   Ignite g0=grid(0);
-  GridCache<Integer,Integer> cache0=g0.cache(null);
+  IgniteCache<Integer,Integer> cache0=g0.jcache(null);
   int key;
   for (int i=0; ; i++) {
-    if (!cache0.affinity().isPrimaryOrBackup(g0.cluster().localNode(),i)) {
-      cache0.put(i,i);
+    if (!affinity(cache0).isPrimaryOrBackup(g0.cluster().localNode(),i)) {
+      cache0.getAndPut(i,i);
       cache0.get(i);
       key=i;
       info("Writes: " + cache0.metrics().getCachePuts());
       info("Reads: " + cache0.metrics().getCacheGets());
-      info("Affinity nodes: " + U.nodes2names(cache0.affinity().mapKeyToPrimaryAndBackups(i)));
+      info("Affinity nodes: " + U.nodes2names(affinity(cache0).mapKeyToPrimaryAndBackups(i)));
       break;
     }
   }
   for (int j=0; j < gridCount(); j++) {
     Ignite g=grid(j);
-    assertEquals(1,g.cache(null).metrics().getCachePuts());
-    if (g.cache(null).affinity().isPrimary(g.cluster().localNode(),key)) {
-      assertEquals(1,g.cache(null).metrics().getCacheGets());
-      assertEquals(0,g.cache(null).metrics().getCacheHits());
-      assertEquals(1,g.cache(null).metrics().getCacheMisses());
+    IgniteCache<Object,Object> jcache=g.jcache(null);
+    assertEquals(1,jcache.metrics().getCachePuts());
+    if (affinity(jcache).isPrimary(g.cluster().localNode(),key)) {
+      assertEquals(1,jcache.metrics().getCacheGets());
+      assertEquals(0,jcache.metrics().getCacheHits());
+      assertEquals(1,jcache.metrics().getCacheMisses());
     }
- else     if (g.cache(null).affinity().isBackup(g.cluster().localNode(),key)) {
-      assertEquals(0,g.cache(null).metrics().getCacheGets());
-      assertEquals(0,g.cache(null).metrics().getCacheHits());
-      assertEquals(0,g.cache(null).metrics().getCacheMisses());
+ else     if (affinity(jcache).isBackup(g.cluster().localNode(),key)) {
+      assertEquals(0,jcache.metrics().getCacheGets());
+      assertEquals(0,jcache.metrics().getCacheHits());
+      assertEquals(0,jcache.metrics().getCacheMisses());
     }
  else {
-      assertEquals(1,g.cache(null).metrics().getCacheGets());
-      assertEquals(1,g.cache(null).metrics().getCacheHits());
-      assertEquals(0,g.cache(null).metrics().getCacheMisses());
+      assertEquals(1,jcache.metrics().getCacheGets());
+      assertEquals(1,jcache.metrics().getCacheHits());
+      assertEquals(0,jcache.metrics().getCacheMisses());
     }
   }
 }

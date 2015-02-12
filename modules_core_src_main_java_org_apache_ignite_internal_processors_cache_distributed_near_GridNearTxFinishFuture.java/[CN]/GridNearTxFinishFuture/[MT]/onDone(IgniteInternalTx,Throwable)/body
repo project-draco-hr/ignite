@@ -1,0 +1,26 @@
+{
+  if ((initialized() || err != null)) {
+    if (this.tx.onePhaseCommit() && (this.tx.state() == COMMITTING))     this.tx.tmCommit();
+    Throwable th=this.err.get();
+    if (super.onDone(tx,th != null ? th : err)) {
+      if (error() instanceof IgniteTxHeuristicCheckedException) {
+        long topVer=this.tx.topologyVersion();
+        for (        IgniteTxEntry<K,V> e : this.tx.writeMap().values()) {
+          GridCacheContext<K,V> cacheCtx=e.context();
+          try {
+            if (e.op() != NOOP && !cacheCtx.affinity().localNode(e.key(),topVer)) {
+              GridCacheEntryEx<K,V> Entry=cacheCtx.cache().peekEx(e.key());
+              if (Entry != null)               Entry.invalidate(null,this.tx.xidVersion());
+            }
+          }
+ catch (          Throwable t) {
+            U.error(log,"Failed to invalidate entry.",t);
+          }
+        }
+      }
+      cctx.mvcc().removeFuture(this);
+      return true;
+    }
+  }
+  return false;
+}

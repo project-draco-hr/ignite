@@ -1,0 +1,19 @@
+{
+  log=(IgniteLogger)beans.get(IgniteLogger.class);
+  if (log == null) {
+    U.error(log,"Failed to find logger definition in application context. Stopping the router.");
+    return;
+  }
+  GridTcpRouterConfiguration tcpCfg=(GridTcpRouterConfiguration)beans.get(GridTcpRouterConfiguration.class);
+  if (tcpCfg == null)   U.warn(log,"TCP router startup skipped (configuration not found).");
+ else {
+    tcpRouter=new GridTcpRouterImpl(tcpCfg);
+    try {
+      tcpRouter.start();
+    }
+ catch (    Exception e) {
+      U.error(log,"Failed to start TCP router on port " + tcpCfg.getPort() + ": "+ e.getMessage(),e);
+      tcpRouter=null;
+    }
+  }
+}

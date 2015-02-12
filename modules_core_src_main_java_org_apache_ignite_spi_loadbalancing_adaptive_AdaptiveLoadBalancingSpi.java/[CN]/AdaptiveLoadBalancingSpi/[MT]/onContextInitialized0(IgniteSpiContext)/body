@@ -1,18 +1,18 @@
 {
   getSpiContext().addLocalEventListener(evtLsnr=new GridLocalEventListener(){
-    @Override public void onEvent(    IgniteEvent evt){
+    @Override public void onEvent(    Event evt){
 switch (evt.type()) {
 case EVT_TASK_FINISHED:
 case EVT_TASK_FAILED:
 {
-          IgniteTaskEvent taskEvt=(IgniteTaskEvent)evt;
+          TaskEvent taskEvt=(TaskEvent)evt;
           taskTops.remove(taskEvt.taskSessionId());
           if (log.isDebugEnabled())           log.debug("Removed task topology from topology cache for session: " + taskEvt.taskSessionId());
           break;
         }
 case EVT_JOB_MAPPED:
 {
-        IgniteJobEvent jobEvt=(IgniteJobEvent)evt;
+        JobEvent jobEvt=(JobEvent)evt;
         IgniteBiTuple<Boolean,WeightedTopology> weightedTop=taskTops.get(jobEvt.taskSessionId());
         if (weightedTop != null)         weightedTop.set1(true);
         if (log.isDebugEnabled())         log.debug("Job has been mapped. Ignore cache for session: " + jobEvt.taskSessionId());
@@ -23,7 +23,7 @@ case EVT_NODE_FAILED:
 case EVT_NODE_JOINED:
 case EVT_NODE_LEFT:
 {
-      IgniteDiscoveryEvent discoEvt=(IgniteDiscoveryEvent)evt;
+      DiscoveryEvent discoEvt=(DiscoveryEvent)evt;
       rwLock.writeLock().lock();
       try {
 switch (evt.type()) {

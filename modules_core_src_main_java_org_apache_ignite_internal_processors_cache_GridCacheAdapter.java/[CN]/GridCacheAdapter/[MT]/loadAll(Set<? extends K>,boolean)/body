@@ -1,11 +1,14 @@
 {
   A.notNull(keys,"keys");
+  for (  Object key : keys)   A.notNull(key,"key");
   if (!ctx.store().configured())   return new GridFinishedFuture<>(ctx.kernalContext());
+  GridCacheProjectionImpl<K,V> prj=ctx.projectionPerCall();
+  ExpiryPolicy plc=prj != null ? prj.expiry() : null;
   if (replaceExisting) {
     if (ctx.store().isLocalStore()) {
-      Collection<ClusterNode> nodes=ctx.grid().forCache(name()).nodes();
+      Collection<ClusterNode> nodes=ctx.grid().forDataNodes(name()).nodes();
       if (nodes.isEmpty())       return new GridFinishedFuture<>(ctx.kernalContext());
-      return ctx.closures().callAsyncNoFailover(BROADCAST,new LoadKeysCallable<>(ctx.name(),keys,true),nodes,true);
+      return ctx.closures().callAsyncNoFailover(BROADCAST,new LoadKeysCallable<>(ctx.name(),keys,true,plc),nodes,true);
     }
  else {
       return ctx.closures().callLocalSafe(new Callable<Void>(){
@@ -18,8 +21,8 @@
     }
   }
  else {
-    Collection<ClusterNode> nodes=ctx.grid().forCache(name()).nodes();
+    Collection<ClusterNode> nodes=ctx.grid().forDataNodes(name()).nodes();
     if (nodes.isEmpty())     return new GridFinishedFuture<>(ctx.kernalContext());
-    return ctx.closures().callAsyncNoFailover(BROADCAST,new LoadKeysCallable<>(ctx.name(),keys,false),nodes,true);
+    return ctx.closures().callAsyncNoFailover(BROADCAST,new LoadKeysCallable<>(ctx.name(),keys,false,plc),nodes,true);
   }
 }

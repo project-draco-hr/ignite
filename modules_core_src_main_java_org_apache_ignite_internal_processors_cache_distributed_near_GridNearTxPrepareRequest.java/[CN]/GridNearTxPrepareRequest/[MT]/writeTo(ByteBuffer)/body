@@ -1,55 +1,35 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
+switch (state) {
+case 22:
+    if (!writer.writeIgniteUuid("futId",futId))     return false;
+  state++;
 case 23:
-    if (!commState.putGridUuid(futId))     return false;
-  commState.idx++;
+if (!writer.writeBoolean("last",last)) return false;
+state++;
 case 24:
-if (!commState.putBoolean(implicitSingle)) return false;
-commState.idx++;
+if (!writer.writeCollection("lastBackups",lastBackups,UUID.class)) return false;
+state++;
 case 25:
-if (!commState.putBoolean(last)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("miniId",miniId)) return false;
+state++;
 case 26:
-if (lastBackups != null) {
-if (commState.it == null) {
-if (!commState.putInt(lastBackups.size())) return false;
-commState.it=lastBackups.iterator();
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putUuid((UUID)commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+if (!writer.writeBoolean("near",near)) return false;
+state++;
 case 27:
-if (!commState.putGridUuid(miniId)) return false;
-commState.idx++;
+if (!writer.writeUuid("subjId",subjId)) return false;
+state++;
 case 28:
-if (!commState.putBoolean(near)) return false;
-commState.idx++;
+if (!writer.writeInt("taskNameHash",taskNameHash)) return false;
+state++;
 case 29:
-if (!commState.putBoolean(retVal)) return false;
-commState.idx++;
-case 30:
-if (!commState.putLong(topVer)) return false;
-commState.idx++;
-case 31:
-if (!commState.putUuid(subjId)) return false;
-commState.idx++;
-case 32:
-if (!commState.putInt(taskNameHash)) return false;
-commState.idx++;
+if (!writer.writeLong("topVer",topVer)) return false;
+state++;
 }
 return true;
 }

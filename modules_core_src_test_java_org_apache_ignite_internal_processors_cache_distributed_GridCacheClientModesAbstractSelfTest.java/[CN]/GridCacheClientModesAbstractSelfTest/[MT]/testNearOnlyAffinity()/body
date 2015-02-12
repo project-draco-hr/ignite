@@ -5,7 +5,7 @@
       for (int k=0; k < 10000; k++) {
         GridCache<Object,Object> cache=g.cache(null);
         String key="key" + k;
-        if (cacheMode() == PARTITIONED)         assertFalse(cache.entry(key).primary() || cache.entry(key).backup());
+        if (cacheMode() == PARTITIONED)         assertFalse(cache.affinity().isPrimaryOrBackup(g.cluster().localNode(),key));
         assertFalse(cache.affinity().mapKeyToPrimaryAndBackups(key).contains(g.cluster().localNode()));
       }
     }
@@ -15,7 +15,7 @@
       for (int k=0; k < 10000; k++) {
         GridCache<Object,Object> cache=g.cache(null);
         String key="key" + k;
-        if (cache.entry(key).primary() || cache.entry(key).backup())         foundEntry=true;
+        if (cache.affinity().isPrimaryOrBackup(g.cluster().localNode(),key))         foundEntry=true;
         if (cache.affinity().mapKeyToPrimaryAndBackups(key).contains(g.cluster().localNode()))         foundAffinityNode=true;
       }
       assertTrue("Did not found primary or backup entry for grid: " + i,foundEntry);

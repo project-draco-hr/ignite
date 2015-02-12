@@ -6,8 +6,8 @@
   }
 ;
   final GridTestKernalContext ctx=new GridTestKernalContext(log);
-  ctx.config().setExecutorService(Executors.newFixedThreadPool(1));
-  ctx.config().setSystemExecutorService(Executors.newFixedThreadPool(1));
+  ctx.setExecutorService(Executors.newFixedThreadPool(1));
+  ctx.setSystemExecutorService(Executors.newFixedThreadPool(1));
   ctx.add(new GridClosureProcessor(ctx));
   ctx.start();
   try {
@@ -19,19 +19,19 @@
       chain.get(20);
       fail("Expects timeout exception.");
     }
- catch (    IgniteFutureTimeoutException e) {
+ catch (    IgniteFutureTimeoutCheckedException e) {
       info("Expected timeout exception: " + e.getMessage());
     }
     fut.onDone("result");
     assertEquals("result",chain.get(1));
     fut=new GridFutureAdapter<>(ctx);
     chain=fut.chain(passThrough);
-    fut.onDone(new ClusterGroupEmptyException("test exception"));
+    fut.onDone(new ClusterGroupEmptyCheckedException("test exception"));
     try {
       chain.get();
       fail("Expects failed with exception.");
     }
- catch (    ClusterGroupEmptyException e) {
+ catch (    ClusterGroupEmptyCheckedException e) {
       info("Expected exception: " + e.getMessage());
     }
     fut=new GridFutureAdapter<>(ctx);

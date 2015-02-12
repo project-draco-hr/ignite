@@ -41,12 +41,12 @@ catch (    IgniteCheckedException e) {
   }
   if (isNearEnabled(cacheCfg))   ((GridNearAtomicCache<K,V>)near()).processDhtAtomicUpdateRequest(nodeId,req,res);
   try {
-    if (res.failedKeys() != null || res.nearEvicted() != null || req.writeSynchronizationMode() == FULL_SYNC)     ctx.io().send(nodeId,res);
+    if (res.failedKeys() != null || res.nearEvicted() != null || req.writeSynchronizationMode() == FULL_SYNC)     ctx.io().send(nodeId,res,ctx.ioPolicy());
  else {
       sendDeferredUpdateResponse(nodeId,req.futureVersion());
     }
   }
- catch (  ClusterTopologyException ignored) {
+ catch (  ClusterTopologyCheckedException ignored) {
     U.warn(log,"Failed to send DHT atomic update response to node because it left grid: " + req.nodeId());
   }
 catch (  IgniteCheckedException e) {

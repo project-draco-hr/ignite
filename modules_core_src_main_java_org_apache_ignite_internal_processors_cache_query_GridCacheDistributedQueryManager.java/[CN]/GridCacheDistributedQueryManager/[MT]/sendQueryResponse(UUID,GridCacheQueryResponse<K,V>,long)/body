@@ -7,10 +7,10 @@
     try {
       if (log.isDebugEnabled())       log.debug("Send query response: " + res);
       Object topic=topic(nodeId,res.requestId());
-      cctx.io().sendOrderedMessage(node,topic,res,timeout > 0 ? timeout : Long.MAX_VALUE);
+      cctx.io().sendOrderedMessage(node,topic,res,cctx.ioPolicy(),timeout > 0 ? timeout : Long.MAX_VALUE);
       return true;
     }
- catch (    ClusterTopologyException ignored) {
+ catch (    ClusterTopologyCheckedException ignored) {
       if (log.isDebugEnabled())       log.debug("Failed to send query response since node left grid [nodeId=" + nodeId + ", res="+ res+ "]");
       return false;
     }
@@ -22,7 +22,7 @@ catch (    IgniteCheckedException e) {
         if (!Thread.currentThread().isInterrupted())         try {
           U.sleep(RESEND_FREQ);
         }
- catch (        IgniteInterruptedException e1) {
+ catch (        IgniteInterruptedCheckedException e1) {
           U.error(log,"Waiting for queries response resending was interrupted (response will not be sent) " + "[nodeId=" + nodeId + ", response="+ res+ "]",e1);
           return false;
         }

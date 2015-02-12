@@ -1,75 +1,50 @@
 {
-  commState.setBuffer(buf);
+  writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!commState.typeWritten) {
-    if (!commState.putByte(directType()))     return false;
-    commState.typeWritten=true;
+  if (!typeWritten) {
+    if (!writer.writeByte(null,directType()))     return false;
+    typeWritten=true;
   }
-switch (commState.idx) {
-case 22:
-    if (!commState.putLong(accessTtl))     return false;
-  commState.idx++;
-case 23:
-if (dhtVers != null) {
-  if (commState.it == null) {
-    if (!commState.putInt(dhtVers.length))     return false;
-    commState.it=arrayIterator(dhtVers);
-  }
-  while (commState.it.hasNext() || commState.cur != NULL) {
-    if (commState.cur == NULL)     commState.cur=commState.it.next();
-    if (!commState.putCacheVersion((GridCacheVersion)commState.cur))     return false;
-    commState.cur=NULL;
-  }
-  commState.it=null;
-}
- else {
-  if (!commState.putInt(-1))   return false;
-}
-commState.idx++;
+switch (state) {
 case 24:
-if (filterBytes != null) {
-if (commState.it == null) {
-if (!commState.putInt(filterBytes.length)) return false;
-commState.it=arrayIterator(filterBytes);
-}
-while (commState.it.hasNext() || commState.cur != NULL) {
-if (commState.cur == NULL) commState.cur=commState.it.next();
-if (!commState.putByteArray((byte[])commState.cur)) return false;
-commState.cur=NULL;
-}
-commState.it=null;
-}
- else {
-if (!commState.putInt(-1)) return false;
-}
-commState.idx++;
+    if (!writer.writeLong("accessTtl",accessTtl))     return false;
+  state++;
 case 25:
-if (!commState.putBoolean(implicitSingleTx)) return false;
-commState.idx++;
+if (!writer.writeObjectArray("dhtVers",dhtVers,GridCacheVersion.class)) return false;
+state++;
 case 26:
-if (!commState.putBoolean(implicitTx)) return false;
-commState.idx++;
+if (!writer.writeObjectArray("filterBytes",filterBytes,byte[].class)) return false;
+state++;
 case 27:
-if (!commState.putGridUuid(miniId)) return false;
-commState.idx++;
+if (!writer.writeBoolean("hasTransforms",hasTransforms)) return false;
+state++;
 case 28:
-if (!commState.putBoolean(onePhaseCommit)) return false;
-commState.idx++;
+if (!writer.writeBoolean("implicitSingleTx",implicitSingleTx)) return false;
+state++;
+case 29:
+if (!writer.writeBoolean("implicitTx",implicitTx)) return false;
+state++;
 case 29:
 if (!commState.putBoolean(syncCommit)) return false;
 commState.idx++;
 case 30:
-if (!commState.putLong(topVer)) return false;
-commState.idx++;
+if (!writer.writeIgniteUuid("miniId",miniId)) return false;
+state++;
 case 31:
-if (!commState.putUuid(subjId)) return false;
-commState.idx++;
+if (!writer.writeBoolean("onePhaseCommit",onePhaseCommit)) return false;
+state++;
 case 32:
-if (!commState.putInt(taskNameHash)) return false;
-commState.idx++;
+if (!writer.writeUuid("subjId",subjId)) return false;
+state++;
 case 33:
-if (!commState.putBoolean(hasTransforms)) return false;
-commState.idx++;
+if (!writer.writeBoolean("syncCommit",syncCommit)) return false;
+state++;
+case 34:
+if (!writer.writeInt("taskNameHash",taskNameHash)) return false;
+state++;
+case 35:
+if (!writer.writeLong("topVer",topVer)) return false;
+state++;
 }
 return true;
 }

@@ -1,19 +1,18 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    if (buf.remaining() < 4)     return false;
-  cacheId=commState.getInt();
-commState.idx++;
+    cacheId=reader.readInt("cacheId");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-Object depInfo0=commState.getMessage();
-if (depInfo0 == MSG_NOT_READ) return false;
-depInfo=(GridDeploymentInfoBean)depInfo0;
-commState.idx++;
+depInfo=reader.readMessage("depInfo");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-if (buf.remaining() < 8) return false;
-msgId=commState.getLong();
-commState.idx++;
+msgId=reader.readLong("msgId");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

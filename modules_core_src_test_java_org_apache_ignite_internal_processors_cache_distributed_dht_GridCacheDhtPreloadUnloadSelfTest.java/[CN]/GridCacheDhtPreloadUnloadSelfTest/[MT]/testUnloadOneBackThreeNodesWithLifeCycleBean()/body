@@ -5,11 +5,11 @@
     final int cnt=1000;
     lbean=new LifecycleBean(){
       @IgniteInstanceResource private Ignite ignite;
-      @Override public void onLifecycleEvent(      LifecycleEventType evt) throws IgniteCheckedException {
+      @Override public void onLifecycleEvent(      LifecycleEventType evt){
         if (evt == LifecycleEventType.AFTER_GRID_START) {
-          GridCache<Integer,String> c=ignite.cache(null);
-          if (c.putxIfAbsent(-1,"true")) {
-            populate(ignite.<Integer,String>cache(null),cnt);
+          IgniteCache<Integer,String> c=ignite.jcache(null);
+          if (c.putIfAbsent(-1,"true")) {
+            populate(ignite.<Integer,String>jcache(null),cnt);
             info(">>> POPULATED GRID <<<");
           }
         }
@@ -19,7 +19,7 @@
     int gridCnt=3;
     for (int i=0; i < gridCnt; i++) {
       startGrid(i);
-      for (int j=0; j < i; j++)       info("Grid size [i=" + i + ", size="+ grid(j).cache(null).size()+ ']');
+      for (int j=0; j < i; j++)       info("Grid size [i=" + i + ", size="+ grid(j).jcache(null).localSize()+ ']');
     }
     long wait=3000;
     waitForUnload(gridCnt,cnt,wait);

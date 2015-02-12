@@ -1,8 +1,8 @@
 {
   super.onKernalStart();
   CacheContinuousQuery<GridHadoopJobId,GridHadoopJobMetadata> qry=jobMetaCache().queries().createContinuousQuery();
-  qry.callback(new IgniteBiPredicate<UUID,Collection<Map.Entry<GridHadoopJobId,GridHadoopJobMetadata>>>(){
-    @Override public boolean apply(    UUID nodeId,    final Collection<Map.Entry<GridHadoopJobId,GridHadoopJobMetadata>> evts){
+  qry.localCallback(new IgniteBiPredicate<UUID,Collection<CacheContinuousQueryEntry<GridHadoopJobId,GridHadoopJobMetadata>>>(){
+    @Override public boolean apply(    UUID nodeId,    final Collection<CacheContinuousQueryEntry<GridHadoopJobId,GridHadoopJobMetadata>> evts){
       if (!busyLock.tryReadLock())       return false;
       try {
         evtProcSvc.submit(new EventHandler(){
@@ -19,14 +19,14 @@
     }
   }
 );
-  qry.execute();
+  qry.execute(ctx.kernalContext().grid().forLocal());
   ctx.kernalContext().event().addLocalEventListener(new GridLocalEventListener(){
-    @Override public void onEvent(    final IgniteEvent evt){
+    @Override public void onEvent(    final Event evt){
       if (!busyLock.tryReadLock())       return;
       try {
         evtProcSvc.submit(new EventHandler(){
           @Override protected void body(){
-            processNodeLeft((IgniteDiscoveryEvent)evt);
+            processNodeLeft((DiscoveryEvent)evt);
           }
         }
 );
@@ -36,5 +36,5 @@
       }
     }
   }
-,IgniteEventType.EVT_NODE_FAILED,IgniteEventType.EVT_NODE_LEFT);
+,EventType.EVT_NODE_FAILED,EventType.EVT_NODE_LEFT);
 }

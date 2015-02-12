@@ -1,0 +1,186 @@
+{
+  genPnl=paneEx(10,10,0,10);
+  genPnl.addColumn();
+  genPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
+  genPnl.addColumn(35,35,35,Priority.NEVER);
+  genPnl.addRow(100,100,Double.MAX_VALUE,Priority.ALWAYS);
+  genPnl.addRows(7);
+  TableColumn<PojoDescriptor,Boolean> useCol=customColumn("Schema / Table","use","If checked then this table will be used for XML and POJOs generation",PojoDescriptorCell.cellFactory());
+  TableColumn<PojoDescriptor,String> keyClsCol=textColumn("Key Class Name","keyClassName","Key class name",new TextColumnValidator<PojoDescriptor>(){
+    @Override public boolean valid(    PojoDescriptor rowVal,    String newVal){
+      boolean valid=checkClassName(rowVal,newVal,true);
+      if (valid)       rowVal.keyClassName(newVal);
+      return valid;
+    }
+  }
+);
+  TableColumn<PojoDescriptor,String> valClsCol=textColumn("Value Class Name","valueClassName","Value class name",new TextColumnValidator<PojoDescriptor>(){
+    @Override public boolean valid(    PojoDescriptor rowVal,    String newVal){
+      boolean valid=checkClassName(rowVal,newVal,true);
+      if (valid)       rowVal.valueClassName(newVal);
+      return valid;
+    }
+  }
+);
+  pojosTbl=tableView("Tables not found in database",useCol,keyClsCol,valClsCol);
+  TableColumn<PojoField,Boolean> useFldCol=customColumn("Use","use","Check to use this field for XML and POJO generation\n" + "Note that NOT NULL columns cannot be unchecked",PojoFieldUseCell.cellFactory());
+  useFldCol.setMinWidth(50);
+  useFldCol.setMaxWidth(50);
+  TableColumn<PojoField,Boolean> keyCol=booleanColumn("Key","key","Check to include this field into key object");
+  TableColumn<PojoField,Boolean> akCol=booleanColumn("AK","affinityKey","Check to annotate key filed with @CacheAffinityKeyMapped annotation in generated POJO class\n" + "Note that a class can have only ONE key field annotated with @CacheAffinityKeyMapped annotation");
+  TableColumn<PojoField,String> dbNameCol=tableColumn("DB Name","dbName","Field name in database");
+  TableColumn<PojoField,String> dbTypeNameCol=tableColumn("DB Type","dbTypeName","Field type in database");
+  TableColumn<PojoField,String> javaNameCol=textColumn("Java Name","javaName","Field name in POJO class",new TextColumnValidator<PojoField>(){
+    @Override public boolean valid(    PojoField rowVal,    String newVal){
+      for (      PojoField field : curPojo.fields())       if (rowVal != field && newVal.equals(field.javaName())) {
+        MessageBox.warningDialog(owner,"Java name must be unique!");
+        return false;
+      }
+      rowVal.javaName(newVal);
+      return true;
+    }
+  }
+);
+  TableColumn<PojoField,String> javaTypeNameCol=customColumn("Java Type","javaTypeName","Field java type in POJO class",JavaTypeCell.cellFactory());
+  fieldsTbl=tableView("Select table to see table columns",useFldCol,keyCol,akCol,dbNameCol,dbTypeNameCol,javaNameCol,javaTypeNameCol);
+  genPnl.add(splitPane(pojosTbl,fieldsTbl,0.6),3);
+  final GridPaneEx keyValPnl=paneEx(0,0,0,0);
+  keyValPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
+  keyValPnl.addColumn();
+  keyValPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
+  keyValPnl.addColumn();
+  pkgTf=genPnl.addLabeled("Package:",textField("Package that will be used for POJOs generation"),2);
+  outFolderTf=genPnl.addLabeled("Output Folder:",textField("Output folder for XML and POJOs files"));
+  genPnl.add(button("...","Select output folder",new EventHandler<ActionEvent>(){
+    @Override public void handle(    ActionEvent evt){
+      DirectoryChooser dc=new DirectoryChooser();
+      try {
+        File outFolder=new File(outFolderTf.getText());
+        if (outFolder.exists())         dc.setInitialDirectory(outFolder);
+      }
+ catch (      Throwable ignored) {
+      }
+      File folder=dc.showDialog(owner);
+      if (folder != null)       outFolderTf.setText(folder.getAbsolutePath());
+    }
+  }
+));
+  pojoIncludeKeysCh=genPnl.add(checkBox("Include key fields into value POJOs","If selected then include key fields into value object",true),3);
+  pojoConstructorCh=genPnl.add(checkBox("Generate constructors for POJOs","If selected then generate empty and full constructors for POJOs",false),3);
+  xmlSingleFileCh=genPnl.add(checkBox("Write all configurations to a single XML file","If selected then all configurations will be saved into the file 'Ignite.xml'",true),3);
+  GridPaneEx regexPnl=paneEx(5,5,5,5);
+  regexPnl.addColumn();
+  regexPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
+  regexPnl.addColumn();
+  regexPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
+  regexTf=regexPnl.addLabeled("  Regexp:",textField("Regular expression. For example: (\\w+)"));
+  replaceTf=regexPnl.addLabeled("  Replace with:",textField("Replace text. For example: $1_SomeText"));
+  final ComboBox<String> replaceCb=regexPnl.addLabeled("  Replace:",comboBox("Replacement target","Key class names","Value class names","Java names"));
+  regexPnl.add(buttonsPane(Pos.CENTER_LEFT,false,button("Rename Selected","Replaces each substring of this string that matches the given regular expression" + " with the given replacement.",new EventHandler<ActionEvent>(){
+    @Override public void handle(    ActionEvent evt){
+      if (checkInput(regexTf,false,"Regular expression should not be empty!"))       return;
+      String sel=replaceCb.getSelectionModel().getSelectedItem();
+      boolean isFields="Java names".equals(sel) && curTbl == fieldsTbl;
+      String src=isFields ? "fields" : "tables";
+      String target="\"" + sel + "\"";
+      Collection<PojoDescriptor> selPojos=pojosTbl.getSelectionModel().getSelectedItems();
+      Collection<PojoField> selFields=fieldsTbl.getSelectionModel().getSelectedItems();
+      boolean isEmpty=isFields ? selFields.isEmpty() : selPojos.isEmpty();
+      if (isEmpty) {
+        MessageBox.warningDialog(owner,"Please select " + src + " to rename "+ target+ "!");
+        return;
+      }
+      if (!MessageBox.confirmDialog(owner,"Are you sure you want to rename " + target + " for all selected "+ src+ "?"))       return;
+      String regex=regexTf.getText();
+      String replace=replaceTf.getText();
+      try {
+switch (replaceCb.getSelectionModel().getSelectedIndex()) {
+case 0:
+          renameKeyClassNames(selPojos,regex,replace);
+        break;
+case 1:
+      renameValueClassNames(selPojos,regex,replace);
+    break;
+default :
+  if (isFields)   renameFieldsJavaNames(selFields,regex,replace);
+ else   renamePojosJavaNames(selPojos,regex,replace);
+}
+}
+ catch (Exception e) {
+MessageBox.errorDialog(owner,"Failed to rename " + target + "!",e);
+}
+}
+}
+),button("Reset Selected","Revert changes for selected items to initial auto-generated values",new EventHandler<ActionEvent>(){
+@Override public void handle(ActionEvent evt){
+String sel=replaceCb.getSelectionModel().getSelectedItem();
+boolean isFields="Java names".equals(sel) && curTbl == fieldsTbl;
+String src=isFields ? "fields" : "tables";
+String target="\"" + sel + "\"";
+Collection<PojoDescriptor> selPojos=pojosTbl.getSelectionModel().getSelectedItems();
+Collection<PojoField> selFields=fieldsTbl.getSelectionModel().getSelectedItems();
+boolean isEmpty=isFields ? selFields.isEmpty() : selPojos.isEmpty();
+if (isEmpty) {
+MessageBox.warningDialog(owner,"Please select " + src + "to revert "+ target+ "!");
+return;
+}
+if (!MessageBox.confirmDialog(owner,"Are you sure you want to revert " + target + " for all selected "+ src+ "?")) return;
+switch (replaceCb.getSelectionModel().getSelectedIndex()) {
+case 0:
+revertKeyClassNames(selPojos);
+break;
+case 1:
+revertValueClassNames(selPojos);
+break;
+default :
+if (isFields) revertFieldsJavaNames(selFields);
+ else revertPojosJavaNames(selPojos);
+}
+}
+}
+)),2).setPadding(new Insets(0,0,0,10));
+pojosTbl.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<PojoDescriptor>(){
+@Override public void changed(ObservableValue<? extends PojoDescriptor> val,PojoDescriptor oldVal,PojoDescriptor newItem){
+if (newItem != null && newItem.parent() != null) {
+curPojo=newItem;
+fieldsTbl.setItems(curPojo.fields());
+fieldsTbl.getSelectionModel().clearSelection();
+keyValPnl.setDisable(false);
+}
+ else {
+curPojo=null;
+fieldsTbl.setItems(NO_FIELDS);
+keyValPnl.setDisable(true);
+}
+}
+}
+);
+pojosTbl.focusedProperty().addListener(new ChangeListener<Boolean>(){
+@Override public void changed(ObservableValue<? extends Boolean> val,Boolean oldVal,Boolean newVal){
+if (newVal) curTbl=pojosTbl;
+}
+}
+);
+fieldsTbl.getSelectionModel().selectedIndexProperty().addListener(new ChangeListener<Number>(){
+@Override public void changed(ObservableValue<? extends Number> val,Number oldVal,Number newVal){
+if (curPojo != null) {
+TableView.TableViewSelectionModel<PojoDescriptor> selMdl=pojosTbl.getSelectionModel();
+List<Integer> idxs=new ArrayList<>(selMdl.getSelectedIndices());
+if (idxs.size() > 1) {
+for (Integer idx : idxs) {
+if (pojos.get(idx) != curPojo) selMdl.clearSelection(idx);
+}
+}
+}
+}
+}
+);
+fieldsTbl.focusedProperty().addListener(new ChangeListener<Boolean>(){
+@Override public void changed(ObservableValue<? extends Boolean> val,Boolean oldVal,Boolean newVal){
+if (newVal) curTbl=fieldsTbl;
+}
+}
+);
+genPnl.add(titledPane("Rename \"Key class name\", \"Value class name\" or  \"Java name\" for selected tables",regexPnl),3);
+genLayerPnl=stackPane(genPnl);
+}

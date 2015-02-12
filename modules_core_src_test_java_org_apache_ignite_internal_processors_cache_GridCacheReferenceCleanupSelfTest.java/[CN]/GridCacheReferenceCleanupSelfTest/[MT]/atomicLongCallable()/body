@@ -4,14 +4,14 @@
       Collection<WeakReference<Object>> refs=new ArrayList<>();
       Ignite g=startGrid();
       try {
-        GridCache<Integer,TestValue> cache=g.cache(null);
+        IgniteCache<Integer,TestValue> cache=g.jcache(null);
         refs.add(new WeakReference<Object>(cacheContext(cache)));
         Map<Integer,TestValue> m=new HashMap<>();
         for (int i=0; i < 10; i++) {
           TestValue val=new TestValue(i);
           refs.add(new WeakReference<Object>(val));
           m.put(i,val);
-          cache.dataStructures().atomicLong("testLong" + i,0,true).incrementAndGet();
+          g.atomicLong("testLong" + i,0,true).incrementAndGet();
         }
         cache.putAll(m);
       }

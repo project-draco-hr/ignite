@@ -1,0 +1,15 @@
+{
+  int cnt=0;
+  while (true) {
+    try {
+      return (Long)cache.invoke(queueKey,c).get();
+    }
+ catch (    CachePartialUpdateCheckedException e) {
+      if (cnt++ == MAX_UPDATE_RETRIES)       throw e;
+ else {
+        U.warn(log,"Failed to update queue header, will retry [err=" + e + ']');
+        U.sleep(RETRY_DELAY);
+      }
+    }
+  }
+}

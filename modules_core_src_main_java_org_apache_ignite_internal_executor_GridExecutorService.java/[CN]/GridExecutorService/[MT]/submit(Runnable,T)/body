@@ -1,2 +1,18 @@
 {
+  A.notNull(task,"task != null");
+  checkShutdown();
+  ctx.gateway().readLock();
+  try {
+    IgniteInternalFuture<T> fut=ctx.closure().runAsync(BALANCE,task,prj.nodes()).chain(new CX1<IgniteInternalFuture<?>,T>(){
+      @Override public T applyx(      IgniteInternalFuture<?> fut) throws IgniteCheckedException {
+        fut.get();
+        return res;
+      }
+    }
+);
+    return addFuture(fut);
+  }
+  finally {
+    ctx.gateway().readUnlock();
+  }
 }

@@ -1,7 +1,7 @@
 {
-  URL url=U.resolveGridGainUrl(arg.folder);
-  if (url == null)   throw new GridInternalException(new FileNotFoundException("Log folder not found: " + arg.folder));
-  UUID uuid=g.localNode().id();
+  URL url=U.resolveIgniteUrl(arg.folder);
+  if (url == null)   throw U.convertException(new GridInternalException(new FileNotFoundException("Log folder not found: " + arg.folder)));
+  UUID uuid=ignite.localNode().id();
   String nid=uuid.toString().toLowerCase();
   String filePtrn=arg.filePtrn.replace("@nid8",nid.substring(0,8)).replace("@nid",nid);
   try {
@@ -9,15 +9,15 @@
     int pathIdx=(fld.isDirectory() ? fld : fld.getParentFile()).getAbsolutePath().length() + 1;
     List<VisorLogFile> matchingFiles=matchedFiles(fld,filePtrn);
     Collection<VisorLogSearchResult> results=new ArrayList<>(arg.limit);
-    int resultCnt=0;
+    int resCnt=0;
     for (    VisorLogFile logFile : matchingFiles) {
       try {
         File f=new File(logFile.path());
         if (textFile(f,false)) {
           Charset charset=decode(f);
-          if (resultCnt == arg.limit)           break;
-          List<GridTuple3<String[],Integer,Integer>> searched=searchInFile(f,charset,arg.searchStr,arg.limit - resultCnt);
-          resultCnt+=searched.size();
+          if (resCnt == arg.limit)           break;
+          List<GridTuple3<String[],Integer,Integer>> searched=searchInFile(f,charset,arg.searchStr,arg.limit - resCnt);
+          resCnt+=searched.size();
           String path=f.getAbsolutePath().substring(pathIdx);
           long sz=f.length(), lastModified=f.lastModified();
           for (          GridTuple3<String[],Integer,Integer> e : searched) {
@@ -31,6 +31,6 @@
     return results.isEmpty() ? null : results;
   }
  catch (  Exception e) {
-    throw new IgniteCheckedException(e);
+    throw new IgniteException(e);
   }
 }

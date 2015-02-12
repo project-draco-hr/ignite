@@ -1,37 +1,34 @@
 {
-  commState.setBuffer(buf);
-switch (commState.idx) {
+  reader.setBuffer(buf);
+switch (state) {
 case 0:
-    Object msg0=commState.getMessage();
-  if (msg0 == MSG_NOT_READ)   return false;
-msg=(GridTcpCommunicationMessageAdapter)msg0;
-commState.idx++;
+    msg=reader.readMessage("msg");
+  if (!reader.isLastRead())   return false;
+state++;
 case 1:
-if (buf.remaining() < 1) return false;
-ordered=commState.getBoolean();
-commState.idx++;
+ordered=reader.readBoolean("ordered");
+if (!reader.isLastRead()) return false;
+state++;
 case 2:
-if (buf.remaining() < 1) return false;
-byte plc0=commState.getByte();
-plc=GridIoPolicy.fromOrdinal(plc0);
-commState.idx++;
+plc=reader.readEnum("plc",GridIoPolicy.class);
+if (!reader.isLastRead()) return false;
+state++;
 case 3:
-if (buf.remaining() < 1) return false;
-skipOnTimeout=commState.getBoolean();
-commState.idx++;
+skipOnTimeout=reader.readBoolean("skipOnTimeout");
+if (!reader.isLastRead()) return false;
+state++;
 case 4:
-if (buf.remaining() < 8) return false;
-timeout=commState.getLong();
-commState.idx++;
+timeout=reader.readLong("timeout");
+if (!reader.isLastRead()) return false;
+state++;
 case 5:
-byte[] topicBytes0=commState.getByteArray();
-if (topicBytes0 == BYTE_ARR_NOT_READ) return false;
-topicBytes=topicBytes0;
-commState.idx++;
+topicBytes=reader.readByteArray("topicBytes");
+if (!reader.isLastRead()) return false;
+state++;
 case 6:
-if (buf.remaining() < 4) return false;
-topicOrd=commState.getInt();
-commState.idx++;
+topicOrd=reader.readInt("topicOrd");
+if (!reader.isLastRead()) return false;
+state++;
 }
 return true;
 }

@@ -36,13 +36,13 @@
         comp.execute(new GridCachePutAllTask(nodeId,CACHE_NAME),data);
         ComputeTaskFuture<Void> fut=comp.future();
         resQueue.put(fut);
-        fut.listenAsync(new CI1<IgniteInternalFuture<Void>>(){
-          @Override public void apply(          IgniteInternalFuture<Void> f){
+        fut.listenAsync(new CI1<IgniteFuture<Void>>(){
+          @Override public void apply(          IgniteFuture<Void> f){
             ComputeTaskFuture<?> taskFut=(ComputeTaskFuture<?>)f;
             try {
               taskFut.get();
             }
- catch (            IgniteCheckedException e) {
+ catch (            IgniteException e) {
               log.error("Job failed",e);
               jobFailed.set(true);
             }
@@ -70,13 +70,13 @@
       comp.execute(new GridCachePutAllTask(entry.getKey(),CACHE_NAME),entry.getValue());
       ComputeTaskFuture<Void> fut=comp.future();
       resQueue.put(fut);
-      fut.listenAsync(new CI1<IgniteInternalFuture<Void>>(){
-        @Override public void apply(        IgniteInternalFuture<Void> f){
+      fut.listenAsync(new CI1<IgniteFuture<Void>>(){
+        @Override public void apply(        IgniteFuture<Void> f){
           ComputeTaskFuture<?> taskFut=(ComputeTaskFuture<?>)f;
           try {
             taskFut.get();
           }
- catch (          IgniteCheckedException e) {
+ catch (          IgniteException e) {
             log.error("Job failed",e);
             jobFailed.set(true);
           }
@@ -104,8 +104,8 @@
     assertTrue(absentKeys.isEmpty());
     int primaryCacheSize=0;
     for (    Ignite g : runningWorkers) {
-      info(">>>>> " + g.cache(CACHE_NAME).size());
-      primaryCacheSize+=g.cache(CACHE_NAME).primarySize();
+      info(">>>>> " + g.jcache(CACHE_NAME).localSize());
+      primaryCacheSize+=((IgniteKernal)g).internalCache(CACHE_NAME).primarySize();
     }
     assertEquals(TEST_MAP_SIZE,primaryCacheSize);
   }

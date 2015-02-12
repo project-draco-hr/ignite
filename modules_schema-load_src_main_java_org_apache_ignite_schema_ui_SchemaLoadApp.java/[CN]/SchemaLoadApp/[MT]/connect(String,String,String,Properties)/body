@@ -1,0 +1,20 @@
+{
+  Driver drv=drivers.get(jdbcDrvCls);
+  if (drv == null) {
+    if (jdbcDrvJarPath.isEmpty())     throw new IllegalStateException("Driver jar file name is not specified");
+    File drvJar=new File(jdbcDrvJarPath);
+    if (!drvJar.exists())     throw new IllegalStateException("Driver jar file is not found");
+    try {
+      URL u=new URL("jar:" + drvJar.toURI() + "!/");
+      URLClassLoader ucl=URLClassLoader.newInstance(new URL[]{u});
+      drv=(Driver)Class.forName(jdbcDrvCls,true,ucl).newInstance();
+      drivers.put(jdbcDrvCls,drv);
+    }
+ catch (    Throwable e) {
+      throw new IllegalStateException(e);
+    }
+  }
+  Connection conn=drv.connect(jdbcUrl,jdbcInfo);
+  if (conn == null)   throw new IllegalStateException("Connection was not established (JDBC driver returned null value).");
+  return conn;
+}

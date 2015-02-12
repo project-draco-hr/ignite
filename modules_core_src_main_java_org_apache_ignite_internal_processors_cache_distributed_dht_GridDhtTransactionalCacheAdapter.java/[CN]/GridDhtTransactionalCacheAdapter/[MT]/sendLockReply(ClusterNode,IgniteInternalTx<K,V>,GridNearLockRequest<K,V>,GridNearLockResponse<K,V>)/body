@@ -1,0 +1,12 @@
+{
+  Throwable err=res.error();
+  if (err != null && !(err instanceof GridCacheLockTimeoutException))   U.error(log,"Failed to acquire lock for request: " + req,err);
+  try {
+    if (!nearNode.id().equals(ctx.nodeId()) && !X.hasCause(err,GridDistributedLockCancelledException.class))     ctx.io().send(nearNode,res,ctx.ioPolicy());
+  }
+ catch (  IgniteCheckedException e) {
+    U.error(log,"Failed to send lock reply to originating node (will rollback transaction) [node=" + U.toShortString(nearNode) + ", req="+ req+ ']',e);
+    if (tx != null)     tx.rollbackAsync();
+    throw new GridClosureException(e);
+  }
+}

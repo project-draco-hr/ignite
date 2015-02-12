@@ -1,0 +1,30 @@
+{
+  final GridClientData dfltData=client.data();
+  assertNotNull(dfltData);
+  GridClientData namedData=client.data(CACHE_NAME);
+  assertNotNull(namedData);
+  dfltData.putAll(F.asMap("","val1"));
+  assertEquals(F.asMap("","val1"),grid().<String,String>jcache(null).getAll(F.asSet("")));
+  GridClientProtocol proto=clientConfiguration().getProtocol();
+  assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      dfltData.putAll(Collections.singletonMap("key3",null));
+      return null;
+    }
+  }
+,proto == GridClientProtocol.TCP ? GridClientException.class : IllegalArgumentException.class,null);
+  assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      dfltData.putAll(Collections.singletonMap(null,"val2"));
+      return null;
+    }
+  }
+,proto == GridClientProtocol.TCP ? GridClientException.class : IllegalArgumentException.class,null);
+  assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      dfltData.getAll(Collections.singleton(null));
+      return null;
+    }
+  }
+,proto == GridClientProtocol.TCP ? GridClientException.class : IllegalArgumentException.class,null);
+}
