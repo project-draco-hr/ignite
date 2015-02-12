@@ -17,7 +17,7 @@
             info("Starting put thread...");
             Ignite ignite=grid(gridIdx);
             UUID locNodeId=ignite.cluster().localNode().id();
-            GridCache<Integer,String> cache=ignite.cache(CACHE_NAME);
+            IgniteCache<Integer,String> cache=ignite.jcache(CACHE_NAME);
             List<Integer> keys=new ArrayList<>(txKeys);
             while (System.currentTimeMillis() < endTime && err.get() == null) {
               keys.clear();
@@ -25,7 +25,7 @@
               Collections.sort(keys);
               int c=0;
               try {
-                try (IgniteTx tx=cache.txStart(txConcurrency(),REPEATABLE_READ)){
+                try (IgniteTx tx=ignite.transactions().txStart(txConcurrency(),REPEATABLE_READ)){
                   c=txCntr.incrementAndGet();
                   if (c % logFreq == 0)                   info(">>> Tx iteration started [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
                   for (                  int key : keys) {
@@ -36,10 +36,12 @@
                   }
                   tx.commit();
                 }
- catch (                ClusterTopologyCheckedException ignored) {
+ catch (                ClusterTopologyException|CacheException e) {
+                  if (e instanceof CacheException && !(e.getCause() instanceof ClusterTopologyException))                   throw e;
                 }
               }
- catch (              ClusterTopologyCheckedException ignored) {
+ catch (              ClusterTopologyException|CacheException e) {
+                if (e instanceof CacheException && !(e.getCause() instanceof ClusterTopologyException))                 throw e;
               }
               if (c % logFreq == 0)               info(">>> Tx iteration finished [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
             }

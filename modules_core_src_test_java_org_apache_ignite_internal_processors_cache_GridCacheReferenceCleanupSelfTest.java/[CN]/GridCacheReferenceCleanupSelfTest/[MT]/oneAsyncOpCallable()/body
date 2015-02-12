@@ -4,11 +4,13 @@
       Collection<WeakReference<Object>> refs=new ArrayList<>();
       Ignite g=startGrid();
       try {
-        GridCache<Integer,TestValue> cache=g.cache(null);
+        IgniteCache<Integer,TestValue> cache=g.jcache(null);
+        IgniteCache<Integer,TestValue> cacheAsync=cache.withAsync();
         refs.add(new WeakReference<Object>(cacheContext(cache)));
         TestValue val=new TestValue(0);
         refs.add(new WeakReference<Object>(val));
-        cache.putxAsync(0,val).get();
+        cacheAsync.putIfAbsent(0,val);
+        cacheAsync.future().get();
       }
   finally {
         G.stop(g.name(),cancel);
