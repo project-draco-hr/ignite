@@ -3,8 +3,8 @@
     GridCacheAdapter<Integer,Integer> cache=((IgniteKernal)g).internalCache(cacheName);
     cache.context().tm().slowTxWarnTimeout(500);
   }
-  GridCache<Object,Object> cache1=g.cache(cacheName);
-  IgniteTx tx=cache1.txStart();
+  IgniteCache<Object,Object> cache1=g.jcache(cacheName);
+  IgniteTx tx=g.transactions().txStart();
   try {
     cache1.put(1,1);
     if (simulateTimeout)     Thread.sleep(800);
@@ -13,7 +13,7 @@
   finally {
     tx.close();
   }
-  tx=cache1.txStart();
+  tx=g.transactions().txStart();
   try {
     cache1.put(1,1);
     if (simulateTimeout)     Thread.sleep(800);

@@ -1,12 +1,14 @@
 {
   Map<String,IgniteBiTuple<Integer,Integer>> total=new HashMap<>();
-  for (  GridCache c : g.cachesx()) {
+  ClusterNode locNode=g.localNode();
+  for (  GridCache c : ignite.cachesx()) {
     String cacheName=c.name();
+    CacheAffinity<Object> aff=g.affinity(c.name());
     if (names.contains(cacheName)) {
-      Set<CacheEntry> entries=c.entrySet();
+      Set<Cache.Entry> entries=c.entrySet();
       int before=entries.size(), after=before;
-      for (      CacheEntry entry : entries) {
-        if (entry.backup() && entry.evict())         after--;
+      for (      Cache.Entry entry : entries) {
+        if (aff.isBackup(locNode,entry.getKey()) && c.evict(entry.getKey()))         after--;
       }
       total.put(cacheName,new IgniteBiTuple<>(before,after));
     }
