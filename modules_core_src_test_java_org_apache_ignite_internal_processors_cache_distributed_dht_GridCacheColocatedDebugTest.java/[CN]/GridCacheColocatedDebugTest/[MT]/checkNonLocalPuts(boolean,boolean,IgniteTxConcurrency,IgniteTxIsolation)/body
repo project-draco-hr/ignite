@@ -8,44 +8,44 @@
     Integer k1=forPrimary(g1);
     Integer k2=forPrimary(g2);
     Map<Integer,String> map=F.asMap(k1,"val" + k1,k2,"val" + k2);
-    IgniteTx tx=explicitTx ? g0.cache(null).txStart(concurrency,isolation) : null;
+    IgniteTx tx=explicitTx ? g0.transactions().txStart(concurrency,isolation) : null;
     try {
       if (separate) {
-        g0.cache(null).put(k1,"val" + k1);
-        g0.cache(null).put(k2,"val" + k2);
+        g0.jcache(null).put(k1,"val" + k1);
+        g0.jcache(null).put(k2,"val" + k2);
       }
- else       g0.cache(null).putAll(map);
+ else       g0.jcache(null).putAll(map);
       if (tx != null)       tx.commit();
     }
   finally {
       if (tx != null)       tx.close();
     }
     if (separate) {
-      assertEquals("val" + k1,g0.cache(null).get(k1));
-      assertEquals("val" + k2,g0.cache(null).get(k2));
+      assertEquals("val" + k1,g0.jcache(null).get(k1));
+      assertEquals("val" + k2,g0.jcache(null).get(k2));
     }
  else {
-      Map<Object,Object> res=g0.cache(null).getAll(map.keySet());
+      Map<Object,Object> res=g0.jcache(null).getAll(map.keySet());
       assertEquals(map,res);
     }
-    tx=explicitTx ? g0.cache(null).txStart(concurrency,isolation) : null;
+    tx=explicitTx ? g0.transactions().txStart(concurrency,isolation) : null;
     try {
       if (separate) {
-        g0.cache(null).remove(k1);
-        g0.cache(null).remove(k2);
+        g0.jcache(null).remove(k1);
+        g0.jcache(null).remove(k2);
       }
- else       g0.cache(null).removeAll(map.keySet());
+ else       g0.jcache(null).removeAll(map.keySet());
       if (tx != null)       tx.commit();
     }
   finally {
       if (tx != null)       tx.close();
     }
     if (separate) {
-      assertEquals(null,g0.cache(null).get(k1));
-      assertEquals(null,g0.cache(null).get(k2));
+      assertEquals(null,g0.jcache(null).get(k1));
+      assertEquals(null,g0.jcache(null).get(k2));
     }
  else {
-      Map<Object,Object> res=g0.cache(null).getAll(map.keySet());
+      Map<Object,Object> res=g0.jcache(null).getAll(map.keySet());
       assertTrue(res.isEmpty());
     }
   }

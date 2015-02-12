@@ -1,6 +1,7 @@
 {
   if (store != null) {
     if (log.isDebugEnabled())     log.debug("Loading all values from store.");
+    initSession(null);
     try {
       store.loadCache(new IgniteBiInClosure<K,Object>(){
         @Override public void apply(        K k,        Object o){
@@ -23,9 +24,12 @@
 catch (    Exception e) {
       throw new IgniteCheckedException(new CacheLoaderException(e));
     }
+ finally {
+      sesHolder.set(null);
+    }
     if (log.isDebugEnabled())     log.debug("Loaded all values from store.");
     return true;
   }
-  LT.warn(log,null,"Calling Cache.loadCache() method will have no effect, " + "GridCacheConfiguration.getStore() is not defined for cache: " + cctx.namexx());
+  LT.warn(log,null,"Calling Cache.loadCache() method will have no effect, " + "CacheConfiguration.getStore() is not defined for cache: " + cctx.namexx());
   return false;
 }
