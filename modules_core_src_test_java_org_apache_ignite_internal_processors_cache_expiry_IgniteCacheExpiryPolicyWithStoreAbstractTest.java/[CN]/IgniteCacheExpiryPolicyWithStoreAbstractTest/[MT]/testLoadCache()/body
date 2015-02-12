@@ -1,0 +1,15 @@
+{
+  IgniteCache<Integer,Integer> cache=jcache(0);
+  final Integer key=primaryKey(cache);
+  storeMap.put(key,100);
+  try {
+    cache.loadCache(null);
+    checkTtl(key,500,false);
+    assertEquals((Integer)100,cache.localPeek(key,CachePeekMode.ONHEAP));
+    U.sleep(600);
+    checkExpired(key);
+  }
+  finally {
+    cache.removeAll();
+  }
+}
