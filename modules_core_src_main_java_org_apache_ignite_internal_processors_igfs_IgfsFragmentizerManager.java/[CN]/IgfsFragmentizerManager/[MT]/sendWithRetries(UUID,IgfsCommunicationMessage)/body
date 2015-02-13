@@ -1,0 +1,13 @@
+{
+  for (int i=0; i < MESSAGE_SEND_RETRY_COUNT; i++) {
+    try {
+      igfsCtx.send(nodeId,topic,msg,SYSTEM_POOL);
+      return;
+    }
+ catch (    IgniteCheckedException e) {
+      if (!igfsCtx.kernalContext().discovery().alive(nodeId))       throw new ClusterTopologyCheckedException("Failed to send message (node left the grid) " + "[nodeId=" + nodeId + ", msg="+ msg+ ']');
+      if (i == MESSAGE_SEND_RETRY_COUNT - 1)       throw e;
+      U.sleep(MESSAGE_SEND_RETRY_INTERVAL);
+    }
+  }
+}
