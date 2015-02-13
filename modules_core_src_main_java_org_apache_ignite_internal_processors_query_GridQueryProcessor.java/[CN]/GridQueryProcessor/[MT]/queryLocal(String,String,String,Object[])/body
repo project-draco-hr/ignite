@@ -4,6 +4,9 @@
     TypeDescriptor typeDesc=typesByName.get(new TypeName(space,type));
     if (typeDesc == null || !typeDesc.registered())     return new GridEmptyCloseableIterator<>();
     final GridCloseableIterator<IgniteBiTuple<K,V>> i=idx.query(space,sqlQry,F.asList(params),typeDesc,idx.backupFilter());
+    if (ctx.event().isRecordable(EVT_CACHE_QUERY_EXECUTED)) {
+      ctx.event().record(new CacheQueryExecutedEvent<>(ctx.discovery().localNode(),"SQL query executed.",EVT_CACHE_QUERY_EXECUTED,CacheQueryType.SQL,null,null,sqlQry,null,null,params,null,null));
+    }
     return new ClIter<Cache.Entry<K,V>>(){
       @Override public void close() throws Exception {
         i.close();
