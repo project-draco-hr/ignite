@@ -1,0 +1,50 @@
+{
+  VisorIgfsProfilerUniformityCounters counters=new VisorIgfsProfilerUniformityCounters();
+  Collections.sort(lines,PARSED_LINE_BY_TS_COMPARATOR);
+  String path="";
+  long ts=0;
+  long size=0;
+  long bytesRead=0;
+  long readTime=0;
+  long userReadTime=0;
+  long bytesWritten=0;
+  long writeTime=0;
+  long userWriteTime=0;
+  IgfsMode mode=null;
+  for (  VisorIgfsProfilerParsedLine line : lines) {
+    if (!line.path.isEmpty())     path=line.path;
+    ts=line.ts;
+    if (line.mode != null)     mode=line.mode;
+switch (line.entryType) {
+case TYPE_OPEN_IN:
+      size=line.dataLen;
+    counters.invalidate(size);
+  break;
+case TYPE_OPEN_OUT:
+if (line.overwrite) {
+  size=0;
+  counters.invalidate(size);
+}
+break;
+case TYPE_CLOSE_IN:
+bytesRead+=line.totalBytes;
+readTime+=line.sysTime;
+userReadTime+=line.userTime;
+counters.increment(line.pos,line.totalBytes);
+break;
+case TYPE_CLOSE_OUT:
+size+=line.totalBytes;
+bytesWritten+=line.totalBytes;
+writeTime+=line.sysTime;
+userWriteTime+=line.userTime;
+counters.invalidate(size);
+break;
+case TYPE_RANDOM_READ:
+counters.increment(line.pos,line.totalBytes);
+break;
+default :
+throw new IllegalStateException("Unexpected GGFS profiler log entry type: " + line.entryType);
+}
+}
+return path.isEmpty() ? null : new VisorIgfsProfilerEntry(path,ts,mode,size,bytesRead,readTime,userReadTime,bytesWritten,writeTime,userWriteTime,counters);
+}
