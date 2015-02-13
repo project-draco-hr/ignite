@@ -6,7 +6,7 @@
     @Override public Object call() throws Exception {
       int id=cnt.incrementAndGet();
       IgfsPath f=new IgfsPath(path.parent(),"asdf" + (id > 1 ? "-" + id : ""));
-      try (IgniteFsOutputStream out=fs.create(f,0,true,null,0,1024,null)){
+      try (IgfsOutputStream out=fs.create(f,0,true,null,0,1024,null)){
         assertNotNull(out);
         cleanUp.add(f);
         U.copy(new IgfsTestInputStream(size,salt),out);
@@ -36,11 +36,11 @@
   expIn.close();
   actIn.close();
   info("Get stored file info: " + path);
-  IgniteFsFile desc=fs.info(path);
+  IgfsFile desc=fs.info(path);
   info("Validate stored file info: " + desc);
   assertNotNull(desc);
   if (log.isDebugEnabled())   log.debug("File descriptor: " + desc);
-  Collection<IgniteFsBlockLocation> aff=fs.affinity(path,0,desc.length());
+  Collection<IgfsBlockLocation> aff=fs.affinity(path,0,desc.length());
   assertFalse("Affinity: " + aff,desc.length() != 0 && aff.isEmpty());
   int blockSize=desc.blockSize();
   assertEquals("File size",size,desc.length());
