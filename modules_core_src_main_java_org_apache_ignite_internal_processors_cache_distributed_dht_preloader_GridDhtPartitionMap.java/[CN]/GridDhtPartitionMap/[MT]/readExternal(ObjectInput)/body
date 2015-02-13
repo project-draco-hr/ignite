@@ -1,5 +1,12 @@
 {
   nodeId=U.readUuid(in);
   updateSeq=in.readLong();
-  putAll(U.<Integer,GridDhtPartitionState>readMap(in));
+  int size=in.readInt();
+  map=U.newHashMap(size);
+  for (int i=0; i < size; i++) {
+    int entry=in.readShort() & 0xFFFF;
+    int part=entry & 0x3FFF;
+    int ordinal=entry >> 14;
+    map.put(part,GridDhtPartitionState.fromOrdinal(ordinal));
+  }
 }
