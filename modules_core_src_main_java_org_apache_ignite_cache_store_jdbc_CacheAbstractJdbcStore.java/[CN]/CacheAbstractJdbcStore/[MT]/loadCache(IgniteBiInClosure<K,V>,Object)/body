@@ -5,10 +5,11 @@
     if (args != null && args.length > 0) {
       if (args.length % 2 != 0)       throw new CacheLoaderException("Expected even number of arguments, but found: " + args.length);
       if (log.isDebugEnabled())       log.debug("Start loading entries from db using user queries from arguments");
+      String cacheName=session().cacheName();
       for (int i=0; i < args.length; i+=2) {
         String keyType=args[i].toString();
         String selQry=args[i + 1].toString();
-        EntryMapping em=entryMapping(keyTypeId(keyType),keyType);
+        EntryMapping em=entryMapping(cacheName,keyTypeId(keyType),keyType);
         futs.add(pool.submit(new LoadCacheCustomQueryWorker<>(em,selQry,clo)));
       }
     }
