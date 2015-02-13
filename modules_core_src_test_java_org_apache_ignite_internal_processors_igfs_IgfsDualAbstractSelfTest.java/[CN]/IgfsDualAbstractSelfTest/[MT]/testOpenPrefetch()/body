@@ -1,0 +1,36 @@
+{
+  create(igfsSecondary,paths(DIR,SUBDIR),paths(FILE));
+  final int blockSize=igfs.info(FILE).blockSize();
+  IgfsOutputStream out=igfsSecondary.append(FILE,false);
+  int totalWritten=0;
+  while (totalWritten < blockSize * 2 + chunk.length) {
+    out.write(chunk);
+    totalWritten+=chunk.length;
+  }
+  out.close();
+  awaitFileClose(igfsSecondary,FILE);
+  int totalRead=0;
+  IgfsInputStream in=igfs.open(FILE,blockSize);
+  final byte[] readBuf=new byte[1024];
+  while (totalRead + readBuf.length <= blockSize * 2) {
+    in.read(readBuf);
+    totalRead+=readBuf.length;
+  }
+  IgfsMetaManager meta=igfs.context().meta();
+  IgfsFileInfo info=meta.info(meta.fileId(FILE));
+  IgfsBlockKey key=new IgfsBlockKey(info.id(),info.affinityKey(),info.evictExclude(),2);
+  GridCache<IgfsBlockKey,byte[]> dataCache=igfs.context().kernalContext().cache().cache(igfs.configuration().getDataCacheName());
+  for (int i=0; i < 10; i++) {
+    if (dataCache.containsKey(key))     break;
+ else     U.sleep(100);
+  }
+  igfsSecondary.delete(FILE,false);
+  U.sleep(300);
+  totalRead=0;
+  in.seek(blockSize * 2);
+  while (totalRead + readBuf.length <= blockSize) {
+    in.read(readBuf);
+    totalRead+=readBuf.length;
+  }
+  in.close();
+}
