@@ -1,16 +1,16 @@
 {
-  IgfsConfiguration ggfsCfg=new IgfsConfiguration();
-  ggfsCfg.setDataCacheName("dataCache");
-  ggfsCfg.setMetaCacheName("metaCache");
-  ggfsCfg.setName(GGFS_PRIMARY);
-  ggfsCfg.setBlockSize(512);
-  ggfsCfg.setDefaultMode(PRIMARY);
-  ggfsCfg.setPrefetchBlocks(1);
-  ggfsCfg.setSequentialReadsBeforePrefetch(Integer.MAX_VALUE);
-  ggfsCfg.setSecondaryFileSystem(secondaryFs);
+  IgfsConfiguration igfsCfg=new IgfsConfiguration();
+  igfsCfg.setDataCacheName("dataCache");
+  igfsCfg.setMetaCacheName("metaCache");
+  igfsCfg.setName(IGFS_PRIMARY);
+  igfsCfg.setBlockSize(512);
+  igfsCfg.setDefaultMode(PRIMARY);
+  igfsCfg.setPrefetchBlocks(1);
+  igfsCfg.setSequentialReadsBeforePrefetch(Integer.MAX_VALUE);
+  igfsCfg.setSecondaryFileSystem(secondaryFs);
   Map<String,IgfsMode> pathModes=new HashMap<>();
   pathModes.put(FILE_RMT.toString(),DUAL_SYNC);
-  ggfsCfg.setPathModes(pathModes);
+  igfsCfg.setPathModes(pathModes);
   CacheConfiguration dataCacheCfg=defaultCacheConfiguration();
   dataCacheCfg.setName("dataCache");
   dataCacheCfg.setCacheMode(PARTITIONED);
@@ -35,10 +35,10 @@
   discoSpi.setIpFinder(new TcpDiscoveryVmIpFinder(true));
   cfg.setDiscoverySpi(discoSpi);
   cfg.setCacheConfiguration(dataCacheCfg,metaCacheCfg);
-  cfg.setIgfsConfiguration(ggfsCfg);
+  cfg.setIgfsConfiguration(igfsCfg);
   cfg.setLocalHost("127.0.0.1");
   cfg.setConnectorConfiguration(null);
   Ignite g=G.start(cfg);
-  ggfsPrimary=(IgfsImpl)g.fileSystem(GGFS_PRIMARY);
-  dataCache=ggfsPrimary.context().kernalContext().cache().internalCache(ggfsPrimary.context().configuration().getDataCacheName());
+  igfsPrimary=(IgfsImpl)g.fileSystem(IGFS_PRIMARY);
+  dataCache=igfsPrimary.context().kernalContext().cache().internalCache(igfsPrimary.context().configuration().getDataCacheName());
 }
