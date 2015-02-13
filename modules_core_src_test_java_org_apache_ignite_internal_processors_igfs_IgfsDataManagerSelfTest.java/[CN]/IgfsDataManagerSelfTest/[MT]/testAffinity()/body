@@ -1,0 +1,25 @@
+{
+  final int blockSize=10;
+  final int grpSize=blockSize * DATA_BLOCK_GROUP_CNT;
+  IgfsFileInfo info=new IgfsFileInfo(blockSize,1024 * 1024,null,null,false,null);
+  for (int pos=0; pos < 5 * grpSize; pos++) {
+    assertEquals("Expects no affinity for zero length.",Collections.<IgfsBlockLocation>emptyList(),mgr.affinity(info,pos,0));
+    for (int len=1, maxLen=grpSize - pos % grpSize; len < maxLen; len++) {
+      Collection<IgfsBlockLocation> aff=mgr.affinity(info,pos,len);
+      assertEquals("Unexpected affinity: " + aff,1,aff.size());
+      IgfsBlockLocation loc=F.first(aff);
+      assertEquals("Unexpected block location: " + loc,pos,loc.start());
+      assertEquals("Unexpected block location: " + loc,len,loc.length());
+    }
+    for (int len=grpSize * 4 + 1, maxLen=5 * grpSize - pos % grpSize; len < maxLen; len++) {
+      Collection<IgfsBlockLocation> aff=mgr.affinity(info,pos,len);
+      assertTrue("Unexpected affinity [aff=" + aff + ", pos="+ pos+ ", len="+ len+ ']',aff.size() <= 5);
+      IgfsBlockLocation first=F.first(aff);
+      assertEquals("Unexpected the first block location [aff=" + aff + ", pos="+ pos+ ", len="+ len+ ']',pos,first.start());
+      assertTrue("Unexpected the first block location [aff=" + aff + ", pos="+ pos+ ", len="+ len+ ']',first.length() >= grpSize - pos % grpSize);
+      IgfsBlockLocation last=F.last(aff);
+      assertTrue("Unexpected the last block location [aff=" + aff + ", pos="+ pos+ ", len="+ len+ ']',last.start() <= (pos / grpSize + 4) * grpSize);
+      assertTrue("Unexpected the last block location [aff=" + aff + ", pos="+ pos+ ", len="+ len+ ']',last.length() >= (pos + len - 1) % grpSize + 1);
+    }
+  }
+}

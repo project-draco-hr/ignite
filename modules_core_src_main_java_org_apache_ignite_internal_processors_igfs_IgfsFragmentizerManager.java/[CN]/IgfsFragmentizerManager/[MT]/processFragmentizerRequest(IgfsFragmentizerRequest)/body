@@ -1,0 +1,44 @@
+{
+  req.finishUnmarshal(igfsCtx.kernalContext().config().getMarshaller(),null);
+  Collection<IgfsFileAffinityRange> ranges=req.fragmentRanges();
+  IgniteUuid fileId=req.fileId();
+  IgfsFileInfo fileInfo=igfsCtx.meta().info(fileId);
+  if (fileInfo == null) {
+    if (log.isDebugEnabled())     log.debug("Failed to find file info for fragmentizer request: " + req);
+    return;
+  }
+  if (log.isDebugEnabled())   log.debug("Moving file ranges for fragmentizer request [req=" + req + ", fileInfo="+ fileInfo+ ']');
+  for (  IgfsFileAffinityRange range : ranges) {
+    try {
+      IgfsFileInfo updated;
+switch (range.status()) {
+case RANGE_STATUS_INITIAL:
+{
+          updated=igfsCtx.meta().updateInfo(fileId,updateRange(range,RANGE_STATUS_MOVING));
+          if (updated == null) {
+            igfsCtx.data().cleanBlocks(fileInfo,range,true);
+            continue;
+          }
+        }
+case RANGE_STATUS_MOVING:
+{
+        igfsCtx.data().spreadBlocks(fileInfo,range);
+        updated=igfsCtx.meta().updateInfo(fileId,updateRange(range,RANGE_STATUS_MOVED));
+        if (updated == null) {
+          igfsCtx.data().cleanBlocks(fileInfo,range,true);
+          continue;
+        }
+      }
+case RANGE_STATUS_MOVED:
+{
+      igfsCtx.data().cleanBlocks(fileInfo,range,false);
+      updated=igfsCtx.meta().updateInfo(fileId,deleteRange(range));
+      if (updated == null)       igfsCtx.data().cleanBlocks(fileInfo,range,true);
+    }
+}
+}
+ catch (IgfsInvalidRangeException e) {
+if (log.isDebugEnabled()) log.debug("Failed to update file range " + "[range=" + range + "fileId="+ fileId+ ", err="+ e.getMessage()+ ']');
+}
+}
+}

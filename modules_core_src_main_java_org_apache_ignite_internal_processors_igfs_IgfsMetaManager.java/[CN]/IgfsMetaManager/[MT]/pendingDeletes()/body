@@ -1,0 +1,23 @@
+{
+  if (busyLock.enterBusy()) {
+    try {
+      IgfsFileInfo trashInfo=id2InfoPrj.get(TRASH_ID);
+      if (trashInfo != null) {
+        Map<String,IgfsListingEntry> listing=trashInfo.listing();
+        if (listing != null && !listing.isEmpty()) {
+          return F.viewReadOnly(listing.values(),new IgniteClosure<IgfsListingEntry,IgniteUuid>(){
+            @Override public IgniteUuid apply(            IgfsListingEntry e){
+              return e.fileId();
+            }
+          }
+);
+        }
+      }
+      return Collections.emptySet();
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get pending deletes because Grid is stopping.");
+}
