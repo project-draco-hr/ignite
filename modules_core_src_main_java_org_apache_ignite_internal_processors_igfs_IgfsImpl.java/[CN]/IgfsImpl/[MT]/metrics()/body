@@ -1,0 +1,26 @@
+{
+  if (enterBusy()) {
+    try {
+      IgfsPathSummary sum=new IgfsPathSummary();
+      summary0(ROOT_ID,sum);
+      long secondarySpaceSize=0;
+      if (secondaryFs != null) {
+        try {
+          secondarySpaceSize=secondaryFs.usedSpaceSize();
+        }
+ catch (        IgniteException e) {
+          LT.warn(log,e,"Failed to get secondary file system consumed space size.");
+          secondarySpaceSize=-1;
+        }
+      }
+      return new IgfsMetricsAdapter(igfsCtx.data().spaceSize(),igfsCtx.data().maxSpaceSize(),secondarySpaceSize,sum.directoriesCount(),sum.filesCount(),metrics.filesOpenedForRead(),metrics.filesOpenedForWrite(),metrics.readBlocks(),metrics.readBlocksSecondary(),metrics.writeBlocks(),metrics.writeBlocksSecondary(),metrics.readBytes(),metrics.readBytesTime(),metrics.writeBytes(),metrics.writeBytesTime());
+    }
+ catch (    IgniteCheckedException e) {
+      throw U.convertException(e);
+    }
+ finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get metrics because Grid is stopping.");
+}

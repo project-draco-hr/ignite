@@ -1,0 +1,25 @@
+{
+  srvEndpoint=IpcServerEndpointDeserializer.deserialize(endpointCfg);
+  if (U.isWindows() && srvEndpoint instanceof IpcSharedMemoryServerEndpoint)   throw new IgniteCheckedException(IpcSharedMemoryServerEndpoint.class.getSimpleName() + " should not be configured on Windows (configure " + IpcServerTcpEndpoint.class.getSimpleName()+ ")");
+  if (srvEndpoint instanceof IpcServerTcpEndpoint) {
+    IpcServerTcpEndpoint srvEndpoint0=(IpcServerTcpEndpoint)srvEndpoint;
+    srvEndpoint0.setManagement(mgmt);
+    if (srvEndpoint0.getHost() == null) {
+      if (mgmt) {
+        String locHostName=igfsCtx.kernalContext().config().getLocalHost();
+        try {
+          srvEndpoint0.setHost(U.resolveLocalHost(locHostName).getHostAddress());
+        }
+ catch (        IOException e) {
+          throw new IgniteCheckedException("Failed to resolve local host: " + locHostName,e);
+        }
+      }
+ else       srvEndpoint0.setHost("127.0.0.1");
+    }
+  }
+  igfsCtx.kernalContext().resource().injectGeneric(srvEndpoint);
+  srvEndpoint.start();
+  if (srvEndpoint.getPort() >= 0)   igfsCtx.kernalContext().ports().registerPort(srvEndpoint.getPort(),TCP,srvEndpoint.getClass());
+  hnd=new IgfsIpcHandler(igfsCtx);
+  acceptWorker=new AcceptWorker();
+}
