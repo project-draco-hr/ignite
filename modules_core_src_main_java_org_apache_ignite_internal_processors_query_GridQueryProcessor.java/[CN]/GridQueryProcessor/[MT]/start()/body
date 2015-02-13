@@ -5,11 +5,18 @@
     idx.start(ctx);
     for (    CacheConfiguration ccfg : ctx.config().getCacheConfiguration()) {
       CacheQueryConfiguration qryCfg=ccfg.getQueryConfiguration();
-      if (qryCfg != null) {
-        if (!F.isEmpty(ccfg.getTypeMetadata())) {
-          for (          CacheTypeMetadata meta : ccfg.getTypeMetadata())           declaredTypesByName.put(new TypeName(ccfg.getName(),meta.getValueType()),meta);
+      if (qryCfg != null && qryCfg.getTypeResolver() != null)       typeResolvers.put(ccfg.getName(),qryCfg.getTypeResolver());
+      Map<TypeName,CacheTypeMetadata> declaredTypes=new HashMap<>();
+      if (!F.isEmpty(ccfg.getTypeMetadata())) {
+        for (        CacheTypeMetadata meta : ccfg.getTypeMetadata()) {
+          declaredTypes.put(new TypeName(ccfg.getName(),meta.getValueType()),meta);
+          int valTypeId=ctx.portable().typeId(meta.getValueType());
+          portableIds.put(valTypeId,meta.getValueType());
+          TypeDescriptor desc=processPortableMeta(meta);
+          desc.registered(idx.registerType(ccfg.getName(),desc));
+          typesByName.put(new TypeName(ccfg.getName(),desc.name()),desc);
+          types.put(new TypeId(ccfg.getName(),valTypeId),desc);
         }
-        if (qryCfg.getTypeResolver() != null)         typeResolvers.put(ccfg.getName(),qryCfg.getTypeResolver());
       }
     }
     execSvc=ctx.getExecutorService();

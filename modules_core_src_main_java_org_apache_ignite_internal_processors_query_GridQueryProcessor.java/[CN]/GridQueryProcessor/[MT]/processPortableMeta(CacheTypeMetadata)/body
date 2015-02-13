@@ -1,20 +1,21 @@
 {
+  TypeDescriptor d=new TypeDescriptor();
   for (  Map.Entry<String,Class<?>> entry : meta.getAscendingFields().entrySet()) {
-    ClassProperty prop=buildClassProperty(key,cls,entry.getKey(),entry.getValue());
+    PortableProperty prop=buildPortableProperty(entry.getKey(),entry.getValue());
     d.addProperty(prop,false);
     String idxName=prop.name() + "_idx";
     d.addIndex(idxName,isGeometryClass(prop.type()) ? GEO_SPATIAL : SORTED);
     d.addFieldToIndex(idxName,prop.name(),0,false);
   }
   for (  Map.Entry<String,Class<?>> entry : meta.getDescendingFields().entrySet()) {
-    ClassProperty prop=buildClassProperty(key,cls,entry.getKey(),entry.getValue());
+    PortableProperty prop=buildPortableProperty(entry.getKey(),entry.getValue());
     d.addProperty(prop,false);
     String idxName=prop.name() + "_idx";
     d.addIndex(idxName,isGeometryClass(prop.type()) ? GEO_SPATIAL : SORTED);
     d.addFieldToIndex(idxName,prop.name(),0,true);
   }
   for (  String txtIdx : meta.getTextFields()) {
-    ClassProperty prop=buildClassProperty(key,cls,txtIdx,String.class);
+    PortableProperty prop=buildPortableProperty(txtIdx,String.class);
     d.addProperty(prop,false);
     d.addFieldToTextIndex(prop.name());
   }
@@ -25,7 +26,7 @@
       LinkedHashMap<String,IgniteBiTuple<Class<?>,Boolean>> idxFields=entry.getValue();
       int order=0;
       for (      Map.Entry<String,IgniteBiTuple<Class<?>,Boolean>> idxField : idxFields.entrySet()) {
-        ClassProperty prop=buildClassProperty(key,cls,idxField.getKey(),idxField.getValue().get1());
+        PortableProperty prop=buildPortableProperty(idxField.getKey(),idxField.getValue().get1());
         d.addProperty(prop,false);
         Boolean descending=idxField.getValue().get2();
         d.addFieldToIndex(idxName,prop.name(),order,descending != null && descending);
@@ -34,7 +35,8 @@
     }
   }
   for (  Map.Entry<String,Class<?>> entry : meta.getQueryFields().entrySet()) {
-    ClassProperty prop=buildClassProperty(key,cls,entry.getKey(),entry.getValue());
-    d.addProperty(prop,false);
+    PortableProperty prop=buildPortableProperty(entry.getKey(),entry.getValue());
+    if (!d.props.containsKey(prop.name()))     d.addProperty(prop,false);
   }
+  return d;
 }
