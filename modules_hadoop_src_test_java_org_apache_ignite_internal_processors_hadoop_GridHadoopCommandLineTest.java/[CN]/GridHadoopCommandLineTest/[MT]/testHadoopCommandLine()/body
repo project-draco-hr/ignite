@@ -2,12 +2,12 @@
   assertEquals(0,executeHadoopCmd("fs","-ls","/"));
   assertEquals(0,executeHadoopCmd("fs","-mkdir","/input"));
   assertEquals(0,executeHadoopCmd("fs","-put",new File(testWorkDir,"test-data").getAbsolutePath(),"/input"));
-  assertTrue(ggfs.exists(new IgniteFsPath("/input/test-data")));
+  assertTrue(igfs.exists(new IgfsPath("/input/test-data")));
   assertEquals(0,executeHadoopCmd("jar",examplesJar.getAbsolutePath(),"wordcount","/input","/output"));
-  IgniteFsPath path=new IgniteFsPath("/user/" + System.getProperty("user.name") + "/");
-  assertTrue(ggfs.exists(path));
-  IgniteFsPath jobStatPath=null;
-  for (  IgniteFsPath jobPath : ggfs.listPaths(path)) {
+  IgfsPath path=new IgfsPath("/user/" + System.getProperty("user.name") + "/");
+  assertTrue(igfs.exists(path));
+  IgfsPath jobStatPath=null;
+  for (  IgfsPath jobPath : igfs.listPaths(path)) {
     assertNull(jobStatPath);
     jobStatPath=jobPath;
   }
@@ -15,8 +15,8 @@
   assertEquals(0,executeHadoopCmd("fs","-get",jobStatPath.toString() + "/performance",locStatFile.toString()));
   long evtCnt=GridHadoopTestUtils.simpleCheckJobStatFile(new BufferedReader(new FileReader(locStatFile)));
   assertTrue(evtCnt >= 22);
-  assertTrue(ggfs.exists(new IgniteFsPath("/output")));
-  BufferedReader in=new BufferedReader(new InputStreamReader(ggfs.open(new IgniteFsPath("/output/part-r-00000"))));
+  assertTrue(igfs.exists(new IgfsPath("/output")));
+  BufferedReader in=new BufferedReader(new InputStreamReader(igfs.open(new IgfsPath("/output/part-r-00000"))));
   List<String> res=new ArrayList<>();
   String line;
   while ((line=in.readLine()) != null)   res.add(line);

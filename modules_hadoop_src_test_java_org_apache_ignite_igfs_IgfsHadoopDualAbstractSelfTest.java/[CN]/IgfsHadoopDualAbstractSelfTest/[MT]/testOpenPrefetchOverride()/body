@@ -1,0 +1,48 @@
+{
+  create(igfsSecondary,paths(DIR,SUBDIR),paths(FILE));
+  final int blockSize=IGFS_BLOCK_SIZE;
+  IgfsOutputStream out=igfsSecondary.append(FILE,false);
+  int totalWritten=0;
+  while (totalWritten < blockSize * 2 + chunk.length) {
+    out.write(chunk);
+    totalWritten+=chunk.length;
+  }
+  out.close();
+  awaitFileClose(igfsSecondary,FILE);
+  Configuration cfg=new Configuration();
+  cfg.addResource(U.resolveIgniteUrl(PRIMARY_CFG));
+  int seqReads=SEQ_READS_BEFORE_PREFETCH + 1;
+  cfg.setInt(String.format(PARAM_IGFS_SEQ_READS_BEFORE_PREFETCH,"igfs:grid@"),seqReads);
+  FileSystem fs=FileSystem.get(new URI(PRIMARY_URI),cfg);
+  Path fsHome=new Path(PRIMARY_URI);
+  Path dir=new Path(fsHome,DIR.name());
+  Path subdir=new Path(dir,SUBDIR.name());
+  Path file=new Path(subdir,FILE.name());
+  FSDataInputStream fsIn=fs.open(file);
+  final byte[] readBuf=new byte[blockSize * 2];
+  fsIn.readFully(0,readBuf,0,readBuf.length);
+  IgfsMetaManager meta=igfs.context().meta();
+  IgfsFileInfo info=meta.info(meta.fileId(FILE));
+  IgfsBlockKey key=new IgfsBlockKey(info.id(),info.affinityKey(),info.evictExclude(),2);
+  GridCache<IgfsBlockKey,byte[]> dataCache=igfs.context().kernalContext().cache().cache(igfs.configuration().getDataCacheName());
+  for (int i=0; i < 10; i++) {
+    if (dataCache.containsKey(key))     break;
+ else     U.sleep(100);
+  }
+  fsIn.close();
+  igfsSecondary.delete(FILE,false);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      IgfsInputStream in0=igfs.open(FILE);
+      in0.seek(blockSize * 2);
+      try {
+        in0.read(readBuf);
+      }
+  finally {
+        U.closeQuiet(in0);
+      }
+      return null;
+    }
+  }
+,IOException.class,"Failed to read data due to secondary file system exception: /dir/subdir/file");
+}
