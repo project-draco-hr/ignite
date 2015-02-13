@@ -1,0 +1,44 @@
+{
+  Collection<VisorGgfsProfilerParsedLine> parsedLines=new ArrayList<>(512);
+  try (BufferedReader br=Files.newBufferedReader(p,Charset.forName("UTF-8"))){
+    String line=br.readLine();
+    if (line != null) {
+      if (line.equalsIgnoreCase(HDR))       line=br.readLine();
+      while (line != null) {
+        try {
+          VisorGgfsProfilerParsedLine ln=parseLine(line);
+          if (ln != null)           parsedLines.add(ln);
+        }
+ catch (        NumberFormatException ignored) {
+        }
+        line=br.readLine();
+      }
+    }
+  }
+   Map<Long,List<VisorGgfsProfilerParsedLine>> byStreamId=new HashMap<>();
+  for (  VisorGgfsProfilerParsedLine line : parsedLines) {
+    List<VisorGgfsProfilerParsedLine> grp=byStreamId.get(line.streamId);
+    if (grp == null) {
+      grp=new ArrayList<>();
+      byStreamId.put(line.streamId,grp);
+    }
+    grp.add(line);
+  }
+  Collection<VisorIgfsProfilerEntry> entries=new ArrayList<>(byStreamId.size());
+  for (  List<VisorGgfsProfilerParsedLine> lines : byStreamId.values()) {
+    VisorIgfsProfilerEntry entry=aggregateParsedLines(lines);
+    if (entry != null)     entries.add(entry);
+  }
+  Map<String,List<VisorIgfsProfilerEntry>> byPath=new HashMap<>();
+  for (  VisorIgfsProfilerEntry entry : entries) {
+    List<VisorIgfsProfilerEntry> grp=byPath.get(entry.path());
+    if (grp == null) {
+      grp=new ArrayList<>();
+      byPath.put(entry.path(),grp);
+    }
+    grp.add(entry);
+  }
+  Collection<VisorIgfsProfilerEntry> res=new ArrayList<>(byPath.size());
+  for (  List<VisorIgfsProfilerEntry> lst : byPath.values())   res.add(VisorIgfsProfiler.aggregateGgfsProfilerEntries(lst));
+  return res;
+}
