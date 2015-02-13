@@ -11,32 +11,32 @@
     }
   }
 ,EVTS_GGFS);
-  final IgniteFsPath file=new IgniteFsPath("/file1");
+  final IgfsPath file=new IgfsPath("/file1");
   final int dataSize=1024;
   byte[] buf=new byte[dataSize];
   try (IgniteFsOutputStream os=ggfs.create(file,false)){
     os.write(buf);
   }
-   try (IgniteFsInputStream is=ggfs.open(file,256)){
+   try (IgfsInputStream is=ggfs.open(file,256)){
     is.readFully(0,buf);
   }
    assertTrue(latch.await(10,TimeUnit.SECONDS));
   assertEquals(evtsCnt,evtList.size());
   IgniteFsEvent evt=(IgniteFsEvent)evtList.get(0);
   assertEquals(EVT_GGFS_FILE_CREATED,evt.type());
-  assertEquals(new IgniteFsPath("/file1"),evt.path());
+  assertEquals(new IgfsPath("/file1"),evt.path());
   evt=(IgniteFsEvent)evtList.get(1);
   assertEquals(EVT_GGFS_FILE_OPENED_WRITE,evt.type());
-  assertEquals(new IgniteFsPath("/file1"),evt.path());
+  assertEquals(new IgfsPath("/file1"),evt.path());
   evt=(IgniteFsEvent)evtList.get(2);
   assertEquals(EVT_GGFS_FILE_CLOSED_WRITE,evt.type());
-  assertEquals(new IgniteFsPath("/file1"),evt.path());
+  assertEquals(new IgfsPath("/file1"),evt.path());
   assertEquals((long)dataSize,evt.dataSize());
   evt=(IgniteFsEvent)evtList.get(3);
   assertEquals(EVT_GGFS_FILE_OPENED_READ,evt.type());
-  assertEquals(new IgniteFsPath("/file1"),evt.path());
+  assertEquals(new IgfsPath("/file1"),evt.path());
   evt=(IgniteFsEvent)evtList.get(4);
   assertEquals(EVT_GGFS_FILE_CLOSED_READ,evt.type());
-  assertEquals(new IgniteFsPath("/file1"),evt.path());
+  assertEquals(new IgfsPath("/file1"),evt.path());
   assertEquals((long)dataSize,evt.dataSize());
 }

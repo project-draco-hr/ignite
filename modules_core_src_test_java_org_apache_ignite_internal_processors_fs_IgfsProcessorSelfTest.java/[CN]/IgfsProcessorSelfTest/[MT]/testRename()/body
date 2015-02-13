@@ -23,10 +23,10 @@
   }
 ,IgniteFsException.class,null);
   Collection<IgniteBiTuple<String,String>> chain=Arrays.asList(F.t("/A/B1/C1","/A/B1/C2"),F.t("/A/B1","/A/B2"),F.t("/A","/Q"),F.t("/Q/B2/C2","/Q/B2/C1"),F.t("/Q/B2","/Q/B1"),F.t("/Q","/A"),F.t("/A/B1/C1","/"),F.t("/C1","/A/B1"));
-  final IgniteFsPath root=path("/");
+  final IgfsPath root=path("/");
   for (  IgniteBiTuple<String,String> e : chain) {
-    final IgniteFsPath p1=path(e.get1());
-    final IgniteFsPath p2=path(e.get2());
+    final IgfsPath p1=path(e.get1());
+    final IgfsPath p2=path(e.get2());
     assertTrue("Entry: " + e,ggfs.exists(p1));
     ggfs.rename(p1,p2);
     assertFalse("Entry: " + e,ggfs.exists(p1));
@@ -62,12 +62,12 @@
   assertEquals(Arrays.asList(path("/A/B1/C1")),sorted(ggfs.listPaths(path("/A/B1"))));
   String text="Test long number: " + rnd.nextLong();
   assertEquals(text,create("/A/a",false,text));
-  try (IgniteFsInputStream in0=ggfs.open(path("/A/a"))){
+  try (IgfsInputStream in0=ggfs.open(path("/A/a"))){
     ggfs.rename(path("/A/a"),path("/b"));
     assertEquals(text,IOUtils.toString(in0,UTF_8));
   }
    assertOpenFails("/A/a","File not found");
   assertEquals(text,read("/b"));
   ggfs.delete(root,true);
-  assertEquals(Collections.<IgniteFsPath>emptyList(),ggfs.listPaths(root));
+  assertEquals(Collections.<IgfsPath>emptyList(),ggfs.listPaths(root));
 }
