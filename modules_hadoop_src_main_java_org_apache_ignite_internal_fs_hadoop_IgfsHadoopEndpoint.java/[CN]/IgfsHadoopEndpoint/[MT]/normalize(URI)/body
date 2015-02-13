@@ -1,0 +1,13 @@
+{
+  try {
+    if (!F.eq(IgniteFs.GGFS_SCHEME,uri.getScheme()))     throw new IOException("Failed to normalize UIR because it has non GGFS scheme: " + uri);
+    IgfsHadoopEndpoint endpoint=new IgfsHadoopEndpoint(uri.getAuthority());
+    StringBuilder sb=new StringBuilder();
+    if (endpoint.ggfs() != null)     sb.append(endpoint.ggfs());
+    if (endpoint.grid() != null)     sb.append(":").append(endpoint.grid());
+    return new URI(uri.getScheme(),sb.length() != 0 ? sb.toString() : null,endpoint.host(),endpoint.port(),uri.getPath(),uri.getQuery(),uri.getFragment());
+  }
+ catch (  URISyntaxException|IgniteCheckedException e) {
+    throw new IOException("Failed to normalize URI: " + uri,e);
+  }
+}
