@@ -1,18 +1,18 @@
 {
-  Collection<UUID> startSync0=startSync=new GridConcurrentHashSet<>(F.viewReadOnly(ggfsCtx.kernalContext().discovery().allNodes(),F.node2id(),new P1<ClusterNode>(){
+  Collection<UUID> startSync0=startSync=new GridConcurrentHashSet<>(F.viewReadOnly(igfsCtx.kernalContext().discovery().allNodes(),F.node2id(),new P1<ClusterNode>(){
     @Override public boolean apply(    ClusterNode n){
-      return ggfsCtx.ggfsNode(n);
+      return igfsCtx.ggfsNode(n);
     }
   }
 ));
-  ClusterNode locNode=ggfsCtx.kernalContext().grid().localNode();
+  ClusterNode locNode=igfsCtx.kernalContext().grid().localNode();
   while (!startSync0.isEmpty()) {
     for (    UUID nodeId : startSync0) {
       IgfsSyncMessage syncReq=new IgfsSyncMessage(locNode.order(),false);
       try {
         if (log.isDebugEnabled())         log.debug("Sending fragmentizer sync start request to remote node [nodeId=" + nodeId + ", syncReq="+ syncReq+ ']');
         sendWithRetries(nodeId,syncReq);
-        if (!ggfsCtx.kernalContext().discovery().alive(nodeId))         startSync0.remove(nodeId);
+        if (!igfsCtx.kernalContext().discovery().alive(nodeId))         startSync0.remove(nodeId);
       }
  catch (      IgniteCheckedException e) {
         if (e.hasCause(ClusterTopologyCheckedException.class)) {

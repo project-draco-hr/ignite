@@ -1,8 +1,8 @@
 {
-  req.finishUnmarshal(ggfsCtx.kernalContext().config().getMarshaller(),null);
+  req.finishUnmarshal(igfsCtx.kernalContext().config().getMarshaller(),null);
   Collection<IgfsFileAffinityRange> ranges=req.fragmentRanges();
   IgniteUuid fileId=req.fileId();
-  IgfsFileInfo fileInfo=ggfsCtx.meta().info(fileId);
+  IgfsFileInfo fileInfo=igfsCtx.meta().info(fileId);
   if (fileInfo == null) {
     if (log.isDebugEnabled())     log.debug("Failed to find file info for fragmentizer request: " + req);
     return;
@@ -14,26 +14,26 @@
 switch (range.status()) {
 case RANGE_STATUS_INITIAL:
 {
-          updated=ggfsCtx.meta().updateInfo(fileId,updateRange(range,RANGE_STATUS_MOVING));
+          updated=igfsCtx.meta().updateInfo(fileId,updateRange(range,RANGE_STATUS_MOVING));
           if (updated == null) {
-            ggfsCtx.data().cleanBlocks(fileInfo,range,true);
+            igfsCtx.data().cleanBlocks(fileInfo,range,true);
             continue;
           }
         }
 case RANGE_STATUS_MOVING:
 {
-        ggfsCtx.data().spreadBlocks(fileInfo,range);
-        updated=ggfsCtx.meta().updateInfo(fileId,updateRange(range,RANGE_STATUS_MOVED));
+        igfsCtx.data().spreadBlocks(fileInfo,range);
+        updated=igfsCtx.meta().updateInfo(fileId,updateRange(range,RANGE_STATUS_MOVED));
         if (updated == null) {
-          ggfsCtx.data().cleanBlocks(fileInfo,range,true);
+          igfsCtx.data().cleanBlocks(fileInfo,range,true);
           continue;
         }
       }
 case RANGE_STATUS_MOVED:
 {
-      ggfsCtx.data().cleanBlocks(fileInfo,range,false);
-      updated=ggfsCtx.meta().updateInfo(fileId,deleteRange(range));
-      if (updated == null)       ggfsCtx.data().cleanBlocks(fileInfo,range,true);
+      igfsCtx.data().cleanBlocks(fileInfo,range,false);
+      updated=igfsCtx.meta().updateInfo(fileId,deleteRange(range));
+      if (updated == null)       igfsCtx.data().cleanBlocks(fileInfo,range,true);
     }
 }
 }
