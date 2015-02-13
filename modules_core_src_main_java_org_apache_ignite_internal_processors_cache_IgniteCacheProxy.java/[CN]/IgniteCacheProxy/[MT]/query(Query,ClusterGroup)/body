@@ -1,0 +1,40 @@
+{
+  final CacheQuery<Map.Entry<K,V>> qry;
+  final CacheQueryFuture<Map.Entry<K,V>> fut;
+  if (filter instanceof ScanQuery) {
+    IgniteBiPredicate<K,V> p=((ScanQuery)filter).getFilter();
+    qry=delegate.queries().createScanQuery(p != null ? p : accepAll());
+    if (grp != null)     qry.projection(grp);
+    fut=qry.execute();
+  }
+ else   if (filter instanceof TextQuery) {
+    TextQuery p=(TextQuery)filter;
+    qry=delegate.queries().createFullTextQuery(p.getType(),p.getText());
+    if (grp != null)     qry.projection(grp);
+    fut=qry.execute();
+  }
+ else   if (filter instanceof SpiQuery) {
+    qry=((GridCacheQueriesEx)delegate.queries()).createSpiQuery();
+    if (grp != null)     qry.projection(grp);
+    fut=qry.execute(((SpiQuery)filter).getArgs());
+  }
+ else   throw new IgniteException("Unsupported query predicate: " + filter);
+  return new org.apache.ignite.internal.processors.cache.QueryCursorImpl<>(new GridCloseableIteratorAdapter<Entry<K,V>>(){
+    /** 
+ */
+    Map.Entry<K,V> cur;
+    @Override protected Entry<K,V> onNext() throws IgniteCheckedException {
+      if (!onHasNext())       throw new NoSuchElementException();
+      Map.Entry<K,V> e=cur;
+      cur=null;
+      return new CacheEntryImpl<>(e.getKey(),e.getValue());
+    }
+    @Override protected boolean onHasNext() throws IgniteCheckedException {
+      return cur != null || (cur=fut.next()) != null;
+    }
+    @Override protected void onClose() throws IgniteCheckedException {
+      fut.cancel();
+    }
+  }
+);
+}
