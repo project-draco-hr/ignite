@@ -2,11 +2,11 @@
   IgfsPath path=new IgfsPath("/someFile");
   long written=0;
   int i=0;
-  int ggfsIdx=0;
-  int fileSize=30 * GGFS_GROUP_SIZE * GGFS_BLOCK_SIZE;
+  int igfsIdx=0;
+  int fileSize=30 * IGFS_GROUP_SIZE * IGFS_BLOCK_SIZE;
   while (written < fileSize) {
-    IgniteFs ggfs=grid(ggfsIdx).fileSystem("igfs");
-    try (IgfsOutputStream out=ggfs.append(path,true)){
+    IgniteFs igfs=grid(igfsIdx).fileSystem("igfs");
+    try (IgfsOutputStream out=igfs.append(path,true)){
       byte[] data=new byte[chunkSize];
       Arrays.fill(data,(byte)i);
       out.write(data);
@@ -15,12 +15,12 @@
     written+=chunkSize;
     i++;
     if (rotate && i % 5 == 0) {
-      ggfsIdx++;
-      if (ggfsIdx >= NODE_CNT)       ggfsIdx=0;
+      igfsIdx++;
+      if (igfsIdx >= NODE_CNT)       igfsIdx=0;
     }
   }
-  IgniteFs ggfs=grid(0).fileSystem("igfs");
-  try (IgfsInputStream in=ggfs.open(path)){
+  IgniteFs igfs=grid(0).fileSystem("igfs");
+  try (IgfsInputStream in=igfs.open(path)){
     i=0;
     int read=0;
     byte[] chunk=new byte[chunkSize];

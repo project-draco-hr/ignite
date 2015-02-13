@@ -1,6 +1,6 @@
 {
   create(ggfsSecondary,paths(DIR,SUBDIR),paths(FILE));
-  final int blockSize=ggfs.info(FILE).blockSize();
+  final int blockSize=igfs.info(FILE).blockSize();
   IgfsOutputStream out=ggfsSecondary.append(FILE,false);
   int totalWritten=0;
   while (totalWritten < blockSize * 2 + chunk.length) {
@@ -10,16 +10,16 @@
   out.close();
   awaitFileClose(ggfsSecondary,FILE);
   int totalRead=0;
-  IgfsInputStream in=ggfs.open(FILE,blockSize);
+  IgfsInputStream in=igfs.open(FILE,blockSize);
   final byte[] readBuf=new byte[1024];
   while (totalRead + readBuf.length <= blockSize * 2) {
     in.read(readBuf);
     totalRead+=readBuf.length;
   }
-  IgfsMetaManager meta=ggfs.context().meta();
+  IgfsMetaManager meta=igfs.context().meta();
   IgfsFileInfo info=meta.info(meta.fileId(FILE));
   IgfsBlockKey key=new IgfsBlockKey(info.id(),info.affinityKey(),info.evictExclude(),2);
-  GridCache<IgfsBlockKey,byte[]> dataCache=ggfs.context().kernalContext().cache().cache(ggfs.configuration().getDataCacheName());
+  GridCache<IgfsBlockKey,byte[]> dataCache=igfs.context().kernalContext().cache().cache(igfs.configuration().getDataCacheName());
   for (int i=0; i < 10; i++) {
     if (dataCache.containsKey(key))     break;
  else     U.sleep(100);

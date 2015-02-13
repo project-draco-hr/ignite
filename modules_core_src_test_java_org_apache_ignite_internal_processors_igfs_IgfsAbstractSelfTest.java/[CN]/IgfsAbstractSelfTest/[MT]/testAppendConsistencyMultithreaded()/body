@@ -2,14 +2,14 @@
   final AtomicBoolean stop=new AtomicBoolean();
   final AtomicInteger chunksCtr=new AtomicInteger();
   final AtomicReference<Exception> err=new AtomicReference<>();
-  ggfs.create(FILE,false).close();
+  igfs.create(FILE,false).close();
   int threadCnt=5;
   IgniteInternalFuture<?> fut=multithreadedAsync(new Runnable(){
     @Override public void run(){
       while (!stop.get()) {
         IgfsOutputStream os=null;
         try {
-          os=ggfs.append(FILE,false);
+          os=igfs.append(FILE,false);
           os.write(chunk);
           U.sleep(50);
           os.close();
@@ -36,9 +36,9 @@ catch (        IOException e) {
   while (chunksCtr.get() < 50 && U.currentTimeMillis() - startTime < 60 * 1000)   U.sleep(100);
   stop.set(true);
   fut.get();
-  awaitFileClose(ggfs,FILE);
+  awaitFileClose(igfs,FILE);
   if (err.get() != null)   throw err.get();
   byte[][] data=new byte[chunksCtr.get()][];
   Arrays.fill(data,chunk);
-  checkFileContent(ggfs,FILE,data);
+  checkFileContent(igfs,FILE,data);
 }
