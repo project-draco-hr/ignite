@@ -1,0 +1,17 @@
+{
+  if (endpoint == null)   endpoint="";
+  logLock.readLock().lock();
+  try {
+    IgfsLogger log=loggers.get(endpoint);
+    if (log == null) {
+      log=new IgfsLogger(endpoint,ggfsName,dir,batchSize);
+      IgfsLogger log0=loggers.putIfAbsent(endpoint,log);
+      if (log0 != null)       log=log0;
+    }
+    log.useCnt.incrementAndGet();
+    return log;
+  }
+  finally {
+    logLock.readLock().unlock();
+  }
+}

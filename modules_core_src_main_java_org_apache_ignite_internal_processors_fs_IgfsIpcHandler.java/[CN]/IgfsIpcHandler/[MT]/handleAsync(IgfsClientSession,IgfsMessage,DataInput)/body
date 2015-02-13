@@ -1,0 +1,31 @@
+{
+  try {
+    if (stopping)     return null;
+    final IgfsIpcCommand cmd=msg.command();
+    IgniteInternalFuture<IgfsMessage> fut;
+switch (cmd) {
+case WRITE_BLOCK:
+case MAKE_DIRECTORIES:
+case LIST_FILES:
+case LIST_PATHS:
+{
+        IgfsMessage res=execute(ses,cmd,msg,in);
+        fut=res == null ? null : new GridFinishedFuture<>(ctx,res);
+        break;
+      }
+default :
+{
+      fut=ctx.closure().callLocalSafe(new GridPlainCallable<IgfsMessage>(){
+        @Override public IgfsMessage call() throws Exception {
+          return execute(ses,cmd,msg,null);
+        }
+      }
+,GridClosurePolicy.GGFS_POOL);
+    }
+}
+return fut;
+}
+ catch (Exception e) {
+return new GridFinishedFuture<>(ctx,e);
+}
+}
