@@ -13,30 +13,42 @@
   final CacheProjection<K,V> prj=prj0;
   final IgniteBiPredicate<K,V> keyValFilter=qry.scanFilter();
   injectResources(keyValFilter);
-  GridIterator<IgniteBiTuple<K,V>> heapIt=new GridIteratorAdapter<IgniteBiTuple<K,V>>(){
+  final CachePeekMode[] peekModes={CachePeekMode.ONHEAP};
+  final GridDhtCacheAdapter dht=cctx.isLocal() ? null : (cctx.isNear() ? cctx.near().dht() : cctx.dht());
+  final ExpiryPolicy plc=cctx.expiry();
+  final GridCloseableIteratorAdapter<IgniteBiTuple<K,V>> heapIt=new GridCloseableIteratorAdapter<IgniteBiTuple<K,V>>(){
     private IgniteBiTuple<K,V> next;
+    private IgniteCacheExpiryPolicy expiryPlc=cctx.cache().expiryPolicy(plc);
     private Iterator<K> iter=qry.includeBackups() || cctx.isReplicated() ? prj.keySet().iterator() : prj.primaryKeySet().iterator();
 {
       advance();
     }
-    @Override public boolean hasNextX(){
+    @Override public boolean onHasNext(){
       return next != null;
     }
-    @Override public IgniteBiTuple<K,V> nextX(){
+    @Override public IgniteBiTuple<K,V> onNext(){
       if (next == null)       throw new NoSuchElementException();
       IgniteBiTuple<K,V> next0=next;
       advance();
       return next0;
-    }
-    @Override public void removeX(){
-      throw new UnsupportedOperationException();
     }
     private void advance(){
       IgniteBiTuple<K,V> next0=null;
       while (iter.hasNext()) {
         next0=null;
         K key=iter.next();
-        V val=prj.peek(key);
+        V val;
+        try {
+          val=prj.localPeek(key,peekModes,expiryPlc);
+        }
+ catch (        IgniteCheckedException e) {
+          if (log.isDebugEnabled())           log.debug("Failed to peek value: " + e);
+          val=null;
+        }
+        if (dht != null && expiryPlc != null && expiryPlc.readyToFlush(100)) {
+          dht.sendTtlUpdateRequest(expiryPlc);
+          expiryPlc=cctx.cache().expiryPolicy(plc);
+        }
         if (val != null) {
           next0=F.t(key,val);
           if (checkPredicate(next0))           break;
@@ -44,6 +56,16 @@
         }
       }
       next=next0 != null ? new IgniteBiTuple<>(next0.getKey(),next0.getValue()) : null;
+      if (next == null)       sendTtlUpdate();
+    }
+    @Override protected void onClose() throws IgniteCheckedException {
+      sendTtlUpdate();
+    }
+    private void sendTtlUpdate(){
+      if (dht != null && expiryPlc != null) {
+        dht.sendTtlUpdateRequest(expiryPlc);
+        expiryPlc=null;
+      }
     }
     private boolean checkPredicate(    Map.Entry<K,V> e){
       if (keyValFilter != null) {
@@ -72,6 +94,9 @@
     }
     @Override protected void onRemove(){
       it.remove();
+    }
+    @Override protected void onClose() throws IgniteCheckedException {
+      heapIt.close();
     }
   }
 ;
