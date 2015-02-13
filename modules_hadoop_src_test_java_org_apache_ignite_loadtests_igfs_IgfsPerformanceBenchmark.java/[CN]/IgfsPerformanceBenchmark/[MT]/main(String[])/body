@@ -6,14 +6,14 @@
   final String cfgPath=argument(args,4,HADOOP_FS_CFG);
   final String fsPrefix=argument(args,5,FS_PREFIX);
   final short replication=(short)intArgument(args,6,3);
-  final Path ggfsHome=new Path(fsPrefix);
-  final FileSystem fs=ggfs(ggfsHome,cfgPath);
+  final Path igfsHome=new Path(fsPrefix);
+  final FileSystem fs=igfs(igfsHome,cfgPath);
   final AtomicLong progress=new AtomicLong();
   final AtomicInteger idx=new AtomicInteger();
   System.out.println("Warming up...");
   System.out.println("Finished warm up.");
   if (op == OP_READ) {
-    for (int i=0; i < threadNum; i++)     benchmarkWrite(fs,new Path(ggfsHome,"in-" + i),fileLen,bufSize,replication,null);
+    for (int i=0; i < threadNum; i++)     benchmarkWrite(fs,new Path(igfsHome,"in-" + i),fileLen,bufSize,replication,null);
   }
   long total=0;
   long start=System.currentTimeMillis();
@@ -22,8 +22,8 @@
       String fileIdx=op == OP_READ ? String.valueOf(idx.getAndIncrement()) : UUID.randomUUID().toString();
       try {
         for (int i=0; i < 200; i++) {
-          if (op == OP_WRITE)           benchmarkWrite(fs,new Path(ggfsHome,"out-" + fileIdx),fileLen,bufSize,replication,progress);
- else           benchmarkRead(fs,new Path(ggfsHome,"in-" + fileIdx),bufSize,progress);
+          if (op == OP_WRITE)           benchmarkWrite(fs,new Path(igfsHome,"out-" + fileIdx),fileLen,bufSize,replication,progress);
+ else           benchmarkRead(fs,new Path(igfsHome,"in-" + fileIdx),bufSize,progress);
         }
         System.out.println("Finished " + (op == OP_WRITE ? "writing" : "reading") + " data.");
       }

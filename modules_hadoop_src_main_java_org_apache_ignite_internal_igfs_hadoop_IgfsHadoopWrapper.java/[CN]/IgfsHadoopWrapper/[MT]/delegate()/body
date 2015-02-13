@@ -3,11 +3,11 @@
   Delegate curDelegate=delegateRef.get();
   if (curDelegate != null)   return curDelegate;
   if (!parameter(conf,PARAM_IGFS_ENDPOINT_NO_EMBED,authority,false)) {
-    IgfsEx ggfs=null;
+    IgfsEx igfs=null;
     if (endpoint.grid() == null) {
       try {
         Ignite ignite=G.ignite();
-        ggfs=(IgfsEx)ignite.fileSystem(endpoint.ggfs());
+        igfs=(IgfsEx)ignite.fileSystem(endpoint.igfs());
       }
  catch (      Exception e) {
         err=e;
@@ -16,7 +16,7 @@
  else {
       for (      Ignite ignite : G.allGrids()) {
         try {
-          ggfs=(IgfsEx)ignite.fileSystem(endpoint.ggfs());
+          igfs=(IgfsEx)ignite.fileSystem(endpoint.igfs());
           break;
         }
  catch (        Exception e) {
@@ -24,10 +24,10 @@
         }
       }
     }
-    if (ggfs != null) {
+    if (igfs != null) {
       IgfsHadoopEx hadoop=null;
       try {
-        hadoop=new IgfsHadoopInProc(ggfs,log);
+        hadoop=new IgfsHadoopInProc(igfs,log);
         curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
       }
  catch (      IOException|IgniteCheckedException e) {
@@ -41,7 +41,7 @@
     if (curDelegate == null && !U.isWindows()) {
       IgfsHadoopEx hadoop=null;
       try {
-        hadoop=new IgfsHadoopOutProc(endpoint.port(),endpoint.grid(),endpoint.ggfs(),log);
+        hadoop=new IgfsHadoopOutProc(endpoint.port(),endpoint.grid(),endpoint.igfs(),log);
         curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
       }
  catch (      IOException|IgniteCheckedException e) {
@@ -56,7 +56,7 @@
     if (curDelegate == null) {
       IgfsHadoopEx hadoop=null;
       try {
-        hadoop=new IgfsHadoopOutProc(LOCALHOST,endpoint.port(),endpoint.grid(),endpoint.ggfs(),log);
+        hadoop=new IgfsHadoopOutProc(LOCALHOST,endpoint.port(),endpoint.grid(),endpoint.igfs(),log);
         curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
       }
  catch (      IOException|IgniteCheckedException e) {
@@ -69,7 +69,7 @@
   if (curDelegate == null && (skipLocTcp || !F.eq(LOCALHOST,endpoint.host()))) {
     IgfsHadoopEx hadoop=null;
     try {
-      hadoop=new IgfsHadoopOutProc(endpoint.host(),endpoint.port(),endpoint.grid(),endpoint.ggfs(),log);
+      hadoop=new IgfsHadoopOutProc(endpoint.host(),endpoint.port(),endpoint.grid(),endpoint.igfs(),log);
       curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
     }
  catch (    IOException|IgniteCheckedException e) {

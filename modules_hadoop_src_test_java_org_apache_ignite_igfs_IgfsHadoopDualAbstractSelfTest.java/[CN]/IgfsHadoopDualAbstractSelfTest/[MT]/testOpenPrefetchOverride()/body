@@ -1,14 +1,14 @@
 {
-  create(ggfsSecondary,paths(DIR,SUBDIR),paths(FILE));
+  create(igfsSecondary,paths(DIR,SUBDIR),paths(FILE));
   final int blockSize=IGFS_BLOCK_SIZE;
-  IgfsOutputStream out=ggfsSecondary.append(FILE,false);
+  IgfsOutputStream out=igfsSecondary.append(FILE,false);
   int totalWritten=0;
   while (totalWritten < blockSize * 2 + chunk.length) {
     out.write(chunk);
     totalWritten+=chunk.length;
   }
   out.close();
-  awaitFileClose(ggfsSecondary,FILE);
+  awaitFileClose(igfsSecondary,FILE);
   Configuration cfg=new Configuration();
   cfg.addResource(U.resolveIgniteUrl(PRIMARY_CFG));
   int seqReads=SEQ_READS_BEFORE_PREFETCH + 1;
@@ -21,19 +21,19 @@
   FSDataInputStream fsIn=fs.open(file);
   final byte[] readBuf=new byte[blockSize * 2];
   fsIn.readFully(0,readBuf,0,readBuf.length);
-  IgfsMetaManager meta=ggfs.context().meta();
+  IgfsMetaManager meta=igfs.context().meta();
   IgfsFileInfo info=meta.info(meta.fileId(FILE));
   IgfsBlockKey key=new IgfsBlockKey(info.id(),info.affinityKey(),info.evictExclude(),2);
-  GridCache<IgfsBlockKey,byte[]> dataCache=ggfs.context().kernalContext().cache().cache(ggfs.configuration().getDataCacheName());
+  GridCache<IgfsBlockKey,byte[]> dataCache=igfs.context().kernalContext().cache().cache(igfs.configuration().getDataCacheName());
   for (int i=0; i < 10; i++) {
     if (dataCache.containsKey(key))     break;
  else     U.sleep(100);
   }
   fsIn.close();
-  ggfsSecondary.delete(FILE,false);
+  igfsSecondary.delete(FILE,false);
   GridTestUtils.assertThrows(log,new Callable<Object>(){
     @Override public Object call() throws Exception {
-      IgfsInputStream in0=ggfs.open(FILE);
+      IgfsInputStream in0=igfs.open(FILE);
       in0.seek(blockSize * 2);
       try {
         in0.read(readBuf);
