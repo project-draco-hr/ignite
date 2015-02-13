@@ -1,0 +1,22 @@
+{
+  try {
+    try {
+      return block(blockIdx);
+    }
+ catch (    IgniteFsCorruptedFileException e) {
+      if (log.isDebugEnabled())       log.debug("Failed to fetch file block [path=" + path + ", fileInfo="+ fileInfo+ ", blockIdx="+ blockIdx+ ", errMsg="+ e.getMessage()+ ']');
+      if (fileInfo.fileMap() != null && !fileInfo.fileMap().ranges().isEmpty()) {
+        IgfsFileInfo newInfo=meta.info(fileInfo.id());
+        if (newInfo == null)         throw new IgniteFsFileNotFoundException("Failed to read file block (file was concurrently " + "deleted) [path=" + path + ", blockIdx="+ blockIdx+ ']');
+        fileInfo=newInfo;
+        locCache.clear();
+        if (log.isDebugEnabled())         log.debug("Updated input stream file info after block fetch failure [path=" + path + ", fileInfo="+ fileInfo+ ']');
+        return block(blockIdx);
+      }
+      throw new IOException(e.getMessage(),e);
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IOException(e.getMessage(),e);
+  }
+}

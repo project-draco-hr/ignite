@@ -4,14 +4,14 @@
   for (int i=0; i < FILES_CNT; i++) {
     IgniteFsPath path=new IgniteFsPath("/file-" + i);
     ggfs(0).create(path,false).close();
-    GridGgfsMetaManager meta=ggfs(0).context().meta();
+    IgfsMetaManager meta=ggfs(0).context().meta();
     IgniteUuid fileId=meta.fileId(path);
     int fileSize=rand.nextInt(MAX_FILE_SIZE);
     int fullBlocks=fileSize / BLOCK_SIZE;
     int remainderSize=fileSize % BLOCK_SIZE;
     Collection<GgfsBlock> blocks=new ArrayList<>(fullBlocks + remainderSize > 0 ? 1 : 0);
-    for (int j=0; j < fullBlocks; j++)     blocks.add(new GgfsBlock(new GridGgfsBlockKey(fileId,null,true,j),BLOCK_SIZE));
-    if (remainderSize > 0)     blocks.add(new GgfsBlock(new GridGgfsBlockKey(fileId,null,true,fullBlocks),remainderSize));
+    for (int j=0; j < fullBlocks; j++)     blocks.add(new GgfsBlock(new IgfsBlockKey(fileId,null,true,j),BLOCK_SIZE));
+    if (remainderSize > 0)     blocks.add(new GgfsBlock(new IgfsBlockKey(fileId,null,true,fullBlocks),remainderSize));
     GgfsFile file=new GgfsFile(path,fileSize,blocks);
     for (    GgfsBlock block : blocks) {
       IgniteFsOutputStream os=ggfs(0).append(path,false);

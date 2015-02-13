@@ -1,0 +1,55 @@
+{
+  try {
+    while (!isCancelled()) {
+      IgniteBiTuple<GridFutureAdapter<Object>,IgfsFileInfo> req=delReqs.take();
+      GridFutureAdapter<Object> fut=req.get1();
+      IgfsFileInfo fileInfo=req.get2();
+      if (fileInfo == stopInfo) {
+        fut.onDone();
+        break;
+      }
+      IgniteDataLoader<IgfsBlockKey,byte[]> ldr=dataLoader();
+      try {
+        IgfsFileMap map=fileInfo.fileMap();
+        for (long block=0, size=fileInfo.blocksCount(); block < size; block++) {
+          IgniteUuid affKey=map == null ? null : map.affinityKey(block * fileInfo.blockSize(),true);
+          ldr.removeData(new IgfsBlockKey(fileInfo.id(),affKey,fileInfo.evictExclude(),block));
+          if (affKey != null)           ldr.removeData(new IgfsBlockKey(fileInfo.id(),null,fileInfo.evictExclude(),block));
+        }
+      }
+ catch (      IgniteInterruptedException ignored) {
+      }
+catch (      IgniteException e) {
+        log.error("Failed to remove file contents: " + fileInfo,e);
+      }
+ finally {
+        try {
+          IgniteUuid fileId=fileInfo.id();
+          for (long block=0, size=fileInfo.blocksCount(); block < size; block++)           ldr.removeData(new IgfsBlockKey(fileId,fileInfo.affinityKey(),fileInfo.evictExclude(),block));
+        }
+ catch (        IgniteException e) {
+          log.error("Failed to remove file contents: " + fileInfo,e);
+        }
+ finally {
+          try {
+            ldr.close(isCancelled());
+          }
+ catch (          IgniteException e) {
+            log.error("Failed to stop data loader while shutting down ggfs async delete thread.",e);
+          }
+ finally {
+            fut.onDone();
+          }
+        }
+      }
+    }
+  }
+  finally {
+    if (log.isDebugEnabled())     log.debug("Stopping asynchronous ggfs file delete thread: " + name());
+    IgniteBiTuple<GridFutureAdapter<Object>,IgfsFileInfo> req=delReqs.poll();
+    while (req != null) {
+      req.get1().onCancelled();
+      req=delReqs.poll();
+    }
+  }
+}
