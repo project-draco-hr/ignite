@@ -1,0 +1,25 @@
+{
+  if (args.length == 0)   System.out.println("Please provide file name and regular expression.");
+ else   if (args.length == 1)   System.out.println("Please provide regular expression.");
+ else {
+    try (Ignite ignite=Ignition.start("examples/config/filesystem/example-igfs.xml")){
+      System.out.println();
+      System.out.println(">>> IGFS map reduce example started.");
+      String fileName=args[0];
+      File file=new File(fileName);
+      String regexStr=args[1];
+      IgniteFs fs=ignite.fileSystem("igfs");
+      IgfsPath workDir=new IgfsPath("/examples/fs");
+      IgfsPath fsPath=new IgfsPath(workDir,file.getName());
+      writeFile(fs,fsPath,file);
+      Collection<Line> lines=fs.execute(new GrepTask(),IgfsNewLineRecordResolver.NEW_LINE,Collections.singleton(fsPath),regexStr);
+      if (lines.isEmpty()) {
+        System.out.println();
+        System.out.println("No lines were found.");
+      }
+ else {
+        for (        Line line : lines)         print(line.fileLine());
+      }
+    }
+   }
+}

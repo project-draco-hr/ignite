@@ -1,0 +1,23 @@
+{
+  final byte[] data="test".getBytes();
+  try {
+    switchHandlerErrorFlag(true);
+    IgfsHadoop client=new IgfsHadoopOutProc("127.0.0.1",10500,getTestGridName(0),"igfs",LOG);
+    client.handshake(null);
+    IgfsPath path=new IgfsPath("/test1.file");
+    IgfsHadoopStreamDelegate delegate=client.create(path,true,false,1,1024,null);
+    final IgfsHadoopOutputStream igfsOut=new IgfsHadoopOutputStream(delegate,LOG,IgfsLogger.disabledLogger(),0);
+    igfsOut.write(data);
+    U.sleep(500);
+    GridTestUtils.assertThrows(null,new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        igfsOut.write(data);
+        return null;
+      }
+    }
+,IOException.class,"Failed to write data to server (test).");
+  }
+  finally {
+    switchHandlerErrorFlag(false);
+  }
+}

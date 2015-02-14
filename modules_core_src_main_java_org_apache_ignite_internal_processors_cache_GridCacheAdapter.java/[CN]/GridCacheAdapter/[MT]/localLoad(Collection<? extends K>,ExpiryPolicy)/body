@@ -1,0 +1,32 @@
+{
+  final boolean replicate=ctx.isDrEnabled();
+  final long topVer=ctx.affinity().affinityTopologyVersion();
+  final ExpiryPolicy plc0=plc != null ? plc : ctx.expiry();
+  if (ctx.store().isLocalStore()) {
+    IgniteDataLoaderImpl<K,V> ldr=ctx.kernalContext().<K,V>dataLoad().dataLoader(ctx.namex(),false);
+    try {
+      ldr.updater(new GridDrDataLoadCacheUpdater<K,V>());
+      LocalStoreLoadClosure c=new LocalStoreLoadClosure(null,ldr,plc0);
+      ctx.store().localStoreLoadAll(null,keys,c);
+      c.onDone();
+    }
+  finally {
+      ldr.closeEx(false);
+    }
+  }
+ else {
+    final GridCacheVersion ver0=ctx.versions().nextForLoad();
+    ctx.store().loadAllFromStore(null,keys,new CI2<K,V>(){
+      @Override public void apply(      K key,      V val){
+        long ttl=0;
+        if (plc0 != null) {
+          ttl=CU.toTtl(plc0.getExpiryForCreation());
+          if (ttl == CU.TTL_ZERO)           return;
+ else           if (ttl == CU.TTL_NOT_CHANGED)           ttl=0;
+        }
+        loadEntry(key,val,ver0,null,topVer,replicate,ttl);
+      }
+    }
+);
+  }
+}

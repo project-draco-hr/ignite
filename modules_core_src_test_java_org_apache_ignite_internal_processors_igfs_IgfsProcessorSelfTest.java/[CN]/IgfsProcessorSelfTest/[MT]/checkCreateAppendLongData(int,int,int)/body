@@ -1,0 +1,30 @@
+{
+  IgfsPath path=new IgfsPath("/someFile");
+  byte[] buf=new byte[chunkSize];
+  for (int i=0; i < buf.length; i++)   buf[i]=(byte)(i * i);
+  IgfsOutputStream os=igfs.create(path,bufSize,true,null,0,1024,null);
+  try {
+    for (int i=0; i < cnt; i++)     os.write(buf);
+    os.flush();
+  }
+  finally {
+    os.close();
+  }
+  os=igfs.append(path,chunkSize,false,null);
+  try {
+    for (int i=0; i < cnt; i++)     os.write(buf);
+    os.flush();
+  }
+  finally {
+    os.close();
+  }
+  byte[] readBuf=new byte[chunkSize];
+  try (IgfsInputStream in=igfs.open(path)){
+    long pos=0;
+    for (int k=0; k < 2 * cnt; k++) {
+      in.readFully(pos,readBuf);
+      for (int i=0; i < readBuf.length; i++)       assertEquals(buf[i],readBuf[i]);
+      pos+=readBuf.length;
+    }
+  }
+ }

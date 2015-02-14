@@ -1,0 +1,18 @@
+{
+  final Path igfsHome=new Path(primaryFsUri);
+  Path file=new Path(igfsHome,"/someDir/someInnerDir/someFile");
+  if (createBufSize == -1)   createBufSize=fs.getServerDefaults().getFileBufferSize();
+  if (appendBufSize == -1)   appendBufSize=fs.getServerDefaults().getFileBufferSize();
+  FSDataOutputStream os=fs.create(file,EnumSet.of(CreateFlag.OVERWRITE),Options.CreateOpts.perms(FsPermission.getDefault()),Options.CreateOpts.bufferSize(createBufSize));
+  for (int i=0; i < writeCntsInCreate; i++)   os.writeInt(i);
+  os.close();
+  FSDataInputStream is=fs.open(file,openAfterCreateBufSize);
+  for (int i=0; i < writeCntsInCreate; i++)   assertEquals(i,is.readInt());
+  is.close();
+  os=fs.create(file,EnumSet.of(CreateFlag.APPEND),Options.CreateOpts.perms(FsPermission.getDefault()),Options.CreateOpts.bufferSize(appendBufSize));
+  for (int i=writeCntsInCreate; i < writeCntsInCreate + writeCntsInAppend; i++)   os.writeInt(i);
+  os.close();
+  is=fs.open(file,openAfterAppendBufSize);
+  for (int i=0; i < writeCntsInCreate + writeCntsInAppend; i++)   assertEquals(i,is.readInt());
+  is.close();
+}

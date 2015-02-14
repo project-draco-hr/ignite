@@ -14,13 +14,13 @@
           try {
             barrier.await();
             info("Starting put thread...");
-            GridCache<Integer,String> cache=grid(gridIdx).cache(CACHE_NAME);
+            IgniteCache<Integer,String> cache=grid(gridIdx).jcache(CACHE_NAME);
             while (System.currentTimeMillis() < endTime && err.get() == null) {
               int key=RAND.nextInt(keyCnt);
               try {
                 cache.put(key,Integer.toString(key));
               }
- catch (              IgniteTxRollbackCheckedException|ClusterTopologyCheckedException ignored) {
+ catch (              IgniteTxRollbackException|ClusterTopologyException|CacheException ignored) {
               }
               int c=putCntr.incrementAndGet();
               if (c % logFreq == 0)               info(">>> Put iteration [cnt=" + c + ", key="+ key+ ']');
