@@ -5,7 +5,16 @@
       return new CacheEntryImpl<>(e.getKey(),e.getValue());
     }
     @Override protected void remove(    Cache.Entry<K,V> item){
-      delegate.remove(item.getKey());
+      ctx.gate().enter();
+      try {
+        removex(item.getKey());
+      }
+ catch (      IgniteCheckedException e) {
+        throw new CacheException(e);
+      }
+ finally {
+        ctx.gate().leave();
+      }
     }
   }
 );
