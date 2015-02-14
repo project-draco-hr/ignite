@@ -1,7 +1,12 @@
 {
   return new EntryIterator(nearSet.iterator(),F.iterator0(dhtSet,false,new P1<Cache.Entry<K,V>>(){
     @Override public boolean apply(    Cache.Entry<K,V> e){
-      return !GridNearCacheAdapter.super.containsKey(e.getKey(),null);
+      try {
+        return GridNearCacheAdapter.super.localPeek(e.getKey(),NEAR_PEEK_MODE,null) == null;
+      }
+ catch (      IgniteCheckedException ex) {
+        throw new IgniteException(ex);
+      }
     }
   }
 ));
