@@ -1,9 +1,12 @@
 {
-  GridNearTxPrepareResponse<K,V> res=new GridNearTxPrepareResponse<>(tx.nearXidVersion(),tx.colocated() ? tx.xid() : tx.nearFutureId(),nearMiniId == null ? tx.xid() : nearMiniId,tx.xidVersion(),tx.invalidPartitions(),ret,err.get());
-  addDhtValues(res);
-  GridCacheVersion min=tx.minVersion();
-  res.completedVersions(cctx.tm().committedVersions(min),cctx.tm().rolledbackVersions(min));
-  res.pending(localDhtPendingVersions(tx.writeEntries(),min));
+  Throwable prepErr=err.get();
+  GridNearTxPrepareResponse<K,V> res=new GridNearTxPrepareResponse<>(tx.nearXidVersion(),tx.colocated() ? tx.xid() : tx.nearFutureId(),nearMiniId == null ? tx.xid() : nearMiniId,tx.xidVersion(),tx.invalidPartitions(),ret,prepErr);
+  if (prepErr == null) {
+    addDhtValues(res);
+    GridCacheVersion min=tx.minVersion();
+    res.completedVersions(cctx.tm().committedVersions(min),cctx.tm().rolledbackVersions(min));
+    res.pending(localDhtPendingVersions(tx.writeEntries(),min));
+  }
   res.filterFailedKeys(filterFailedKeys);
   tx.implicitSingleResult(ret);
   return res;

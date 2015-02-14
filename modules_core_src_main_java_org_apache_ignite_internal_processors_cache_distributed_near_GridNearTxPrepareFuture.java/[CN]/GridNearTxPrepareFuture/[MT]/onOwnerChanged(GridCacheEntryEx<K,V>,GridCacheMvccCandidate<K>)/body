@@ -1,9 +1,11 @@
 {
   if (log.isDebugEnabled())   log.debug("Transaction future received owner changed callback: " + entry);
-  if ((entry.context().isNear() || entry.context().isLocal()) && owner != null && tx.hasWriteKey(entry.txKey())) {
-    lockKeys.remove(entry.txKey());
-    onDone();
-    return true;
+  if (tx.optimistic()) {
+    if ((entry.context().isNear() || entry.context().isLocal()) && owner != null && tx.hasWriteKey(entry.txKey())) {
+      lockKeys.remove(entry.txKey());
+      onDone();
+      return true;
+    }
   }
   return false;
 }
