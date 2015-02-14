@@ -5,6 +5,7 @@
       if (!lastFinished)       return;
       it=map.entrySet().iterator();
     }
+    MessageWriteState state=MessageWriteState.get();
     Type keyType=type(keyCls);
     Type valType=type(valCls);
     while (it.hasNext() || cur != NULL) {
@@ -12,27 +13,14 @@
       if (cur == NULL) {
         cur=it.next();
         e=(Map.Entry<K,V>)cur;
-        if (keyType == Type.MSG || valType == Type.MSG) {
-          K k=e.getKey();
-          V v=e.getValue();
-          if (k != null && keyType == Type.MSG) {
-            k=(K)((MessageAdapter)k).clone();
-            ((MessageAdapter)k).setWriter(writer);
-          }
-          if (v != null && valType == Type.MSG) {
-            v=(V)((MessageAdapter)v).clone();
-            ((MessageAdapter)v).setWriter(writer);
-          }
-          cur=e=F.t(k,v);
-        }
       }
  else       e=(Map.Entry<K,V>)cur;
       if (!keyDone) {
-        write(keyType,e.getKey());
+        write(keyType,e.getKey(),state);
         if (!lastFinished)         return;
         keyDone=true;
       }
-      write(valType,e.getValue());
+      write(valType,e.getValue(),state);
       if (!lastFinished)       return;
       cur=NULL;
       keyDone=false;
