@@ -1,0 +1,23 @@
+{
+  cctx.checkSecurity(GridSecurityPermission.CACHE_READ);
+  if (grp == null)   grp=cctx.kernalContext().grid();
+  Collection<ClusterNode> nodes=grp.nodes();
+  if (nodes.isEmpty())   throw new ClusterTopologyException("Failed to execute continuous query (empty cluster group is " + "provided).");
+  boolean skipPrimaryCheck=false;
+switch (cctx.config().getCacheMode()) {
+case LOCAL:
+    if (!nodes.contains(cctx.localNode()))     throw new ClusterTopologyException("Continuous query for LOCAL cache can be executed " + "only locally (provided projection contains remote nodes only).");
+ else     if (nodes.size() > 1)     U.warn(log,"Continuous query for LOCAL cache will be executed locally (provided projection is " + "ignored).");
+  grp=grp.forNode(cctx.localNode());
+break;
+case REPLICATED:
+if (nodes.size() == 1 && F.first(nodes).equals(cctx.localNode())) {
+CacheDistributionMode distributionMode=cctx.config().getDistributionMode();
+if (distributionMode == PARTITIONED_ONLY || distributionMode == NEAR_PARTITIONED) skipPrimaryCheck=true;
+}
+break;
+}
+int taskNameHash=!internal && cctx.kernalContext().security().enabled() ? cctx.kernalContext().job().currentTaskNameHash() : 0;
+GridContinuousHandler hnd=new CacheContinuousQueryHandler<>(cctx.name(),TOPIC_CACHE.topic(topicPrefix,cctx.localNodeId(),seq.getAndIncrement()),locLsnr,rmtFilter,internal,oldValRequired,sync,ignoreExpired,taskNameHash,skipPrimaryCheck);
+return cctx.kernalContext().continuous().startRoutine(hnd,bufSize,timeInterval,autoUnsubscribe,grp.predicate()).get();
+}
