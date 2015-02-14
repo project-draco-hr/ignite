@@ -1,0 +1,17 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  CacheConfiguration cacheCfg=cacheConfiguration(CACHE_NAME);
+  TestTpcCommunicationSpi commSpi=new TestTpcCommunicationSpi();
+  commSpi.setLocalPort(GridTestUtils.getNextCommPort(getClass()));
+  commSpi.setTcpNoDelay(true);
+  if (gridName.endsWith(String.valueOf(CLN_GRD)))   cacheCfg.setDistributionMode(CacheDistributionMode.CLIENT_ONLY);
+  cacheCfg.setPreloadMode(CachePreloadMode.SYNC);
+  cacheCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  cacheCfg.setBackups(1);
+  cfg.setCommunicationSpi(commSpi);
+  TcpDiscoverySpi spi=new TcpDiscoverySpi();
+  spi.setIpFinder(finder);
+  cfg.setDiscoverySpi(spi);
+  cfg.setCacheConfiguration(cacheCfg);
+  return cfg;
+}
