@@ -11,7 +11,7 @@
       try {
         GridCacheEntryInfo<K,V> info=e.info();
         if (info == null)         continue;
-        IgniteInternalFuture<Boolean> f=(!e.deleted() && k.getValue()) ? e.addReader(reader,msgId,topVer) : null;
+        IgniteInternalFuture<Boolean> f=(!e.deleted() && k.getValue() && !skipVals) ? e.addReader(reader,msgId,topVer) : null;
         if (f != null) {
           if (txFut == null)           txFut=new GridCompoundFuture<>(cctx.kernalContext(),CU.boolReducer());
           txFut.add(f);
@@ -31,14 +31,14 @@
   IgniteInternalFuture<Map<K,V>> fut;
   if (txFut == null || txFut.isDone()) {
     if (reload && cctx.readThrough() && cctx.store().configured()) {
-      fut=cache().reloadAllAsync(keys.keySet(),true,subjId,taskName,filters);
+      fut=cache().reloadAllAsync(keys.keySet(),true,skipVals,subjId,taskName);
     }
  else {
       if (tx == null) {
-        fut=cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,deserializePortable,filters,expiryPlc);
+        fut=cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,deserializePortable,expiryPlc,skipVals);
       }
  else {
-        fut=tx.getAllAsync(cctx,keys.keySet(),null,deserializePortable,filters);
+        fut=tx.getAllAsync(cctx,keys.keySet(),null,deserializePortable,skipVals);
       }
     }
   }
@@ -47,14 +47,14 @@
       @Override public IgniteInternalFuture<Map<K,V>> apply(      Boolean b,      Exception e){
         if (e != null)         throw new GridClosureException(e);
         if (reload && cctx.readThrough() && cctx.store().configured()) {
-          return cache().reloadAllAsync(keys.keySet(),true,subjId,taskName,filters);
+          return cache().reloadAllAsync(keys.keySet(),true,skipVals,subjId,taskName);
         }
  else {
           if (tx == null) {
-            return cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,deserializePortable,filters,expiryPlc);
+            return cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,deserializePortable,expiryPlc,skipVals);
           }
  else {
-            return tx.getAllAsync(cctx,keys.keySet(),null,deserializePortable,filters);
+            return tx.getAllAsync(cctx,keys.keySet(),null,deserializePortable,skipVals);
           }
         }
       }
