@@ -1,32 +1,34 @@
 {
+  MessageWriteState state=MessageWriteState.get();
+  MessageWriter writer=state.writer();
   writer.setBuffer(buf);
   if (!super.writeTo(buf))   return false;
-  if (!typeWritten) {
+  if (!state.isTypeWritten()) {
     if (!writer.writeByte(null,directType()))     return false;
-    typeWritten=true;
+    state.setTypeWritten();
   }
-switch (state) {
+switch (state.index()) {
 case 3:
     if (!writer.writeByteArray("entriesBytes",entriesBytes))     return false;
-  state++;
+  state.increment();
 case 4:
 if (!writer.writeByteArray("errBytes",errBytes)) return false;
-state++;
+state.increment();
 case 5:
 if (!writer.writeIgniteUuid("futId",futId)) return false;
-state++;
+state.increment();
 case 6:
 if (!writer.writeCollection("invalidParts",invalidParts,int.class)) return false;
-state++;
+state.increment();
 case 7:
 if (!writer.writeIgniteUuid("miniId",miniId)) return false;
-state++;
+state.increment();
 case 8:
 if (!writer.writeLong("topVer",topVer)) return false;
-state++;
+state.increment();
 case 9:
 if (!writer.writeMessage("ver",ver)) return false;
-state++;
+state.increment();
 }
 return true;
 }
