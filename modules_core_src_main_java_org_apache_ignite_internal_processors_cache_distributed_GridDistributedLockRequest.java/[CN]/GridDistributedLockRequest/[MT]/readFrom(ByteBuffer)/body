@@ -2,9 +2,17 @@
   reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
 switch (readState) {
-case 10:
-    isInTx=reader.readBoolean("isInTx");
+case 8:
+    futId=reader.readIgniteUuid("futId");
   if (!reader.isLastRead())   return false;
+readState++;
+case 9:
+grpLockKeyBytes=reader.readByteArray("grpLockKeyBytes");
+if (!reader.isLastRead()) return false;
+readState++;
+case 10:
+isInTx=reader.readBoolean("isInTx");
+if (!reader.isLastRead()) return false;
 readState++;
 case 11:
 isInvalidate=reader.readBoolean("isInvalidate");
@@ -12,6 +20,16 @@ if (!reader.isLastRead()) return false;
 readState++;
 case 12:
 isRead=reader.readBoolean("isRead");
+if (!reader.isLastRead()) return false;
+readState++;
+case 13:
+byte isolationOrd;
+isolationOrd=reader.readByte("isolation");
+if (!reader.isLastRead()) return false;
+isolation=IgniteTxIsolation.fromOrdinal(isolationOrd);
+readState++;
+case 14:
+keyBytes=reader.readCollection("keyBytes",Type.BYTE_ARR);
 if (!reader.isLastRead()) return false;
 readState++;
 case 15:
@@ -36,6 +54,10 @@ if (!reader.isLastRead()) return false;
 readState++;
 case 20:
 timeout=reader.readLong("timeout");
+if (!reader.isLastRead()) return false;
+readState++;
+case 21:
+txSize=reader.readInt("txSize");
 if (!reader.isLastRead()) return false;
 readState++;
 }
