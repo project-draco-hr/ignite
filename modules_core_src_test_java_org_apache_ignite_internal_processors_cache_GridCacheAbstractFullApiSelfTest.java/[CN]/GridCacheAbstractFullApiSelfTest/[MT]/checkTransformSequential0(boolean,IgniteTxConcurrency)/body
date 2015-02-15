@@ -3,9 +3,13 @@
   IgniteTx tx=txEnabled() ? ignite(0).transactions().txStart(concurrency,READ_COMMITTED) : null;
   try {
     if (startVal)     cache.put("key",2);
-    cache.invoke("key",INCR_PROCESSOR);
-    cache.invoke("key",INCR_PROCESSOR);
-    cache.invoke("key",INCR_PROCESSOR);
+ else     assertEquals(null,cache.get("key"));
+    Integer expectedRes=startVal ? 2 : null;
+    assertEquals(String.valueOf(expectedRes),cache.invoke("key",INCR_PROCESSOR));
+    expectedRes=startVal ? 3 : 1;
+    assertEquals(String.valueOf(expectedRes),cache.invoke("key",INCR_PROCESSOR));
+    expectedRes++;
+    assertEquals(String.valueOf(expectedRes),cache.invoke("key",INCR_PROCESSOR));
     if (tx != null)     tx.commit();
   }
   finally {
