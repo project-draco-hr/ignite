@@ -18,22 +18,19 @@
     if (grp != null)     qry.projection(grp);
     fut=qry.execute(((SpiQuery)filter).getArgs());
   }
+ else   if (filter instanceof SqlQuery) {
+    SqlQuery q=(SqlQuery)filter;
+    qry=((GridCacheQueriesEx)delegate.queries()).createSqlQuery(q.getType(),q.getSql());
+    if (grp != null)     qry.projection(grp);
+    qry.pageSize(q.getPageSize());
+    qry.enableDedup(false);
+    qry.includeBackups(false);
+    fut=qry.execute(q.getArgs());
+  }
  else   throw new IgniteException("Unsupported query predicate: " + filter);
-  return new QueryCursorImpl<>(new GridCloseableIteratorAdapter<Entry<K,V>>(){
-    /** 
- */
-    Map.Entry<K,V> cur;
-    @Override protected Entry<K,V> onNext() throws IgniteCheckedException {
-      if (!onHasNext())       throw new NoSuchElementException();
-      Map.Entry<K,V> e=cur;
-      cur=null;
+  return new QueryCursorImpl<>(new ClIter<Map.Entry<K,V>,Cache.Entry<K,V>>(fut){
+    @Override protected Cache.Entry<K,V> convert(    Map.Entry<K,V> e){
       return new CacheEntryImpl<>(e.getKey(),e.getValue());
-    }
-    @Override protected boolean onHasNext() throws IgniteCheckedException {
-      return cur != null || (cur=fut.next()) != null;
-    }
-    @Override protected void onClose() throws IgniteCheckedException {
-      fut.cancel();
     }
   }
 );

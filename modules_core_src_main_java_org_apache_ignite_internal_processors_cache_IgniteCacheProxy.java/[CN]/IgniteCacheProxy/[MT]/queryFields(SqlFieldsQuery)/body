@@ -3,7 +3,15 @@
   GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
     validate(qry);
-    return null;
+    CacheQuery<List<?>> q=((GridCacheQueriesEx<K,V>)delegate.queries()).createSqlFieldsQuery(qry.getSql(),false);
+    q.pageSize(qry.getPageSize());
+    CacheQueryFuture<List<?>> fut=q.execute(qry.getArgs());
+    return new QueryCursorImpl<>(new ClIter<List<?>,List<?>>(fut){
+      @Override protected List<?> convert(      List<?> row){
+        return row;
+      }
+    }
+);
   }
  catch (  Exception e) {
     if (e instanceof CacheException)     throw e;
