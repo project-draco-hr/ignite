@@ -1,0 +1,23 @@
+{
+  A.notNull(qry,"qry");
+  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+  try {
+    validate(qry);
+    CacheQuery<List<?>> q=((GridCacheQueriesEx<K,V>)delegate.queries()).createSqlFieldsQuery(qry.getSql(),false);
+    if (qry.getPageSize() > 0)     q.pageSize(qry.getPageSize());
+    CacheQueryFuture<List<?>> fut=q.execute(qry.getArgs());
+    return new QueryCursorImpl<>(new ClIter<List<?>,List<?>>(fut){
+      @Override protected List<?> convert(      List<?> row){
+        return row;
+      }
+    }
+);
+  }
+ catch (  Exception e) {
+    if (e instanceof CacheException)     throw e;
+    throw new CacheException(e);
+  }
+ finally {
+    gate.leave(prev);
+  }
+}

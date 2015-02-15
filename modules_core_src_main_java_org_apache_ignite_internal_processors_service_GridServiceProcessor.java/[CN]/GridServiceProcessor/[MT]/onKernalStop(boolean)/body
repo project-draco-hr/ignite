@@ -2,18 +2,8 @@
   if (ctx.isDaemon())   return;
   busyLock.block();
   ctx.event().removeLocalEventListener(topLsnr);
-  try {
-    if (cfgQry != null)     cfgQry.close();
-  }
- catch (  IgniteCheckedException e) {
-    log.error("Failed to unsubscribe service configuration notifications.",e);
-  }
-  try {
-    if (assignQry != null)     assignQry.close();
-  }
- catch (  IgniteCheckedException e) {
-    log.error("Failed to unsubscribe service assignment notifications.",e);
-  }
+  if (cfgQryId != null)   cache.context().continuousQueries().cancelInternalQuery(cfgQryId);
+  if (assignQryId != null)   cache.context().continuousQueries().cancelInternalQuery(assignQryId);
   Collection<ServiceContextImpl> ctxs=new ArrayList<>();
 synchronized (locSvcs) {
     for (    Collection<ServiceContextImpl> ctxs0 : locSvcs.values())     ctxs.addAll(ctxs0);
