@@ -1,0 +1,14 @@
+{
+  if (!onStart)   cctx.config().addCacheEntryListenerConfiguration(cfg);
+  CacheEntryListener<? super K,? super V> locLsnrImpl=cfg.getCacheEntryListenerFactory().create();
+  if (locLsnrImpl == null)   throw new IgniteCheckedException("Local CacheEntryListener is mandatory and can't be null.");
+  byte types=0;
+  types|=locLsnrImpl instanceof CacheEntryCreatedListener ? CREATED_FLAG : 0;
+  types|=locLsnrImpl instanceof CacheEntryUpdatedListener ? UPDATED_FLAG : 0;
+  types|=locLsnrImpl instanceof CacheEntryRemovedListener ? REMOVED_FLAG : 0;
+  types|=locLsnrImpl instanceof CacheEntryExpiredListener ? EXPIRED_FLAG : 0;
+  if (types == 0)   throw new IgniteCheckedException("Listener must implement one of CacheEntryListener sub-interfaces.");
+  CacheEntryUpdatedListener<K,V> locLsnr=(CacheEntryUpdatedListener<K,V>)new JCacheQueryLocalListener(locLsnrImpl,cctx.kernalContext().cache().jcache(cctx.name()));
+  CacheEntryEventFilter<K,V> rmtFilter=(CacheEntryEventFilter<K,V>)new JCacheQueryRemoteFilter<>(cfg.getCacheEntryEventFilterFactory() != null ? cfg.getCacheEntryEventFilterFactory().create() : null,types);
+  routineId=executeQuery0(locLsnr,rmtFilter,ContinuousQuery.DFLT_BUF_SIZE,ContinuousQuery.DFLT_TIME_INTERVAL,ContinuousQuery.DFLT_AUTO_UNSUBSCRIBE,false,cfg.isOldValueRequired(),cfg.isSynchronous(),false,null);
+}
