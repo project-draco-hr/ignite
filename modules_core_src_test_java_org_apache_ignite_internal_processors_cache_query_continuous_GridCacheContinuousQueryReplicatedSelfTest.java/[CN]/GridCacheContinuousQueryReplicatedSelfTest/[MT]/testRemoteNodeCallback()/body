@@ -1,22 +1,2 @@
 {
-  GridCache<Integer,Integer> cache1=((IgniteKernal)grid(0)).cache(null);
-  GridCache<Integer,Integer> cache2=((IgniteKernal)grid(1)).cache(null);
-  CacheContinuousQuery<Integer,Integer> qry=cache2.queries().createContinuousQuery();
-  final AtomicReference<Integer> val=new AtomicReference<>();
-  final CountDownLatch latch=new CountDownLatch(1);
-  qry.localCallback(new P2<UUID,Collection<CacheContinuousQueryEntry<Integer,Integer>>>(){
-    @Override public boolean apply(    UUID uuid,    Collection<CacheContinuousQueryEntry<Integer,Integer>> entries){
-      assertEquals(1,entries.size());
-      Map.Entry<Integer,Integer> e=entries.iterator().next();
-      log.info("Entry: " + e);
-      val.set(e.getValue());
-      latch.countDown();
-      return false;
-    }
-  }
-);
-  qry.execute();
-  cache1.put(1,10);
-  latch.await(LATCH_TIMEOUT,MILLISECONDS);
-  assertEquals(10,val.get().intValue());
 }

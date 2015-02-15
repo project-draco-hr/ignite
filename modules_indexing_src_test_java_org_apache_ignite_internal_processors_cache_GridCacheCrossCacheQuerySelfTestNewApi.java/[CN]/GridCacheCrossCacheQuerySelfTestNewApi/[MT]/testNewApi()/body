@@ -1,0 +1,36 @@
+{
+  fillCaches();
+  IgniteCache<Object,Object> p=ignite.jcache("partitioned");
+  List<Cache.Entry<Object,Object>> res=p.query(sql(FactPurchase.class,"price = 5")).getAll();
+  assertEquals(1,res.size());
+  IgniteReducer<List<?>,Long> rdc=new IgniteReducer<List<?>,Long>(){
+    /** 
+ */
+    long l;
+    @Override public boolean collect(    @Nullable List<?> row){
+      l+=((Number)row.get(0)).longValue();
+      return true;
+    }
+    @Override public Long reduce(){
+      return l;
+    }
+  }
+;
+  final long cnt=F.reduce(p.queryFields(sql("select count(*) from FactPurchase where price > 5")),rdc);
+  X.println("all facts: " + cnt);
+  long cnt0=0;
+  for (int i=0; i < 3; i++) {
+    List<List<?>> rows=grid(i).jcache("partitioned").localQueryFields(sql("select count(*) from FactPurchase where price > 5")).getAll();
+    assertEquals(1,rows.size());
+    X.println("node facts: " + rows);
+    cnt0+=((Number)rows.get(0).get(0)).longValue();
+  }
+  assertEquals(cnt,cnt0);
+  cnt0=0;
+  for (int i=0; i < 3; i++) {
+    List<Cache.Entry<Object,Object>> rows=grid(i).jcache("partitioned").localQuery(sql(FactPurchase.class,"price > 5")).getAll();
+    X.println("node facts: " + rows.size());
+    cnt0+=rows.size();
+  }
+  assertEquals(cnt,cnt0);
+}
