@@ -1,6 +1,11 @@
 {
   MessageAdapter msg=ses.removeMeta(MSG_META_KEY);
-  if (msg == null && buf.hasRemaining())   msg=msgFactory.create(buf.get());
+  if (msg == null && buf.hasRemaining()) {
+    MessageReader reader=ses.meta(MSG_READER_KEY);
+    if (reader == null)     ses.addMeta(MSG_READER_KEY,reader=formatter.reader());
+    msg=msgFactory.create(buf.get());
+    msg.setReader(reader);
+  }
   boolean finished=false;
   if (buf.hasRemaining())   finished=msg.readFrom(buf);
   if (finished)   return msg;
