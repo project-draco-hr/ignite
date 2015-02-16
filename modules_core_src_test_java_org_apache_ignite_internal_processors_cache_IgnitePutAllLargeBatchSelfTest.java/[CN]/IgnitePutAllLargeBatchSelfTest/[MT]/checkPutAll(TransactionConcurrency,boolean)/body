@@ -1,0 +1,52 @@
+{
+  this.nearEnabled=nearEnabled;
+  startGrids(GRID_CNT);
+  awaitPartitionMapExchange();
+  try {
+    GridCache<Object,Object> cache=grid(0).cache(null);
+    int keyCnt=200;
+    for (int i=0; i < keyCnt; i++)     cache.put(i,i);
+    for (int g=1; g < 2; g++) {
+      for (int i=30; i < 70; i++)       grid(g).cache(null).get(i);
+    }
+    info(">>> Starting test tx.");
+    try (Transaction tx=cache.txStart(concurrency,TransactionIsolation.REPEATABLE_READ)){
+      Map<Integer,Integer> map=new LinkedHashMap<>();
+      for (int i=0; i < keyCnt; i++)       map.put(i,i * i);
+      cache.getAll(map.keySet());
+      cache.putAll(map);
+      tx.commit();
+    }
+     for (int g=0; g < GRID_CNT; g++) {
+      IgniteKernal k=(IgniteKernal)grid(g);
+      GridCacheAdapter<Object,Object> cacheAdapter=k.context().cache().internalCache();
+      assertEquals(0,cacheAdapter.context().tm().idMapSize());
+      for (int i=0; i < keyCnt; i++) {
+        if (cacheAdapter.isNear()) {
+          GridDhtCacheEntry<Object,Object> entry=((GridNearCacheAdapter<Object,Object>)cacheAdapter).dht().peekExx(i);
+          if (entry != null) {
+            assertFalse(entry.lockedByAny());
+            assertTrue(entry.localCandidates().isEmpty());
+            assertTrue(entry.remoteMvccSnapshot().isEmpty());
+          }
+        }
+        GridCacheEntryEx<Object,Object> entry=cacheAdapter.peekEx(i);
+        if (entry != null) {
+          assertFalse(entry.lockedByAny());
+          assertTrue(entry.localCandidates().isEmpty());
+          assertTrue(entry.remoteMvccSnapshot().isEmpty());
+        }
+      }
+    }
+    for (int g=0; g < GRID_CNT; g++) {
+      GridCache<Object,Object> checkCache=grid(g).cache(null);
+      ClusterNode checkNode=grid(g).localNode();
+      for (int i=0; i < keyCnt; i++) {
+        if (checkCache.affinity().isPrimaryOrBackup(checkNode,i))         assertEquals(i * i,checkCache.peek(i,F.asList(GridCachePeekMode.PARTITIONED_ONLY)));
+      }
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}
