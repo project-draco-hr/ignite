@@ -1,6 +1,14 @@
 {
   MessageAdapter msg=ses.removeMeta(MSG_META_KEY);
-  if (msg == null && buf.hasRemaining())   msg=msgFactory.create(buf.get());
+  if (msg == null && buf.hasRemaining()) {
+    MessageReader reader=formatter.reader();
+    reader.setBuffer(buf);
+    MessageHeader header=reader.readHeader();
+    if (reader.isLastRead()) {
+      msg=msgFactory.create(header.messageType());
+      msg.setReader(reader);
+    }
+  }
   boolean finished=false;
   if (buf.hasRemaining())   finished=msg.readFrom(buf);
   if (finished)   return msg;
