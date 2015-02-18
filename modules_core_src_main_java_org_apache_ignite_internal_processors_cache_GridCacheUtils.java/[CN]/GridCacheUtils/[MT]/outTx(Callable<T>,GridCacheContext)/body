@@ -1,5 +1,7 @@
 {
-  if (ctx.tm().inUserTx())   return ctx.closures().callLocalSafe(cmd,false).get();
+  IgniteInternalTx<?,?> tx=ctx.tm().txx();
+  boolean inTx=tx != null && tx.user() && (tx.state() != UNKNOWN && tx.state() != ROLLED_BACK && tx.state() != COMMITTED);
+  if (inTx)   return ctx.closures().callLocalSafe(cmd,false).get();
  else {
     try {
       return cmd.call();
