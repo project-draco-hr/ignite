@@ -5,18 +5,22 @@
   A.notNull(key,"key",val,"val");
   if (keyCheck)   validateCacheKey(key);
   validateCacheValue(val);
-  boolean removed=syncOp(new SyncOp<Boolean>(true){
+  boolean rmv=syncOp(new SyncOp<Boolean>(true){
     @Override public Boolean op(    IgniteTxLocalAdapter<K,V> tx) throws IgniteCheckedException {
       if (ctx.deploymentEnabled())       ctx.deploy().registerClass(val);
       K key0=key;
-      if (ctx.portableEnabled())       key0=(K)ctx.marshalToPortable(key);
-      return tx.removeAllAsync(ctx,Collections.singletonList(key0),null,false,ctx.vararg(F.<K,V>cacheContainsPeek(val))).get().success();
+      V val0=val;
+      if (ctx.portableEnabled()) {
+        key0=(K)ctx.marshalToPortable(key);
+        val0=(V)ctx.marshalToPortable(val);
+      }
+      return tx.removeAllAsync(ctx,Collections.singletonList(key0),null,false,ctx.vararg(F.<K,V>cacheContainsPeek(val0))).get().success();
     }
     @Override public String toString(){
       return "remove [key=" + key + ", val="+ val+ ']';
     }
   }
 );
-  if (statsEnabled && removed)   metrics0().addRemoveTimeNanos(System.nanoTime() - start);
-  return removed;
+  if (statsEnabled && rmv)   metrics0().addRemoveTimeNanos(System.nanoTime() - start);
+  return rmv;
 }
