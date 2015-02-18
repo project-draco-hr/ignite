@@ -1,0 +1,14 @@
+{
+  if (F.isEmpty(drMap))   return;
+  ctx.dr().onReceiveCacheEntriesReceived(drMap.size());
+  ctx.denyOnLocalRead();
+  syncOp(new SyncInOp(drMap.size() == 1){
+    @Override public void inOp(    IgniteTxLocalAdapter<K,V> tx) throws IgniteCheckedException {
+      tx.putAllDrAsync(ctx,drMap).get();
+    }
+    @Override public String toString(){
+      return "putAllConflict [drMap=" + drMap + ']';
+    }
+  }
+);
+}
