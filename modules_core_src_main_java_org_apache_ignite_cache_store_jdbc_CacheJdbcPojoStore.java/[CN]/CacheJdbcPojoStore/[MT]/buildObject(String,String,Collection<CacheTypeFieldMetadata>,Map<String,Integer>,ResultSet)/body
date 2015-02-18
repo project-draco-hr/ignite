@@ -1,9 +1,11 @@
 {
   PojoMethodsCache mc=mtdsCache.get(cacheName).get(typeName);
+  if (mc == null)   throw new CacheLoaderException("Failed to find cache type metadata for type: " + typeName);
   Object obj=mc.newInstance();
   try {
     for (    CacheTypeFieldMetadata field : fields) {
       Method setter=mc.setters.get(field.getJavaName());
+      if (setter == null)       throw new CacheLoaderException("Failed to find setter in pojo class [class name:" + typeName + ", property: "+ field.getJavaName()+ "]");
       Integer colIdx=loadColIdxs.get(field.getDatabaseName());
       setter.invoke(obj,getColumnValue(rs,colIdx,field.getJavaType()));
     }
