@@ -1,0 +1,48 @@
+{
+  IgniteCache<String,String> asyncCache=cache.withAsync();
+  Transaction tx=ignite.transactions().txStart();
+  try {
+    assertNull(cache.get("key1"));
+    tx.commit();
+  }
+  finally {
+    tx.close();
+  }
+  tx=ignite.transactions().txStart();
+  try {
+    asyncCache.get("key2");
+    assertNull(asyncCache.future().get());
+    tx.commit();
+  }
+  finally {
+    tx.close();
+  }
+  tx=ignite.transactions().txStart();
+  try {
+    assertTrue(cache.getAll(F.asSet("key3","key4")).isEmpty());
+    tx.commit();
+  }
+  finally {
+    tx.close();
+  }
+  tx=ignite.transactions().txStart();
+  try {
+    asyncCache.getAll(F.asSet("key5","key6"));
+    assertTrue(((Map)asyncCache.future().get()).isEmpty());
+    tx.commit();
+  }
+  finally {
+    tx.close();
+  }
+  tx=ignite.transactions().txStart();
+  try {
+    cache.put("key7","key7");
+    cache.remove("key7");
+    assertNull(cache.get("key7"));
+    tx.commit();
+  }
+  finally {
+    tx.close();
+  }
+  checkEmpty(cache);
+}

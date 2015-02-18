@@ -9,6 +9,7 @@
     if (cacheAdapter instanceof GridNearCacheAdapter)     dht=((GridNearCacheAdapter<K,V>)cacheAdapter).dht();
  else     dht=(GridDhtCacheAdapter<K,V>)cacheAdapter;
     try (IgniteDataLoader<K,V> dataLdr=ignite.dataLoader(cacheName)){
+      dataLdr.updater(GridDataLoadCacheUpdaters.<K,V>batched());
       for (      GridDhtLocalPartition<K,V> locPart : dht.topology().currentLocalPartitions()) {
         if (!locPart.isEmpty() && locPart.primary(topVer)) {
           for (          GridDhtCacheEntry<K,V> o : locPart.entries()) {

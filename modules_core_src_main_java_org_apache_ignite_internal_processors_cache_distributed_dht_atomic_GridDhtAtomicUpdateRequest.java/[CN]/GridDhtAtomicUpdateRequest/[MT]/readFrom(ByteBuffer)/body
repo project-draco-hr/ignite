@@ -1,87 +1,89 @@
 {
   reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (state) {
+switch (readState) {
 case 3:
-    drExpireTimes=reader.readMessage("drExpireTimes");
+    conflictExpireTimes=reader.readMessage("conflictExpireTimes");
   if (!reader.isLastRead())   return false;
-state++;
+readState++;
 case 4:
-drVers=reader.readCollection("drVers",GridCacheVersion.class);
+conflictVers=reader.readCollection("conflictVers",Type.MSG);
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 5:
-entryProcessorsBytes=reader.readCollection("entryProcessorsBytes",byte[].class);
+entryProcessorsBytes=reader.readCollection("entryProcessorsBytes",Type.BYTE_ARR);
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 6:
 forceTransformBackups=reader.readBoolean("forceTransformBackups");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 7:
 futVer=reader.readMessage("futVer");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 8:
-invokeArgsBytes=reader.readObjectArray("invokeArgsBytes",byte[].class);
+invokeArgsBytes=reader.readObjectArray("invokeArgsBytes",Type.BYTE_ARR,byte[].class);
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 9:
-keyBytes=reader.readCollection("keyBytes",byte[].class);
+keyBytes=reader.readCollection("keyBytes",Type.BYTE_ARR);
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 10:
-nearEntryProcessorsBytes=reader.readCollection("nearEntryProcessorsBytes",byte[].class);
+nearEntryProcessorsBytes=reader.readCollection("nearEntryProcessorsBytes",Type.BYTE_ARR);
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 11:
 nearExpireTimes=reader.readMessage("nearExpireTimes");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 12:
-nearKeyBytes=reader.readCollection("nearKeyBytes",byte[].class);
+nearKeyBytes=reader.readCollection("nearKeyBytes",Type.BYTE_ARR);
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 13:
 nearTtls=reader.readMessage("nearTtls");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 14:
-nearValBytes=reader.readCollection("nearValBytes",GridCacheValueBytes.class);
+nearValBytes=reader.readCollection("nearValBytes",Type.MSG);
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 15:
 nodeId=reader.readUuid("nodeId");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 16:
 subjId=reader.readUuid("subjId");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 17:
-syncMode=reader.readEnum("syncMode",CacheWriteSynchronizationMode.class);
+byte syncModeOrd;
+syncModeOrd=reader.readByte("syncMode");
 if (!reader.isLastRead()) return false;
-state++;
+syncMode=CacheWriteSynchronizationMode.fromOrdinal(syncModeOrd);
+readState++;
 case 18:
 taskNameHash=reader.readInt("taskNameHash");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 19:
 topVer=reader.readLong("topVer");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 20:
 ttls=reader.readMessage("ttls");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 21:
-valBytes=reader.readCollection("valBytes",GridCacheValueBytes.class);
+valBytes=reader.readCollection("valBytes",Type.MSG);
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 22:
 writeVer=reader.readMessage("writeVer");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 }
 return true;
 }

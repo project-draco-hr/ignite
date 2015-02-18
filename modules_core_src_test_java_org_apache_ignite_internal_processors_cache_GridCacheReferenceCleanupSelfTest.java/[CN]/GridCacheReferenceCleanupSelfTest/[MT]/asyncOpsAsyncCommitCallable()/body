@@ -4,13 +4,15 @@
       Collection<WeakReference<Object>> refs=new ArrayList<>();
       Ignite g=startGrid();
       try {
-        GridCache<Integer,TestValue> cache=g.cache(null);
+        IgniteCache<Integer,TestValue> cache=g.jcache(null);
+        IgniteCache<Integer,TestValue> cacheAsync=cache.withAsync();
         refs.add(new WeakReference<Object>(cacheContext(cache)));
-        IgniteTx tx=cache.txStart();
+        Transaction tx=g.transactions().txStart();
         for (int i=0; i < 1000; i++) {
           TestValue val=new TestValue(i);
           refs.add(new WeakReference<Object>(val));
-          cache.putxAsync(i,val);
+          cacheAsync.put(i,val);
+          cacheAsync.future().get();
         }
         tx.commit();
       }

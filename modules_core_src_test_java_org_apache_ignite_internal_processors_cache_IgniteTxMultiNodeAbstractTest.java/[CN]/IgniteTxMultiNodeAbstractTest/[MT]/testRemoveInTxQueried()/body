@@ -1,17 +1,17 @@
 {
   startGrids(GRID_CNT);
   try {
-    GridCache<String,Integer> cache=grid(0).cache(null);
+    GridCache<String,Integer> cache=((IgniteKernal)grid(0)).cache(null);
     cache.put(RMVD_CNTR_KEY,0);
     for (int i=0; i < GRID_CNT * RETRIES; i++)     cache.put(String.valueOf(i),i);
-    for (int i=0; i < RETRIES; i++)     for (int j=0; j < GRID_CNT; j++)     assertEquals(i,grid(j).cache(null).get(String.valueOf(i)));
+    for (int i=0; i < RETRIES; i++)     for (int j=0; j < GRID_CNT; j++)     assertEquals(i,grid(j).jcache(null).get(String.valueOf(i)));
     CacheQuery<Map.Entry<String,Integer>> qry=cache.queries().createSqlQuery(Integer.class," _val >= 0");
     Collection<Map.Entry<String,Integer>> entries=qry.execute().get();
     assertFalse(entries.isEmpty());
     cntrRmvd.set(0);
     grid(0).compute().call(new RemoveInTxJobQueried());
-    for (int i=0; i < GRID_CNT * RETRIES; i++)     for (int ii=0; ii < GRID_CNT; ii++)     assertEquals(null,grid(ii).cache(null).get(Integer.toString(i)));
-    assertEquals(-GRID_CNT * RETRIES,grid(0).cache(null).peek(RMVD_CNTR_KEY));
+    for (int i=0; i < GRID_CNT * RETRIES; i++)     for (int ii=0; ii < GRID_CNT; ii++)     assertEquals(null,grid(ii).jcache(null).get(Integer.toString(i)));
+    assertEquals(-GRID_CNT * RETRIES,grid(0).jcache(null).localPeek(RMVD_CNTR_KEY,CachePeekMode.ONHEAP));
   }
   finally {
     stopAllGrids();

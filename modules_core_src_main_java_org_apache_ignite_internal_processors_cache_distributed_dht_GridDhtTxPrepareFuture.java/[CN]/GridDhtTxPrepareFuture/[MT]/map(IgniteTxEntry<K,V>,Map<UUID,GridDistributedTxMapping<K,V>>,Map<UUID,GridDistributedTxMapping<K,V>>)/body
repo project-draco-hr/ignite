@@ -1,9 +1,14 @@
 {
   if (entry.cached().isLocal())   return false;
   GridDhtCacheEntry<K,V> cached=(GridDhtCacheEntry<K,V>)entry.cached();
-  boolean ret;
   GridCacheContext<K,V> cacheCtx=entry.context();
   GridDhtCacheAdapter<K,V> dht=cacheCtx.isNear() ? cacheCtx.near().dht() : cacheCtx.dht();
+  ExpiryPolicy expiry=cacheCtx.expiryForTxEntry(entry);
+  if (expiry != null && entry.op() == READ) {
+    entry.op(NOOP);
+    entry.ttl(CU.toTtl(expiry.getExpiryForAccess()));
+  }
+  boolean ret;
   while (true) {
     try {
       Collection<ClusterNode> dhtNodes=dht.topology().nodes(cached.partition(),tx.topologyVersion());

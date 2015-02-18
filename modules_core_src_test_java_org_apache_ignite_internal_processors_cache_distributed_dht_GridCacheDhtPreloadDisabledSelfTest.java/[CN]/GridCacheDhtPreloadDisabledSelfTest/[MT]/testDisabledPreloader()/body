@@ -13,8 +13,8 @@
     Collection<Ignite> ignites=new ArrayList<>(nodeCnt);
     startGrids(nodeCnt,1,ignites);
     for (    Ignite g : ignites) {
-      GridCache<Integer,String> c=g.cache(null);
-      for (int i=0; i < keyCnt; i++)       assertNull(c.peek(i));
+      IgniteCache<Integer,String> c=g.jcache(null);
+      for (int i=0; i < keyCnt; i++)       assertNull(c.localPeek(i,CachePeekMode.ONHEAP));
     }
     Collection<Integer> keys=new LinkedList<>();
     for (int i=0; i < keyCnt; i++)     if (ignite1.affinity(null).mapKeyToNode(i).equals(ignite1.cluster().localNode()))     keys.add(i);
@@ -24,8 +24,8 @@
       it.remove();
       stopGrid(g.name());
       for (      Ignite gg : ignites) {
-        GridCache<Integer,String> c=gg.cache(null);
-        for (int i=0; i < keyCnt; i++)         assertNull(c.peek(i));
+        IgniteCache<Integer,String> c=gg.jcache(null);
+        for (int i=0; i < keyCnt; i++)         assertNull(c.localPeek(i,CachePeekMode.ONHEAP));
       }
     }
     for (    Integer i : keys)     assertEquals(i.toString(),cache1.localPeek(i,CachePeekMode.ONHEAP));

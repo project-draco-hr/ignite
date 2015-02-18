@@ -1,0 +1,34 @@
+{
+  if (state() != PREPARING) {
+    if (timedOut())     return new GridFinishedFuture<>(cctx.kernalContext(),new IgniteTxTimeoutCheckedException("Transaction timed out: " + this));
+    setRollbackOnly();
+    return new GridFinishedFuture<>(cctx.kernalContext(),new IgniteCheckedException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
+  }
+  init();
+  GridDhtTxPrepareFuture<K,V> fut=new GridDhtTxPrepareFuture<>(cctx,this,IgniteUuid.randomUuid(),Collections.<IgniteTxKey<K>,GridCacheVersion>emptyMap(),last,needReturnValue() && implicit(),lastBackups,completeCb);
+  try {
+    optimisticLockEntries=writes;
+    userPrepare();
+    cctx.mvcc().addFuture(fut);
+    if (isSystemInvalidate())     fut.complete();
+ else     fut.prepare(reads,writes,txNodes);
+  }
+ catch (  IgniteTxTimeoutCheckedException|IgniteTxOptimisticCheckedException e) {
+    fut.onError(e);
+  }
+catch (  IgniteCheckedException e) {
+    setRollbackOnly();
+    fut.onError(new IgniteTxRollbackCheckedException("Failed to prepare transaction: " + this,e));
+    try {
+      rollback();
+    }
+ catch (    IgniteTxOptimisticCheckedException e1) {
+      if (log.isDebugEnabled())       log.debug("Failed optimistically to prepare transaction [tx=" + this + ", e="+ e1+ ']');
+      fut.onError(e);
+    }
+catch (    IgniteCheckedException e1) {
+      U.error(log,"Failed to rollback transaction: " + this,e1);
+    }
+  }
+  return fut;
+}

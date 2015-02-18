@@ -13,12 +13,12 @@
   }
 );
   long start=System.currentTimeMillis();
-  final GridCache<GridTestKey,Long> cache=G.ignite().cache("partitioned");
+  final IgniteCache<GridTestKey,Long> cache=G.ignite().jcache("partitioned");
   for (long i=0; i < GridTestConstants.ENTRY_COUNT; i++) {
     final long key=i;
     exe.submit(new Runnable(){
       @Override public void run(){
-        Long val=cache.peek(new GridTestKey(key));
+        Long val=cache.localPeek(new GridTestKey(key),CachePeekMode.ONHEAP);
         if (val == null || val != key)         throw new RuntimeException("Invalid value found [key=" + key + ", val="+ val+ ']');
       }
     }

@@ -1,0 +1,19 @@
+{
+  if (enterBusy()) {
+    try {
+      A.notNull(path,"path");
+      IgniteUuid nextId=meta.fileId(path);
+      if (nextId == null)       return 0;
+      IgfsPathSummary sum=new IgfsPathSummary(path);
+      summary0(nextId,sum);
+      return sum.totalLength();
+    }
+ catch (    IgniteCheckedException e) {
+      throw U.convertException(e);
+    }
+ finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get path size because Grid is stopping.");
+}

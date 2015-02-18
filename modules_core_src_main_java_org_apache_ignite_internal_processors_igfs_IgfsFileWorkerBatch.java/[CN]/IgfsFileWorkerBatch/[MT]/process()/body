@@ -1,0 +1,30 @@
+{
+  try {
+    boolean cancelled=false;
+    while (!cancelled) {
+      try {
+        IgfsFileWorkerTask task=queue.poll(1000,TimeUnit.MILLISECONDS);
+        if (task == null)         continue;
+        task.execute();
+        if (lastTask)         cancelled=true;
+      }
+ catch (      IgniteCheckedException e) {
+        err=e;
+        cancelled=true;
+      }
+catch (      InterruptedException ignore) {
+        Thread.currentThread().interrupt();
+        cancelled=true;
+      }
+    }
+  }
+  finally {
+    try {
+      onComplete();
+    }
+  finally {
+      U.closeQuiet(out);
+      completeLatch.countDown();
+    }
+  }
+}

@@ -1,26 +1,28 @@
 {
   reader.setBuffer(buf);
-switch (state) {
+switch (readState) {
 case 0:
     clsLdrId=reader.readIgniteUuid("clsLdrId");
   if (!reader.isLastRead())   return false;
-state++;
+readState++;
 case 1:
-depMode=reader.readEnum("depMode",DeploymentMode.class);
+byte depModeOrd;
+depModeOrd=reader.readByte("depMode");
 if (!reader.isLastRead()) return false;
-state++;
+depMode=DeploymentMode.fromOrdinal(depModeOrd);
+readState++;
 case 2:
 locDepOwner=reader.readBoolean("locDepOwner");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 3:
-participants=reader.readMap("participants",UUID.class,IgniteUuid.class,false);
+participants=reader.readMap("participants",Type.UUID,Type.IGNITE_UUID,false);
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 4:
 userVer=reader.readString("userVer");
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
 }
 return true;
 }
