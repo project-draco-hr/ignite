@@ -14,8 +14,12 @@
           cctx.evicts().touch(entry,topVer);
         }
         V val=info.value();
-        if (cctx.portableEnabled())         val=(V)cctx.unwrapPortableIfNeeded(val,!deserializePortable);
-        map.put(info.key(),val);
+        K key=info.key();
+        if (cctx.portableEnabled()) {
+          val=(V)cctx.unwrapPortableIfNeeded(val,!deserializePortable);
+          key=(K)cctx.unwrapPortableIfNeeded(key,!deserializePortable);
+        }
+        map.put(key,val);
       }
  catch (      GridCacheEntryRemovedException ignore) {
         if (log.isDebugEnabled())         log.debug("Got removed entry while processing get response (will not retry).");
