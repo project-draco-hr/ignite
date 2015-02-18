@@ -1,5 +1,7 @@
 {
   ClusterGroup nodes=ctx.kernalContext().grid().cluster().forCacheNodes(ctx.name());
   ctx.kernalContext().task().setThreadContext(TC_NO_FAILOVER,true);
-  return ctx.kernalContext().closure().callAsync(BROADCAST,Arrays.asList(new LoadCacheClosure<>(ctx.name(),p,args)),nodes.nodes());
+  GridCacheProjectionImpl<K,V> prj=ctx.projectionPerCall();
+  ExpiryPolicy plc=prj != null ? prj.expiry() : null;
+  return ctx.kernalContext().closure().callAsync(BROADCAST,Arrays.asList(new LoadCacheClosure<>(ctx.name(),p,args,plc)),nodes.nodes());
 }
