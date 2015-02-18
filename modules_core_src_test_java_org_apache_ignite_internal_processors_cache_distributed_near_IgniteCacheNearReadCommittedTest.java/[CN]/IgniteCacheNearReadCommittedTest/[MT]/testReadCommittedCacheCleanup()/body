@@ -1,0 +1,11 @@
+{
+  IgniteCache<Integer,Integer> cache=ignite(0).jcache(null);
+  Integer key=backupKey(cache);
+  cache.put(key,key);
+  try (Transaction tx=ignite(0).transactions().txStart(PESSIMISTIC,READ_COMMITTED)){
+    assertEquals(key,cache.get(key));
+    tx.commit();
+  }
+   ignite(1).jcache(null).remove(key);
+  assertEquals(0,cache.localSize());
+}
