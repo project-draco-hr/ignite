@@ -1,0 +1,14 @@
+{
+  IgniteConfiguration g2Cfg=getConfiguration("g2");
+  IgfsConfiguration g2IgfsCfg1=new IgfsConfiguration(g1IgfsCfg1);
+  IgfsConfiguration g2IgfsCfg2=new IgfsConfiguration(g1IgfsCfg2);
+  g2IgfsCfg1.setName("g2IgfsCfg1");
+  g2IgfsCfg2.setName("g2IgfsCfg2");
+  g2IgfsCfg1.setDataCacheName("g2DataCache1");
+  g2IgfsCfg2.setDataCacheName("g2DataCache2");
+  g1Cfg.setCacheConfiguration(concat(dataCaches(1024),metaCaches(),CacheConfiguration.class));
+  g2Cfg.setCacheConfiguration(concat(dataCaches(1024,"g2DataCache1","g2DataCache2"),metaCaches(),CacheConfiguration.class));
+  g2Cfg.setIgfsConfiguration(g2IgfsCfg1,g2IgfsCfg2);
+  G.start(g1Cfg);
+  checkGridStartFails(g2Cfg,"Meta cache names should be different for different IGFS instances",false);
+}

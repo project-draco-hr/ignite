@@ -1,23 +1,23 @@
 {
   try {
     Boolean scan=arg.queryTxt().toUpperCase().startsWith("SCAN");
-    String qryId=(scan ? VisorQueryUtils.SCAN_QRY_NAME : VisorQueryUtils.SQL_QRY_NAME) + "-" + UUID.randomUUID();
-    GridCache<Object,Object> c=g.cachex(arg.cacheName());
+    String qryId=(scan ? SCAN_QRY_NAME : SQL_QRY_NAME) + "-" + UUID.randomUUID();
+    GridCache<Object,Object> c=ignite.cachex(arg.cacheName());
     if (c == null)     return new IgniteBiTuple<>(new IgniteCheckedException("Cache not found: " + escapeName(arg.cacheName())),null);
     CacheProjection<Object,Object> cp=c.keepPortable();
     if (scan) {
-      CacheQueryFuture<Map.Entry<Object,Object>> fut=cp.queries().createScanQuery(null).pageSize(arg.pageSize()).projection(g.forNodeIds(arg.proj())).execute();
+      CacheQueryFuture<Map.Entry<Object,Object>> fut=cp.queries().createScanQuery(null).pageSize(arg.pageSize()).projection(ignite.forNodeIds(arg.proj())).execute();
       long start=U.currentTimeMillis();
-      IgniteBiTuple<List<Object[]>,Map.Entry<Object,Object>> rows=VisorQueryUtils.fetchScanQueryRows(fut,null,arg.pageSize());
+      IgniteBiTuple<List<Object[]>,Map.Entry<Object,Object>> rows=fetchScanQueryRows(fut,null,arg.pageSize());
       long fetchDuration=U.currentTimeMillis() - start;
       long duration=fut.duration() + fetchDuration;
       Map.Entry<Object,Object> next=rows.get2();
-      g.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,next,false));
+      ignite.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,next,false));
       scheduleResultSetHolderRemoval(qryId);
-      return new IgniteBiTuple<>(null,new VisorQueryResultEx(g.localNode().id(),qryId,VisorQueryUtils.SCAN_COL_NAMES,rows.get1(),next != null,duration));
+      return new IgniteBiTuple<>(null,new VisorQueryResultEx(ignite.localNode().id(),qryId,SCAN_COL_NAMES,rows.get1(),next != null,duration));
     }
  else {
-      CacheQueryFuture<List<?>> fut=((GridCacheQueriesEx<?,?>)cp.queries()).createSqlFieldsQuery(arg.queryTxt(),true).pageSize(arg.pageSize()).projection(g.forNodeIds(arg.proj())).execute();
+      CacheQueryFuture<List<?>> fut=((GridCacheQueriesEx<?,?>)cp.queries()).createSqlFieldsQuery(arg.queryTxt(),true).pageSize(arg.pageSize()).projection(ignite.forNodeIds(arg.proj())).execute();
       List<Object> firstRow=(List<Object>)fut.next();
       List<GridQueryFieldMetadata> meta=((GridCacheQueryMetadataAware)fut).metadata().get();
       if (meta == null)       return new IgniteBiTuple<Exception,VisorQueryResultEx>(new SQLException("Fail to execute query. No metadata available."),null);
@@ -28,12 +28,12 @@
           names[i]=new VisorQueryField(col.typeName(),col.fieldName());
         }
         long start=U.currentTimeMillis();
-        IgniteBiTuple<List<Object[]>,List<?>> rows=VisorQueryUtils.fetchSqlQueryRows(fut,firstRow,arg.pageSize());
+        IgniteBiTuple<List<Object[]>,List<?>> rows=fetchSqlQueryRows(fut,firstRow,arg.pageSize());
         long fetchDuration=U.currentTimeMillis() - start;
         long duration=fut.duration() + fetchDuration;
-        g.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,rows.get2(),false));
+        ignite.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,rows.get2(),false));
         scheduleResultSetHolderRemoval(qryId);
-        return new IgniteBiTuple<>(null,new VisorQueryResultEx(g.localNode().id(),qryId,names,rows.get1(),rows.get2() != null,duration));
+        return new IgniteBiTuple<>(null,new VisorQueryResultEx(ignite.localNode().id(),qryId,names,rows.get1(),rows.get2() != null,duration));
       }
     }
   }

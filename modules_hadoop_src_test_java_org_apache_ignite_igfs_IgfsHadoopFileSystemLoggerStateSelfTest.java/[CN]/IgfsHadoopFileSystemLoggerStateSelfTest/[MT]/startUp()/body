@@ -1,0 +1,43 @@
+{
+  IgfsConfiguration igfsCfg=new IgfsConfiguration();
+  igfsCfg.setDataCacheName("partitioned");
+  igfsCfg.setMetaCacheName("replicated");
+  igfsCfg.setName("igfs");
+  igfsCfg.setBlockSize(512 * 1024);
+  igfsCfg.setDefaultMode(PRIMARY);
+  igfsCfg.setIpcEndpointConfiguration(new HashMap<String,String>(){
+{
+      put("type","tcp");
+      put("port","10500");
+    }
+  }
+);
+  CacheConfiguration cacheCfg=defaultCacheConfiguration();
+  cacheCfg.setName("partitioned");
+  cacheCfg.setCacheMode(PARTITIONED);
+  cacheCfg.setDistributionMode(CacheDistributionMode.PARTITIONED_ONLY);
+  cacheCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  cacheCfg.setAffinityMapper(new IgfsGroupDataBlocksKeyMapper(128));
+  cacheCfg.setBackups(0);
+  cacheCfg.setQueryIndexEnabled(false);
+  cacheCfg.setAtomicityMode(TRANSACTIONAL);
+  CacheConfiguration metaCacheCfg=defaultCacheConfiguration();
+  metaCacheCfg.setName("replicated");
+  metaCacheCfg.setCacheMode(REPLICATED);
+  metaCacheCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  metaCacheCfg.setQueryIndexEnabled(false);
+  metaCacheCfg.setAtomicityMode(TRANSACTIONAL);
+  IgniteConfiguration cfg=new IgniteConfiguration();
+  cfg.setGridName("igfs-grid");
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setIpFinder(new TcpDiscoveryVmIpFinder(true));
+  cfg.setDiscoverySpi(discoSpi);
+  cfg.setCacheConfiguration(metaCacheCfg,cacheCfg);
+  cfg.setIgfsConfiguration(igfsCfg);
+  cfg.setLocalHost("127.0.0.1");
+  cfg.setConnectorConfiguration(null);
+  Ignite g=G.start(cfg);
+  igfs=(IgfsEx)g.fileSystem("igfs");
+  igfs.globalSampling(sampling);
+  fs=fileSystem();
+}

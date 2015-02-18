@@ -1,0 +1,14 @@
+{
+  try (Transaction tx=cache.unwrap(Ignite.class).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+    Integer total=(Integer)cache.get(TX_KEY);
+    if (total == null)     total=0;
+    int cntr=0;
+    for (    Cache.Entry e : cache) {
+      if (e.getKey() instanceof Integer)       cntr++;
+    }
+    assertEquals(total,(Integer)cntr);
+    cache.put(cntr + 1,cntr + 1);
+    cache.put(TX_KEY,cntr + 1);
+    tx.commit();
+  }
+ }

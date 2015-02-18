@@ -6,15 +6,15 @@
   job.setMapperClass(Mapper.class);
   job.setNumReduceTasks(0);
   setupFileSystems(job.getConfiguration());
-  FileOutputFormat.setOutputPath(job,new Path(ggfsScheme() + PATH_INPUT));
+  FileOutputFormat.setOutputPath(job,new Path(igfsScheme() + PATH_INPUT));
   X.printerrln("Data generation started.");
   grid(0).hadoop().submit(new GridHadoopJobId(UUID.randomUUID(),1),createJobInfo(job.getConfiguration())).get(180000);
   X.printerrln("Data generation complete.");
   job=Job.getInstance();
   setupFileSystems(job.getConfiguration());
   job.getConfiguration().set(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY,JavaSerialization.class.getName() + "," + WritableSerialization.class.getName());
-  FileInputFormat.setInputPaths(job,new Path(ggfsScheme() + PATH_INPUT));
-  FileOutputFormat.setOutputPath(job,new Path(ggfsScheme() + PATH_OUTPUT));
+  FileInputFormat.setInputPaths(job,new Path(igfsScheme() + PATH_INPUT));
+  FileOutputFormat.setOutputPath(job,new Path(igfsScheme() + PATH_OUTPUT));
   job.setSortComparatorClass(JavaSerializationComparator.class);
   job.setMapperClass(MyMapper.class);
   job.setReducerClass(MyReducer.class);
@@ -26,8 +26,8 @@
   X.printerrln("Job started.");
   grid(0).hadoop().submit(new GridHadoopJobId(UUID.randomUUID(),2),createJobInfo(job.getConfiguration())).get(180000);
   X.printerrln("Job complete.");
-  Path outDir=new Path(ggfsScheme() + PATH_OUTPUT);
-  AbstractFileSystem fs=AbstractFileSystem.get(new URI(ggfsScheme()),job.getConfiguration());
+  Path outDir=new Path(igfsScheme() + PATH_OUTPUT);
+  AbstractFileSystem fs=AbstractFileSystem.get(new URI(igfsScheme()),job.getConfiguration());
   for (  FileStatus file : fs.listStatus(outDir)) {
     X.printerrln("__ file: " + file);
     if (file.getLen() == 0)     continue;

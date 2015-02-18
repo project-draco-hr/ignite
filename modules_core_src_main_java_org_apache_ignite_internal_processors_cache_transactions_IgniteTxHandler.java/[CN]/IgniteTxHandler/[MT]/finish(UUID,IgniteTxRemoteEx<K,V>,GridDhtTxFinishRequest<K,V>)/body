@@ -1,0 +1,34 @@
+{
+  if (tx == null) {
+    if (req.commit())     ctx.tm().addCommittedTx(req.version(),null);
+ else     ctx.tm().addRolledbackTx(req.version());
+    if (log.isDebugEnabled())     log.debug("Received finish request for non-existing transaction (added to completed set) " + "[senderNodeId=" + nodeId + ", res="+ req+ ']');
+    return;
+  }
+ else   if (log.isDebugEnabled())   log.debug("Received finish request for transaction [senderNodeId=" + nodeId + ", req="+ req+ ", tx="+ tx+ ']');
+  try {
+    if (req.commit() || req.isSystemInvalidate()) {
+      if (tx.commitVersion(req.commitVersion())) {
+        tx.invalidate(req.isInvalidate());
+        tx.systemInvalidate(req.isSystemInvalidate());
+        tx.doneRemote(req.baseVersion(),null,null,null);
+        tx.commit();
+      }
+    }
+ else {
+      tx.doneRemote(req.baseVersion(),null,null,null);
+      tx.rollback();
+    }
+  }
+ catch (  Throwable e) {
+    U.error(log,"Failed completing transaction [commit=" + req.commit() + ", tx="+ tx+ ']',e);
+    tx.invalidate(true);
+    tx.systemInvalidate(true);
+    try {
+      tx.commit();
+    }
+ catch (    IgniteCheckedException ex) {
+      U.error(log,"Failed to invalidate transaction: " + tx,ex);
+    }
+  }
+}

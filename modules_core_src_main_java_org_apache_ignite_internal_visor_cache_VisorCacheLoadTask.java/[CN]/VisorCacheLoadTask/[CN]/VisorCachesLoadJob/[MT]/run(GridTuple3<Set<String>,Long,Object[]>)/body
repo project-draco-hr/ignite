@@ -1,24 +1,13 @@
 {
-  try {
-    Set<String> cacheNames=arg.get1();
-    Long ttl=arg.get2();
-    Object[] loaderArgs=arg.get3();
-    Map<String,Integer> res=new HashMap<>();
-    for (    GridCache c : g.cachesx()) {
-      String cacheName=c.name();
-      if (cacheNames.contains(cacheName)) {
-        c.loadCache(new P2<Object,Object>(){
-          @Override public boolean apply(          Object o,          Object o2){
-            return true;
-          }
-        }
-,ttl,loaderArgs);
-        res.put(cacheName,c.size());
-      }
-    }
-    return res;
+  Set<String> cacheNames=arg.get1();
+  Long ttl=arg.get2();
+  Object[] ldrArgs=arg.get3();
+  Map<String,Integer> res=new HashMap<>();
+  ExpiryPolicy plc=new CreatedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS,ttl));
+  for (  String cacheName : cacheNames) {
+    IgniteCache cache=ignite.jcache(cacheName).withExpiryPolicy(plc);
+    cache.loadCache(null,ldrArgs);
+    res.put(cacheName,cache.size());
   }
- catch (  IgniteCheckedException e) {
-    throw U.convertException(e);
-  }
+  return res;
 }

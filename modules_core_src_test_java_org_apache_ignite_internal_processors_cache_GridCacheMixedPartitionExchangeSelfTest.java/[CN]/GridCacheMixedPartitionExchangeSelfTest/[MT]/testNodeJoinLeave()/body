@@ -11,8 +11,8 @@
         while (!finished.get()) {
           int g=rnd.nextInt(4);
           int key=rnd.nextInt(keys);
-          GridCache<Integer,Integer> prj=grid(g).cache(null);
-          try (IgniteTx tx=prj.txStart(PESSIMISTIC,REPEATABLE_READ)){
+          IgniteCache<Integer,Integer> prj=grid(g).jcache(null);
+          try (Transaction tx=grid(g).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
             Integer val=prj.get(key);
             val=val == null ? 1 : val + 1;
             prj.put(key,val);

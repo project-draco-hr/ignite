@@ -1,0 +1,25 @@
+{
+  Node<EvictableEntry<K,V>> node=entry.meta();
+  if (node == null) {
+    while (true) {
+      node=queue.offerLastx(entry);
+      if (entry.putMetaIfAbsent(node) != null) {
+        queue.unlinkx(node);
+        return false;
+      }
+ else       if (node.item() != null) {
+        if (!entry.isCached()) {
+          queue.unlinkx(node);
+          return false;
+        }
+        return true;
+      }
+ else       if (!entry.removeMeta(node))       return false;
+    }
+  }
+ else   if (queue.unlinkx(node)) {
+    Node<EvictableEntry<K,V>> newNode=queue.offerLastx(entry);
+    if (!entry.replaceMeta(node,newNode))     queue.unlinkx(newNode);
+  }
+  return false;
+}

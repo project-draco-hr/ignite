@@ -1,0 +1,20 @@
+{
+  if (srvEndpoint == null)   return;
+  U.cancel(acceptWorker);
+  U.join(acceptWorker,log);
+  try {
+    hnd.stop();
+  }
+ catch (  IgniteCheckedException e) {
+    U.error(log,"Failed to stop IGFS server handler (will close client connections anyway).",e);
+  }
+  for (  ClientWorker worker : clientWorkers)   U.cancel(worker);
+  U.join(clientWorkers,log);
+  if (srvEndpoint.getPort() >= 0)   igfsCtx.kernalContext().ports().deregisterPort(srvEndpoint.getPort(),TCP,srvEndpoint.getClass());
+  try {
+    igfsCtx.kernalContext().resource().cleanupGeneric(srvEndpoint);
+  }
+ catch (  IgniteCheckedException e) {
+    U.error(log,"Failed to cleanup server endpoint.",e);
+  }
+}

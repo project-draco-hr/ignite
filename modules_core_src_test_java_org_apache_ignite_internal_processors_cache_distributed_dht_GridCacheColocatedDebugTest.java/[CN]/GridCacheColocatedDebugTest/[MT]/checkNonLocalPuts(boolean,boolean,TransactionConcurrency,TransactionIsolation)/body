@@ -1,0 +1,55 @@
+{
+  storeEnabled=false;
+  startGridsMultiThreaded(3);
+  Ignite g0=grid(0);
+  Ignite g1=grid(1);
+  Ignite g2=grid(2);
+  try {
+    Integer k1=forPrimary(g1);
+    Integer k2=forPrimary(g2);
+    Map<Integer,String> map=F.asMap(k1,"val" + k1,k2,"val" + k2);
+    Transaction tx=explicitTx ? g0.transactions().txStart(concurrency,isolation) : null;
+    try {
+      if (separate) {
+        g0.jcache(null).put(k1,"val" + k1);
+        g0.jcache(null).put(k2,"val" + k2);
+      }
+ else       g0.jcache(null).putAll(map);
+      if (tx != null)       tx.commit();
+    }
+  finally {
+      if (tx != null)       tx.close();
+    }
+    if (separate) {
+      assertEquals("val" + k1,g0.jcache(null).get(k1));
+      assertEquals("val" + k2,g0.jcache(null).get(k2));
+    }
+ else {
+      Map<Object,Object> res=g0.jcache(null).getAll(map.keySet());
+      assertEquals(map,res);
+    }
+    tx=explicitTx ? g0.transactions().txStart(concurrency,isolation) : null;
+    try {
+      if (separate) {
+        g0.jcache(null).remove(k1);
+        g0.jcache(null).remove(k2);
+      }
+ else       g0.jcache(null).removeAll(map.keySet());
+      if (tx != null)       tx.commit();
+    }
+  finally {
+      if (tx != null)       tx.close();
+    }
+    if (separate) {
+      assertEquals(null,g0.jcache(null).get(k1));
+      assertEquals(null,g0.jcache(null).get(k2));
+    }
+ else {
+      Map<Object,Object> res=g0.jcache(null).getAll(map.keySet());
+      assertTrue(res.isEmpty());
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}
