@@ -1,0 +1,39 @@
+{
+  backups=2;
+  startGrids(GRID_CNT - 1);
+  try {
+    for (int i=0; i < GRID_CNT - 1; i++)     ((IgniteKernal)grid(i)).cache(null).forceRepartition().get();
+    startGrid(GRID_CNT - 1);
+    GridCache<Object,Object> cache=((IgniteKernal)grid(0)).cache(null);
+    final int keyCnt=100;
+    try (Transaction tx=cache.txStart(OPTIMISTIC,REPEATABLE_READ)){
+      for (int k=0; k < keyCnt; k++)       cache.get(k);
+      for (int k=0; k < keyCnt; k++)       cache.put(k,k);
+      tx.commit();
+    }
+     for (int g=0; g < GRID_CNT; g++) {
+      IgniteKernal k=(IgniteKernal)grid(g);
+      GridCacheAdapter<Object,Object> cacheAdapter=k.context().cache().internalCache();
+      assertEquals(0,cacheAdapter.context().tm().idMapSize());
+      for (int i=0; i < keyCnt; i++) {
+        if (cacheAdapter.isNear()) {
+          GridDhtCacheEntry<Object,Object> entry=((GridNearCacheAdapter<Object,Object>)cacheAdapter).dht().peekExx(i);
+          if (entry != null) {
+            assertFalse(entry.lockedByAny());
+            assertTrue(entry.localCandidates().isEmpty());
+            assertTrue(entry.remoteMvccSnapshot().isEmpty());
+          }
+        }
+        GridCacheEntryEx<Object,Object> entry=cacheAdapter.peekEx(i);
+        if (entry != null) {
+          assertFalse(entry.lockedByAny());
+          assertTrue(entry.localCandidates().isEmpty());
+          assertTrue(entry.remoteMvccSnapshot().isEmpty());
+        }
+      }
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

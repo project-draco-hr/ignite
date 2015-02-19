@@ -6,7 +6,7 @@
       val=(V)cctx.unwrapPortableIfNeeded(val,false);
     }
     if (log.isDebugEnabled())     log.debug("Storing value in cache store [key=" + key + ", val="+ val+ ']');
-    initSession(tx);
+    boolean ses=initSession(tx);
     try {
       store.write(new CacheEntryImpl<>(key,locStore ? F.t(val,ver) : val));
     }
@@ -20,7 +20,7 @@ catch (    Exception e) {
       throw new IgniteCheckedException(new CacheWriterException(e));
     }
  finally {
-      sesHolder.set(null);
+      if (ses)       sesHolder.set(null);
     }
     if (log.isDebugEnabled())     log.debug("Stored value in cache store [key=" + key + ", val="+ val+ ']');
     return true;

@@ -1,0 +1,19 @@
+{
+  create(igfs,paths(DIR,SUBDIR),null);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      IgfsOutputStream os=null;
+      try {
+        os=igfs.create(FILE,true);
+        igfs.format();
+        os.write(chunk);
+        os.close();
+      }
+  finally {
+        U.closeQuiet(os);
+      }
+      return null;
+    }
+  }
+,IOException.class,"File was concurrently deleted: " + FILE);
+}

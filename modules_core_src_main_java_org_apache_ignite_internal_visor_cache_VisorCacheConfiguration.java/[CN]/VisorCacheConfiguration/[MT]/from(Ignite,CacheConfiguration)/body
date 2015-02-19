@@ -1,8 +1,4 @@
 {
-  Collection<CacheTypeMetadata> cacheMetadata=ccfg.getTypeMetadata();
-  if (cacheMetadata == null)   cacheMetadata=Collections.emptyList();
-  Collection<VisorCacheTypeMetadata> typeMeta=new ArrayList<>(cacheMetadata != null ? cacheMetadata.size() : 0);
-  for (  CacheTypeMetadata m : cacheMetadata)   typeMeta.add(VisorCacheTypeMetadata.from(m));
   GridCacheContext cctx=((IgniteKernal)ignite).internalCache(ccfg.getName()).context();
   boolean jdbcStore=cctx.store().configuredStore() instanceof CacheAbstractJdbcStore;
   VisorCacheConfiguration cfg=new VisorCacheConfiguration();
@@ -28,10 +24,17 @@
   cfg.evictConfiguration(VisorCacheEvictionConfiguration.from(ccfg));
   cfg.nearConfiguration(VisorCacheNearConfiguration.from(ccfg));
   cfg.defaultConfiguration(VisorCacheDefaultConfiguration.from(ccfg));
-  cfg.dgcConfiguration(VisorCacheDgcConfiguration.from(ccfg));
   cfg.storeConfiguration(VisorCacheStoreConfiguration.from(ccfg));
   cfg.writeBehind(VisorCacheWriteBehindConfiguration.from(ccfg));
   cfg.typeMeta(VisorCacheTypeMetadata.list(ccfg.getTypeMetadata()));
   cfg.jdbcStore(jdbcStore);
+  cfg.readThrough(ccfg.isReadThrough());
+  cfg.writeThrough(ccfg.isWriteThrough());
+  cfg.statisticsEnabled(ccfg.isStatisticsEnabled());
+  cfg.managementEnabled(ccfg.isManagementEnabled());
+  cfg.loaderFactory(compactClass(ccfg.getCacheLoaderFactory()));
+  cfg.writerFactory(compactClass(ccfg.getCacheWriterFactory()));
+  cfg.expiryPolicyFactory(compactClass(ccfg.getExpiryPolicyFactory()));
+  cfg.queryConfiguration(VisorCacheQueryConfiguration.from(ccfg.getQueryConfiguration()));
   return cfg;
 }

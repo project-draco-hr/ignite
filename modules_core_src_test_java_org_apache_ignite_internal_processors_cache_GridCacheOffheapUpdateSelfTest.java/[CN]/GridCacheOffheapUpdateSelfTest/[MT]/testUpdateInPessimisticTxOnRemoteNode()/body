@@ -5,16 +5,16 @@
     int key=0;
     while (!ignite.affinity(null).isPrimary(grid(1).localNode(),key))     key++;
     IgniteCache<Object,Object> locCache=grid(1).jcache(null);
-    try (IgniteTx tx=grid(1).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+    try (Transaction tx=grid(1).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
       locCache.putIfAbsent(key,0);
       tx.commit();
     }
-     try (IgniteTx tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+     try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
       assertEquals(0,rmtCache.get(key));
       rmtCache.put(key,1);
       tx.commit();
     }
-     try (IgniteTx tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+     try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
       assertEquals(1,rmtCache.get(key));
       rmtCache.put(key,2);
       tx.commit();

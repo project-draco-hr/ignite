@@ -1,0 +1,24 @@
+{
+  Collection<IgfsFile> res=new HashSet<>(FILES_CNT,1.0f);
+  ThreadLocalRandom8 rand=ThreadLocalRandom8.current();
+  for (int i=0; i < FILES_CNT; i++) {
+    IgfsPath path=new IgfsPath("/file-" + i);
+    igfs(0).create(path,false).close();
+    IgfsMetaManager meta=igfs(0).context().meta();
+    IgniteUuid fileId=meta.fileId(path);
+    int fileSize=rand.nextInt(MAX_FILE_SIZE);
+    int fullBlocks=fileSize / BLOCK_SIZE;
+    int remainderSize=fileSize % BLOCK_SIZE;
+    Collection<IgfsBlock> blocks=new ArrayList<>(fullBlocks + remainderSize > 0 ? 1 : 0);
+    for (int j=0; j < fullBlocks; j++)     blocks.add(new IgfsBlock(new IgfsBlockKey(fileId,null,true,j),BLOCK_SIZE));
+    if (remainderSize > 0)     blocks.add(new IgfsBlock(new IgfsBlockKey(fileId,null,true,fullBlocks),remainderSize));
+    IgfsFile file=new IgfsFile(path,fileSize,blocks);
+    for (    IgfsBlock block : blocks) {
+      IgfsOutputStream os=igfs(0).append(path,false);
+      os.write(chunk(block.length()));
+      os.close();
+    }
+    res.add(file);
+  }
+  return res;
+}

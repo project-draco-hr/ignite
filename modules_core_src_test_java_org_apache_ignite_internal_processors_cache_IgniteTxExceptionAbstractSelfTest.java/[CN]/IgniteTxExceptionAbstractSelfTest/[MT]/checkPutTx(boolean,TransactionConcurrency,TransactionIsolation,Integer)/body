@@ -1,0 +1,37 @@
+{
+  assertTrue(keys.length > 0);
+  info("Test transaction [concurrency=" + concurrency + ", isolation="+ isolation+ ']');
+  IgniteCache<Integer,Integer> cache=grid(0).jcache(null);
+  if (putBefore) {
+    idxSpi.forceFail(false);
+    info("Start transaction.");
+    try (Transaction tx=grid(0).transactions().txStart(concurrency,isolation)){
+      for (      Integer key : keys) {
+        info("Put " + key);
+        cache.put(key,1);
+      }
+      info("Commit.");
+      tx.commit();
+    }
+   }
+  for (int i=0; i < gridCount(); i++) {
+    for (    Integer key : keys)     grid(i).jcache(null).get(key);
+  }
+  idxSpi.forceFail(true);
+  try {
+    info("Start transaction.");
+    try (Transaction tx=grid(0).transactions().txStart(concurrency,isolation)){
+      for (      Integer key : keys) {
+        info("Put " + key);
+        cache.put(key,2);
+      }
+      info("Commit.");
+      tx.commit();
+    }
+     fail("Transaction should fail.");
+  }
+ catch (  TransactionHeuristicException e) {
+    log.info("Expected exception: " + e);
+  }
+  for (  Integer key : keys)   checkUnlocked(key);
+}

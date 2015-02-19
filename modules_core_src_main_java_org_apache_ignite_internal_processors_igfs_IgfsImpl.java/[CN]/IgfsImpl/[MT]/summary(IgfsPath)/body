@@ -1,0 +1,20 @@
+{
+  if (enterBusy()) {
+    try {
+      A.notNull(path,"path");
+      if (log.isDebugEnabled())       log.debug("Calculating path summary: " + path);
+      IgniteUuid fileId=meta.fileId(path);
+      if (fileId == null)       throw new IgfsFileNotFoundException("Failed to get path summary (path not found): " + path);
+      IgfsPathSummary sum=new IgfsPathSummary(path);
+      summary0(fileId,sum);
+      return sum;
+    }
+ catch (    IgniteCheckedException e) {
+      throw U.convertException(e);
+    }
+ finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get path summary because Grid is stopping.");
+}

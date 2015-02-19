@@ -16,16 +16,15 @@ synchronized (mux) {
 );
       spi.setDataExchange(new DiscoverySpiDataExchange(){
         @Override public Map<Integer,Object> collect(        UUID nodeId){
-          return new HashMap<Integer,Object>();
+          return new HashMap<>();
         }
-        @Override public void onExchange(        Map<Integer,Object> data){
+        @Override public void onExchange(        UUID nodeId,        Map<Integer,Object> data){
         }
       }
 );
       spi.setAuthenticator(new DiscoverySpiNodeAuthenticator(){
         @Override public GridSecurityContext authenticateNode(        ClusterNode n,        GridSecurityCredentials cred){
-          GridSecuritySubjectAdapter subj=new GridSecuritySubjectAdapter(GridSecuritySubjectType.REMOTE_NODE,n.id());
-          subj.permissions(new GridAllowAllPermissionSet());
+          GridSecuritySubject subj=getGridSecuritySubject(GridSecuritySubjectType.REMOTE_NODE,n.id());
           return new GridSecurityContext(subj);
         }
         @Override public boolean isGlobalNodeAuthentication(){

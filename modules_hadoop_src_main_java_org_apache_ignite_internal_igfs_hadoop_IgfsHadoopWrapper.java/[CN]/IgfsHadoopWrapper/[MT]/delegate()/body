@@ -1,0 +1,86 @@
+{
+  Exception err=null;
+  Delegate curDelegate=delegateRef.get();
+  if (curDelegate != null)   return curDelegate;
+  if (!parameter(conf,PARAM_IGFS_ENDPOINT_NO_EMBED,authority,false)) {
+    IgfsEx igfs=null;
+    if (endpoint.grid() == null) {
+      try {
+        Ignite ignite=G.ignite();
+        igfs=(IgfsEx)ignite.fileSystem(endpoint.igfs());
+      }
+ catch (      Exception e) {
+        err=e;
+      }
+    }
+ else {
+      for (      Ignite ignite : G.allGrids()) {
+        try {
+          igfs=(IgfsEx)ignite.fileSystem(endpoint.igfs());
+          break;
+        }
+ catch (        Exception e) {
+          err=e;
+        }
+      }
+    }
+    if (igfs != null) {
+      IgfsHadoopEx hadoop=null;
+      try {
+        hadoop=new IgfsHadoopInProc(igfs,log);
+        curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
+      }
+ catch (      IOException|IgniteCheckedException e) {
+        if (e instanceof IgfsHadoopCommunicationException)         hadoop.close(true);
+        if (log.isDebugEnabled())         log.debug("Failed to connect to in-proc IGFS, fallback to IPC mode.",e);
+        err=e;
+      }
+    }
+  }
+  if (!parameter(conf,PARAM_IGFS_ENDPOINT_NO_LOCAL_SHMEM,authority,false)) {
+    if (curDelegate == null && !U.isWindows()) {
+      IgfsHadoopEx hadoop=null;
+      try {
+        hadoop=new IgfsHadoopOutProc(endpoint.port(),endpoint.grid(),endpoint.igfs(),log);
+        curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
+      }
+ catch (      IOException|IgniteCheckedException e) {
+        if (e instanceof IgfsHadoopCommunicationException)         hadoop.close(true);
+        if (log.isDebugEnabled())         log.debug("Failed to connect to out-proc local IGFS using shmem.",e);
+        err=e;
+      }
+    }
+  }
+  boolean skipLocTcp=parameter(conf,PARAM_IGFS_ENDPOINT_NO_LOCAL_TCP,authority,false);
+  if (!skipLocTcp) {
+    if (curDelegate == null) {
+      IgfsHadoopEx hadoop=null;
+      try {
+        hadoop=new IgfsHadoopOutProc(LOCALHOST,endpoint.port(),endpoint.grid(),endpoint.igfs(),log);
+        curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
+      }
+ catch (      IOException|IgniteCheckedException e) {
+        if (e instanceof IgfsHadoopCommunicationException)         hadoop.close(true);
+        if (log.isDebugEnabled())         log.debug("Failed to connect to out-proc local IGFS using TCP.",e);
+        err=e;
+      }
+    }
+  }
+  if (curDelegate == null && (skipLocTcp || !F.eq(LOCALHOST,endpoint.host()))) {
+    IgfsHadoopEx hadoop=null;
+    try {
+      hadoop=new IgfsHadoopOutProc(endpoint.host(),endpoint.port(),endpoint.grid(),endpoint.igfs(),log);
+      curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
+    }
+ catch (    IOException|IgniteCheckedException e) {
+      if (e instanceof IgfsHadoopCommunicationException)       hadoop.close(true);
+      if (log.isDebugEnabled())       log.debug("Failed to connect to out-proc remote IGFS using TCP.",e);
+      err=e;
+    }
+  }
+  if (curDelegate != null) {
+    if (!delegateRef.compareAndSet(null,curDelegate))     curDelegate.doomed=true;
+    return curDelegate;
+  }
+ else   throw new IgfsHadoopCommunicationException("Failed to connect to IGFS: " + endpoint,err);
+}

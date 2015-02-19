@@ -1,0 +1,42 @@
+{
+  final List<Event> evtList=new ArrayList<>();
+  final int evtsCnt=5;
+  final CountDownLatch latch=new CountDownLatch(evtsCnt);
+  grid(1).events().localListen(lsnr=new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      log.info("Received event [evt=" + evt + ']');
+      evtList.add(evt);
+      latch.countDown();
+      return true;
+    }
+  }
+,EVTS_IGFS);
+  final IgfsPath file=new IgfsPath("/file1");
+  final int dataSize=1024;
+  byte[] buf=new byte[dataSize];
+  try (IgfsOutputStream os=igfs.create(file,false)){
+    os.write(buf);
+  }
+   try (IgfsInputStream is=igfs.open(file,256)){
+    is.readFully(0,buf);
+  }
+   assertTrue(latch.await(10,TimeUnit.SECONDS));
+  assertEquals(evtsCnt,evtList.size());
+  IgfsEvent evt=(IgfsEvent)evtList.get(0);
+  assertEquals(EVT_IGFS_FILE_CREATED,evt.type());
+  assertEquals(new IgfsPath("/file1"),evt.path());
+  evt=(IgfsEvent)evtList.get(1);
+  assertEquals(EVT_IGFS_FILE_OPENED_WRITE,evt.type());
+  assertEquals(new IgfsPath("/file1"),evt.path());
+  evt=(IgfsEvent)evtList.get(2);
+  assertEquals(EVT_IGFS_FILE_CLOSED_WRITE,evt.type());
+  assertEquals(new IgfsPath("/file1"),evt.path());
+  assertEquals((long)dataSize,evt.dataSize());
+  evt=(IgfsEvent)evtList.get(3);
+  assertEquals(EVT_IGFS_FILE_OPENED_READ,evt.type());
+  assertEquals(new IgfsPath("/file1"),evt.path());
+  evt=(IgfsEvent)evtList.get(4);
+  assertEquals(EVT_IGFS_FILE_CLOSED_READ,evt.type());
+  assertEquals(new IgfsPath("/file1"),evt.path());
+  assertEquals((long)dataSize,evt.dataSize());
+}

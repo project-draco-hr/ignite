@@ -1,19 +1,19 @@
 {
-  IgniteFsPath inDir=new IgniteFsPath(PATH_INPUT);
-  ggfs.mkdirs(inDir);
-  IgniteFsPath inFile=new IgniteFsPath(inDir,GridHadoopWordCount2.class.getSimpleName() + "-input");
-  URI inFileUri=URI.create(ggfsScheme() + inFile.toString());
-  try (PrintWriter pw=new PrintWriter(ggfs.create(inFile,true))){
+  IgfsPath inDir=new IgfsPath(PATH_INPUT);
+  igfs.mkdirs(inDir);
+  IgfsPath inFile=new IgfsPath(inDir,GridHadoopWordCount2.class.getSimpleName() + "-input");
+  URI inFileUri=URI.create(igfsScheme() + inFile.toString());
+  try (PrintWriter pw=new PrintWriter(igfs.create(inFile,true))){
     pw.println("hello0 world0");
     pw.println("world1 hello1");
   }
-   GridHadoopFileBlock fileBlock1=new GridHadoopFileBlock(HOSTS,inFileUri,0,ggfs.info(inFile).length() - 1);
-  try (PrintWriter pw=new PrintWriter(ggfs.append(inFile,false))){
+   GridHadoopFileBlock fileBlock1=new GridHadoopFileBlock(HOSTS,inFileUri,0,igfs.info(inFile).length() - 1);
+  try (PrintWriter pw=new PrintWriter(igfs.append(inFile,false))){
     pw.println("hello2 world2");
     pw.println("world3 hello3");
   }
-   GridHadoopFileBlock fileBlock2=new GridHadoopFileBlock(HOSTS,inFileUri,fileBlock1.length(),ggfs.info(inFile).length() - fileBlock1.length());
-  GridHadoopV2Job gridJob=getHadoopJob(ggfsScheme() + inFile.toString(),ggfsScheme() + PATH_OUTPUT);
+   GridHadoopFileBlock fileBlock2=new GridHadoopFileBlock(HOSTS,inFileUri,fileBlock1.length(),igfs.info(inFile).length() - fileBlock1.length());
+  GridHadoopV2Job gridJob=getHadoopJob(igfsScheme() + inFile.toString(),igfsScheme() + PATH_OUTPUT);
   GridHadoopTaskInfo taskInfo=new GridHadoopTaskInfo(GridHadoopTaskType.MAP,gridJob.id(),0,0,fileBlock1);
   GridHadoopTestTaskContext ctx=new GridHadoopTestTaskContext(taskInfo,gridJob);
   ctx.mockOutput().clear();

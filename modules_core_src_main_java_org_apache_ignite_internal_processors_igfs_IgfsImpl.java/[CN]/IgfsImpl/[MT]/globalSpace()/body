@@ -1,0 +1,12 @@
+{
+  if (enterBusy()) {
+    try {
+      IgniteBiTuple<Long,Long> space=igfsCtx.kernalContext().grid().compute().execute(new IgfsGlobalSpaceTask(name()),null);
+      return new IgfsStatus(space.get1(),space.get2());
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get global space because Grid is stopping.");
+}

@@ -1,0 +1,73 @@
+{
+  igfs.mkdirs(path("/A/B1/C1"));
+  for (  Object key : metaCache.keySet())   info("Entry in cache [key=" + key + ", val="+ metaCache.get(key)+ ']');
+  GridTestUtils.assertThrowsInherited(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      igfs.rename(path("/A/B1/C1"),path("/A/B1/C1/C2"));
+      return null;
+    }
+  }
+,IgfsException.class,null);
+  GridTestUtils.assertThrowsInherited(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      igfs.rename(path("/A/B1/C1"),path("/A/B1/C1/D/C2"));
+      return null;
+    }
+  }
+,IgfsException.class,null);
+  GridTestUtils.assertThrowsInherited(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      igfs.rename(path("/A/B1/C1"),path("/A/B1/C1/D/E/C2"));
+      return null;
+    }
+  }
+,IgfsException.class,null);
+  Collection<IgniteBiTuple<String,String>> chain=Arrays.asList(F.t("/A/B1/C1","/A/B1/C2"),F.t("/A/B1","/A/B2"),F.t("/A","/Q"),F.t("/Q/B2/C2","/Q/B2/C1"),F.t("/Q/B2","/Q/B1"),F.t("/Q","/A"),F.t("/A/B1/C1","/"),F.t("/C1","/A/B1"));
+  final IgfsPath root=path("/");
+  for (  IgniteBiTuple<String,String> e : chain) {
+    final IgfsPath p1=path(e.get1());
+    final IgfsPath p2=path(e.get2());
+    assertTrue("Entry: " + e,igfs.exists(p1));
+    igfs.rename(p1,p2);
+    assertFalse("Entry: " + e,igfs.exists(p1));
+    assertTrue("Entry: " + e,igfs.exists(p2));
+    GridTestUtils.assertThrowsInherited(log,new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        igfs.rename(root,p1);
+        return null;
+      }
+    }
+,IgfsException.class,null);
+    GridTestUtils.assertThrowsInherited(log,new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        igfs.rename(p1,root);
+        return null;
+      }
+    }
+,IgfsException.class,null);
+    if (!root.equals(p2)) {
+      GridTestUtils.assertThrowsInherited(log,new Callable<Object>(){
+        @Override public Object call() throws Exception {
+          igfs.rename(root,p2);
+          return null;
+        }
+      }
+,IgfsException.class,null);
+    }
+    igfs.rename(p1,p1);
+    igfs.rename(p2,p2);
+  }
+  assertEquals(Arrays.asList(path("/A")),sorted(igfs.listPaths(root)));
+  assertEquals(Arrays.asList(path("/A/B1")),sorted(igfs.listPaths(path("/A"))));
+  assertEquals(Arrays.asList(path("/A/B1/C1")),sorted(igfs.listPaths(path("/A/B1"))));
+  String text="Test long number: " + rnd.nextLong();
+  assertEquals(text,create("/A/a",false,text));
+  try (IgfsInputStream in0=igfs.open(path("/A/a"))){
+    igfs.rename(path("/A/a"),path("/b"));
+    assertEquals(text,IOUtils.toString(in0,UTF_8));
+  }
+   assertOpenFails("/A/a","File not found");
+  assertEquals(text,read("/b"));
+  igfs.delete(root,true);
+  assertEquals(Collections.<IgfsPath>emptyList(),igfs.listPaths(root));
+}

@@ -1,0 +1,37 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  IgfsConfiguration igfsCfg=new IgfsConfiguration();
+  igfsCfg.setDataCacheName(DATA_CACHE_NAME);
+  igfsCfg.setMetaCacheName(META_CACHE_NAME);
+  igfsCfg.setName(IGFS_NAME);
+  igfsCfg.setBlockSize(BLOCK_SIZE);
+  igfsCfg.setFragmentizerEnabled(false);
+  igfsCfg.setMaxSpaceSize(igfsMaxData);
+  igfsCfg.setTrashPurgeTimeout(trashPurgeTimeout);
+  igfsCfg.setManagementPort(++mgmtPort);
+  CacheConfiguration dataCfg=defaultCacheConfiguration();
+  dataCfg.setName(DATA_CACHE_NAME);
+  dataCfg.setCacheMode(cacheMode);
+  if (cacheMode == PARTITIONED) {
+    dataCfg.setDistributionMode(nearEnabled ? NEAR_PARTITIONED : PARTITIONED_ONLY);
+    dataCfg.setBackups(0);
+  }
+  dataCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  dataCfg.setPreloadMode(SYNC);
+  dataCfg.setAffinityMapper(new IgfsGroupDataBlocksKeyMapper(128));
+  dataCfg.setQueryIndexEnabled(false);
+  dataCfg.setAtomicityMode(TRANSACTIONAL);
+  CacheConfiguration metaCfg=defaultCacheConfiguration();
+  metaCfg.setName(META_CACHE_NAME);
+  metaCfg.setCacheMode(REPLICATED);
+  metaCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  metaCfg.setPreloadMode(SYNC);
+  metaCfg.setQueryIndexEnabled(false);
+  metaCfg.setAtomicityMode(TRANSACTIONAL);
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setIpFinder(IP_FINDER);
+  cfg.setDiscoverySpi(discoSpi);
+  cfg.setCacheConfiguration(metaCfg,dataCfg);
+  cfg.setIgfsConfiguration(igfsCfg);
+  return cfg;
+}

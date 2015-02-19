@@ -1,0 +1,21 @@
+{
+  final AtomicInteger cntr=new AtomicInteger();
+  multithreaded(new CAX(){
+    @SuppressWarnings({"BusyWait"}) @Override public void applyx() throws IgniteCheckedException {
+      IgniteCache<Integer,Integer> c=grid(0).jcache(null);
+      for (int i=0; i < TX_CNT; i++) {
+        int kv=cntr.incrementAndGet();
+        try (Transaction tx=grid(0).transactions().txStart(concurrency,isolation)){
+          assertNull(c.get(kv));
+          c.put(kv,kv);
+          assertEquals(Integer.valueOf(kv),c.get(kv));
+          c.put(kv,kv);
+          assertEquals(Integer.valueOf(kv),c.get(kv));
+          tx.commit();
+        }
+         if (TEST_INFO && kv % 1000 == 0)         info("Transactions: " + kv);
+      }
+    }
+  }
+,THREAD_CNT);
+}

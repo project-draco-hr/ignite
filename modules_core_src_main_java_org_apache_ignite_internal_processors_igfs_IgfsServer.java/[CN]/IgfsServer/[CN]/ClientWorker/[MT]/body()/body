@@ -1,0 +1,77 @@
+{
+  try {
+    IgfsDataInputStream dis=new IgfsDataInputStream(endpoint.inputStream());
+    byte[] hdr=new byte[IgfsMarshaller.HEADER_SIZE];
+    boolean first=true;
+    while (!Thread.currentThread().isInterrupted()) {
+      dis.readFully(hdr);
+      final long reqId=U.bytesToLong(hdr,0);
+      int ordinal=U.bytesToInt(hdr,8);
+      if (first) {
+        if (reqId != 0 || ordinal != IgfsIpcCommand.HANDSHAKE.ordinal()) {
+          U.warn(log,"Handshake failed.");
+          return;
+        }
+        first=false;
+      }
+      final IgfsIpcCommand cmd=IgfsIpcCommand.valueOf(ordinal);
+      IgfsMessage msg=marsh.unmarshall(cmd,hdr,dis);
+      IgniteInternalFuture<IgfsMessage> fut=hnd.handleAsync(ses,msg,dis);
+      if (fut != null) {
+        if (fut.isDone()) {
+          IgfsMessage res;
+          try {
+            res=fut.get();
+          }
+ catch (          IgniteCheckedException e) {
+            res=new IgfsControlResponse();
+            ((IgfsControlResponse)res).error(e);
+          }
+          try {
+synchronized (out) {
+              IgfsMarshaller.fillHeader(hdr,reqId,res.command());
+              marsh.marshall(res,hdr,out);
+              out.flush();
+            }
+          }
+ catch (          IOException|IgniteCheckedException e) {
+            shutdown0(e);
+          }
+        }
+ else {
+          fut.listenAsync(new CIX1<IgniteInternalFuture<IgfsMessage>>(){
+            @Override public void applyx(            IgniteInternalFuture<IgfsMessage> fut){
+              IgfsMessage res;
+              try {
+                res=fut.get();
+              }
+ catch (              IgniteCheckedException e) {
+                res=new IgfsControlResponse();
+                ((IgfsControlResponse)res).error(e);
+              }
+              try {
+synchronized (out) {
+                  byte[] hdr=IgfsMarshaller.createHeader(reqId,res.command());
+                  marsh.marshall(res,hdr,out);
+                  out.flush();
+                }
+              }
+ catch (              IOException|IgniteCheckedException e) {
+                shutdown0(e);
+              }
+            }
+          }
+);
+        }
+      }
+    }
+  }
+ catch (  EOFException ignored) {
+  }
+catch (  IgniteCheckedException|IOException e) {
+    if (!isCancelled())     U.error(log,"Failed to read data from client (will close connection)",e);
+  }
+ finally {
+    onFinished();
+  }
+}

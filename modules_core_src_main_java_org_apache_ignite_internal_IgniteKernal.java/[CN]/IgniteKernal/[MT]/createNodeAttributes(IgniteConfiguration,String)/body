@@ -68,20 +68,6 @@
   }
   add(attrs,ATTR_RESTART_ENABLED,Boolean.toString(isRestartEnabled()));
   if (cfg.getConnectorConfiguration() != null)   add(attrs,ATTR_REST_PORT_RANGE,cfg.getConnectorConfiguration().getPortRange());
-  try {
-    AuthenticationSpi authSpi=cfg.getAuthenticationSpi();
-    boolean securityEnabled=authSpi != null && !U.hasAnnotation(authSpi.getClass(),IgniteSpiNoop.class);
-    GridSecurityCredentialsProvider provider=cfg.getSecurityCredentialsProvider();
-    if (provider != null) {
-      GridSecurityCredentials cred=provider.credentials();
-      if (cred != null)       add(attrs,ATTR_SECURITY_CREDENTIALS,cred);
- else       if (securityEnabled)       throw new IgniteCheckedException("Failed to start node (authentication SPI is configured, " + "by security credentials provider returned null).");
-    }
- else     if (securityEnabled)     throw new IgniteCheckedException("Failed to start node (authentication SPI is configured, " + "but security credentials provider is not set. Fix the configuration and restart the node).");
-  }
- catch (  IgniteCheckedException e) {
-    throw new IgniteCheckedException("Failed to create node security credentials",e);
-  }
   addAttributes(attrs,cfg.getCollisionSpi());
   addAttributes(attrs,cfg.getSwapSpaceSpi());
   addAttributes(attrs,cfg.getDiscoverySpi());
@@ -90,8 +76,6 @@
   addAttributes(attrs,cfg.getEventStorageSpi());
   addAttributes(attrs,cfg.getCheckpointSpi());
   addAttributes(attrs,cfg.getLoadBalancingSpi());
-  addAttributes(attrs,cfg.getAuthenticationSpi());
-  addAttributes(attrs,cfg.getSecureSessionSpi());
   addAttributes(attrs,cfg.getDeploymentSpi());
   if (cfg.getUserAttributes() != null) {
     for (    Map.Entry<String,?> e : cfg.getUserAttributes().entrySet()) {

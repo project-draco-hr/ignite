@@ -1,0 +1,14 @@
+{
+  Map<String,String> propsDir=properties("ownerDir","groupDir","0555");
+  Map<String,String> propsSubDir=properties("ownerSubDir","groupSubDir","0666");
+  create(igfsSecondary,paths(DIR,SUBDIR),null);
+  create(igfs,null,null);
+  igfsSecondary.update(DIR,propsDir);
+  igfsSecondary.update(SUBDIR,propsSubDir);
+  createFile(igfsSecondary,FILE,true,BLOCK_SIZE,chunk);
+  appendFile(igfs,FILE,chunk);
+  checkExist(igfs,igfsSecondary,SUBDIR);
+  checkFile(igfs,igfsSecondary,FILE,chunk,chunk);
+  assertEquals(propsDir,igfs.info(DIR).properties());
+  assertEquals(propsSubDir,igfs.info(SUBDIR).properties());
+}

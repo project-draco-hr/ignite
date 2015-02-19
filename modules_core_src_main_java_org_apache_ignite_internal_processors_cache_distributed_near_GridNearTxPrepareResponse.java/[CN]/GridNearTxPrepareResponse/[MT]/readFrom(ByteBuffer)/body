@@ -1,31 +1,39 @@
 {
   reader.setBuffer(buf);
   if (!super.readFrom(buf))   return false;
-switch (state) {
+switch (readState) {
 case 10:
     dhtVer=reader.readMessage("dhtVer");
   if (!reader.isLastRead())   return false;
-state++;
+readState++;
 case 11:
+filterFailedKeyBytes=reader.readByteArray("filterFailedKeyBytes");
+if (!reader.isLastRead()) return false;
+readState++;
+case 12:
 futId=reader.readIgniteUuid("futId");
 if (!reader.isLastRead()) return false;
-state++;
-case 12:
-invalidParts=reader.readCollection("invalidParts",int.class);
-if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 13:
+invalidParts=reader.readCollection("invalidParts",Type.INT);
+if (!reader.isLastRead()) return false;
+readState++;
+case 14:
 miniId=reader.readIgniteUuid("miniId");
 if (!reader.isLastRead()) return false;
-state++;
-case 14:
-ownedValsBytes=reader.readCollection("ownedValsBytes",byte[].class);
-if (!reader.isLastRead()) return false;
-state++;
+readState++;
 case 15:
-pending=reader.readCollection("pending",GridCacheVersion.class);
+ownedValsBytes=reader.readCollection("ownedValsBytes",Type.BYTE_ARR);
 if (!reader.isLastRead()) return false;
-state++;
+readState++;
+case 16:
+pending=reader.readCollection("pending",Type.MSG);
+if (!reader.isLastRead()) return false;
+readState++;
+case 17:
+retValBytes=reader.readByteArray("retValBytes");
+if (!reader.isLastRead()) return false;
+readState++;
 }
 return true;
 }

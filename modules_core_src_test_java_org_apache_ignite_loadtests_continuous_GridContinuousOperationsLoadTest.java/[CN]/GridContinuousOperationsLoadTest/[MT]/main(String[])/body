@@ -22,34 +22,47 @@
   X.println("The test will start with the following parameters:");
   dumpProperties(System.out);
   try (Ignite ignite=Ignition.start(cfgPath)){
-    final GridCache<Object,Object> cache=ignite.cache(cacheName);
+    final IgniteCache<Object,Object> cache=ignite.jcache(cacheName);
     if (cache == null)     throw new IgniteCheckedException("Cache is not configured: " + cacheName);
-    final GridCacheContinuousQueryManager contQryMgr=((GridCacheAdapter)((GridCacheProxyImpl)cache).cache()).context().continuousQueries();
-    if (contQryMgr == null)     throw new IgniteCheckedException("Could not access GridCacheContinuousQueryManager");
+    final CacheContinuousQueryManager contQryMgr=((GridCacheAdapter)((GridCacheProxyImpl)cache).cache()).context().continuousQueries();
+    if (contQryMgr == null)     throw new IgniteCheckedException("Could not access CacheContinuousQueryManager");
     final AtomicBoolean stop=new AtomicBoolean();
     final AtomicLong cbCntr=new AtomicLong();
     final AtomicLong updCntr=new AtomicLong();
     for (int i=0; i < parallelCnt; i++) {
       if (useQry) {
-        CacheContinuousQuery<Object,Object> qry=cache.queries().createContinuousQuery();
-        qry.localCallback(new PX2<UUID,Collection<CacheContinuousQueryEntry<Object,Object>>>(){
-          @Override public boolean applyx(          UUID uuid,          Collection<CacheContinuousQueryEntry<Object,Object>> entries) throws IgniteInterruptedCheckedException {
-            if (cbSleepMs > 0)             U.sleep(cbSleepMs);
-            cbCntr.addAndGet(entries.size());
-            return true;
+        ContinuousQuery<Object,Object> qry=Query.continuous();
+        qry.setLocalListener(new CacheEntryUpdatedListener<Object,Object>(){
+          @Override public void onUpdated(          Iterable<CacheEntryEvent<?,?>> evts){
+            if (cbSleepMs > 0) {
+              try {
+                U.sleep(cbSleepMs);
+              }
+ catch (              IgniteInterruptedCheckedException e) {
+                throw new IgniteException(e);
+              }
+            }
+            for (            CacheEntryEvent<?,?> ignored : evts)             cbCntr.incrementAndGet();
           }
         }
 );
-        qry.remoteFilter(new IgnitePredicateX<CacheContinuousQueryEntry<Object,Object>>(){
-          @Override public boolean applyx(          CacheContinuousQueryEntry e) throws IgniteInterruptedCheckedException {
-            if (filterSleepMs > 0)             U.sleep(filterSleepMs);
+        qry.setRemoteFilter(new CacheEntryEventFilter<Object,Object>(){
+          @Override public boolean evaluate(          CacheEntryEvent<?,?> evt){
+            if (filterSleepMs > 0) {
+              try {
+                U.sleep(filterSleepMs);
+              }
+ catch (              IgniteInterruptedCheckedException e) {
+                throw new IgniteException(e);
+              }
+            }
             return Math.random() * 100 >= filterSkipProb;
           }
         }
 );
-        qry.bufferSize(bufSize);
-        qry.timeInterval(timeInterval);
-        qry.execute();
+        qry.setBufferSize(bufSize);
+        qry.setTimeInterval(timeInterval);
+        cache.query(qry);
       }
  else {
         ignite.events().remoteListen(bufSize,timeInterval,true,new PX2<UUID,Event>(){
@@ -92,7 +105,7 @@
         ThreadLocalRandom8 rnd=ThreadLocalRandom8.current();
         while (!stop.get() && !Thread.currentThread().isInterrupted()) {
           Integer key=rnd.nextInt(keyRange);
-          cache.putx(key,val);
+          cache.put(key,val);
           updCntr.incrementAndGet();
           if (updSleepMs > 0)           U.sleep(updSleepMs);
         }

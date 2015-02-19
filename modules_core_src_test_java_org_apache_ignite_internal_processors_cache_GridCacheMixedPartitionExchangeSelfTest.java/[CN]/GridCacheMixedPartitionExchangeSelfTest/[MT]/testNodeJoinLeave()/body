@@ -12,7 +12,7 @@
           int g=rnd.nextInt(4);
           int key=rnd.nextInt(keys);
           IgniteCache<Integer,Integer> prj=grid(g).jcache(null);
-          try (IgniteTx tx=grid(g).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+          try (Transaction tx=grid(g).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
             Integer val=prj.get(key);
             val=val == null ? 1 : val + 1;
             prj.put(key,val);
@@ -33,7 +33,7 @@
     U.sleep(500);
     finished.set(true);
     fut.get();
-    long topVer=grid(0).topologyVersion();
+    long topVer=grid(0).cluster().topologyVersion();
     assertEquals(29,topVer);
     for (int i=0; i < 4; i++) {
       IgniteKernal grid=(IgniteKernal)grid(i);

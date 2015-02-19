@@ -1,0 +1,20 @@
+{
+  IgfsPath p=path("/tmp/my");
+  igfs.mkdirs(p);
+  Map<String,String> oldProps=igfs.info(p).properties();
+  igfs.update(p,F.asMap("a","1"));
+  igfs.update(p,F.asMap("b","2"));
+  assertEquals("1",igfs.info(p).property("a"));
+  assertEquals("2",igfs.info(p).property("b"));
+  igfs.update(p,F.asMap("b","3"));
+  Map<String,String> expProps=new HashMap<>(oldProps);
+  expProps.put("a","1");
+  expProps.put("b","3");
+  assertEquals("3",igfs.info(p).property("b"));
+  assertEquals(expProps,igfs.info(p).properties());
+  assertEquals("5",igfs.info(p).property("c","5"));
+  assertUpdatePropertiesFails(null,null,NullPointerException.class,"Ouch! Argument cannot be null");
+  assertUpdatePropertiesFails(p,null,NullPointerException.class,"Ouch! Argument cannot be null");
+  assertUpdatePropertiesFails(null,F.asMap("x","9"),NullPointerException.class,"Ouch! Argument cannot be null");
+  assertUpdatePropertiesFails(p,Collections.<String,String>emptyMap(),IllegalArgumentException.class,"Ouch! Argument is invalid");
+}

@@ -1,0 +1,19 @@
+{
+  Ignite ignite=grid(0);
+  final Collection<Integer> keys=nearKeys(ignite);
+  IgniteInternalFuture<?> fut=multithreadedAsync(new Runnable(){
+    @Override public void run(){
+      IgniteCache<Object,Object> c=jcache(0);
+      try {
+        Transaction tx=grid(0).transactions().txStart(mode,REPEATABLE_READ);
+        for (        Integer key : keys)         c.put(key,"val" + key);
+        if (prepare)         U.<IgniteInternalTx>field(tx,"tx").prepare();
+      }
+ catch (      IgniteCheckedException e) {
+        info("Failed to put keys to cache: " + e.getMessage());
+      }
+    }
+  }
+,1);
+  fut.get();
+}

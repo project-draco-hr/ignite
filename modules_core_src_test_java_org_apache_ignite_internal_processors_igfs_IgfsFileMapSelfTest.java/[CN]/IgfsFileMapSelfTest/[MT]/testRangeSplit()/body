@@ -1,0 +1,25 @@
+{
+  IgniteUuid affKey=IgniteUuid.randomUuid();
+  IgfsFileAffinityRange range=new IgfsFileAffinityRange(0,9999,affKey);
+  Collection<IgfsFileAffinityRange> split=range.split(10000);
+  assertEquals(1,split.size());
+  assertTrue(range.regionEqual(F.first(split)));
+  split=range.split(5000);
+  assertEquals(2,split.size());
+  Iterator<IgfsFileAffinityRange> it=split.iterator();
+  IgfsFileAffinityRange part=it.next();
+  assertTrue(part.regionEqual(new IgfsFileAffinityRange(0,4999,affKey)));
+  part=it.next();
+  assertTrue(part.regionEqual(new IgfsFileAffinityRange(5000,9999,affKey)));
+  split=range.split(3000);
+  assertEquals(4,split.size());
+  it=split.iterator();
+  part=it.next();
+  assertTrue(part.regionEqual(new IgfsFileAffinityRange(0,2999,affKey)));
+  part=it.next();
+  assertTrue(part.regionEqual(new IgfsFileAffinityRange(3000,5999,affKey)));
+  part=it.next();
+  assertTrue(part.regionEqual(new IgfsFileAffinityRange(6000,8999,affKey)));
+  part=it.next();
+  assertTrue(part.regionEqual(new IgfsFileAffinityRange(9000,9999,affKey)));
+}

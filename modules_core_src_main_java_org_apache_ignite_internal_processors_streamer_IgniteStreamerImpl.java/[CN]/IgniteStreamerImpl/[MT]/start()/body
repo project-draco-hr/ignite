@@ -26,19 +26,8 @@
     winMap.put(wName,w);
     if (dfltWin == null)     dfltWin=w;
   }
-  execSvc=c.getExecutorService();
-  if (execSvc == null) {
-    execSvc=new IgniteThreadPoolExecutor(ctx.gridName(),Runtime.getRuntime().availableProcessors(),Runtime.getRuntime().availableProcessors(),0,new LinkedBlockingQueue<Runnable>());
-    execSvcCap=Runtime.getRuntime().availableProcessors();
-    dfltExecSvc=true;
-  }
- else {
-    if (execSvc instanceof ThreadPoolExecutor) {
-      ThreadPoolExecutor exec=(ThreadPoolExecutor)execSvc;
-      execSvcCap=exec.getMaximumPoolSize();
-    }
- else     execSvcCap=-1;
-  }
+  execSvc=new IgniteThreadPoolExecutor(ctx.gridName(),c.getThreadPoolSize(),c.getThreadPoolSize(),0,new LinkedBlockingQueue<Runnable>());
+  execSvcCap=c.getThreadPoolSize();
   resetMetrics();
   if (router == null)   router=new StreamerLocalEventRouter();
   ctx.io().addMessageListener(topic,new GridMessageListener(){

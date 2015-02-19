@@ -4,11 +4,12 @@
     if (log.isDebugEnabled())     log.debug("Returning finished future for readyFuture [head=" + aff.topologyVersion() + ", topVer="+ topVer+ ']');
     return null;
   }
-  GridFutureAdapter<Long> fut=F.addIfAbsent(readyFuts,topVer,new AffinityReadyFuture(ctx.kernalContext()));
+  GridFutureAdapter<Long> fut=F.addIfAbsent(readyFuts,topVer,new AffinityReadyFuture(ctx.kernalContext(),topVer));
   aff=head.get();
   if (aff.topologyVersion() >= topVer) {
     if (log.isDebugEnabled())     log.debug("Completing topology ready future right away [head=" + aff.topologyVersion() + ", topVer="+ topVer+ ']');
     fut.onDone(topVer);
   }
+ else   if (stopping)   fut.onDone(new IgniteCheckedException("Failed to wait for topology update, node is stopping."));
   return fut;
 }

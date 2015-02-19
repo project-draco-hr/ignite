@@ -2,7 +2,7 @@
   Collection<GridCacheVersion> processedVers=null;
   for (  IgniteInternalTx<K,V> tx : txs()) {
     if (nearVer.equals(tx.nearXidVersion())) {
-      IgniteTxState state=tx.state();
+      TransactionState state=tx.state();
       if (state == PREPARED || state == COMMITTING || state == COMMITTED) {
         if (--txNum == 0)         return true;
       }
@@ -26,7 +26,9 @@
       processedVers.add(tx.xidVersion());
     }
   }
-  for (  GridCacheVersion ver : committedVers) {
+  for (  Map.Entry<GridCacheVersion,Boolean> e : completedVers.entrySet()) {
+    if (!e.getValue())     continue;
+    GridCacheVersion ver=e.getKey();
     if (processedVers != null && processedVers.contains(ver))     continue;
     if (ver instanceof CommittedVersion) {
       CommittedVersion commitVer=(CommittedVersion)ver;

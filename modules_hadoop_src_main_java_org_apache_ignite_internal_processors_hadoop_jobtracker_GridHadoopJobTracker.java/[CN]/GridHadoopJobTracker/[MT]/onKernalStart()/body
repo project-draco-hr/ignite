@@ -1,9 +1,8 @@
 {
   super.onKernalStart();
-  CacheContinuousQuery<GridHadoopJobId,GridHadoopJobMetadata> qry=jobMetaCache().queries().createContinuousQuery();
-  qry.localCallback(new IgniteBiPredicate<UUID,Collection<CacheContinuousQueryEntry<GridHadoopJobId,GridHadoopJobMetadata>>>(){
-    @Override public boolean apply(    UUID nodeId,    final Collection<CacheContinuousQueryEntry<GridHadoopJobId,GridHadoopJobMetadata>> evts){
-      if (!busyLock.tryReadLock())       return false;
+  jobMetaCache().context().continuousQueries().executeInternalQuery(new CacheEntryUpdatedListener<GridHadoopJobId,GridHadoopJobMetadata>(){
+    @Override public void onUpdated(    final Iterable<CacheEntryEvent<? extends GridHadoopJobId,? extends GridHadoopJobMetadata>> evts){
+      if (!busyLock.tryReadLock())       return;
       try {
         evtProcSvc.submit(new EventHandler(){
           @Override protected void body() throws IgniteCheckedException {
@@ -11,15 +10,13 @@
           }
         }
 );
-        return true;
       }
   finally {
         busyLock.readUnlock();
       }
     }
   }
-);
-  qry.execute(ctx.kernalContext().grid().forLocal());
+,null,true,true);
   ctx.kernalContext().event().addLocalEventListener(new GridLocalEventListener(){
     @Override public void onEvent(    final Event evt){
       if (!busyLock.tryReadLock())       return;

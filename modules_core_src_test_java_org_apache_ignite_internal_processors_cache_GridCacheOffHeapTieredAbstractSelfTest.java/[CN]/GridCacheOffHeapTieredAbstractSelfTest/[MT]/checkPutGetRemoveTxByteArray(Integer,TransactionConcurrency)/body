@@ -1,0 +1,12 @@
+{
+  IgniteCache<Integer,byte[]> c=grid(0).jcache(null);
+  Transaction tx=grid(0).transactions().txStart(txConcurrency,REPEATABLE_READ);
+  byte[] val=new byte[]{key.byteValue()};
+  assertNull(c.getAndPut(key,val));
+  tx.commit();
+  checkValue(key,val);
+  tx=grid(0).transactions().txStart(txConcurrency,REPEATABLE_READ);
+  Assert.assertArrayEquals(val,c.getAndRemove(key));
+  tx.commit();
+  checkValue(key,null);
+}

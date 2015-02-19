@@ -1,0 +1,20 @@
+{
+  busyLock.writeLock().lock();
+  try {
+    if (stopping)     return;
+    stopping=true;
+  }
+  finally {
+    busyLock.writeLock().unlock();
+  }
+  if (err == null)   err=new IgniteCheckedException("Failed to perform request (connection was concurrently closed before response " + "is received).");
+  U.closeQuiet(out);
+  if (endpoint != null)   endpoint.close();
+  Iterator<IgfsHadoopFuture> it=reqMap.values().iterator();
+  while (it.hasNext()) {
+    IgfsHadoopFuture fut=it.next();
+    fut.onDone(err);
+    it.remove();
+  }
+  for (  IgfsHadoopIpcIoListener lsnr : lsnrs)   lsnr.onClose();
+}

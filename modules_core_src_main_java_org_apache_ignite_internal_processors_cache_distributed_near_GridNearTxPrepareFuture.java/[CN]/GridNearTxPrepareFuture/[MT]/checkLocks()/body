@@ -1,23 +1,10 @@
 {
-  Collection<IgniteTxEntry<K,V>> checkEntries=tx.groupLock() ? Collections.singletonList(tx.groupLockEntry()) : tx.writeEntries();
-  for (  IgniteTxEntry<K,V> txEntry : checkEntries) {
-    if (!txEntry.context().isNear())     continue;
-    while (true) {
-      GridCacheEntryEx<K,V> cached=txEntry.cached();
-      try {
-        GridCacheVersion ver=txEntry.explicitVersion() != null ? txEntry.explicitVersion() : tx.xidVersion();
-        if (!cached.lockedBy(ver)) {
-          if (log.isDebugEnabled())           log.debug("Transaction entry is not locked by transaction (will wait) [entry=" + cached + ", tx="+ tx+ ']');
-          return false;
-        }
-        break;
-      }
- catch (      GridCacheEntryRemovedException ignored) {
-        if (log.isDebugEnabled())         log.debug("Got removed entry in future onAllReplies method (will retry): " + txEntry);
-        txEntry.cached(txEntry.context().cache().entryEx(txEntry.key()),txEntry.keyBytes());
-      }
-    }
+  boolean locked=lockKeys.isEmpty();
+  if (locked) {
+    if (log.isDebugEnabled())     log.debug("All locks are acquired for near prepare future: " + this);
   }
-  if (log.isDebugEnabled())   log.debug("All locks are acquired for near prepare future: " + this);
-  return true;
+ else {
+    if (log.isDebugEnabled())     log.debug("Still waiting for locks [fut=" + this + ", keys="+ lockKeys+ ']');
+  }
+  return locked;
 }

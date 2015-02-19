@@ -1,0 +1,21 @@
+{
+  start();
+  igfsPrimary.create(FILE_RMT,true).close();
+  int blockCnt=3;
+  int blockSize=igfsPrimary.info(FILE_RMT).blockSize();
+  evictPlc.setMaxSize(blockSize * blockCnt);
+  append(FILE_RMT,blockSize * blockCnt);
+  checkEvictionPolicy(blockCnt,blockCnt * blockSize);
+  igfsPrimary.resetMetrics();
+  read(FILE_RMT,0,blockSize);
+  checkMetrics(1,0);
+  checkEvictionPolicy(blockCnt,blockCnt * blockSize);
+  append(FILE_RMT,blockSize);
+  checkEvictionPolicy(blockCnt,blockCnt * blockSize);
+  read(FILE_RMT,0,blockSize);
+  checkMetrics(2,0);
+  checkEvictionPolicy(blockCnt,blockCnt * blockSize);
+  read(FILE_RMT,blockSize,blockSize);
+  checkMetrics(3,1);
+  checkEvictionPolicy(blockCnt,blockCnt * blockSize);
+}

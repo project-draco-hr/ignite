@@ -44,7 +44,13 @@
             res.successStatus(GridClientResponse.STATUS_FAILED);
             res.errorMessage("Failed to process client request: " + e.getMessage());
           }
-          ses.send(res);
+          GridNioFuture<?> sf=ses.send(res);
+          if (sf.isDone())           try {
+            sf.get();
+          }
+ catch (          Exception e) {
+            U.error(log,"Failed to process client request [ses=" + ses + ", msg="+ msg+ ']',e);
+          }
         }
       }
 );
