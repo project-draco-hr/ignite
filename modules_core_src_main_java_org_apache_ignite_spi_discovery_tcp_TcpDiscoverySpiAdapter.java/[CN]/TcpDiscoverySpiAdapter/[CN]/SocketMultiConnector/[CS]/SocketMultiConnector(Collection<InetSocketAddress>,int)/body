@@ -1,0 +1,31 @@
+{
+  connInProgress=addrs.size();
+  executor=new ThreadPoolExecutor(0,10,1L,TimeUnit.MILLISECONDS,new SynchronousQueue<Runnable>());
+  for (  final InetSocketAddress addr : addrs) {
+    executor.execute(new Runnable(){
+      @Override public void run(){
+        Exception ex=null;
+        Socket sock=null;
+        for (int i=0; i < retryCnt; i++) {
+synchronized (SocketMultiConnector.this) {
+            if (closed)             return;
+          }
+          try {
+            sock=openSocket(addr);
+            break;
+          }
+ catch (          Exception e) {
+            ex=e;
+          }
+        }
+synchronized (SocketMultiConnector.this) {
+          if (closed)           U.closeQuiet(sock);
+ else           queue.add(new GridTuple3<>(addr,sock,ex));
+          connInProgress--;
+          SocketMultiConnector.this.notifyAll();
+        }
+      }
+    }
+);
+  }
+}
