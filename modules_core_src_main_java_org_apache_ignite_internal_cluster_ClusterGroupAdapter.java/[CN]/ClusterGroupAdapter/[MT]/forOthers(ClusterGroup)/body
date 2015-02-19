@@ -1,0 +1,18 @@
+{
+  A.notNull(grp,"grp");
+  if (ids != null) {
+    guard();
+    try {
+      Set<UUID> nodeIds=U.newHashSet(ids.size());
+      for (      UUID id : ids) {
+        ClusterNode n=node(id);
+        if (n != null && !grp.predicate().apply(n))         nodeIds.add(id);
+      }
+      return new ClusterGroupAdapter(ctx,subjId,nodeIds);
+    }
+  finally {
+      unguard();
+    }
+  }
+ else   return forPredicate(F.not(grp.predicate()));
+}
