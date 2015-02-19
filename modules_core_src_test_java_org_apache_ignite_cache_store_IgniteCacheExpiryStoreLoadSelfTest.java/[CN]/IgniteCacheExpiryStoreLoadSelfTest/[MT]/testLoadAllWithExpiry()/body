@@ -1,0 +1,13 @@
+{
+  IgniteCache<Integer,Integer> cache=ignite(0).<Integer,Integer>jcache(null).withExpiryPolicy(new CreatedExpiryPolicy(new Duration(MILLISECONDS,TIME_TO_LIVE)));
+  Set<Integer> keys=new HashSet<>();
+  keys.add(primaryKey(jcache(0)));
+  keys.add(primaryKey(jcache(1)));
+  keys.add(primaryKey(jcache(2)));
+  CompletionListenerFuture fut=new CompletionListenerFuture();
+  cache.loadAll(keys,false,fut);
+  fut.get();
+  assertEquals(3,cache.size(CachePeekMode.PRIMARY));
+  Thread.sleep(TIME_TO_LIVE + WAIT_TIME);
+  assertEquals(0,cache.size());
+}
