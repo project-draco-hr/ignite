@@ -1,0 +1,13 @@
+{
+  IgniteCache<String,Integer> cache=jcache(0).withExpiryPolicy(new CreatedExpiryPolicy(new Duration(MILLISECONDS,TIME_TO_LIVE)));
+  List<Integer> keys=primaryKeys(cache,3);
+  if (async) {
+    IgniteCache<String,Integer> asyncCache=cache.withAsync();
+    asyncCache.localLoadCache(null,keys.toArray(new Integer[3]));
+    asyncCache.future().get();
+  }
+ else   cache.localLoadCache(null,keys.toArray(new Integer[3]));
+  assertEquals(3,cache.localSize());
+  Thread.sleep(TIME_TO_LIVE + WAIT_TIME);
+  assertEquals(0,cache.localSize(CachePeekMode.PRIMARY));
+}
