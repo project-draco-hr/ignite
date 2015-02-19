@@ -7,7 +7,9 @@
   return syncOp(new SyncOp<Boolean>(true){
     @Override public Boolean op(    IgniteTxLocalAdapter<K,V> tx) throws IgniteCheckedException {
       if (ctx.deploymentEnabled())       ctx.deploy().registerClass(oldVal);
-      return tx.putAllAsync(ctx,F.t(key,newVal),false,null,-1,ctx.equalsPeekArray(oldVal)).get().success();
+      V oldVal0=oldVal;
+      if (ctx.portableEnabled())       oldVal0=(V)ctx.marshalToPortable(oldVal);
+      return tx.putAllAsync(ctx,F.t(key,newVal),false,null,-1,ctx.equalsPeekArray(oldVal0)).get().success();
     }
     @Override public String toString(){
       return "replace [key=" + key + ", oldVal="+ oldVal+ ", newVal="+ newVal+ ']';
