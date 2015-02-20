@@ -1,0 +1,27 @@
+{
+  if (store != null) {
+    if (key.internal())     return false;
+    Object storeKey=key.value(cctx);
+    if (convertPortable)     storeKey=cctx.unwrapPortableIfNeeded(storeKey,false);
+    if (log.isDebugEnabled())     log.debug("Removing value from cache store [key=" + key + ']');
+    boolean ses=initSession(tx);
+    try {
+      store.delete(storeKey);
+    }
+ catch (    ClassCastException e) {
+      handleClassCastException(e);
+    }
+catch (    CacheWriterException e) {
+      throw new IgniteCheckedException(e);
+    }
+catch (    Exception e) {
+      throw new IgniteCheckedException(new CacheWriterException(e));
+    }
+ finally {
+      if (ses)       sesHolder.set(null);
+    }
+    if (log.isDebugEnabled())     log.debug("Removed value from cache store [key=" + key + ']');
+    return true;
+  }
+  return false;
+}

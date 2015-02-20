@@ -1,13 +1,13 @@
 {
   try {
-    IgniteInternalTx<K,V> tx=cctx.tm().userTx();
-    V val;
+    IgniteInternalTx tx=cctx.tm().userTx();
+    CacheObject val;
     if (tx != null) {
-      GridTuple<V> peek=tx.peek(cctx,false,key,null);
+      GridTuple<CacheObject> peek=tx.peek(cctx,false,key,null);
       val=peek == null ? rawGetOrUnmarshal(false) : peek.get();
     }
  else     val=rawGetOrUnmarshal(false);
-    return new CacheEntryImpl<>(key,val);
+    return new CacheEntryImpl<>(key.<K>value(cctx),val != null ? val.<V>value(cctx) : null);
   }
  catch (  GridCacheFilterFailedException ignored) {
     throw new IgniteException("Should never happen.");

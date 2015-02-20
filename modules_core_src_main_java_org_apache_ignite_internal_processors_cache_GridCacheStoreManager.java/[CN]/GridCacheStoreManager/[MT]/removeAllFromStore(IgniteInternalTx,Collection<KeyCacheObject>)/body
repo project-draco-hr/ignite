@@ -1,0 +1,45 @@
+{
+  if (F.isEmpty(keys))   return true;
+  if (keys.size() == 1) {
+    KeyCacheObject key=keys.iterator().next();
+    return removeFromStore(tx,key);
+  }
+  if (store != null) {
+    Collection<Object> keys0;
+    if (convertPortable) {
+      keys0=F.viewReadOnly(keys,new C1<KeyCacheObject,Object>(){
+        @Override public Object apply(        KeyCacheObject key){
+          return cctx.unwrapPortableIfNeeded(key.value(cctx),false);
+        }
+      }
+);
+    }
+ else {
+      keys0=F.viewReadOnly(keys,new C1<KeyCacheObject,Object>(){
+        @Override public Object apply(        KeyCacheObject key){
+          return key.value(cctx);
+        }
+      }
+);
+    }
+    if (log.isDebugEnabled())     log.debug("Removing values from cache store [keys=" + keys0 + ']');
+    boolean ses=initSession(tx);
+    try {
+      store.deleteAll(keys0);
+    }
+ catch (    ClassCastException e) {
+      handleClassCastException(e);
+    }
+catch (    Exception e) {
+      if (!keys0.isEmpty())       throw new CacheStorePartialUpdateException(keys0,e);
+      if (!(e instanceof CacheWriterException))       e=new CacheWriterException(e);
+      throw new IgniteCheckedException(e);
+    }
+ finally {
+      if (ses)       sesHolder.set(null);
+    }
+    if (log.isDebugEnabled())     log.debug("Removed values from cache store [keys=" + keys0 + ']');
+    return true;
+  }
+  return false;
+}

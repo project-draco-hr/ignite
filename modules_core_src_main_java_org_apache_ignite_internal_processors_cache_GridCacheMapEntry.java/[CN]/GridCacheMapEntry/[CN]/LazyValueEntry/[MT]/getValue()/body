@@ -1,16 +1,16 @@
 {
   try {
-    IgniteInternalTx<K,V> tx=cctx.tm().userTx();
+    IgniteInternalTx tx=cctx.tm().userTx();
     if (tx != null) {
-      GridTuple<V> peek=tx.peek(cctx,false,key,null);
-      if (peek != null)       return peek.get();
+      GridTuple<CacheObject> peek=tx.peek(cctx,false,key,null);
+      if (peek != null)       return peek.get().value(cctx);
     }
-    if (detached())     return rawGet();
+    if (detached())     return rawGet().value(cctx);
     for (; ; ) {
-      GridCacheEntryEx<K,V> e=cctx.cache().peekEx(key);
+      GridCacheEntryEx e=cctx.cache().peekEx(key);
       if (e == null)       return null;
       try {
-        return e.peek(GridCachePeekMode.GLOBAL,CU.<K,V>empty());
+        return e.peek(GridCachePeekMode.GLOBAL,CU.<K,V>empty()).value(cctx);
       }
  catch (      GridCacheEntryRemovedException ignored) {
       }
