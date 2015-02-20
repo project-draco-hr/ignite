@@ -1,0 +1,24 @@
+{
+  reader.setBuffer(buf);
+  if (!reader.beforeMessageRead())   return false;
+  if (!super.readFrom(buf,reader))   return false;
+switch (reader.state()) {
+case 3:
+    errBytes=reader.readByteArray("errBytes");
+  if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 4:
+failedKeysBytes=reader.readByteArray("failedKeysBytes");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 5:
+futVer=reader.readMessage("futVer");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 6:
+nearEvictedBytes=reader.readCollection("nearEvictedBytes",MessageCollectionItemType.BYTE_ARR);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+}
+return true;
+}
