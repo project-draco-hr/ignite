@@ -7,7 +7,7 @@
   for (int i=0; i < NODES_CNT; i++)   gridsByLocNode.put(grid(i).localNode().id(),grid(i));
   for (int i=0; i < 100; i++) {
     String key="key" + i;
-    UUID primaryNodeId=grid(0).mapKeyToNode(PARTITIONED_CACHE_NAME,key).id();
+    UUID primaryNodeId=grid(0).cluster().mapKeyToNode(PARTITIONED_CACHE_NAME,key).id();
     assertEquals("Affinity mismatch for key: " + key,primaryNodeId,partitioned.affinity(key));
     assertEquals(primaryNodeId,partitioned.affinity(key));
     partitioned.put(key,"val" + key);
@@ -19,7 +19,7 @@
   }
   for (int i=100; i < 200; i++) {
     String pinnedKey="key" + i;
-    UUID primaryNodeId=grid(0).mapKeyToNode(PARTITIONED_CACHE_NAME,pinnedKey).id();
+    UUID primaryNodeId=grid(0).cluster().mapKeyToNode(PARTITIONED_CACHE_NAME,pinnedKey).id();
     UUID pinnedNodeId=F.first(F.view(gridsByLocNode.keySet(),F.notEqualTo(primaryNodeId)));
     GridClientNode node=compute.node(pinnedNodeId);
     partitioned.pinNodes(node).put(pinnedKey,"val" + pinnedKey);
