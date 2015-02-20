@@ -3,8 +3,7 @@
   GridDhtCacheEntry<K,V> cached=(GridDhtCacheEntry<K,V>)entry.cached();
   GridCacheContext<K,V> cacheCtx=entry.context();
   GridDhtCacheAdapter<K,V> dht=cacheCtx.isNear() ? cacheCtx.near().dht() : cacheCtx.dht();
-  ExpiryPolicy expiry=entry.expiry();
-  if (expiry == null)   expiry=cacheCtx.expiry();
+  ExpiryPolicy expiry=cacheCtx.expiryForTxEntry(entry);
   if (expiry != null && entry.op() == READ) {
     entry.op(NOOP);
     entry.ttl(CU.toTtl(expiry.getExpiryForAccess()));
