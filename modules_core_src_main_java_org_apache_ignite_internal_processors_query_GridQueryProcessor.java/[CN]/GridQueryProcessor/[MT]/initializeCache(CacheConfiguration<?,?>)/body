@@ -1,23 +1,20 @@
 {
   Map<TypeName,CacheTypeMetadata> declaredTypes=new HashMap<>();
-  boolean cacheRegistered=false;
+  idx.registerCache(ccfg);
   if (!F.isEmpty(ccfg.getTypeMetadata())) {
-    idx.registerCache(ccfg);
-    cacheRegistered=true;
     for (    CacheTypeMetadata meta : ccfg.getTypeMetadata()) {
       declaredTypes.put(new TypeName(ccfg.getName(),meta.getValueType()),meta);
       int valTypeId=ctx.portable().typeId(meta.getValueType());
       portableIds.put(valTypeId,meta.getValueType());
-      TypeDescriptor desc=processPortableMeta(meta);
+      TypeDescriptor desc=processPortableMeta(ccfg,meta);
       desc.registered(idx.registerType(ccfg.getName(),desc));
       typesByName.put(new TypeName(ccfg.getName(),desc.name()),desc);
       types.put(new TypeId(ccfg.getName(),valTypeId),desc);
     }
   }
   if (!F.isEmpty(ccfg.getIndexedTypes())) {
-    if (!cacheRegistered)     idx.registerCache(ccfg);
     for (    IgniteBiTuple<Class<?>,Class<?>> types : ccfg.getIndexedTypes()) {
-      TypeDescriptor desc=processKeyAndValue(ccfg.getName(),types.getKey(),types.getValue(),declaredTypes);
+      TypeDescriptor desc=processKeyAndValue(ccfg,types.getKey(),types.getValue(),declaredTypes);
       desc.registered(idx.registerType(ccfg.getName(),desc));
       typesByName.put(new TypeName(ccfg.getName(),desc.name()),desc);
     }
