@@ -1,0 +1,32 @@
+{
+  reader.setBuffer(buf);
+  if (!reader.beforeMessageRead())   return false;
+  if (!super.readFrom(buf,reader))   return false;
+switch (reader.state()) {
+case 3:
+    ack=reader.readBoolean("ack");
+  if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 4:
+infoBytes=reader.readByteArray("infoBytes");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 5:
+last=reader.readCollection("last",MessageCollectionItemType.INT);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 6:
+missed=reader.readCollection("missed",MessageCollectionItemType.INT);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 7:
+updateSeq=reader.readLong("updateSeq");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 8:
+workerId=reader.readInt("workerId");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+}
+return true;
+}
