@@ -1,0 +1,31 @@
+{
+  System.out.println("Populate database with sample data.");
+  createDb();
+  Server srv=Server.createTcpServer().start();
+  try (Ignite ignite=Ignition.start("examples/config/store/example-jdbc-pojo-store.xml")){
+    IgniteCache<Object,Object> cache=ignite.jcache(CACHE_NAME);
+    System.out.println("Load whole DB into cache.");
+    cache.loadCache(null);
+    System.out.println("Print loaded content.");
+    System.out.println("Organizations:");
+    for (int i=0; i < ORGANIZATION_CNT; i++) {
+      OrganizationKey orgKey=new OrganizationKey(i);
+      System.out.println("    " + cache.get(orgKey));
+    }
+    System.out.println("Persons:");
+    for (int i=0; i < PERSON_CNT; i++) {
+      PersonKey prnKey=new PersonKey(i);
+      System.out.println("    " + cache.get(prnKey));
+    }
+    System.out.println("Clear cache for next demo.");
+    cache.clear();
+    System.out.println("Cache size = " + cache.size());
+    System.out.println("Load cache by custom SQL.");
+    cache.loadCache(null,"org.apache.ignite.examples.datagrid.store.model.OrganizationKey","SELECT * FROM Organization WHERE id = 2","org.apache.ignite.examples.datagrid.store.model.PersonKey","SELECT * FROM Person WHERE id = 5");
+    System.out.println("Check custom SQL.");
+    System.out.println("    Organization: " + cache.get(new OrganizationKey(2)));
+    System.out.println("    Person: " + cache.get(new PersonKey(5)));
+  }
+   srv.stop();
+  System.exit(0);
+}
