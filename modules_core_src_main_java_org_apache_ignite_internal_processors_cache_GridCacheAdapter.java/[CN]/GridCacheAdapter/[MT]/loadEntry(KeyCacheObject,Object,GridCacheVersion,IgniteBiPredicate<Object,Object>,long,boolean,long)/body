@@ -1,0 +1,18 @@
+{
+  if (p != null && !p.apply(key,val))   return;
+  CacheObject cacheVal=ctx.toCacheObject(val);
+  GridCacheEntryEx entry=entryEx(key,false);
+  try {
+    entry.initialValue(cacheVal,null,ver,ttl,CU.EXPIRE_TIME_CALCULATE,false,topVer,replicate ? DR_LOAD : DR_NONE);
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException("Failed to put cache value: " + entry,e);
+  }
+catch (  GridCacheEntryRemovedException ignore) {
+    if (log.isDebugEnabled())     log.debug("Got removed entry during loadCache (will ignore): " + entry);
+  }
+ finally {
+    ctx.evicts().touch(entry,topVer);
+  }
+  CU.unwindEvicts(ctx);
+}

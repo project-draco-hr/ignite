@@ -1,0 +1,13 @@
+{
+  checkObsolete();
+  if (isNew()) {
+    CacheObject val=unswapped.value();
+    if (cctx.portableEnabled()) {
+      val=(CacheObject)cctx.kernalContext().portable().detachPortable(val);
+      if (cctx.offheapTiered() && !unswapped.valueIsByteArray())       unswapped.valueBytes(cctx.convertPortableBytes(unswapped.valueBytes()));
+    }
+    update(val,unswapped.valueBytes(),unswapped.expireTime(),unswapped.ttl(),unswapped.version());
+    return true;
+  }
+  return false;
+}

@@ -2,7 +2,7 @@
   if (res.error() != null)   onError(res.error());
  else {
     if (nearMapping != null && !F.isEmpty(res.nearEvicted())) {
-      for (      IgniteTxEntry<K,V> entry : nearMapping.entries()) {
+      for (      IgniteTxEntry entry : nearMapping.entries()) {
         if (res.nearEvicted().contains(entry.txKey())) {
           while (true) {
             try {
@@ -11,7 +11,7 @@
               break;
             }
  catch (            GridCacheEntryRemovedException ignore) {
-              GridCacheEntryEx<K,V> e=entry.context().cache().peekEx(entry.key());
+              GridCacheEntryEx e=entry.context().cache().peekEx(entry.key());
               if (e == null)               break;
               entry.cached(e,entry.keyBytes());
             }
@@ -21,8 +21,8 @@
       nearMapping.evictReaders(res.nearEvicted());
     }
     if (!F.isEmpty(res.invalidPartitions())) {
-      for (Iterator<IgniteTxEntry<K,V>> it=dhtMapping.entries().iterator(); it.hasNext(); ) {
-        IgniteTxEntry<K,V> entry=it.next();
+      for (Iterator<IgniteTxEntry> it=dhtMapping.entries().iterator(); it.hasNext(); ) {
+        IgniteTxEntry entry=it.next();
         if (res.invalidPartitions().contains(entry.cached().partition())) {
           it.remove();
           if (log.isDebugEnabled())           log.debug("Removed mapping for entry from dht mapping [key=" + entry.key() + ", tx="+ tx+ ", dhtMapping="+ dhtMapping+ ']');
@@ -38,7 +38,7 @@
     for (    GridCacheEntryInfo<K,V> info : res.preloadEntries()) {
       GridCacheContext<K,V> cacheCtx=cctx.cacheContext(info.cacheId());
       while (true) {
-        GridCacheEntryEx<K,V> entry=cacheCtx.cache().entryEx(info.key());
+        GridCacheEntryEx entry=cacheCtx.cache().entryEx(info.key());
         GridDrType drType=cacheCtx.isDrEnabled() ? GridDrType.DR_PRELOAD : GridDrType.DR_NONE;
         try {
           if (entry.initialValue(info.value(),info.valueBytes(),info.version(),info.ttl(),info.expireTime(),true,topVer,drType)) {

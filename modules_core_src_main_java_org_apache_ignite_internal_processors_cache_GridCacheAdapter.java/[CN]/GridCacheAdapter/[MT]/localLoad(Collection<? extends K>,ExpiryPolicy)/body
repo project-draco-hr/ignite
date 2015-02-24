@@ -2,12 +2,18 @@
   final boolean replicate=ctx.isDrEnabled();
   final long topVer=ctx.affinity().affinityTopologyVersion();
   final ExpiryPolicy plc0=plc != null ? plc : ctx.expiry();
+  Collection<KeyCacheObject> keys0=F.viewReadOnly(keys,new C1<K,KeyCacheObject>(){
+    @Override public KeyCacheObject apply(    K key){
+      return ctx.toCacheKeyObject(key);
+    }
+  }
+);
   if (ctx.store().isLocalStore()) {
     IgniteDataLoaderImpl<K,V> ldr=ctx.kernalContext().<K,V>dataLoad().dataLoader(ctx.namex(),false);
     try {
       ldr.updater(new GridDrDataLoadCacheUpdater<K,V>());
       LocalStoreLoadClosure c=new LocalStoreLoadClosure(null,ldr,plc0);
-      ctx.store().localStoreLoadAll(null,keys,c);
+      ctx.store().localStoreLoadAll(null,keys0,c);
       c.onDone();
     }
   finally {
@@ -16,8 +22,8 @@
   }
  else {
     final GridCacheVersion ver0=ctx.versions().nextForLoad();
-    ctx.store().loadAllFromStore(null,keys,new CI2<K,V>(){
-      @Override public void apply(      K key,      V val){
+    ctx.store().loadAllFromStore(null,keys0,new CI2<KeyCacheObject,Object>(){
+      @Override public void apply(      KeyCacheObject key,      Object val){
         long ttl=CU.ttlForLoad(plc0);
         if (ttl == CU.TTL_ZERO)         return;
         loadEntry(key,val,ver0,null,topVer,replicate,ttl);
