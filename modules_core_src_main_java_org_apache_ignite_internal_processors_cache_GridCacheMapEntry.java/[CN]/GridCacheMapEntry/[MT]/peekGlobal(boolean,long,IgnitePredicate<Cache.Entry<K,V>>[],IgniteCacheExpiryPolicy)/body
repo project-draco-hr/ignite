@@ -13,13 +13,7 @@ synchronized (this) {
         checkObsolete();
         ver=this.ver;
         val=rawGetOrUnmarshalUnlocked(false);
-        if (val != null && expiryPlc != null) {
-          long ttl=expiryPlc.forAccess();
-          if (ttl != CU.TTL_NOT_CHANGED) {
-            updateTtl(ttl);
-            expiryPlc.ttlUpdated(key(),getOrMarshalKeyBytes(),version(),hasReaders() ? ((GridDhtCacheEntry)this).readers() : null);
-          }
-        }
+        if (val != null && expiryPlc != null)         updateTtl(expiryPlc);
       }
       if (!cctx.isAll(this.<K,V>wrap(),filter))       return F.t(CU.<CacheObject>failed(failFast));
       if (F.isEmptyOrNulls(filter) || ver.equals(version()))       return F.t(val);

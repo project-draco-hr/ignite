@@ -66,13 +66,7 @@ synchronized (this) {
       cctx.events().addEvent(partition(),key,tx,owner,EVT_CACHE_OBJECT_READ,ret,ret != null,old,hasOldBytes || old != null,subjId,transformClo != null ? transformClo.getClass().getName() : null,taskName);
       evt=false;
     }
-    if (ret != null && expiryPlc != null) {
-      long ttl=expiryPlc.forAccess();
-      if (ttl != CU.TTL_NOT_CHANGED) {
-        updateTtl(ttl);
-        expiryPlc.ttlUpdated(key(),getOrMarshalKeyBytes(),version(),hasReaders() ? ((GridDhtCacheEntry)this).readers() : null);
-      }
-    }
+    if (ret != null && expiryPlc != null)     updateTtl(expiryPlc);
   }
   if (ret != null)   return ret;
   boolean loadedFromStore=false;
