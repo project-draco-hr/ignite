@@ -20,7 +20,7 @@ synchronized (this) {
       if (delta <= 0)       expired=true;
     }
     CacheObject val=this.val;
-    hasOldBytes=valBytes != null || valPtr != 0;
+    hasOldBytes=valPtr != 0;
     if ((unmarshal || isOffHeapValuesOnly()) && !expired && val == null && hasOldBytes)     val=rawGetOrUnmarshalUnlocked(tmp);
     boolean valid=valid(tx != null ? tx.topologyVersion() : cctx.affinity().affinityTopologyVersion());
     if (val == null && !hasOldBytes && readSwap) {
@@ -81,11 +81,12 @@ synchronized (this) {
     if (tx != null && tx.local()) {
       if (cctx.isReplicated() || cctx.isColocated() || tx.near())       tx0=tx;
  else       if (tx.dht()) {
-        GridCacheVersion ver=((GridDhtTxLocalAdapter)tx).nearXidVersion();
+        GridCacheVersion ver=tx.nearXidVersion();
         tx0=cctx.dht().near().context().tm().tx(ver);
       }
     }
-    ret=readThrough(tx0,key,false,subjId,taskName);
+    Object storeVal=readThrough(tx0,key,false,subjId,taskName);
+    if (storeVal != null)     ret=cctx.toCacheObject(storeVal);
     loadedFromStore=true;
   }
 synchronized (this) {

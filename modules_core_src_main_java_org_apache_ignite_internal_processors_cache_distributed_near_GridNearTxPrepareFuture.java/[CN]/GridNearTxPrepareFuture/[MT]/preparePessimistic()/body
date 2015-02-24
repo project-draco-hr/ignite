@@ -2,7 +2,7 @@
   Map<IgniteBiTuple<ClusterNode,Boolean>,GridDistributedTxMapping<K,V>> mappings=new HashMap<>();
   long topVer=tx.topologyVersion();
   txMapping=new GridDhtTxMapping<>();
-  for (  IgniteTxEntry<K,V> txEntry : tx.allEntries()) {
+  for (  IgniteTxEntry txEntry : tx.allEntries()) {
     GridCacheContext<K,V> cacheCtx=txEntry.context();
     List<ClusterNode> nodes=cacheCtx.affinity().nodes(txEntry.key(),topVer);
     ClusterNode primary=F.first(nodes);
@@ -23,7 +23,7 @@
   for (  final GridDistributedTxMapping<K,V> m : mappings.values()) {
     final ClusterNode node=m.node();
     GridNearTxPrepareRequest<K,V> req=new GridNearTxPrepareRequest<>(futId,tx.topologyVersion(),tx,m.reads(),m.writes(),null,false,m.near(),txMapping.transactionNodes(),true,txMapping.transactionNodes().get(node.id()),tx.onePhaseCommit(),tx.needReturnValue() && tx.implicit(),tx.implicitSingle(),tx.subjectId(),tx.taskNameHash());
-    for (    IgniteTxEntry<K,V> txEntry : m.writes()) {
+    for (    IgniteTxEntry txEntry : m.writes()) {
       if (txEntry.op() == TRANSFORM)       req.addDhtVersion(txEntry.txKey(),null);
     }
     final MiniFuture fut=new MiniFuture(m,null);
