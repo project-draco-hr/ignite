@@ -1,5 +1,11 @@
 {
-  GridCache<Object,Object> cache=((IgniteKernal)ignite).cache(null);
-  cache.putx("key","value");
-  cache.putx(1,"value");
+  final IgniteCache<Object,Object> cache=ignite.jcache(null);
+  cache.put(1,"value");
+  GridTestUtils.assertThrows(log(),new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      cache.put("key","value");
+      return null;
+    }
+  }
+,CacheException.class,null);
 }
