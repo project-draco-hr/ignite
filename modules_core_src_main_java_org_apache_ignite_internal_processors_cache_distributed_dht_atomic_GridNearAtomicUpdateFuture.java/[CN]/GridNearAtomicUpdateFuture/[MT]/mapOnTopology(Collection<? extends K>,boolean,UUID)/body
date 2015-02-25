@@ -8,15 +8,15 @@
       snapshot=fut.topologySnapshot();
     }
  else {
-      fut.listenAsync(new CI1<IgniteInternalFuture<Long>>(){
-        @Override public void apply(        IgniteInternalFuture<Long> t){
+      fut.listenAsync(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
+        @Override public void apply(        IgniteInternalFuture<AffinityTopologyVersion> t){
           mapOnTopology(keys,remap,oldNodeId);
         }
       }
 );
       return;
     }
-    topVer=snapshot.topologyVersion();
+    topVer=new AffinityTopologyVersion(snapshot.topologyVersion());
     mapTime=U.currentTimeMillis();
     if (!remap && (cctx.config().getAtomicWriteOrderMode() == CLOCK || syncMode != FULL_ASYNC))     cctx.mvcc().addAtomicFuture(version(),this);
   }

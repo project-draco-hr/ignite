@@ -1,13 +1,13 @@
 {
   if (log.isDebugEnabled())   log.debug("Remote node left grid while sending or waiting for reply (will retry): " + this);
-  long updTopVer=ctx.discovery().topologyVersion();
-  if (updTopVer > topVer) {
+  AffinityTopologyVersion updTopVer=new AffinityTopologyVersion(ctx.discovery().topologyVersion());
+  if (updTopVer.compareTo(topVer) > 0) {
     map(keys.keySet(),F.t(node,keys),updTopVer);
     onDone(Collections.<K,V>emptyMap());
   }
  else {
     final RemapTimeoutObject timeout=new RemapTimeoutObject(ctx.config().getNetworkTimeout(),topVer,e);
-    ctx.discovery().topologyFuture(topVer + 1).listenAsync(new CI1<IgniteInternalFuture<Long>>(){
+    ctx.discovery().topologyFuture(topVer.topologyVersion() + 1).listenAsync(new CI1<IgniteInternalFuture<Long>>(){
       @Override public void apply(      IgniteInternalFuture<Long> longIgniteFuture){
         if (timeout.finish()) {
           ctx.timeout().removeTimeoutObject(timeout);
