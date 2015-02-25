@@ -1,23 +1,2 @@
 {
-  Ignite ignite1=startGrid(1);
-  IgniteCache<Object,Object> cache=ignite1.jcache(null);
-  for (int i=0; i < KEYS; i++)   cache.put(i,i);
-  for (int i=0; i < KEYS; i++)   assertEquals(LOCAL_STORE_1.load(i).get1().intValue(),i);
-  final CountDownLatch startPartExchange=new CountDownLatch(1);
-  final AtomicBoolean eventOcr=new AtomicBoolean(true);
-  if (getCacheMode() != REPLICATED) {
-    ignite1.events().localListen(new IgnitePredicate<Event>(){
-      @Override public boolean apply(      Event event){
-        startPartExchange.countDown();
-        eventOcr.set(true);
-        return true;
-      }
-    }
-,EventType.EVT_CACHE_PRELOAD_OBJECT_UNLOADED);
-  }
-  Ignite ignite2=startGrid(2);
-  assertEquals(Ignition.allGrids().size(),2);
-  waitExpirePartition(startPartExchange,eventOcr);
-  checkLocalStore(ignite1,LOCAL_STORE_1);
-  checkLocalStore(ignite2,LOCAL_STORE_2);
 }
