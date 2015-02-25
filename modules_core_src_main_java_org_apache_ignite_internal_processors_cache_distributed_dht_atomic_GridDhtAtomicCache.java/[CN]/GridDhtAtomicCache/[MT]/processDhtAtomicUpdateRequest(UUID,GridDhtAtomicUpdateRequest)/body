@@ -13,12 +13,11 @@
         try {
           entry=entryExx(key);
           CacheObject val=req.value(i);
-          byte[] valBytes=req.valueBytes(i);
           EntryProcessor<Object,Object,Object> entryProcessor=req.entryProcessor(i);
-          GridCacheOperation op=entryProcessor != null ? TRANSFORM : (val != null || valBytes != null) ? UPDATE : DELETE;
+          GridCacheOperation op=entryProcessor != null ? TRANSFORM : (val != null) ? UPDATE : DELETE;
           long ttl=req.ttl(i);
           long expireTime=req.conflictExpireTime(i);
-          GridCacheUpdateAtomicResult updRes=entry.innerUpdate(ver,nodeId,nodeId,op,op == TRANSFORM ? entryProcessor : val,valBytes,op == TRANSFORM ? req.invokeArguments() : null,false,false,null,true,true,false,!req.forceTransformBackups(),CU.empty(),replicate ? DR_BACKUP : DR_NONE,ttl,expireTime,req.conflictVersion(i),false,intercept,req.subjectId(),taskName);
+          GridCacheUpdateAtomicResult updRes=entry.innerUpdate(ver,nodeId,nodeId,op,op == TRANSFORM ? entryProcessor : val,null,op == TRANSFORM ? req.invokeArguments() : null,false,false,null,true,true,false,!req.forceTransformBackups(),CU.empty(),replicate ? DR_BACKUP : DR_NONE,ttl,expireTime,req.conflictVersion(i),false,intercept,req.subjectId(),taskName);
           if (updRes.removeVersion() != null)           ctx.onDeferredDelete(entry,updRes.removeVersion());
           entry.onUnlock();
           break;
