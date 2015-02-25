@@ -2,6 +2,7 @@
   if (keyCheck)   validateCacheKeys(keys);
   if (op == DELETE)   ctx.checkSecurity(GridSecurityPermission.CACHE_REMOVE);
  else   ctx.checkSecurity(GridSecurityPermission.CACHE_PUT);
+  IgnitePredicate<Cache.Entry<Object,Object>>[] filter0=(IgnitePredicate[])filter;
   String taskName=ctx.kernalContext().job().currentTaskName();
   GridCacheVersion ver=ctx.versions().next();
   UUID subjId=ctx.subjectIdPerCall(null);
@@ -16,15 +17,13 @@
     if (key == null)     throw new NullPointerException("Null key.");
     Object val=valsIter != null ? valsIter.next() : null;
     if (val == null && op != DELETE)     throw new NullPointerException("Null value.");
-    if (ctx.portableEnabled()) {
-      key=(K)ctx.marshalToPortable(key);
-      if (op == UPDATE)       val=(V)ctx.marshalToPortable(val);
-    }
+    KeyCacheObject cacheKey=ctx.toCacheKeyObject(key);
+    if (op == UPDATE)     val=ctx.toCacheObject(val);
     while (true) {
       GridCacheEntryEx entry=null;
       try {
-        entry=entryEx(key);
-        GridTuple3<Boolean,V,EntryProcessorResult<Object>> t=entry.innerUpdateLocal(ver,val == null ? DELETE : op,val,invokeArgs,storeEnabled,retval,expiryPlc,true,true,filter,intercept,subjId,taskName);
+        entry=entryEx(cacheKey);
+        GridTuple3<Boolean,CacheObject,EntryProcessorResult<Object>> t=entry.innerUpdateLocal(ver,val == null ? DELETE : op,val,invokeArgs,storeEnabled,retval,expiryPlc,true,true,filter0,intercept,subjId,taskName);
         if (op == TRANSFORM) {
           if (t.get3() != null) {
             Map<K,EntryProcessorResult> computedMap;

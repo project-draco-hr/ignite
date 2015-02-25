@@ -8,20 +8,22 @@
     for (    K key : keys) {
       if (key == null)       throw new NullPointerException("Null key.");
       GridCacheEntryEx entry=null;
+      KeyCacheObject cacheKey=ctx.toCacheKeyObject(key);
       while (true) {
         try {
-          entry=ctx.isSwapOrOffheapEnabled() ? entryEx(key) : peekEx(key);
+          entry=ctx.isSwapOrOffheapEnabled() ? entryEx(cacheKey) : peekEx(cacheKey);
           if (entry != null) {
             boolean isNew=entry.isNewLocked();
-            V v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiryPlc);
+            CacheObject v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiryPlc);
             if (v == null) {
               GridCacheVersion obsoleteVer=context().versions().next();
-              if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(key);
+              if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(cacheKey);
               success=false;
             }
  else {
-              if (ctx.portableEnabled() && !skipVals)               v=(V)ctx.unwrapPortableIfNeeded(v,!deserializePortable);
-              locVals.put(key,(V)CU.skipValue(v,skipVals));
+              Object val=v.value(ctx);
+              if (ctx.portableEnabled() && !skipVals)               val=ctx.unwrapPortableIfNeeded(val,!deserializePortable);
+              locVals.put(key,(V)CU.skipValue(val,skipVals));
             }
           }
  else           success=false;

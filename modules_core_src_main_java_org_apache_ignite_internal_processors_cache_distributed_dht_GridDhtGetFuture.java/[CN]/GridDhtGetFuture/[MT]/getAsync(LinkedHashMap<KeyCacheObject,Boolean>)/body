@@ -1,0 +1,61 @@
+{
+  if (F.isEmpty(keys))   return new GridFinishedFuture<Collection<GridCacheEntryInfo>>(cctx.kernalContext(),Collections.<GridCacheEntryInfo>emptyList());
+  final Collection<GridCacheEntryInfo> infos=new LinkedList<>();
+  String taskName0=ctx.job().currentTaskName();
+  if (taskName0 == null)   taskName0=ctx.task().resolveTaskName(taskNameHash);
+  final String taskName=taskName0;
+  GridCompoundFuture<Boolean,Boolean> txFut=null;
+  for (  Map.Entry<KeyCacheObject,Boolean> k : keys.entrySet()) {
+    while (true) {
+      GridDhtCacheEntry e=cache().entryExx(k.getKey(),topVer);
+      try {
+        GridCacheEntryInfo info=e.info();
+        if (info == null)         continue;
+        IgniteInternalFuture<Boolean> f=(!e.deleted() && k.getValue() && !skipVals) ? e.addReader(reader,msgId,topVer) : null;
+        if (f != null) {
+          if (txFut == null)           txFut=new GridCompoundFuture<>(cctx.kernalContext(),CU.boolReducer());
+          txFut.add(f);
+        }
+        infos.add(info);
+        break;
+      }
+ catch (      GridCacheEntryRemovedException ignore) {
+        if (log.isDebugEnabled())         log.debug("Got removed entry when getting a DHT value: " + e);
+      }
+ finally {
+        cctx.evicts().touch(e,topVer);
+      }
+    }
+  }
+  if (txFut != null)   txFut.markInitialized();
+  IgniteInternalFuture<Map<K,V>> fut;
+  if (txFut == null || txFut.isDone()) {
+    fut=null;
+  }
+ else {
+    fut=new GridEmbeddedFuture<>(txFut,new C2<Boolean,Exception,IgniteInternalFuture<Map<K,V>>>(){
+      @Override public IgniteInternalFuture<Map<K,V>> apply(      Boolean b,      Exception e){
+        return null;
+      }
+    }
+,cctx.kernalContext());
+  }
+  return new GridEmbeddedFuture<>(cctx.kernalContext(),fut,new C2<Map<K,V>,Exception,Collection<GridCacheEntryInfo>>(){
+    @Override public Collection<GridCacheEntryInfo> apply(    Map<K,V> map,    Exception e){
+      if (e != null) {
+        onDone(e);
+        return Collections.emptyList();
+      }
+ else {
+        for (Iterator<GridCacheEntryInfo> it=infos.iterator(); it.hasNext(); ) {
+          GridCacheEntryInfo info=it.next();
+          V v=map.get(info.key().value(cctx));
+          if (v == null)           it.remove();
+ else           info.value(cctx.toCacheObject(v));
+        }
+        return infos;
+      }
+    }
+  }
+);
+}

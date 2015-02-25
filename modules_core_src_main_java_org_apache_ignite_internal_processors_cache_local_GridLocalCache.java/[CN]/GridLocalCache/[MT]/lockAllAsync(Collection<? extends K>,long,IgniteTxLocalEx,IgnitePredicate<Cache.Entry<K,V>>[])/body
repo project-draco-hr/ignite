@@ -1,0 +1,31 @@
+{
+  if (F.isEmpty(keys))   return new GridFinishedFuture<>(ctx.kernalContext(),true);
+  GridLocalLockFuture<K,V> fut=new GridLocalLockFuture<>(ctx,keys,tx,this,timeout,filter);
+  try {
+    for (    K key : keys) {
+      while (true) {
+        GridLocalCacheEntry entry=null;
+        try {
+          entry=entryExx(ctx.toCacheKeyObject(key));
+          if (!ctx.isAll(entry,filter)) {
+            fut.onFailed();
+            return fut;
+          }
+          GridCacheMvccCandidate cand=fut.addEntry(entry);
+          if (cand == null && fut.isDone())           return fut;
+          break;
+        }
+ catch (        GridCacheEntryRemovedException ignored) {
+          if (log().isDebugEnabled())           log().debug("Got removed entry in lockAsync(..) method (will retry): " + entry);
+        }
+      }
+    }
+    if (!ctx.mvcc().addFuture(fut))     fut.onError(new IgniteCheckedException("Duplicate future ID (internal error): " + fut));
+    fut.checkLocks();
+    return fut;
+  }
+ catch (  IgniteCheckedException e) {
+    fut.onError(e);
+    return fut;
+  }
+}

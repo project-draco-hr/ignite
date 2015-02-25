@@ -10,18 +10,20 @@
   for (  K key : keys) {
     if (key == null)     throw new NullPointerException("Null key.");
     GridCacheEntryEx entry=null;
+    KeyCacheObject cacheKey=ctx.toCacheKeyObject(key);
     while (true) {
       try {
-        entry=swapOrOffheap ? entryEx(key) : peekEx(key);
+        entry=swapOrOffheap ? entryEx(cacheKey) : peekEx(cacheKey);
         if (entry != null) {
-          V v=entry.innerGet(null,swapOrOffheap,false,false,true,true,!skipVals,false,subjId,null,taskName,expiry);
+          CacheObject v=entry.innerGet(null,swapOrOffheap,false,false,true,true,!skipVals,false,subjId,null,taskName,expiry);
           if (v != null) {
             K key0=key;
+            Object val=v.value(ctx);
             if (ctx.portableEnabled() && deserializePortable) {
-              v=(V)ctx.unwrapPortableIfNeeded(v,false);
+              val=ctx.unwrapPortableIfNeeded(val,false);
               key0=(K)ctx.unwrapPortableIfNeeded(key,false);
             }
-            vals.put(key0,v);
+            vals.put(key0,(V)val);
           }
  else           success=false;
         }
