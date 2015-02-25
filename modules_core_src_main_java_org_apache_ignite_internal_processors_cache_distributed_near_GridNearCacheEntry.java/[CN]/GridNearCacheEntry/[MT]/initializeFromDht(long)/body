@@ -1,17 +1,17 @@
 {
   while (true) {
-    GridDhtCacheEntry<K,V> entry=cctx.near().dht().peekExx(key);
+    GridDhtCacheEntry entry=cctx.near().dht().peekExx(key);
     if (entry != null) {
-      GridCacheEntryInfo<K,V> e=entry.info();
+      GridCacheEntryInfo e=entry.info();
       if (e != null) {
         GridCacheVersion enqueueVer=null;
         try {
 synchronized (this) {
             checkObsolete();
             if (isNew() || !valid(topVer)) {
-              update(e.value(),e.valueBytes(),e.expireTime(),e.ttl(),e.isNew() ? ver : e.version());
+              update(e.value(),null,e.expireTime(),e.ttl(),e.isNew() ? ver : e.version());
               if (cctx.deferredDelete()) {
-                boolean deleted=val == null && valBytes == null;
+                boolean deleted=val == null;
                 if (deleted != deletedUnlocked()) {
                   deletedUnlocked(deleted);
                   if (deleted)                   enqueueVer=e.version();
