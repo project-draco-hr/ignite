@@ -2,15 +2,24 @@
   A.notNull(key,"key",oldVal,"oldVal",newVal,"newVal");
   if (keyCheck)   validateCacheKey(key);
   ctx.denyOnLocalRead();
-  return asyncOp(new AsyncOp<GridCacheReturn<CacheObject>>(key){
-    @Override public IgniteInternalFuture<GridCacheReturn<CacheObject>> op(    IgniteTxLocalAdapter tx){
+  return asyncOp(new AsyncOp<GridCacheReturn<V>>(key){
+    @Override public IgniteInternalFuture<GridCacheReturn<V>> op(    IgniteTxLocalAdapter tx){
       try {
         if (ctx.deploymentEnabled())         ctx.deploy().registerClass(oldVal);
       }
  catch (      IgniteCheckedException e) {
         return new GridFinishedFuture<>(ctx.kernalContext(),e);
       }
-      return tx.putAllAsync(ctx,F.t(key,newVal),true,null,-1,ctx.equalsPeekArray(oldVal));
+      IgniteInternalFuture<GridCacheReturn<CacheObject>> fut=tx.putAllAsync(ctx,F.t(key,newVal),true,null,-1,ctx.equalsPeekArray(oldVal));
+      return fut.chain(new CX1<IgniteInternalFuture<GridCacheReturn<CacheObject>>,GridCacheReturn<V>>(){
+        @Override public GridCacheReturn<V> applyx(        IgniteInternalFuture<GridCacheReturn<CacheObject>> fut) throws IgniteCheckedException {
+          GridCacheReturn ret=fut.get();
+          CacheObject val=(CacheObject)ret.value();
+          ret.value(CU.value(val,ctx));
+          return ret;
+        }
+      }
+);
     }
     @Override public String toString(){
       return "replaceAsync [key=" + key + ", oldVal="+ oldVal+ ", newVal="+ newVal+ ']';

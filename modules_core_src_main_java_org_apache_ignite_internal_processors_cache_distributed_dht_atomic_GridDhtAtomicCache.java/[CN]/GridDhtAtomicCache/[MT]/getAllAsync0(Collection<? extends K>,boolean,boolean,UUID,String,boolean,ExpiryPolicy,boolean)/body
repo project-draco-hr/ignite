@@ -5,7 +5,7 @@
   long topVer=ctx.affinity().affinityTopologyVersion();
   final IgniteCacheExpiryPolicy expiry=skipVals ? null : expiryPolicy(expiryPlc);
   if (!reload && !forcePrimary) {
-    Map<K,V> locVals=new HashMap<>(keys.size(),1.0f);
+    Map<K,V> locVals=U.newHashMap(keys.size());
     boolean success=true;
     for (    K key : keys) {
       if (key == null)       throw new NullPointerException("Null key.");
@@ -22,14 +22,7 @@
               if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(cacheKey);
               success=false;
             }
- else {
-              Object val=v.value(ctx);
-              if (ctx.portableEnabled() && deserializePortable) {
-                key=(K)ctx.unwrapPortableIfNeeded(key,false);
-                val=ctx.unwrapPortableIfNeeded(val,false);
-              }
-              locVals.put(key,(V)val);
-            }
+ else             ctx.addResult(locVals,cacheKey,v,skipVals,false,deserializePortable);
           }
  else           success=false;
           break;

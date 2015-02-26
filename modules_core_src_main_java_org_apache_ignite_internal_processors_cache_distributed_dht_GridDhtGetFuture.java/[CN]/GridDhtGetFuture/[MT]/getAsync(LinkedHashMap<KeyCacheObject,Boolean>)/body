@@ -28,20 +28,38 @@
     }
   }
   if (txFut != null)   txFut.markInitialized();
-  IgniteInternalFuture<Map<K,V>> fut;
+  IgniteInternalFuture<Map<KeyCacheObject,CacheObject>> fut=null;
   if (txFut == null || txFut.isDone()) {
-    fut=null;
+    if (reload && cctx.readThrough() && cctx.store().configured()) {
+      fut=cache().reloadAllAsync0(keys.keySet(),true,skipVals,subjId,taskName);
+    }
+ else {
+      if (tx == null) {
+        fut=cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,expiryPlc,skipVals);
+      }
+    }
   }
  else {
-    fut=new GridEmbeddedFuture<>(txFut,new C2<Boolean,Exception,IgniteInternalFuture<Map<K,V>>>(){
-      @Override public IgniteInternalFuture<Map<K,V>> apply(      Boolean b,      Exception e){
-        return null;
+    fut=new GridEmbeddedFuture<>(txFut,new C2<Boolean,Exception,IgniteInternalFuture<Map<KeyCacheObject,CacheObject>>>(){
+      @Override public IgniteInternalFuture<Map<KeyCacheObject,CacheObject>> apply(      Boolean b,      Exception e){
+        if (e != null)         throw new GridClosureException(e);
+        if (reload && cctx.readThrough() && cctx.store().configured()) {
+          return cache().reloadAllAsync0(keys.keySet(),true,skipVals,subjId,taskName);
+        }
+ else {
+          if (tx == null) {
+            return cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,expiryPlc,skipVals);
+          }
+ else {
+            return null;
+          }
+        }
       }
     }
 ,cctx.kernalContext());
   }
-  return new GridEmbeddedFuture<>(cctx.kernalContext(),fut,new C2<Map<K,V>,Exception,Collection<GridCacheEntryInfo>>(){
-    @Override public Collection<GridCacheEntryInfo> apply(    Map<K,V> map,    Exception e){
+  return new GridEmbeddedFuture<>(cctx.kernalContext(),fut,new C2<Map<KeyCacheObject,CacheObject>,Exception,Collection<GridCacheEntryInfo>>(){
+    @Override public Collection<GridCacheEntryInfo> apply(    Map<KeyCacheObject,CacheObject> map,    Exception e){
       if (e != null) {
         onDone(e);
         return Collections.emptyList();
@@ -49,9 +67,9 @@
  else {
         for (Iterator<GridCacheEntryInfo> it=infos.iterator(); it.hasNext(); ) {
           GridCacheEntryInfo info=it.next();
-          V v=map.get(info.key().value(cctx));
+          CacheObject v=map.get(info.key());
           if (v == null)           it.remove();
- else           info.value(cctx.toCacheObject(v));
+ else           info.value(v);
         }
         return infos;
       }

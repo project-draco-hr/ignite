@@ -2,10 +2,13 @@
   ctx.denyOnLocalRead();
   A.notNull(key,"key",val,"val");
   if (keyCheck)   validateCacheKey(key);
-  return syncOp(new SyncOp<GridCacheReturn<CacheObject>>(true){
-    @Override public GridCacheReturn<CacheObject> op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
+  return syncOp(new SyncOp<GridCacheReturn<V>>(true){
+    @Override public GridCacheReturn<V> op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
       if (ctx.deploymentEnabled())       ctx.deploy().registerClass(val);
-      return tx.removeAllAsync(ctx,Collections.singletonList(key),null,true,ctx.vararg(F.<K,V>cacheContainsPeek(val))).get();
+      GridCacheReturn ret=tx.removeAllAsync(ctx,Collections.singletonList(key),null,true,ctx.vararg(F.<K,V>cacheContainsPeek(val))).get();
+      CacheObject val=(CacheObject)ret.value();
+      ret.value(CU.value(val,ctx));
+      return ret;
     }
     @Override public String toString(){
       return "remove [key=" + key + ", val="+ val+ ']';

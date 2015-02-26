@@ -1,23 +1,9 @@
 {
   int keysSize=infos.size();
-  try {
-    if (keysSize != 0) {
-      Map<K,V> map=new GridLeanMap<>(keysSize);
-      for (      GridCacheEntryInfo info : infos) {
-        info.unmarshalValue(cctx,cctx.deploy().globalLoader());
-        K key=info.key().value(cctx);
-        V val=info.value().value(cctx);
-        if (cctx.portableEnabled()) {
-          key=(K)cctx.unwrapPortableIfNeeded(key,!deserializePortable);
-          val=(V)cctx.unwrapPortableIfNeeded(val,!deserializePortable);
-        }
-        map.put(key,val);
-      }
-      return map;
-    }
-  }
- catch (  IgniteCheckedException e) {
-    onDone(e);
+  if (keysSize != 0) {
+    Map<K,V> map=new GridLeanMap<>(keysSize);
+    for (    GridCacheEntryInfo info : infos)     cctx.addResult(map,info.key(),info.value(),skipVals,false,deserializePortable);
+    return map;
   }
   return Collections.emptyMap();
 }
