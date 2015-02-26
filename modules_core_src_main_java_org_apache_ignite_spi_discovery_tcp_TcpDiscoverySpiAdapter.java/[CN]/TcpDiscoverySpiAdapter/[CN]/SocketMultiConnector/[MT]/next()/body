@@ -1,15 +1,13 @@
 {
+  if (connInProgress == 0)   return null;
   try {
-    do {
-      if (closed)       return null;
-      GridTuple3<InetSocketAddress,Socket,Exception> res=queue.poll();
-      if (res != null)       return res;
-      if (connInProgress == 0)       return null;
-      wait();
-    }
- while (true);
+    connInProgress--;
+    return completionSrvc.take().get();
   }
  catch (  InterruptedException e) {
     throw new IgniteSpiException("Thread has been interrupted.",e);
+  }
+catch (  ExecutionException e) {
+    throw new IgniteSpiException(e);
   }
 }

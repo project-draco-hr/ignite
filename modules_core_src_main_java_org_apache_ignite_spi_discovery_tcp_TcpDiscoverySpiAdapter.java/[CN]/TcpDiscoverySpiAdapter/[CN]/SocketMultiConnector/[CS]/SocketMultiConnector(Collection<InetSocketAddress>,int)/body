@@ -1,15 +1,14 @@
 {
   connInProgress=addrs.size();
-  executor=Executors.newFixedThreadPool(Math.min(10,addrs.size()));
+  executor=Executors.newFixedThreadPool(Math.min(1,addrs.size()));
+  completionSrvc=new ExecutorCompletionService<>(executor);
   for (  final InetSocketAddress addr : addrs) {
-    executor.execute(new Runnable(){
-      @Override public void run(){
+    completionSrvc.submit(new Callable<GridTuple3<InetSocketAddress,Socket,Exception>>(){
+      @Override public GridTuple3<InetSocketAddress,Socket,Exception> call(){
         Exception ex=null;
         Socket sock=null;
         for (int i=0; i < retryCnt; i++) {
-synchronized (SocketMultiConnector.this) {
-            if (closed)             return;
-          }
+          if (Thread.currentThread().isInterrupted())           return null;
           try {
             sock=openSocket(addr);
             break;
@@ -18,12 +17,7 @@ synchronized (SocketMultiConnector.this) {
             ex=e;
           }
         }
-synchronized (SocketMultiConnector.this) {
-          if (closed)           U.closeQuiet(sock);
- else           queue.add(new GridTuple3<>(addr,sock,ex));
-          connInProgress--;
-          SocketMultiConnector.this.notifyAll();
-        }
+        return new GridTuple3<>(addr,sock,ex);
       }
     }
 );
