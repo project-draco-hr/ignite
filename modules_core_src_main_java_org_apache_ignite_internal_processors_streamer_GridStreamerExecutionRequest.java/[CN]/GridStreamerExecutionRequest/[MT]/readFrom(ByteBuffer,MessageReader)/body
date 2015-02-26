@@ -1,0 +1,37 @@
+{
+  reader.setBuffer(buf);
+  if (!reader.beforeMessageRead())   return false;
+switch (reader.state()) {
+case 0:
+    batchBytes=reader.readByteArray("batchBytes");
+  if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 1:
+clsLdrId=reader.readIgniteUuid("clsLdrId");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 2:
+byte depModeOrd;
+depModeOrd=reader.readByte("depMode");
+if (!reader.isLastRead()) return false;
+depMode=DeploymentMode.fromOrdinal(depModeOrd);
+reader.incrementState();
+case 3:
+forceLocDep=reader.readBoolean("forceLocDep");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 4:
+ldrParticipants=reader.readMap("ldrParticipants",MessageCollectionItemType.UUID,MessageCollectionItemType.IGNITE_UUID,false);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 5:
+sampleClsName=reader.readString("sampleClsName");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 6:
+userVer=reader.readString("userVer");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+}
+return true;
+}
