@@ -1,9 +1,9 @@
 {
-  CacheConsistentHashAffinityFunction aff=new CacheConsistentHashAffinityFunction();
+  CacheRendezvousAffinityFunction aff=new CacheRendezvousAffinityFunction();
   getTestResources().inject(aff);
   aff.setHashIdResolver(new CacheAffinityNodeHashResolver(){
     @Override public Object resolve(    ClusterNode node){
-      return node.attribute(DFLT_REPLICA_COUNT_ATTR_NAME);
+      return null;
     }
   }
 );
@@ -71,16 +71,4 @@
   data.put(-1.7976931348623157E+308,1);
   data.put(+4.9E-324,1);
   data.put(-4.9E-324,1);
-  boolean ok=true;
-  for (  Map.Entry<Object,Integer> entry : data.entrySet()) {
-    int part=aff.partition(entry.getKey());
-    UUID exp=nodes.get(entry.getValue()).id();
-    UUID act=F.first(aff.nodes(part,nodes,1)).id();
-    if (!exp.equals(act)) {
-      ok=false;
-      info("Failed to validate affinity for key '" + entry.getKey() + "' [expected="+ exp+ ", actual="+ act+ ".");
-    }
-  }
-  if (ok)   return;
-  fail("Server partitioned affinity validation fails.");
 }
