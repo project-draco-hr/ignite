@@ -1,0 +1,28 @@
+{
+  reader.setBuffer(buf);
+  if (!reader.beforeMessageRead())   return false;
+  if (!super.readFrom(buf,reader))   return false;
+switch (reader.state()) {
+case 3:
+    candsByIdxBytes=reader.readByteArray("candsByIdxBytes");
+  if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 4:
+candsByKeyBytes=reader.readByteArray("candsByKeyBytes");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 5:
+committedVers=reader.readCollection("committedVers",MessageCollectionItemType.MSG);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 6:
+rolledbackVers=reader.readCollection("rolledbackVers",MessageCollectionItemType.MSG);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 7:
+ver=reader.readMessage("ver");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+}
+return true;
+}

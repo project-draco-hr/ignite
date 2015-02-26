@@ -1,0 +1,19 @@
+{
+  boolean rmv=false;
+  if (ttl == CU.TTL_NOT_CHANGED) {
+    if (expiry != null)     ttl=hasValueUnlocked() ? expiry.forUpdate() : expiry.forCreate();
+  }
+  if (ttl == CU.TTL_ZERO) {
+    rmv=true;
+    ttl=CU.TTL_ETERNAL;
+  }
+  if (ttl == CU.TTL_NOT_CHANGED) {
+    if (isNew())     ttl=CU.TTL_ETERNAL;
+ else {
+      ttl=ttlExtras();
+      expireTime=expireTimeExtras();
+    }
+  }
+  if (expireTime == CU.EXPIRE_TIME_CALCULATE)   expireTime=CU.toExpireTime(ttl);
+  return F.t(ttl,expireTime,rmv);
+}
