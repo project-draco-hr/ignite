@@ -23,13 +23,8 @@ synchronized (mux) {
     throw new IgniteSpiException("Failed to resolve local host to set of external addresses: " + locHost,e);
   }
   locNode=new TcpDiscoveryNode(ignite.configuration().getNodeId(),addrs.get1(),addrs.get2(),tcpSrvr.port,metricsProvider,locNodeVer);
-  try {
-    Collection<InetSocketAddress> extAddrs=addrRslvr == null ? null : U.resolveAddresses(addrRslvr,F.flat(Arrays.asList(addrs.get1(),addrs.get2())),locNode.discoveryPort());
-    if (extAddrs != null)     locNodeAttrs.put(createSpiAttributeName(ATTR_EXT_ADDRS),extAddrs);
-  }
- catch (  IgniteCheckedException e) {
-    throw new IgniteSpiException("Failed to resolve local host to addresses: " + locHost,e);
-  }
+  Collection<InetSocketAddress> extAddrs=addrRslvr == null ? null : U.resolveAddresses(addrRslvr,F.flat(Arrays.asList(addrs.get1(),addrs.get2())),locNode.discoveryPort());
+  if (extAddrs != null)   locNodeAttrs.put(createSpiAttributeName(ATTR_EXT_ADDRS),extAddrs);
   locNode.setAttributes(locNodeAttrs);
   locNode.local(true);
   locNodeAddrs=getNodeAddresses(locNode);
