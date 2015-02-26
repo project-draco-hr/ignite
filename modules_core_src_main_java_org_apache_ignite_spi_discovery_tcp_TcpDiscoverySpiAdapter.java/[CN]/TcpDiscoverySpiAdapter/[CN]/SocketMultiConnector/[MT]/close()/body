@@ -1,23 +1,29 @@
 {
-  executor.shutdown();
+  List<Runnable> unstartedTasks=executor.shutdownNow();
+  connInProgress-=unstartedTasks.size();
   if (connInProgress > 0) {
-    new Thread(new Runnable(){
+    Thread thread=new Thread(new Runnable(){
       @Override public void run(){
         try {
-          for (int i=0; i < connInProgress; i++) {
+          executor.awaitTermination(5,TimeUnit.MINUTES);
+          Future<GridTuple3<InetSocketAddress,Socket,Exception>> fut;
+          while ((fut=completionSrvc.poll()) != null) {
             try {
-              GridTuple3<InetSocketAddress,Socket,Exception> take=completionSrvc.take().get();
-              if (take != null)               IgniteUtils.closeQuiet(take.get2());
+              GridTuple3<InetSocketAddress,Socket,Exception> tuple3=fut.get();
+              if (tuple3 != null)               IgniteUtils.closeQuiet(tuple3.get2());
             }
- catch (            ExecutionException ignored) {
+ catch (            ExecutionException ignore) {
             }
           }
         }
  catch (        InterruptedException e) {
+          Thread.currentThread().interrupt();
           throw new RuntimeException(e);
         }
       }
     }
-).start();
+);
+    thread.setDaemon(true);
+    thread.start();
   }
 }
