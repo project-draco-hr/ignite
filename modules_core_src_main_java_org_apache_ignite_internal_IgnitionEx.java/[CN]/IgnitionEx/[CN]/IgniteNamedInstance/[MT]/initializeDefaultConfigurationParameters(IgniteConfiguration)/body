@@ -1,0 +1,68 @@
+{
+  String ggHome=cfg.getIgniteHome();
+  if (ggHome == null)   ggHome=U.getIgniteHome();
+ else   U.setIgniteHome(ggHome);
+  U.setWorkDirectory(cfg.getWorkDirectory(),ggHome);
+  if (ggHome != null) {
+    File ggHomeFile=new File(ggHome);
+    if (!ggHomeFile.exists() || !ggHomeFile.isDirectory())     throw new IgniteCheckedException("Invalid Ignite installation home folder: " + ggHome);
+  }
+  cfg.setIgniteHome(ggHome);
+  String locHost=IgniteSystemProperties.getString(IGNITE_LOCAL_HOST);
+  cfg.setLocalHost(F.isEmpty(locHost) ? cfg.getLocalHost() : locHost);
+  if (daemon)   cfg.setDaemon(true);
+  Marshaller marsh=cfg.getMarshaller();
+  if (marsh == null) {
+    if (!U.isHotSpot()) {
+      U.warn(log,"GridOptimizedMarshaller is not supported on this JVM " + "(only Java HotSpot VMs are supported). Switching to standard JDK marshalling - " + "object serialization performance will be significantly slower.","To enable fast marshalling upgrade to recent 1.6 or 1.7 HotSpot VM release.");
+      marsh=new JdkMarshaller();
+    }
+ else     if (!OptimizedMarshaller.available()) {
+      U.warn(log,"GridOptimizedMarshaller is not supported on this JVM " + "(only recent 1.6 and 1.7 versions HotSpot VMs are supported). " + "To enable fast marshalling upgrade to recent 1.6 or 1.7 HotSpot VM release. "+ "Switching to standard JDK marshalling - "+ "object serialization performance will be significantly slower.","To enable fast marshalling upgrade to recent 1.6 or 1.7 HotSpot VM release.");
+      marsh=new JdkMarshaller();
+    }
+ else     marsh=new OptimizedMarshaller();
+  }
+ else   if (marsh instanceof OptimizedMarshaller && !U.isHotSpot()) {
+    U.warn(log,"Using GridOptimizedMarshaller on untested JVM (only Java HotSpot VMs were tested) - " + "object serialization behavior could yield unexpected results.","Using GridOptimizedMarshaller on untested JVM.");
+  }
+  String depModeName=IgniteSystemProperties.getString(IGNITE_DEP_MODE_OVERRIDE);
+  if (!F.isEmpty(depModeName)) {
+    if (!F.isEmpty(cfg.getCacheConfiguration())) {
+      U.quietAndInfo(log,"Skipping deployment mode override for caches (custom closure " + "execution may not work for console Visor)");
+    }
+ else {
+      try {
+        DeploymentMode depMode=DeploymentMode.valueOf(depModeName);
+        if (cfg.getDeploymentMode() != depMode)         cfg.setDeploymentMode(depMode);
+      }
+ catch (      IllegalArgumentException e) {
+        throw new IgniteCheckedException("Failed to override deployment mode using system property " + "(are there any misspellings?)" + "[name=" + IGNITE_DEP_MODE_OVERRIDE + ", value="+ depModeName+ ']',e);
+      }
+    }
+  }
+  cfg.setMarshaller(marsh);
+  cfg.setConnectorConfiguration(cfg.getConnectorConfiguration() != null ? new ConnectorConfiguration(cfg.getConnectorConfiguration()) : null);
+  IgfsConfiguration[] igfsCfgs=cfg.getIgfsConfiguration();
+  if (igfsCfgs != null) {
+    IgfsConfiguration[] clone=igfsCfgs.clone();
+    for (int i=0; i < igfsCfgs.length; i++)     clone[i]=new IgfsConfiguration(igfsCfgs[i]);
+    cfg.setIgfsConfiguration(clone);
+  }
+  if (cfg.getMBeanServer() == null)   cfg.setMBeanServer(ManagementFactory.getPlatformMBeanServer());
+  if (cfg.getNodeId() == null)   cfg.setNodeId(UUID.randomUUID());
+  if (cfg.getPeerClassLoadingLocalClassPathExclude() == null)   cfg.setPeerClassLoadingLocalClassPathExclude(EMPTY_STR_ARR);
+  StreamerConfiguration[] streamerCfgs=cfg.getStreamerConfiguration();
+  if (streamerCfgs != null) {
+    StreamerConfiguration[] clone=streamerCfgs.clone();
+    for (int i=0; i < streamerCfgs.length; i++)     clone[i]=new StreamerConfiguration(streamerCfgs[i]);
+    cfg.setStreamerConfiguration(clone);
+  }
+  cfg.setTransactionConfiguration(cfg.getTransactionConfiguration() != null ? new TransactionConfiguration(cfg.getTransactionConfiguration()) : null);
+  if (cfg.getUserAttributes() == null) {
+    Map<String,?> emptyAttr=Collections.emptyMap();
+    cfg.setUserAttributes(emptyAttr);
+  }
+  initializeDefaultCacheConfiguration(cfg);
+  initializeDefaultSpi(cfg);
+}
