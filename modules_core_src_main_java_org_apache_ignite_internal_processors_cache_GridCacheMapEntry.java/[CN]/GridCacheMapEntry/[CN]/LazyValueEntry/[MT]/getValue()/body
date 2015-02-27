@@ -3,14 +3,14 @@
     IgniteInternalTx tx=cctx.tm().userTx();
     if (tx != null) {
       GridTuple<CacheObject> peek=tx.peek(cctx,false,key,null);
-      if (peek != null)       return peek.get().value(cctx);
+      if (peek != null)       return peek.get().value(cctx,false);
     }
-    if (detached())     return rawGet().value(cctx);
+    if (detached())     return rawGet().value(cctx,false);
     for (; ; ) {
       GridCacheEntryEx e=cctx.cache().peekEx(key);
       if (e == null)       return null;
       try {
-        return e.peek(GridCachePeekMode.GLOBAL,CU.<K,V>empty()).value(cctx);
+        return e.peek(GridCachePeekMode.GLOBAL,CU.<K,V>empty()).value(cctx,false);
       }
  catch (      GridCacheEntryRemovedException ignored) {
       }

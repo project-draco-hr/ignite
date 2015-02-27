@@ -10,7 +10,7 @@ synchronized (this) {
           if (e.offheapPointer() > 0) {
             valPtr=e.offheapPointer();
             if (needVal) {
-              CacheObject val=unmarshalOffheap(false);
+              CacheObject val=cctx.fromOffheap(valPtr,false);
               e.value(val);
             }
           }
@@ -27,7 +27,7 @@ synchronized (this) {
         long delta=e.expireTime() == 0 ? 0 : e.expireTime() - U.currentTimeMillis();
         if (delta >= 0) {
           CacheObject val=e.value();
-          if (cctx.portableEnabled())           val=(CacheObject)cctx.kernalContext().portable().detachPortable(val,cctx);
+          val=(CacheObject)cctx.kernalContext().portable().detachPortable(val,cctx);
           update(val,e.valueBytes(),e.expireTime(),e.ttl(),e.version());
           if (cctx.offheapTiered() && e.offheapPointer() > 0)           valPtr=e.offheapPointer();
           return val;
