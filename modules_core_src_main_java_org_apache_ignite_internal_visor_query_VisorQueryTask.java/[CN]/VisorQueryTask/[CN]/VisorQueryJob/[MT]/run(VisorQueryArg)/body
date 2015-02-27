@@ -6,18 +6,18 @@
     if (c == null)     return new IgniteBiTuple<>(new IgniteCheckedException("Cache not found: " + escapeName(arg.cacheName())),null);
     CacheProjection<Object,Object> cp=c.keepPortable();
     if (scan) {
-      CacheQueryFuture<Map.Entry<Object,Object>> fut=cp.queries().createScanQuery(null).pageSize(arg.pageSize()).projection(ignite.forNodeIds(arg.proj())).execute();
+      CacheQueryFuture<Map.Entry<Object,Object>> fut=cp.queries().createScanQuery(null).pageSize(arg.pageSize()).projection(ignite.cluster().forNodeIds(arg.proj())).execute();
       long start=U.currentTimeMillis();
       IgniteBiTuple<List<Object[]>,Map.Entry<Object,Object>> rows=fetchScanQueryRows(fut,null,arg.pageSize());
       long fetchDuration=U.currentTimeMillis() - start;
       long duration=fut.duration() + fetchDuration;
       Map.Entry<Object,Object> next=rows.get2();
-      ignite.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,next,false));
+      ignite.cluster().<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,next,false));
       scheduleResultSetHolderRemoval(qryId);
       return new IgniteBiTuple<>(null,new VisorQueryResultEx(ignite.localNode().id(),qryId,SCAN_COL_NAMES,rows.get1(),next != null,duration));
     }
  else {
-      CacheQueryFuture<List<?>> fut=((GridCacheQueriesEx<?,?>)cp.queries()).createSqlFieldsQuery(arg.queryTxt(),true).pageSize(arg.pageSize()).projection(ignite.forNodeIds(arg.proj())).execute();
+      CacheQueryFuture<List<?>> fut=((GridCacheQueriesEx<?,?>)cp.queries()).createSqlFieldsQuery(arg.queryTxt(),true).pageSize(arg.pageSize()).projection(ignite.cluster().forNodeIds(arg.proj())).execute();
       List<Object> firstRow=(List<Object>)fut.next();
       List<GridQueryFieldMetadata> meta=((GridCacheQueryMetadataAware)fut).metadata().get();
       if (meta == null)       return new IgniteBiTuple<Exception,VisorQueryResultEx>(new SQLException("Fail to execute query. No metadata available."),null);
@@ -31,7 +31,7 @@
         IgniteBiTuple<List<Object[]>,List<?>> rows=fetchSqlQueryRows(fut,firstRow,arg.pageSize());
         long fetchDuration=U.currentTimeMillis() - start;
         long duration=fut.duration() + fetchDuration;
-        ignite.<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,rows.get2(),false));
+        ignite.cluster().<String,VisorFutureResultSetHolder>nodeLocalMap().put(qryId,new VisorFutureResultSetHolder<>(fut,rows.get2(),false));
         scheduleResultSetHolderRemoval(qryId);
         return new IgniteBiTuple<>(null,new VisorQueryResultEx(ignite.localNode().id(),qryId,names,rows.get1(),rows.get2() != null,duration));
       }

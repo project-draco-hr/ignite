@@ -1,11 +1,19 @@
 {
   checkObsolete();
-  ReaderId reader=readerId(nodeId);
-  if (reader == null || (reader.messageId() > msgId && msgId >= 0))   return false;
-  List<ReaderId<K,V>> rdrs=new ArrayList<>(this.rdrs.size());
-  for (  ReaderId<K,V> rdr : this.rdrs) {
-    if (!rdr.equals(reader))     rdrs.add(rdr);
+  ReaderId<K,V>[] rdrs=this.rdrs;
+  int readerIdx=-1;
+  for (int i=0; i < rdrs.length; i++) {
+    if (rdrs[i].nodeId().equals(nodeId)) {
+      readerIdx=i;
+      break;
+    }
   }
-  this.rdrs=rdrs.isEmpty() ? Collections.<ReaderId<K,V>>emptyList() : Collections.unmodifiableList(rdrs);
+  if (readerIdx == -1 || (rdrs[readerIdx].messageId() > msgId && msgId >= 0))   return false;
+  if (rdrs.length == 1)   this.rdrs=ReaderId.EMPTY_ARRAY;
+ else {
+    ReaderId<K,V>[] newRdrs=Arrays.copyOf(rdrs,rdrs.length - 1);
+    System.arraycopy(rdrs,readerIdx + 1,newRdrs,readerIdx,rdrs.length - readerIdx - 1);
+    this.rdrs=newRdrs;
+  }
   return true;
 }

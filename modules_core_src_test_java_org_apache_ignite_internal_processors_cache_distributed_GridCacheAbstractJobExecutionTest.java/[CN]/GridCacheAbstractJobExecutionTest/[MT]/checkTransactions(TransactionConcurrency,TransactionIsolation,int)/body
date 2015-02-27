@@ -9,9 +9,9 @@
   for (int i=0; i < jobCnt; i++) {
     comp.apply(new CX1<Integer,Void>(){
       @IgniteInstanceResource private Ignite ignite;
-      @Override public Void applyx(      final Integer i) throws IgniteCheckedException {
-        GridCache<String,int[]> cache=((IgniteKernal)this.ignite).cache(null);
-        try (Transaction tx=cache.txStart(concur,isolation)){
+      @Override public Void applyx(      final Integer i){
+        IgniteCache<String,int[]> cache=ignite.jcache(null);
+        try (Transaction tx=ignite.transactions().txStart(concur,isolation)){
           int[] arr=cache.get("TestKey");
           if (arr == null)           arr=new int[jobCnt];
           arr[i]=1;
