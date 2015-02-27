@@ -1,12 +1,10 @@
 {
   final String[] incProps=cfg.getIncludeProperties();
   try {
-    ctx.addNodeAttributes(F.view(System.getenv(),new P1<String>(){
-      @Override public boolean apply(      String name){
-        return incProps == null || U.containsStringArray(incProps,name,true) || U.isVisorNodeStartProperty(name) || U.isVisorRequiredProperty(name);
-      }
+    for (    Map.Entry<String,String> sysEntry : System.getenv().entrySet()) {
+      String name=sysEntry.getKey();
+      if (incProps == null || U.containsStringArray(incProps,name,true) || U.isVisorNodeStartProperty(name) || U.isVisorRequiredProperty(name))       ctx.addNodeAttribute(name,sysEntry.getValue());
     }
-));
     if (log.isDebugEnabled())     log.debug("Added environment properties to node attributes.");
   }
  catch (  SecurityException e) {
