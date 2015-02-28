@@ -1,0 +1,40 @@
+{
+  if (it == null)   return new GridEmptyIterator<>();
+  checkIteratorQueue();
+  final GridCloseableIteratorAdapter<KeyCacheObject> iter=new GridCloseableIteratorAdapter<KeyCacheObject>(){
+    private KeyCacheObject cur;
+    @Override protected KeyCacheObject onNext(){
+      try {
+        cur=cctx.toCacheKeyObject(null,it.next().getKey());
+        return cur;
+      }
+ catch (      IgniteCheckedException e) {
+        throw new IgniteException(e);
+      }
+    }
+    @Override protected boolean onHasNext(){
+      return it.hasNext();
+    }
+    @Override protected void onRemove() throws IgniteCheckedException {
+      throw new IllegalArgumentException();
+    }
+    @Override protected void onClose() throws IgniteCheckedException {
+      it.close();
+    }
+  }
+;
+  Iterator<KeyCacheObject> ret=new Iterator<KeyCacheObject>(){
+    @Override public boolean hasNext(){
+      return iter.hasNext();
+    }
+    @Override public KeyCacheObject next(){
+      return iter.next();
+    }
+    @Override public void remove(){
+      iter.remove();
+    }
+  }
+;
+  itSet.add(new GridWeakIterator(ret,iter,itQ));
+  return ret;
+}
