@@ -1,10 +1,25 @@
 {
   if (log.isDebugEnabled())   log.debug("Running put job [nodeId=" + ctx.localNodeId() + ", size="+ col.size()+ ']');
-  IgniteCacheProxy<K,V> cache=ctx.cache().jcache(cacheName);
-  if (skipStore)   cache=(IgniteCacheProxy<K,V>)cache.withSkipStore();
+  IgniteCacheProxy cache=ctx.cache().jcache(cacheName);
+  if (skipStore)   cache=(IgniteCacheProxy<?,?>)cache.withSkipStore();
   if (ignoreDepOwnership)   cache.context().deploy().ignoreOwnership(true);
   try {
-    updater.update(cache,col);
+    final GridCacheContext cctx=cache.context();
+    for (    IgniteDataLoaderEntry e : col) {
+      e.getKey().finishUnmarshal(cctx,cctx.deploy().globalLoader());
+      CacheObject val=e.getValue();
+      if (val != null)       val.finishUnmarshal(cctx,cctx.deploy().globalLoader());
+    }
+    if (unwrapEntries()) {
+      Collection<Map.Entry> col0=F.viewReadOnly(col,new C1<IgniteDataLoaderEntry,Map.Entry>(){
+        @Override public Map.Entry apply(        IgniteDataLoaderEntry e){
+          return e.toEntry(cctx);
+        }
+      }
+);
+      updater.update(cache,col0);
+    }
+ else     updater.update(cache,col);
     return null;
   }
   finally {
