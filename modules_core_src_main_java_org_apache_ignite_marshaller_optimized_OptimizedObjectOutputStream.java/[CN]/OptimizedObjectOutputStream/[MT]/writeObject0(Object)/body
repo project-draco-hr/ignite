@@ -6,7 +6,7 @@
   if (obj == null)   writeByte(NULL);
  else {
     Class<?> cls=obj.getClass();
-    OptimizedClassDescriptor desc=classDescriptor(cls);
+    OptimizedClassDescriptor desc=classDescriptor(cls,ctx);
     if (desc.excluded()) {
       writeByte(NULL);
       return;
@@ -20,7 +20,7 @@
     if (!desc.isPrimitive() && !desc.isEnum() && !desc.isClass())     handle=handles.lookup(obj);
     if (obj0 != obj) {
       obj=obj0;
-      desc=classDescriptor(obj.getClass());
+      desc=classDescriptor(obj.getClass(),ctx);
     }
     if (handle >= 0) {
       writeByte(HANDLE);
@@ -28,6 +28,7 @@
     }
  else {
       writeByte(OBJECT);
+      writeInt(desc.typeId());
       desc.write(this,obj);
     }
   }

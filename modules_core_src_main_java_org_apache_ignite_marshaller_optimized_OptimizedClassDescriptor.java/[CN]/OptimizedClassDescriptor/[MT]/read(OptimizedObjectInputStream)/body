@@ -57,10 +57,12 @@ return in.readLinkedHashSet(mapFieldOff);
 case TYPE_DATE:
 return in.readDate();
 case TYPE_CLS:
-return null;
+return OptimizedMarshallerUtils.classDescriptor(in.readInt(),in.classLoader(),ctx).describedClass();
 case TYPE_EXTERNALIZABLE:
+verifyChecksum(in.readShort());
 return in.readExternalizable(constructor,readResolveMtd);
 case TYPE_SERIALIZABLE:
+verifyChecksum(in.readShort());
 return in.readSerializable(cls,readObjMtds,readResolveMtd,fields);
 default :
 throw new IllegalStateException("Invalid class type: " + type);

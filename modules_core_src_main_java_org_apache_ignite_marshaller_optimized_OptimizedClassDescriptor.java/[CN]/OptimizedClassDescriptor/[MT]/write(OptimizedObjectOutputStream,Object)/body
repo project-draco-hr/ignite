@@ -1,5 +1,4 @@
 {
-  out.writeInt(cls.getName().hashCode());
 switch (type) {
 case TYPE_BYTE:
     out.writeByte((Byte)obj);
@@ -86,13 +85,16 @@ case TYPE_DATE:
 out.writeDate((Date)obj);
 break;
 case TYPE_CLS:
-out.writeInt(((Class<?>)obj).getName().hashCode());
+OptimizedClassDescriptor desc=OptimizedMarshallerUtils.classDescriptor((Class<?>)obj,ctx);
+out.writeInt(desc.typeId());
 break;
 case TYPE_EXTERNALIZABLE:
+out.writeShort(checksum);
 out.writeExternalizable(obj);
 break;
 case TYPE_SERIALIZABLE:
 if (out.requireSerializable() && !isSerial) throw new NotSerializableException("Must implement java.io.Serializable or " + "set OptimizedMarshaller.setRequireSerializable() to false " + "(note that performance may degrade if object is not Serializable): "+ name);
+out.writeShort(checksum);
 out.writeSerializable(obj,writeObjMtds,fields);
 break;
 default :
