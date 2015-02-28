@@ -1,7 +1,17 @@
 {
   super.finishUnmarshal(ctx,ldr);
+  GridCacheContext cctx=ctx.cacheContext(cacheId);
   if (ownedValsBytes != null && ownedVals == null) {
+    ownedVals=new HashMap<>();
+    for (    byte[] bytes : ownedValsBytes) {
+      GridTuple3<IgniteTxKey,GridCacheVersion,CacheObject> tup=ctx.marshaller().unmarshal(bytes,ldr);
+      CacheObject val=tup.get3();
+      if (val != null)       val.finishUnmarshal(cctx,ldr);
+      ownedVals.put(tup.get1(),F.t(tup.get2(),val));
+    }
   }
   if (retVal == null && retValBytes != null)   retVal=ctx.marshaller().unmarshal(retValBytes,ldr);
-  if (filterFailedKeys == null && filterFailedKeyBytes != null)   filterFailedKeys=ctx.marshaller().unmarshal(filterFailedKeyBytes,ldr);
+  if (filterFailedKeys != null) {
+    for (    IgniteTxKey key : filterFailedKeys)     key.finishUnmarshal(cctx,ldr);
+  }
 }

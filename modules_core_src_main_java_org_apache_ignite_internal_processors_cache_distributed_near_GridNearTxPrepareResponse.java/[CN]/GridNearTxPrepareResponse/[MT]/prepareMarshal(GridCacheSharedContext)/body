@@ -1,7 +1,17 @@
 {
   super.prepareMarshal(ctx);
+  GridCacheContext cctx=ctx.cacheContext(cacheId);
   if (ownedVals != null && ownedValsBytes == null) {
+    ownedValsBytes=new ArrayList<>(ownedVals.size());
+    for (    Map.Entry<IgniteTxKey,IgniteBiTuple<GridCacheVersion,CacheObject>> entry : ownedVals.entrySet()) {
+      IgniteBiTuple<GridCacheVersion,CacheObject> tup=entry.getValue();
+      CacheObject val=tup.get2();
+      if (val != null)       val.prepareMarshal(cctx);
+      ownedValsBytes.add(ctx.marshaller().marshal(F.t(entry.getKey(),tup.get1(),val)));
+    }
   }
   if (retValBytes == null && retVal != null)   retValBytes=ctx.marshaller().marshal(retVal);
-  if (filterFailedKeyBytes == null && filterFailedKeys != null)   filterFailedKeyBytes=ctx.marshaller().marshal(filterFailedKeys);
+  if (filterFailedKeys != null) {
+    for (    IgniteTxKey key : filterFailedKeys)     key.prepareMarshal(cctx);
+  }
 }
