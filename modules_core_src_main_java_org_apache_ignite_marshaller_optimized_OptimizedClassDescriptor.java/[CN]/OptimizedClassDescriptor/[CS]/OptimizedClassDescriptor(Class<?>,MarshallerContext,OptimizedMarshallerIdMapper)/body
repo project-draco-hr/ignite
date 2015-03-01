@@ -1,9 +1,16 @@
 {
   this.cls=cls;
   this.ctx=ctx;
-  typeId=cls.getName().hashCode();
-  excluded=MarshallerExclusions.isExcluded(cls);
+  this.mapper=mapper;
   name=cls.getName();
+  int typeId;
+  if (mapper != null) {
+    typeId=mapper.typeId(name);
+    if (typeId == 0)     typeId=name.hashCode();
+  }
+ else   typeId=name.hashCode();
+  this.typeId=typeId;
+  excluded=MarshallerExclusions.isExcluded(cls);
   if (!excluded) {
     Class<?> parent;
     if (cls == byte.class || cls == Byte.class) {
