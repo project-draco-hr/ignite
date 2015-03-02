@@ -1,12 +1,13 @@
 {
-  if (needCopy(ctx)) {
-    try {
-      if (valBytes == null)       valBytes=ctx.marshaller().marshal(val);
-      return new KeyCacheObjectImpl(ctx.marshaller().unmarshal(valBytes,ctx.deploy().globalLoader()),valBytes);
+  try {
+    if (valBytes == null)     valBytes=ctx.marshaller().marshal(val);
+    if (needCopy(ctx)) {
+      Object val=ctx.marshaller().unmarshal(valBytes,ctx.deploy().globalLoader());
+      return new KeyCacheObjectImpl(val,valBytes);
     }
- catch (    IgniteCheckedException e) {
-      throw new IgniteException("Failed to marshal object: " + val,e);
-    }
+    return new KeyCacheObjectImpl(val,valBytes);
   }
- else   return new KeyCacheObjectImpl(val,valBytes);
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException("Failed to marshal object: " + val,e);
+  }
 }

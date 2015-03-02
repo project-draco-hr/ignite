@@ -18,11 +18,13 @@
 ;
   int part=cctx.affinity().partition(key);
   if (offheapEnabled) {
-    byte[] val=offheap.remove(spaceName,part,key,key.valueBytes(cctx));
+    byte[] val=offheap.remove(spaceName,part,key.value(cctx,false),key.valueBytes(cctx));
     if (val != null) {
       if (c != null)       c.apply(val);
       return;
     }
   }
-  if (swapEnabled)   swapMgr.remove(spaceName,new SwapKey(key,part,key.valueBytes(cctx)),c,cctx.deploy().globalLoader());
+  if (swapEnabled) {
+    swapMgr.remove(spaceName,new SwapKey(key.value(cctx,false),part,key.valueBytes(cctx)),c,cctx.deploy().globalLoader());
+  }
 }
