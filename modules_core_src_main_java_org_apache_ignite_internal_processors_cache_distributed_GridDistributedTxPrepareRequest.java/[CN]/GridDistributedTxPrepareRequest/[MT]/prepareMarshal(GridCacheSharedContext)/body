@@ -11,6 +11,13 @@
     for (    IgniteTxEntry e : reads)     readsBytes.add(ctx.marshaller().marshal(e));
   }
   if (grpLockKey != null && grpLockKeyBytes == null)   grpLockKeyBytes=ctx.marshaller().marshal(grpLockKey);
-  if (dhtVers != null && dhtVersBytes == null)   dhtVersBytes=ctx.marshaller().marshal(dhtVers);
+  if (dhtVers != null) {
+    for (    IgniteTxKey key : dhtVers.keySet()) {
+      GridCacheContext cctx=ctx.cacheContext(key.cacheId());
+      key.prepareMarshal(cctx);
+    }
+    dhtVerKeys=dhtVers.keySet();
+    dhtVerVals=dhtVers.values();
+  }
   if (txNodes != null)   txNodesBytes=ctx.marshaller().marshal(txNodes);
 }
