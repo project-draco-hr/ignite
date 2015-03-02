@@ -21,7 +21,7 @@ int taskNameHash=!internal && cctx.kernalContext().security().enabled() ? cctx.k
 GridContinuousHandler hnd=new CacheContinuousQueryHandler<>(cctx.name(),TOPIC_CACHE.topic(topicPrefix,cctx.localNodeId(),seq.getAndIncrement()),locLsnr,rmtFilter,internal,notifyExisting,oldValRequired,sync,ignoreExpired,taskNameHash,skipPrimaryCheck);
 UUID id=cctx.kernalContext().continuous().startRoutine(hnd,bufSize,timeInterval,autoUnsubscribe,grp.predicate()).get();
 if (notifyExisting) {
-final Iterator<Cache.Entry<K,V>> it=cctx.cache().entrySetx().iterator();
+final Iterator<GridCacheEntryEx> it=cctx.cache().allEntries().iterator();
 locLsnr.onUpdated(new Iterable<CacheEntryEvent<? extends K,? extends V>>(){
 @Override public Iterator<CacheEntryEvent<? extends K,? extends V>> iterator(){
 return new Iterator<CacheEntryEvent<? extends K,? extends V>>(){
@@ -45,8 +45,8 @@ private void advance(){
   next=null;
   while (next == null) {
     if (!it.hasNext())     break;
-    Cache.Entry<K,V> e=it.next();
-    next=new CacheContinuousQueryEvent<>(cctx.kernalContext().cache().jcache(cctx.name()),CREATED,new CacheContinuousQueryEntry<>(e.getKey(),e.getValue(),null,null,null));
+    GridCacheEntryEx e=it.next();
+    next=new CacheContinuousQueryEvent<>(cctx.kernalContext().cache().jcache(cctx.name()),cctx,new CacheContinuousQueryEntry(cctx.cacheId(),CREATED,e.key(),e.rawGet(),null));
     if (rmtFilter != null && !rmtFilter.evaluate(next))     next=null;
   }
 }
