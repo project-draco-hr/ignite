@@ -1,11 +1,10 @@
 {
-  Transaction tx=transaction();
   Long key=entry.getKey();
   Person val=entry.getValue();
-  System.out.println(">>> Store put [key=" + key + ", val="+ val+ ", xid="+ (tx == null ? null : tx.xid())+ ']');
+  System.out.println(">>> Putting [key=" + key + ", val="+ val+ ']');
   Connection conn=null;
   try {
-    conn=connection(tx);
+    conn=connection();
     int updated;
     try (PreparedStatement st=conn.prepareStatement("update PERSONS set firstName=?, lastName=? where id=?")){
       st.setString(1,val.getFirstName());
@@ -26,6 +25,6 @@
     throw new CacheLoaderException("Failed to put object [key=" + key + ", val="+ val+ ']',e);
   }
  finally {
-    end(tx,conn);
+    end(conn);
   }
 }
