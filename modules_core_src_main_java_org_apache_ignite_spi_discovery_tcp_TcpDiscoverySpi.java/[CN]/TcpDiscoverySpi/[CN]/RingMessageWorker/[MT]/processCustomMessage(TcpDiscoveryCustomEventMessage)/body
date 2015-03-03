@@ -1,10 +1,16 @@
 {
-  if (msg.creatorNodeId().equals(getLocalNodeId())) {
-    if (msg.senderNodeId() != null)     return;
-    msg.senderNodeId(getLocalNodeId());
+  if (isLocalNodeCoordinator()) {
+    if (msg.verified()) {
+      stats.onRingMessageReceived(msg);
+      addMessage(new TcpDiscoveryDiscardMessage(getLocalNodeId(),msg.id()));
+      return;
+    }
+    msg.verify(getLocalNodeId());
   }
-  DiscoverySpiListener lsnr=TcpDiscoverySpi.this.lsnr;
-  TcpDiscoverySpiState spiState=spiStateCopy();
-  if (lsnr != null && (spiState == CONNECTED || spiState == DISCONNECTING))   lsnr.onDiscovery(DiscoveryCustomEvent.EVT_DISCOVERY_CUSTOM_EVT,msg.topologyVersion(),ring.node(msg.creatorNodeId()),null,null,msg.message());
+  if (msg.verified()) {
+    DiscoverySpiListener lsnr=TcpDiscoverySpi.this.lsnr;
+    TcpDiscoverySpiState spiState=spiStateCopy();
+    if (lsnr != null && (spiState == CONNECTED || spiState == DISCONNECTING))     lsnr.onDiscovery(DiscoveryCustomEvent.EVT_DISCOVERY_CUSTOM_EVT,msg.topologyVersion(),ring.node(msg.creatorNodeId()),null,null,msg.message());
+  }
   if (ring.hasRemoteNodes())   sendMessageAcrossRing(msg);
 }
