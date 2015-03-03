@@ -3,7 +3,7 @@
   QueryRun r=new QueryRun();
   r.tbls=new ArrayList<>(qry.mapQueries().size());
   r.conn=h2.connectionForSpace(space);
-  Collection<ClusterNode> nodes=ctx.grid().cluster().forCacheNodes(space).nodes();
+  final Collection<ClusterNode> nodes=ctx.grid().cluster().forCacheNodes(space).nodes();
   for (  GridCacheSqlQuery mapQry : qry.mapQueries()) {
     GridMergeTable tbl;
     try {
@@ -23,7 +23,10 @@
     if (r.rmtErr != null)     throw new CacheException("Failed to run map query remotely.",r.rmtErr);
     GridCacheSqlQuery rdc=qry.reduceQuery();
     final ResultSet res=h2.executeSqlQueryWithTimer(space,r.conn,rdc.query(),F.asList(rdc.parameters()));
-    for (    GridMergeTable tbl : r.tbls)     dropTable(r.conn,tbl.getName());
+    for (    GridMergeTable tbl : r.tbls) {
+      if (!tbl.getScanIndex(null).fetchedAll())       ctx.io().sendUserMessage(nodes,new GridQueryCancelRequest(qryReqId),GridTopic.TOPIC_QUERY,false,0);
+      dropTable(r.conn,tbl.getName());
+    }
     return new QueryCursorImpl<>(new Iter(res));
   }
  catch (  IgniteCheckedException|InterruptedException|SQLException|RuntimeException e) {
