@@ -1,0 +1,34 @@
+{
+  CacheConfiguration[] cacheCfgs=cfg.getCacheConfiguration();
+  final boolean hasHadoop=IgniteComponentType.HADOOP.inClassPath();
+  final boolean hasAtomics=cfg.getAtomicConfiguration() != null;
+  final boolean clientDisco=cfg.getDiscoverySpi() instanceof TcpClientDiscoverySpi;
+  CacheConfiguration[] copies;
+  if (cacheCfgs != null && cacheCfgs.length > 0) {
+    if (!U.discoOrdered(cfg.getDiscoverySpi()) && !U.relaxDiscoveryOrdered())     throw new IgniteCheckedException("Discovery SPI implementation does not support node ordering and " + "cannot be used with cache (use SPI with @GridDiscoverySpiOrderSupport annotation, " + "like GridTcpDiscoverySpi)");
+    for (    CacheConfiguration ccfg : cacheCfgs) {
+      if (CU.isHadoopSystemCache(ccfg.getName()))       throw new IgniteCheckedException("Cache name cannot be \"" + CU.SYS_CACHE_HADOOP_MR + "\" because it is reserved for internal purposes.");
+      if (CU.isAtomicsCache(ccfg.getName()))       throw new IgniteCheckedException("Cache name cannot be \"" + CU.ATOMICS_CACHE_NAME + "\" because it is reserved for internal purposes.");
+      if (CU.isUtilityCache(ccfg.getName()))       throw new IgniteCheckedException("Cache name cannot start with \"" + CU.UTILITY_CACHE_NAME + "\" because this prefix is reserved for internal purposes.");
+    }
+    int addCacheCnt=1;
+    if (hasHadoop)     addCacheCnt++;
+    if (hasAtomics)     addCacheCnt++;
+    copies=new CacheConfiguration[cacheCfgs.length + addCacheCnt];
+    int cloneIdx=1;
+    if (hasHadoop)     copies[cloneIdx++]=CU.hadoopSystemCache();
+    if (hasAtomics)     copies[cloneIdx++]=atomicsSystemCache(cfg.getAtomicConfiguration(),clientDisco);
+    for (    CacheConfiguration ccfg : cacheCfgs)     copies[cloneIdx++]=new CacheConfiguration(ccfg);
+  }
+ else {
+    int cacheCnt=1;
+    if (hasHadoop)     cacheCnt++;
+    if (hasAtomics)     cacheCnt++;
+    copies=new CacheConfiguration[cacheCnt];
+    int cacheIdx=1;
+    if (hasHadoop)     copies[cacheIdx++]=CU.hadoopSystemCache();
+    if (hasAtomics)     copies[cacheIdx]=atomicsSystemCache(cfg.getAtomicConfiguration(),clientDisco);
+  }
+  copies[0]=utilitySystemCache(clientDisco);
+  cfg.setCacheConfiguration(copies);
+}

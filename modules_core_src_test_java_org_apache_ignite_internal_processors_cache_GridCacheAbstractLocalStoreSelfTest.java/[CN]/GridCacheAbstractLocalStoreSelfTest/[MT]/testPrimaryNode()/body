@@ -1,0 +1,30 @@
+{
+  Ignite ignite1=startGrid(1);
+  IgniteCache<Object,Object> cache=ignite1.jcache(null);
+  for (int i=0; i < KEYS; i++)   cache.put(i,i);
+  checkLocalStore(ignite1,LOCAL_STORE_1);
+  final AtomicInteger evtCnt=new AtomicInteger(0);
+  if (getCacheMode() != REPLICATED) {
+    ignite1.events().localListen(new IgnitePredicate<Event>(){
+      @Override public boolean apply(      Event evt){
+        evtCnt.incrementAndGet();
+        return true;
+      }
+    }
+,EventType.EVT_CACHE_PRELOAD_PART_UNLOADED);
+  }
+  final Ignite ignite2=startGrid(2);
+  if (getCacheMode() != REPLICATED) {
+    boolean wait=GridTestUtils.waitForCondition(new GridAbsPredicate(){
+      @Override public boolean apply(){
+        int parts=ignite2.affinity(null).allPartitions(ignite2.cluster().localNode()).length;
+        return evtCnt.get() >= parts;
+      }
+    }
+,5000);
+    assertTrue(wait);
+  }
+  assertEquals(Ignition.allGrids().size(),2);
+  checkLocalStore(ignite1,LOCAL_STORE_1);
+  checkLocalStore(ignite2,LOCAL_STORE_2);
+}
