@@ -5,7 +5,7 @@
     if (log.isDebugEnabled())     log.debug("Committed entries: " + entries);
     for (    IgniteTxEntry entry : entries) {
       if ((entry.op() == CREATE || entry.op() == UPDATE) && entry.key().internal()) {
-        GridCacheInternal key=(GridCacheInternal)entry.key();
+        GridCacheInternal key=entry.key().value(entry.context(),false);
         Object val0=CU.value(entry.value(),entry.context(),false);
         if (val0 instanceof GridCacheCountDownLatchValue) {
           GridCacheRemovable latch=dsMap.get(key);
@@ -24,8 +24,8 @@
           }
         }
       }
-      if (entry.op() == DELETE && entry.key() instanceof GridCacheInternal) {
-        GridCacheInternal key=(GridCacheInternal)entry.key();
+      if (entry.op() == DELETE && entry.key().internal()) {
+        GridCacheInternal key=entry.key().value(entry.context(),false);
         GridCacheRemovable obj=dsMap.remove(key);
         if (obj != null)         obj.onRemoved();
       }
