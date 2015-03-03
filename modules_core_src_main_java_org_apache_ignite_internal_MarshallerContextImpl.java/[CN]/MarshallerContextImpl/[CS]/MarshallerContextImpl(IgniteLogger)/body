@@ -1,17 +1,19 @@
 {
-  String clsName=null;
   try {
     ClassLoader ldr=getClass().getClassLoader();
     BufferedReader rdr=new BufferedReader(new InputStreamReader(ldr.getResourceAsStream(CLS_NAMES_FILE)));
+    String clsName;
     while ((clsName=rdr.readLine()) != null) {
-      Class cls=U.forName(clsName,ldr);
-      clsById.put(cls.getName().hashCode(),F.t(cls,true));
+      try {
+        Class cls=U.forName(clsName,ldr);
+        clsById.put(cls.getName().hashCode(),F.t(cls,true));
+      }
+ catch (      ClassNotFoundException|NoClassDefFoundError ignored) {
+        if (log.isDebugEnabled())         log.debug("Class defined in classnames.properties doesn't exist (ignoring): " + clsName);
+      }
     }
   }
- catch (  ClassNotFoundException ignored) {
-    if (log.isDebugEnabled())     log.debug("Class defined in classnames.properties doesn't exist (ignoring): " + clsName);
-  }
-catch (  IOException e) {
+ catch (  IOException e) {
     throw new IllegalStateException("Failed to initialize marshaller context.",e);
   }
 }
