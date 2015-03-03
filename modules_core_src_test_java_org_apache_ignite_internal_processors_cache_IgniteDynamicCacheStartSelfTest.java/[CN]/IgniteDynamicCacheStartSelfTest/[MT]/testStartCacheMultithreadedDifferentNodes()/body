@@ -1,0 +1,29 @@
+{
+  final Collection<IgniteInternalFuture<?>> futs=new ConcurrentLinkedDeque<>();
+  int threadNum=20;
+  GridTestUtils.runMultiThreaded(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      CacheConfiguration ccfg=new CacheConfiguration();
+      ccfg.setName("TestCacheName2");
+      IgniteKernal kernal=(IgniteKernal)grid(ThreadLocalRandom.current().nextInt(nodeCount()));
+      futs.add(kernal.context().cache().startCache(ccfg,F.<ClusterNode>alwaysTrue()));
+      return null;
+    }
+  }
+,threadNum,"cache-starter");
+  assertEquals(threadNum,futs.size());
+  int succeeded=0;
+  int failed=0;
+  for (  IgniteInternalFuture<?> fut : futs) {
+    try {
+      fut.get();
+      succeeded++;
+    }
+ catch (    IgniteCheckedException e) {
+      info(e.getMessage());
+      failed++;
+    }
+  }
+  assertEquals(1,succeeded);
+  assertEquals(threadNum - 1,failed);
+}
