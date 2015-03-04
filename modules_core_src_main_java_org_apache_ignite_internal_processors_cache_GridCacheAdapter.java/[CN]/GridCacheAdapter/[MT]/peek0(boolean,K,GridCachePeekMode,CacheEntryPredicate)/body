@@ -1,0 +1,37 @@
+{
+  A.notNull(key,"key");
+  if (keyCheck)   validateCacheKey(key);
+  ctx.checkSecurity(GridSecurityPermission.CACHE_READ);
+  GridCacheEntryEx e=null;
+  try {
+    KeyCacheObject cacheKey=ctx.toCacheKeyObject(key);
+    e=peekEx(cacheKey);
+    if (e != null) {
+      GridTuple<CacheObject> peek=e.peek0(failFast,mode,filter,ctx.tm().localTxx());
+      if (peek != null) {
+        CacheObject v=peek.get();
+        Object val0=CU.value(v,ctx,true);
+        if (ctx.portableEnabled())         val0=ctx.unwrapPortableIfNeeded(v,ctx.keepPortable());
+        return F.t((V)val0);
+      }
+    }
+    IgniteInternalTx tx=ctx.tm().localTx();
+    if (tx != null) {
+      GridTuple<CacheObject> peek=tx.peek(ctx,failFast,cacheKey,filter);
+      if (peek != null) {
+        CacheObject v=peek.get();
+        Object val0=v.value(ctx,true);
+        if (ctx.portableEnabled())         val0=ctx.unwrapPortableIfNeeded(v,ctx.keepPortable());
+        return F.t((V)val0);
+      }
+    }
+    return null;
+  }
+ catch (  GridCacheEntryRemovedException ignore) {
+    if (log.isDebugEnabled())     log.debug("Got removed entry during 'peek': " + e);
+    return null;
+  }
+catch (  IgniteCheckedException ex) {
+    throw new IgniteException(ex);
+  }
+}
