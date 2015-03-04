@@ -1,0 +1,34 @@
+{
+  IgniteCache<TestKey,TestValue> cache=grid(0).jcache(null);
+  Set<TestKey> keys=new LinkedHashSet<>();
+  for (int i=0; i < ITER_CNT; i++) {
+    TestKey key=new TestKey(i,i);
+    keys.add(key);
+    cache.put(key,new TestValue(i));
+  }
+  for (int i=0; i < ITER_CNT; i++) {
+    cache.invoke(new TestKey(i,i),new EntryProcessor<TestKey,TestValue,Object>(){
+      @Override public Object process(      MutableEntry<TestKey,TestValue> entry,      Object... arguments) throws EntryProcessorException {
+        entry.getKey().field(WRONG_VALUE);
+        entry.getValue().val(WRONG_VALUE);
+        return -1;
+      }
+    }
+);
+    Cache.Entry<Object,Object> e=internalCache(0).entry(new TestKey(i,i));
+    assertEquals(i,((TestKey)e.getKey()).field());
+    assertEquals(i,((TestValue)e.getValue()).val());
+  }
+  cache.invokeAll(keys,new EntryProcessor<TestKey,TestValue,Object>(){
+    @Override public Object process(    MutableEntry<TestKey,TestValue> entry,    Object... arguments) throws EntryProcessorException {
+      entry.getKey().field(WRONG_VALUE);
+      entry.getValue().val(WRONG_VALUE);
+      return -1;
+    }
+  }
+);
+  for (  Cache.Entry<Object,Object> e : internalCache(0).entrySet()) {
+    assertNotEquals(WRONG_VALUE,((TestKey)e.getKey()).field());
+    assertNotEquals(WRONG_VALUE,((TestValue)e.getValue()).val());
+  }
+}

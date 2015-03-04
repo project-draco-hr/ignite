@@ -1,14 +1,12 @@
 {
   GridCacheContext ctx=txEntry.context();
   Object keyVal=txEntry.key().value(ctx,false);
-  Object val=CU.value(cacheVal,ctx,false);
   try {
     Object res=null;
     for (    T2<EntryProcessor<Object,Object,Object>,Object[]> t : txEntry.entryProcessors()) {
-      CacheInvokeEntry<Object,Object> invokeEntry=new CacheInvokeEntry<>(txEntry.context(),keyVal,val);
+      CacheInvokeEntry<Object,Object> invokeEntry=new CacheInvokeEntry<>(txEntry.context(),txEntry.key(),cacheVal);
       EntryProcessor<Object,Object,?> entryProcessor=t.get1();
       res=entryProcessor.process(invokeEntry,t.get2());
-      val=invokeEntry.getValue();
     }
     if (res != null)     ret.addEntryProcessResult(keyVal,new CacheInvokeResult<>(res));
   }

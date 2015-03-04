@@ -1,0 +1,59 @@
+{
+  IgniteCache<TestKey,TestValue> cache=grid(0).jcache(null);
+  for (int i=0; i < ITER_CNT; i++) {
+    final TestValue val=new TestValue(i);
+    final TestKey key=new TestKey(i,i);
+    interceptor.delegate(new CacheInterceptorAdapter<TestKey,TestValue>(){
+      @Override public void onAfterPut(      Cache.Entry<TestKey,TestValue> entry){
+        assertNotSame(key,entry.getKey());
+        assertNotSame(val,entry.getValue());
+        assertSame(entry.getValue(),entry.getValue());
+        assertSame(entry.getKey(),entry.getKey());
+        entry.getKey().field(WRONG_VALUE);
+        entry.getValue().val(WRONG_VALUE);
+      }
+    }
+);
+    cache.put(key,val);
+    Cache.Entry<Object,Object> entry=internalCache(0).entrySet().iterator().next();
+    assertEquals(i,((TestKey)entry.getKey()).field());
+    assertEquals(i,((TestValue)entry.getValue()).val());
+    final TestValue newTestVal=new TestValue(-i);
+    interceptor.delegate(new CacheInterceptorAdapter<TestKey,TestValue>(){
+      @Override public TestValue onBeforePut(      Cache.Entry<TestKey,TestValue> entry,      TestValue newVal){
+        assertNotSame(key,entry.getKey());
+        assertNotSame(val,entry.getValue());
+        assertEquals(newTestVal,newVal);
+        entry.getKey().field(WRONG_VALUE);
+        entry.getValue().val(WRONG_VALUE);
+        return newVal;
+      }
+      @Override public void onAfterPut(      Cache.Entry<TestKey,TestValue> entry){
+        assertNotSame(key,entry.getKey());
+        assertNotSame(newTestVal,entry.getValue());
+        assertSame(entry.getValue(),entry.getValue());
+        assertSame(entry.getKey(),entry.getKey());
+        entry.getKey().field(WRONG_VALUE);
+        entry.getValue().val(WRONG_VALUE);
+      }
+    }
+);
+    cache.put(key,newTestVal);
+    entry=internalCache(0).entrySet().iterator().next();
+    assertEquals(i,((TestKey)entry.getKey()).field());
+    assertEquals(-i,((TestValue)entry.getValue()).val());
+    interceptor.delegate(new CacheInterceptorAdapter<TestKey,TestValue>(){
+      @Override public IgniteBiTuple onBeforeRemove(      Cache.Entry<TestKey,TestValue> entry){
+        assertNotSame(key,entry.getKey());
+        assertNotSame(newTestVal,entry.getValue());
+        return super.onBeforeRemove(entry);
+      }
+      @Override public void onAfterRemove(      Cache.Entry<TestKey,TestValue> entry){
+        assertNotSame(key,entry.getKey());
+        assertNotSame(newTestVal,entry.getValue());
+      }
+    }
+);
+    cache.remove(key);
+  }
+}
