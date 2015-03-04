@@ -8,12 +8,10 @@
   for (int i=0; i < 100; i++) {
     String key="key" + i;
     UUID primaryNodeId=grid(0).cluster().mapKeyToNode(PARTITIONED_CACHE_NAME,key).id();
-    assertEquals("Affinity mismatch for key: " + key,primaryNodeId,partitioned.affinity(key));
-    assertEquals(primaryNodeId,partitioned.affinity(key));
     partitioned.put(key,"val" + key);
     for (    Map.Entry<UUID,Ignite> entry : gridsByLocNode.entrySet()) {
       Object val=entry.getValue().jcache(PARTITIONED_CACHE_NAME).localPeek(key,CachePeekMode.ONHEAP);
-      if (primaryNodeId.equals(entry.getKey()))       assertEquals("val" + key,val);
+      if (primaryNodeId.equals(entry.getKey()) || partitioned.affinity(key).equals(entry.getKey()))       assertEquals("val" + key,val);
  else       assertNull(val);
     }
   }
