@@ -1,0 +1,9 @@
+{
+  if (stopping.compareAndSet(false,true)) {
+    if (log.isDebugEnabled())     log.debug("Stopping write-behind store for cache '" + cacheName + '\'');
+    wakeUp();
+    boolean graceful=true;
+    for (    GridWorker worker : flushThreads)     graceful&=U.join(worker,log);
+    if (!graceful)     log.warning("Shutdown was aborted");
+  }
+}

@@ -1,0 +1,18 @@
+{
+  if (!groups.isEmpty()) {
+    Element prop=addProperty(doc,parent,"groups",null);
+    Element map=addElement(doc,prop,"map");
+    for (    Map.Entry<String,Map<String,IgniteBiTuple<String,Boolean>>> group : groups.entrySet()) {
+      Element entry1=addElement(doc,map,"entry","key",group.getKey());
+      Element val1=addElement(doc,entry1,"map");
+      Map<String,IgniteBiTuple<String,Boolean>> fields=group.getValue();
+      for (      Map.Entry<String,IgniteBiTuple<String,Boolean>> field : fields.entrySet()) {
+        Element entry2=addElement(doc,val1,"entry","key",field.getKey());
+        Element val2=addBean(doc,entry2,IgniteBiTuple.class);
+        IgniteBiTuple<String,Boolean> idx=field.getValue();
+        addElement(doc,val2,"constructor-arg",null,null,"value",idx.get1());
+        addElement(doc,val2,"constructor-arg",null,null,"value",String.valueOf(idx.get2()));
+      }
+    }
+  }
+}

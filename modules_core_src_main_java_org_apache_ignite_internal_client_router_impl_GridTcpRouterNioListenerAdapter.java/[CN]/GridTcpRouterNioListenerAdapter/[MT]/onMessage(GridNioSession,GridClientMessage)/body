@@ -1,0 +1,52 @@
+{
+  if (msg instanceof GridRouterRequest) {
+    GridRouterRequest routerMsg=(GridRouterRequest)msg;
+    final UUID clientId=routerMsg.clientId();
+    final long reqId=routerMsg.requestId();
+    try {
+      client.forwardMessage(routerMsg,routerMsg.destinationId(),ses.<Byte>meta(MARSHALLER_ID.ordinal())).listenAsync(new GridClientFutureListener(){
+        @Override public void onDone(        GridClientFuture fut){
+          try {
+            GridRouterResponse res=(GridRouterResponse)fut.get();
+            res.requestId(reqId);
+            ses.send(res);
+          }
+ catch (          GridClientException e) {
+            ses.send(makeFailureResponse(e,clientId,reqId));
+          }
+        }
+      }
+);
+    }
+ catch (    GridClientException e) {
+      ses.send(makeFailureResponse(e,clientId,reqId));
+    }
+catch (    InterruptedException e) {
+      Thread.currentThread().interrupt();
+      U.warn(log,"Message forwarding was interrupted (will ignore last message): " + e.getMessage(),"Message forwarding was interrupted.");
+    }
+  }
+ else   if (msg instanceof GridClientHandshakeRequest) {
+    GridClientHandshakeRequest hs=(GridClientHandshakeRequest)msg;
+    short ver=hs.version();
+    if (!SUPP_VERS.contains(ver)) {
+      U.error(log,"Client protocol version is not supported [ses=" + ses + ", ver="+ ver+ ", supported="+ SUPP_VERS+ ']');
+      ses.close();
+    }
+ else {
+      byte marshId=hs.marshallerId();
+      GridClientMarshaller marsh=marshMap.get(marshId);
+      if (marsh == null) {
+        U.error(log,"Client marshaller ID is invalid. Note that .NET and C++ clients " + "are supported only in enterprise edition [ses=" + ses + ", marshId="+ marshId+ ']');
+        ses.close();
+      }
+ else {
+        ses.addMeta(MARSHALLER_ID.ordinal(),marshId);
+        ses.addMeta(MARSHALLER.ordinal(),marsh);
+        ses.send(GridClientHandshakeResponse.OK);
+      }
+    }
+  }
+ else   if (msg instanceof GridClientPingPacket)   ses.send(GridClientPingPacket.PING_MESSAGE);
+ else   throw new IllegalArgumentException("Unsupported input message: " + msg);
+}

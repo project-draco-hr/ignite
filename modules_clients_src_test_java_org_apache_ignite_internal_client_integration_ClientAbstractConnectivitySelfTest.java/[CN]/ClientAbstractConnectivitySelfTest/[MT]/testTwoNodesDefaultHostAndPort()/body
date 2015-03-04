@@ -1,0 +1,34 @@
+{
+  startRestNode("grid1",null,null);
+  startRestNode("grid2",null,null);
+  GridClient cli=startClient(LOOPBACK_IP,defaultRestPort());
+  List<GridClientNode> nodes=cli.compute().refreshTopology(true,false);
+  assertEquals(2,nodes.size());
+  assertTrue(F.forAll(nodes,new P1<GridClientNode>(){
+    @Override public boolean apply(    GridClientNode node){
+      return node.tcpAddresses().contains(LOOPBACK_IP);
+    }
+  }
+));
+  GridTestUtils.assertOneToOne(nodes,new P1<GridClientNode>(){
+    @Override public boolean apply(    GridClientNode node){
+      try {
+        return eqAddresses(getAllIps(),node) && Integer.valueOf(defaultRestPort()).equals(node.attribute(restPortAttributeName()));
+      }
+ catch (      Exception ignored) {
+        return false;
+      }
+    }
+  }
+,new P1<GridClientNode>(){
+    @Override public boolean apply(    GridClientNode node){
+      try {
+        return eqAddresses(getAllIps(),node) && Integer.valueOf(defaultRestPort() + 1).equals(node.attribute(restPortAttributeName()));
+      }
+ catch (      Exception ignored) {
+        return false;
+      }
+    }
+  }
+);
+}

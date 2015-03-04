@@ -1,0 +1,44 @@
+{
+  CacheConfiguration ccfg=super.cacheConfiguration(gridName);
+  ccfg.setWriteThrough(writeThrough);
+  ccfg.setCacheLoaderFactory(new Factory<CacheLoader>(){
+    @Override public CacheLoader create(){
+      return new CacheLoader<Object,Object>(){
+        @Override public Object load(        Object key) throws CacheLoaderException {
+          return storeMap.get(key);
+        }
+        @Override public Map<Object,Object> loadAll(        Iterable<?> keys) throws CacheLoaderException {
+          Map<Object,Object> loaded=new HashMap<>();
+          for (          Object key : keys) {
+            Object val=storeMap.get(key);
+            if (val != null)             loaded.put(key,val);
+          }
+          return loaded;
+        }
+      }
+;
+    }
+  }
+);
+  ccfg.setCacheWriterFactory(new Factory<CacheWriter>(){
+    @Override public CacheWriter create(){
+      return new CacheWriter<Object,Object>(){
+        @Override public void write(        Cache.Entry<?,?> e){
+          storeMap.put(e.getKey(),e.getValue());
+        }
+        @Override public void writeAll(        Collection<Cache.Entry<?,?>> entries){
+          for (          Cache.Entry<?,?> e : entries)           write(e);
+        }
+        @Override public void delete(        Object key){
+          storeMap.remove(key);
+        }
+        @Override public void deleteAll(        Collection<?> keys){
+          for (          Object key : keys)           delete(key);
+        }
+      }
+;
+    }
+  }
+);
+  return ccfg;
+}

@@ -1,0 +1,20 @@
+{
+  boolean found=false;
+  for (int i=0; i < gridCount(); i++) {
+    IgniteKernal grid=(IgniteKernal)grid(i);
+    GridCacheAdapter<Object,Object> cache=grid.context().cache().internalCache();
+    GridCacheEntryEx<Object,Object> e=cache.peekEx(key);
+    if (e == null && cache.context().isNear())     e=cache.context().near().dht().peekEx(key);
+    if (e == null) {
+      if (primaryOnly)       assertTrue("Not found " + key,!cache.affinity().isPrimary(grid.localNode(),key));
+ else       assertTrue("Not found " + key,!cache.affinity().isPrimaryOrBackup(grid.localNode(),key));
+    }
+ else {
+      found=true;
+      assertEquals("Unexpected ttl [grid=" + i + ", key="+ key+ ']',ttl,e.ttl());
+      if (ttl > 0)       assertTrue(e.expireTime() > 0);
+ else       assertEquals(0,e.expireTime());
+    }
+  }
+  assertTrue(found);
+}

@@ -1,0 +1,51 @@
+{
+  String item=getItem();
+  if (item == null || item.isEmpty())   return;
+  super.startEdit();
+  rowVal=getTableView().getSelectionModel().getSelectedItem();
+  curTxt="";
+  hardCancel=false;
+  Node g=getGraphic();
+  if (g != null) {
+    final TextField tf=(TextField)g;
+    tf.textProperty().addListener(new ChangeListener<String>(){
+      @Override public void changed(      ObservableValue<? extends String> val,      String oldVal,      String newVal){
+        curTxt=newVal;
+      }
+    }
+);
+    tf.setOnKeyPressed(new EventHandler<KeyEvent>(){
+      @Override public void handle(      KeyEvent evt){
+        if (KeyCode.ENTER == evt.getCode())         cancelEdit();
+ else         if (KeyCode.ESCAPE == evt.getCode()) {
+          hardCancel=true;
+          cancelEdit();
+        }
+      }
+    }
+);
+    tf.setOnKeyReleased(new EventHandler<KeyEvent>(){
+      @Override public void handle(      KeyEvent evt){
+      }
+    }
+);
+    tf.focusedProperty().addListener(new ChangeListener<Boolean>(){
+      @Override public void changed(      ObservableValue<? extends Boolean> val,      Boolean oldVal,      Boolean newVal){
+        Node fo=getScene().getFocusOwner();
+        if (!newVal) {
+          if (fo instanceof VirtualFlow) {
+            if (fo.getParent().getParent() != getTableView())             cancelEdit();
+          }
+ else           cancelEdit();
+        }
+      }
+    }
+);
+    Platform.runLater(new Runnable(){
+      @Override public void run(){
+        tf.requestFocus();
+      }
+    }
+);
+  }
+}

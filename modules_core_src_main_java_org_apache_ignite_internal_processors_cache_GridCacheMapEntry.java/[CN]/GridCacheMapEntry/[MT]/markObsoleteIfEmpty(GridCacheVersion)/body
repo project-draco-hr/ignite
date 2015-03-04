@@ -1,0 +1,25 @@
+{
+  boolean obsolete=false;
+  boolean deferred=false;
+  try {
+synchronized (this) {
+      if (obsoleteVersionExtras() != null)       return false;
+      if (!hasValueUnlocked() || checkExpired()) {
+        if (ver == null)         ver=nextVersion();
+        if (cctx.deferredDelete() && !isStartVersion() && !detached()&& !isInternal()) {
+          if (!deletedUnlocked()) {
+            update(null,null,0L,0L,ver);
+            deletedUnlocked(true);
+            deferred=true;
+          }
+        }
+ else         obsolete=markObsolete0(ver,true);
+      }
+    }
+  }
+  finally {
+    if (obsolete)     onMarkedObsolete();
+    if (deferred)     cctx.onDeferredDelete(this,ver);
+  }
+  return obsolete;
+}

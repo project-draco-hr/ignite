@@ -1,0 +1,28 @@
+{
+  if (ctx.isDaemon())   return;
+  busyLock.block();
+  ctx.event().removeLocalEventListener(topLsnr);
+  if (cfgQryId != null)   cache.context().continuousQueries().cancelInternalQuery(cfgQryId);
+  if (assignQryId != null)   cache.context().continuousQueries().cancelInternalQuery(assignQryId);
+  Collection<ServiceContextImpl> ctxs=new ArrayList<>();
+synchronized (locSvcs) {
+    for (    Collection<ServiceContextImpl> ctxs0 : locSvcs.values())     ctxs.addAll(ctxs0);
+  }
+  for (  ServiceContextImpl ctx : ctxs) {
+    ctx.setCancelled(true);
+    ctx.service().cancel(ctx);
+    ctx.executor().shutdownNow();
+  }
+  for (  ServiceContextImpl ctx : ctxs) {
+    try {
+      if (log.isInfoEnabled() && !ctxs.isEmpty())       log.info("Shutting down distributed service [name=" + ctx.name() + ", execId8="+ U.id8(ctx.executionId())+ ']');
+      ctx.executor().awaitTermination(Long.MAX_VALUE,TimeUnit.MILLISECONDS);
+    }
+ catch (    InterruptedException ignore) {
+      Thread.currentThread().interrupt();
+      U.error(log,"Got interrupted while waiting for service to shutdown (will continue stopping node): " + ctx.name());
+    }
+  }
+  U.shutdownNow(GridServiceProcessor.class,depExe,log);
+  if (log.isDebugEnabled())   log.debug("Stopped service processor.");
+}

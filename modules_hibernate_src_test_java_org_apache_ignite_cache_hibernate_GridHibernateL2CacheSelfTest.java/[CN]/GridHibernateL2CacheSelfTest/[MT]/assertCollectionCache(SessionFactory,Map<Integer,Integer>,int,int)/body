@@ -1,0 +1,16 @@
+{
+  sesFactory.getStatistics().clear();
+  Session ses=sesFactory.openSession();
+  try {
+    for (    Map.Entry<Integer,Integer> e : idToChildCnt.entrySet()) {
+      Entity entity=(Entity)ses.load(Entity.class,e.getKey());
+      assertEquals((int)e.getValue(),entity.getChildren().size());
+    }
+  }
+  finally {
+    ses.close();
+  }
+  SecondLevelCacheStatistics stats=sesFactory.getStatistics().getSecondLevelCacheStatistics(CHILD_COLLECTION_REGION);
+  assertEquals(expHit,stats.getHitCount());
+  assertEquals(expMiss,stats.getMissCount());
+}

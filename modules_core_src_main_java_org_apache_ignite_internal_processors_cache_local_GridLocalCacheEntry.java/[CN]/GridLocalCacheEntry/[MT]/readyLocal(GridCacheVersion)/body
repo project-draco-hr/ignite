@@ -1,0 +1,14 @@
+{
+  GridCacheMvccCandidate<K> prev=null;
+  GridCacheMvccCandidate<K> owner=null;
+synchronized (this) {
+    GridCacheMvcc<K> mvcc=mvccExtras();
+    if (mvcc != null) {
+      prev=mvcc.localOwner();
+      owner=mvcc.readyLocal(ver);
+      if (mvcc.isEmpty())       mvccExtras(null);
+    }
+  }
+  checkOwnerChanged(prev,owner);
+  return owner;
+}

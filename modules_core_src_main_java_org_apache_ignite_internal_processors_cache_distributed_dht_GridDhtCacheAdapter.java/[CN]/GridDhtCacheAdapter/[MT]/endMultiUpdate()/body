@@ -1,0 +1,14 @@
+{
+  IgniteBiTuple<IgniteUuid,GridDhtTopologyFuture> tup=multiTxHolder.get();
+  if (tup == null)   throw new IgniteCheckedException("Multi-update was not started or released twice.");
+  top.readLock();
+  try {
+    IgniteUuid lockId=tup.get1();
+    MultiUpdateFuture multiFut=multiTxFuts.remove(lockId);
+    multiTxHolder.set(null);
+    multiFut.onDone(lockId);
+  }
+  finally {
+    top.readUnlock();
+  }
+}

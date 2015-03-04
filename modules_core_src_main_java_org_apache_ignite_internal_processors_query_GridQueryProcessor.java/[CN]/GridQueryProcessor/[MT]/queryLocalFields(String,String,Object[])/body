@@ -1,0 +1,16 @@
+{
+  if (!busyLock.enterBusy())   throw new IllegalStateException("Failed to execute query (grid is stopping).");
+  try {
+    IgniteSpiCloseableIterator<List<?>> iterator=idx.queryFields(space,sql,F.asList(args),idx.backupFilter()).iterator();
+    if (ctx.event().isRecordable(EVT_CACHE_QUERY_EXECUTED)) {
+      ctx.event().record(new CacheQueryExecutedEvent<>(ctx.discovery().localNode(),"SQL query executed.",EVT_CACHE_QUERY_EXECUTED,CacheQueryType.SQL,null,null,sql,null,null,args,null,null));
+    }
+    return iterator;
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+ finally {
+    busyLock.leaveBusy();
+  }
+}

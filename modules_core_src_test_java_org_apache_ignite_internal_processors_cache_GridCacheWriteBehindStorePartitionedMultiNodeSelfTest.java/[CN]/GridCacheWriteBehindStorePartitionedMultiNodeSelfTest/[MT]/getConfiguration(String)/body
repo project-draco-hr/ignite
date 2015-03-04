@@ -1,0 +1,20 @@
+{
+  IgniteConfiguration c=super.getConfiguration(gridName);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  c.setDiscoverySpi(disco);
+  CacheConfiguration cc=defaultCacheConfiguration();
+  cc.setCacheMode(CacheMode.PARTITIONED);
+  cc.setWriteBehindEnabled(true);
+  cc.setWriteBehindFlushFrequency(WRITE_BEHIND_FLUSH_FREQ);
+  cc.setAtomicityMode(TRANSACTIONAL);
+  cc.setDistributionMode(NEAR_PARTITIONED);
+  CacheStore store=stores[idx]=new GridCacheTestStore();
+  cc.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+  cc.setReadThrough(true);
+  cc.setWriteThrough(true);
+  cc.setLoadPreviousValue(true);
+  c.setCacheConfiguration(cc);
+  idx++;
+  return c;
+}

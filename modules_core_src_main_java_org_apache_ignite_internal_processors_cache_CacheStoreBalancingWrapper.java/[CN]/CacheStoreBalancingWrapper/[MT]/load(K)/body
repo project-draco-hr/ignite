@@ -1,0 +1,21 @@
+{
+  LoadFuture fut=pendingLoads.get(key);
+  try {
+    if (fut != null)     return fut.get(key);
+    fut=new LoadFuture();
+    LoadFuture old=pendingLoads.putIfAbsent(key,fut);
+    if (old != null)     return old.get(key);
+  }
+ catch (  IgniteCheckedException e) {
+    throw new CacheLoaderException(e);
+  }
+  try {
+    V val=delegate.load(key);
+    fut.onComplete(key,val);
+    return val;
+  }
+ catch (  Throwable e) {
+    fut.onError(key,e);
+    throw e;
+  }
+}

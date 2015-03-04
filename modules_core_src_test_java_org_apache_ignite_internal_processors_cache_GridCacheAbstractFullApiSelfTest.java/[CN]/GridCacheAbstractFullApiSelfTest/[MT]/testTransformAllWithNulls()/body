@@ -1,0 +1,36 @@
+{
+  final IgniteCache<String,Integer> cache=jcache();
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      cache.invokeAll((Set<String>)null,INCR_PROCESSOR);
+      return null;
+    }
+  }
+,NullPointerException.class,null);
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      cache.invokeAll(F.asSet("key1"),null);
+      return null;
+    }
+  }
+,NullPointerException.class,null);
+{
+    final Set<String> keys=new LinkedHashSet<>(2);
+    keys.add("key1");
+    keys.add(null);
+    GridTestUtils.assertThrows(log,new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        cache.invokeAll(keys,INCR_PROCESSOR);
+        return null;
+      }
+    }
+,NullPointerException.class,null);
+    GridTestUtils.assertThrows(log,new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        cache.invokeAll(F.asSet("key1"),null);
+        return null;
+      }
+    }
+,NullPointerException.class,null);
+  }
+}

@@ -1,0 +1,32 @@
+{
+  Configuration cfg=prepareJobForCancelling();
+  GridHadoopJobId jobId=new GridHadoopJobId(UUID.randomUUID(),1);
+  final IgniteInternalFuture<?> fut=grid(0).hadoop().submit(jobId,createJobInfo(cfg));
+  if (!GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return splitsCount.get() > 0;
+    }
+  }
+,20000)) {
+    U.dumpThreads(log);
+    assertTrue(false);
+  }
+  if (!GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return executedTasks.get() == splitsCount.get();
+    }
+  }
+,20000)) {
+    U.dumpThreads(log);
+    assertTrue(false);
+  }
+  failMapperId.set(1);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      fut.get();
+      return null;
+    }
+  }
+,IgniteCheckedException.class,null);
+  assertEquals(executedTasks.get(),cancelledTasks.get() + 1);
+}

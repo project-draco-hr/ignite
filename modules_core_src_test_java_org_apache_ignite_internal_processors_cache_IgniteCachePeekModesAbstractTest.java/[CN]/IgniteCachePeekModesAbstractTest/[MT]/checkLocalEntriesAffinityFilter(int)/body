@@ -1,0 +1,41 @@
+{
+  IgniteCache<Integer,String> cache0=jcache(nodeIdx);
+  final int PUT_KEYS=10;
+  List<Integer> primaryKeys=null;
+  List<Integer> backupKeys=null;
+  List<Integer> nearKeys=null;
+  try {
+    primaryKeys=primaryKeys(cache0,PUT_KEYS,0);
+    backupKeys=backupKeys(cache0,PUT_KEYS,0);
+    for (    Integer key : primaryKeys)     cache0.put(key,String.valueOf(key));
+    for (    Integer key : backupKeys)     cache0.put(key,String.valueOf(key));
+    nearKeys=cacheMode() == PARTITIONED ? nearKeys(cache0,PUT_KEYS,0) : Collections.<Integer>emptyList();
+    for (    Integer key : nearKeys)     cache0.put(key,String.valueOf(key));
+    log.info("Keys [near=" + nearKeys + ", primary="+ primaryKeys+ ", backup="+ backupKeys+ ']');
+    boolean hasNearCache=nodeIdx == 0 && cacheMode() == PARTITIONED;
+    if (hasNearCache) {
+      checkLocalEntries(cache0.localEntries(),nearKeys,primaryKeys,backupKeys);
+      checkLocalEntries(cache0.localEntries(ALL),nearKeys,primaryKeys,backupKeys);
+      checkLocalEntries(cache0.localEntries(NEAR),nearKeys);
+      checkLocalEntries(cache0.localEntries(PRIMARY,BACKUP,NEAR),nearKeys,primaryKeys,backupKeys);
+      checkLocalEntries(cache0.localEntries(NEAR,PRIMARY),nearKeys,primaryKeys);
+      checkLocalEntries(cache0.localEntries(NEAR,BACKUP),nearKeys,backupKeys);
+    }
+ else {
+      checkLocalEntries(cache0.localEntries(),primaryKeys,backupKeys);
+      checkLocalEntries(cache0.localEntries(ALL),primaryKeys,backupKeys);
+      checkLocalEntries(cache0.localEntries(NEAR));
+      checkLocalEntries(cache0.localEntries(NEAR,PRIMARY),primaryKeys);
+      checkLocalEntries(cache0.localEntries(NEAR,BACKUP),backupKeys);
+      checkLocalEntries(cache0.localEntries(PRIMARY,BACKUP,NEAR),primaryKeys,backupKeys);
+    }
+    checkLocalEntries(cache0.localEntries(PRIMARY),primaryKeys);
+    checkLocalEntries(cache0.localEntries(BACKUP),backupKeys);
+    checkLocalEntries(cache0.localEntries(PRIMARY,BACKUP),primaryKeys,backupKeys);
+  }
+  finally {
+    if (primaryKeys != null)     cache0.removeAll(new HashSet<>(primaryKeys));
+    if (backupKeys != null)     cache0.removeAll(new HashSet<>(backupKeys));
+    if (nearKeys != null)     cache0.removeAll(new HashSet<>(nearKeys));
+  }
+}

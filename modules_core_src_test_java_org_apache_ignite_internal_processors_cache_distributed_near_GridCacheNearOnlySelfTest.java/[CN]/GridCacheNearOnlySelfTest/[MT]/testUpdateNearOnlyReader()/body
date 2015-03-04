@@ -1,0 +1,16 @@
+{
+  IgniteCache<Object,Object> dhtCache=dhtCache();
+  final int keyCnt=100;
+  for (int i=0; i < keyCnt; i++)   dhtCache.put(i,i);
+  IgniteCache<Object,Object> nearOnlyCache=nearOnlyCache();
+  for (int i=0; i < keyCnt; i++) {
+    assertNull(nearOnlyCache.localPeek(i,CachePeekMode.ONHEAP));
+    assertEquals(i,nearOnlyCache.get(i));
+    assertEquals(i,nearOnlyCache.localPeek(i,CachePeekMode.ONHEAP));
+  }
+  for (int i=0; i < keyCnt; i++)   dhtCache.put(i,i * i);
+  for (int i=0; i < keyCnt; i++) {
+    assertEquals(i * i,nearOnlyCache.localPeek(i,CachePeekMode.ONHEAP));
+    assertEquals(i * i,nearOnlyCache.get(i));
+  }
+}

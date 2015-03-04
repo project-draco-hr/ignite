@@ -1,0 +1,42 @@
+{
+  Collection<String> phases=new HashSet<>();
+  phases.add("submit");
+  phases.add("prepare");
+  phases.add("start");
+  phases.add("finish");
+  phases.add("requestId");
+  phases.add("responseId");
+  Collection<String> evtTypes=new HashSet<>();
+  evtTypes.add("JOB");
+  evtTypes.add("SETUP");
+  evtTypes.add("MAP");
+  evtTypes.add("SHUFFLE");
+  evtTypes.add("REDUCE");
+  evtTypes.add("COMBINE");
+  evtTypes.add("COMMIT");
+  long evtCnt=0;
+  String line;
+  Map<Long,String> reduceNodes=new HashMap<>();
+  while ((line=reader.readLine()) != null) {
+    String[] splitLine=line.split(":");
+    Long.parseLong(splitLine[1]);
+    String[] evt=splitLine[0].split(" ");
+    assertTrue("Unknown event '" + evt[0] + "'",evtTypes.contains(evt[0]));
+    String phase;
+    if ("JOB".equals(evt[0]))     phase=evt[1];
+ else {
+      assertEquals(4,evt.length);
+      assertTrue("The node id is not defined",!F.isEmpty(evt[3]));
+      long taskNum=Long.parseLong(evt[1]);
+      if (("REDUCE".equals(evt[0]) || "SHUFFLE".equals(evt[0]))) {
+        String nodeId=reduceNodes.get(taskNum);
+        if (nodeId == null)         reduceNodes.put(taskNum,evt[3]);
+ else         assertEquals("Different nodes for SHUFFLE and REDUCE tasks",nodeId,evt[3]);
+      }
+      phase=evt[2];
+    }
+    assertTrue("Unknown phase '" + phase + "' in "+ Arrays.toString(evt),phases.contains(phase));
+    evtCnt++;
+  }
+  return evtCnt;
+}

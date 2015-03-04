@@ -1,0 +1,33 @@
+{
+  ClusterGroup empty=ignite(0).cluster().forNodeId(UUID.randomUUID());
+  assertEquals(0,empty.nodes().size());
+  final IgniteCompute comp=ignite(0).compute(empty);
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      comp.affinityRun(null,1,new FailRunnable());
+      return null;
+    }
+  }
+,ClusterGroupEmptyException.class,null);
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      comp.apply(new FailClosure(),new Object());
+      return null;
+    }
+  }
+,ClusterGroupEmptyException.class,null);
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      comp.affinityCall(null,1,new FailCallable());
+      return null;
+    }
+  }
+,ClusterGroupEmptyException.class,null);
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      comp.broadcast(new FailCallable());
+      return null;
+    }
+  }
+,ClusterGroupEmptyException.class,null);
+}

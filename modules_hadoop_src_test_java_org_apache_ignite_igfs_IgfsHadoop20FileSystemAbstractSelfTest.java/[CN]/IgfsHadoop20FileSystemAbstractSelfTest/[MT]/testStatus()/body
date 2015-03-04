@@ -1,0 +1,16 @@
+{
+  try (FSDataOutputStream file=fs.create(new Path("/file1"),EnumSet.noneOf(CreateFlag.class),Options.CreateOpts.perms(FsPermission.getDefault()))){
+    file.write(new byte[1024 * 1024]);
+  }
+   FsStatus status=fs.getFsStatus();
+  assertEquals(4,grid(0).nodes().size());
+  long used=0, max=0;
+  for (int i=0; i < 4; i++) {
+    IgniteFs igfs=grid(i).fileSystem("igfs");
+    IgfsMetrics metrics=igfs.metrics();
+    used+=metrics.localSpaceSize();
+    max+=metrics.maxSpaceSize();
+  }
+  assertEquals(used,status.getUsed());
+  assertEquals(max,status.getCapacity());
+}

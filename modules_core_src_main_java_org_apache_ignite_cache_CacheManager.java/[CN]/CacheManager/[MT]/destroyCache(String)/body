@@ -1,0 +1,18 @@
+{
+  ensureNotClosed();
+  if (cacheName == null)   throw new NullPointerException();
+  Ignite ignite;
+synchronized (igniteMap) {
+    ignite=igniteMap.remove(cacheName);
+  }
+  if (ignite != null) {
+    try {
+      ignite.close();
+    }
+ catch (    Exception ignored) {
+    }
+    MBeanServer mBeanSrv=ignite.configuration().getMBeanServer();
+    unregisterCacheObject(mBeanSrv,cacheName,CACHE_STATISTICS);
+    unregisterCacheObject(mBeanSrv,cacheName,CACHE_CONFIGURATION);
+  }
+}

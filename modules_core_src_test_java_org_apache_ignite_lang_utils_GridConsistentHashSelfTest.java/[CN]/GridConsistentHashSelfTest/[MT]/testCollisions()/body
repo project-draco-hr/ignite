@@ -1,0 +1,25 @@
+{
+  Map<Integer,Set<UUID>> map=new HashMap<>();
+  Collection<UUID> nodes=new LinkedHashSet<>();
+  while (nodes.size() < 8) {
+    UUID uuid=UUID.randomUUID();
+    int hashCode=uuid.hashCode();
+    Set<UUID> set=map.get(hashCode);
+    if (set == null)     map.put(hashCode,set=new LinkedHashSet<>());
+    set.add(uuid);
+    if (set.size() > 1)     nodes.addAll(set);
+  }
+  map.clear();
+  GridConsistentHash<UUID> hash=new GridConsistentHash<>();
+  hash.addNodes(nodes,REPLICAS);
+  boolean fail=false;
+  for (  UUID exp : nodes) {
+    UUID act=hash.node(0,Arrays.asList(exp));
+    if (exp.equals(act))     info("Validation succeed [exp=" + exp + ", act="+ act+ ']');
+ else {
+      info("Validation failed  [exp=" + exp + ", act="+ act+ ']');
+      fail=true;
+    }
+  }
+  if (fail)   fail("Failed to resolve consistent hash node, when node's hash codes collide: " + nodes);
+}

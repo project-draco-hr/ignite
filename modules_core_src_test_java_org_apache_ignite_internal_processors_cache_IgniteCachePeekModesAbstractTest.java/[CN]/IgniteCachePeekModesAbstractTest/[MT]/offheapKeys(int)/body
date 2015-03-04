@@ -1,0 +1,19 @@
+{
+  GridCacheAdapter<Integer,String> internalCache=((IgniteKernal)ignite(nodeIdx)).context().cache().internalCache();
+  Iterator<Map.Entry<Integer,String>> offheapIt;
+  if (internalCache.context().isNear())   offheapIt=internalCache.context().near().dht().context().swap().lazyOffHeapIterator();
+ else   offheapIt=internalCache.context().swap().lazyOffHeapIterator();
+  CacheAffinity aff=ignite(nodeIdx).affinity(null);
+  ClusterNode node=ignite(nodeIdx).cluster().localNode();
+  List<Integer> primary=new ArrayList<>();
+  List<Integer> backups=new ArrayList<>();
+  while (offheapIt.hasNext()) {
+    Map.Entry<Integer,String> e=offheapIt.next();
+    if (aff.isPrimary(node,e.getKey()))     primary.add(e.getKey());
+ else {
+      assertTrue(aff.isBackup(node,e.getKey()));
+      backups.add(e.getKey());
+    }
+  }
+  return new T2<>(primary,backups);
+}

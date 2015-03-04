@@ -1,0 +1,15 @@
+{
+  if (groupLock() && cctx.kernalContext().config().isCacheSanityCheckEnabled()) {
+    int affinityPart=cacheCtx.config().getAffinity().partition(grpLockKey.key());
+    for (    K key : keys) {
+      if (partitionLock()) {
+        int part=cacheCtx.affinity().partition(key);
+        if (affinityPart != part)         throw new IgniteCheckedException("Failed to enlist key into group-lock transaction (given " + "key does not belong to locked partition) [key=" + key + ", affinityPart="+ affinityPart+ ", part="+ part+ ", groupLockKey="+ grpLockKey+ ']');
+      }
+ else {
+        IgniteTxKey affinityKey=cacheCtx.txKey((K)cacheCtx.config().getAffinityMapper().affinityKey(key));
+        if (!grpLockKey.equals(affinityKey))         throw new IgniteCheckedException("Failed to enlist key into group-lock transaction (affinity key was " + "not enlisted to transaction on start) [key=" + key + ", affinityKey="+ affinityKey+ ", groupLockKey="+ grpLockKey+ ']');
+      }
+    }
+  }
+}

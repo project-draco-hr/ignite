@@ -1,0 +1,51 @@
+{
+  int cpos=0;
+  int start=pos;
+  int avail=Math.min(end - pos,CHAR_BUF_SIZE);
+  int stop=pos + ((utfLen > avail) ? avail - 2 : (int)utfLen);
+  boolean outOfBounds=false;
+  try {
+    while (pos < stop) {
+      int b1=utfBuf[pos++] & 0xFF;
+      int b2, b3;
+switch (b1 >> 4) {
+case 0:
+case 1:
+case 2:
+case 3:
+case 4:
+case 5:
+case 6:
+case 7:
+        urfCBuf[cpos++]=(char)b1;
+      break;
+case 12:
+case 13:
+    b2=utfBuf[pos++];
+  if ((b2 & 0xC0) != 0x80)   throw new UTFDataFormatException();
+urfCBuf[cpos++]=(char)(((b1 & 0x1F) << 6) | (b2 & 0x3F));
+break;
+case 14:
+b3=utfBuf[pos + 1];
+b2=utfBuf[pos];
+pos+=2;
+if ((b2 & 0xC0) != 0x80 || (b3 & 0xC0) != 0x80) throw new UTFDataFormatException();
+urfCBuf[cpos++]=(char)(((b1 & 0x0F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F));
+break;
+default :
+throw new UTFDataFormatException();
+}
+}
+}
+ catch (ArrayIndexOutOfBoundsException ignored) {
+outOfBounds=true;
+}
+ finally {
+if (outOfBounds || (pos - start) > utfLen) {
+pos=start + (int)utfLen;
+throw new UTFDataFormatException();
+}
+}
+sbuf.append(urfCBuf,0,cpos);
+return pos - start;
+}

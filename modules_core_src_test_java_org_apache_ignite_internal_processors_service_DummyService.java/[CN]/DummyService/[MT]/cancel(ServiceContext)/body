@@ -1,0 +1,11 @@
+{
+  AtomicInteger cntr=cancelled.get(ctx.name());
+  if (cntr == null) {
+    AtomicInteger old=cancelled.putIfAbsent(ctx.name(),cntr=new AtomicInteger());
+    if (old != null)     cntr=old;
+  }
+  cntr.incrementAndGet();
+  CountDownLatch latch=cancelLatches.get(ctx.name());
+  if (latch != null)   latch.countDown();
+  System.out.println("Cancelling service: " + ctx.name());
+}

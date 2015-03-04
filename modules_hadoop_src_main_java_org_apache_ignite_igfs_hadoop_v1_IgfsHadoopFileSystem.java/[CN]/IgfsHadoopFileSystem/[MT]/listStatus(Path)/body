@@ -1,0 +1,39 @@
+{
+  A.notNull(f,"f");
+  enterBusy();
+  try {
+    IgfsPath path=convert(f);
+    IgfsMode mode=mode(path);
+    if (mode == PROXY) {
+      if (secondaryFs == null) {
+        assert mgmt;
+        return EMPTY_FILE_STATUS;
+      }
+      FileStatus[] arr=secondaryFs.listStatus(toSecondary(f));
+      if (arr == null)       throw new FileNotFoundException("File " + f + " does not exist.");
+      for (int i=0; i < arr.length; i++)       arr[i]=toPrimary(arr[i]);
+      if (clientLog.isLogEnabled()) {
+        String[] fileArr=new String[arr.length];
+        for (int i=0; i < arr.length; i++)         fileArr[i]=arr[i].getPath().toString();
+        clientLog.logListDirectory(path,PROXY,fileArr);
+      }
+      return arr;
+    }
+ else {
+      Collection<IgfsFile> list=rmtClient.listFiles(path);
+      if (list == null)       throw new FileNotFoundException("File " + f + " does not exist.");
+      List<IgfsFile> files=new ArrayList<>(list);
+      FileStatus[] arr=new FileStatus[files.size()];
+      for (int i=0; i < arr.length; i++)       arr[i]=convert(files.get(i));
+      if (clientLog.isLogEnabled()) {
+        String[] fileArr=new String[arr.length];
+        for (int i=0; i < arr.length; i++)         fileArr[i]=arr[i].getPath().toString();
+        clientLog.logListDirectory(path,mode,fileArr);
+      }
+      return arr;
+    }
+  }
+  finally {
+    leaveBusy();
+  }
+}

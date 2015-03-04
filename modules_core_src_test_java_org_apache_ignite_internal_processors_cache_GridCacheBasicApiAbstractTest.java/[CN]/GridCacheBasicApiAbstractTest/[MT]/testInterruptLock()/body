@@ -1,0 +1,27 @@
+{
+  final IgniteCache<Integer,String> cache=ignite.jcache(null);
+  final Lock lock=cache.lock(1);
+  lock.lock();
+  final AtomicBoolean isOk=new AtomicBoolean(false);
+  Thread t=new Thread(new Runnable(){
+    @Override public void run(){
+      assertFalse(cache.isLocalLocked(1,true));
+      lock.lock();
+      try {
+        assertTrue(cache.isLocalLocked(1,true));
+      }
+  finally {
+        lock.unlock();
+      }
+      assertTrue(Thread.currentThread().isInterrupted());
+      isOk.set(true);
+    }
+  }
+);
+  t.start();
+  Thread.sleep(100);
+  t.interrupt();
+  lock.unlock();
+  t.join();
+  assertTrue(isOk.get());
+}

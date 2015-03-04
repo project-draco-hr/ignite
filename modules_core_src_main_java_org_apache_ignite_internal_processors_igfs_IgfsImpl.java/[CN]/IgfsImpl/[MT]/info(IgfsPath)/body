@@ -1,0 +1,20 @@
+{
+  if (enterBusy()) {
+    try {
+      A.notNull(path,"path");
+      if (log.isDebugEnabled())       log.debug("Get file info: " + path);
+      IgfsMode mode=modeRslvr.resolveMode(path);
+      if (mode == PROXY)       throw new IgniteException("PROXY mode cannot be used in IGFS directly: " + path);
+      IgfsFileInfo info=resolveFileInfo(path,mode);
+      if (info == null)       return null;
+      return new IgfsFileImpl(path,info,data.groupBlockSize());
+    }
+ catch (    IgniteCheckedException e) {
+      throw U.convertException(e);
+    }
+ finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to get path info because grid is stopping.");
+}

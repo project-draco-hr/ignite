@@ -1,0 +1,20 @@
+{
+  return new Callable<Long>(){
+    @Override public Long call() throws Exception {
+      try (IgniteInternalTx tx=CU.txStartInternal(ctx,atomicView,PESSIMISTIC,REPEATABLE_READ)){
+        GridCacheAtomicLongValue val=atomicView.get(key);
+        if (val == null)         throw new IgniteCheckedException("Failed to find atomic long with given name: " + name);
+        long retVal=val.get() + l;
+        val.set(retVal);
+        atomicView.put(key,val);
+        tx.commit();
+        return retVal;
+      }
+ catch (      Error|Exception e) {
+        U.error(log,"Failed to add and get: " + this,e);
+        throw e;
+      }
+    }
+  }
+;
+}

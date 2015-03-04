@@ -1,0 +1,18 @@
+{
+  if (map.isEmpty() && state.compareAndSet(RENTING,EVICTED,0,0)) {
+    if (log.isDebugEnabled())     log.debug("Evicted partition: " + this);
+    clearSwap();
+    if (cctx.isDrEnabled())     cctx.dr().partitionEvicted(id);
+    cctx.dataStructures().onPartitionEvicted(id);
+    rent.onDone();
+    ((GridDhtPreloader<K,V>)cctx.preloader()).onPartitionEvicted(this,updateSeq);
+    clearDeferredDeletes();
+    return new GridFinishedFuture<>(cctx.kernalContext(),true);
+  }
+  return cctx.closures().callLocalSafe(new GPC<Boolean>(){
+    @Override public Boolean call(){
+      return tryEvict(true);
+    }
+  }
+,true);
+}

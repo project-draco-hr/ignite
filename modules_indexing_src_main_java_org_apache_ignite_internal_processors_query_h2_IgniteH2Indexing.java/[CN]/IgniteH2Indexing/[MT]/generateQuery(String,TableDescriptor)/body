@@ -1,0 +1,27 @@
+{
+  boolean needSelect=tbl != null;
+  String str=qry.trim().toUpperCase();
+  if (!str.startsWith("FROM")) {
+    if (str.startsWith("SELECT")) {
+      if (needSelect) {
+        StringTokenizer st=new StringTokenizer(str," ");
+        String errMsg="Wrong query format, query must start with 'select * from' " + "or 'from' or without such keywords.";
+        if (st.countTokens() > 3) {
+          st.nextToken();
+          String wildcard=st.nextToken();
+          String from=st.nextToken();
+          if (!"*".equals(wildcard) || !"FROM".equals(from))           throw new IgniteCheckedException(errMsg);
+          needSelect=false;
+        }
+ else         throw new IgniteCheckedException(errMsg);
+      }
+    }
+ else {
+      boolean needWhere=!str.startsWith("ORDER") && !str.startsWith("LIMIT");
+      qry=needWhere ? "FROM " + tbl.fullTableName() + " WHERE "+ qry : "FROM " + tbl.fullTableName() + ' '+ qry;
+    }
+  }
+  GridStringBuilder ptrn=new SB("SELECT {0}.").a(KEY_FIELD_NAME);
+  ptrn.a(", {0}.").a(VAL_FIELD_NAME);
+  return needSelect ? MessageFormat.format(ptrn.toString(),tbl.fullTableName()) + ' ' + qry : qry;
+}

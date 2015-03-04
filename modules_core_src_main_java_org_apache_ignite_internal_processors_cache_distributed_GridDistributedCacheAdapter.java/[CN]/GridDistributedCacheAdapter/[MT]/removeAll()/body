@@ -1,0 +1,16 @@
+{
+  try {
+    long topVer;
+    do {
+      topVer=ctx.affinity().affinityTopologyVersion();
+      Collection<ClusterNode> nodes=ctx.grid().forDataNodes(name()).nodes();
+      if (!nodes.isEmpty()) {
+        ctx.closures().callAsyncNoFailover(BROADCAST,new GlobalRemoveAllCallable<>(name(),topVer),nodes,true).get();
+      }
+    }
+ while (ctx.affinity().affinityTopologyVersion() > topVer);
+  }
+ catch (  ClusterGroupEmptyCheckedException ignore) {
+    if (log.isDebugEnabled())     log.debug("All remote nodes left while cache remove [cacheName=" + name() + "]");
+  }
+}

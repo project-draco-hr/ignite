@@ -1,0 +1,24 @@
+{
+  FutureHolder holder=lastFut.get();
+  holder.lock();
+  try {
+    IgniteInternalFuture fut=holder.future();
+    if (fut != null && !fut.isDone()) {
+      IgniteInternalFuture<IgniteInternalTx> f=new GridEmbeddedFuture<>(fut,new C2<Object,Exception,IgniteInternalFuture<IgniteInternalTx>>(){
+        @Override public IgniteInternalFuture<IgniteInternalTx> apply(        Object o,        Exception e){
+          return tx.commitAsync();
+        }
+      }
+,ctx.kernalContext());
+      saveFuture(holder,f);
+      return f;
+    }
+    IgniteInternalFuture<IgniteInternalTx> f=tx.commitAsync();
+    saveFuture(holder,f);
+    ctx.tm().txContextReset();
+    return f;
+  }
+  finally {
+    holder.unlock();
+  }
+}

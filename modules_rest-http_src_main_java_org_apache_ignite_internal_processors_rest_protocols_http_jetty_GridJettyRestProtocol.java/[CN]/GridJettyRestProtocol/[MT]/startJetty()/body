@@ -1,0 +1,28 @@
+{
+  try {
+    httpSrv.start();
+    if (httpSrv.isStarted()) {
+      for (      Connector con : httpSrv.getConnectors()) {
+        int connPort=((NetworkConnector)con).getPort();
+        if (connPort > 0)         ctx.ports().registerPort(connPort,TCP,getClass());
+      }
+      return true;
+    }
+    return false;
+  }
+ catch (  SocketException ignore) {
+    if (log.isDebugEnabled())     log.debug("Failed to bind HTTP server to configured port.");
+    stopJetty();
+    return false;
+  }
+catch (  MultiException e) {
+    if (log.isDebugEnabled())     log.debug("Caught multi exception: " + e);
+    for (    Object obj : e.getThrowables())     if (!(obj instanceof SocketException))     throw new IgniteCheckedException("Failed to start Jetty HTTP server.",e);
+    if (log.isDebugEnabled())     log.debug("Failed to bind HTTP server to configured port.");
+    stopJetty();
+    return false;
+  }
+catch (  Exception e) {
+    throw new IgniteCheckedException("Failed to start Jetty HTTP server.",e);
+  }
+}

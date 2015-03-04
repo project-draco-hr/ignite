@@ -1,0 +1,44 @@
+{
+  final long startEvtTime=arg.timeArgument() == null ? 0L : System.currentTimeMillis() - arg.timeArgument();
+  final ClusterNodeLocalMap<String,Long> nl=ignite.nodeLocalMap();
+  final Long startEvtOrder=arg.keyOrder() != null && nl.containsKey(arg.keyOrder()) ? nl.get(arg.keyOrder()) : -1L;
+  Collection<Event> evts=ignite.events().localQuery(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      return evt.localOrder() > startEvtOrder && (arg.typeArgument() == null || F.contains(arg.typeArgument(),evt.type())) && evt.timestamp() >= startEvtTime && (arg.taskName() == null || filterByTaskName(evt,arg.taskName())) && (arg.taskSessionId() == null || filterByTaskSessionId(evt,arg.taskSessionId()));
+    }
+  }
+);
+  Collection<VisorGridEvent> res=new ArrayList<>(evts.size());
+  Long maxOrder=startEvtOrder;
+  for (  Event e : evts) {
+    int tid=e.type();
+    IgniteUuid id=e.id();
+    String name=e.name();
+    UUID nid=e.node().id();
+    long t=e.timestamp();
+    String msg=e.message();
+    String shortDisplay=e.shortDisplay();
+    maxOrder=Math.max(maxOrder,e.localOrder());
+    if (e instanceof TaskEvent) {
+      TaskEvent te=(TaskEvent)e;
+      res.add(new VisorGridTaskEvent(tid,id,name,nid,t,msg,shortDisplay,te.taskName(),te.taskClassName(),te.taskSessionId(),te.internal()));
+    }
+ else     if (e instanceof JobEvent) {
+      JobEvent je=(JobEvent)e;
+      res.add(new VisorGridJobEvent(tid,id,name,nid,t,msg,shortDisplay,je.taskName(),je.taskClassName(),je.taskSessionId(),je.jobId()));
+    }
+ else     if (e instanceof DeploymentEvent) {
+      DeploymentEvent de=(DeploymentEvent)e;
+      res.add(new VisorGridDeploymentEvent(tid,id,name,nid,t,msg,shortDisplay,de.alias()));
+    }
+ else     if (e instanceof DiscoveryEvent) {
+      DiscoveryEvent de=(DiscoveryEvent)e;
+      ClusterNode node=de.eventNode();
+      String addr=F.first(node.addresses());
+      res.add(new VisorGridDiscoveryEvent(tid,id,name,nid,t,msg,shortDisplay,node.id(),addr,node.isDaemon()));
+    }
+ else     res.add(new VisorGridEvent(tid,id,name,nid,t,msg,shortDisplay));
+  }
+  if (arg.keyOrder() != null && !res.isEmpty())   nl.put(arg.keyOrder(),maxOrder);
+  return res;
+}

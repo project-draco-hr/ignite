@@ -1,0 +1,21 @@
+{
+  startRestNode("grid1",WILDCARD_IP,defaultRestPort());
+  Collection<String> addrs=new LinkedList<>();
+  addrs.add(LOOPBACK_IP);
+  Collection<String> nonLoopbackAddrs=U.allLocalIps();
+  assertNotNull(nonLoopbackAddrs);
+  addrs.addAll(F.view(nonLoopbackAddrs,new IpV4AddressPredicate()));
+  for (  String addr : addrs) {
+    log.info("Trying address: " + addr);
+    GridClient cli=startClient(addr,defaultRestPort());
+    List<GridClientNode> nodes=cli.compute().refreshTopology(true,false);
+    assertEquals(1,nodes.size());
+    GridClientNode node=F.first(nodes);
+    assertNotNull(node);
+    assertEquals(getAllIps().get1(),node.attribute(restAddressAttributeName()));
+    assertEquals(getAllIps().get2(),node.attribute(restHostNameAttributeName()));
+    List<String> nodeAddrs=node.tcpAddresses();
+    assertTrue(nodeAddrs.contains(LOOPBACK_IP));
+    assertTrue(F.containsAll(nodeAddrs,addrs));
+  }
+}

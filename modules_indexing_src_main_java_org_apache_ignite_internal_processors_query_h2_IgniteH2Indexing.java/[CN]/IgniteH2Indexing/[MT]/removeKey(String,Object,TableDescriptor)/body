@@ -1,0 +1,19 @@
+{
+  try {
+    Collection<TableDescriptor> tbls=tables(schema(spaceName));
+    if (tbls.size() > 1) {
+      boolean fixedTyping=isIndexFixedTyping(spaceName);
+      for (      TableDescriptor tbl : tbls) {
+        if (tbl != tblToUpdate && (tbl.type().keyClass().equals(key.getClass()) || !fixedTyping)) {
+          if (tbl.tbl.update(key,null,0)) {
+            if (tbl.luceneIdx != null)             tbl.luceneIdx.remove(key);
+            return;
+          }
+        }
+      }
+    }
+  }
+ catch (  Exception e) {
+    throw new IgniteCheckedException("Failed to remove key: " + key,e);
+  }
+}

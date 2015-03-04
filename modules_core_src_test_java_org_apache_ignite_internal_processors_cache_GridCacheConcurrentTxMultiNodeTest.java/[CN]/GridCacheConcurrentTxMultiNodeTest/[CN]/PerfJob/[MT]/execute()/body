@@ -1,0 +1,20 @@
+{
+  ClusterNodeLocalMap<String,T2<AtomicLong,AtomicLong>> nodeLoc=ignite.cluster().nodeLocalMap();
+  T2<AtomicLong,AtomicLong> cntrs=nodeLoc.get("cntrs");
+  if (cntrs == null) {
+    T2<AtomicLong,AtomicLong> other=nodeLoc.putIfAbsent("cntrs",cntrs=new T2<>(new AtomicLong(),new AtomicLong(System.currentTimeMillis())));
+    if (other != null)     cntrs=other;
+  }
+  long cnt=cntrs.get1().incrementAndGet();
+  doWork();
+  GridNearCacheAdapter near=(GridNearCacheAdapter)((IgniteKernal)ignite).internalCache();
+  GridDhtCacheAdapter dht=near.dht();
+  long start=cntrs.get2().get();
+  long now=System.currentTimeMillis();
+  long dur=now - start;
+  if (dur > 20000 && cntrs.get2().compareAndSet(start,System.currentTimeMillis())) {
+    cntrs.get1().set(0);
+    X.println("Stats [tx/sec=" + (cnt / (dur / 1000)) + ", nearSize="+ near.size()+ ", dhtSize="+ dht.size()+ ']');
+  }
+  return null;
+}

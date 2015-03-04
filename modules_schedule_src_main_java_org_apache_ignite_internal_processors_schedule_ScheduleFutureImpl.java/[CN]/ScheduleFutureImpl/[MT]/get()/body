@@ -1,0 +1,15 @@
+{
+  CountDownLatch latch=ensureGet();
+  if (latch != null) {
+    try {
+      latch.await();
+    }
+ catch (    InterruptedException e) {
+      Thread.currentThread().interrupt();
+      if (isCancelled())       throw new IgniteFutureCancelledException(e);
+      if (isDone())       return last();
+      throw new IgniteInterruptedException(e);
+    }
+  }
+  return last();
+}

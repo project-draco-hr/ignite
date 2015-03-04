@@ -1,0 +1,38 @@
+{
+  while (true) {
+    final long child=unsharedChild(node,dirToC,unlinked);
+    if (child == 0) {
+      if (isOutdatedOVL(node,nodeOVL)) {
+        return SpecialRetry;
+      }
+      return null;
+    }
+ else {
+      final int childCmp=k.compareTo(key(child));
+      if (childCmp == 0) {
+        return vOpt(child);
+      }
+      final long childOVL=shrinkOVL(child);
+      if (isShrinkingOrUnlinked(childOVL)) {
+        waitUntilShrinkCompleted(child,childOVL);
+        if (isOutdatedOVL(node,nodeOVL)) {
+          return SpecialRetry;
+        }
+      }
+ else       if (child != child(node,dirToC)) {
+        if (isOutdatedOVL(node,nodeOVL)) {
+          return SpecialRetry;
+        }
+      }
+ else {
+        if (isOutdatedOVL(node,nodeOVL)) {
+          return SpecialRetry;
+        }
+        GridOffHeapSmartPointer vo=attemptGet(k,child,(childCmp < 0 ? Left : Right),childOVL,unlinked);
+        if (vo != SpecialRetry) {
+          return vo;
+        }
+      }
+    }
+  }
+}

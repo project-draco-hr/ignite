@@ -1,0 +1,35 @@
+{
+  if (resp.sessionToken() != null)   sesTok=resp.sessionToken();
+  GridClientMessage src=fut.pendingMessage();
+switch (fut.retryState()) {
+case TcpClientFuture.STATE_INITIAL:
+{
+      if (resp.successStatus() == GridClientResponse.STATUS_AUTH_FAILURE) {
+        if (credentials() == null) {
+          fut.onDone(new GridClientAuthenticationException("Authentication failed on server " + "(client has no credentials) [clientId=" + clientId + ", srvAddr="+ serverAddress()+ ", errMsg="+ resp.errorMessage()+ ']'));
+          return;
+        }
+        fut.retryState(TcpClientFuture.STATE_AUTH_RETRY);
+        GridClientAuthenticationRequest req=buildAuthRequest();
+        req.requestId(resp.requestId());
+        ses.send(req);
+        return;
+      }
+      break;
+    }
+case TcpClientFuture.STATE_AUTH_RETRY:
+{
+    if (resp.successStatus() == GridClientResponse.STATUS_SUCCESS) {
+      fut.retryState(TcpClientFuture.STATE_REQUEST_RETRY);
+      src.sessionToken(sesTok);
+      ses.send(src);
+      return;
+    }
+    break;
+  }
+}
+removePending(resp.requestId());
+if (resp.successStatus() == GridClientResponse.STATUS_AUTH_FAILURE) fut.onDone(new GridClientAuthenticationException("Client authentication failed [clientId=" + clientId + ", srvAddr="+ serverAddress()+ ", errMsg="+ resp.errorMessage()+ ']'));
+ else if (resp.errorMessage() != null) fut.onDone(new GridClientException(resp.errorMessage()));
+ else fut.onDone(resp.result());
+}

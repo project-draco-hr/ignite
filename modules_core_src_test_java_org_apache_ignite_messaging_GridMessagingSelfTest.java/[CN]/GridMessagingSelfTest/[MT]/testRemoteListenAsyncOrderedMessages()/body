@@ -1,0 +1,29 @@
+{
+  List<TestMessage> msgs=Arrays.asList(new TestMessage(MSG_1),new TestMessage(MSG_2,3000),new TestMessage(MSG_3));
+  final Collection<Object> rcvMsgs=new ArrayList<>(msgs.size());
+  final AtomicBoolean error=new AtomicBoolean(false);
+  final CountDownLatch rcvLatch=new CountDownLatch(3);
+  ignite2.message().remoteListen(S_TOPIC_1,new P2<UUID,Object>(){
+    @Override public boolean apply(    UUID nodeId,    Object msg){
+      try {
+        log.info("Received new message [msg=" + msg + ", senderNodeId="+ nodeId+ ']');
+        if (!nodeId.equals(ignite1.cluster().localNode().id())) {
+          log.error("Unexpected sender node: " + nodeId);
+          error.set(true);
+          return false;
+        }
+        rcvMsgs.add(msg);
+        return true;
+      }
+  finally {
+        rcvLatch.countDown();
+      }
+    }
+  }
+);
+  ClusterGroup prj2=ignite1.cluster().forRemotes();
+  for (  TestMessage msg : msgs)   message(prj2).sendOrdered(S_TOPIC_1,msg,15000);
+  assertTrue(rcvLatch.await(6,TimeUnit.SECONDS));
+  assertFalse(error.get());
+  assertEquals(msgs,Arrays.asList(rcvMsgs.toArray()));
+}

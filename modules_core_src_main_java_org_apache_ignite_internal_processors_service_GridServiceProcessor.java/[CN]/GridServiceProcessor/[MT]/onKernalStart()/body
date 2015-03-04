@@ -1,0 +1,20 @@
+{
+  if (ctx.isDaemon())   return;
+  cache=ctx.cache().utilityCache();
+  ctx.event().addLocalEventListener(topLsnr,EVTS_DISCOVERY);
+  try {
+    if (ctx.deploy().enabled())     ctx.cache().context().deploy().ignoreOwnership(true);
+    cfgQryId=cache.context().continuousQueries().executeInternalQuery(new DeploymentListener(),null,true,true);
+    assignQryId=cache.context().continuousQueries().executeInternalQuery(new AssignmentListener(),null,true,true);
+  }
+  finally {
+    if (ctx.deploy().enabled())     ctx.cache().context().deploy().ignoreOwnership(false);
+  }
+  ServiceConfiguration[] cfgs=ctx.config().getServiceConfiguration();
+  if (cfgs != null) {
+    Collection<IgniteInternalFuture<?>> futs=new ArrayList<>();
+    for (    ServiceConfiguration c : ctx.config().getServiceConfiguration())     futs.add(deploy(c));
+    for (    IgniteInternalFuture<?> f : futs)     f.get();
+  }
+  if (log.isDebugEnabled())   log.debug("Started service processor.");
+}

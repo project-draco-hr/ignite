@@ -1,0 +1,27 @@
+{
+  final int ENTRY_CNT=100;
+  for (int i=0; i < ENTRY_CNT; i++)   assertTrue(cache.putx(i,new byte[i]));
+  try {
+    CacheQuery<Map.Entry<Integer,byte[]>> qry=cache.queries().createScanQuery(new IgniteBiPredicate<Integer,byte[]>(){
+      @Override public boolean apply(      Integer key,      byte[] val){
+        assertEquals(key,(Integer)val.length);
+        return key % 2 == 0;
+      }
+    }
+);
+    Collection<Map.Entry<Integer,byte[]>> res=qry.execute().get();
+    assertEquals(ENTRY_CNT / 2,res.size());
+    for (    Map.Entry<Integer,byte[]> e : res) {
+      Integer key=e.getKey();
+      byte[] val=e.getValue();
+      assertEquals(key,(Integer)val.length);
+      assertEquals(0,key % 2);
+    }
+    qry=cache.queries().createScanQuery(null);
+    res=qry.execute().get();
+    assertEquals(ENTRY_CNT,res.size());
+  }
+  finally {
+    for (int i=0; i < ENTRY_CNT; i++)     assertTrue(cache.removex(i));
+  }
+}

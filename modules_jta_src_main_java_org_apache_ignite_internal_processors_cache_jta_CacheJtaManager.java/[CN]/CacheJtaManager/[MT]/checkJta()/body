@@ -1,0 +1,34 @@
+{
+  if (jtaTm == null) {
+    try {
+      jtaTm=tmLookup.getTm();
+    }
+ catch (    Exception e) {
+      throw new IgniteCheckedException("Failed to get transaction manager: " + e,e);
+    }
+  }
+  if (jtaTm != null) {
+    GridCacheXAResource rsrc=xaRsrc.get();
+    if (rsrc == null || rsrc.isFinished()) {
+      try {
+        Transaction jtaTx=jtaTm.getTransaction();
+        if (jtaTx != null) {
+          IgniteInternalTx tx=cctx.tm().userTx();
+          if (tx == null) {
+            TransactionConfiguration tCfg=cctx.kernalContext().config().getTransactionConfiguration();
+            tx=cctx.tm().newTx(false,false,false,tCfg.getDefaultTxConcurrency(),tCfg.getDefaultTxIsolation(),tCfg.getDefaultTxTimeout(),false,true,0,null,false);
+          }
+          rsrc=new GridCacheXAResource((IgniteInternalTx)tx,cctx);
+          if (!jtaTx.enlistResource(rsrc))           throw new IgniteCheckedException("Failed to enlist XA resource to JTA user transaction.");
+          xaRsrc.set(rsrc);
+        }
+      }
+ catch (      SystemException e) {
+        throw new IgniteCheckedException("Failed to obtain JTA transaction.",e);
+      }
+catch (      RollbackException e) {
+        throw new IgniteCheckedException("Failed to enlist XAResource to JTA transaction.",e);
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  while (!isCancelled()) {
+    GridDiscoveryTopologySnapshot top=lastSnapshot;
+    if (log.isDebugEnabled())     log.debug("Creating time sync snapshot for topology: " + top);
+    GridClockDeltaSnapshot snapshot=new GridClockDeltaSnapshot(new GridClockDeltaVersion(verCnt++,top.topologyVersion()),ctx.localNodeId(),top,ctx.config().getClockSyncSamples());
+    pendingSnapshot=snapshot;
+    while (!snapshot.ready()) {
+      if (log.isDebugEnabled())       log.debug("Requesting time from remote nodes: " + snapshot.pendingNodeIds());
+      for (      UUID nodeId : snapshot.pendingNodeIds())       requestTime(nodeId);
+      if (log.isDebugEnabled())       log.debug("Waiting for snapshot to be ready: " + snapshot);
+      snapshot.awaitReady(1000);
+    }
+    pendingSnapshot=null;
+    if (log.isDebugEnabled())     log.debug("Collected time sync results: " + snapshot.deltas());
+    publish(snapshot,top);
+synchronized (this) {
+      if (top.topologyVersion() == lastSnapshot.topologyVersion())       wait(ctx.config().getClockSyncFrequency());
+    }
+  }
+}

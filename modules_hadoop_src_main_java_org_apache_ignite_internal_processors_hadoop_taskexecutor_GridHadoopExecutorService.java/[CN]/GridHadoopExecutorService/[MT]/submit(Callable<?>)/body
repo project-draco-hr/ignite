@@ -1,0 +1,20 @@
+{
+  while (queue.isEmpty()) {
+    int active0=active.get();
+    if (active0 == maxTasks)     break;
+    if (active.compareAndSet(active0,active0 + 1)) {
+      startThread(task);
+      return;
+    }
+  }
+  try {
+    while (!queue.offer(task,100,TimeUnit.MILLISECONDS)) {
+      if (shutdown)       return;
+    }
+  }
+ catch (  InterruptedException e) {
+    Thread.currentThread().interrupt();
+    return;
+  }
+  startFromQueue();
+}

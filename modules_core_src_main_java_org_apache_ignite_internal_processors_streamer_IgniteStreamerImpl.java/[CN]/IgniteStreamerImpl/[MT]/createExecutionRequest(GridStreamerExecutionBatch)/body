@@ -1,0 +1,11 @@
+{
+  boolean depEnabled=ctx.deploy().enabled();
+  byte[] batchBytes=ctx.config().getMarshaller().marshal(batch);
+  if (!depEnabled)   return new GridStreamerExecutionRequest(true,batchBytes,null,null,null,null,null);
+ else {
+    GridPeerDeployAware pda=new StreamerPda(batch.events());
+    GridDeployment dep=ctx.deploy().deploy(pda.deployClass(),pda.classLoader());
+    if (dep == null)     throw new IgniteCheckedException("Failed to get deployment for batch request [batch=" + batch + ", pda="+ pda+ ']');
+    return new GridStreamerExecutionRequest(false,batchBytes,dep.deployMode(),dep.sampleClassName(),dep.userVersion(),dep.participants(),dep.classLoaderId());
+  }
+}

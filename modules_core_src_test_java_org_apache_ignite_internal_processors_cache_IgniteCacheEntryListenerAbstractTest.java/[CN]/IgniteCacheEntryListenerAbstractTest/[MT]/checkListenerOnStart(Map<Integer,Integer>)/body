@@ -1,0 +1,36 @@
+{
+  lsnrCfg=new MutableCacheEntryListenerConfiguration<>(new Factory<CacheEntryListener<Integer,Integer>>(){
+    @Override public CacheEntryListener<Integer,Integer> create(){
+      return new CreateUpdateRemoveExpireListener();
+    }
+  }
+,null,true,false);
+  Ignite grid=startGrid(gridCount());
+  try {
+    awaitPartitionMapExchange();
+    IgniteCache<Integer,Integer> cache=grid.jcache(null);
+    Integer key=Integer.MAX_VALUE;
+    log.info("Check create/update/remove events for listener in configuration [key=" + key + ']');
+    checkEvents(cache,lsnrCfg,key,true,true,true,true,true);
+  }
+  finally {
+    stopGrid(gridCount());
+  }
+  lsnrCfg=new MutableCacheEntryListenerConfiguration<>(new Factory<CacheEntryListener<Integer,Integer>>(){
+    @Override public CacheEntryListener<Integer,Integer> create(){
+      return new CreateUpdateRemoveExpireListener();
+    }
+  }
+,new TestFilterFactory(),true,false);
+  grid=startGrid(gridCount());
+  try {
+    awaitPartitionMapExchange();
+    IgniteCache<Integer,Integer> cache=grid.jcache(null);
+    log.info("Check filter for listener in configuration.");
+    if (cacheMode() == LOCAL)     cache.putAll(vals);
+    checkFilter(cache,vals);
+  }
+  finally {
+    stopGrid(gridCount());
+  }
+}

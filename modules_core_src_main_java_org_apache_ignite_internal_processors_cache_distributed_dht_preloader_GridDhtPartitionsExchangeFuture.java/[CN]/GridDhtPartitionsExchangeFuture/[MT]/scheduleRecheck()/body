@@ -1,0 +1,22 @@
+{
+  if (!isDone()) {
+    GridTimeoutObject old=timeoutObj;
+    if (old != null)     cctx.kernalContext().timeout().removeTimeoutObject(old);
+    GridTimeoutObject timeoutObj=new GridTimeoutObjectAdapter(cctx.gridConfig().getNetworkTimeout() * cctx.gridConfig().getCacheConfiguration().length){
+      @Override public void onTimeout(){
+        if (isDone())         return;
+        if (!enterBusy())         return;
+        try {
+          U.warn(log,"Retrying preload partition exchange due to timeout [done=" + isDone() + ", dummy="+ dummy+ ", exchId="+ exchId+ ", rcvdIds="+ F.id8s(rcvdIds)+ ", rmtIds="+ F.id8s(rmtIds)+ ", remaining="+ F.id8s(remaining())+ ", init="+ init+ ", initFut="+ initFut.isDone()+ ", ready="+ ready+ ", replied="+ replied+ ", added="+ added+ ", oldest="+ U.id8(oldestNode.get().id())+ ", oldestOrder="+ oldestNode.get().order()+ ", evtLatch="+ evtLatch.getCount()+ ", locNodeOrder="+ cctx.localNode().order()+ ", locNodeId="+ cctx.localNode().id()+ ']',"Retrying preload partition exchange due to timeout.");
+          recheck();
+        }
+  finally {
+          leaveBusy();
+        }
+      }
+    }
+;
+    this.timeoutObj=timeoutObj;
+    cctx.kernalContext().timeout().addTimeoutObject(timeoutObj);
+  }
+}

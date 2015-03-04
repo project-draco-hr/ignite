@@ -1,0 +1,24 @@
+{
+  GridTestUtils.runMultiThreaded(new Runnable(){
+    @Override public void run(){
+      try {
+        barrier.await();
+      }
+ catch (      Exception e) {
+        fail("Failed to await other threads: " + e.getMessage());
+      }
+      for (long i=Integer.MAX_VALUE; i < ITERATION_COUNT + Integer.MAX_VALUE; i++) {
+        lock.lock(i);
+        try {
+          int holdCnt=0;
+          for (long lockNum=0; lockNum < STRIPE_COUNT; lockNum++)           if (((ReentrantLock)lock.getLock(lockNum)).isHeldByCurrentThread())           holdCnt++;
+          assertEquals(1,holdCnt);
+        }
+  finally {
+          lock.unlock(i);
+        }
+      }
+    }
+  }
+,THREAD_COUNT,"GridStripedLock-test");
+}

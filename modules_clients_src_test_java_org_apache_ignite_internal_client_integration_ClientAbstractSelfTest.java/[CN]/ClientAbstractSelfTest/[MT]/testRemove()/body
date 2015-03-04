@@ -1,0 +1,22 @@
+{
+  GridClientData dfltData=client.data();
+  assertNotNull(dfltData);
+  GridClientData namedData=client.data(CACHE_NAME);
+  assertNotNull(namedData);
+  grid().jcache(null).put("key1","val1");
+  grid().jcache(null).put("key2","val2");
+  assertTrue(dfltData.remove("key1"));
+  assertTrue(dfltData.removeAsync("key2").get());
+  assertFalse(dfltData.remove("wrongKey"));
+  assertFalse(dfltData.removeAsync("wrongKey").get());
+  assertNull(grid().jcache(null).get("key1"));
+  assertNull(grid().jcache(null).get("key2"));
+  grid().jcache(CACHE_NAME).put("key1","val1");
+  grid().jcache(CACHE_NAME).put("key2","val2");
+  assertTrue(namedData.remove("key1"));
+  assertTrue(namedData.removeAsync("key2").get());
+  assertFalse(namedData.remove("wrongKey"));
+  assertFalse(namedData.removeAsync("wrongKey").get());
+  assertNull(grid().jcache(CACHE_NAME).get("key1"));
+  assertNull(grid().jcache(CACHE_NAME).get("key2"));
+}

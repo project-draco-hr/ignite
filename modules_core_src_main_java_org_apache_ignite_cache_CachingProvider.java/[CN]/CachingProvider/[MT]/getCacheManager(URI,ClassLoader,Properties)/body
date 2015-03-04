@@ -1,0 +1,17 @@
+{
+  if (uri == null)   uri=getDefaultURI();
+  if (clsLdr == null)   clsLdr=getDefaultClassLoader();
+synchronized (cacheManagers) {
+    Map<URI,CacheManager> uriMap=cacheManagers.get(clsLdr);
+    if (uriMap == null) {
+      uriMap=new HashMap<>();
+      cacheManagers.put(clsLdr,uriMap);
+    }
+    CacheManager mgr=uriMap.get(uri);
+    if (mgr == null || mgr.isClosed()) {
+      mgr=new CacheManager(uri,this,clsLdr,props);
+      uriMap.put(uri,mgr);
+    }
+    return mgr;
+  }
+}

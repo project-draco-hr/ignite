@@ -1,0 +1,21 @@
+{
+  GridClient c=client(p,false);
+  for (int i=0; i < RECONN_CNT; i++) {
+    try {
+      c.compute().nodes();
+    }
+ catch (    GridClientDisconnectedException e) {
+      assertTrue(X.hasCause(e,GridServerUnreachableException.class,GridClientConnectionResetException.class));
+    }
+    startGrid();
+    try {
+      Thread.sleep(TOP_REFRESH_PERIOD * 2);
+      c.compute().nodes();
+      assertEquals("arg",c.compute().execute(TestTask.class.getName(),"arg"));
+    }
+  finally {
+      stopGrid();
+    }
+    Thread.sleep(TOP_REFRESH_PERIOD * 2);
+  }
+}

@@ -1,0 +1,21 @@
+{
+  cctx.gridIO().removeMessageListener(TOPIC_CACHE);
+  for (  Object ordTopic : orderedHandlers.keySet())   cctx.gridIO().removeMessageListener(ordTopic);
+  boolean interrupted=false;
+  while (true) {
+    try {
+      if (rw.tryWriteLock(200,TimeUnit.MILLISECONDS))       break;
+ else       Thread.sleep(200);
+    }
+ catch (    InterruptedException ignore) {
+      interrupted=true;
+    }
+  }
+  if (interrupted)   Thread.currentThread().interrupt();
+  try {
+    stopping=true;
+  }
+  finally {
+    rw.writeUnlock();
+  }
+}

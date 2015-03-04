@@ -1,0 +1,20 @@
+{
+  IgniteCache<Integer,String> cache=jcache(0);
+  String val=Integer.toString(key);
+  cache.put(key,val);
+  assertEquals(val,dht(0).peek(key));
+  assertEquals(val,dht(1).peek(key));
+  assertNull(near(0).peekNearOnly(key));
+  assertNull(near(1).peekNearOnly(key));
+  if (transactional()) {
+    try (Transaction tx=grid(0).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+      assertEquals(val,cache.get(key));
+      tx.commit();
+    }
+   }
+ else   assertEquals(val,cache.get(key));
+  assertEquals(val,dht(0).peek(key));
+  assertEquals(val,dht(1).peek(key));
+  assertNull(near(0).peekNearOnly(key));
+  assertNull(near(1).peekNearOnly(key));
+}

@@ -1,0 +1,16 @@
+{
+  DiscoveryData data=(DiscoveryData)obj;
+  if (!ctx.isDaemon() && data != null) {
+    for (    DiscoveryDataItem item : data.items) {
+      if (item.prjPred == null || item.prjPred.apply(ctx.discovery().localNode())) {
+        try {
+          if (ctx.config().isPeerClassLoadingEnabled())           item.hnd.p2pUnmarshal(data.nodeId,ctx);
+          if (registerHandler(data.nodeId,item.routineId,item.hnd,item.bufSize,item.interval,item.autoUnsubscribe,false))           item.hnd.onListenerRegistered(item.routineId,ctx);
+        }
+ catch (        IgniteCheckedException e) {
+          U.error(log,"Failed to register continuous handler.",e);
+        }
+      }
+    }
+  }
+}

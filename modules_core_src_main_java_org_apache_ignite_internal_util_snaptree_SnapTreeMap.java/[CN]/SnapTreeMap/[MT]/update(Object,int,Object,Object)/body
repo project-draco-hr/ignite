@@ -1,0 +1,13 @@
+{
+  final Comparable<? super K> k=comparable(key);
+  int sd=0;
+  final Epoch.Ticket ticket=holderRef.beginMutation();
+  try {
+    final Object result=updateUnderRoot(key,k,func,expected,newValue,holderRef.mutable());
+    sd=sizeDelta(func,result,newValue);
+    return result;
+  }
+  finally {
+    ticket.leave(sd);
+  }
+}

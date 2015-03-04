@@ -1,0 +1,31 @@
+{
+  boolean exists;
+  try {
+    exists=meta.exists(fileInfo.id());
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IOError(e);
+  }
+  if (!exists) {
+    onClose(true);
+    throw new IOException("File was concurrently deleted: " + path);
+  }
+  super.flush();
+  try {
+    if (remainder != null) {
+      data.storeDataBlocks(fileInfo,fileInfo.length() + space,null,0,ByteBuffer.wrap(remainder,0,remainderDataLen),true,streamRange,batch);
+      remainder=null;
+      remainderDataLen=0;
+    }
+    if (space > 0) {
+      IgfsFileInfo fileInfo0=meta.updateInfo(fileInfo.id(),new ReserveSpaceClosure(space,streamRange));
+      if (fileInfo0 == null)       throw new IOException("File was concurrently deleted: " + path);
+ else       fileInfo=fileInfo0;
+      streamRange=initialStreamRange(fileInfo);
+      space=0;
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IOException("Failed to flush data [path=" + path + ", space="+ space+ ']',e);
+  }
+}

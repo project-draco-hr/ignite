@@ -1,0 +1,60 @@
+{
+  final CacheEntryCreatedListener<Integer,Integer> lsnr=new CreateUpdateRemoveExpireListener(){
+    @Override public void onRemoved(    Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> evts){
+      super.onRemoved(evts);
+      awaitLatch();
+    }
+    @Override public void onCreated(    Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> evts){
+      super.onCreated(evts);
+      awaitLatch();
+    }
+    @Override public void onUpdated(    Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> evts){
+      super.onUpdated(evts);
+      awaitLatch();
+    }
+    private void awaitLatch(){
+      try {
+        assertTrue(syncEvtLatch.await(5000,MILLISECONDS));
+      }
+ catch (      InterruptedException e) {
+        fail("Unexpected exception: " + e);
+      }
+    }
+  }
+;
+  CacheEntryListenerConfiguration<Integer,Integer> lsnrCfg=new MutableCacheEntryListenerConfiguration<>(new Factory<CacheEntryListener<Integer,Integer>>(){
+    @Override public CacheEntryListener<Integer,Integer> create(){
+      return lsnr;
+    }
+  }
+,null,true,true);
+  IgniteCache<Integer,Integer> cache=jcache();
+  cache.registerCacheEntryListener(lsnrCfg);
+  try {
+    for (    Integer key : keys()) {
+      log.info("Check synchronous create event [key=" + key + ']');
+      syncEvent(key,1,cache,1);
+      checkEvent(evts.iterator(),key,CREATED,1,null);
+      log.info("Check synchronous update event [key=" + key + ']');
+      syncEvent(key,2,cache,1);
+      checkEvent(evts.iterator(),key,UPDATED,2,1);
+      log.info("Check synchronous remove event [key=" + key + ']');
+      syncEvent(key,null,cache,1);
+      checkEvent(evts.iterator(),key,REMOVED,null,2);
+      log.info("Check synchronous expire event [key=" + key + ']');
+      syncEvent(key,3,cache.withExpiryPolicy(new ModifiedExpiryPolicy(new Duration(MILLISECONDS,1000))),eagerTtl() ? 2 : 1);
+      checkEvent(evts.iterator(),key,CREATED,3,null);
+      if (!eagerTtl()) {
+        U.sleep(1100);
+        assertNull(primaryCache(key,cache.getName()).get(key));
+        evtsLatch.await(5000,MILLISECONDS);
+        assertEquals(1,evts.size());
+      }
+      checkEvent(evts.iterator(),key,EXPIRED,null,3);
+      assertEquals(0,evts.size());
+    }
+  }
+  finally {
+    cache.deregisterCacheEntryListener(lsnrCfg);
+  }
+}

@@ -1,0 +1,18 @@
+{
+  for (  TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+    txConcurrency=concurrency;
+    for (    TransactionIsolation isolation : TransactionIsolation.values()) {
+      txIsolation=isolation;
+      Ignite g=startGrids();
+      IgniteCache<String,String> cache=g.jcache(null);
+      try {
+        info(">>> Checking policy [txConcurrency=" + txConcurrency + ", txIsolation="+ txIsolation+ ", plc="+ plc+ ", nearPlc="+ nearPlc+ ']');
+        checkExplicitTx(g,cache);
+        checkImplicitTx(cache);
+      }
+  finally {
+        stopAllGrids();
+      }
+    }
+  }
+}

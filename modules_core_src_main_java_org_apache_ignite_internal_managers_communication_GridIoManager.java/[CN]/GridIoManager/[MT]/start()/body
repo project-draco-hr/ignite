@@ -1,0 +1,42 @@
+{
+  assertParameter(discoDelay > 0,"discoveryStartupDelay > 0");
+  startSpi();
+  pubPool=ctx.getExecutorService();
+  p2pPool=ctx.getPeerClassLoadingExecutorService();
+  sysPool=ctx.getSystemExecutorService();
+  mgmtPool=ctx.getManagementExecutorService();
+  utilityCachePool=ctx.utilityCachePool();
+  affPool=Executors.newFixedThreadPool(1);
+  getSpi().setListener(commLsnr=new CommunicationListener<Serializable>(){
+    @Override public void onMessage(    UUID nodeId,    Serializable msg,    IgniteRunnable msgC){
+      try {
+        onMessage0(nodeId,(GridIoMessage)msg,msgC);
+      }
+ catch (      ClassCastException ignored) {
+        U.error(log,"Communication manager received message of unknown type (will ignore): " + msg.getClass().getName() + ". Most likely GridCommunicationSpi is being used directly, "+ "which is illegal - make sure to send messages only via GridProjection API.");
+      }
+    }
+    @Override public void onDisconnected(    UUID nodeId){
+      for (      GridDisconnectListener lsnr : disconnectLsnrs)       lsnr.onNodeDisconnected(nodeId);
+    }
+  }
+);
+  MessageFormatter[] formatterExt=ctx.plugins().extensions(MessageFormatter.class);
+  if (formatterExt != null && formatterExt.length > 0) {
+    if (formatterExt.length > 1)     throw new IgniteCheckedException("More than one MessageFormatter extension is defined. Check your " + "plugins configuration and make sure that only one of them provides custom message format.");
+    formatter=formatterExt[0];
+  }
+ else {
+    formatter=new MessageFormatter(){
+      @Override public MessageWriter writer(){
+        return new DirectMessageWriter();
+      }
+      @Override public MessageReader reader(){
+        return new DirectMessageReader(msgFactory);
+      }
+    }
+;
+  }
+  msgFactory=new GridIoMessageFactory(formatter,ctx.plugins().extensions(MessageFactory.class));
+  if (log.isDebugEnabled())   log.debug(startInfo());
+}

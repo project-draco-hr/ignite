@@ -1,0 +1,22 @@
+{
+  Path fsHome=new Path(primaryFsUri);
+  Path srcFile=new Path(fsHome,"srcFile");
+  Path dstFile=new Path(fsHome,"dstFile");
+  FSDataOutputStream os=fs.create(srcFile,EnumSet.noneOf(CreateFlag.class),Options.CreateOpts.perms(FsPermission.getDefault()));
+  os.close();
+  os=fs.create(srcFile,EnumSet.of(CreateFlag.APPEND),Options.CreateOpts.perms(FsPermission.getDefault()));
+  fs.rename(srcFile,dstFile);
+  assertPathExists(fs,dstFile);
+  String testStr="Test";
+  try {
+    os.writeBytes(testStr);
+  }
+  finally {
+    os.close();
+  }
+  try (FSDataInputStream is=fs.open(dstFile)){
+    byte[] buf=new byte[testStr.getBytes().length];
+    is.readFully(buf);
+    assertEquals(testStr,new String(buf));
+  }
+ }

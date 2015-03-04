@@ -1,0 +1,25 @@
+{
+  int idx1=1;
+  int idx2=2;
+  GridCheckpointTestState state1=new GridCheckpointTestState(Integer.toString(idx1));
+  GridCheckpointTestState state2=new GridCheckpointTestState(Integer.toString(idx2));
+  getSpi().saveCheckpoint(KEY_PREFIX,GridTestIoUtils.serializeJdk(state1),0,true);
+  getSpi().saveCheckpoint(KEY_PREFIX,GridTestIoUtils.serializeJdk(state2),0,true);
+  assertWithRetries(new GridAbsClosureX(){
+    @Override public void applyx() throws IgniteCheckedException {
+      assertNotNull(getSpi().loadCheckpoint(KEY_PREFIX));
+    }
+  }
+);
+  byte[] serState=getSpi().loadCheckpoint(KEY_PREFIX);
+  GridCheckpointTestState state=GridTestIoUtils.deserializeJdk(serState);
+  assertNotNull(state);
+  assertEquals(state2,state);
+  getSpi().removeCheckpoint(KEY_PREFIX);
+  assertWithRetries(new GridAbsClosureX(){
+    @Override public void applyx() throws IgniteCheckedException {
+      assertNull(getSpi().loadCheckpoint(KEY_PREFIX));
+    }
+  }
+);
+}

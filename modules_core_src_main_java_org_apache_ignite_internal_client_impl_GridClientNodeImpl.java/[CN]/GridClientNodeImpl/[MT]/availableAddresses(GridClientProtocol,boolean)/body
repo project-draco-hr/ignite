@@ -1,0 +1,18 @@
+{
+  Collection<String> addrs;
+  Collection<String> hostNames;
+  AtomicReference<Collection<InetSocketAddress>> addrsCache;
+  final int port;
+  if (proto == GridClientProtocol.TCP) {
+    addrsCache=tcpSockAddrs;
+    addrs=tcpAddrs;
+    hostNames=tcpHostNames;
+    port=tcpPort;
+  }
+ else   throw new AssertionError("Unknown protocol: " + proto);
+  Collection<InetSocketAddress> addrs0=addrsCache.get();
+  if (addrs0 != null)   return filterIfNecessary(addrs0,filterResolved);
+  addrs0=U.toSocketAddresses(addrs,hostNames,port);
+  if (!addrsCache.compareAndSet(null,addrs0))   return filterIfNecessary(addrsCache.get(),filterResolved);
+  return filterIfNecessary(addrs0,filterResolved);
+}

@@ -1,0 +1,31 @@
+{
+  GridNearTxPrepareFuture<K,V> fut=(GridNearTxPrepareFuture<K,V>)prepFut.get();
+  if (fut == null) {
+    fut=new GridNearTxPrepareFuture<>(cctx,this);
+    if (!prepFut.compareAndSet(null,fut))     return prepFut.get();
+  }
+ else   return fut;
+  mapExplicitLocks();
+  if (pessimistic()) {
+    if (!state(PREPARING)) {
+      if (setRollbackOnly()) {
+        if (timedOut())         fut.onError(new IgniteTxTimeoutCheckedException("Transaction timed out and was " + "rolled back: " + this));
+ else         fut.onError(new IgniteCheckedException("Invalid transaction state for prepare [state=" + state() + ", tx="+ this+ ']'));
+      }
+ else       fut.onError(new IgniteTxRollbackCheckedException("Invalid transaction state for prepare " + "[state=" + state() + ", tx="+ this+ ']'));
+      return fut;
+    }
+    try {
+      userPrepare();
+      cctx.mvcc().addFuture(fut);
+      fut.prepare();
+    }
+ catch (    IgniteCheckedException e) {
+      fut.onError(e);
+    }
+  }
+ else {
+    fut.prepare();
+  }
+  return fut;
+}

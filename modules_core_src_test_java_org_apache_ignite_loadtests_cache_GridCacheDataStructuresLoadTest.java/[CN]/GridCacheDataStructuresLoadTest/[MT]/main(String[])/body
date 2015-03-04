@@ -1,0 +1,39 @@
+{
+  System.setProperty(IgniteSystemProperties.IGNITE_UPDATE_NOTIFIER,"false");
+  System.out.println("Starting master node [params=" + Arrays.toString(args) + ']');
+  String cfg=args.length >= 1 ? args[0] : CONFIG_FILE;
+  String log=args.length >= 2 ? args[1] : LOG_FILE;
+  final GridCacheDataStructuresLoadTest test=new GridCacheDataStructuresLoadTest();
+  try (Ignite g=Ignition.start(test.configuration(cfg,log))){
+    System.gc();
+    if (LONG) {
+      info("Testing atomic long...");
+      test.loadTestIgnite(test.longWriteClos,test.longReadClos);
+    }
+    System.gc();
+    if (REF) {
+      info("Testing atomic reference...");
+      test.loadTestIgnite(test.refWriteClos,test.refReadClos);
+    }
+    System.gc();
+    if (SEQ) {
+      info("Testing atomic sequence...");
+      test.loadTestIgnite(test.seqWriteClos,test.seqReadClos);
+    }
+    System.gc();
+    if (STAMP) {
+      info("Testing atomic stamped...");
+      test.loadTestIgnite(test.stampWriteClos,test.stampReadClos);
+    }
+    System.gc();
+    if (QUEUE) {
+      info("Testing queue...");
+      test.loadTestIgnite(test.queueWriteClos,test.queueReadClos);
+    }
+    System.gc();
+    if (LATCH) {
+      info("Testing count down latch...");
+      test.loadTestIgnite(test.latchWriteClos,test.latchReadClos);
+    }
+  }
+ }

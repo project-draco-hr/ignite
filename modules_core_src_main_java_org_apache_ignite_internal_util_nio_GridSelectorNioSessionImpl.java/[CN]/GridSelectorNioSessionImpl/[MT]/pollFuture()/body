@@ -1,0 +1,15 @@
+{
+  GridNioFuture<?> last=queue.poll();
+  if (last != null) {
+    queueSize.decrementAndGet();
+    if (sem != null && !last.messageThread())     sem.release();
+    if (recovery != null) {
+      if (!recovery.add(last)) {
+        LT.warn(log,null,"Unacknowledged messages queue size overflow, will attempt to reconnect " + "[remoteAddr=" + remoteAddress() + ", queueLimit="+ recovery.queueLimit()+ ']');
+        if (log.isDebugEnabled())         log.debug("Unacknowledged messages queue size overflow, will attempt to reconnect " + "[remoteAddr=" + remoteAddress() + ", queueSize="+ recovery.messagesFutures().size()+ ", queueLimit="+ recovery.queueLimit()+ ']');
+        close();
+      }
+    }
+  }
+  return last;
+}

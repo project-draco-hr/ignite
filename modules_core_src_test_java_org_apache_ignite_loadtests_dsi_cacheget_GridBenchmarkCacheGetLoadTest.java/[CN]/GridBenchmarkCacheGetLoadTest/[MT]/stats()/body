@@ -1,0 +1,24 @@
+{
+  t=new Thread(new Runnable(){
+    @SuppressWarnings({"InfiniteLoopStatement","BusyWait"}) @Override public void run(){
+      int interval=5;
+      while (!Thread.currentThread().isInterrupted()) {
+        long cnt0=cnt.get();
+        long lt0=latency.get();
+        try {
+          Thread.sleep(interval * 1000);
+        }
+ catch (        InterruptedException e) {
+          System.out.println("Stat thread got interrupted: " + e);
+          return;
+        }
+        long cnt1=cnt.get();
+        long lt1=latency.get();
+        System.out.println("Get/s: " + (cnt1 - cnt0) / interval);
+        System.out.println("Avg Latency: " + ((cnt1 - cnt0) > 0 ? (lt1 - lt0) / (cnt1 - cnt0) + "ms" : "invalid"));
+      }
+    }
+  }
+);
+  t.start();
+}

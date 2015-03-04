@@ -1,0 +1,12 @@
+{
+  if (!entry.context().isDht()) {
+    GridCacheMvccCandidate<K> explicitCand=entry.localOwner();
+    if (explicitCand != null) {
+      GridCacheVersion explicitVer=explicitCand.version();
+      if (!explicitVer.equals(xidVer) && explicitCand.threadId() == threadId && !explicitCand.tx()) {
+        txEntry.explicitVersion(explicitVer);
+        if (explicitVer.isLess(minVer))         minVer=explicitVer;
+      }
+    }
+  }
+}

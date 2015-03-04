@@ -1,0 +1,47 @@
+{
+switch (type) {
+case Value.BOOLEAN:
+    return ValueBoolean.get((Boolean)obj);
+case Value.BYTE:
+  return ValueByte.get((Byte)obj);
+case Value.SHORT:
+return ValueShort.get((Short)obj);
+case Value.INT:
+return ValueInt.get((Integer)obj);
+case Value.FLOAT:
+return ValueFloat.get((Float)obj);
+case Value.LONG:
+return ValueLong.get((Long)obj);
+case Value.DOUBLE:
+return ValueDouble.get((Double)obj);
+case Value.UUID:
+UUID uuid=(UUID)obj;
+return ValueUuid.get(uuid.getMostSignificantBits(),uuid.getLeastSignificantBits());
+case Value.DATE:
+return ValueDate.get((Date)obj);
+case Value.TIME:
+return ValueTime.get((Time)obj);
+case Value.TIMESTAMP:
+if (obj instanceof java.util.Date && !(obj instanceof Timestamp)) obj=new Timestamp(((java.util.Date)obj).getTime());
+return GridH2Utils.toValueTimestamp((Timestamp)obj);
+case Value.DECIMAL:
+return ValueDecimal.get((BigDecimal)obj);
+case Value.STRING:
+return ValueString.get(obj.toString());
+case Value.BYTES:
+return ValueBytes.get((byte[])obj);
+case Value.JAVA_OBJECT:
+return ValueJavaObject.getNoCopy(obj,null,null);
+case Value.ARRAY:
+Object[] arr=(Object[])obj;
+Value[] valArr=new Value[arr.length];
+for (int i=0; i < arr.length; i++) {
+Object o=arr[i];
+valArr[i]=o == null ? ValueNull.INSTANCE : wrap(o,DataType.getTypeFromClass(o.getClass()));
+}
+return ValueArray.get(valArr);
+case Value.GEOMETRY:
+return ValueGeometry.getFromGeometry(obj);
+}
+throw new IgniteSpiException("Failed to wrap value[type=" + type + ", value="+ obj+ "]");
+}

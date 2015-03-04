@@ -1,0 +1,10 @@
+{
+  if (isDone() || (err == null && !checkLocks()))   return false;
+  this.err.compareAndSet(null,err);
+  if (err == null)   tx.state(PREPARED);
+  if (super.onDone(tx,err)) {
+    cctx.mvcc().removeFuture(this);
+    return true;
+  }
+  return false;
+}

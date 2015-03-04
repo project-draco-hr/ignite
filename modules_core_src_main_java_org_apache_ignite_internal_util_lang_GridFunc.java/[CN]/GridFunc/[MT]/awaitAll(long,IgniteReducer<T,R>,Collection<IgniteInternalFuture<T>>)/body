@@ -1,0 +1,17 @@
+{
+  if (futs == null || futs.isEmpty())   return null;
+  long end=timeout == 0 ? Long.MAX_VALUE : U.currentTimeMillis() + timeout;
+  if (end < 0)   end=Long.MAX_VALUE;
+  for (  IgniteInternalFuture<T> fut : futs) {
+    T t;
+    if (timeout > 0) {
+      long left=end - U.currentTimeMillis();
+      if (left <= 0 && !fut.isDone())       throw new IgniteFutureTimeoutCheckedException("Timed out waiting for all futures: " + futs);
+      if (fut.isDone() && left < 0)       left=0;
+      t=fut.get(left);
+    }
+ else     t=fut.get();
+    if (rdc != null)     rdc.collect(t);
+  }
+  return rdc == null ? null : rdc.reduce();
+}

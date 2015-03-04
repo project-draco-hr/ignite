@@ -1,0 +1,14 @@
+{
+  COWEpoch a=_active;
+  E f=a.getFrozenValue();
+  while (f == null) {
+    a.freezeRequested=true;
+    final COWEpoch succ=a.getOrCreateSuccessor(a.mutationAllowed);
+    succ.awaitActivated();
+    if (a.value != succ.value) {
+      f=a.value;
+    }
+    a=succ;
+  }
+  return f;
+}

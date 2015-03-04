@@ -1,0 +1,49 @@
+{
+  int totalWeight=0;
+  List<WeightedNode> nodes=new ArrayList<>(top.size());
+  for (  ClusterNode node : top) {
+    Collection<GridHadoopInputSplit> split=mappers.get(node.id());
+    int weight=reducerNodeWeight(node,split != null ? split.size() : 0);
+    nodes.add(new WeightedNode(node.id(),weight,weight));
+    totalWeight+=weight;
+  }
+  int totalAdjustedWeight=0;
+  for (  WeightedNode node : nodes) {
+    node.floatWeight=((float)node.weight * reducerCnt) / totalWeight;
+    node.weight=Math.round(node.floatWeight);
+    totalAdjustedWeight+=node.weight;
+  }
+  Collections.sort(nodes);
+  if (totalAdjustedWeight > reducerCnt) {
+    ListIterator<WeightedNode> iter=nodes.listIterator(nodes.size() - 1);
+    while (totalAdjustedWeight != reducerCnt) {
+      if (!iter.hasPrevious())       iter=nodes.listIterator(nodes.size() - 1);
+      WeightedNode node=iter.previous();
+      if (node.weight > 0) {
+        node.weight-=1;
+        totalAdjustedWeight--;
+      }
+    }
+  }
+ else   if (totalAdjustedWeight < reducerCnt) {
+    ListIterator<WeightedNode> iter=nodes.listIterator(0);
+    while (totalAdjustedWeight != reducerCnt) {
+      if (!iter.hasNext())       iter=nodes.listIterator(0);
+      WeightedNode node=iter.next();
+      if (node.floatWeight > 0.0f) {
+        node.weight+=1;
+        totalAdjustedWeight++;
+      }
+    }
+  }
+  int idx=0;
+  Map<UUID,int[]> reducers=new HashMap<>(nodes.size(),1.0f);
+  for (  WeightedNode node : nodes) {
+    if (node.weight > 0) {
+      int[] arr=new int[node.weight];
+      for (int i=0; i < arr.length; i++)       arr[i]=idx++;
+      reducers.put(node.nodeId,arr);
+    }
+  }
+  return reducers;
+}

@@ -1,0 +1,21 @@
+{
+  GridCacheMvccCandidate<K> prev=null;
+  GridCacheMvccCandidate<K> owner=null;
+  V val;
+  boolean hasVal;
+synchronized (this) {
+    GridCacheMvcc<K> mvcc=mvccExtras();
+    if (mvcc != null) {
+      prev=mvcc.localOwner();
+      owner=mvcc.releaseLocal(threadId);
+      if (mvcc.isEmpty())       mvccExtras(null);
+    }
+    val=this.val;
+    hasVal=hasValueUnlocked();
+  }
+  if (prev != null && owner != prev) {
+    checkThreadChain(prev);
+    if (cctx.events().isRecordable(EVT_CACHE_OBJECT_UNLOCKED))     cctx.events().addEvent(partition(),key,prev.nodeId(),prev,EVT_CACHE_OBJECT_UNLOCKED,val,hasVal,val,hasVal,null,null,null);
+  }
+  checkOwnerChanged(prev,owner);
+}

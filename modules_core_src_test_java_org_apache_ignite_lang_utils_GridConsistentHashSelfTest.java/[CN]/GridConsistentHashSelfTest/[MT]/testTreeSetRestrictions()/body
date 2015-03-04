@@ -1,0 +1,40 @@
+{
+  GridConsistentHash<Object> hash=new GridConsistentHash<>();
+  try {
+    hash.addNode(new Object(){
+      public int hashCode(){
+        return 0;
+      }
+    }
+,1);
+    hash.addNode(new Object(){
+      public int hashCode(){
+        return 0;
+      }
+    }
+,1);
+    fail("Expects failed due to internal TreeSet requires comparator or natural ordering.");
+  }
+ catch (  ClassCastException e) {
+    info("Expected fail due to internal TreeSet requires comparator or natural ordering: " + e.getMessage());
+  }
+  hash=new GridConsistentHash<>(new Comparator<Object>(){
+    @Override public int compare(    Object o1,    Object o2){
+      return System.identityHashCode(o1) - System.identityHashCode(o2);
+    }
+  }
+,null);
+  hash.addNode(new Object(){
+    public int hashCode(){
+      return 0;
+    }
+  }
+,1);
+  hash.addNode(new Object(){
+    public int hashCode(){
+      return 0;
+    }
+  }
+,1);
+  info("Expected pass due to internal TreeSet has explicit comparator.");
+}

@@ -1,0 +1,39 @@
+{
+  execStartTs=U.currentTimeMillis();
+  Throwable err=null;
+  GridHadoopTaskState state=GridHadoopTaskState.COMPLETED;
+  GridHadoopPerformanceCounter perfCntr=null;
+  try {
+    ctx=job.getTaskContext(info);
+    perfCntr=GridHadoopPerformanceCounter.getCounter(ctx.counters(),nodeId);
+    perfCntr.onTaskSubmit(info,submitTs);
+    perfCntr.onTaskPrepare(info,execStartTs);
+    ctx.prepareTaskEnvironment();
+    runTask(perfCntr);
+    if (info.type() == MAP && job.info().hasCombiner()) {
+      ctx.taskInfo(new GridHadoopTaskInfo(COMBINE,info.jobId(),info.taskNumber(),info.attempt(),null));
+      try {
+        runTask(perfCntr);
+      }
+  finally {
+        ctx.taskInfo(info);
+      }
+    }
+  }
+ catch (  GridHadoopTaskCancelledException ignored) {
+    state=GridHadoopTaskState.CANCELED;
+  }
+catch (  Throwable e) {
+    state=GridHadoopTaskState.FAILED;
+    err=e;
+    U.error(log,"Task execution failed.",e);
+  }
+ finally {
+    execEndTs=U.currentTimeMillis();
+    if (perfCntr != null)     perfCntr.onTaskFinish(info,execEndTs);
+    onTaskFinished(new GridHadoopTaskStatus(state,err,ctx == null ? null : ctx.counters()));
+    if (combinerInput != null)     combinerInput.close();
+    if (ctx != null)     ctx.cleanupTaskEnvironment();
+  }
+  return null;
+}

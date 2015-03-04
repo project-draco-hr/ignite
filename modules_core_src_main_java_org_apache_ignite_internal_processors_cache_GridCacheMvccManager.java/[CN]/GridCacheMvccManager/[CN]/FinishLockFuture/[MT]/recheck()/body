@@ -1,0 +1,14 @@
+{
+  for (Iterator<IgniteTxKey<K>> it=pendingLocks.keySet().iterator(); it.hasNext(); ) {
+    IgniteTxKey<K> key=it.next();
+    GridCacheContext<K,V> cacheCtx=cctx.cacheContext(key.cacheId());
+    GridCacheEntryEx<K,V> entry=cacheCtx.cache().peekEx(key.key());
+    if (entry == null)     it.remove();
+ else     recheck(entry);
+  }
+  if (log.isDebugEnabled())   log.debug("After rechecking finished future: " + this);
+  if (pendingLocks.isEmpty()) {
+    if (exchLog.isDebugEnabled())     exchLog.debug("Finish lock future is done: " + this);
+    onDone();
+  }
+}

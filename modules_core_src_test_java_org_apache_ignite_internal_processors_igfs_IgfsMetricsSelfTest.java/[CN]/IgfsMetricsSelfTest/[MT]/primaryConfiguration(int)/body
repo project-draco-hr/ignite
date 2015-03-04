@@ -1,0 +1,37 @@
+{
+  IgfsConfiguration igfsCfg=new IgfsConfiguration();
+  igfsCfg.setDataCacheName("dataCache");
+  igfsCfg.setMetaCacheName("metaCache");
+  igfsCfg.setName(IGFS_PRIMARY);
+  igfsCfg.setBlockSize(PRIMARY_BLOCK_SIZE);
+  igfsCfg.setDefaultMode(PRIMARY);
+  igfsCfg.setSecondaryFileSystem(igfsSecondary);
+  Map<String,IgfsMode> pathModes=new HashMap<>();
+  pathModes.put("/fileRemote",DUAL_SYNC);
+  igfsCfg.setPathModes(pathModes);
+  CacheConfiguration dataCacheCfg=defaultCacheConfiguration();
+  dataCacheCfg.setName("dataCache");
+  dataCacheCfg.setCacheMode(PARTITIONED);
+  dataCacheCfg.setDistributionMode(CacheDistributionMode.PARTITIONED_ONLY);
+  dataCacheCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  dataCacheCfg.setAffinityMapper(new IgfsGroupDataBlocksKeyMapper(128));
+  dataCacheCfg.setBackups(0);
+  dataCacheCfg.setQueryIndexEnabled(false);
+  dataCacheCfg.setAtomicityMode(TRANSACTIONAL);
+  CacheConfiguration metaCacheCfg=defaultCacheConfiguration();
+  metaCacheCfg.setName("metaCache");
+  metaCacheCfg.setCacheMode(REPLICATED);
+  metaCacheCfg.setDistributionMode(CacheDistributionMode.PARTITIONED_ONLY);
+  metaCacheCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  metaCacheCfg.setQueryIndexEnabled(false);
+  metaCacheCfg.setAtomicityMode(TRANSACTIONAL);
+  IgniteConfiguration cfg=new IgniteConfiguration();
+  cfg.setGridName("grid-" + idx);
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setIpFinder(IP_FINDER);
+  cfg.setDiscoverySpi(discoSpi);
+  cfg.setCacheConfiguration(dataCacheCfg,metaCacheCfg);
+  cfg.setIgfsConfiguration(igfsCfg);
+  cfg.setLocalHost("127.0.0.1");
+  return cfg;
+}

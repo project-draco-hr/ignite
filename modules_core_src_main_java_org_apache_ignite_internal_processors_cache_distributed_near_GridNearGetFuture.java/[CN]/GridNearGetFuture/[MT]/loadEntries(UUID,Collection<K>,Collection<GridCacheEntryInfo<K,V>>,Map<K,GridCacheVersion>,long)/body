@@ -1,0 +1,30 @@
+{
+  boolean empty=F.isEmpty(keys);
+  Map<K,V> map=empty ? Collections.<K,V>emptyMap() : new GridLeanMap<K,V>(keys.size());
+  if (!empty) {
+    boolean atomic=cctx.atomic();
+    GridCacheVersion ver=atomic ? null : F.isEmpty(infos) ? null : cctx.versions().next();
+    for (    GridCacheEntryInfo<K,V> info : infos) {
+      try {
+        info.unmarshalValue(cctx,cctx.deploy().globalLoader());
+        if (!cctx.cache().affinity().isPrimaryOrBackup(cctx.localNode(),info.key())) {
+          GridNearCacheEntry<K,V> entry=cache().entryExx(info.key(),topVer);
+          GridCacheVersion saved=savedVers.get(info.key());
+          entry.loadedValue(tx,nodeId,info.value(),info.valueBytes(),atomic ? info.version() : ver,info.version(),saved,info.ttl(),info.expireTime(),true,topVer,subjId);
+          cctx.evicts().touch(entry,topVer);
+        }
+        V val=info.value();
+        if (cctx.portableEnabled())         val=(V)cctx.unwrapPortableIfNeeded(val,!deserializePortable);
+        map.put(info.key(),val);
+      }
+ catch (      GridCacheEntryRemovedException ignore) {
+        if (log.isDebugEnabled())         log.debug("Got removed entry while processing get response (will not retry).");
+      }
+catch (      IgniteCheckedException e) {
+        onDone(e);
+        return Collections.emptyMap();
+      }
+    }
+  }
+  return map;
+}

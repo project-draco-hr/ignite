@@ -1,0 +1,27 @@
+{
+  if (!(U.isLinux() || U.isMacOs() || U.isWindows()))   throw new Exception("Your OS is not supported.");
+  GridJavaProcess gjProc=new GridJavaProcess();
+  gjProc.log=log;
+  gjProc.procKilledC=procKilledC;
+  String javaBin=System.getProperty("java.home") + File.separator + "bin"+ File.separator+ "java";
+  String classpath=System.getProperty("java.class.path");
+  String clsName=cls.getCanonicalName();
+  if (cp != null)   classpath+=System.getProperty("path.separator") + cp;
+  List<String> procParams=params == null || params.isEmpty() ? Collections.<String>emptyList() : Arrays.asList(params.split(" "));
+  List<String> procCommands=new ArrayList<>();
+  procCommands.add(javaBin);
+  procCommands.addAll(jvmArgs == null ? U.jvmArgs() : jvmArgs);
+  procCommands.add("-cp");
+  procCommands.add(classpath);
+  procCommands.add(clsName);
+  procCommands.addAll(procParams);
+  ProcessBuilder builder=new ProcessBuilder(procCommands);
+  builder.redirectErrorStream(true);
+  Process proc=builder.start();
+  gjProc.osGrabber=gjProc.new ProcessStreamGrabber(proc.getInputStream(),printC);
+  gjProc.esGrabber=gjProc.new ProcessStreamGrabber(proc.getErrorStream(),printC);
+  gjProc.osGrabber.start();
+  gjProc.esGrabber.start();
+  gjProc.proc=proc;
+  return gjProc;
+}

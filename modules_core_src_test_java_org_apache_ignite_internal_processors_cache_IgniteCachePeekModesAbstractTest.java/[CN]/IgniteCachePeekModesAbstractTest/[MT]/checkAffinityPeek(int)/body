@@ -1,0 +1,57 @@
+{
+  IgniteCache<Integer,String> cache0=jcache(nodeIdx);
+  final String val="1";
+  Integer key=null;
+  try {
+    if (cacheMode() == REPLICATED) {
+      key=backupKey(cache0);
+      cache0.put(key,val);
+      assertEquals(val,cache0.localPeek(key,ALL));
+      assertEquals(val,cache0.localPeek(key,BACKUP));
+      assertNull(cache0.localPeek(key,NEAR));
+      assertNull(cache0.localPeek(key,PRIMARY));
+    }
+ else {
+      key=nearKey(cache0);
+      cache0.put(key,val);
+      boolean hasNearCache=nodeIdx == 0;
+      if (hasNearCache) {
+        assertEquals(val,cache0.localPeek(key,NEAR));
+        assertEquals(val,cache0.localPeek(key,ALL));
+      }
+ else {
+        assertNull(cache0.localPeek(key,NEAR));
+        assertNull(cache0.localPeek(key,ALL));
+      }
+      assertNull(cache0.localPeek(key,PRIMARY));
+      assertNull(cache0.localPeek(key,BACKUP));
+    }
+    CacheAffinity<Integer> aff=ignite(0).affinity(null);
+    for (int i=0; i < gridCount(); i++) {
+      if (i == nodeIdx)       continue;
+      IgniteCache<Integer,String> cache=jcache(i);
+      assertNull(cache.localPeek(key,NEAR));
+      if (aff.isPrimary(ignite(i).cluster().localNode(),key)) {
+        assertEquals(val,cache.localPeek(key,PRIMARY));
+        assertEquals(val,cache.localPeek(key,ALL));
+        assertNull(cache.localPeek(key,BACKUP));
+        assertNull(cache.localPeek(key,NEAR));
+      }
+ else       if (aff.isBackup(ignite(i).cluster().localNode(),key)) {
+        assertEquals(val,cache.localPeek(key,BACKUP));
+        assertEquals(val,cache.localPeek(key,ALL));
+        assertNull(cache.localPeek(key,PRIMARY));
+        assertNull(cache.localPeek(key,NEAR));
+      }
+ else {
+        assertNull(cache.localPeek(key,ALL));
+        assertNull(cache.localPeek(key,PRIMARY));
+        assertNull(cache.localPeek(key,BACKUP));
+        assertNull(cache.localPeek(key,NEAR));
+      }
+    }
+  }
+  finally {
+    if (key != null)     cache0.remove(key);
+  }
+}

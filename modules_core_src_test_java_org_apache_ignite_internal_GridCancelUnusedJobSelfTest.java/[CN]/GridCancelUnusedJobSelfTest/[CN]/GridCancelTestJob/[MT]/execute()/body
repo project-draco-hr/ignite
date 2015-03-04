@@ -1,0 +1,24 @@
+{
+  int arg=this.<Integer>argument(0);
+  try {
+    if (log.isInfoEnabled())     log.info("Executing job [job=" + this + ", arg="+ arg+ ']');
+    startSignal.countDown();
+    try {
+      if (!startSignal.await(WAIT_TIME,TimeUnit.MILLISECONDS))       fail();
+      if (arg == 1) {
+        if (log.isInfoEnabled())         log.info("Job one is proceeding.");
+      }
+ else       Thread.sleep(WAIT_TIME);
+    }
+ catch (    InterruptedException e) {
+      if (log.isInfoEnabled())       log.info("Job got cancelled [arg=" + arg + ", ses="+ ses+ ", e="+ e+ ']');
+      return 0;
+    }
+    if (log.isInfoEnabled())     log.info("Completing job: " + ses);
+    return argument(0);
+  }
+  finally {
+    stopSignal.countDown();
+    processedCnt++;
+  }
+}

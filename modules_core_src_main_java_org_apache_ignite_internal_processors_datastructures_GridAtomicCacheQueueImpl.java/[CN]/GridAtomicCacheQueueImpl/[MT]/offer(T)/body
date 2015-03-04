@@ -1,0 +1,26 @@
+{
+  try {
+    Long idx=transformHeader(new AddProcessor(id,1));
+    if (idx == null)     return false;
+    checkRemoved(idx);
+    int cnt=0;
+    GridCacheQueueItemKey key=itemKey(idx);
+    while (true) {
+      try {
+        cache.put(key,item);
+        break;
+      }
+ catch (      CachePartialUpdateCheckedException e) {
+        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
+ else {
+          U.warn(log,"Failed to put queue item, will retry [err=" + e + ", idx="+ idx+ ']');
+          U.sleep(RETRY_DELAY);
+        }
+      }
+    }
+    return true;
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+}

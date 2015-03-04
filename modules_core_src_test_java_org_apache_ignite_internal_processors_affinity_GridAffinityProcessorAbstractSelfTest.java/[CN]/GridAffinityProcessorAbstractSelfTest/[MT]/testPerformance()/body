@@ -1,0 +1,13 @@
+{
+  IgniteKernal grid=(IgniteKernal)grid(0);
+  GridAffinityProcessor aff=grid.context().affinity();
+  int keysSize=1000000;
+  Collection<Integer> keys=new ArrayList<>(keysSize);
+  for (int i=0; i < keysSize; i++)   keys.add(i);
+  long start=System.currentTimeMillis();
+  int iterations=10000000;
+  for (int i=0; i < iterations; i++)   aff.mapKeyToNode(keys);
+  long diff=System.currentTimeMillis() - start;
+  info(">>> Map " + keysSize + " keys to "+ grid.nodes().size()+ " nodes "+ iterations+ " times in "+ diff+ "ms.");
+  assertTrue(diff < 25000);
+}

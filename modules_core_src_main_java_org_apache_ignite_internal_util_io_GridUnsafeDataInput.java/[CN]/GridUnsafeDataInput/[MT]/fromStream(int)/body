@@ -1,0 +1,23 @@
+{
+  if (in == null)   return;
+  maxOff=Math.max(maxOff,size);
+  long now=U.currentTimeMillis();
+  if (size > inBuf.length)   buf=inBuf=new byte[Math.max(inBuf.length << 1,size)];
+ else   if (now - lastCheck > CHECK_FREQ) {
+    int halfSize=inBuf.length >> 1;
+    if (maxOff < halfSize) {
+      byte[] newInBuf=new byte[halfSize];
+      UNSAFE.copyMemory(inBuf,byteArrOff,newInBuf,byteArrOff,off);
+      buf=inBuf=newInBuf;
+    }
+    maxOff=0;
+    lastCheck=now;
+  }
+  off=0;
+  max=0;
+  while (max != size) {
+    int read=in.read(inBuf,max,size - max);
+    if (read == -1)     throw new EOFException("End of stream reached: " + in);
+    max+=read;
+  }
+}

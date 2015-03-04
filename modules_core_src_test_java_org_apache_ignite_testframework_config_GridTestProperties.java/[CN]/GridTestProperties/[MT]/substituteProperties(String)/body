@@ -1,0 +1,20 @@
+{
+  str=str.trim();
+  Matcher matcher=PROP_REGEX.matcher(str);
+  StringBuffer buf=new StringBuffer();
+  while (matcher.find()) {
+    String match=matcher.group();
+    if (match.length() >= 4) {
+      String key=match.substring(2,match.length() - 1);
+      String val=System.getenv(key);
+      if (val == null)       val=System.getProperty(key);
+      if (val != null) {
+        match=val.replaceAll("\\\\","\\\\\\\\");
+      }
+ else       if (match.startsWith("$"))       match=match.replace("$","\\$");
+    }
+    matcher.appendReplacement(buf,match);
+  }
+  matcher.appendTail(buf);
+  return buf.toString();
+}

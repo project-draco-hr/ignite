@@ -1,0 +1,25 @@
+{
+  if (obj == null)   return null;
+  if (honorCloneable && obj instanceof Cloneable)   return shallowClone(obj);
+  Integer idx=identityIdxs.get(System.identityHashCode(obj));
+  Object clone=null;
+  if (idx != null)   clone=clones.get(idx);
+  if (clone != null)   return clone;
+  if (obj instanceof Class)   return obj;
+  Class cls=obj.getClass();
+  if (cls.isArray()) {
+    Class<?> arrType=cls.getComponentType();
+    int len=Array.getLength(obj);
+    clone=Array.newInstance(arrType,len);
+    for (int i=0; i < len; i++)     Array.set(clone,i,deepClone(identityIdxs,clones,Array.get(obj,i),honorCloneable));
+    clones.add(clone);
+    identityIdxs.put(System.identityHashCode(obj),clones.size() - 1);
+    return clone;
+  }
+  clone=U.forceNewInstance(cls);
+  if (clone == null)   throw new IgniteException("Failed to clone object (empty constructor could not be assigned): " + obj);
+  clones.add(clone);
+  identityIdxs.put(System.identityHashCode(obj),clones.size() - 1);
+  for (Class<?> c=cls; c != Object.class; c=c.getSuperclass())   for (  Field f : c.getDeclaredFields())   cloneField(identityIdxs,clones,obj,clone,f,honorCloneable);
+  return clone;
+}

@@ -1,0 +1,45 @@
+{
+  IgniteCache<Integer,Integer> c=grid(0).jcache(null);
+  c.invoke(key,new EntryProcessor<Integer,Integer,Void>(){
+    @Override public Void process(    MutableEntry<Integer,Integer> e,    Object... args){
+      Integer val=e.getValue();
+      assertNull("Unexpected value: " + val,val);
+      return null;
+    }
+  }
+);
+  c.put(key,1);
+  c.invoke(key,new EntryProcessor<Integer,Integer,Void>(){
+    @Override public Void process(    MutableEntry<Integer,Integer> e,    Object... args){
+      Integer val=e.getValue();
+      assertNotNull("Unexpected value: " + val,val);
+      assertEquals((Integer)1,val);
+      e.setValue(val + 1);
+      return null;
+    }
+  }
+);
+  assertEquals((Integer)2,c.get(key));
+  c.invoke(key,new EntryProcessor<Integer,Integer,Void>(){
+    @Override public Void process(    MutableEntry<Integer,Integer> e,    Object... args){
+      Integer val=e.getValue();
+      assertNotNull("Unexpected value: " + val,val);
+      assertEquals((Integer)2,val);
+      e.setValue(val);
+      return null;
+    }
+  }
+);
+  assertEquals((Integer)2,c.get(key));
+  c.invoke(key,new EntryProcessor<Integer,Integer,Void>(){
+    @Override public Void process(    MutableEntry<Integer,Integer> e,    Object... args){
+      Integer val=e.getValue();
+      assertNotNull("Unexpected value: " + val,val);
+      assertEquals((Integer)2,val);
+      e.remove();
+      return null;
+    }
+  }
+);
+  assertNull(c.get(key));
+}

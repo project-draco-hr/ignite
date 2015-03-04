@@ -1,0 +1,48 @@
+{
+  checkRemoved();
+  A.ensure(l > 0," Parameter mustn't be less then 1: " + l);
+  lock.lock();
+  try {
+    if (locVal + l <= upBound) {
+      long curVal=locVal;
+      locVal+=l;
+      return new GridFinishedFuture<>(ctx.kernalContext(),updated ? locVal : curVal);
+    }
+  }
+  finally {
+    lock.unlock();
+  }
+  if (updateCall == null)   updateCall=internalUpdate(l,updated);
+  while (true) {
+    if (updateGuard.compareAndSet(false,true)) {
+      try {
+        return ctx.closures().callLocalSafe(updateCall,true);
+      }
+  finally {
+        lock.lock();
+        try {
+          updateGuard.set(false);
+          cond.signalAll();
+        }
+  finally {
+          lock.unlock();
+        }
+      }
+    }
+ else {
+      lock.lock();
+      try {
+        while (locVal >= upBound && updateGuard.get())         U.await(cond,500,MILLISECONDS);
+        checkRemoved();
+        if (locVal + l <= upBound) {
+          long curVal=locVal;
+          locVal+=l;
+          return new GridFinishedFuture<>(ctx.kernalContext(),updated ? locVal : curVal);
+        }
+      }
+  finally {
+        lock.unlock();
+      }
+    }
+  }
+}

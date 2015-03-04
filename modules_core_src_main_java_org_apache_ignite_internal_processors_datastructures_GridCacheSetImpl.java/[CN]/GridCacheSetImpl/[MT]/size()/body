@@ -1,0 +1,19 @@
+{
+  try {
+    onAccess();
+    if (ctx.isLocal() || ctx.isReplicated()) {
+      GridConcurrentHashSet<GridCacheSetItemKey> set=ctx.dataStructures().setData(id);
+      return set != null ? set.size() : 0;
+    }
+    CacheQuery qry=new GridCacheQueryAdapter<>(ctx,SET,null,null,null,new GridSetQueryPredicate<>(id,collocated),false,false);
+    Collection<ClusterNode> nodes=dataNodes(ctx.affinity().affinityTopologyVersion());
+    qry.projection(ctx.grid().forNodes(nodes));
+    Iterable<Integer> col=(Iterable<Integer>)qry.execute(new SumReducer()).get();
+    int sum=0;
+    for (    Integer val : col)     sum+=val;
+    return sum;
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+}

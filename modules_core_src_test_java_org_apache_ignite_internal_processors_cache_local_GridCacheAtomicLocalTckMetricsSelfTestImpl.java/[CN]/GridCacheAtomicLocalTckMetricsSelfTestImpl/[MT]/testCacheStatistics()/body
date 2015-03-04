@@ -1,0 +1,26 @@
+{
+  IgniteCache<Integer,Integer> cache=grid(0).jcache(null);
+  cache.put(1,10);
+  assertEquals(0,cache.metrics().getCacheRemovals());
+  assertEquals(1,cache.metrics().getCachePuts());
+  cache.remove(1);
+  assertEquals(0,cache.metrics().getCacheHits());
+  assertEquals(1,cache.metrics().getCacheRemovals());
+  assertEquals(1,cache.metrics().getCachePuts());
+  cache.remove(1);
+  assertEquals(0,cache.metrics().getCacheHits());
+  assertEquals(0,cache.metrics().getCacheMisses());
+  assertEquals(1,cache.metrics().getCacheRemovals());
+  assertEquals(1,cache.metrics().getCachePuts());
+  cache.put(1,10);
+  assertTrue(cache.remove(1,10));
+  assertEquals(1,cache.metrics().getCacheHits());
+  assertEquals(0,cache.metrics().getCacheMisses());
+  assertEquals(2,cache.metrics().getCacheRemovals());
+  assertEquals(2,cache.metrics().getCachePuts());
+  assertFalse(cache.remove(1,10));
+  assertEquals(1,cache.metrics().getCacheHits());
+  assertEquals(1,cache.metrics().getCacheMisses());
+  assertEquals(2,cache.metrics().getCacheRemovals());
+  assertEquals(2,cache.metrics().getCachePuts());
+}

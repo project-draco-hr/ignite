@@ -1,0 +1,17 @@
+{
+  if (!busyLock.enterBusy())   throw new IllegalStateException("Failed to start new threads (test is being stopped).");
+  Collection<Thread> threads=new ArrayList<>();
+  long time;
+  try {
+    for (    Callable<?> call : calls)     threads.add(threadFactory.newThread(call));
+    time=System.currentTimeMillis();
+    for (    Thread t : threads)     t.start();
+  }
+  finally {
+    busyLock.leaveBusy();
+  }
+  for (  Thread t : threads)   t.join();
+  time=System.currentTimeMillis() - time;
+  threadFactory.checkError();
+  return time;
+}

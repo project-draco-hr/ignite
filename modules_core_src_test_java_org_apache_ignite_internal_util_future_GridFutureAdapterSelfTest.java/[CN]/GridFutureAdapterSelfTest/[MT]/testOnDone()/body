@@ -1,0 +1,30 @@
+{
+  GridFutureAdapter<String> fut=new GridFutureAdapter<>();
+  fut.onDone();
+  assertNull(fut.get());
+  fut=new GridFutureAdapter<>();
+  fut.onDone("test");
+  assertEquals("test",fut.get());
+  fut=new GridFutureAdapter<>();
+  fut.onDone(new IgniteCheckedException("TestMessage"));
+  final GridFutureAdapter<String> callFut1=fut;
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      return callFut1.get();
+    }
+  }
+,IgniteCheckedException.class,"TestMessage");
+  fut=new GridFutureAdapter<>();
+  fut.onDone("test",new IgniteCheckedException("TestMessage"));
+  final GridFutureAdapter<String> callFut2=fut;
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      return callFut2.get();
+    }
+  }
+,IgniteCheckedException.class,"TestMessage");
+  fut=new GridFutureAdapter<>();
+  fut.onDone("test");
+  fut.onCancelled();
+  assertEquals("test",fut.get());
+}

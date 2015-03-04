@@ -1,0 +1,24 @@
+{
+  for (  Ignite g : alive)   assertEquals(PERM_NODES_CNT,g.cluster().nodes().size());
+  for (  final Ignite g : alive) {
+    IgniteKernal k=(IgniteKernal)g;
+    GridDiscoveryManager discoMgr=k.context().discovery();
+    final Collection<ClusterNode> currTop=g.cluster().nodes();
+    long currVer=discoMgr.topologyVersion();
+    for (long v=currVer; v > currVer - GridDiscoveryManager.DISCOVERY_HISTORY_SIZE && v > 0; v--) {
+      F.forAll(discoMgr.aliveCacheNodes(null,v),new IgnitePredicate<ClusterNode>(){
+        @Override public boolean apply(        ClusterNode e){
+          return currTop.contains(e);
+        }
+      }
+);
+      F.forAll(discoMgr.aliveRemoteCacheNodes(null,v),new IgnitePredicate<ClusterNode>(){
+        @Override public boolean apply(        ClusterNode e){
+          return currTop.contains(e) || g.cluster().localNode().equals(e);
+        }
+      }
+);
+      assertTrue(currTop.contains(GridCacheUtils.oldest(k.internalCache().context(),currVer)));
+    }
+  }
+}

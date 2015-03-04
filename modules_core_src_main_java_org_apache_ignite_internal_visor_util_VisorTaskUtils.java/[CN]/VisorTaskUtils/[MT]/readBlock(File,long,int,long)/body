@@ -1,0 +1,23 @@
+{
+  RandomAccessFile raf=null;
+  try {
+    long fSz=file.length();
+    long fLastModified=file.lastModified();
+    long pos=off >= 0 ? off : Math.max(fSz - blockSz,0);
+    if (fLastModified == lastModified && fSz != 0 && pos >= fSz)     throw new IOException("Trying to read file block with wrong offset: " + pos + " while file size: "+ fSz);
+    if (fSz == 0)     return new VisorFileBlock(file.getPath(),pos,fLastModified,0,false,EMPTY_FILE_BUF);
+ else {
+      int toRead=Math.min(blockSz,(int)(fSz - pos));
+      byte[] buf=new byte[toRead];
+      raf=new RandomAccessFile(file,"r");
+      raf.seek(pos);
+      int cntRead=raf.read(buf,0,toRead);
+      if (cntRead != toRead)       throw new IOException("Count of requested and actually read bytes does not match [cntRead=" + cntRead + ", toRead="+ toRead+ ']');
+      boolean zipped=buf.length > 512;
+      return new VisorFileBlock(file.getPath(),pos,fSz,fLastModified,zipped,zipped ? U.zipBytes(buf) : buf);
+    }
+  }
+  finally {
+    U.close(raf,null);
+  }
+}

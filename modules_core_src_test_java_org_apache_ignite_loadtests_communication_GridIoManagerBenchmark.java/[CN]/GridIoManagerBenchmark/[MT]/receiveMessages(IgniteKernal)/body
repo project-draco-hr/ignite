@@ -1,0 +1,20 @@
+{
+  X.println(">>> Receiving messages.");
+  final GridIoManager io=g.context().io();
+  GridMessageListener lsnr=new GridMessageListener(){
+    private ClusterNode node;
+    @Override public void onMessage(    UUID nodeId,    Object msg){
+      if (node == null)       node=g.context().discovery().node(nodeId);
+      GridTestMessage testMsg=((GridTestMessage)msg);
+      testMsg.bytes(null);
+      try {
+        io.send(node,TEST_TOPIC,testMsg,PUBLIC_POOL);
+      }
+ catch (      IgniteCheckedException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+;
+  io.addMessageListener(TEST_TOPIC,lsnr);
+}

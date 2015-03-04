@@ -1,0 +1,20 @@
+{
+  Selector selector=null;
+  ServerSocketChannel srvrCh=null;
+  try {
+    selector=SelectorProvider.provider().openSelector();
+    if (addr != null) {
+      srvrCh=ServerSocketChannel.open();
+      srvrCh.configureBlocking(false);
+      if (sockRcvBuf > 0)       srvrCh.socket().setReceiveBufferSize(sockRcvBuf);
+      srvrCh.socket().bind(addr);
+      srvrCh.register(selector,SelectionKey.OP_ACCEPT);
+    }
+    return selector;
+  }
+ catch (  Throwable e) {
+    U.close(srvrCh,log);
+    U.close(selector,log);
+    throw new IgniteCheckedException("Failed to initialize NIO selector.",e);
+  }
+}

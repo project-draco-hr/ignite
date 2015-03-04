@@ -1,0 +1,58 @@
+{
+  if (log.isDebugEnabled())   log.debug("Entered handshake(): [handshakeStatus=" + handshakeStatus + ", ses="+ ses+ ']');
+  lock();
+  try {
+    boolean loop=true;
+    while (loop) {
+switch (handshakeStatus) {
+case NOT_HANDSHAKING:
+case FINISHED:
+{
+          SSLSession sslSes=sslEngine.getSession();
+          if (log.isDebugEnabled())           log.debug("Finished ssl handshake [protocol=" + sslSes.getProtocol() + ", cipherSuite="+ sslSes.getCipherSuite()+ ", ses="+ ses+ ']');
+          handshakeFinished=true;
+          if (!initHandshakeComplete) {
+            initHandshakeComplete=true;
+            GridNioFutureImpl<?> fut=ses.removeMeta(HANDSHAKE_FUT_META_KEY);
+            if (fut != null)             fut.onDone();
+            parent.proceedSessionOpened(ses);
+          }
+          loop=false;
+          break;
+        }
+case NEED_TASK:
+{
+        if (log.isDebugEnabled())         log.debug("Need to run ssl tasks: " + ses);
+        handshakeStatus=runTasks();
+        break;
+      }
+case NEED_UNWRAP:
+{
+      if (log.isDebugEnabled())       log.debug("Need to unwrap incoming data: " + ses);
+      Status status=unwrapHandshake();
+      if (status == BUFFER_UNDERFLOW && handshakeStatus != FINISHED || sslEngine.isInboundDone())       loop=false;
+      break;
+    }
+case NEED_WRAP:
+{
+    if (outNetBuf.hasRemaining())     U.warn(log,"Output net buffer has unsent bytes during handshake (will clear): " + ses);
+    outNetBuf.clear();
+    SSLEngineResult res=sslEngine.wrap(handshakeBuf,outNetBuf);
+    outNetBuf.flip();
+    handshakeStatus=res.getHandshakeStatus();
+    if (log.isDebugEnabled())     log.debug("Wrapped handshake data [status=" + res.getStatus() + ", handshakeStatus="+ handshakeStatus+ ", ses="+ ses+ ']');
+    writeNetBuffer();
+    break;
+  }
+default :
+{
+  throw new IllegalStateException("Invalid handshake status in handshake method [handshakeStatus=" + handshakeStatus + ", ses="+ ses+ ']');
+}
+}
+}
+}
+  finally {
+unlock();
+}
+if (log.isDebugEnabled()) log.debug("Leaved handshake(): [handshakeStatus=" + handshakeStatus + ", ses="+ ses+ ']');
+}

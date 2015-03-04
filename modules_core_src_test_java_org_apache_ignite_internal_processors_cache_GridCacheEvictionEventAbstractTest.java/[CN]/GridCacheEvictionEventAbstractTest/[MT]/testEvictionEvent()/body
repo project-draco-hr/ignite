@@ -1,0 +1,19 @@
+{
+  Ignite g=grid();
+  final CountDownLatch latch=new CountDownLatch(1);
+  final AtomicReference<String> oldVal=new AtomicReference<>();
+  g.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      CacheEvent e=(CacheEvent)evt;
+      oldVal.set((String)e.oldValue());
+      latch.countDown();
+      return true;
+    }
+  }
+,EventType.EVT_CACHE_ENTRY_EVICTED);
+  IgniteCache<String,String> c=g.jcache(null);
+  c.put("1","val1");
+  c.localEvict(Collections.singleton("1"));
+  latch.await();
+  assertNotNull(oldVal.get());
+}

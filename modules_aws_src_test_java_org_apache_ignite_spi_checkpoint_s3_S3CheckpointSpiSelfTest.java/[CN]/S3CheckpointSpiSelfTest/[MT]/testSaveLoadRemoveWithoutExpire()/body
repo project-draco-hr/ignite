@@ -1,0 +1,38 @@
+{
+  String dataPrefix="Test check point data ";
+  for (int i=0; i < CHECK_POINT_COUNT; i++) {
+    GridCheckpointTestState state=new GridCheckpointTestState(dataPrefix + i);
+    getSpi().saveCheckpoint(KEY_PREFIX + i,GridTestIoUtils.serializeJdk(state),0,true);
+  }
+  for (int i=0; i < CHECK_POINT_COUNT; i++) {
+    final String key=KEY_PREFIX + i;
+    assertWithRetries(new GridAbsClosureX(){
+      @Override public void applyx() throws IgniteCheckedException {
+        assertNotNull("Missing checkpoint: " + key,getSpi().loadCheckpoint(key));
+      }
+    }
+);
+    byte[] serState=getSpi().loadCheckpoint(key);
+    GridCheckpointTestState state=GridTestIoUtils.deserializeJdk(serState);
+    assertNotNull("Can't load checkpoint state for key: " + key,state);
+    assertEquals("Invalid state loaded [expected='" + dataPrefix + i+ "', received='"+ state.getData()+ "']",dataPrefix + i,state.getData());
+  }
+  for (int i=0; i < CHECK_POINT_COUNT; i++) {
+    final String key=KEY_PREFIX + i;
+    assertWithRetries(new GridAbsClosureX(){
+      @Override public void applyx(){
+        assertTrue(getSpi().removeCheckpoint(key));
+      }
+    }
+);
+  }
+  for (int i=0; i < CHECK_POINT_COUNT; i++) {
+    final String key=KEY_PREFIX + i;
+    assertWithRetries(new GridAbsClosureX(){
+      @Override public void applyx() throws IgniteCheckedException {
+        assertNull(getSpi().loadCheckpoint(key));
+      }
+    }
+);
+  }
+}

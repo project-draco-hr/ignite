@@ -1,0 +1,16 @@
+{
+  int keyCnt=1000;
+  int retries=20;
+  Ignite g0=startGrid(0);
+  Ignite g1=startGrid(1);
+  for (int i=0; i < keyCnt; i++)   g0.jcache(null).put(i,i);
+  assertEquals(keyCnt,((IgniteKernal)g0).internalCache(null).size());
+  assertEquals(keyCnt,((IgniteKernal)g1).internalCache(null).size());
+  for (int n=0; n < retries; n++) {
+    info("Starting additional grid node...");
+    Ignite g2=startGrid(2);
+    assertEquals(keyCnt,((IgniteKernal)g2).internalCache(null).size());
+    info("Stopping additional grid node...");
+    stopGrid(2);
+  }
+}

@@ -1,0 +1,15 @@
+{
+  A.notNull(key,"key",oldVal,"oldVal",newVal,"newVal");
+  if (keyCheck)   validateCacheKey(key);
+  ctx.denyOnLocalRead();
+  return syncOp(new SyncOp<GridCacheReturn<V>>(true){
+    @Override public GridCacheReturn<V> op(    IgniteTxLocalAdapter<K,V> tx) throws IgniteCheckedException {
+      if (ctx.deploymentEnabled())       ctx.deploy().registerClass(oldVal);
+      return tx.putAllAsync(ctx,F.t(key,newVal),true,null,-1,ctx.equalsPeekArray(oldVal)).get();
+    }
+    @Override public String toString(){
+      return "replace [key=" + key + ", oldVal="+ oldVal+ ", newVal="+ newVal+ ']';
+    }
+  }
+);
+}

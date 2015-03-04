@@ -1,0 +1,17 @@
+{
+  getSpi().setListener(null);
+  busyLock.writeLock();
+  U.shutdownNow(getClass(),affPool,log);
+  boolean interrupted=false;
+  while (workersCnt.sum() != 0) {
+    try {
+      Thread.sleep(200);
+    }
+ catch (    InterruptedException ignored) {
+      interrupted=true;
+    }
+  }
+  if (interrupted)   Thread.currentThread().interrupt();
+  GridEventStorageManager evtMgr=ctx.event();
+  if (evtMgr != null && discoLsnr != null)   evtMgr.removeLocalEventListener(discoLsnr);
+}

@@ -1,0 +1,33 @@
+{
+  IgniteCache<Integer,Integer> cache=jcache(0);
+  final Integer key=primaryKey(cache);
+  storeMap.put(key,100);
+  try {
+    CompletionListenerFuture fut=new CompletionListenerFuture();
+    cache.loadAll(F.asSet(key),false,fut);
+    fut.get();
+    checkTtl(key,500,false);
+    assertEquals((Integer)100,cache.localPeek(key,CachePeekMode.ONHEAP));
+    U.sleep(600);
+    checkExpired(key);
+    cache=cache.withExpiryPolicy(new ExpiryPolicy(){
+      @Override public Duration getExpiryForCreation(){
+        return new Duration(TimeUnit.MILLISECONDS,501);
+      }
+      @Override public Duration getExpiryForAccess(){
+        return new Duration(TimeUnit.MILLISECONDS,601);
+      }
+      @Override public Duration getExpiryForUpdate(){
+        return new Duration(TimeUnit.MILLISECONDS,701);
+      }
+    }
+);
+    fut=new CompletionListenerFuture();
+    cache.loadAll(F.asSet(key),false,fut);
+    fut.get();
+    checkTtl(key,501,false);
+  }
+  finally {
+    cache.removeAll();
+  }
+}

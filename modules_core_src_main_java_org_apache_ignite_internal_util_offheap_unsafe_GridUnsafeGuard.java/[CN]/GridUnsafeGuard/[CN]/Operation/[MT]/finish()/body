@@ -1,0 +1,17 @@
+{
+  if (!stateUpdater.compareAndSet(this,STATE_MAY_DEALLOCATE,STATE_DEALLOCATED))   return;
+  GridUnsafeCompoundMemory c=compound;
+  if (c != null) {
+    c.deallocate();
+    compoundUpdater.lazySet(this,null);
+  }
+  Finalizer fin=finHead;
+  if (fin != null) {
+    finUpdater.lazySet(this,null);
+    do {
+      fin.run();
+      fin=fin.previous();
+    }
+ while (fin != null);
+  }
+}

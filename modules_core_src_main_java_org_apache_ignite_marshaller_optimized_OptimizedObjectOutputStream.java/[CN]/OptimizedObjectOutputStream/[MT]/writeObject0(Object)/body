@@ -1,0 +1,35 @@
+{
+  curObj=null;
+  curFields=null;
+  curPut=null;
+  curFieldInfoMap=null;
+  if (obj == null)   writeByte(NULL);
+ else {
+    Class<?> cls=obj.getClass();
+    OptimizedClassDescriptor desc=classDescriptor(cls,obj);
+    if (desc.excluded()) {
+      writeByte(NULL);
+      return;
+    }
+    Object obj0=desc.replace(obj);
+    if (obj0 == null) {
+      writeByte(NULL);
+      return;
+    }
+    int handle=-1;
+    if (!desc.isPrimitive() && !desc.isEnum() && !desc.isClass())     handle=handles.lookup(obj);
+    if (obj0 != obj) {
+      obj=obj0;
+      desc=classDescriptor(obj.getClass(),obj);
+    }
+    if (handle >= 0) {
+      writeByte(HANDLE);
+      writeInt(handle);
+    }
+ else {
+      writeByte(OBJECT);
+      OptimizedClassResolver.writeClass(this,desc);
+      desc.write(this,obj);
+    }
+  }
+}

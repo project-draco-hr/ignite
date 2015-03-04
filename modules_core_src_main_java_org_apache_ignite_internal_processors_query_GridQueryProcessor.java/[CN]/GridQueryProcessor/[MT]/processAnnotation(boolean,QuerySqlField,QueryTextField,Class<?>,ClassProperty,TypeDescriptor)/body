@@ -1,0 +1,18 @@
+{
+  if (sqlAnn != null) {
+    processAnnotationsInClass(key,cls,desc,prop);
+    if (!sqlAnn.name().isEmpty())     prop.name(sqlAnn.name());
+    if (sqlAnn.index()) {
+      String idxName=prop.name() + "_idx";
+      desc.addIndex(idxName,isGeometryClass(prop.type()) ? GEO_SPATIAL : SORTED);
+      desc.addFieldToIndex(idxName,prop.name(),0,sqlAnn.descending());
+    }
+    if (!F.isEmpty(sqlAnn.groups())) {
+      for (      String group : sqlAnn.groups())       desc.addFieldToIndex(group,prop.name(),0,false);
+    }
+    if (!F.isEmpty(sqlAnn.orderedGroups())) {
+      for (      QuerySqlField.Group idx : sqlAnn.orderedGroups())       desc.addFieldToIndex(idx.name(),prop.name(),idx.order(),idx.descending());
+    }
+  }
+  if (txtAnn != null)   desc.addFieldToTextIndex(prop.name());
+}

@@ -1,0 +1,31 @@
+{
+  if (qry.getInitialPredicate() instanceof ContinuousQuery)   throw new IgniteException("Initial predicate for continuous query can't be an instance of another " + "continuous query. Use SCAN or SQL query for initial iteration.");
+  if (qry.getLocalListener() == null)   throw new IgniteException("Mandatory local listener is not set for the query: " + qry);
+  try {
+    final UUID routineId=ctx.continuousQueries().executeQuery(qry.getLocalListener(),qry.getRemoteFilter(),qry.getBufferSize(),qry.getTimeInterval(),qry.isAutoUnsubscribe(),loc ? ctx.grid().forLocal() : null);
+    final QueryCursor<Cache.Entry<K,V>> cur;
+    if (qry.getInitialPredicate() != null)     cur=loc ? localQuery(qry.getInitialPredicate()) : query(qry.getInitialPredicate());
+ else     cur=null;
+    return new QueryCursor<Cache.Entry<K,V>>(){
+      @Override public Iterator<Cache.Entry<K,V>> iterator(){
+        return cur != null ? cur.iterator() : new GridEmptyIterator<Cache.Entry<K,V>>();
+      }
+      @Override public List<Cache.Entry<K,V>> getAll(){
+        return cur != null ? cur.getAll() : Collections.<Cache.Entry<K,V>>emptyList();
+      }
+      @Override public void close(){
+        if (cur != null)         cur.close();
+        try {
+          ctx.kernalContext().continuous().stopRoutine(routineId).get();
+        }
+ catch (        IgniteCheckedException e) {
+          throw U.convertException(e);
+        }
+      }
+    }
+;
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+}

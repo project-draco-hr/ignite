@@ -1,0 +1,29 @@
+{
+  if (appendVal instanceof String && origVal instanceof String)   return appendPlc ? origVal + (String)appendVal : (String)appendVal + origVal;
+  if (appendVal instanceof Map && origVal instanceof Map) {
+    Map<Object,Object> origMap=(Map<Object,Object>)origVal;
+    Map<Object,Object> appendMap=(Map<Object,Object>)appendVal;
+    Map<Object,Object> map=X.cloneObject(origMap,false,true);
+    if (appendPlc)     map.putAll(appendMap);
+ else {
+      map.clear();
+      map.putAll(appendMap);
+      map.putAll(origMap);
+    }
+    for (    Map.Entry<Object,Object> e : appendMap.entrySet())     if (e.getValue() == null && map.get(e.getKey()) == null)     map.remove(e.getKey());
+    return map;
+  }
+  if (appendVal instanceof Collection<?> && origVal instanceof Collection<?>) {
+    Collection<Object> origCol=(Collection<Object>)origVal;
+    Collection<Object> appendCol=(Collection<Object>)appendVal;
+    Collection<Object> col=X.cloneObject(origCol,false,true);
+    if (appendPlc)     col.addAll(appendCol);
+ else {
+      col.clear();
+      col.addAll(appendCol);
+      col.addAll(origCol);
+    }
+    return col;
+  }
+  throw new IgniteCheckedException("Incompatible types [appendVal=" + appendVal + ", old="+ origVal+ ']');
+}

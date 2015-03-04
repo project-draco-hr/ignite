@@ -1,0 +1,49 @@
+{
+  this.id=id;
+  cfg=new GridClientConfiguration(cfg0);
+  boolean success=false;
+  try {
+    top=new GridClientTopology(cfg);
+    for (    GridClientDataConfiguration dataCfg : cfg.getDataConfigurations()) {
+      GridClientDataAffinity aff=dataCfg.getAffinity();
+      if (aff instanceof GridClientTopologyListener)       addTopologyListener((GridClientTopologyListener)aff);
+    }
+    if (cfg.getBalancer() instanceof GridClientTopologyListener)     top.addTopologyListener((GridClientTopologyListener)cfg.getBalancer());
+    GridSslContextFactory factory=cfg.getSslContextFactory();
+    if (factory != null) {
+      try {
+        sslCtx=factory.createSslContext();
+      }
+ catch (      SSLException e) {
+        throw new GridClientException("Failed to create client (unable to create SSL context, " + "check ssl context factory configuration): " + e.getMessage(),e);
+      }
+    }
+    if (cfg.isAutoFetchMetrics() && !cfg.isEnableMetricsCache())     log.warning("Auto-fetch for metrics is enabled without enabling caching for them.");
+    if (cfg.isAutoFetchAttributes() && !cfg.isEnableAttributesCache())     log.warning("Auto-fetch for node attributes is enabled without enabling caching for them.");
+    srvs=parseAddresses(cfg.getServers());
+    routers=parseAddresses(cfg.getRouters());
+    if (srvs.isEmpty() && routers.isEmpty())     throw new GridClientException("Servers addresses and routers addresses cannot both be empty " + "for client (please fix configuration and restart): " + this);
+    if (!srvs.isEmpty() && !routers.isEmpty())     throw new GridClientException("Servers addresses and routers addresses cannot both be provided " + "for client (please fix configuration and restart): " + this);
+    connMgr=createConnectionManager(id,sslCtx,cfg,routers,top,null,routerClient);
+    try {
+      tryInitTopology();
+    }
+ catch (    GridClientException e) {
+      top.fail(e);
+      log.warning("Failed to initialize topology on client start. Will retry in background.");
+    }
+catch (    InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new GridClientException("Client startup was interrupted.",e);
+    }
+    topUpdateThread=new TopologyUpdaterThread();
+    topUpdateThread.setDaemon(true);
+    topUpdateThread.start();
+    compute=new GridClientComputeImpl(this,null,null,cfg.getBalancer());
+    if (log.isLoggable(Level.INFO))     log.info("Client started [id=" + id + ", protocol="+ cfg.getProtocol()+ ']');
+    success=true;
+  }
+  finally {
+    if (!success)     stop(false);
+  }
+}

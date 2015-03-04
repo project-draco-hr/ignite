@@ -1,0 +1,22 @@
+{
+  if (log.isDebugEnabled())   log.debug("Received data load response: " + res);
+  GridFutureAdapter<?> f=reqs.remove(res.requestId());
+  if (f == null) {
+    if (log.isDebugEnabled())     log.debug("Future for request has not been found: " + res.requestId());
+    return;
+  }
+  Throwable err=null;
+  byte[] errBytes=res.errorBytes();
+  if (errBytes != null) {
+    try {
+      GridPeerDeployAware jobPda0=jobPda;
+      err=ctx.config().getMarshaller().unmarshal(errBytes,jobPda0 != null ? jobPda0.classLoader() : U.gridClassLoader());
+    }
+ catch (    IgniteCheckedException e) {
+      f.onDone(null,new IgniteCheckedException("Failed to unmarshal response.",e));
+      return;
+    }
+  }
+  f.onDone(null,err);
+  if (log.isDebugEnabled())   log.debug("Finished future [fut=" + f + ", reqId="+ res.requestId()+ ", err="+ err+ ']');
+}

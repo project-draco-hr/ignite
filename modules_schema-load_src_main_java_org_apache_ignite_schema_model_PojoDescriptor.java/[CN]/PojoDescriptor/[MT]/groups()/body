@@ -1,0 +1,15 @@
+{
+  Map<String,Map<String,Boolean>> idxs=tbl.indexes();
+  Map<String,Map<String,IgniteBiTuple<String,Boolean>>> groups=new LinkedHashMap<>(idxs.size());
+  for (  Map.Entry<String,Map<String,Boolean>> idx : idxs.entrySet()) {
+    String idxName=idx.getKey();
+    Map<String,Boolean> idxCols=idx.getValue();
+    Map<String,IgniteBiTuple<String,Boolean>> grp=new LinkedHashMap<>();
+    groups.put(idxName,grp);
+    for (    Map.Entry<String,Boolean> idxCol : idxCols.entrySet()) {
+      PojoField fld=fieldsMap.get(idxCol.getKey());
+      grp.put(fld.javaName(),new IgniteBiTuple<>(fld.javaTypeName(),idxCol.getValue()));
+    }
+  }
+  return groups;
+}

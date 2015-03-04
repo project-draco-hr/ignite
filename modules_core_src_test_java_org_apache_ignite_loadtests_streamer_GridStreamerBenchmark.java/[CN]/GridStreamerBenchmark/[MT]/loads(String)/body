@@ -1,0 +1,15 @@
+{
+  URL cfgUrl;
+  try {
+    cfgUrl=new URL(cfgPath);
+  }
+ catch (  MalformedURLException ignore) {
+    cfgUrl=U.resolveIgniteUrl(cfgPath);
+  }
+  if (cfgUrl == null)   throw new Exception("Spring XML configuration path is invalid: " + cfgPath);
+  GenericApplicationContext springCtx=new GenericApplicationContext();
+  new XmlBeanDefinitionReader(springCtx).loadBeanDefinitions(new UrlResource(cfgUrl));
+  springCtx.refresh();
+  Map<String,GridStreamerLoad> cfgMap=springCtx.getBeansOfType(GridStreamerLoad.class);
+  return cfgMap.values();
+}

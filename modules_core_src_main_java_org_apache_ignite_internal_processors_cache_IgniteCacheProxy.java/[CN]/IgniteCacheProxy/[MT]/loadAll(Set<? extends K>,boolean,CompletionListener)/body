@@ -1,3 +1,23 @@
 {
-  throw new UnsupportedOperationException();
+  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+  try {
+    IgniteInternalFuture<?> fut=ctx.cache().loadAll(keys,replaceExisting);
+    if (completionLsnr != null) {
+      fut.listenAsync(new CI1<IgniteInternalFuture<?>>(){
+        @Override public void apply(        IgniteInternalFuture<?> fut){
+          try {
+            fut.get();
+            completionLsnr.onCompletion();
+          }
+ catch (          IgniteCheckedException e) {
+            completionLsnr.onException(cacheException(e));
+          }
+        }
+      }
+);
+    }
+  }
+  finally {
+    gate.leave(prev);
+  }
 }

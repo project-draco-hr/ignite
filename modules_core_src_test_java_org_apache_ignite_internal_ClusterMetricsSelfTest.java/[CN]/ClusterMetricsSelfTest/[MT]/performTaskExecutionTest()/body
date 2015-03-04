@@ -1,0 +1,18 @@
+{
+  Ignite g=grid(0);
+  JobFinishLock jobFinishLock=new JobFinishLock();
+  MetricsUpdateLock metricsUpdLock=new MetricsUpdateLock();
+  try {
+    for (    Ignite g0 : G.allGrids())     g0.events().localListen(jobFinishLock,EVT_JOB_FINISHED);
+    g.compute().execute(new GridTestTask(),"testArg");
+    jobFinishLock.await();
+    g.events().localListen(metricsUpdLock,EVT_NODE_METRICS_UPDATED);
+    metricsUpdLock.await();
+    ClusterMetrics m=g.cluster().metrics();
+    checkMetrics(m);
+  }
+  finally {
+    for (    Ignite g0 : G.allGrids())     g0.events().stopLocalListen(jobFinishLock);
+    g.events().stopLocalListen(metricsUpdLock);
+  }
+}

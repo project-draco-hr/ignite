@@ -1,0 +1,24 @@
+{
+  GridSqlSelect srcQry=GridSqlQueryParser.parse(conn,query);
+  if (srcQry.groups().isEmpty()) {
+    String tbl0=table(0);
+    GridCacheTwoStepQuery res=new GridCacheTwoStepQuery("select * from " + tbl0);
+    res.addMapQuery(tbl0,srcQry.getSQL(),params);
+    return res;
+  }
+  List<GridSqlElement> mapExps=new ArrayList<>(srcQry.allExpressions());
+  GridSqlElement[] rdcExps=new GridSqlElement[srcQry.select().size()];
+  for (int i=0, len=mapExps.size(); i < len; i++)   splitSelectExpression(mapExps,rdcExps,i);
+  GridSqlSelect mapQry=srcQry.clone();
+  mapQry.clearSelect();
+  for (  GridSqlElement exp : mapExps)   mapQry.addSelectExpression(exp);
+  mapQry.clearGroups();
+  for (  int col : srcQry.groupColumns())   mapQry.addGroupExpression(column(((GridSqlAlias)mapExps.get(col)).alias()));
+  GridSqlSelect rdcQry=new GridSqlSelect();
+  for (  GridSqlElement rdcExp : rdcExps)   rdcQry.addSelectExpression(rdcExp);
+  rdcQry.from(new GridSqlTable(null,table(0)));
+  for (  int col : srcQry.groupColumns())   rdcQry.addGroupExpression(column(((GridSqlAlias)mapExps.get(col)).alias()));
+  GridCacheTwoStepQuery res=new GridCacheTwoStepQuery(rdcQry.getSQL());
+  res.addMapQuery(table(0),mapQry.getSQL(),params);
+  return res;
+}

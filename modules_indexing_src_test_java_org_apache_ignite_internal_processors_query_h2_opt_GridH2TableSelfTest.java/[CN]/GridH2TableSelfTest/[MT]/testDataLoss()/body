@@ -1,0 +1,46 @@
+{
+  final int threads=37;
+  final int iterations=15000;
+  final AtomicInteger cntr=new AtomicInteger();
+  final UUID[] ids=new UUID[threads * iterations];
+  for (int i=0; i < ids.length; i++)   ids[i]=UUID.randomUUID();
+  final long t=System.currentTimeMillis();
+  final AtomicInteger deleted=new AtomicInteger();
+  multithreaded(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      Random rnd=new Random();
+      int offset=cntr.getAndIncrement() * iterations;
+synchronized (ids[offset]) {
+        for (int i=0; i < iterations; i++) {
+          UUID id=ids[offset + i];
+          int x=rnd.nextInt(50);
+          GridH2Row row=row(id,t,id.toString(),x);
+          assertTrue(tbl.doUpdate(row,false));
+        }
+      }
+      offset=(offset + iterations) % ids.length;
+synchronized (ids[offset]) {
+        for (int i=0; i < iterations; i+=2) {
+          UUID id=ids[offset + i];
+          int x=rnd.nextInt(50);
+          GridH2Row row=row(id,t,id.toString(),x);
+          if (tbl.doUpdate(row,true))           deleted.incrementAndGet();
+        }
+      }
+      return null;
+    }
+  }
+,threads);
+  assertTrue(deleted.get() > 0);
+  PreparedStatement p=conn.prepareStatement("select count(*) from t where id = ?");
+  for (int i=1; i < ids.length; i+=2) {
+    p.setObject(1,ids[i]);
+    ResultSet rs=p.executeQuery();
+    assertTrue(rs.next());
+    assertEquals(1,rs.getInt(1));
+  }
+  Statement s=conn.createStatement();
+  ResultSet rs=s.executeQuery("select count(*) from t");
+  assertTrue(rs.next());
+  assertEquals(ids.length - deleted.get(),rs.getInt(1));
+}

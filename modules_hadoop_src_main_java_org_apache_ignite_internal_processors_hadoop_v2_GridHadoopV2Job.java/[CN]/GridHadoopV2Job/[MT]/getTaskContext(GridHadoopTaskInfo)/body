@@ -1,0 +1,30 @@
+{
+  T2<GridHadoopTaskType,Integer> locTaskId=new T2<>(info.type(),info.taskNumber());
+  GridFutureAdapter<GridHadoopTaskContext> fut=ctxs.get(locTaskId);
+  if (fut != null)   return fut.get();
+  GridFutureAdapter<GridHadoopTaskContext> old=ctxs.putIfAbsent(locTaskId,fut=new GridFutureAdapter<>());
+  if (old != null)   return old.get();
+  Class<?> cls=taskCtxClsPool.poll();
+  try {
+    if (cls == null) {
+      GridHadoopClassLoader ldr=new GridHadoopClassLoader(rsrcMgr.classPath());
+      cls=ldr.loadClass(GridHadoopV2TaskContext.class.getName());
+    }
+    Constructor<?> ctr=cls.getConstructor(GridHadoopTaskInfo.class,GridHadoopJob.class,GridHadoopJobId.class,UUID.class,DataInput.class);
+    if (jobConfData == null) synchronized (jobConf) {
+      if (jobConfData == null) {
+        ByteArrayOutputStream buf=new ByteArrayOutputStream();
+        jobConf.write(new DataOutputStream(buf));
+        jobConfData=buf.toByteArray();
+      }
+    }
+    GridHadoopTaskContext res=(GridHadoopTaskContext)ctr.newInstance(info,this,jobId,locNodeId,new DataInputStream(new ByteArrayInputStream(jobConfData)));
+    fut.onDone(res);
+    return res;
+  }
+ catch (  Throwable e) {
+    IgniteCheckedException te=transformException(e);
+    fut.onDone(te);
+    throw te;
+  }
+}

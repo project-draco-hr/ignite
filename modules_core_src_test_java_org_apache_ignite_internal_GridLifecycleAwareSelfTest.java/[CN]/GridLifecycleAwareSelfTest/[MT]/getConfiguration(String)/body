@@ -1,0 +1,24 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TestConnectorMessageInterceptor interceptor=new TestConnectorMessageInterceptor();
+  ConnectorConfiguration clientCfg=new ConnectorConfiguration();
+  clientCfg.setMessageInterceptor(interceptor);
+  cfg.setConnectorConfiguration(clientCfg);
+  lifecycleAwares.add(interceptor);
+  TestSegmentationResolver segmentationRslvr=new TestSegmentationResolver();
+  cfg.setSegmentationResolvers(segmentationRslvr);
+  lifecycleAwares.add(segmentationRslvr);
+  TestContextFactory ctxFactory=new TestContextFactory();
+  clientCfg.setSslContextFactory(ctxFactory);
+  lifecycleAwares.add(ctxFactory);
+  TestLifecycleBean lifecycleBean=new TestLifecycleBean();
+  cfg.setLifecycleBeans(lifecycleBean);
+  lifecycleAwares.add(lifecycleBean);
+  TestMarshaller marshaller=new TestMarshaller();
+  cfg.setMarshaller(marshaller);
+  lifecycleAwares.add(marshaller.lifecycleAware());
+  TestLogger testLog=new TestLogger();
+  cfg.setGridLogger(testLog);
+  lifecycleAwares.add(testLog.lifecycleAware());
+  return cfg;
+}

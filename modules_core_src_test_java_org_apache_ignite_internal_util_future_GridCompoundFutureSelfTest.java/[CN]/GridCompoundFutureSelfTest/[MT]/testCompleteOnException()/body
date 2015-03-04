@@ -1,0 +1,19 @@
+{
+  GridTestKernalContext ctx=new GridTestKernalContext(log);
+  GridCompoundFuture<Boolean,Boolean> fut=new GridCompoundFuture<>(ctx,CU.boolReducer());
+  List<GridFutureAdapter<Boolean>> futs=new ArrayList<>(5);
+  for (int i=0; i < 5; i++) {
+    GridFutureAdapter<Boolean> part=new GridFutureAdapter<>(ctx,true);
+    fut.add(part);
+    futs.add(part);
+  }
+  fut.markInitialized();
+  assertFalse(fut.isDone());
+  assertFalse(fut.isCancelled());
+  for (int i=0; i < 3; i++) {
+    futs.get(i).onDone(true);
+    assertFalse(fut.isDone());
+  }
+  futs.get(3).onDone(new IgniteCheckedException("Test message"));
+  assertTrue(fut.isDone());
+}

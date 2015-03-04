@@ -1,0 +1,30 @@
+{
+  while (!canceled) {
+    try {
+      if (getSpi() != null) {
+        Collection<ClusterNode> nodes=getSpi().getRemoteNodes();
+        for (        ClusterNode item : nodes) {
+          boolean flag=getSpi().pingNode(item.id());
+          if (flag) {
+            info("Ping node [nodeId=" + item.id().toString().toUpperCase() + ", pingResult="+ flag+ ']');
+          }
+ else {
+            info("***Error*** Ping node fail [nodeId=" + item.id().toString().toUpperCase() + ", pingResult="+ flag+ ']');
+          }
+        }
+      }
+    }
+ catch (    Exception e) {
+      error("Can't get remote nodes list.",e);
+    }
+synchronized (mux) {
+      if (!canceled) {
+        try {
+          mux.wait(2000);
+        }
+ catch (        InterruptedException e) {
+        }
+      }
+    }
+  }
+}

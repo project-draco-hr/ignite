@@ -1,0 +1,54 @@
+{
+  for (int i=0; i < 10; i++) {
+    startGrid(0);
+    final int PUT_THREADS=50;
+    final CountDownLatch stopLatch=new CountDownLatch(1);
+    final CountDownLatch readyLatch=new CountDownLatch(PUT_THREADS);
+    final IgniteCache<Integer,Integer> cache=grid(0).jcache(null);
+    assertNotNull(cache);
+    assertEquals(atomic ? ATOMIC : TRANSACTIONAL,cache.getConfiguration(CacheConfiguration.class).getAtomicityMode());
+    assertEquals(replicated ? REPLICATED : PARTITIONED,cache.getConfiguration(CacheConfiguration.class).getCacheMode());
+    Collection<IgniteInternalFuture<?>> putFuts=new ArrayList<>();
+    for (int j=0; j < PUT_THREADS; j++) {
+      final int key=j;
+      putFuts.add(GridTestUtils.runAsync(new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          if (startTx) {
+            try (Transaction tx=grid(0).transactions().txStart()){
+              cache.put(key,key);
+              readyLatch.countDown();
+              stopLatch.await();
+              tx.commit();
+            }
+           }
+ else {
+            readyLatch.countDown();
+            stopLatch.await();
+            cache.put(key,key);
+          }
+          return null;
+        }
+      }
+));
+    }
+    readyLatch.await();
+    stopLatch.countDown();
+    stopGrid(0);
+    for (    IgniteInternalFuture<?> fut : putFuts) {
+      try {
+        fut.get();
+      }
+ catch (      IgniteCheckedException e) {
+        if (!e.getMessage().startsWith(EXPECTED_MSG))         e.printStackTrace();
+        assertTrue("Unexpected error message: " + e.getMessage(),e.getMessage().startsWith(EXPECTED_MSG));
+      }
+    }
+    try {
+      cache.put(1,1);
+    }
+ catch (    IllegalStateException e) {
+      if (!e.getMessage().startsWith(EXPECTED_MSG))       e.printStackTrace();
+      assertTrue("Unexpected error message: " + e.getMessage(),e.getMessage().startsWith(EXPECTED_MSG));
+    }
+  }
+}

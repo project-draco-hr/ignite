@@ -1,0 +1,16 @@
+{
+  ((IgniteKernal)ignite).context().timeout().addTimeoutObject(new GridTimeoutObjectAdapter(RMV_DELAY){
+    @Override public void onTimeout(){
+      ClusterNodeLocalMap<String,VisorFutureResultSetHolder> storage=ignite.nodeLocalMap();
+      VisorFutureResultSetHolder<?> t=storage.get(id);
+      if (t != null) {
+        if (t.accessed()) {
+          t.accessed(false);
+          scheduleResultSetHolderRemoval(id);
+        }
+ else         storage.remove(id);
+      }
+    }
+  }
+);
+}

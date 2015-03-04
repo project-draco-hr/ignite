@@ -1,0 +1,23 @@
+{
+  GridClient c=client();
+  GridClientCompute compute=c.compute();
+  String taskName=getTaskName();
+  Object taskArg=getTaskArgument();
+  Collection<GridClientFuture<Object>> futs=new ArrayList<>();
+  compute.execute(taskName,taskArg);
+  info(">>> First task executed successfully, running batch.");
+  for (int i=0; i < 10; i++)   futs.add(compute.executeAsync(taskName,taskArg));
+  GridClientFactory.stop(c.id(),true);
+  info(">>> Completed stop request.");
+  int failed=0;
+  for (  GridClientFuture<Object> fut : futs) {
+    try {
+      assertEquals(17,fut.get());
+    }
+ catch (    GridClientException e) {
+      failed++;
+      log.warning("Task execution failed.",e);
+    }
+  }
+  assertEquals(0,failed);
+}

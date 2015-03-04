@@ -1,0 +1,31 @@
+{
+  lock();
+  try {
+    SegmentHeader<K,V> hdr=this.hdr;
+    int hdrId=hdr.id();
+    GridCacheMapEntry<K,V>[] tab=hdr.table();
+    int idx=hash & (tab.length - 1);
+    GridCacheMapEntry<K,V> bin=tab[idx];
+    GridCacheMapEntry<K,V> cur=null;
+    GridCacheMapEntry<K,V> created=null;
+    GridCacheMapEntry<K,V> doomed=null;
+    if (bin == null) {
+      if (create)       cur=created=put0(key,hash,val,topVer,ttl);
+      return new GridTriple<>(cur,created,doomed);
+    }
+    GridCacheMapEntry<K,V> e=bin;
+    while (e != null && (e.hash() != hash || !key.equals(e.key)))     e=e.next(hdrId);
+    if (e != null) {
+      if (e.obsolete()) {
+        doomed=remove(key,hash,null);
+        if (create)         cur=created=put0(key,hash,val,topVer,ttl);
+      }
+ else       cur=e;
+    }
+ else     if (create)     cur=created=put0(key,hash,val,topVer,ttl);
+    return new GridTriple<>(cur,created,doomed);
+  }
+  finally {
+    unlock();
+  }
+}

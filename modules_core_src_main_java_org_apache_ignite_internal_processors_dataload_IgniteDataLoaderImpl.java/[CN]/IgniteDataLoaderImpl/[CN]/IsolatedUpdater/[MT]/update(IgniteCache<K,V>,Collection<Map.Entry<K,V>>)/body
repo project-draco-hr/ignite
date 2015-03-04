@@ -1,0 +1,22 @@
+{
+  IgniteCacheProxy<K,V> proxy=(IgniteCacheProxy<K,V>)cache;
+  GridCacheAdapter<K,V> internalCache=proxy.context().cache();
+  if (internalCache.isNear())   internalCache=internalCache.context().near().dht();
+  GridCacheContext<K,V> cctx=internalCache.context();
+  long topVer=cctx.affinity().affinityTopologyVersion();
+  GridCacheVersion ver=cctx.versions().next(topVer);
+  for (  Map.Entry<K,V> e : entries) {
+    try {
+      GridCacheEntryEx<K,V> entry=internalCache.entryEx(e.getKey(),topVer);
+      entry.unswap(true,false);
+      entry.initialValue(e.getValue(),null,ver,0,0,false,topVer,GridDrType.DR_LOAD);
+      cctx.evicts().touch(entry,topVer);
+    }
+ catch (    GridDhtInvalidPartitionException|GridCacheEntryRemovedException ignored) {
+    }
+catch (    IgniteCheckedException ex) {
+      IgniteLogger log=cache.unwrap(Ignite.class).log();
+      U.error(log,"Failed to set initial value for cache entry: " + e,ex);
+    }
+  }
+}

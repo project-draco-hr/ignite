@@ -1,0 +1,18 @@
+{
+  int blockSize=BLOCK_SIZE;
+  IgfsFileInfo info=new IgfsFileInfo(blockSize,1024 * 1024,null,null,false,null);
+  Collection<IgfsBlockLocation> affinity=mgr.affinity(info,0,info.length());
+  for (  IgfsBlockLocation loc : affinity) {
+    info("Going to check IGFS block location: " + loc);
+    int block=(int)(loc.start() / blockSize);
+    int endPos;
+    do {
+      IgfsBlockKey key=new IgfsBlockKey(info.id(),null,false,block);
+      ClusterNode affNode=grid(0).cachex(DATA_CACHE_NAME).affinity().mapKeyToNode(key);
+      assertTrue("Failed to find node in affinity [dataMgr=" + loc.nodeIds() + ", nodeId="+ affNode.id()+ ", block="+ block+ ']',loc.nodeIds().contains(affNode.id()));
+      endPos=(block + 1) * blockSize;
+      block++;
+    }
+ while (endPos < loc.start() + loc.length());
+  }
+}

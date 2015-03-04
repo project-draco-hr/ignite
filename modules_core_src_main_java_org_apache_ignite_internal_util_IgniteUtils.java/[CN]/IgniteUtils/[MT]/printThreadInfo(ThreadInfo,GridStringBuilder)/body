@@ -1,0 +1,17 @@
+{
+  sb.a("Thread [name=\"").a(threadInfo.getThreadName()).a("\", id=").a(threadInfo.getThreadId()).a(", state=").a(threadInfo.getThreadState()).a(", blockCnt=").a(threadInfo.getBlockedCount()).a(", waitCnt=").a(threadInfo.getWaitedCount()).a("]").a(NL);
+  LockInfo lockInfo=threadInfo.getLockInfo();
+  if (lockInfo != null) {
+    sb.a("    Lock [object=").a(lockInfo).a(", ownerName=").a(threadInfo.getLockOwnerName()).a(", ownerId=").a(threadInfo.getLockOwnerId()).a("]").a(NL);
+  }
+  MonitorInfo[] monitors=threadInfo.getLockedMonitors();
+  StackTraceElement[] elements=threadInfo.getStackTrace();
+  for (int i=0; i < elements.length; i++) {
+    StackTraceElement e=elements[i];
+    sb.a("        at ").a(e.toString());
+    for (    MonitorInfo monitor : monitors) {
+      if (monitor.getLockedStackDepth() == i)       sb.a(NL).a("        - locked ").a(monitor);
+    }
+    sb.a(NL);
+  }
+}

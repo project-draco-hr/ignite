@@ -1,0 +1,18 @@
+{
+  A.notNull(keys,"keys");
+  ctx.denyOnFlag(READ);
+  if (F.isEmpty(keys))   return;
+  if (keyCheck)   validateCacheKey(keys);
+  GridCacheVersion obsoleteVer=ctx.versions().next();
+  if (!ctx.evicts().evictSyncOrNearSync() && F.isEmptyOrNulls(filter) && ctx.isSwapOrOffheapEnabled()) {
+    try {
+      ctx.evicts().batchEvict(keys,obsoleteVer);
+    }
+ catch (    IgniteCheckedException e) {
+      U.error(log,"Failed to perform batch evict for keys: " + keys,e);
+    }
+  }
+ else {
+    for (    K k : keys)     evictx(k,obsoleteVer,filter);
+  }
+}

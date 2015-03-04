@@ -1,0 +1,28 @@
+{
+  assert(!isUnlinked(parent.shrinkOVL));
+  final Node<K,V> parentL=parent.left;
+  final Node<K,V> parentR=parent.right;
+  if (parentL != node && parentR != node) {
+    return false;
+  }
+  assert(!isUnlinked(node.shrinkOVL));
+  assert(parent == node.parent);
+  final Node<K,V> left=node.unsharedLeft();
+  final Node<K,V> right=node.unsharedRight();
+  if (left != null && right != null) {
+    return false;
+  }
+  final Node<K,V> splice=left != null ? left : right;
+  if (parentL == node) {
+    parent.left=splice;
+  }
+ else {
+    parent.right=splice;
+  }
+  if (splice != null) {
+    splice.parent=parent;
+  }
+  node.shrinkOVL=UnlinkedOVL;
+  node.vOpt=null;
+  return true;
+}

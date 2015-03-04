@@ -1,0 +1,22 @@
+{
+  IgniteCache<String,Integer> cache=jcache(0);
+  cache.clear();
+  Transaction tx=grid(0).transactions().txStart(concurrency,isolation);
+  try {
+    cache.put("key",1);
+    assertEquals("Invalid value after put",1,cache.get("key").intValue());
+    tx.commit();
+  }
+  finally {
+    tx.close();
+  }
+  assertEquals("Invalid cache size after put",1,cache.size());
+  try {
+    tx=grid(0).transactions().txStart(concurrency,isolation);
+    assertEquals("Invalid value inside transactional read",Integer.valueOf(1),cache.get("key"));
+    tx.commit();
+  }
+  finally {
+    tx.close();
+  }
+}

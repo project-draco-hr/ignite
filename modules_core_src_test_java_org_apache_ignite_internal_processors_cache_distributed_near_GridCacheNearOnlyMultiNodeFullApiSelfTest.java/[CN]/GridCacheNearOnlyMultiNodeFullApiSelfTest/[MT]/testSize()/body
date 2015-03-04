@@ -1,0 +1,14 @@
+{
+  IgniteCache<String,Integer> nearCache=jcache();
+  int size=10;
+  Map<String,Integer> map=U.newLinkedHashMap(size);
+  for (int i=0; i < size; i++)   map.put("key" + i,i);
+  nearCache.putAll(map);
+  affinityNodes();
+  checkKeySize(map.keySet());
+  checkSize(map.keySet());
+  assertEquals(10,nearCache.localSize());
+  int fullCacheSize=0;
+  for (int i=0; i < gridCount(); i++)   fullCacheSize+=jcache(i).localSize();
+  assertEquals("Invalid cache size",fullCacheSize,nearCache.size());
+}

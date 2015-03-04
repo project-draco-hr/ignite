@@ -1,0 +1,21 @@
+{
+  IgniteCache<String,Integer> cache=jcache();
+  String key=primaryKeysForCache(cache,1).get(0);
+  cache.put(key,1);
+  assertEquals((Integer)1,cache.get(key));
+  long ttl=500;
+  final ExpiryPolicy expiry=new TouchedExpiryPolicy(new Duration(MILLISECONDS,ttl));
+  grid(0).jcache(null).withExpiryPolicy(expiry).put(key,1);
+  Thread.sleep(ttl + 100);
+  cache.localEvict(Collections.singleton(key));
+  assertNull(cache.localPeek(key,CachePeekMode.ONHEAP));
+  cache.localPromote(Collections.singleton(key));
+  assertNull(cache.localPeek(key,CachePeekMode.ONHEAP));
+  assertTrue(cache.localSize() == 0);
+  load(cache,key,true);
+  CacheAffinity<String> aff=ignite(0).affinity(null);
+  for (int i=0; i < gridCount(); i++) {
+    if (aff.isPrimary(grid(i).cluster().localNode(),key))     assertEquals((Integer)1,peek(jcache(i),key));
+    if (aff.isBackup(grid(i).cluster().localNode(),key))     assertEquals((Integer)1,peek(jcache(i),key));
+  }
+}

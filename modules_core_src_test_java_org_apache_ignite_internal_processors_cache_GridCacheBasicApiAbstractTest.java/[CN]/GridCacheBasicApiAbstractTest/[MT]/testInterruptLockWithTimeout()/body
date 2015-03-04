@@ -1,0 +1,38 @@
+{
+  final IgniteCache<Integer,String> cache=ignite.jcache(null);
+  startGrid(1);
+  try {
+    final List<Integer> keys=primaryKeys(grid(1).jcache(null),2,1);
+    Lock lock1=cache.lock(keys.get(1));
+    lock1.lock();
+    final AtomicBoolean isOk=new AtomicBoolean(false);
+    final CountDownLatch latch=new CountDownLatch(1);
+    Thread t=new Thread(new Runnable(){
+      @Override public void run(){
+        try {
+          latch.countDown();
+          cache.lockAll(Arrays.asList(keys.get(0),keys.get(1))).tryLock(50000,MILLISECONDS);
+        }
+ catch (        InterruptedException ignored) {
+          isOk.set(true);
+        }
+      }
+    }
+);
+    t.start();
+    latch.await();
+    Thread.sleep(300);
+    t.interrupt();
+    t.join();
+    lock1.unlock();
+    Thread.sleep(1000);
+    assertFalse(cache.isLocalLocked(keys.get(0),false));
+    assertFalse(cache.isLocalLocked(keys.get(1),false));
+    assertFalse(grid(1).jcache(null).isLocalLocked(keys.get(0),false));
+    assertFalse(grid(1).jcache(null).isLocalLocked(keys.get(1),false));
+    assertTrue(isOk.get());
+  }
+  finally {
+    stopGrid(1);
+  }
+}

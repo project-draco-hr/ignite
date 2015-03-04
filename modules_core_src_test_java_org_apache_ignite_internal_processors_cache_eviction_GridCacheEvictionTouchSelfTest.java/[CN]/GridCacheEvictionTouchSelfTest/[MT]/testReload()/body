@@ -1,0 +1,20 @@
+{
+  plc=new CacheFifoEvictionPolicy<Object,Object>(100);
+  try {
+    Ignite ignite=startGrid(1);
+    final IgniteCache<Integer,Integer> cache=ignite.jcache(null);
+    for (int i=0; i < 10000; i++)     load(cache,i,true);
+    assertEquals(100,cache.size());
+    assertEquals(100,cache.size());
+    assertEquals(100,((CacheFifoEvictionPolicy)plc).queue().size());
+    Set<Integer> keys=new TreeSet<>();
+    for (int i=0; i < 10000; i++)     keys.add(i);
+    loadAll(cache,keys,true);
+    assertEquals(100,cache.size());
+    assertEquals(100,cache.size());
+    assertEquals(100,((CacheFifoEvictionPolicy)plc).queue().size());
+  }
+  finally {
+    stopAllGrids();
+  }
+}

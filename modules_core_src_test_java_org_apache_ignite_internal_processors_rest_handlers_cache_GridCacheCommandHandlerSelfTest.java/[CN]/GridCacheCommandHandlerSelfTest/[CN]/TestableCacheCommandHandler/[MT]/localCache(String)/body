@@ -1,0 +1,16 @@
+{
+  final GridCacheProjectionEx<Object,Object> cache=super.localCache(cacheName);
+  return (GridCacheProjectionEx<Object,Object>)Proxy.newProxyInstance(getClass().getClassLoader(),new Class[]{GridCacheProjectionEx.class},new InvocationHandler(){
+    @Override public Object invoke(    Object proxy,    Method mtd,    Object[] args) throws Throwable {
+      if (failMtd.equals(mtd.getName())) {
+        IgniteInternalFuture<Object> fut=new GridFinishedFuture<>(ctx,new IgniteCheckedException("Operation failed"));
+        fut.syncNotify(sync);
+        return fut;
+      }
+ else       if ("flagsOn".equals(mtd.getName()))       return proxy;
+ else       if ("forSubjectId".equals(mtd.getName()))       return proxy;
+      return mtd.invoke(cache,args);
+    }
+  }
+);
+}

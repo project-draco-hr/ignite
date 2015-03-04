@@ -1,0 +1,58 @@
+{
+  for (int i=0; i < gridCount(); i++)   info("Grid " + i + ": "+ grid(i).localNode().id());
+  final Object affKey=new Object(){
+    @Override public boolean equals(    Object obj){
+      return obj == this;
+    }
+    @Override public int hashCode(){
+      return 1;
+    }
+  }
+;
+  Object key=new Object(){
+    /** 
+ */
+    @SuppressWarnings("UnusedDeclaration") @CacheAffinityKeyMapped private final Object key0=affKey;
+    @Override public boolean equals(    Object obj){
+      return obj == this;
+    }
+    @Override public int hashCode(){
+      return 2;
+    }
+  }
+;
+  info("All affinity nodes: " + affinityNodes());
+  IgniteCache<Object,Object> cache=grid(0).jcache(null);
+  info("Cache affinity nodes: " + affinity(cache).mapKeyToPrimaryAndBackups(key));
+  CacheAffinity<Object> aff=affinity(cache);
+  Collection<ClusterNode> nodes=aff.mapKeyToPrimaryAndBackups(key);
+  info("Got nodes from affinity: " + nodes);
+  assertEquals(cacheMode() == PARTITIONED ? 2 : affinityNodes().size(),nodes.size());
+  ClusterNode primary=F.first(nodes);
+  ClusterNode backup=F.last(nodes);
+  assertNotSame(primary,backup);
+  ClusterNode other=null;
+  for (int i=0; i < gridCount(); i++) {
+    ClusterNode node=grid(i).localNode();
+    if (!node.equals(primary) && !node.equals(backup)) {
+      other=node;
+      break;
+    }
+  }
+  assertNotSame(other,primary);
+  assertNotSame(other,backup);
+  assertNotNull(primary);
+  assertNotNull(backup);
+  assertNotNull(other);
+  assertTrue(affinity(cache).isPrimary(primary,key));
+  assertFalse(affinity(cache).isBackup(primary,key));
+  assertTrue(affinity(cache).isPrimaryOrBackup(primary,key));
+  assertFalse(affinity(cache).isPrimary(backup,key));
+  assertTrue(affinity(cache).isBackup(backup,key));
+  assertTrue(affinity(cache).isPrimaryOrBackup(backup,key));
+  assertFalse(affinity(cache).isPrimary(other,key));
+  if (cacheMode() == PARTITIONED) {
+    assertFalse(affinity(cache).isBackup(other,key));
+    assertFalse(affinity(cache).isPrimaryOrBackup(other,key));
+  }
+}

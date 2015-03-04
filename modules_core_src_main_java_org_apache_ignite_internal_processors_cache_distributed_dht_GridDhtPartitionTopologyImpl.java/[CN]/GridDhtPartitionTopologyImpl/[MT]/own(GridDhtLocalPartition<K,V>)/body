@@ -1,0 +1,16 @@
+{
+  ClusterNode loc=cctx.localNode();
+  lock.writeLock().lock();
+  try {
+    if (part.own()) {
+      updateLocal(part.id(),loc.id(),part.state(),updateSeq.incrementAndGet());
+      consistencyCheck();
+      return true;
+    }
+    consistencyCheck();
+    return false;
+  }
+  finally {
+    lock.writeLock().unlock();
+  }
+}

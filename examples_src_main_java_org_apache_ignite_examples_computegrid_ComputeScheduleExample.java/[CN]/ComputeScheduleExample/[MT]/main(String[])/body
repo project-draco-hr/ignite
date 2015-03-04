@@ -1,0 +1,25 @@
+{
+  try (Ignite ignite=Ignition.start("examples/config/example-compute.xml")){
+    System.out.println();
+    System.out.println("Compute schedule example started.");
+    SchedulerFuture<?> fut=ignite.scheduler().scheduleLocal(new Callable<Integer>(){
+      private int invocations;
+      @Override public Integer call(){
+        invocations++;
+        ignite.compute().broadcast(new IgniteRunnable(){
+          @Override public void run(){
+            System.out.println();
+            System.out.println("Howdy! :) ");
+          }
+        }
+);
+        return invocations;
+      }
+    }
+,"{5, 3} * * * * *");
+    while (!fut.isDone())     System.out.println(">>> Invocation #: " + fut.get());
+    System.out.println();
+    System.out.println(">>> Schedule future is done and has been unscheduled.");
+    System.out.println(">>> Check all nodes for hello message output.");
+  }
+ }

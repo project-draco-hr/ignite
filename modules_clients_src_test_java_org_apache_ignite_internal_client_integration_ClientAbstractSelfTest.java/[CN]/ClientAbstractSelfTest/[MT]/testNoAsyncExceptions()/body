@@ -1,0 +1,34 @@
+{
+  GridClient client=client();
+  GridClientData data=client.data(CACHE_NAME);
+  GridClientCompute compute=client.compute().projection(new GridClientPredicate<GridClientNode>(){
+    @Override public boolean apply(    GridClientNode e){
+      return false;
+    }
+  }
+);
+  Map<String,GridClientFuture<?>> futs=new LinkedHashMap<>();
+  futs.put("exec",compute.executeAsync("taskName","taskArg"));
+  futs.put("affExec",compute.affinityExecuteAsync("taskName","cacheName","affKey","taskArg"));
+  futs.put("refreshById",compute.refreshNodeAsync(UUID.randomUUID(),true,true));
+  futs.put("refreshByIP",compute.refreshNodeAsync("nodeIP",true,true));
+  futs.put("refreshTop",compute.refreshTopologyAsync(true,true));
+  GridClientFactory.stop(client.id(),false);
+  futs.put("put",data.putAsync("key","val"));
+  futs.put("putAll",data.putAllAsync(F.asMap("key","val")));
+  futs.put("get",data.getAsync("key"));
+  futs.put("getAll",data.getAllAsync(Arrays.asList("key")));
+  futs.put("remove",data.removeAsync("key"));
+  futs.put("removeAll",data.removeAllAsync(Arrays.asList("key")));
+  futs.put("replace",data.replaceAsync("key","val"));
+  futs.put("cas",data.casAsync("key","val","val2"));
+  futs.put("metrics",data.metricsAsync());
+  for (  Map.Entry<String,GridClientFuture<?>> e : futs.entrySet()) {
+    try {
+      e.getValue().get();
+      info("Expects '" + e.getKey() + "' fails with grid client exception.");
+    }
+ catch (    GridServerUnreachableException|GridClientClosedException ignore) {
+    }
+  }
+}

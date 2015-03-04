@@ -1,0 +1,23 @@
+{
+  final AtomicBoolean done=new AtomicBoolean();
+  final AtomicInteger writes=new AtomicInteger();
+  IgniteInternalFuture fut1=GridTestUtils.runMultiThreadedAsync(new Runnable(){
+    @Override public void run(){
+      while (!done.get()) {
+        map.put(rnd.nextInt(keyRange) + "very.long.string.for.key",1);
+        writes.incrementAndGet();
+      }
+    }
+  }
+,40,"thread");
+  long duration=20 * 1000;
+  for (long time=0; time < duration; ) {
+    Thread.sleep(5000);
+    time+=5000;
+    X.println(">>> Stats [duration=" + time + ", writes="+ writes.get()+ ']');
+  }
+  done.set(true);
+  fut1.get();
+  X.println(">>> Test finished [duration=" + duration + ", writes="+ writes.get()+ ']');
+  return writes.get();
+}

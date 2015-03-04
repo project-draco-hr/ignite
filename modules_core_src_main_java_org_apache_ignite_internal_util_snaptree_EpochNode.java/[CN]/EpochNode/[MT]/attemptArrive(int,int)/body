@@ -1,0 +1,26 @@
+{
+  int tries=0;
+  while (true) {
+    final long state=get();
+    if (isMarked(state)) {
+      return null;
+    }
+    if (isAnyChildPresent(state) || (tries >= TRIES_BEFORE_SUBTREE && level < MAX_LEVELS)) {
+      if (id == 0) {
+        id=getIdentity();
+      }
+      final EpochNode child=getOrCreateChild(id & BF_MASK);
+      if (child == null) {
+        return null;
+      }
+      return child.attemptArrive(id >> LOG_BF,level + 1);
+    }
+    if (!mayArrive(state)) {
+      throw new IllegalStateException("maximum arrival count of " + ENTRY_COUNT_MASK + " exceeded");
+    }
+    if (compareAndSet(state,withArrive(state))) {
+      return this;
+    }
+    ++tries;
+  }
+}

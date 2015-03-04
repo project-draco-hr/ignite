@@ -1,0 +1,15 @@
+{
+  if (ctx.config().isDaemon())   return;
+  super.onKernalStop(cancel);
+  if (!F.isEmpty(mBeans)) {
+    for (    ObjectName name : mBeans) {
+      try {
+        mBeanSrv.unregisterMBean(name);
+      }
+ catch (      JMException e) {
+        U.error(log,"Failed to unregister streamer MBean.",e);
+      }
+    }
+  }
+  for (  IgniteStreamerImpl streamer : map.values())   streamer.onKernalStop(cancel);
+}

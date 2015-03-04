@@ -1,0 +1,25 @@
+{
+  return new Callable<Boolean>(){
+    @Override public Boolean call() throws Exception {
+      try (IgniteInternalTx tx=CU.txStartInternal(ctx,atomicView,PESSIMISTIC,REPEATABLE_READ)){
+        GridCacheAtomicStampedValue<T,S> stmp=atomicView.get(key);
+        if (stmp == null)         throw new IgniteCheckedException("Failed to find atomic stamped with given name: " + name);
+        if (!(expValPred.apply(stmp.value()) && expStampPred.apply(stmp.stamp()))) {
+          tx.setRollbackOnly();
+          return false;
+        }
+ else {
+          stmp.set(newValClos.apply(stmp.value()),newStampClos.apply(stmp.stamp()));
+          atomicView.put(key,stmp);
+          tx.commit();
+          return true;
+        }
+      }
+ catch (      Error|Exception e) {
+        U.error(log,"Failed to compare and set [expValPred=" + expValPred + ", newValClos="+ newValClos+ ", expStampPred="+ expStampPred+ ", newStampClos="+ newStampClos+ ", atomicStamped="+ this+ ']',e);
+        throw e;
+      }
+    }
+  }
+;
+}

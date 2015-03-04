@@ -1,0 +1,13 @@
+{
+  Ignite g=randomGrid();
+  final Integer affKey=1;
+  g.jcache(CACHE_NAME).put(affKey,affKey.toString());
+  String name="serviceAffinity";
+  IgniteServices svcs=g.services().withAsync();
+  svcs.deployKeyAffinitySingleton(name,new AffinityService(affKey),CACHE_NAME,affKey);
+  IgniteFuture<?> fut=svcs.future();
+  info("Deployed service: " + name);
+  fut.get();
+  info("Finished waiting for service future: " + name);
+  checkCount(name,g.services().serviceDescriptors(),1);
+}

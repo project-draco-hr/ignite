@@ -1,0 +1,13 @@
+{
+  try {
+    Ignite ignite1=startGrid(1);
+    Ignite ignite2=startGrid(2);
+    ignite1.compute().localDeployTask(SessionTestTask.class,SessionTestTask.class.getClassLoader());
+    ComputeTaskFuture<?> fut=executeAsync(ignite1.compute(),SessionTestTask.class.getName(),ignite2.cluster().localNode().id());
+    fut.get();
+  }
+  finally {
+    stopGrid(1);
+    stopGrid(2);
+  }
+}

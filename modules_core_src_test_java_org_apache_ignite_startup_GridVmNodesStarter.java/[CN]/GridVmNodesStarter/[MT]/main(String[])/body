@@ -1,0 +1,35 @@
+{
+  System.setProperty(IGNITE_UPDATE_NOTIFIER,"false");
+  Options options=createOptions();
+  CommandLineParser parser=new PosixParser();
+  String cfgPath=null;
+  Integer nodesCnt=null;
+  try {
+    CommandLine cmd=parser.parse(options,args);
+    if (cmd.hasOption(OPTION_CFG))     cfgPath=cmd.getOptionValue(OPTION_CFG);
+    if (cmd.hasOption(OPTION_N))     try {
+      nodesCnt=Integer.parseInt(cmd.getOptionValue(OPTION_N));
+    }
+ catch (    NumberFormatException ignored) {
+    }
+    if (nodesCnt == null)     nodesCnt=DFLT_NODES_COUNT;
+  }
+ catch (  ParseException e) {
+    exit(e.getMessage(),options,-1);
+  }
+  System.out.println();
+  System.out.println(">>> VM Nodes Starter parameters:");
+  System.out.println("  Nodes Count: " + nodesCnt);
+  System.out.println("  Config Path: " + cfgPath);
+  System.out.println();
+  final IgniteConfiguration[] cfgs=new IgniteConfiguration[nodesCnt];
+  for (int i=0; i < nodesCnt; i++)   cfgs[i]=getConfigurations(cfgPath).iterator().next();
+  final AtomicInteger cfgIdx=new AtomicInteger(0);
+  GridTestUtils.runMultiThreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      G.start(cfgs[cfgIdx.getAndIncrement()]);
+      return null;
+    }
+  }
+,nodesCnt,"test-node-starter");
+}

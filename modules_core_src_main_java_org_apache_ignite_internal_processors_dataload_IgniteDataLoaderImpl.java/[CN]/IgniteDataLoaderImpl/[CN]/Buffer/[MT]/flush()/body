@@ -1,0 +1,25 @@
+{
+  List<Map.Entry<K,V>> entries0=null;
+  GridFutureAdapter<Object> curFut0=null;
+synchronized (this) {
+    if (!entries.isEmpty()) {
+      entries0=entries;
+      curFut0=curFut;
+      entries=newEntries();
+      curFut=new GridFutureAdapter<>(ctx);
+      curFut.listenAsync(signalC);
+    }
+  }
+  if (entries0 != null)   submit(entries0,curFut0);
+  GridCompoundFuture<Object,Object> res=null;
+  for (  IgniteInternalFuture<Object> f : locFuts) {
+    if (res == null)     res=new GridCompoundFuture<>(ctx);
+    res.add(f);
+  }
+  for (  IgniteInternalFuture<Object> f : reqs.values()) {
+    if (res == null)     res=new GridCompoundFuture<>(ctx);
+    res.add(f);
+  }
+  if (res != null)   res.markInitialized();
+  return res;
+}

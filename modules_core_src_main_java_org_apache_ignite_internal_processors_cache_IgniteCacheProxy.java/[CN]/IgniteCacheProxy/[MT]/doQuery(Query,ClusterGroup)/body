@@ -1,0 +1,37 @@
+{
+  final CacheQuery<Map.Entry<K,V>> qry;
+  final CacheQueryFuture<Map.Entry<K,V>> fut;
+  if (filter instanceof ScanQuery) {
+    IgniteBiPredicate<K,V> p=((ScanQuery)filter).getFilter();
+    qry=delegate.queries().createScanQuery(p != null ? p : acceptAll());
+    if (grp != null)     qry.projection(grp);
+    fut=qry.execute();
+  }
+ else   if (filter instanceof TextQuery) {
+    TextQuery p=(TextQuery)filter;
+    qry=delegate.queries().createFullTextQuery(p.getType(),p.getText());
+    if (grp != null)     qry.projection(grp);
+    fut=qry.execute();
+  }
+ else   if (filter instanceof SpiQuery) {
+    qry=((GridCacheQueriesEx)delegate.queries()).createSpiQuery();
+    if (grp != null)     qry.projection(grp);
+    fut=qry.execute(((SpiQuery)filter).getArgs());
+  }
+ else   if (filter instanceof SqlQuery) {
+    SqlQuery q=(SqlQuery)filter;
+    qry=((GridCacheQueriesEx)delegate.queries()).createSqlQuery(q.getType(),q.getSql());
+    if (grp != null)     qry.projection(grp);
+    if (q.getPageSize() > 0)     qry.pageSize(q.getPageSize());
+    qry.enableDedup(false);
+    qry.includeBackups(false);
+    fut=qry.execute(q.getArgs());
+  }
+ else   throw new IgniteException("Unsupported query predicate: " + filter);
+  return new QueryCursorImpl<>(new ClIter<Map.Entry<K,V>,Cache.Entry<K,V>>(fut){
+    @Override protected Cache.Entry<K,V> convert(    Map.Entry<K,V> e){
+      return new CacheEntryImpl<>(e.getKey(),e.getValue());
+    }
+  }
+);
+}

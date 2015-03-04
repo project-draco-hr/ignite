@@ -1,0 +1,24 @@
+{
+  if (idx == null)   return new GridFinishedFuture<>(ctx,new IgniteCheckedException("Indexing is disabled."));
+  if (desc == null || !desc.registered())   return new GridFinishedFuture<Void>(ctx);
+  final GridWorkerFuture<?> fut=new GridWorkerFuture<Void>();
+  GridWorker w=new GridWorker(ctx.gridName(),"index-rebuild-worker",log){
+    @Override protected void body(){
+      try {
+        idx.rebuildIndexes(space,desc);
+        fut.onDone();
+      }
+ catch (      Exception e) {
+        fut.onDone(e);
+      }
+catch (      Throwable e) {
+        log.error("Failed to rebuild indexes for type: " + desc.name(),e);
+        fut.onDone(e);
+      }
+    }
+  }
+;
+  fut.setWorker(w);
+  execSvc.execute(w);
+  return fut;
+}

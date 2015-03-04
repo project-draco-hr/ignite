@@ -1,0 +1,35 @@
+{
+  try {
+    while (true) {
+      Long idx=transformHeader(new PollProcessor(id));
+      if (idx == null)       return null;
+      checkRemoved(idx);
+      GridCacheQueueItemKey key=itemKey(idx);
+      int cnt=0;
+      long stop=0;
+      while (true) {
+        try {
+          T data=(T)cache.remove(key,null);
+          if (data != null)           return data;
+          if (stop == 0)           stop=U.currentTimeMillis() + RETRY_TIMEOUT;
+          while (U.currentTimeMillis() < stop) {
+            data=(T)cache.remove(key,null);
+            if (data != null)             return data;
+          }
+          break;
+        }
+ catch (        CachePartialUpdateCheckedException e) {
+          if (cnt++ == MAX_UPDATE_RETRIES)           throw e;
+ else {
+            U.warn(log,"Failed to remove queue item, will retry [err=" + e + ']');
+            U.sleep(RETRY_DELAY);
+          }
+        }
+      }
+      U.warn(log,"Failed to get item, will retry poll [queue=" + queueName + ", idx="+ idx+ ']');
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+}

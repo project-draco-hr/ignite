@@ -1,0 +1,10 @@
+{
+  try (Ignite g=G.start("examples/config/example-cache.xml")){
+    int max=30000;
+    IgniteDataLoader<Integer,TestObject> ldr=g.dataLoader("replicated");
+    for (int i=0; i < max; i++)     ldr.addData(i,new TestObject(i,"Test object: " + i));
+    ldr.close(false);
+    X.println("Populated replicated cache.");
+    g.compute().execute(new GridContinuousMapperTask1(),max);
+  }
+ }

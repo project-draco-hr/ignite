@@ -1,0 +1,33 @@
+{
+  cacheEnabled=true;
+  cacheMode=PARTITIONED;
+  initCache=new C1<CacheConfiguration,Void>(){
+    @SuppressWarnings("unchecked") @Override public Void apply(    CacheConfiguration cc){
+      cc.setAtomicityMode(TRANSACTIONAL);
+      cc.setDistributionMode(PARTITIONED_ONLY);
+      cc.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(new TestStore()));
+      cc.setReadThrough(true);
+      cc.setWriteThrough(true);
+      cc.setLoadPreviousValue(true);
+      return null;
+    }
+  }
+;
+  startGrid(1);
+  initCache=new C1<CacheConfiguration,Void>(){
+    @Override public Void apply(    CacheConfiguration cc){
+      cc.setAtomicityMode(TRANSACTIONAL);
+      cc.setDistributionMode(PARTITIONED_ONLY);
+      cc.setCacheStoreFactory(null);
+      return null;
+    }
+  }
+;
+  GridTestUtils.assertThrows(log,new IgniteCallable<Object>(){
+    @Override public Object call() throws Exception {
+      startGrid(2);
+      return null;
+    }
+  }
+,IgniteCheckedException.class,null);
+}

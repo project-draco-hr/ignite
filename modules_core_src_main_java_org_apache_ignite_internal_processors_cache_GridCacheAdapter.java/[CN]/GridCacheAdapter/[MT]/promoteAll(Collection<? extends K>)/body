@@ -1,0 +1,25 @@
+{
+  ctx.denyOnFlags(F.asList(READ,SKIP_SWAP));
+  if (F.isEmpty(keys))   return;
+  if (keyCheck)   validateCacheKeys(keys);
+  Collection<K> unswap=new ArrayList<>(keys.size());
+  for (  K key : keys) {
+    GridCacheEntryEx<K,V> entry=peekEx(key);
+    try {
+      if (entry == null || entry.obsolete() || entry.isNewLocked())       unswap.add(key);
+    }
+ catch (    GridCacheEntryRemovedException ignored) {
+    }
+  }
+  Collection<GridCacheBatchSwapEntry<K,V>> swapped=ctx.swap().readAndRemove(unswap);
+  for (  GridCacheBatchSwapEntry<K,V> swapEntry : swapped) {
+    K key=swapEntry.key();
+    GridCacheEntryEx<K,V> entry=entryEx(key);
+    try {
+      entry.initialValue(key,swapEntry);
+    }
+ catch (    GridCacheEntryRemovedException ignored) {
+      if (log.isDebugEnabled())       log.debug("Entry has been concurrently removed.");
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  try {
+    startGridsMultiThreaded(5);
+    Long startTime=null;
+    IgniteKernal firstGrid=null;
+    Collection<IgniteKernal> grids=new ArrayList<>();
+    for (int i=0; i < 5; i++) {
+      IgniteKernal grid=(IgniteKernal)grid(i);
+      assertTrue(grid.context().discovery().gridStartTime() > 0);
+      if (i > 0)       assertEquals(startTime,(Long)grid.context().discovery().gridStartTime());
+ else       startTime=grid.context().discovery().gridStartTime();
+      if (grid.localNode().order() == 1)       firstGrid=grid;
+ else       grids.add(grid);
+    }
+    assertNotNull(firstGrid);
+    stopGrid(firstGrid.name());
+    for (    IgniteKernal grid : grids)     assertEquals(startTime,(Long)grid.context().discovery().gridStartTime());
+    grids.add((IgniteKernal)startGrid(5));
+    for (    IgniteKernal grid : grids)     assertEquals(startTime,(Long)grid.context().discovery().gridStartTime());
+  }
+  finally {
+    stopAllGrids();
+  }
+}

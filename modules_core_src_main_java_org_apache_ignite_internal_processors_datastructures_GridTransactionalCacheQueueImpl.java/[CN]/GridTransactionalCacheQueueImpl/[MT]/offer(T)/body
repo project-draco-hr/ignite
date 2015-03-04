@@ -1,0 +1,34 @@
+{
+  A.notNull(item,"item");
+  try {
+    boolean retVal;
+    int cnt=0;
+    while (true) {
+      try {
+        try (IgniteInternalTx tx=cache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
+          Long idx=(Long)cache.invoke(queueKey,new AddProcessor(id,1)).get();
+          if (idx != null) {
+            checkRemoved(idx);
+            cache.put(itemKey(idx),item);
+            retVal=true;
+          }
+ else           retVal=false;
+          tx.commit();
+          break;
+        }
+       }
+ catch (      ClusterTopologyCheckedException e) {
+        if (e instanceof ClusterGroupEmptyCheckedException)         throw e;
+        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
+ else {
+          U.warn(log,"Failed to add item, will retry [err=" + e + ']');
+          U.sleep(RETRY_DELAY);
+        }
+      }
+    }
+    return retVal;
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+}

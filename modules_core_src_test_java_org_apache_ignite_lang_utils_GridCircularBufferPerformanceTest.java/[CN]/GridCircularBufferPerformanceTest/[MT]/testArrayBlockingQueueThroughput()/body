@@ -1,0 +1,28 @@
+{
+  final int size=256 * 1024;
+  final ArrayBlockingQueue<Integer> buf=new ArrayBlockingQueue<>(size);
+  final LongAdder cnt=new LongAdder();
+  final AtomicBoolean finished=new AtomicBoolean();
+  multithreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      while (!finished.get()) {
+        U.sleep(5000);
+        info("Ops/sec: " + cnt.sumThenReset() / 5);
+      }
+      return null;
+    }
+  }
+,1);
+  multithreaded(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      while (!finished.get()) {
+        buf.add(1);
+        buf.poll();
+        cnt.increment();
+      }
+      return null;
+    }
+  }
+,8);
+  info("Buffer: " + buf);
+}

@@ -1,0 +1,11 @@
+{
+  super.onKernalStop0(cancel);
+  stopping=true;
+  busyLock.block();
+  if (evictSync && !cctx.isNear() && backupWorker != null) {
+    backupWorker.cancel();
+    U.join(backupWorkerThread,log);
+  }
+  for (  EvictionFuture fut : futs.values())   fut.cancel();
+  if (log.isDebugEnabled())   log.debug("Eviction manager stopped on node: " + cctx.nodeId());
+}

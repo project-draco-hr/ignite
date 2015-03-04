@@ -1,0 +1,16 @@
+{
+  List<IgniteInternalFuture<?>> cpFuts;
+synchronized (mux) {
+    cpFuts=new ArrayList<>(futs);
+    isBeingShutdown=true;
+  }
+  for (  IgniteInternalFuture<?> task : cpFuts) {
+    try {
+      task.cancel();
+    }
+ catch (    IgniteCheckedException e) {
+      U.error(log,"Failed to cancel task: " + task,e);
+    }
+  }
+  return Collections.emptyList();
+}

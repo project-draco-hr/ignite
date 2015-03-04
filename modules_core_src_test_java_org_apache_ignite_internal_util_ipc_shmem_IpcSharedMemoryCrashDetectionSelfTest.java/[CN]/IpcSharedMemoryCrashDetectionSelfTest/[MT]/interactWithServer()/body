@@ -1,0 +1,12 @@
+{
+  ProcessStartResult srvStartRes=startSharedMemoryTestServer();
+  ProcessStartResult clientStartRes=startSharedMemoryTestClient();
+  clientStartRes.isReadyLatch().await();
+  info("Going to kill server.");
+  srvStartRes.proc().kill();
+  srvStartRes.isKilledLatch().await();
+  info("Going to kill client.");
+  clientStartRes.proc().kill();
+  clientStartRes.isKilledLatch().await();
+  return clientStartRes.shmemIds();
+}

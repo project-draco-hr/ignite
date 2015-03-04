@@ -1,0 +1,24 @@
+{
+  final AtomicReference<Exception> err=new AtomicReference<>();
+  multithreadedAsync(new Runnable(){
+    @Override public void run(){
+      try {
+        delegate.setShouldFail(true);
+        initStore(2);
+        try {
+          store.write(new CacheEntryImpl<>(1,"val1"));
+          store.write(new CacheEntryImpl<>(2,"val2"));
+        }
+  finally {
+          shutdownStore();
+          delegate.setShouldFail(false);
+        }
+      }
+ catch (      Exception e) {
+        err.set(e);
+      }
+    }
+  }
+,1).get();
+  if (err.get() != null)   throw err.get();
+}

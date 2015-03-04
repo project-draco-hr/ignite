@@ -1,0 +1,21 @@
+{
+  try {
+    boolean reset=false;
+    while (!closed && !Thread.currentThread().isInterrupted()) {
+      try {
+        if (reset)         selector=createSelector(locAddr);
+        accept();
+      }
+ catch (      IgniteCheckedException e) {
+        if (!Thread.currentThread().isInterrupted()) {
+          U.error(log,"Failed to accept remote connection (will wait for " + ERR_WAIT_TIME + "ms).",e);
+          U.sleep(ERR_WAIT_TIME);
+          reset=true;
+        }
+      }
+    }
+  }
+  finally {
+    closeSelector();
+  }
+}

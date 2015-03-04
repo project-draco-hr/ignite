@@ -1,0 +1,22 @@
+{
+  return new Callable<Boolean>(){
+    @Override public Boolean call() throws Exception {
+      try (IgniteInternalTx tx=CU.txStartInternal(ctx,atomicView,PESSIMISTIC,REPEATABLE_READ)){
+        GridCacheAtomicLongValue val=atomicView.get(key);
+        if (val == null)         throw new IgniteCheckedException("Failed to find atomic long with given name: " + name);
+        boolean retVal=val.get() == expVal;
+        if (retVal) {
+          val.set(newVal);
+          atomicView.put(key,val);
+          tx.commit();
+        }
+        return retVal;
+      }
+ catch (      Error|Exception e) {
+        U.error(log,"Failed to compare and set: " + this,e);
+        throw e;
+      }
+    }
+  }
+;
+}

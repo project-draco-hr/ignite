@@ -1,0 +1,20 @@
+{
+  try {
+    IgniteConfiguration cfg=ignite.configuration();
+    for (    GridCache cache : ignite.cachesx()) {
+      String cacheName=cache.name();
+      if (arg.systemCaches() || !(isSystemCache(cacheName) || isIgfsCache(cfg,cacheName))) {
+        long start0=U.currentTimeMillis();
+        try {
+          res.caches().add(VisorCache.from(ignite,cache,arg.sample()));
+        }
+  finally {
+          if (debug)           log(ignite.log(),"Collected cache: " + cache.name(),getClass(),start0);
+        }
+      }
+    }
+  }
+ catch (  Throwable cachesEx) {
+    res.cachesEx(cachesEx);
+  }
+}

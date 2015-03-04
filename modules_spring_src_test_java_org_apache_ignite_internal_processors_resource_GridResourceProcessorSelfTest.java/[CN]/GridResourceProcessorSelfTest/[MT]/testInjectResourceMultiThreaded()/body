@@ -1,0 +1,28 @@
+{
+  final int threadsCnt=100;
+  final int iters=2000000;
+  ctx=newContext();
+  ctx.add(new GridResourceProcessor(ctx));
+  ctx.start();
+  try {
+    GridTestUtils.runMultiThreaded(new Runnable(){
+      @Override public void run(){
+        try {
+          Test1 obj=new Test1();
+          long start=System.currentTimeMillis();
+          for (int i=0; i < iters; i++)           ctx.resource().injectBasicResource(obj,TestAnnotation1.class,"value");
+          long duration=(System.currentTimeMillis() - start);
+          float avgInjectTime=Math.round(1000.0f * duration / iters) / 1000.0f;
+          info("Finished load test [avgInjectTime=" + avgInjectTime + "ms, duration="+ duration+ "ms, count="+ iters+ ']');
+        }
+ catch (        IgniteCheckedException e) {
+          fail("Failed to inject resources: " + e.getMessage());
+        }
+      }
+    }
+,threadsCnt,"grid-ioc-test");
+  }
+  finally {
+    ctx.stop(true);
+  }
+}

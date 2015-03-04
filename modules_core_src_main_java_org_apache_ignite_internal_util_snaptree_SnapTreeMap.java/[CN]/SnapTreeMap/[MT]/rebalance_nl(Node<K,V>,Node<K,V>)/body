@@ -1,0 +1,30 @@
+{
+  final Node<K,V> nL=n.unsharedLeft();
+  final Node<K,V> nR=n.unsharedRight();
+  if ((nL == null || nR == null) && n.vOpt == null) {
+    if (attemptUnlink_nl(nParent,n)) {
+      return fixHeight_nl(nParent);
+    }
+ else {
+      return n;
+    }
+  }
+  final int hN=n.height;
+  final int hL0=height(nL);
+  final int hR0=height(nR);
+  final int hNRepl=1 + Math.max(hL0,hR0);
+  final int bal=hL0 - hR0;
+  if (bal > 1) {
+    return rebalanceToRight_nl(nParent,n,nL,hR0);
+  }
+ else   if (bal < -1) {
+    return rebalanceToLeft_nl(nParent,n,nR,hL0);
+  }
+ else   if (hNRepl != hN) {
+    n.height=hNRepl;
+    return fixHeight_nl(nParent);
+  }
+ else {
+    return null;
+  }
+}

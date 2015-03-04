@@ -1,0 +1,21 @@
+{
+  mapTime=U.currentTimeMillis();
+  if (!mappings.isEmpty()) {
+    for (    GridDhtAtomicUpdateRequest<K,V> req : mappings.values()) {
+      try {
+        if (log.isDebugEnabled())         log.debug("Sending DHT atomic update request [nodeId=" + req.nodeId() + ", req="+ req+ ']');
+        cctx.io().send(req.nodeId(),req,cctx.ioPolicy());
+      }
+ catch (      ClusterTopologyCheckedException ignored) {
+        U.warn(log,"Failed to send update request to backup node because it left grid: " + req.nodeId());
+        mappings.remove(req.nodeId());
+      }
+catch (      IgniteCheckedException e) {
+        U.error(log,"Failed to send update request to backup node (did node leave the grid?): " + req.nodeId(),e);
+        mappings.remove(req.nodeId());
+      }
+    }
+  }
+  checkComplete();
+  if (updateReq.writeSynchronizationMode() != FULL_SYNC)   completionCb.apply(updateReq,updateRes);
+}

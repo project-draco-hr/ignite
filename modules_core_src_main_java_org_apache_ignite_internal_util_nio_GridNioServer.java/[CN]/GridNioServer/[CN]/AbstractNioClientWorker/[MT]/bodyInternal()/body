@@ -1,0 +1,74 @@
+{
+  try {
+    while (!closed && selector.isOpen()) {
+      NioOperationFuture req;
+      while ((req=changeReqs.poll()) != null) {
+switch (req.operation()) {
+case REGISTER:
+{
+            register(req);
+            break;
+          }
+case REQUIRE_WRITE:
+{
+          SelectionKey key=req.session().key();
+          if (key.isValid()) {
+            key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+            ((GridNioSessionImpl)key.attachment()).bytesSent(0);
+          }
+          break;
+        }
+case CLOSE:
+{
+        if (close(req.session(),null))         req.onDone(true);
+ else         req.onDone(false);
+        break;
+      }
+case PAUSE_READ:
+{
+      SelectionKey key=req.session().key();
+      if (key.isValid()) {
+        key.interestOps(key.interestOps() & (~SelectionKey.OP_READ));
+        GridSelectorNioSessionImpl ses=(GridSelectorNioSessionImpl)key.attachment();
+        ses.readsPaused(true);
+        req.onDone(true);
+      }
+ else       req.onDone(false);
+      break;
+    }
+case RESUME_READ:
+{
+    SelectionKey key=req.session().key();
+    if (key.isValid()) {
+      key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+      GridSelectorNioSessionImpl ses=(GridSelectorNioSessionImpl)key.attachment();
+      ses.readsPaused(false);
+      req.onDone(true);
+    }
+ else     req.onDone(false);
+    break;
+  }
+}
+}
+if (selector.select(2000) > 0) processSelectedKeys(selector.selectedKeys());
+checkIdle(selector.keys());
+}
+}
+ catch (ClosedByInterruptException e) {
+if (log.isDebugEnabled()) log.debug("Closing selector due to thread interruption: " + e.getMessage());
+}
+catch (ClosedSelectorException e) {
+throw new IgniteCheckedException("Selector got closed while active.",e);
+}
+catch (IOException e) {
+throw new IgniteCheckedException("Failed to select events on selector.",e);
+}
+ finally {
+if (selector.isOpen()) {
+if (log.isDebugEnabled()) log.debug("Closing all connected client sockets.");
+for (SelectionKey key : selector.keys()) close((GridSelectorNioSessionImpl)key.attachment(),null);
+if (log.isDebugEnabled()) log.debug("Closing NIO selector.");
+U.close(selector,log);
+}
+}
+}

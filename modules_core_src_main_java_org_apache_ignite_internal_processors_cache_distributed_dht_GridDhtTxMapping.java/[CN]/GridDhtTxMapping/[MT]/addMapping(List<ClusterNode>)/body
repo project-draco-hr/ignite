@@ -1,0 +1,12 @@
+{
+  ClusterNode primary=F.first(nodes);
+  Collection<ClusterNode> backups=F.view(nodes,F.notEqualTo(primary));
+  if (last == null || !last.primary.equals(primary.id())) {
+    last=new TxMapping(primary,backups);
+    mappings.add(last);
+  }
+ else   last.add(backups);
+  Collection<UUID> storedBackups=txNodes.get(last.primary);
+  if (storedBackups == null)   txNodes.put(last.primary,storedBackups=new HashSet<>());
+  storedBackups.addAll(last.backups);
+}

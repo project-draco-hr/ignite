@@ -1,0 +1,30 @@
+{
+  GridFutureAdapter<String> fut=new GridFutureAdapter<>(new GridTestKernalContext(log),true);
+  int lsnrCnt=10;
+  final CountDownLatch latch=new CountDownLatch(lsnrCnt);
+  final Thread runThread=Thread.currentThread();
+  final AtomicReference<Exception> err=new AtomicReference<>();
+  for (int i=0; i < lsnrCnt; i++) {
+    fut.listenAsync(new CI1<IgniteInternalFuture<String>>(){
+      @Override public void apply(      IgniteInternalFuture<String> t){
+        if (Thread.currentThread() != runThread)         err.compareAndSet(null,new Exception("Wrong notification thread: " + Thread.currentThread()));
+        latch.countDown();
+      }
+    }
+);
+  }
+  fut.onDone();
+  assertEquals(0,latch.getCount());
+  if (err.get() != null)   throw err.get();
+  final AtomicBoolean called=new AtomicBoolean();
+  err.set(null);
+  fut.listenAsync(new CI1<IgniteInternalFuture<String>>(){
+    @Override public void apply(    IgniteInternalFuture<String> t){
+      if (Thread.currentThread() != runThread)       err.compareAndSet(null,new Exception("Wrong notification thread: " + Thread.currentThread()));
+      called.set(true);
+    }
+  }
+);
+  assertTrue(called.get());
+  if (err.get() != null)   throw err.get();
+}

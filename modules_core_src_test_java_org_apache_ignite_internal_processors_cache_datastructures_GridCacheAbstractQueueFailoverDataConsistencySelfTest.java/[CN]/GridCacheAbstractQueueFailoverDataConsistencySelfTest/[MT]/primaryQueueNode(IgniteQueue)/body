@@ -1,0 +1,11 @@
+{
+  GridCacheContext cctx=GridTestUtils.getFieldValue(queue,"cctx");
+  GridCacheAffinityManager aff=cctx.affinity();
+  for (int i=0; i < gridCount(); i++) {
+    for (    GridCacheEntryEx e : ((IgniteKernal)grid(i)).context().cache().internalCache(cctx.name()).map().allEntries0()) {
+      if (aff.primary(grid(i).localNode(),e.key(),-1) && e.key() instanceof GridCacheQueueHeaderKey)       return i;
+    }
+  }
+  fail("Failed to find primary node for queue header.");
+  return -1;
+}

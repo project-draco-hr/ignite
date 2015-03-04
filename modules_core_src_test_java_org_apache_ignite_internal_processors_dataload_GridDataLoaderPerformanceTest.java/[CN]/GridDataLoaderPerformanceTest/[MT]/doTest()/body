@@ -1,0 +1,52 @@
+{
+  System.gc();
+  System.gc();
+  System.gc();
+  try {
+    useCache=true;
+    startGridsMultiThreaded(GRID_CNT);
+    useCache=false;
+    Ignite ignite=startGrid();
+    final IgniteDataLoader<Integer,String> ldr=ignite.dataLoader(null);
+    ldr.perNodeBufferSize(8192);
+    ldr.updater(GridDataLoadCacheUpdaters.<Integer,String>batchedSorted());
+    ldr.autoFlushFrequency(0);
+    final LongAdder cnt=new LongAdder();
+    long start=U.currentTimeMillis();
+    Thread t=new Thread(new Runnable(){
+      @SuppressWarnings("BusyWait") @Override public void run(){
+        while (true) {
+          try {
+            Thread.sleep(10000);
+          }
+ catch (          InterruptedException ignored) {
+            break;
+          }
+          info(">>> Adds/sec: " + cnt.sumThenReset() / 10);
+        }
+      }
+    }
+);
+    t.setDaemon(true);
+    t.start();
+    int threadNum=2;
+    multithreaded(new Callable<Object>(){
+      @SuppressWarnings("InfiniteLoopStatement") @Override public Object call() throws Exception {
+        ThreadLocalRandom8 rnd=ThreadLocalRandom8.current();
+        while (true) {
+          int i=rnd.nextInt(ENTRY_CNT);
+          ldr.addData(i,vals[rnd.nextInt(vals.length)]);
+          cnt.increment();
+        }
+      }
+    }
+,threadNum,"loader");
+    info("Closing loader...");
+    ldr.close(false);
+    long duration=U.currentTimeMillis() - start;
+    info("Finished performance test. Duration: " + duration + "ms.");
+  }
+  finally {
+    stopAllGrids();
+  }
+}

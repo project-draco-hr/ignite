@@ -1,0 +1,24 @@
+{
+  this.ctx=ctx;
+  clockSync=ctx.clockSync();
+  log=ctx.log(GridClockServer.class);
+  try {
+    int startPort=ctx.config().getTimeServerPortBase();
+    int endPort=startPort + ctx.config().getTimeServerPortRange() - 1;
+    InetAddress locHost=!F.isEmpty(ctx.config().getLocalHost()) ? InetAddress.getByName(ctx.config().getLocalHost()) : U.getLocalHost();
+    for (int p=startPort; p <= endPort; p++) {
+      try {
+        sock=new DatagramSocket(p,locHost);
+        if (log.isDebugEnabled())         log.debug("Successfully bound time server [host=" + locHost + ", port="+ p+ ']');
+        break;
+      }
+ catch (      SocketException e) {
+        if (log.isDebugEnabled())         log.debug("Failed to bind time server socket [host=" + locHost + ", port="+ p+ ", err="+ e.getMessage()+ ']');
+      }
+    }
+    if (sock == null)     throw new IgniteCheckedException("Failed to bind time server socket within specified port range [locHost=" + locHost + ", startPort="+ startPort+ ", endPort="+ endPort+ ']');
+  }
+ catch (  IOException e) {
+    throw new IgniteCheckedException("Failed to start time server (failed to get local host address)",e);
+  }
+}

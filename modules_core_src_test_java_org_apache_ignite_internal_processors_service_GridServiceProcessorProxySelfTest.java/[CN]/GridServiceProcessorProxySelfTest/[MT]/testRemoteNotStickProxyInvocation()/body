@@ -1,0 +1,15 @@
+{
+  final String name="testRemoteNotStickProxyInvocation";
+  final Ignite ignite=grid(0);
+  ignite.services().deployNodeSingleton(name,new MapServiceImpl<String,Integer>());
+  MapService<Integer,String> svc=ignite.services(ignite.cluster().forRemotes()).serviceProxy(name,MapService.class,false);
+  assertFalse(svc instanceof Service);
+  for (int i=0; i < nodeCount(); i++)   svc.put(i,Integer.toString(i));
+  int size=0;
+  for (  ClusterNode n : ignite.cluster().forRemotes().nodes()) {
+    MapService<Integer,String> map=ignite.services(ignite.cluster().forNode(n)).serviceProxy(name,MapService.class,false);
+    assertFalse(map instanceof Service);
+    size+=map.size();
+  }
+  assertEquals(nodeCount(),size);
+}

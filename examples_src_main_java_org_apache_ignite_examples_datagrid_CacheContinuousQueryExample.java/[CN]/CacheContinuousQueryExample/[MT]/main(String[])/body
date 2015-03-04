@@ -1,0 +1,34 @@
+{
+  try (Ignite ignite=Ignition.start("examples/config/example-cache.xml")){
+    System.out.println();
+    System.out.println(">>> Cache continuous query example started.");
+    IgniteCache<Integer,String> cache=ignite.jcache(CACHE_NAME);
+    cache.clear();
+    int keyCnt=20;
+    for (int i=0; i < keyCnt; i++)     cache.put(i,Integer.toString(i));
+    ContinuousQuery<Integer,String> qry=Query.continuous();
+    qry.setInitialPredicate(Query.scan(new IgniteBiPredicate<Integer,String>(){
+      @Override public boolean apply(      Integer key,      String val){
+        return key > 10;
+      }
+    }
+));
+    qry.setLocalListener(new CacheEntryUpdatedListener<Integer,String>(){
+      @Override public void onUpdated(      Iterable<CacheEntryEvent<? extends Integer,? extends String>> evts){
+        for (        CacheEntryEvent<? extends Integer,? extends String> e : evts)         System.out.println("Updated entry [key=" + e.getKey() + ", val="+ e.getValue()+ ']');
+      }
+    }
+);
+    qry.setRemoteFilter(new CacheEntryEventFilter<Integer,String>(){
+      @Override public boolean evaluate(      CacheEntryEvent<? extends Integer,? extends String> e){
+        return e.getKey() > 25;
+      }
+    }
+);
+    try (QueryCursor<Cache.Entry<Integer,String>> cur=cache.query(qry)){
+      for (      Cache.Entry<Integer,String> e : cur)       System.out.println("Queried existing entry [key=" + e.getKey() + ", val="+ e.getValue()+ ']');
+      for (int i=keyCnt; i < keyCnt + 10; i++)       cache.put(i,Integer.toString(i));
+      Thread.sleep(2000);
+    }
+   }
+ }

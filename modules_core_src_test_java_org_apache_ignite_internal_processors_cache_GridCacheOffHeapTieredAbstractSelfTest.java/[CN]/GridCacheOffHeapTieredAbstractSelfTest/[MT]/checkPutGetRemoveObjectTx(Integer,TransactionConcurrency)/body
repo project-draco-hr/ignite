@@ -1,0 +1,12 @@
+{
+  IgniteCache<Integer,TestValue> c=grid(0).jcache(null);
+  TestValue val=new TestValue(new byte[10]);
+  Transaction tx=grid(0).transactions().txStart(txConcurrency,REPEATABLE_READ);
+  assertNull(c.getAndPut(key,val));
+  tx.commit();
+  checkValue(key,val);
+  tx=grid(0).transactions().txStart(txConcurrency,REPEATABLE_READ);
+  assertEquals(val,c.getAndRemove(key));
+  tx.commit();
+  checkValue(key,null);
+}

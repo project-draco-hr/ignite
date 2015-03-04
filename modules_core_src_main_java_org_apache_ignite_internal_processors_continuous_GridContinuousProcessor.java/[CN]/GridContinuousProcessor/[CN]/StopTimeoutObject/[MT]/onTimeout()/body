@@ -1,0 +1,27 @@
+{
+  Collection<UUID> ids=waitForStopAck.remove(routineId);
+  if (ids != null) {
+    U.warn(log,"Failed to get stop acknowledgement from nodes (timeout expired): " + ids + ". Will retry.");
+    StopFuture f=stopFuts.get(routineId);
+    if (f != null) {
+      if (!ids.isEmpty()) {
+        waitForStopAck.put(routineId,ids);
+        for (        UUID id : ids) {
+          try {
+            sendWithRetries(id,req,null);
+          }
+ catch (          ClusterTopologyCheckedException ignored) {
+            if (log.isDebugEnabled())             log.debug("Failed to resend stop request to node (is node alive?): " + id);
+          }
+catch (          IgniteCheckedException e) {
+            U.error(log,"Failed to resend stop request to node: " + id,e);
+            ids.remove(id);
+            if (ids.isEmpty())             f.onDone(e);
+          }
+        }
+        ctx.timeout().addTimeoutObject(new StopTimeoutObject(timeout,routineId,req));
+      }
+ else       if (stopFuts.remove(routineId) != null)       f.onDone();
+    }
+  }
+}

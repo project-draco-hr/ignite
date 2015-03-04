@@ -1,0 +1,31 @@
+{
+  cache.topology().readLock();
+  GridDiscoveryTopologySnapshot snapshot=null;
+  try {
+    GridDhtTopologyFuture fut=cctx.topologyVersionFuture();
+    if (fut.isDone()) {
+      if (futVer == null)       futVer=cctx.versions().next(topVer);
+      snapshot=fut.topologySnapshot();
+    }
+ else {
+      fut.listenAsync(new CI1<IgniteInternalFuture<Long>>(){
+        @Override public void apply(        IgniteInternalFuture<Long> t){
+          mapOnTopology(keys,remap,oldNodeId);
+        }
+      }
+);
+      return;
+    }
+    topVer=snapshot.topologyVersion();
+    mapTime=U.currentTimeMillis();
+    if (!remap && (cctx.config().getAtomicWriteOrderMode() == CLOCK || syncMode != FULL_ASYNC))     cctx.mvcc().addAtomicFuture(version(),this);
+  }
+ catch (  IgniteCheckedException e) {
+    onDone(new IgniteCheckedException("Failed to get topology snapshot for update operation: " + this,e));
+    return;
+  }
+ finally {
+    cache.topology().readUnlock();
+  }
+  map0(snapshot,keys,remap,oldNodeId);
+}

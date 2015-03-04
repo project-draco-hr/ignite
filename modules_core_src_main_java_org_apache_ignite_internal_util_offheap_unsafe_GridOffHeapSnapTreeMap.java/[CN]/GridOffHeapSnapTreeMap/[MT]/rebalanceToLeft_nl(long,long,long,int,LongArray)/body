@@ -1,0 +1,40 @@
+{
+  KeyLock.Lock nRl=lock.lock(nR);
+  try {
+    final int hR=height(nR);
+    if (hL0 - hR >= -1) {
+      return n;
+    }
+ else {
+      final long nRL=unsharedLeft(nR,unlinked);
+      final int hRL0=height(nRL);
+      final int hRR0=height(right(nR));
+      if (hRR0 >= hRL0) {
+        return rotateLeft_nl(nParent,n,hL0,nR,nRL,hRL0,hRR0);
+      }
+ else {
+        KeyLock.Lock nRLl=lock.lock(nRL);
+        try {
+          final int hRL=height(nRL);
+          if (hRR0 >= hRL) {
+            return rotateLeft_nl(nParent,n,hL0,nR,nRL,hRL,hRR0);
+          }
+ else {
+            final int hRLR=height(right(nRL));
+            final int b=hRR0 - hRLR;
+            if (b >= -1 && b <= 1 && !((hRR0 == 0 || hRLR == 0) && vOptIsNull(nR))) {
+              return rotateLeftOverRight_nl(nParent,n,hL0,nR,nRL,hRR0,hRLR,unlinked);
+            }
+          }
+        }
+  finally {
+          if (nRLl != null)           nRLl.unlock();
+        }
+        return rebalanceToRight_nl(n,nR,nRL,hRR0,unlinked);
+      }
+    }
+  }
+  finally {
+    if (nRl != null)     nRl.unlock();
+  }
+}

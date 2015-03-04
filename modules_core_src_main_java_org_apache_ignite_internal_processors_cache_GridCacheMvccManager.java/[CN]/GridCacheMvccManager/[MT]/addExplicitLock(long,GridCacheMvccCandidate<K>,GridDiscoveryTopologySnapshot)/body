@@ -1,0 +1,13 @@
+{
+  while (true) {
+    GridCacheExplicitLockSpan<K> span=pendingExplicit.get(cand.threadId());
+    if (span == null) {
+      span=new GridCacheExplicitLockSpan<>(snapshot,cand);
+      GridCacheExplicitLockSpan<K> old=pendingExplicit.putIfAbsent(threadId,span);
+      if (old == null)       break;
+ else       span=old;
+    }
+    if (span.addCandidate(snapshot,cand))     break;
+ else     pendingExplicit.remove(threadId,span);
+  }
+}

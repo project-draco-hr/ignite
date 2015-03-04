@@ -1,0 +1,21 @@
+{
+  IgfsPath curPath=parentPath == null ? new IgfsPath() : new IgfsPath(parentPath,desc.fileName);
+  if (desc.isFile) {
+    deleteFile(curPath,desc,true);
+    return true;
+  }
+ else {
+    if (recursive) {
+      meta.softDelete(desc.parentId,desc.fileName,desc.fileId);
+      return true;
+    }
+ else {
+      Map<String,IgfsListingEntry> infoMap=meta.directoryListing(desc.fileId);
+      if (F.isEmpty(infoMap)) {
+        deleteFile(curPath,desc,true);
+        return true;
+      }
+ else       throw new IgfsDirectoryNotEmptyException("Failed to remove directory (directory is not empty " + "and recursive flag is not set)");
+    }
+  }
+}

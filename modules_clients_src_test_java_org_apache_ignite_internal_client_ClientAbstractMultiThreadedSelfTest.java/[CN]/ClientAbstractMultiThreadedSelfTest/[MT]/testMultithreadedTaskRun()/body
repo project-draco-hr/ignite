@@ -1,0 +1,31 @@
+{
+  final AtomicLong cnt=new AtomicLong();
+  final AtomicReference<GridClientException> err=new AtomicReference<>();
+  final ConcurrentLinkedQueue<String> execQueue=new ConcurrentLinkedQueue<>();
+  IgniteInternalFuture<?> fut=multithreadedAsync(new Runnable(){
+    @Override public void run(){
+      long processed;
+      while ((processed=cnt.getAndIncrement()) < taskExecutionCount()) {
+        try {
+          if (processed > 0 && processed % STATISTICS_PRINT_STEP == 0)           info(">>>>>>> " + processed + " tasks finished.");
+          String res=client.compute().execute(TestTask.class.getName(),null);
+          execQueue.add(res);
+        }
+ catch (        GridClientException e) {
+          err.compareAndSet(null,e);
+        }
+      }
+    }
+  }
+,THREAD_CNT,"client-task-request");
+  fut.get();
+  if (err.get() != null)   throw new Exception(err.get());
+  assertEquals(taskExecutionCount(),execQueue.size());
+  Collection<String> executionIds=new HashSet<>(execQueue);
+  assertTrue(executionIds.size() == NODES_CNT);
+  Map<String,AtomicInteger> statisticsMap=new HashMap<>();
+  for (  String id : executionIds)   statisticsMap.put(id,new AtomicInteger());
+  for (  String id : execQueue)   statisticsMap.get(id).incrementAndGet();
+  info(">>>>>>> Execution statistics per node:");
+  for (  Map.Entry<String,AtomicInteger> e : statisticsMap.entrySet())   info(">>>>>>> " + e.getKey() + " run "+ e.getValue().get()+ " tasks");
+}

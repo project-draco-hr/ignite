@@ -1,0 +1,15 @@
+{
+  int cacheId=cacheCtx.cacheId();
+  if (!activeCacheIds.contains(cacheId)) {
+    if (!cctx.txCompatible(this,activeCacheIds,cacheCtx)) {
+      StringBuilder cacheNames=new StringBuilder();
+      for (      Integer activeCacheId : activeCacheIds) {
+        cacheNames.append(cctx.cacheContext(activeCacheId).name());
+        cacheNames.append(", ");
+      }
+      cacheNames.setLength(cacheNames.length() - 2);
+      throw new IgniteCheckedException("Failed to enlist new cache to existing transaction " + "(cache configurations are not compatible) [activeCaches=[" + cacheNames + "], cacheName="+ cacheCtx.name()+ ", txSystem="+ system()+ ", cacheSystem="+ cacheCtx.system()+ ']');
+    }
+ else     activeCacheIds.add(cacheId);
+  }
+}

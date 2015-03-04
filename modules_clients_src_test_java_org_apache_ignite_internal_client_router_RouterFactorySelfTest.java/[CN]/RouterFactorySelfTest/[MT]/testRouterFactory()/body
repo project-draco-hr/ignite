@@ -1,0 +1,32 @@
+{
+  try {
+    System.setProperty(IGNITE_JETTY_PORT,String.valueOf(GRID_HTTP_PORT));
+    try {
+      startGrid();
+    }
+  finally {
+      System.clearProperty(IGNITE_JETTY_PORT);
+    }
+    final int size=20;
+    final Collection<GridTcpRouter> tcpRouters=new ArrayList<>(size);
+    final GridTcpRouterConfiguration tcpCfg=new GridTcpRouterConfiguration();
+    tcpCfg.setPortRange(size);
+    for (int i=0; i < size; i++)     tcpRouters.add(GridRouterFactory.startTcpRouter(tcpCfg));
+    for (    GridTcpRouter tcpRouter : tcpRouters) {
+      assertEquals(tcpCfg,tcpRouter.configuration());
+      assertEquals(tcpRouter,GridRouterFactory.tcpRouter(tcpRouter.id()));
+    }
+    assertEquals("Validate all started tcp routers.",new HashSet<>(tcpRouters),new HashSet<>(GridRouterFactory.allTcpRouters()));
+    for (Iterator<GridTcpRouter> it=tcpRouters.iterator(); it.hasNext(); ) {
+      GridTcpRouter tcpRouter=it.next();
+      assertEquals("Validate all started tcp routers.",new HashSet<>(tcpRouters),new HashSet<>(GridRouterFactory.allTcpRouters()));
+      it.remove();
+      GridRouterFactory.stopTcpRouter(tcpRouter.id());
+      assertEquals("Validate all started tcp routers.",new HashSet<>(tcpRouters),new HashSet<>(GridRouterFactory.allTcpRouters()));
+    }
+    assertEquals(Collections.<GridTcpRouter>emptyList(),GridRouterFactory.allTcpRouters());
+  }
+  finally {
+    GridRouterFactory.stopAllRouters();
+  }
+}

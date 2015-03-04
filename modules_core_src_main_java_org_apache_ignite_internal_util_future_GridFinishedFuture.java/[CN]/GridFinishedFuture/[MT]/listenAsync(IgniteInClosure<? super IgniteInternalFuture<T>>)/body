@@ -1,0 +1,12 @@
+{
+  if (ctx == null)   throw new IllegalStateException("Cannot attach listener to deserialized future (context is null): " + this);
+  if (lsnr != null) {
+    if (syncNotify)     lsnr.apply(this);
+ else     ctx.closure().runLocalSafe(new GPR(){
+      @Override public void run(){
+        lsnr.apply(GridFinishedFuture.this);
+      }
+    }
+,true);
+  }
+}

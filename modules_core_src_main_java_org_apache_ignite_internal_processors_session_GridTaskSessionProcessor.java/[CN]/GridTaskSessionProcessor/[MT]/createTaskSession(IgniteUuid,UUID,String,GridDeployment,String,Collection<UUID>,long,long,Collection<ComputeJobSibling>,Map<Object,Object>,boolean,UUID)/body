@@ -1,0 +1,15 @@
+{
+  if (!fullSup) {
+    return new GridTaskSessionImpl(taskNodeId,taskName,dep,taskClsName,sesId,top,startTime,endTime,siblings,attrs,ctx,false,subjId);
+  }
+  while (true) {
+    GridTaskSessionImpl ses=sesMap.get(sesId);
+    if (ses == null) {
+      GridTaskSessionImpl old=sesMap.putIfAbsent(sesId,ses=new GridTaskSessionImpl(taskNodeId,taskName,dep,taskClsName,sesId,top,startTime,endTime,siblings,attrs,ctx,true,subjId));
+      if (old != null)       ses=old;
+ else       return ses;
+    }
+    if (ses.acquire())     return ses;
+ else     sesMap.remove(sesId,ses);
+  }
+}

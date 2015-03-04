@@ -1,0 +1,18 @@
+{
+  GridProtocolHandler.registerDeploymentManager(this);
+  assertParameter(ctx.config().getDeploymentMode() != null,"ctx.config().getDeploymentMode() != null");
+  if (ctx.config().isPeerClassLoadingEnabled())   assertParameter(ctx.config().getNetworkTimeout() > 0,"networkTimeout > 0");
+  startSpi();
+  comm=new GridDeploymentCommunication(ctx,log);
+  comm.start();
+  locStore=new GridDeploymentLocalStore(getSpi(),ctx,comm);
+  ldrStore=new GridDeploymentPerLoaderStore(getSpi(),ctx,comm);
+  verStore=new GridDeploymentPerVersionStore(getSpi(),ctx,comm);
+  locStore.start();
+  ldrStore.start();
+  verStore.start();
+  if (log.isDebugEnabled()) {
+    log.debug("Local deployment: " + locDep);
+    log.debug(startInfo());
+  }
+}

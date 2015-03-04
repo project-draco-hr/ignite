@@ -1,0 +1,25 @@
+{
+  GridCacheMvccCandidate<K> prev=null;
+  GridCacheMvccCandidate<K> owner=null;
+  V val;
+synchronized (this) {
+    checkObsolete();
+    GridCacheMvcc<K> mvcc=mvccExtras();
+    if (mvcc != null) {
+      prev=mvcc.anyOwner();
+      boolean emptyBefore=mvcc.isEmpty();
+      if (!F.isEmpty(committedVers) || !F.isEmpty(rolledbackVers)) {
+        mvcc.orderCompleted(lockVer,committedVers,rolledbackVers);
+        if (!baseVer.equals(lockVer))         mvcc.orderCompleted(baseVer,committedVers,rolledbackVers);
+      }
+      if (sysInvalidate && baseVer != null)       mvcc.salvageRemote(baseVer);
+      owner=mvcc.doneRemote(lockVer,maskNull(pendingVers),maskNull(committedVers),maskNull(rolledbackVers));
+      boolean emptyAfter=mvcc.isEmpty();
+      checkCallbacks(emptyBefore,emptyAfter);
+      if (emptyAfter)       mvccExtras(null);
+    }
+    val=this.val;
+  }
+  checkOwnerChanged(prev,owner,val);
+  return owner;
+}

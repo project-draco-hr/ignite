@@ -1,0 +1,49 @@
+{
+  if (cleared)   return F.emptyIterator();
+  final Iterator<Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>>> it0=map.entrySet().iterator();
+  return new Iterator<Cache.Entry<? extends K,?>>(){
+    /** 
+ */
+    private Cache.Entry<? extends K,?> cur;
+    /** 
+ */
+    private Cache.Entry<? extends K,?> next;
+    /** 
+ */
+{
+      checkNext();
+    }
+    /** 
+ */
+    private void checkNext(){
+      while (it0.hasNext()) {
+        Map.Entry<K,IgniteBiTuple<V,GridCacheVersion>> e=it0.next();
+        K k=e.getKey();
+        if (rmvd != null && rmvd.contains(k))         continue;
+        Object v=locStore ? e.getValue() : e.getValue().get1();
+        if (convertPortable) {
+          k=(K)cctx.unwrapPortableIfNeeded(k,false);
+          v=cctx.unwrapPortableIfNeeded(v,false);
+        }
+        next=new CacheEntryImpl<>(k,v);
+        break;
+      }
+    }
+    @Override public boolean hasNext(){
+      return next != null;
+    }
+    @Override public Cache.Entry<? extends K,?> next(){
+      if (next == null)       throw new NoSuchElementException();
+      cur=next;
+      next=null;
+      checkNext();
+      return cur;
+    }
+    @Override public void remove(){
+      if (cur == null)       throw new IllegalStateException();
+      addRemoved(cur);
+      cur=null;
+    }
+  }
+;
+}

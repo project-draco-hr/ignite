@@ -1,0 +1,17 @@
+{
+  IgfsConfiguration igfsCfg=igfsCtx.configuration();
+  Map<String,String> cfg=igfsCfg.getIpcEndpointConfiguration();
+  if (F.isEmpty(cfg)) {
+    cfg=new HashMap<>();
+    cfg.put("type",U.isWindows() ? "tcp" : "shmem");
+    cfg.put("port",String.valueOf(DFLT_IPC_PORT));
+  }
+  if (igfsCfg.isIpcEndpointEnabled())   bind(cfg,false);
+  if (igfsCfg.getManagementPort() >= 0) {
+    cfg=new HashMap<>();
+    cfg.put("type","tcp");
+    cfg.put("port",String.valueOf(igfsCfg.getManagementPort()));
+    bind(cfg,true);
+  }
+  if (bindWorker != null)   new IgniteThread(bindWorker).start();
+}

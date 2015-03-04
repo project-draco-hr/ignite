@@ -1,0 +1,21 @@
+{
+  if (p != null && !p.apply(key,val))   return;
+  if (ctx.portableEnabled()) {
+    key=(K)ctx.marshalToPortable(key);
+    val=(V)ctx.marshalToPortable(val);
+  }
+  GridCacheEntryEx<K,V> entry=entryEx(key,false);
+  try {
+    entry.initialValue(val,null,ver,ttl,-1,false,topVer,replicate ? DR_LOAD : DR_NONE);
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException("Failed to put cache value: " + entry,e);
+  }
+catch (  GridCacheEntryRemovedException ignore) {
+    if (log.isDebugEnabled())     log.debug("Got removed entry during loadCache (will ignore): " + entry);
+  }
+ finally {
+    ctx.evicts().touch(entry,topVer);
+  }
+  CU.unwindEvicts(ctx);
+}

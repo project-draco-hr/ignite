@@ -1,0 +1,36 @@
+{
+  return new Iterator<Map.Entry<K,V>>(){
+    Iterator<Cache.Entry<K,V>> it=entrySet.iterator();
+    @Override public boolean hasNext(){
+      return it.hasNext();
+    }
+    @Override public Map.Entry<K,V> next(){
+      final Cache.Entry<K,V> e=it.next();
+      return new Map.Entry<K,V>(){
+        V val0;
+        @Override public K getKey(){
+          return e.getKey();
+        }
+        @Override public V getValue(){
+          return val0 == null ? e.getValue() : val0;
+        }
+        @Override public V setValue(        V val){
+          A.notNull(val,"val");
+          try {
+            prj.put(e.getKey(),val);
+            val0=val;
+            return e.getValue();
+          }
+ catch (          IgniteCheckedException e1) {
+            throw new IgniteException("Failed to set entry value.",e1);
+          }
+        }
+      }
+;
+    }
+    @Override public void remove(){
+      it.remove();
+    }
+  }
+;
+}

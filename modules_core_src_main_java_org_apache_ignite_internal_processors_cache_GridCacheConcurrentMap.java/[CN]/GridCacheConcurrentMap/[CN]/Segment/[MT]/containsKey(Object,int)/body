@@ -1,0 +1,16 @@
+{
+  SegmentHeader<K,V> hdr=headerForRead();
+  try {
+    if (hdr.size() != 0) {
+      GridCacheMapEntry<K,V> e=getFirst(hdr.table(),hash);
+      while (e != null) {
+        if (e.hash() == hash && key.equals(e.key))         return true;
+        e=e.next(hdr.id());
+      }
+    }
+    return false;
+  }
+  finally {
+    hdr.onReadEnd();
+  }
+}

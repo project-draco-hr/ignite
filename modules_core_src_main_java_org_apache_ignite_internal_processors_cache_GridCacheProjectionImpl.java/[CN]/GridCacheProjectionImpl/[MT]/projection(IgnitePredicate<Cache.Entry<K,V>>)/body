@@ -1,0 +1,14 @@
+{
+  if (filter == null)   return new GridCacheProxyImpl<>(cctx,this,this);
+  if (noNullEntryFilter.entryFilter != null)   filter=and(filter,true);
+  if (cctx.deploymentEnabled()) {
+    try {
+      cctx.deploy().registerClasses(filter);
+    }
+ catch (    IgniteCheckedException e) {
+      throw new IgniteException(e);
+    }
+  }
+  GridCacheProjectionImpl<K,V> prj=new GridCacheProjectionImpl<>(this,cctx,noNullKvFilter.kvFilter,filter,flags,subjId,keepPortable,expiryPlc);
+  return new GridCacheProxyImpl<>(cctx,prj,prj);
+}

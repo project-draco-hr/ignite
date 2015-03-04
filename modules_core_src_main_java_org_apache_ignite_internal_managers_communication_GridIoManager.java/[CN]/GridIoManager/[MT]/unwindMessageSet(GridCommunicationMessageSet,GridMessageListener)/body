@@ -1,0 +1,20 @@
+{
+  while (true) {
+    if (msgSet.reserve()) {
+      try {
+        msgSet.unwind(lsnr);
+      }
+  finally {
+        msgSet.release();
+      }
+      if (!msgSet.changed()) {
+        if (log.isDebugEnabled())         log.debug("Message set has not been changed: " + msgSet);
+        break;
+      }
+    }
+ else {
+      if (log.isDebugEnabled())       log.debug("Another thread owns reservation: " + msgSet);
+      return;
+    }
+  }
+}

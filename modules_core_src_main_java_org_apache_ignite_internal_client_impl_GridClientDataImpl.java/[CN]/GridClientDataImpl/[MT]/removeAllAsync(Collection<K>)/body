@@ -1,0 +1,11 @@
+{
+  A.notNull(keys,"keys");
+  if (keys.isEmpty())   return new GridClientFutureAdapter<>(false);
+  K key=GridClientUtils.first(keys);
+  return withReconnectHandling(new ClientProjectionClosure<Boolean>(){
+    @Override public GridClientFuture<Boolean> apply(    GridClientConnection conn,    UUID destNodeId) throws GridClientConnectionResetException, GridClientClosedException {
+      return conn.cacheRemoveAll(cacheName,keys,flags,destNodeId);
+    }
+  }
+,cacheName,key);
+}

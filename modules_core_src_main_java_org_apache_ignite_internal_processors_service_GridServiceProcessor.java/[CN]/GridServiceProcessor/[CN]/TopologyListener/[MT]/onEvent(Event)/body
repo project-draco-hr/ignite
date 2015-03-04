@@ -1,0 +1,51 @@
+{
+  if (!busyLock.enterBusy())   return;
+  try {
+    depExe.submit(new BusyRunnable(){
+      @Override public void run0(){
+        long topVer=((DiscoveryEvent)evt).topologyVersion();
+        ClusterNode oldest=U.oldest(ctx.discovery().nodes(topVer),null);
+        if (oldest.isLocal()) {
+          final Collection<GridServiceDeployment> retries=new ConcurrentLinkedQueue<>();
+          if (ctx.deploy().enabled())           ctx.cache().context().deploy().ignoreOwnership(true);
+          try {
+            for (            Cache.Entry<Object,Object> e : cache.entrySetx()) {
+              if (!(e.getKey() instanceof GridServiceDeploymentKey))               continue;
+              GridServiceDeployment dep=(GridServiceDeployment)e.getValue();
+              try {
+                svcName.set(dep.configuration().getName());
+                ctx.cache().internalCache(UTILITY_CACHE_NAME).context().affinity().affinityReadyFuture(topVer).get();
+                reassign(dep,topVer);
+              }
+ catch (              IgniteCheckedException ex) {
+                if (!(e instanceof ClusterTopologyCheckedException))                 LT.error(log,ex,"Failed to do service reassignment (will retry): " + dep.configuration().getName());
+                retries.add(dep);
+              }
+            }
+          }
+  finally {
+            if (ctx.deploy().enabled())             ctx.cache().context().deploy().ignoreOwnership(false);
+          }
+          if (!retries.isEmpty())           onReassignmentFailed(topVer,retries);
+        }
+        for (        Cache.Entry<Object,Object> e : cache.primaryEntrySetx()) {
+          if (!(e.getKey() instanceof GridServiceAssignmentsKey))           continue;
+          String name=((GridServiceAssignmentsKey)e.getKey()).name();
+          try {
+            if (cache.get(new GridServiceDeploymentKey(name)) == null) {
+              if (log.isDebugEnabled())               log.debug("Removed zombie assignments: " + e.getValue());
+              cache.remove(e.getKey());
+            }
+          }
+ catch (          IgniteCheckedException ex) {
+            log.error("Failed to clean up zombie assignments for service: " + name,ex);
+          }
+        }
+      }
+    }
+);
+  }
+  finally {
+    busyLock.leaveBusy();
+  }
+}

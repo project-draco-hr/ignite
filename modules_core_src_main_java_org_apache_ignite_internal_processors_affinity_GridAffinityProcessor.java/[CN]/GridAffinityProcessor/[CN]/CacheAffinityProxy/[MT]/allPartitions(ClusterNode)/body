@@ -1,0 +1,15 @@
+{
+  ctx.gateway().readLock();
+  try {
+    GridAffinityAssignment assignment=cache().assignment();
+    int[] primary=U.toIntArray(assignment.primaryPartitions(n.id()));
+    int[] backup=U.toIntArray(assignment.backupPartitions(n.id()));
+    return U.addAll(primary,backup);
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+ finally {
+    ctx.gateway().readUnlock();
+  }
+}

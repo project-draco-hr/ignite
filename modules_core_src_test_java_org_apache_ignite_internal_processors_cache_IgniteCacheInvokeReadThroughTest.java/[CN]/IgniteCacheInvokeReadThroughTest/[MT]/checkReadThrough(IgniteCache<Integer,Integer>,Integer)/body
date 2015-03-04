@@ -1,0 +1,23 @@
+{
+  log.info("Test [key=" + key + ']');
+  storeMap.put(key,key);
+  Object ret=cache.invoke(key,new EntryProcessor<Integer,Integer,Object>(){
+    @Override public Object process(    MutableEntry<Integer,Integer> entry,    Object... args){
+      if (!entry.exists()) {
+        failed=true;
+        fail();
+      }
+      Integer val=entry.getValue();
+      if (!val.equals(entry.getKey())) {
+        failed=true;
+        assertEquals(val,entry.getKey());
+      }
+      entry.setValue(val + 1);
+      return val;
+    }
+  }
+);
+  assertEquals(key,ret);
+  for (int i=0; i < gridCount(); i++)   assertEquals("Unexpected value for node: " + i,key + 1,jcache(i).get(key));
+  assertFalse(failed);
+}

@@ -1,0 +1,19 @@
+{
+  IgniteConfiguration cfg=CacheNodeWithStoreStartup.configure();
+  try (Ignite ignite=Ignition.start(cfg)){
+    System.out.println();
+    System.out.println(">>> Cache store example started.");
+    IgniteCache<Long,Person> cache=ignite.jcache(null);
+    cache.clear();
+    try (Transaction tx=ignite.transactions().txStart()){
+      Person val=cache.get(id);
+      System.out.println("Read value: " + val);
+      val=cache.getAndPut(id,person(id,"Isaac","Newton"));
+      System.out.println("Overwrote old value: " + val);
+      val=cache.get(id);
+      System.out.println("Read value: " + val);
+      tx.commit();
+    }
+     System.out.println("Read value after commit: " + cache.get(id));
+  }
+ }

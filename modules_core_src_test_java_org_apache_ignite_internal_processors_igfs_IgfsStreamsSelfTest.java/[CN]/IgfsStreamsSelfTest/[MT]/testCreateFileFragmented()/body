@@ -1,0 +1,49 @@
+{
+  IgfsEx impl=(IgfsEx)grid(0).fileSystem("igfs");
+  IgfsFragmentizerManager fragmentizer=impl.context().fragmentizer();
+  GridTestUtils.setFieldValue(fragmentizer,"fragmentizerEnabled",false);
+  IgfsPath path=new IgfsPath("/file");
+  try {
+    IgniteFs fs0=grid(0).fileSystem("igfs");
+    IgniteFs fs1=grid(1).fileSystem("igfs");
+    IgniteFs fs2=grid(2).fileSystem("igfs");
+    try (IgfsOutputStream out=fs0.create(path,128,false,1,CFG_GRP_SIZE,F.asMap(IgniteFs.PROP_PREFER_LOCAL_WRITES,"true"))){
+      byte[] data=new byte[CFG_BLOCK_SIZE * 3 / 2];
+      Arrays.fill(data,(byte)1);
+      out.write(data);
+    }
+     try (IgfsOutputStream out=fs1.append(path,false)){
+      byte[] data=new byte[CFG_BLOCK_SIZE * 3 / 2];
+      Arrays.fill(data,(byte)2);
+      out.write(data);
+    }
+     IgfsFileImpl fileImpl=(IgfsFileImpl)fs.info(path);
+    GridCache<Object,Object> metaCache=grid(0).cachex(META_CACHE_NAME);
+    IgfsFileInfo fileInfo=(IgfsFileInfo)metaCache.get(fileImpl.fileId());
+    IgfsFileMap map=fileInfo.fileMap();
+    List<IgfsFileAffinityRange> ranges=map.ranges();
+    assertEquals(2,ranges.size());
+    assertTrue(ranges.get(0).startOffset() == 0);
+    assertTrue(ranges.get(0).endOffset() == 2 * CFG_BLOCK_SIZE - 1);
+    assertTrue(ranges.get(1).startOffset() == 2 * CFG_BLOCK_SIZE);
+    assertTrue(ranges.get(1).endOffset() == 3 * CFG_BLOCK_SIZE - 1);
+    try (IgfsInputStream in=fs2.open(path)){
+      for (int i=0; i < CFG_BLOCK_SIZE * 3 / 2; i++)       assertEquals((byte)1,in.read());
+      for (int i=0; i < CFG_BLOCK_SIZE * 3 / 2; i++)       assertEquals((byte)2,in.read());
+      assertEquals(-1,in.read());
+    }
+   }
+  finally {
+    GridTestUtils.setFieldValue(fragmentizer,"fragmentizerEnabled",true);
+    boolean hasData=false;
+    for (int i=0; i < NODES_CNT; i++)     hasData|=!grid(i).cachex(DATA_CACHE_NAME).isEmpty();
+    assertTrue(hasData);
+    fs.delete(path,true);
+  }
+  GridTestUtils.retryAssert(log,ASSERT_RETRIES,ASSERT_RETRY_INTERVAL,new CAX(){
+    @Override public void applyx(){
+      for (int i=0; i < NODES_CNT; i++)       assertTrue(grid(i).cachex(DATA_CACHE_NAME).isEmpty());
+    }
+  }
+);
+}

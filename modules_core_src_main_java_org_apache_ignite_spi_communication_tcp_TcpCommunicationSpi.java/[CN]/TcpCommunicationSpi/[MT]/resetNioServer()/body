@@ -1,18 +1,2 @@
 {
-  if (boundTcpPort >= 0)   throw new IgniteCheckedException("Tcp NIO server was already created on port " + boundTcpPort);
-  IgniteCheckedException lastEx=null;
-  for (int port=locPort; port < locPort + locPortRange; port++) {
-    try {
-      GridNioServer<GridTcpCommunicationMessageAdapter> srvr=GridNioServer.<GridTcpCommunicationMessageAdapter>builder().address(locHost).port(port).listener(srvLsnr).logger(log).selectorCount(selectorsCnt).gridName(gridName).tcpNoDelay(tcpNoDelay).directBuffer(directBuf).byteOrder(ByteOrder.nativeOrder()).socketSendBufferSize(sockSndBuf).socketReceiveBufferSize(sockRcvBuf).sendQueueLimit(msgQueueLimit).directMode(true).metricsListener(metricsLsnr).messageWriter(msgWriter).writeTimeout(sockWriteTimeout).filters(new GridNioCodecFilter(new GridDirectParser(msgReader,this),log,true),new GridConnectionBytesVerifyFilter(log)).build();
-      boundTcpPort=port;
-      if (log.isInfoEnabled())       log.info("Successfully bound to TCP port [port=" + boundTcpPort + ", locHost="+ locHost+ ']');
-      srvr.idleTimeout(idleConnTimeout);
-      return srvr;
-    }
- catch (    IgniteCheckedException e) {
-      lastEx=e;
-      if (log.isDebugEnabled())       log.debug("Failed to bind to local port (will try next port within range) [port=" + port + ", locHost="+ locHost+ ']');
-    }
-  }
-  throw new IgniteCheckedException("Failed to bind to any port within range [startPort=" + locPort + ", portRange="+ locPortRange+ ", locHost="+ locHost+ ']',lastEx);
 }
