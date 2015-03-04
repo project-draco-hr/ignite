@@ -1,0 +1,20 @@
+{
+  before();
+  try {
+    Path fsHome=new Path(primaryFsUri);
+    Path dir=new Path(fsHome,"/someDir1/someDir2/someDir3");
+    Path file=new Path(dir,"someFile");
+    assertPathDoesNotExist(primaryFs,file);
+    FsPermission fsPerm=new FsPermission((short)644);
+    FSDataOutputStream os=primaryFs.create(file,fsPerm,false,1,(short)1,1L,null);
+    os.write("abc".getBytes());
+    os.close();
+    FileStatus fileStatus=primaryFs.getFileStatus(file);
+    assertFalse(fileStatus.isDir());
+    assertEquals(file,fileStatus.getPath());
+    assertEquals(fsPerm,fileStatus.getPermission());
+  }
+  finally {
+    after();
+  }
+}

@@ -1,0 +1,21 @@
+{
+  if (secConfPath != null) {
+    URL url=U.resolveIgniteUrl(secConfPath);
+    if (url == null) {
+      throw new IllegalArgumentException("Failed to resolve secondary file system " + "configuration path: " + secConfPath);
+    }
+    cfg.addResource(url);
+  }
+  if (secUri == null)   uri=FileSystem.getDefaultUri(cfg);
+ else {
+    try {
+      uri=new URI(secUri);
+    }
+ catch (    URISyntaxException use) {
+      throw new IOException("Failed to resolve secondary file system URI: " + secUri);
+    }
+  }
+  if (uri == null)   throw new IllegalArgumentException("Failed to get secondary file system URI (it is neither given " + "explicitly nor specified in the configuration): " + secConfPath);
+  String prop=String.format("fs.%s.impl.disable.cache",uri.getScheme());
+  cfg.setBoolean(prop,true);
+}
