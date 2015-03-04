@@ -1,2 +1,23 @@
 {
+  getSpi().setListener(null);
+  boolean interrupted=false;
+  while (true) {
+    try {
+      if (busyLock.tryWriteLock(200,TimeUnit.MILLISECONDS))       break;
+ else       Thread.sleep(200);
+    }
+ catch (    InterruptedException ignore) {
+      interrupted=true;
+    }
+  }
+  try {
+    if (interrupted)     Thread.currentThread().interrupt();
+    U.shutdownNow(getClass(),affPool,log);
+    GridEventStorageManager evtMgr=ctx.event();
+    if (evtMgr != null && discoLsnr != null)     evtMgr.removeLocalEventListener(discoLsnr);
+    stopping=true;
+  }
+  finally {
+    busyLock.writeUnlock();
+  }
 }
