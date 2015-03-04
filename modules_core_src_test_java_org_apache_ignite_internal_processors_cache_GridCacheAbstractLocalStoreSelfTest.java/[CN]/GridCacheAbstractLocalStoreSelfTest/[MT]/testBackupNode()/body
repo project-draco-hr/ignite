@@ -1,0 +1,17 @@
+{
+  Ignite ignite1=startGrid(1);
+  IgniteCache<Object,Object> cache=ignite1.jcache(BACKUP_CACHE);
+  for (int i=0; i < KEYS; i++)   cache.put(i,i);
+  for (int i=0; i < KEYS; i++)   assertEquals(LOCAL_STORE_1.load(i).get1().intValue(),i);
+  Ignite ignite2=startGrid(2);
+  assertEquals(2,Ignition.allGrids().size());
+  checkLocalStoreForBackup(ignite2,LOCAL_STORE_2);
+  Ignite ignite3=startGrid(3);
+  assertEquals(Ignition.allGrids().size(),3);
+  for (int i=0; i < KEYS; i++)   cache.put(i,i * 3);
+  checkLocalStoreForBackup(ignite2,LOCAL_STORE_2);
+  checkLocalStoreForBackup(ignite3,LOCAL_STORE_3);
+  stopGrid(3,true);
+  assertEquals(Ignition.allGrids().size(),2);
+  checkLocalStoreForBackup(ignite2,LOCAL_STORE_2);
+}

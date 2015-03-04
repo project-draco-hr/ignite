@@ -1,0 +1,20 @@
+{
+  boolean success=false;
+  boolean res=false;
+  try {
+    TxContext ctx=txCtx.get();
+    if (ctx != null) {
+      cache.putx(key,val);
+      unlock(ctx,key);
+      res=true;
+    }
+    success=true;
+    return res;
+  }
+ catch (  Exception e) {
+    throw new CacheException(e);
+  }
+ finally {
+    if (!success)     rollbackCurrentTx();
+  }
+}
