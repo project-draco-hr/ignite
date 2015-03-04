@@ -3,18 +3,18 @@
     IgniteInternalTx tx=cached.context().tm().userTx();
     if (tx != null) {
       GridTuple<CacheObject> peek=tx.peek(cached.context(),false,cached.key(),null);
-      if (peek != null)       return peek.get().value(cached.context(),false);
+      if (peek != null)       return peek.get().value(cached.context().cacheObjectContext(),false);
     }
     if (cached.detached()) {
       CacheObject val=cached.rawGet();
-      return val != null ? val.<V>value(cached.context(),false) : null;
+      return val != null ? val.<V>value(cached.context().cacheObjectContext(),false) : null;
     }
     for (; ; ) {
       GridCacheEntryEx e=cached.context().cache().peekEx(cached.key());
       if (e == null)       return null;
       try {
         CacheObject val=e.peek(GridCachePeekMode.GLOBAL,CU.empty0());
-        return val != null ? val.<V>value(cached.context(),false) : null;
+        return val != null ? val.<V>value(cached.context().cacheObjectContext(),false) : null;
       }
  catch (      GridCacheEntryRemovedException ignored) {
       }
