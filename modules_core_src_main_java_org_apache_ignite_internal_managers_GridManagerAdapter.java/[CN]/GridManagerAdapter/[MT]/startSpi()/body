@@ -1,7 +1,8 @@
 {
   Collection<String> names=U.newHashSet(spis.length);
-  injectSpi();
   for (  T spi : spis) {
+    ctx.resource().inject(spi);
+    inject(spi);
     try {
       Map<String,Object> retval=spi.getNodeAttributes();
       if (retval != null) {
@@ -18,13 +19,14 @@
     if (names.contains(spi.getName()))     throw new IgniteCheckedException("Duplicate SPI name (need to explicitly configure 'setName()' property): " + spi.getName());
     names.add(spi.getName());
     if (log.isDebugEnabled())     log.debug("Starting SPI implementation: " + spi.getClass().getName());
-    if (spi instanceof DiscoverySpi)     ((DiscoverySpi)spi).setNodeAttributes(ctx.nodeAttributes(),VER);
+    onBeforeSpiStart();
     try {
       spi.spiStart(ctx.gridName());
     }
  catch (    IgniteSpiException e) {
       throw new IgniteCheckedException("Failed to start SPI: " + spi,e);
     }
+    onAfterSpiStart();
     if (log.isDebugEnabled())     log.debug("SPI module started OK: " + spi.getClass().getName());
   }
 }
