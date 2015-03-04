@@ -1,0 +1,29 @@
+{
+  Connection conn=DriverManager.getConnection(CONN_URL,"sa","");
+  Statement stmt=conn.createStatement();
+  stmt.executeUpdate("CREATE TABLE IF NOT EXISTS Organization" + "(id integer not null, name varchar(50), city varchar(50), PRIMARY KEY(id))");
+  stmt.executeUpdate("CREATE TABLE IF NOT EXISTS Person" + "(id integer not null, first_name varchar(50), last_name varchar(50), PRIMARY KEY(id))");
+  U.closeQuiet(stmt);
+  conn.commit();
+  PreparedStatement st=conn.prepareStatement("INSERT INTO Organization(id, name, city) VALUES (?, ?, ?)");
+  for (int i=0; i < ORGANIZATION_CNT; i++) {
+    st.setInt(1,i);
+    st.setString(2,"name-" + i);
+    st.setString(3,"city-" + i);
+    st.addBatch();
+  }
+  st.executeBatch();
+  U.closeQuiet(st);
+  conn.commit();
+  st=conn.prepareStatement("INSERT INTO Person(id, first_name, last_name) VALUES (?, ?, ?)");
+  for (int i=0; i < PERSON_CNT; i++) {
+    st.setInt(1,i);
+    st.setString(3,"firstName-" + i);
+    st.setString(3,"lastName-" + i);
+    st.addBatch();
+  }
+  st.executeBatch();
+  U.closeQuiet(st);
+  conn.commit();
+  U.closeQuiet(conn);
+}
