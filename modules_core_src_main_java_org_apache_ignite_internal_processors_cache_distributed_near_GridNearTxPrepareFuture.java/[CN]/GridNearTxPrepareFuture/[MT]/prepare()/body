@@ -30,10 +30,14 @@ catch (        IgniteCheckedException e) {
         }
       }
  else {
-        topFut.syncNotify(false);
         topFut.listenAsync(new CI1<IgniteInternalFuture<Long>>(){
           @Override public void apply(          IgniteInternalFuture<Long> t){
-            prepare();
+            cctx.kernalContext().closure().runLocalSafe(new Runnable(){
+              @Override public void run(){
+                prepare();
+              }
+            }
+);
           }
         }
 );
