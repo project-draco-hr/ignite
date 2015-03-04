@@ -27,34 +27,25 @@
  else     clientLog=IgfsLogger.disabledLogger();
     modeRslvr=new IgfsModeResolver(paths.defaultMode(),paths.pathModes());
     boolean initSecondary=paths.defaultMode() == PROXY;
-    if (paths.pathModes() != null) {
+    if (!initSecondary && paths.pathModes() != null) {
       for (      T2<IgfsPath,IgfsMode> pathMode : paths.pathModes()) {
         IgfsMode mode=pathMode.getValue();
-        initSecondary|=mode == PROXY;
+        if (mode == PROXY) {
+          initSecondary=true;
+          break;
+        }
       }
     }
     if (initSecondary) {
       Map<String,String> props=paths.properties();
-      String secUri=props.get(IgfsHadoopFileSystemWrapper.SECONDARY_FS_URI);
-      String secConfPath=props.get(IgfsHadoopFileSystemWrapper.SECONDARY_FS_CONFIG_PATH);
-      if (secConfPath == null)       throw new IOException("Failed to connect to the secondary file system because configuration " + "path is not provided.");
-      if (secUri == null)       throw new IOException("Failed to connect to the secondary file system because URI is not " + "provided.");
-      if (secConfPath == null)       throw new IOException("Failed to connect to the secondary file system because configuration " + "path is not provided.");
-      if (secUri == null)       throw new IOException("Failed to connect to the secondary file system because URI is not " + "provided.");
+      String secUri=props.get(SECONDARY_FS_URI);
+      String secConfPath=props.get(SECONDARY_FS_CONFIG_PATH);
       try {
-        secondaryUri=new URI(secUri);
-        URL secondaryCfgUrl=U.resolveIgniteUrl(secConfPath);
-        if (secondaryCfgUrl == null)         throw new IOException("Failed to resolve secondary file system config URL: " + secConfPath);
-        Configuration conf=new Configuration();
-        conf.addResource(secondaryCfgUrl);
-        String prop=String.format("fs.%s.impl.disable.cache",secondaryUri.getScheme());
-        conf.setBoolean(prop,true);
-        secondaryFs=AbstractFileSystem.get(secondaryUri,conf);
+        SecondaryFileSystemProvider secProvider=new SecondaryFileSystemProvider(secUri,secConfPath);
+        secondaryFs=secProvider.createAbstractFileSystem();
+        secondaryUri=secProvider.uri();
       }
- catch (      URISyntaxException ignore) {
-        throw new IOException("Failed to resolve secondary file system URI: " + secUri);
-      }
-catch (      IOException e) {
+ catch (      IOException e) {
         throw new IOException("Failed to connect to the secondary file system: " + secUri,e);
       }
     }
