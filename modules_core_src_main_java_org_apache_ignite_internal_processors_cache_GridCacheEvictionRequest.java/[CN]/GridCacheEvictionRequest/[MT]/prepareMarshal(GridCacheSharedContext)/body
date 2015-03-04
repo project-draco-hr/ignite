@@ -1,7 +1,11 @@
 {
   super.prepareMarshal(ctx);
   if (entries != null) {
-    if (ctx.deploymentEnabled())     prepareObjects(entries,ctx);
-    entriesBytes=ctx.marshaller().marshal(entries);
+    boolean depEnabled=ctx.deploymentEnabled();
+    GridCacheContext cctx=ctx.cacheContext(cacheId);
+    for (    CacheEvictionEntry e : entries) {
+      e.prepareMarshal(cctx);
+      if (depEnabled)       prepareObject(e.key().value(cctx,false),ctx);
+    }
   }
 }

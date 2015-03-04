@@ -1,10 +1,12 @@
 {
-  if (depEnabled) {
-    if (transformClosBytes == null && entryProcessorsCol != null)     transformClosBytes=CU.marshal(ctx,entryProcessorsCol);
-    if (F.isEmptyOrNulls(filters))     filterBytes=null;
- else     if (filterBytes == null)     filterBytes=CU.marshal(ctx,filters);
+  if (filters != null) {
+    for (    CacheEntryPredicate p : filters) {
+      if (p != null)       p.prepareMarshal(ctx.cacheContext(cacheId));
+    }
   }
+  if (transformClosBytes == null && entryProcessorsCol != null)   transformClosBytes=CU.marshal(ctx,entryProcessorsCol);
   if (transferExpiry)   transferExpiryPlc=expiryPlc != null && expiryPlc != this.ctx.expiry();
   key.prepareMarshal(context().cacheObjectContext());
-  val.marshal(ctx,context(),depEnabled);
+  val.marshal(ctx,context());
+  expiryPlcBytes=transferExpiryPlc ? CU.marshal(ctx,new IgniteExternalizableExpiryPolicy(expiryPlc)) : null;
 }
