@@ -1,8 +1,9 @@
 {
-  if (err == null) {
-    for (    GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
+  for (  GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
+    if (err == null) {
       if (!cacheCtx.isLocal())       cacheCtx.affinity().cleanUpCache(res.topologyVersion() - 10);
     }
+    if (startDesc != null && F.eq(startDesc.cacheConfiguration().getName(),cacheCtx.name()))     cacheCtx.preloader().onInitialExchangeComplete(err);
   }
   cctx.exchange().onExchangeDone(this);
   if (super.onDone(res,err) && !dummy && !forcePreload) {
