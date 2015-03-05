@@ -1,5 +1,15 @@
 {
   if (ctx.config().isDaemon())   return;
+  for (  DynamicCacheDescriptor desc : dynamicCaches.values()) {
+    GridCacheContext ctx=createCache(desc.cacheConfiguration());
+    sharedCtx.addCacheContext(ctx);
+    GridCacheAdapter cache=ctx.cache();
+    String name=desc.cacheConfiguration().getName();
+    caches.put(name,cache);
+    startCache(cache);
+    proxies.put(name,new GridCacheProxyImpl(ctx,cache,null));
+    jCacheProxies.put(name,new IgniteCacheProxy(ctx,cache,null,false));
+  }
   if (!getBoolean(IGNITE_SKIP_CONFIGURATION_CONSISTENCY_CHECK)) {
     for (    ClusterNode n : ctx.discovery().remoteNodes())     checkCache(n);
   }
