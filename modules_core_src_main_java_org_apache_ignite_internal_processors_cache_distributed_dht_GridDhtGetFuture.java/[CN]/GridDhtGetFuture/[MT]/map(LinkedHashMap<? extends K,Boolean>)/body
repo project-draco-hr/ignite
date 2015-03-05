@@ -1,7 +1,7 @@
 {
   GridDhtFuture<Object> fut=cctx.dht().dhtPreloader().request(keys.keySet(),topVer);
   if (!F.isEmpty(fut.invalidPartitions()))   retries.addAll(fut.invalidPartitions());
-  add(new GridEmbeddedFuture<>(fut,new IgniteBiClosure<Object,Exception,Collection<GridCacheEntryInfo<K,V>>>(){
+  add(new GridEmbeddedFuture<>(new IgniteBiClosure<Object,Exception,Collection<GridCacheEntryInfo<K,V>>>(){
     @Override public Collection<GridCacheEntryInfo<K,V>> apply(    Object o,    Exception e){
       if (e != null) {
         if (log.isDebugEnabled())         log.debug("Failed to request keys from preloader [keys=" + keys + ", err="+ e+ ']');
@@ -19,5 +19,5 @@
       return Collections.emptyList();
     }
   }
-,false));
+,fut));
 }
