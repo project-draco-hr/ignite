@@ -1,0 +1,84 @@
+{
+  final String[] incProps=cfg.getIncludeProperties();
+  try {
+    for (    Map.Entry<String,String> sysEntry : System.getenv().entrySet()) {
+      String name=sysEntry.getKey();
+      if (incProps == null || U.containsStringArray(incProps,name,true) || U.isVisorNodeStartProperty(name) || U.isVisorRequiredProperty(name))       ctx.addNodeAttribute(name,sysEntry.getValue());
+    }
+    if (log.isDebugEnabled())     log.debug("Added environment properties to node attributes.");
+  }
+ catch (  SecurityException e) {
+    throw new IgniteCheckedException("Failed to add environment properties to node attributes due to " + "security violation: " + e.getMessage());
+  }
+  try {
+    for (    Map.Entry<Object,Object> e : F.view(System.getProperties(),new P1<Object>(){
+      @Override public boolean apply(      Object o){
+        String name=(String)o;
+        return incProps == null || U.containsStringArray(incProps,name,true) || U.isVisorRequiredProperty(name);
+      }
+    }
+).entrySet()) {
+      String key=(String)e.getKey();
+      Object val=ctx.nodeAttribute(key);
+      if (val != null && !val.equals(e.getValue()))       U.warn(log,"System property will override environment variable with the same name: " + key);
+      ctx.addNodeAttribute(key,e.getValue());
+    }
+    if (log.isDebugEnabled())     log.debug("Added system properties to node attributes.");
+  }
+ catch (  SecurityException e) {
+    throw new IgniteCheckedException("Failed to add system properties to node attributes due to security " + "violation: " + e.getMessage());
+  }
+  String ips=F.concat(U.allLocalIps(),", ");
+  String macs=F.concat(U.allLocalMACs(),", ");
+  if (log.isInfoEnabled()) {
+    log.info("Non-loopback local IPs: " + (F.isEmpty(ips) ? "N/A" : ips));
+    log.info("Enabled local MACs: " + (F.isEmpty(macs) ? "N/A" : macs));
+  }
+  if (ips.isEmpty() && macs.isEmpty())   U.warn(log,"Ignite is starting on loopback address... Only nodes on the same physical " + "computer can participate in topology.","Ignite is starting on loopback address...");
+  add(ATTR_IPS,(ips.isEmpty() ? "" : ips));
+  add(ATTR_MACS,(macs.isEmpty() ? "" : macs));
+  add(ATTR_JIT_NAME,U.getCompilerMx() == null ? "" : U.getCompilerMx().getName());
+  add(ATTR_BUILD_VER,VER_STR);
+  add(ATTR_BUILD_DATE,BUILD_TSTAMP_STR);
+  add(ATTR_COMPATIBLE_VERS,(Serializable)compatibleVersions());
+  add(ATTR_MARSHALLER,cfg.getMarshaller().getClass().getName());
+  add(ATTR_USER_NAME,System.getProperty("user.name"));
+  add(ATTR_GRID_NAME,gridName);
+  add(ATTR_PEER_CLASSLOADING,cfg.isPeerClassLoadingEnabled());
+  add(ATTR_DEPLOYMENT_MODE,cfg.getDeploymentMode());
+  add(ATTR_LANG_RUNTIME,getLanguage());
+  add(ATTR_JVM_PID,U.jvmPid());
+  SB jvmArgs=new SB(512);
+  for (  String arg : U.jvmArgs()) {
+    if (arg.startsWith("-"))     jvmArgs.a("@@@");
+ else     jvmArgs.a(' ');
+    jvmArgs.a(arg);
+  }
+  add(ATTR_JVM_ARGS,jvmArgs.toString());
+  if (isDaemon())   add(ATTR_DAEMON,"true");
+  if (isJmxRemoteEnabled()) {
+    String portStr=System.getProperty("com.sun.management.jmxremote.port");
+    if (portStr != null)     try {
+      add(ATTR_JMX_PORT,Integer.parseInt(portStr));
+    }
+ catch (    NumberFormatException ignore) {
+    }
+  }
+  add(ATTR_RESTART_ENABLED,Boolean.toString(isRestartEnabled()));
+  if (cfg.getConnectorConfiguration() != null)   add(ATTR_REST_PORT_RANGE,cfg.getConnectorConfiguration().getPortRange());
+  addSpiAttributes(cfg.getCollisionSpi());
+  addSpiAttributes(cfg.getSwapSpaceSpi());
+  addSpiAttributes(cfg.getDiscoverySpi());
+  addSpiAttributes(cfg.getFailoverSpi());
+  addSpiAttributes(cfg.getCommunicationSpi());
+  addSpiAttributes(cfg.getEventStorageSpi());
+  addSpiAttributes(cfg.getCheckpointSpi());
+  addSpiAttributes(cfg.getLoadBalancingSpi());
+  addSpiAttributes(cfg.getDeploymentSpi());
+  if (cfg.getUserAttributes() != null) {
+    for (    Map.Entry<String,?> e : cfg.getUserAttributes().entrySet()) {
+      if (ctx.hasNodeAttribute(e.getKey()))       U.warn(log,"User or internal attribute has the same name as environment or system " + "property and will take precedence: " + e.getKey());
+      ctx.addNodeAttribute(e.getKey(),e.getValue());
+    }
+  }
+}
