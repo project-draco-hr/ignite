@@ -1,9 +1,14 @@
 {
-  return new GridPlainClosure<GridPlainFuture<IgfsMessage>,T>(){
-    @Override public T apply(    GridPlainFuture<IgfsMessage> fut) throws IgniteCheckedException {
-      IgfsControlResponse res=(IgfsControlResponse)fut.get();
-      if (res.hasError())       res.throwError();
-      return (T)res.response();
+  return new IgniteClosure<IgniteInternalFuture<IgfsMessage>,T>(){
+    @Override public T apply(    IgniteInternalFuture<IgfsMessage> fut){
+      try {
+        IgfsControlResponse res=(IgfsControlResponse)fut.get();
+        if (res.hasError())         res.throwError();
+        return (T)res.response();
+      }
+ catch (      IgniteCheckedException e) {
+        throw new GridClosureException(e);
+      }
     }
   }
 ;

@@ -3,9 +3,9 @@
   IgniteInternalFuture<?> topReadyFut=cctx.affinity().affinityReadyFuturex(topVer);
   if (startFut.isDone() && topReadyFut == null)   fut.init();
  else {
-    if (topReadyFut == null)     startFut.listenAsync(new CI1<IgniteInternalFuture<?>>(){
+    if (topReadyFut == null)     startFut.listen(new CI1<IgniteInternalFuture<?>>(){
       @Override public void apply(      IgniteInternalFuture<?> syncFut){
-        cctx.kernalContext().closure().runLocalSafe(new Runnable(){
+        cctx.kernalContext().closure().runLocalSafe(new GridPlainRunnable(){
           @Override public void run(){
             fut.init();
           }
@@ -19,7 +19,7 @@
       compound.add((IgniteInternalFuture<Object>)startFut);
       compound.add((IgniteInternalFuture<Object>)topReadyFut);
       compound.markInitialized();
-      compound.listenAsync(new CI1<IgniteInternalFuture<?>>(){
+      compound.listen(new CI1<IgniteInternalFuture<?>>(){
         @Override public void apply(        IgniteInternalFuture<?> syncFut){
           fut.init();
         }
