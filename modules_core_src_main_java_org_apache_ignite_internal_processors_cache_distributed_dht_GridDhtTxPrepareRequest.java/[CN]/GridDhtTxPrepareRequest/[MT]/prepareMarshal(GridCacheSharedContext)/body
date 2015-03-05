@@ -1,14 +1,12 @@
 {
   super.prepareMarshal(ctx);
-  if (ownedBytes == null && owned != null) {
-    ownedBytes=CU.marshal(ctx,owned);
+  if (owned != null) {
+    ownedKeys=owned.keySet();
+    ownedVals=owned.values();
+    for (    IgniteTxKey key : ownedKeys)     key.prepareMarshal(ctx.cacheContext(key.cacheId()));
     if (ctx.deploymentEnabled()) {
       for (      IgniteTxKey k : owned.keySet())       prepareObject(k,ctx);
     }
   }
-  if (nearWrites != null) {
-    marshalTx(nearWrites,ctx);
-    nearWritesBytes=new ArrayList<>(nearWrites.size());
-    for (    IgniteTxEntry e : nearWrites)     nearWritesBytes.add(ctx.marshaller().marshal(e));
-  }
+  if (nearWrites != null)   marshalTx(nearWrites,ctx);
 }

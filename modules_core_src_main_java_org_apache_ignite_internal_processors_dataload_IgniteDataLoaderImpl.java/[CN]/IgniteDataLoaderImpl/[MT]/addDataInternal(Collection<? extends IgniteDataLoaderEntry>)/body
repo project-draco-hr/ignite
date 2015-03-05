@@ -1,7 +1,7 @@
 {
   enterBusy();
+  GridFutureAdapter<Object> resFut=new GridFutureAdapter<>(ctx);
   try {
-    GridFutureAdapter<Object> resFut=new GridFutureAdapter<>(ctx);
     resFut.listenAsync(rmvActiveFut);
     activeFuts.add(resFut);
     Collection<KeyCacheObject> keys=null;
@@ -12,7 +12,9 @@
     load0(entries,resFut,keys,0);
     return new IgniteFutureImpl<>(resFut);
   }
- catch (  IgniteException e) {
+ catch (  Throwable e) {
+    resFut.onDone(e);
+    if (e instanceof Error)     throw e;
     return new IgniteFinishedFutureImpl<>(ctx,e);
   }
  finally {
