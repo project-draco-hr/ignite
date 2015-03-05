@@ -1,0 +1,29 @@
+{
+  String clsName=path.substring(prefixLen,path.length() - 6).replace(File.separatorChar,'.');
+  boolean included=false;
+  for (  String pkg : INCLUDED_PACKAGES) {
+    if (clsName.startsWith(pkg)) {
+      included=true;
+      break;
+    }
+  }
+  if (included) {
+    Class<?> cls=Class.forName(clsName,false,ldr);
+    boolean isSerializable=!cls.isInterface() && !Modifier.isAbstract(cls.getModifiers()) && Serializable.class.isAssignableFrom(cls);
+    if (isSerializable) {
+      if (!cls.isEnum() && !cls.getSimpleName().isEmpty() && cls.getName().startsWith("org.apache.ignite")) {
+        try {
+          Field field=cls.getDeclaredField("serialVersionUID");
+          if (!field.getType().equals(long.class))           errs.add("serialVersionUID field is not long in class: " + cls.getName());
+          int mod=field.getModifiers();
+          if (!Modifier.isStatic(mod))           errs.add("serialVersionUID field is not static in class: " + cls.getName());
+          if (!Modifier.isFinal(mod))           errs.add("serialVersionUID field is not final in class: " + cls.getName());
+        }
+ catch (        NoSuchFieldException ignored) {
+          errs.add("No serialVersionUID field in class: " + cls.getName());
+        }
+      }
+      classes.add((Class)cls);
+    }
+  }
+}
