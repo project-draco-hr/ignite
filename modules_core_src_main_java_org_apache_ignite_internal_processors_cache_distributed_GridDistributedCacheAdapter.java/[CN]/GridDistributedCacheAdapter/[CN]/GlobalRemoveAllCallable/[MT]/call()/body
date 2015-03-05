@@ -8,20 +8,20 @@
     GridDhtCacheAdapter<K,V> dht;
     if (cacheAdapter instanceof GridNearCacheAdapter)     dht=((GridNearCacheAdapter<K,V>)cacheAdapter).dht();
  else     dht=(GridDhtCacheAdapter<K,V>)cacheAdapter;
-    try (IgniteDataLoader<KeyCacheObject,Object> dataLdr=ignite.dataLoader(cacheName)){
+    try (IgniteDataLoaderImpl<KeyCacheObject,Object> dataLdr=(IgniteDataLoaderImpl)ignite.dataLoader(cacheName)){
       ((IgniteDataLoaderImpl)dataLdr).maxRemapCount(0);
       dataLdr.updater(GridDataLoadCacheUpdaters.<KeyCacheObject,Object>batched());
       for (      GridDhtLocalPartition locPart : dht.topology().currentLocalPartitions()) {
         if (!locPart.isEmpty() && locPart.primary(topVer)) {
           for (          GridDhtCacheEntry o : locPart.entries()) {
-            if (!o.obsoleteOrDeleted())             dataLdr.removeData(o.key());
+            if (!o.obsoleteOrDeleted())             dataLdr.removeDataInternal(o.key());
           }
         }
       }
       Iterator<KeyCacheObject> it=dht.context().swap().offHeapKeyIterator(true,false,topVer);
-      while (it.hasNext())       dataLdr.removeData(it.next());
+      while (it.hasNext())       dataLdr.removeDataInternal(it.next());
       it=dht.context().swap().swapKeyIterator(true,false,topVer);
-      while (it.hasNext())       dataLdr.removeData(it.next());
+      while (it.hasNext())       dataLdr.removeDataInternal(it.next());
     }
    }
   finally {
