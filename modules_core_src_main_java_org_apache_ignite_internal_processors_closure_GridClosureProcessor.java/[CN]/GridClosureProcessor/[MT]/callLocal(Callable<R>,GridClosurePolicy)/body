@@ -1,11 +1,10 @@
 {
   if (c == null)   return new GridFinishedFuture<>(ctx);
-  enterBusy();
+  busyLock.readLock();
   try {
     if (!(c instanceof GridPlainCallable))     ctx.resource().inject(ctx.deploy().getDeployment(c.getClass().getName()),c.getClass(),c);
     final ClassLoader ldr=Thread.currentThread().getContextClassLoader();
     final GridWorkerFuture<R> fut=new GridWorkerFuture<>(ctx);
-    workersCnt.increment();
     GridWorker w=new GridWorker(ctx.gridName(),"closure-proc-worker",log){
       @Override protected void body(){
         try {
@@ -15,9 +14,6 @@
  catch (        Throwable e) {
           if (e instanceof Error)           U.error(log,"Closure execution failed with error.",e);
           fut.onDone(U.cast(e));
-        }
- finally {
-          workersCnt.decrement();
         }
       }
     }
@@ -33,6 +29,6 @@
     return fut;
   }
   finally {
-    leaveBusy();
+    busyLock.readUnlock();
   }
 }
