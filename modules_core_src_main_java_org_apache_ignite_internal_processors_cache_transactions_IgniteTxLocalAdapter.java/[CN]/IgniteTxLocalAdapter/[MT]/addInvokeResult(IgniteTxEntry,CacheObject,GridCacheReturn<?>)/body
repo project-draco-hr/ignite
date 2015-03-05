@@ -8,9 +8,13 @@
       CacheInvokeEntry<Object,Object> invokeEntry=new CacheInvokeEntry(txEntry.context(),txEntry.key(),keyVal,cacheVal,val);
       EntryProcessor<Object,Object,?> entryProcessor=t.get1();
       res=entryProcessor.process(invokeEntry,t.get2());
-      val=invokeEntry.val();
+      val=invokeEntry.value();
+      keyVal=invokeEntry.key();
     }
-    if (res != null)     ret.addEntryProcessResult(keyVal,new CacheInvokeResult<>(res));
+    if (res != null) {
+      if (keyVal == null)       keyVal=txEntry.key().value(ctx.cacheObjectContext(),true);
+      ret.addEntryProcessResult(keyVal,new CacheInvokeResult<>(res));
+    }
   }
  catch (  Exception e) {
     if (keyVal == null)     keyVal=txEntry.key().value(ctx.cacheObjectContext(),true);
