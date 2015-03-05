@@ -3,7 +3,14 @@
     if (err == null) {
       if (!cacheCtx.isLocal())       cacheCtx.affinity().cleanUpCache(res.topologyVersion() - 10);
     }
-    if (startDesc != null && F.eq(startDesc.cacheConfiguration().getName(),cacheCtx.name()))     cacheCtx.preloader().onInitialExchangeComplete(err);
+    if (!F.isEmpty(reqs)) {
+      for (      DynamicCacheChangeRequest req : reqs) {
+        if (req.isStart() && F.eq(cacheCtx.name(),req.cacheName()))         cacheCtx.preloader().onInitialExchangeComplete(err);
+      }
+    }
+  }
+  if (!F.isEmpty(reqs)) {
+    for (    DynamicCacheChangeRequest req : reqs)     cctx.cache().onExchangeDone(req);
   }
   cctx.exchange().onExchangeDone(this);
   if (super.onDone(res,err) && !dummy && !forcePreload) {

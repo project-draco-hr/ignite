@@ -1,19 +1,5 @@
 {
   if (nodeFilter == null)   nodeFilter=F.alwaysTrue();
-  DynamicCacheStartFuture fut=new DynamicCacheStartFuture(ctx,IgniteUuid.fromUuid(ctx.localNodeId()));
-  try {
-    for (    CacheConfiguration ccfg0 : ctx.config().getCacheConfiguration()) {
-      if (ccfg0.getName().equals(ccfg.getName()))       return new GridFinishedFutureEx<>(new IgniteCheckedException("Failed to start cache " + "(a cache with the same name is already configured): " + ccfg.getName()));
-    }
-    if (caches.containsKey(ccfg.getName()))     return new GridFinishedFutureEx<>(new IgniteCheckedException("Failed to start cache " + "(a cache with the same name is already started): " + ccfg.getName()));
-    IgniteInternalFuture<?> old=pendingStarts.putIfAbsent(ccfg.getName(),fut);
-    if (old != null)     return new GridFinishedFutureEx<>(new IgniteCheckedException("Failed to start cache " + "(a cache with the same name is already started): " + ccfg.getName()));
-    ctx.discovery().sendCustomEvent(new DynamicCacheDescriptor(ccfg,nodeFilter,fut.startId()));
-    return fut;
-  }
- catch (  Exception e) {
-    fut.onDone(e);
-    pendingStarts.remove(ccfg.getName(),fut);
-    return fut;
-  }
+  DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(ccfg,nodeFilter);
+  return F.first(initiateCacheChanges(F.asList(req)));
 }

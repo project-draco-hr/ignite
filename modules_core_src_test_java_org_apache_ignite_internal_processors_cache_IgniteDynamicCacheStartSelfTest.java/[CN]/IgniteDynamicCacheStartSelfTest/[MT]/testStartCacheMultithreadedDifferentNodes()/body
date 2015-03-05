@@ -4,7 +4,7 @@
   GridTestUtils.runMultiThreaded(new Callable<Object>(){
     @Override public Object call() throws Exception {
       CacheConfiguration ccfg=new CacheConfiguration();
-      ccfg.setName("TestCacheName2");
+      ccfg.setName(CACHE_NAME);
       IgniteKernal kernal=(IgniteKernal)grid(ThreadLocalRandom.current().nextInt(nodeCount()));
       futs.add(kernal.context().cache().dynamicStartCache(ccfg,F.<ClusterNode>alwaysTrue()));
       return null;
@@ -26,4 +26,15 @@
   }
   assertEquals(1,succeeded);
   assertEquals(threadNum - 1,failed);
+  futs.clear();
+  GridTestUtils.runMultiThreaded(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      IgniteKernal kernal=(IgniteKernal)grid(ThreadLocalRandom.current().nextInt(nodeCount()));
+      futs.add(kernal.context().cache().dynamicStopCache(CACHE_NAME));
+      return null;
+    }
+  }
+,threadNum,"cache-stopper");
+  assertEquals(threadNum,futs.size());
+  for (  IgniteInternalFuture<?> fut : futs)   fut.get();
 }
