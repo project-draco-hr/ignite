@@ -11,22 +11,19 @@
     try (ResultSet colsRs=colsStmt.executeQuery(sql)){
       String prevSchema="";
       String prevTbl="";
+      boolean first=true;
       while (colsRs.next()) {
         String owner=colsRs.getString(OWNER_IDX);
         String tbl=colsRs.getString(TBL_NAME_IDX);
-        if (!prevSchema.equals(owner) || !prevTbl.equals(tbl)) {
-          pkCols=primaryKeys(pkStmt,owner,tbl);
-          idxs=indexes(idxStmt,owner,tbl);
-        }
-        if (prevSchema.isEmpty()) {
-          prevSchema=owner;
-          prevTbl=tbl;
-        }
-        if (!owner.equals(prevSchema) || !tbl.equals(prevTbl)) {
-          tbls.add(table(prevSchema,prevTbl,cols,idxs));
+        boolean changed=!owner.equals(prevSchema) || !tbl.equals(prevTbl);
+        if (changed) {
+          if (first)           first=false;
+ else           tbls.add(table(prevSchema,prevTbl,cols,idxs));
           prevSchema=owner;
           prevTbl=tbl;
           cols=new ArrayList<>();
+          pkCols=primaryKeys(pkStmt,owner,tbl);
+          idxs=indexes(idxStmt,owner,tbl);
         }
         String colName=colsRs.getString(COL_NAME_IDX);
         cols.add(new DbColumn(colName,decodeType(colsRs),pkCols.contains(colName),!"N".equals(colsRs.getString(NULLABLE_IDX))));
