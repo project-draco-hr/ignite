@@ -1,0 +1,59 @@
+{
+  if (out.exists()) {
+    MessageBox.Result choice=askOverwrite.confirm(out.getName());
+    if (CANCEL == choice)     throw new IllegalStateException("Java configuration snippet generation was canceled!");
+    if (NO == choice || NO_TO_ALL == choice)     return;
+  }
+  Collection<String> src=new ArrayList<>(256);
+  src.add("// Code snippet for cache configuration.");
+  src.add("");
+  src.add("IgniteConfiguration cfg = new IgniteConfiguration();");
+  src.add("");
+  src.add("CacheConfiguration ccfg = new CacheConfiguration<>();");
+  src.add("");
+  src.add("DataSource dataSource = null; // TODO: Create data source for your database.");
+  src.add("");
+  src.add("// Create store. ");
+  src.add("CacheJdbcPojoStore store = new CacheJdbcPojoStore();");
+  src.add("store.setDataSource(dataSource);");
+  src.add("");
+  src.add("// Create store factory. ");
+  src.add("ccfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory<>(store));");
+  src.add("");
+  src.add("// Configure cache to use store. ");
+  src.add("ccfg.setReadThrough(true);");
+  src.add("ccfg.setWriteThrough(true);");
+  src.add("");
+  src.add("cfg.setCacheConfiguration(ccfg);");
+  src.add("");
+  src.add("// Configure cache types. ");
+  src.add("Collection<CacheTypeMetadata> meta = new ArrayList<>();");
+  src.add("");
+  boolean first=true;
+  for (  PojoDescriptor pojo : pojos) {
+    String tbl=pojo.table();
+    src.add("// " + tbl + ".");
+    src.add((first ? "CacheTypeMetadata " : "") + "type = new CacheTypeMetadata();");
+    src.add("type.setDatabaseSchema(\"" + pojo.schema() + "\");");
+    src.add("type.setDatabaseTable(\"" + tbl + "\");");
+    src.add("type.setKeyType(\"" + pkg + "."+ pojo.keyClassName()+ "\");");
+    src.add("type.setValueType(\"" + pkg + "."+ pojo.valueClassName()+ "\");");
+    src.add("");
+    src.add("// Key fields for " + tbl + ".");
+    src.add((first ? "Collection<CacheTypeFieldMetadata> " : "") + "keys = new ArrayList<>();");
+    addFields(src,"keys",pojo.keyFields());
+    src.add("type.setKeyFields(keys);");
+    src.add("");
+    src.add("// Value fields for " + tbl + ".");
+    src.add((first ? "Collection<CacheTypeFieldMetadata> " : "") + "vals = new ArrayList<>();");
+    addFields(src,"vals",pojo.valueFields(includeKeys));
+    src.add("type.setValueFields(vals);");
+    src.add("");
+    first=false;
+  }
+  src.add("// Start Ignite node.");
+  src.add("Ignition.start(cfg);");
+  try (Writer writer=new BufferedWriter(new FileWriter(out))){
+    for (    String line : src)     writer.write(line + '\n');
+  }
+ }
