@@ -1,25 +1,20 @@
 {
   GridCacheEntryInfo info=null;
   long time=U.currentTimeMillis();
-  try {
 synchronized (this) {
-      if (!obsolete()) {
-        info=new GridCacheEntryInfo();
-        info.key(key);
-        info.cacheId(cctx.cacheId());
-        long expireTime=expireTimeExtras();
-        boolean expired=expireTime != 0 && expireTime <= time;
-        info.ttl(ttlExtras());
-        info.expireTime(expireTime);
-        info.version(ver);
-        info.setNew(isStartVersion());
-        info.setDeleted(deletedUnlocked());
-        if (!expired)         info.value(valueBytesUnlocked());
-      }
+    if (!obsolete()) {
+      info=new GridCacheEntryInfo();
+      info.key(key);
+      info.cacheId(cctx.cacheId());
+      long expireTime=expireTimeExtras();
+      boolean expired=expireTime != 0 && expireTime <= time;
+      info.ttl(ttlExtras());
+      info.expireTime(expireTime);
+      info.version(ver);
+      info.setNew(isStartVersion());
+      info.setDeleted(deletedUnlocked());
+      if (!expired)       info.value(valueBytesUnlocked());
     }
-  }
- catch (  Exception e) {
-    throw new IgniteException("Failed to unmarshal object while creating entry info: " + this,e);
   }
   return info;
 }
