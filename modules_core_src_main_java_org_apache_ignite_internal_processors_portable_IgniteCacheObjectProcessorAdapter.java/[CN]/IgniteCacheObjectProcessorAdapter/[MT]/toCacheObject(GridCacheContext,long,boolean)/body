@@ -1,14 +1,2 @@
 {
-  long ptr=valPtr;
-  int size=UNSAFE.getInt(ptr);
-  ptr+=4;
-  boolean plainByteArr=UNSAFE.getByte(ptr++) == 1;
-  byte[] bytes=U.copyMemory(ptr,size);
-  if (plainByteArr)   return new CacheObjectImpl(bytes,null);
-  if (ctx.offheapTiered()) {
-    IgniteUuid valClsLdrId=U.readGridUuid(ptr + size);
-    ClassLoader ldr=valClsLdrId != null ? ctx.deploy().getClassLoader(valClsLdrId) : ctx.deploy().localLoader();
-    return new CacheObjectImpl(ctx.marshaller().unmarshal(bytes,ldr),bytes);
-  }
- else   return new CacheObjectImpl(ctx.marshaller().unmarshal(bytes,U.gridClassLoader()),bytes);
 }
