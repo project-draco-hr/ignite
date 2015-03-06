@@ -10,16 +10,8 @@
  catch (      IgniteCheckedException e) {
         return new GridFinishedFuture<>(ctx.kernalContext(),e);
       }
-      IgniteInternalFuture<GridCacheReturn<CacheObject>> fut=tx.putAllAsync(ctx,F.t(key,newVal),true,null,-1,ctx.equalsValArray(oldVal));
-      return fut.chain(new CX1<IgniteInternalFuture<GridCacheReturn<CacheObject>>,GridCacheReturn<V>>(){
-        @Override public GridCacheReturn<V> applyx(        IgniteInternalFuture<GridCacheReturn<CacheObject>> fut) throws IgniteCheckedException {
-          GridCacheReturn ret=fut.get();
-          CacheObject val=(CacheObject)ret.value();
-          ret.value(CU.value(val,ctx,true));
-          return ret;
-        }
-      }
-);
+      IgniteInternalFuture<GridCacheReturn<V>> fut=(IgniteInternalFuture)tx.putAllAsync(ctx,F.t(key,newVal),true,null,-1,ctx.equalsValArray(oldVal));
+      return fut;
     }
     @Override public String toString(){
       return "replaceAsync [key=" + key + ", oldVal="+ oldVal+ ", newVal="+ newVal+ ']';
