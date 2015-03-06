@@ -1,13 +1,13 @@
 {
   if (cleared)   return F.emptyIterator();
-  final Iterator<Map.Entry<KeyCacheObject,IgniteBiTuple<CacheObject,GridCacheVersion>>> it0=map.entrySet().iterator();
+  final Iterator<Map.Entry<?,IgniteBiTuple<?,GridCacheVersion>>> it0=(Iterator)map.entrySet().iterator();
   return new Iterator<Cache.Entry<?,?>>(){
     /** 
  */
-    private Cache.Entry<Object,Object> cur;
+    private Cache.Entry<?,?> cur;
     /** 
  */
-    private Cache.Entry<Object,Object> next;
+    private Cache.Entry<?,?> next;
     /** 
  */
 {
@@ -17,23 +17,22 @@
  */
     private void checkNext(){
       while (it0.hasNext()) {
-        Map.Entry<KeyCacheObject,IgniteBiTuple<CacheObject,GridCacheVersion>> e=it0.next();
-        KeyCacheObject k=e.getKey();
+        Map.Entry<?,IgniteBiTuple<?,GridCacheVersion>> e=it0.next();
+        Object k=e.getKey();
         if (rmvd != null && rmvd.contains(k))         continue;
-        Object storeKey=e.getKey().value(cctx.cacheObjectContext(),false);
-        Object storeVal=CU.value(e.getValue().get1(),cctx,false);
+        Object v=locStore ? e.getValue() : e.getValue().get1();
         if (convertPortable) {
-          storeKey=cctx.unwrapPortableIfNeeded(storeKey,false);
-          storeVal=cctx.unwrapPortableIfNeeded(storeVal,false);
+          k=cctx.unwrapPortableIfNeeded(k,false);
+          v=cctx.unwrapPortableIfNeeded(v,false);
         }
-        next=new EntryImpl<>(k,storeKey,storeVal);
+        next=new CacheEntryImpl<>(k,v);
         break;
       }
     }
     @Override public boolean hasNext(){
       return next != null;
     }
-    @Override public Cache.Entry<Object,Object> next(){
+    @Override public Cache.Entry<?,?> next(){
       if (next == null)       throw new NoSuchElementException();
       cur=next;
       next=null;
