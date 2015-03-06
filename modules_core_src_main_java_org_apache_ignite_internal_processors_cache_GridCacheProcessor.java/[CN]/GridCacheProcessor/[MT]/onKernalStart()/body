@@ -1,15 +1,18 @@
 {
   if (ctx.config().isDaemon())   return;
   for (  DynamicCacheDescriptor desc : dynamicCaches.values()) {
-    GridCacheContext ctx=createCache(desc.cacheConfiguration());
-    ctx.dynamicDeploymentId(desc.deploymentId());
-    sharedCtx.addCacheContext(ctx);
-    GridCacheAdapter cache=ctx.cache();
-    String name=desc.cacheConfiguration().getName();
-    caches.put(name,cache);
-    startCache(cache);
-    proxies.put(name,new GridCacheProxyImpl(ctx,cache,null));
-    jCacheProxies.put(name,new IgniteCacheProxy(ctx,cache,null,false));
+    if (hasStaticCache(desc.cacheConfiguration().getName()))     throw new IgniteCheckedException("Failed to start node (current grid has dynamic cache which " + "conflicts with locally configured static cache: " + desc.cacheConfiguration().getName());
+    if (desc.nodeFilter().apply(ctx.discovery().localNode())) {
+      GridCacheContext ctx=createCache(desc.cacheConfiguration());
+      ctx.dynamicDeploymentId(desc.deploymentId());
+      sharedCtx.addCacheContext(ctx);
+      GridCacheAdapter cache=ctx.cache();
+      String name=desc.cacheConfiguration().getName();
+      caches.put(name,cache);
+      startCache(cache);
+      proxies.put(name,new GridCacheProxyImpl(ctx,cache,null));
+      jCacheProxies.put(name,new IgniteCacheProxy(ctx,cache,null,false));
+    }
   }
   if (!getBoolean(IGNITE_SKIP_CONFIGURATION_CONSISTENCY_CHECK)) {
     for (    ClusterNode n : ctx.discovery().remoteNodes())     checkCache(n);
