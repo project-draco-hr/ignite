@@ -1,19 +1,14 @@
 {
-  try (final IgniteDataLoader<KeyCacheObject,CacheObject> ldr=ctx.kernalContext().<KeyCacheObject,CacheObject>dataLoad().dataLoader(ctx.namex())){
+  try (final IgniteDataLoaderImpl<KeyCacheObject,CacheObject> ldr=ctx.kernalContext().<KeyCacheObject,CacheObject>dataLoad().dataLoader(ctx.namex())){
     ldr.allowOverwrite(true);
     ldr.skipStore(true);
-    final Collection<Map.Entry<KeyCacheObject,CacheObject>> col=new ArrayList<>(ldr.perNodeBufferSize());
-    Collection<KeyCacheObject> keys0=F.viewReadOnly(keys,new C1<K,KeyCacheObject>(){
-      @Override public KeyCacheObject apply(      K key){
-        return ctx.toCacheKeyObject(key);
-      }
-    }
-);
+    final Collection<IgniteDataLoaderEntry> col=new ArrayList<>(ldr.perNodeBufferSize());
+    Collection<KeyCacheObject> keys0=ctx.cacheKeysView(keys);
     ctx.store().loadAllFromStore(null,keys0,new CIX2<KeyCacheObject,Object>(){
       @Override public void applyx(      KeyCacheObject key,      Object val){
-        col.add(new GridMapEntry<>(key,ctx.toCacheObject(val)));
+        col.add(new IgniteDataLoaderEntry(key,ctx.toCacheObject(val)));
         if (col.size() == ldr.perNodeBufferSize()) {
-          ldr.addData(col);
+          ldr.addDataInternal(col);
           col.clear();
         }
       }
