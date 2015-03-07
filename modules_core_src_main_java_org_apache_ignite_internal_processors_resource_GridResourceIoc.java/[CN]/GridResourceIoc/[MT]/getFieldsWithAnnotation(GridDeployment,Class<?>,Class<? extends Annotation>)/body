@@ -2,10 +2,14 @@
   GridResourceField[] fields=getFieldsFromCache(cls,annCls);
   if (fields == null) {
     List<GridResourceField> fieldsList=new ArrayList<>();
+    boolean allowImplicitInjection=!GridNoImplicitInjection.class.isAssignableFrom(cls);
     for (Class cls0=cls; !cls0.equals(Object.class); cls0=cls0.getSuperclass()) {
       for (      Field field : cls0.getDeclaredFields()) {
         Annotation ann=field.getAnnotation(annCls);
-        if (ann != null || GridResourceUtils.mayRequireResources(field))         fieldsList.add(new GridResourceField(field,ann));
+        if (ann != null)         fieldsList.add(new GridResourceField(field,ann));
+ else         if (allowImplicitInjection && GridResourceUtils.mayRequireResources(field)) {
+          fieldsList.add(new GridResourceField(field,null));
+        }
       }
     }
     if (fieldsList.isEmpty())     fields=GridResourceField.EMPTY_ARRAY;
