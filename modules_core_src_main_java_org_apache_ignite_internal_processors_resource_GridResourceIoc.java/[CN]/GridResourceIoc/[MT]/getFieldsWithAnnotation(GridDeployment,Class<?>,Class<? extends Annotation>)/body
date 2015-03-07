@@ -1,13 +1,15 @@
 {
-  List<GridResourceField> fields=getFieldsFromCache(cls,annCls);
+  GridResourceField[] fields=getFieldsFromCache(cls,annCls);
   if (fields == null) {
-    fields=new ArrayList<>();
+    List<GridResourceField> fieldsList=new ArrayList<>();
     for (Class cls0=cls; !cls0.equals(Object.class); cls0=cls0.getSuperclass()) {
       for (      Field field : cls0.getDeclaredFields()) {
         Annotation ann=field.getAnnotation(annCls);
-        if (ann != null || GridResourceUtils.mayRequireResources(field))         fields.add(new GridResourceField(field,ann));
+        if (ann != null || GridResourceUtils.mayRequireResources(field))         fieldsList.add(new GridResourceField(field,ann));
       }
     }
+    if (fieldsList.isEmpty())     fields=GridResourceField.EMPTY_ARRAY;
+ else     fields=fieldsList.toArray(new GridResourceField[fieldsList.size()]);
     cacheFields(dep,cls,annCls,fields);
   }
   return fields;
