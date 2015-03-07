@@ -1,10 +1,13 @@
 {
   OptimizedClassDescriptor desc=DESC_BY_CLS.get(cls);
   if (desc == null) {
-    desc=new OptimizedClassDescriptor(cls,ctx,mapper);
-    ctx.registerClass(desc.typeId(),cls);
-    OptimizedClassDescriptor old=DESC_BY_CLS.putIfAbsent(cls,desc);
-    if (old != null)     desc=old;
+    int typeId=resolveTypeId(cls.getName(),mapper);
+    boolean registered=ctx.registerClass(typeId,cls);
+    desc=new OptimizedClassDescriptor(cls,registered ? typeId : 0,ctx,mapper);
+    if (registered) {
+      OptimizedClassDescriptor old=DESC_BY_CLS.putIfAbsent(cls,desc);
+      if (old != null)       desc=old;
+    }
   }
   return desc;
 }

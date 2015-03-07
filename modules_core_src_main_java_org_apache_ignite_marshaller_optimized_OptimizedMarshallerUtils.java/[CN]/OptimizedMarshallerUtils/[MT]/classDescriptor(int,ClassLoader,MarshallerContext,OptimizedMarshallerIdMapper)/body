@@ -1,3 +1,9 @@
 {
-  return classDescriptor(ctx.getClass(id,ldr),ctx,mapper);
+  Class cls=ctx.getClass(id,ldr);
+  OptimizedClassDescriptor desc=DESC_BY_CLS.get(cls);
+  if (desc == null) {
+    OptimizedClassDescriptor old=DESC_BY_CLS.putIfAbsent(cls,desc=new OptimizedClassDescriptor(cls,resolveTypeId(cls.getName(),mapper),ctx,mapper));
+    if (old != null)     desc=old;
+  }
+  return desc;
 }

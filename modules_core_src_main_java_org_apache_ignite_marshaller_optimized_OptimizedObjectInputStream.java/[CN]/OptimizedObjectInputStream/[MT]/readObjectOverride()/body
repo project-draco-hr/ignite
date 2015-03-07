@@ -51,7 +51,7 @@ return readCharArray();
 case BOOLEAN_ARR:
 return readBooleanArray();
 case OBJ_ARR:
-return readArray(Class.forName(readUTF(),false,clsLdr));
+return readArray(readClass());
 case STR:
 return readString();
 case UUID:
@@ -73,12 +73,12 @@ return readLinkedHashSet(HASH_SET_MAP_OFF);
 case DATE:
 return readDate();
 case CLS:
-return classDescriptor(in.readInt(),clsLdr,ctx,mapper).describedClass();
+return readClass();
 case ENUM:
 case EXTERNALIZABLE:
 case SERIALIZABLE:
 int typeId=readInt();
-OptimizedClassDescriptor desc=OptimizedMarshallerUtils.classDescriptor(typeId,clsLdr,ctx,mapper);
+OptimizedClassDescriptor desc=typeId == 0 ? classDescriptor(Class.forName(readUTF(),true,clsLdr),ctx,mapper) : classDescriptor(typeId,clsLdr,ctx,mapper);
 curCls=desc.describedClass();
 return desc.read(this);
 default :
