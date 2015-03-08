@@ -1,13 +1,13 @@
 {
   GridCacheAdapter<K,V> cache=cacheCtx.cache();
-  Collection<KeyCacheObject> keys=new ArrayList<>();
-  for (  GridCacheEntryEx e : cache.entries()) {
+  Collection<K> keys=new ArrayList<>();
+  for (  Cache.Entry<K,V> e : cache.entrySet()) {
     boolean undeploy=cacheCtx.isNear() ? undeploy(ldr,e,cacheCtx.near()) || undeploy(ldr,e,cacheCtx.near().dht()) : undeploy(ldr,e,cacheCtx.cache());
-    if (undeploy)     keys.add(e.key());
+    if (undeploy)     keys.add(e.getKey());
   }
   if (log.isDebugEnabled())   log.debug("Finished searching keys for undeploy [keysCnt=" + keys.size() + ']');
-  cache.clearLocally(keys,true);
-  if (cacheCtx.isNear())   cacheCtx.near().dht().clearLocally(keys,true);
+  for (  K k : keys)   cache.clearLocally(k);
+  if (cacheCtx.isNear())   for (  K k : keys)   cacheCtx.near().dht().clearLocally(k);
   GridCacheQueryManager<K,V> qryMgr=cacheCtx.queries();
   if (qryMgr != null)   qryMgr.onUndeploy(ldr);
   int swapUndeployCnt=cacheCtx.isNear() ? cacheCtx.near().dht().context().swap().onUndeploy(ldr) : cacheCtx.swap().onUndeploy(ldr);
