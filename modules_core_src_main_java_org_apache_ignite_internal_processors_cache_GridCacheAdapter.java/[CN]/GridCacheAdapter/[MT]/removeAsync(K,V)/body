@@ -12,7 +12,7 @@
           ctx.deploy().registerClass(val);
         }
  catch (        IgniteCheckedException e) {
-          return new GridFinishedFuture<>(ctx.kernalContext(),e);
+          return new GridFinishedFuture<>(e);
         }
       }
       K key0=key;
@@ -23,7 +23,7 @@
           val0=(V)ctx.marshalToPortable(val);
         }
  catch (        IgniteException e) {
-          return new GridFinishedFuture<>(ctx.kernalContext(),e);
+          return new GridFinishedFuture<>(e);
         }
       }
       return tx.removeAllAsync(ctx,Collections.singletonList(key0),null,false,ctx.vararg(F.<K,V>cacheContainsPeek(val0))).chain((IgniteClosure<IgniteInternalFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
@@ -33,6 +33,6 @@
     }
   }
 );
-  if (statsEnabled)   fut.listenAsync(new UpdateRemoveTimeStatClosure<Boolean>(metrics0(),start));
+  if (statsEnabled)   fut.listen(new UpdateRemoveTimeStatClosure<Boolean>(metrics0(),start));
   return fut;
 }
