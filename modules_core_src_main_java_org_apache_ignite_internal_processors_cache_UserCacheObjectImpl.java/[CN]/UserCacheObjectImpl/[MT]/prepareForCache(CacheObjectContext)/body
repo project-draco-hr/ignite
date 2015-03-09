@@ -8,7 +8,8 @@
       try {
         if (valBytes == null)         valBytes=ctx.processor().marshal(ctx,val);
         if (ctx.unmarshalValues()) {
-          Object val=ctx.processor().unmarshal(ctx,valBytes,IgniteUtils.detectClass(this.val).getClassLoader());
+          ClassLoader ldr=ctx.p2pEnabled() ? IgniteUtils.detectClass(this.val).getClassLoader() : val.getClass().getClassLoader();
+          Object val=ctx.processor().unmarshal(ctx,valBytes,ldr);
           return new CacheObjectImpl(val,valBytes);
         }
         return new CacheObjectImpl(null,valBytes);
