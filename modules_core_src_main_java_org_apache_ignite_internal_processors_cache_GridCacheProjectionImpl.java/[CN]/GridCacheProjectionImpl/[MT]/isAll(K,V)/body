@@ -1,14 +1,8 @@
 {
   if (k == null || v == null)   return false;
-  IgniteBiPredicate<K,V> p=null;
-  if (p != null) {
-    CacheFlag[] f=cctx.forceLocalRead();
-    try {
-      if (!p.apply(k,v))       return false;
-    }
-  finally {
-      cctx.forceFlags(f);
-    }
+  if (filter != null) {
+    GridLocalCacheEntry e=new GridLocalCacheEntry(cctx,cctx.toCacheKeyObject(k),k.hashCode(),cctx.toCacheObject(v),null,0,0);
+    if (!filter.apply(e))     return false;
   }
   return true;
 }

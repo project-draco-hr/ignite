@@ -1,12 +1,30 @@
 {
   A.notEmpty(entries,"entries");
-  Collection<? extends IgniteDataLoaderEntry> entries0=F.viewReadOnly(entries,new C1<Entry<K,V>,IgniteDataLoaderEntry>(){
-    @Override public IgniteDataLoaderEntry apply(    Entry<K,V> e){
-      KeyCacheObject key=cacheObjProc.toCacheKeyObject(cacheObjCtx,e.getKey());
-      CacheObject val=cacheObjProc.toCacheObject(cacheObjCtx,e.getValue());
-      return new IgniteDataLoaderEntry(key,val);
+  enterBusy();
+  try {
+    GridFutureAdapter<Object> resFut=new GridFutureAdapter<>(ctx);
+    resFut.listenAsync(rmvActiveFut);
+    activeFuts.add(resFut);
+    Collection<KeyCacheObject> keys=null;
+    if (entries.size() > 1) {
+      keys=new GridConcurrentHashSet<>(entries.size(),U.capacity(entries.size()),1);
+      for (      Map.Entry<K,V> entry : entries)       keys.add(cacheObjProc.toCacheKeyObject(cacheObjCtx,entry.getKey()));
     }
-  }
+    Collection<? extends IgniteDataLoaderEntry> entries0=F.viewReadOnly(entries,new C1<Entry<K,V>,IgniteDataLoaderEntry>(){
+      @Override public IgniteDataLoaderEntry apply(      Entry<K,V> e){
+        KeyCacheObject key=cacheObjProc.toCacheKeyObject(cacheObjCtx,e.getKey());
+        CacheObject val=cacheObjProc.toCacheObject(cacheObjCtx,e.getValue());
+        return new IgniteDataLoaderEntry(key,val);
+      }
+    }
 );
-  return addDataInternal(entries0);
+    load0(entries0,resFut,keys,0);
+    return new IgniteFutureImpl<>(resFut);
+  }
+ catch (  IgniteException e) {
+    return new IgniteFinishedFutureImpl<>(ctx,e);
+  }
+ finally {
+    leaveBusy();
+  }
 }
