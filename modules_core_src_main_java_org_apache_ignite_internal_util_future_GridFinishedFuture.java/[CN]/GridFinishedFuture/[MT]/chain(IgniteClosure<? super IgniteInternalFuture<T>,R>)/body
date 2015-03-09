@@ -1,10 +1,11 @@
 {
-  GridFutureAdapter<R> fut=new GridFutureAdapter<R>(){
-    @Override public String toString(){
-      return "ChainFuture[orig=" + GridFinishedFuture.this + ", doneCb="+ doneCb+ ']';
-    }
+  try {
+    return new GridFinishedFuture<>(doneCb.apply(this));
   }
-;
-  listen(new GridFutureChainListener<>(fut,doneCb));
-  return fut;
+ catch (  GridClosureException e) {
+    return new GridFinishedFuture<>(e.unwrap());
+  }
+catch (  RuntimeException|Error e) {
+    return new GridFinishedFuture<>(e);
+  }
 }
