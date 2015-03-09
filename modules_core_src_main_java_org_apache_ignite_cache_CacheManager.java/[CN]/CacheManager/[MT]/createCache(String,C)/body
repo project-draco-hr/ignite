@@ -10,25 +10,16 @@
     igniteCacheCfg.setStoreValueBytes(cacheCfg.isStoreByValue());
   }
   igniteCacheCfg.setName(cacheName);
-  IgniteCache<K,V> res;
-synchronized (igniteMap) {
-    if (igniteMap.containsKey(cacheName))     throw new CacheException("Cache already exists [cacheName=" + cacheName + ", manager="+ uri+ ']');
-    Ignite ignite;
-    if (uri.equals(cachingProvider.getDefaultURI())) {
-      IgniteConfiguration cfg=new IgniteConfiguration();
-      cfg.setGridName(mgrIdx.incrementAndGet() + "-grid-for-" + cacheName);
-      cfg.setCacheConfiguration(igniteCacheCfg);
-      try {
-        ignite=Ignition.start(cfg);
-      }
- catch (      IgniteException e) {
-        throw new CacheException(e);
-      }
-    }
- else     throw new UnsupportedOperationException();
-    res=ignite.jcache(cacheName);
-    igniteMap.put(cacheName,ignite);
+  IgniteInternalFuture<?> fut=ignite.context().cache().dynamicStartCache(igniteCacheCfg,new GridNodePredicate(Collections.singleton(ignite.getLocalNodeId())));
+  try {
+    fut.get();
   }
+ catch (  IgniteCheckedException e) {
+    throw CU.convertToCacheException(e);
+  }
+  IgniteCache<K,V> res=ignite.jcache(cacheName);
+  ((IgniteCacheProxy<K,V>)res).setCacheManager(this);
+  if (res == null)   throw new CacheException();
   if (igniteCacheCfg.isManagementEnabled())   enableManagement(cacheName,true);
   if (igniteCacheCfg.isStatisticsEnabled())   enableStatistics(cacheName,true);
   return res;

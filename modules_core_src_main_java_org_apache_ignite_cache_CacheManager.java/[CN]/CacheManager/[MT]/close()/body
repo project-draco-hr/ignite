@@ -1,16 +1,12 @@
 {
   if (closed.compareAndSet(false,true)) {
-    Ignite[] ignites;
-synchronized (igniteMap) {
-      ignites=igniteMap.values().toArray(new Ignite[igniteMap.values().size()]);
-      igniteMap.clear();
+    try {
+      ignite.close();
     }
-    for (    Ignite ignite : ignites) {
-      try {
-        ignite.close();
-      }
- catch (      Exception ignored) {
-      }
+ catch (    Exception ignored) {
+    }
+ finally {
+      cachingProvider.removeClosedManager(this);
     }
   }
 }
