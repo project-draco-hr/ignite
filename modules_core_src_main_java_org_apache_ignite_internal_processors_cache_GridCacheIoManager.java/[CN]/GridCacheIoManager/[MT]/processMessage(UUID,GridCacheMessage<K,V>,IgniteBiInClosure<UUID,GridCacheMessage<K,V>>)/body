@@ -1,6 +1,5 @@
 {
   try {
-    if (msg.transactional())     CU.resetTxContext(cctx);
     c.apply(nodeId,msg);
     if (log.isDebugEnabled())     log.debug("Finished processing cache communication message [nodeId=" + nodeId + ", msg="+ msg+ ']');
   }
@@ -8,7 +7,8 @@
     U.error(log,"Failed processing message [senderId=" + nodeId + ']',e);
   }
  finally {
-    CU.resetTxContext(cctx);
+    cctx.tm().resetContext();
+    cctx.mvcc().contextReset();
     CU.unwindEvicts(cctx);
   }
 }
