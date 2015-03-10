@@ -1,22 +1,17 @@
 {
-  if (enterBusy()) {
-    try {
-      A.notNull(path,"path");
-      if (accessTime == -1 && modificationTime == -1)       return;
+  A.notNull(path,"path");
+  safeOp(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      if (accessTime == -1 && modificationTime == -1)       return null;
       FileDescriptor desc=getFileDescriptor(path);
       if (desc == null) {
         checkConflictWithPrimary(path);
         throw new IgfsPathNotFoundException("Failed to update times (path not found): " + path);
       }
-      if (desc.parentId == null)       return;
+      if (desc.parentId == null)       return null;
       meta.updateTimes(desc.parentId,desc.fileId,desc.fileName,accessTime,modificationTime);
-    }
- catch (    IgniteCheckedException e) {
-      throw U.convertException(e);
-    }
- finally {
-      busyLock.leaveBusy();
+      return null;
     }
   }
- else   throw new IllegalStateException("Failed to set file times because Grid is stopping.");
+);
 }
