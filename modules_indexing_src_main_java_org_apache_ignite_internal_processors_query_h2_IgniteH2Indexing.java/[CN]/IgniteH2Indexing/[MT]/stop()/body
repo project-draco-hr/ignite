@@ -1,26 +1,12 @@
 {
   if (log.isDebugEnabled())   log.debug("Stopping cache query index...");
-  Connection conn=connectionForThread(null);
   for (  Schema schema : schemas.values()) {
     for (    TableDescriptor desc : schema.tbls.values()) {
       desc.tbl.close();
       if (desc.luceneIdx != null)       U.closeQuiet(desc.luceneIdx);
     }
   }
-  if (conn != null) {
-    Statement stmt=null;
-    try {
-      stmt=conn.createStatement();
-      stmt.execute("DROP ALL OBJECTS DELETE FILES");
-      stmt.execute("SHUTDOWN");
-    }
- catch (    SQLException e) {
-      throw new IgniteCheckedException("Failed to shutdown database.",e);
-    }
- finally {
-      U.close(stmt,log);
-    }
-  }
+  executeStatement("INFORMATION_SCHEMA","SHUTDOWN");
   for (  Connection c : conns)   U.close(c,log);
   conns.clear();
   schemas.clear();
