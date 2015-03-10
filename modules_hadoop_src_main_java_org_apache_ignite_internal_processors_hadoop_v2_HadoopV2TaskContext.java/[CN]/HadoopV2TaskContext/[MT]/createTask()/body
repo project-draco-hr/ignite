@@ -1,0 +1,18 @@
+{
+  boolean isAbort=taskInfo().type() == HadoopTaskType.ABORT;
+switch (taskInfo().type()) {
+case SETUP:
+    return useNewMapper ? new HadoopV2SetupTask(taskInfo()) : new HadoopV1SetupTask(taskInfo());
+case MAP:
+  return useNewMapper ? new HadoopV2MapTask(taskInfo()) : new HadoopV1MapTask(taskInfo());
+case REDUCE:
+return useNewReducer ? new HadoopV2ReduceTask(taskInfo(),true) : new HadoopV1ReduceTask(taskInfo(),true);
+case COMBINE:
+return useNewCombiner ? new HadoopV2ReduceTask(taskInfo(),false) : new HadoopV1ReduceTask(taskInfo(),false);
+case COMMIT:
+case ABORT:
+return useNewReducer ? new HadoopV2CleanupTask(taskInfo(),isAbort) : new HadoopV1CleanupTask(taskInfo(),isAbort);
+default :
+return null;
+}
+}
