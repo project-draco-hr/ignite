@@ -1,0 +1,17 @@
+{
+  if (ses.accepted()) {
+    if (log.isDebugEnabled())     log.debug("Accepted connection, initiating handshake: " + ses);
+    ses.send(locIdMsg).listen(new CI1<IgniteInternalFuture<?>>(){
+      @Override public void apply(      IgniteInternalFuture<?> fut){
+        try {
+          fut.get();
+        }
+ catch (        IgniteCheckedException e) {
+          log.warning("Failed to send handshake message, will close session: " + ses,e);
+          ses.close();
+        }
+      }
+    }
+);
+  }
+}

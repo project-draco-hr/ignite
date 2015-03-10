@@ -1,6 +1,6 @@
 {
   ctx.checkSecurity(GridSecurityPermission.CACHE_READ);
-  if (F.isEmpty(keys))   return new GridFinishedFuture<>(ctx.kernalContext(),Collections.<K,V>emptyMap());
+  if (F.isEmpty(keys))   return new GridFinishedFuture<>(Collections.<K,V>emptyMap());
   if (keyCheck)   validateCacheKeys(keys);
   long topVer=ctx.affinity().affinityTopologyVersion();
   final IgniteCacheExpiryPolicy expiry=skipVals ? null : expiryPolicy(expiryPlc);
@@ -42,7 +42,7 @@ catch (        GridDhtInvalidPartitionException ignored) {
           break;
         }
 catch (        IgniteCheckedException e) {
-          return new GridFinishedFuture<>(ctx.kernalContext(),e);
+          return new GridFinishedFuture<>(e);
         }
  finally {
           if (entry != null)           ctx.evicts().touch(entry,topVer);
@@ -53,7 +53,7 @@ catch (        IgniteCheckedException e) {
     }
     if (success) {
       sendTtlUpdateRequest(expiry);
-      return ctx.wrapCloneMap(new GridFinishedFuture<>(ctx.kernalContext(),locVals));
+      return ctx.wrapCloneMap(new GridFinishedFuture<>(locVals));
     }
   }
   if (expiry != null)   expiry.reset();

@@ -1,0 +1,17 @@
+{
+  proc.lock();
+  try {
+    if (proc.terminated()) {
+      notifyTasksFailed(tasks,CRASHED,null);
+      return;
+    }
+    HadoopTaskExecutionRequest req=new HadoopTaskExecutionRequest();
+    req.jobId(job.id());
+    req.jobInfo(job.info());
+    req.tasks(tasks);
+    comm.sendMessage(proc.descriptor(),req);
+  }
+  finally {
+    proc.unlock();
+  }
+}
