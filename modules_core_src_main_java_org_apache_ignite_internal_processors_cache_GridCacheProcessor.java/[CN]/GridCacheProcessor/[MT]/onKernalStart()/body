@@ -1,8 +1,18 @@
 {
   if (ctx.config().isDaemon())   return;
-  for (  DynamicCacheDescriptor desc : dynamicCaches.values()) {
-    if (hasStaticCache(desc.cacheConfiguration().getName()))     throw new IgniteCheckedException("Failed to start node (current grid has dynamic cache which " + "conflicts with locally configured static cache: " + desc.cacheConfiguration().getName());
-    if (desc.nodeFilter().apply(ctx.discovery().localNode())) {
+  if (!getBoolean(IGNITE_SKIP_CONFIGURATION_CONSISTENCY_CHECK)) {
+    for (    ClusterNode n : ctx.discovery().remoteNodes()) {
+      checkTransactionConfiguration(n);
+      DeploymentMode locDepMode=ctx.config().getDeploymentMode();
+      DeploymentMode rmtDepMode=n.attribute(IgniteNodeAttributes.ATTR_DEPLOYMENT_MODE);
+      CU.checkAttributeMismatch(log,null,n.id(),"deploymentMode","Deployment mode",locDepMode,rmtDepMode,true);
+    }
+  }
+  validateCfg=false;
+  for (  DynamicCacheDescriptor desc : registeredCaches.values()) {
+    desc.checkValid();
+    IgnitePredicate filter=desc.cacheConfiguration().getNodeFilter();
+    if (filter.apply(ctx.discovery().localNode()) && !desc.locallyConfigured()) {
       GridCacheContext ctx=createCache(desc.cacheConfiguration());
       ctx.dynamicDeploymentId(desc.deploymentId());
       sharedCtx.addCacheContext(ctx);
@@ -14,9 +24,7 @@
       jCacheProxies.put(name,new IgniteCacheProxy(ctx,cache,null,false));
     }
   }
-  if (!getBoolean(IGNITE_SKIP_CONFIGURATION_CONSISTENCY_CHECK)) {
-    for (    ClusterNode n : ctx.discovery().remoteNodes())     checkCache(n);
-  }
+  for (  GridCacheSharedManager<?,?> mgr : sharedCtx.managers())   mgr.onKernalStart();
   for (  Map.Entry<String,GridCacheAdapter<?,?>> e : caches.entrySet()) {
     GridCacheAdapter cache=e.getValue();
     if (maxPreloadOrder > 0) {
@@ -33,7 +41,6 @@
     }
   }
   for (  IgniteInternalFuture<?> fut : preloadFuts.values())   ((GridCompoundFuture<Object,Object>)fut).markInitialized();
-  for (  GridCacheSharedManager<?,?> mgr : sharedCtx.managers())   mgr.onKernalStart();
   for (  GridCacheAdapter<?,?> cache : caches.values())   onKernalStart(cache);
   for (  GridCacheAdapter<?,?> cache : caches.values()) {
     CacheConfiguration cfg=cache.configuration();

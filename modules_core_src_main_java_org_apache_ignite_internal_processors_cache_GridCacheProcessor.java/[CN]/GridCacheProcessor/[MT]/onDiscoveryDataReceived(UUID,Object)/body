@@ -2,8 +2,25 @@
   if (data instanceof DynamicCacheChangeBatch) {
     DynamicCacheChangeBatch batch=(DynamicCacheChangeBatch)data;
     for (    DynamicCacheChangeRequest req : batch.requests()) {
-      dynamicCaches.put(req.cacheName(),new DynamicCacheDescriptor(req.startCacheConfiguration(),req.startNodeFilter(),req.deploymentId()));
-      ctx.discovery().addDynamicCacheFilter(req.cacheName(),req.startNodeFilter());
+      DynamicCacheDescriptor existing=registeredCaches.get(req.cacheName());
+      try {
+        if (req.isStart()) {
+          CacheConfiguration ccfg=req.startCacheConfiguration();
+          if (validateCfg && existing != null)           checkCache(existing.cacheConfiguration(),ccfg,nodeId);
+          if (existing == null) {
+            registeredCaches.put(req.cacheName(),new DynamicCacheDescriptor(ccfg,req.deploymentId()));
+          }
+ else           existing.deploymentId(req.deploymentId());
+          if (existing == null || existing.valid()) {
+            ctx.discovery().addDynamicCacheFilter(req.cacheName(),ccfg.getNodeFilter(),ccfg.isNearEnabled(),ccfg.getCacheMode() == LOCAL);
+          }
+        }
+ else         if (req.isNearStart()) {
+        }
+      }
+ catch (      IgniteCheckedException e) {
+        existing.validationFailed(e);
+      }
     }
   }
 }
