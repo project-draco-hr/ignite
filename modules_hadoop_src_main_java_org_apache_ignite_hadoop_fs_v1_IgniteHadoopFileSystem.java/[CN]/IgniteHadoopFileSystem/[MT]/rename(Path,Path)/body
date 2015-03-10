@@ -15,8 +15,14 @@
       return secondaryFs.rename(toSecondary(src),toSecondary(dst));
     }
  else {
-      rmtClient.rename(srcPath,dstPath);
       if (clientLog.isLogEnabled())       clientLog.logRename(srcPath,mode,dstPath);
+      try {
+        rmtClient.rename(srcPath,dstPath);
+      }
+ catch (      IOException ioe) {
+        LOG.warn("Failed to rename [srcPath=" + srcPath + ", dstPath="+ dstPath+ ", mode="+ mode+ ']',ioe);
+        throw ioe;
+      }
       return true;
     }
   }
