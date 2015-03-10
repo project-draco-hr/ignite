@@ -1,0 +1,11 @@
+{
+  HadoopMultimap map=maps.get(idx);
+  if (map == null) {
+    map=get(job.info(),SHUFFLE_REDUCER_NO_SORTING,false) ? new HadoopConcurrentHashMultimap(job.info(),mem,get(job.info(),PARTITION_HASHMAP_SIZE,8 * 1024)) : new HadoopSkipList(job.info(),mem);
+    if (!maps.compareAndSet(idx,null,map)) {
+      map.close();
+      return maps.get(idx);
+    }
+  }
+  return map;
+}
