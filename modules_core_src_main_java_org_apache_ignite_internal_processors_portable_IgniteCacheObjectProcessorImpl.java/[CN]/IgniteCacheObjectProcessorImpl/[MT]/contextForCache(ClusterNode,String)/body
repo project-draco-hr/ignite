@@ -6,5 +6,9 @@
       break;
     }
   }
-  return new CacheObjectContext(ctx,new GridCacheDefaultAffinityKeyMapper(),ccfg != null && ccfg.isCopyOnGet(),ctx.config().isPeerClassLoadingEnabled() || (ccfg != null && ccfg.isQueryIndexEnabled()));
+  if (ccfg != null) {
+    CacheMemoryMode memMode=ccfg.getMemoryMode();
+    return new CacheObjectContext(ctx,new GridCacheDefaultAffinityKeyMapper(),ccfg.isCopyOnGet() && memMode == ONHEAP_TIERED,ctx.config().isPeerClassLoadingEnabled() || ccfg.isQueryIndexEnabled());
+  }
+ else   return new CacheObjectContext(ctx,new GridCacheDefaultAffinityKeyMapper(),false,ctx.config().isPeerClassLoadingEnabled());
 }
