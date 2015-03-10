@@ -1,5 +1,8 @@
 {
   String clsName=path.substring(prefixLen,path.length() - 6).replace(File.separatorChar,'.');
+  for (  String pkg : EXCLUDED_PACKAGES) {
+    if (clsName.startsWith(pkg))     return;
+  }
   boolean included=false;
   for (  String pkg : packages) {
     if (clsName.startsWith(pkg)) {
@@ -9,7 +12,7 @@
   }
   if (included) {
     Class<?> cls=Class.forName(clsName,false,ldr);
-    if (Serializable.class.isAssignableFrom(cls) && !IgniteFuture.class.isAssignableFrom(cls) && !IgniteInternalFuture.class.isAssignableFrom(cls)&& !GridClientFuture.class.isAssignableFrom(cls)) {
+    if (Serializable.class.isAssignableFrom(cls) && !AbstractQueuedSynchronizer.class.isAssignableFrom(cls)) {
       if (!cls.isInterface() && !Modifier.isAbstract(cls.getModifiers()) && !cls.isEnum()&& !cls.getSimpleName().isEmpty()&& cls.getName().startsWith("org.apache.ignite")) {
         try {
           Field field=cls.getDeclaredField("serialVersionUID");
