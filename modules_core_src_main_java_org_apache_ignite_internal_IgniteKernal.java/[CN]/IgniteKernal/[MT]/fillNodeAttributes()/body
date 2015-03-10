@@ -11,17 +11,13 @@
     throw new IgniteCheckedException("Failed to add environment properties to node attributes due to " + "security violation: " + e.getMessage());
   }
   try {
-    for (    Map.Entry<Object,Object> e : F.view(System.getProperties(),new P1<Object>(){
-      @Override public boolean apply(      Object o){
-        String name=(String)o;
-        return incProps == null || U.containsStringArray(incProps,name,true) || U.isVisorRequiredProperty(name);
-      }
-    }
-).entrySet()) {
+    for (    Map.Entry<Object,Object> e : systemPropertiesSnapshot().entrySet()) {
       String key=(String)e.getKey();
-      Object val=ctx.nodeAttribute(key);
-      if (val != null && !val.equals(e.getValue()))       U.warn(log,"System property will override environment variable with the same name: " + key);
-      ctx.addNodeAttribute(key,e.getValue());
+      if (incProps == null || U.containsStringArray(incProps,key,true) || U.isVisorRequiredProperty(key)) {
+        Object val=ctx.nodeAttribute(key);
+        if (val != null && !val.equals(e.getValue()))         U.warn(log,"System property will override environment variable with the same name: " + key);
+        ctx.addNodeAttribute(key,e.getValue());
+      }
     }
     if (log.isDebugEnabled())     log.debug("Added system properties to node attributes.");
   }
