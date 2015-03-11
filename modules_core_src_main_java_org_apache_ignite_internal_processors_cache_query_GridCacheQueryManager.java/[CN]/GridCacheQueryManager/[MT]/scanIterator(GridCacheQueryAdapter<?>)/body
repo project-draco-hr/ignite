@@ -4,7 +4,6 @@
   final CacheProjection<K,V> prj=prj0;
   final IgniteBiPredicate<K,V> keyValFilter=qry.scanFilter();
   injectResources(keyValFilter);
-  final CachePeekMode[] peekModes={CachePeekMode.ONHEAP};
   final GridDhtCacheAdapter dht=cctx.isLocal() ? null : (cctx.isNear() ? cctx.near().dht() : cctx.dht());
   final ExpiryPolicy plc=cctx.expiry();
   final GridCloseableIteratorAdapter<IgniteBiTuple<K,V>> heapIt=new GridCloseableIteratorAdapter<IgniteBiTuple<K,V>>(){
@@ -30,7 +29,7 @@
         K key=iter.next();
         V val;
         try {
-          val=prj.localPeek(key,peekModes,expiryPlc);
+          val=prj.localPeek(key,CachePeekModes.ONHEAP_ONLY,expiryPlc);
         }
  catch (        IgniteCheckedException e) {
           if (log.isDebugEnabled())           log.debug("Failed to peek value: " + e);
