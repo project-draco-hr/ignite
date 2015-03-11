@@ -9,10 +9,12 @@
     CacheConfiguration cc=defaultCacheConfiguration();
     cc.setCacheMode(mode);
     cc.setAtomicityMode(TRANSACTIONAL);
-    cc.setDistributionMode(nearEnabled ? NEAR_PARTITIONED : PARTITIONED_ONLY);
+    if (nearEnabled) {
+      NearCacheConfiguration nearCfg=new NearCacheConfiguration();
+      cc.setNearConfiguration(nearCfg);
+    }
     cc.setWriteSynchronizationMode(FULL_SYNC);
     cc.setEvictSynchronized(false);
-    cc.setEvictNearSynchronized(false);
     if (store != null) {
       cc.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
       cc.setReadThrough(true);
