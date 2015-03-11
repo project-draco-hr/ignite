@@ -1,13 +1,13 @@
 {
   if (log.isDebugEnabled())   log.debug("Committing near local tx: " + this);
   prepareAsync();
-  GridNearTxFinishFuture<K,V> fut=commitFut.get();
+  GridNearTxFinishFuture fut=commitFut.get();
   if (fut == null && !commitFut.compareAndSet(null,fut=new GridNearTxFinishFuture<>(cctx,this,true)))   return commitFut.get();
   cctx.mvcc().addFuture(fut);
-  IgniteInternalFuture<IgniteInternalTx<K,V>> prepareFut=prepFut.get();
-  prepareFut.listen(new CI1<IgniteInternalFuture<IgniteInternalTx<K,V>>>(){
-    @Override public void apply(    IgniteInternalFuture<IgniteInternalTx<K,V>> f){
-      GridNearTxFinishFuture<K,V> fut0=commitFut.get();
+  IgniteInternalFuture<IgniteInternalTx> prepareFut=prepFut.get();
+  prepareFut.listen(new CI1<IgniteInternalFuture<IgniteInternalTx>>(){
+    @Override public void apply(    IgniteInternalFuture<IgniteInternalTx> f){
+      GridNearTxFinishFuture fut0=commitFut.get();
       try {
         f.get();
         if (finish(true))         fut0.finish();

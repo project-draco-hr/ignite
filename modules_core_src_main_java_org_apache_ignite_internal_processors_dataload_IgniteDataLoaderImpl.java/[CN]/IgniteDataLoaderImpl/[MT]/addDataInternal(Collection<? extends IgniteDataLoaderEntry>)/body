@@ -1,0 +1,23 @@
+{
+  enterBusy();
+  GridFutureAdapter<Object> resFut=new GridFutureAdapter<>();
+  try {
+    resFut.listen(rmvActiveFut);
+    activeFuts.add(resFut);
+    Collection<KeyCacheObject> keys=null;
+    if (entries.size() > 1) {
+      keys=new GridConcurrentHashSet<>(entries.size(),U.capacity(entries.size()),1);
+      for (      IgniteDataLoaderEntry entry : entries)       keys.add(entry.getKey());
+    }
+    load0(entries,resFut,keys,0);
+    return new IgniteFutureImpl<>(resFut);
+  }
+ catch (  Throwable e) {
+    resFut.onDone(e);
+    if (e instanceof Error)     throw e;
+    return new IgniteFinishedFutureImpl<>(e);
+  }
+ finally {
+    leaveBusy();
+  }
+}

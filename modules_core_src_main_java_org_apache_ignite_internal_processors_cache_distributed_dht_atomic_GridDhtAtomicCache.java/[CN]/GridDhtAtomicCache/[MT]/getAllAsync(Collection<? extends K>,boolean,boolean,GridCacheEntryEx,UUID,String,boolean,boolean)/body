@@ -1,0 +1,15 @@
+{
+  ctx.checkSecurity(GridSecurityPermission.CACHE_READ);
+  if (F.isEmpty(keys))   return new GridFinishedFuture<>(Collections.<K,V>emptyMap());
+  if (keyCheck)   validateCacheKeys(keys);
+  GridCacheProjectionImpl<K,V> prj=ctx.projectionPerCall();
+  subjId=ctx.subjectIdPerCall(null,prj);
+  final UUID subjId0=subjId;
+  final ExpiryPolicy expiryPlc=skipVals ? null : prj != null ? prj.expiry() : null;
+  return asyncOp(new CO<IgniteInternalFuture<Map<K,V>>>(){
+    @Override public IgniteInternalFuture<Map<K,V>> apply(){
+      return getAllAsync0(ctx.cacheKeysView(keys),false,forcePrimary,subjId0,taskName,deserializePortable,expiryPlc,skipVals);
+    }
+  }
+);
+}
