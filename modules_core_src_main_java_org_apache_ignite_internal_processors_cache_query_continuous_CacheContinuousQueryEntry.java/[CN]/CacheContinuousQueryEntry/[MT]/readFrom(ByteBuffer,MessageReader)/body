@@ -1,0 +1,29 @@
+{
+  reader.setBuffer(buf);
+  if (!reader.beforeMessageRead())   return false;
+switch (reader.state()) {
+case 0:
+    cacheId=reader.readInt("cacheId");
+  if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 1:
+byte evtTypeOrd;
+evtTypeOrd=reader.readByte("evtType");
+if (!reader.isLastRead()) return false;
+evtType=eventTypeFromOrdinal(evtTypeOrd);
+reader.incrementState();
+case 2:
+key=reader.readMessage("key");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 3:
+newVal=reader.readMessage("newVal");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 4:
+oldVal=reader.readMessage("oldVal");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+}
+return true;
+}

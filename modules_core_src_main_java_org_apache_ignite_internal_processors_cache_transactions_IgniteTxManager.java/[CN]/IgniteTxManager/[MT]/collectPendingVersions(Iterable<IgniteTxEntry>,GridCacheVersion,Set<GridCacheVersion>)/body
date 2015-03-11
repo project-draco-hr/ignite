@@ -1,0 +1,18 @@
+{
+  for (  IgniteTxEntry txEntry : entries) {
+    GridCacheEntryEx cached=txEntry.cached();
+    try {
+      if (!cached.obsolete()) {
+        for (        GridCacheMvccCandidate cand : cached.localCandidates()) {
+          if (!cand.owner() && cand.version().compareTo(baseVer) < 0) {
+            if (log.isDebugEnabled())             log.debug("Adding candidate version to pending set: " + cand);
+            vers.add(cand.version());
+          }
+        }
+      }
+    }
+ catch (    GridCacheEntryRemovedException ignored) {
+      if (log.isDebugEnabled())       log.debug("There are no pending locks for entry (entry was deleted in transaction): " + txEntry);
+    }
+  }
+}
