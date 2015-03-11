@@ -30,10 +30,14 @@ catch (        IgniteCheckedException e) {
         }
       }
  else {
-        topFut.syncNotify(false);
-        topFut.listenAsync(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
+        topFut.listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
           @Override public void apply(          IgniteInternalFuture<AffinityTopologyVersion> t){
-            prepare();
+            cctx.kernalContext().closure().runLocalSafe(new GridPlainRunnable(){
+              @Override public void run(){
+                prepare();
+              }
+            }
+);
           }
         }
 );

@@ -19,6 +19,7 @@
     }
   }
   if (IgniteComponentType.HADOOP.inClassPath())   sysCaches.add(CU.SYS_CACHE_HADOOP_MR);
+  sysCaches.add(CU.MARSH_CACHE_NAME);
   sysCaches.add(CU.UTILITY_CACHE_NAME);
   sysCaches.add(CU.ATOMICS_CACHE_NAME);
   CacheConfiguration[] cfgs=ctx.config().getCacheConfiguration();
@@ -27,14 +28,15 @@
   Collection<GridCacheAdapter<?,?>> startSeq=new ArrayList<>(cfgs.length);
   for (int i=0; i < cfgs.length; i++) {
     CacheConfiguration<?,?> cfg=new CacheConfiguration(cfgs[i]);
-    initialize(cfg);
+    CacheObjectContext cacheObjCtx=ctx.cacheObjects().contextForCache(null,cfg.getName());
+    initialize(cfg,cacheObjCtx);
     cfgs[i]=cfg;
     if (caches.containsKey(cfg.getName())) {
       String cacheName=cfg.getName();
       if (cacheName != null)       throw new IgniteCheckedException("Duplicate cache name found (check configuration and " + "assign unique name to each cache): " + cacheName);
  else       throw new IgniteCheckedException("Default cache has already been configured (check configuration and " + "assign unique name to each cache).");
     }
-    GridCacheContext cacheCtx=createCache(cfg);
+    GridCacheContext cacheCtx=createCache(cfg,cacheObjCtx);
     DynamicCacheDescriptor desc=new DynamicCacheDescriptor(cfg,IgniteUuid.randomUuid());
     desc.locallyConfigured(true);
     registeredCaches.put(cfg.getName(),desc);
@@ -57,5 +59,12 @@
     if (!sysCaches.contains(e.getKey()))     publicProxies.put(e.getKey(),new GridCacheProxyImpl(cache.context(),cache,null));
   }
   transactions=new IgniteTransactionsImpl(sharedCtx);
+  marshallerCache().context().preloader().syncFuture().listen(new CI1<IgniteInternalFuture<?>>(){
+    @Override public void apply(    IgniteInternalFuture<?> f){
+      ctx.marshallerContext().onMarshallerCacheReady(ctx);
+    }
+  }
+);
+  if (log.isDebugEnabled())   log.debug("Started cache processor.");
   if (log.isDebugEnabled())   log.debug("Started cache processor.");
 }

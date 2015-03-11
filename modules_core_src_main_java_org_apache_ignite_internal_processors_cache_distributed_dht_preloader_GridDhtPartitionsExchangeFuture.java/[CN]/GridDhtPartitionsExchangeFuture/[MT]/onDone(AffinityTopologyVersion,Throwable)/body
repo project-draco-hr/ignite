@@ -1,5 +1,5 @@
 {
-  for (  GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
+  for (  GridCacheContext cacheCtx : cctx.cacheContexts()) {
     if (err == null) {
       if (!cacheCtx.isLocal())       cacheCtx.affinity().cleanUpCache(res.topologyVersion() - 10);
     }
@@ -8,7 +8,7 @@
         if (F.eq(cacheCtx.name(),req.cacheName())) {
           if (req.isStart())           cacheCtx.preloader().onInitialExchangeComplete(err);
  else           if (req.isClientStart()) {
-            if (req.clientNodeId().equals(ctx.localNodeId()))             cacheCtx.preloader().onInitialExchangeComplete(err);
+            if (req.clientNodeId().equals(cacheCtx.localNodeId()))             cacheCtx.preloader().onInitialExchangeComplete(err);
           }
         }
       }
@@ -23,7 +23,7 @@
     initFut.onDone(err == null);
     GridTimeoutObject timeoutObj=this.timeoutObj;
     if (timeoutObj != null)     cctx.kernalContext().timeout().removeTimeoutObject(timeoutObj);
-    for (    GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
+    for (    GridCacheContext cacheCtx : cctx.cacheContexts()) {
       if (exchId.event() == EventType.EVT_NODE_FAILED || exchId.event() == EventType.EVT_NODE_LEFT)       cacheCtx.config().getAffinity().removeNode(exchId.nodeId());
     }
     return true;

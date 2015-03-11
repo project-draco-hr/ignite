@@ -12,8 +12,10 @@
   Ignite g1=grid(n1.id());
   Ignite g2=grid(n2.id());
   awaitPartitionMapExchange();
-  ((IgniteKernal)g1).internalCache(null).preloader().request(F.asList(1,2),new AffinityTopologyVersion(2)).get();
-  ((IgniteKernal)g2).internalCache(null).preloader().request(F.asList(1,2),new AffinityTopologyVersion(2)).get();
+  GridCacheContext ctx=((IgniteKernal)g1).internalCache(null).context();
+  List<KeyCacheObject> cacheKeys=F.asList(ctx.toCacheKeyObject(1),ctx.toCacheKeyObject(2));
+  ((IgniteKernal)g1).internalCache(null).preloader().request(cacheKeys,new AffinityTopologyVersion(2)).get();
+  ((IgniteKernal)g2).internalCache(null).preloader().request(cacheKeys,new AffinityTopologyVersion(2)).get();
   IgniteCache<Integer,String> cache1=g1.jcache(null);
   IgniteCache<Integer,String> cache2=g2.jcache(null);
   assertEquals(g1.affinity(null).mapKeyToNode(1),g1.cluster().localNode());
@@ -29,7 +31,7 @@
   assertEquals("v1",dht(cache2).peek(1));
   assertNull(near(cache1).peekNearOnly(1));
   assertNull(near(cache2).peekNearOnly(1));
-  GridDhtCacheEntry<Integer,String> e1=(GridDhtCacheEntry<Integer,String>)dht(cache1).entryEx(1);
+  GridDhtCacheEntry e1=(GridDhtCacheEntry)dht(cache1).entryEx(1);
   assertNull(cache1.getAndPut(2,"v2"));
   assertTrue(cache1.containsKey(2));
   assertTrue(cache2.containsKey(2));
@@ -39,7 +41,7 @@
   assertEquals("v2",dht(cache2).peek(2));
   assertNull(near(cache1).peekNearOnly(2));
   assertNull(near(cache2).peekNearOnly(2));
-  GridDhtCacheEntry<Integer,String> c2e2=(GridDhtCacheEntry<Integer,String>)dht(cache2).entryEx(2);
+  GridDhtCacheEntry c2e2=(GridDhtCacheEntry)dht(cache2).entryEx(2);
   assertFalse(c2e2.readers().contains(n1.id()));
   assertFalse(e1.readers().contains(n2.id()));
   assertEquals("v1",cache2.get(1));

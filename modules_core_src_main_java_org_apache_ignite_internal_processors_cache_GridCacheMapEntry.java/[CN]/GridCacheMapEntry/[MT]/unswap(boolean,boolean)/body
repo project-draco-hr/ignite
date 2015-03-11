@@ -3,21 +3,18 @@
   if (!swapEnabled && !cctx.isOffHeapEnabled())   return null;
 synchronized (this) {
     if (isStartVersion() && ((flags & IS_UNSWAPPED_MASK) == 0)) {
-      GridCacheSwapEntry<V> e;
+      GridCacheSwapEntry e;
       if (cctx.offheapTiered()) {
         e=cctx.swap().readOffheapPointer(this);
         if (e != null) {
           if (e.offheapPointer() > 0) {
             valPtr=e.offheapPointer();
             if (needVal) {
-              V val=unmarshalOffheap(false);
+              CacheObject val=cctx.fromOffheap(valPtr,false);
               e.value(val);
             }
           }
- else {
-            valPtr=0;
-            if (cctx.portableEnabled() && !e.valueIsByteArray())             e.valueBytes(null);
-          }
+ else           valPtr=0;
         }
       }
  else       e=detached() ? cctx.swap().read(this,true,true,true) : cctx.swap().readAndRemove(this);
@@ -26,9 +23,9 @@ synchronized (this) {
       if (e != null) {
         long delta=e.expireTime() == 0 ? 0 : e.expireTime() - U.currentTimeMillis();
         if (delta >= 0) {
-          V val=e.value();
-          if (cctx.portableEnabled())           val=(V)cctx.kernalContext().portable().detachPortable(val);
-          update(val,e.valueBytes(),e.expireTime(),e.ttl(),e.version());
+          CacheObject val=e.value();
+          val=cctx.kernalContext().cacheObjects().prepareForCache(val,cctx);
+          update(val,e.expireTime(),e.ttl(),e.version());
           if (cctx.offheapTiered() && e.offheapPointer() > 0)           valPtr=e.offheapPointer();
           return val;
         }

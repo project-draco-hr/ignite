@@ -1,0 +1,31 @@
+{
+  final GridDhtForceKeysFuture<K,V> fut=new GridDhtForceKeysFuture<>(cctx,topVer,keys,this);
+  IgniteInternalFuture<?> topReadyFut=cctx.affinity().affinityReadyFuturex(topVer);
+  if (startFut.isDone() && topReadyFut == null)   fut.init();
+ else {
+    if (topReadyFut == null)     startFut.listen(new CI1<IgniteInternalFuture<?>>(){
+      @Override public void apply(      IgniteInternalFuture<?> syncFut){
+        cctx.kernalContext().closure().runLocalSafe(new GridPlainRunnable(){
+          @Override public void run(){
+            fut.init();
+          }
+        }
+);
+      }
+    }
+);
+ else {
+      GridCompoundFuture<Object,Object> compound=new GridCompoundFuture<>();
+      compound.add((IgniteInternalFuture<Object>)startFut);
+      compound.add((IgniteInternalFuture<Object>)topReadyFut);
+      compound.markInitialized();
+      compound.listen(new CI1<IgniteInternalFuture<?>>(){
+        @Override public void apply(        IgniteInternalFuture<?> syncFut){
+          fut.init();
+        }
+      }
+);
+    }
+  }
+  return (GridDhtFuture)fut;
+}
