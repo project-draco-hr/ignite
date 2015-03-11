@@ -1,12 +1,12 @@
 {
-  try (final IgniteDataStreamerImpl<KeyCacheObject,CacheObject> ldr=ctx.kernalContext().<KeyCacheObject,CacheObject>dataStream().dataStreamer(ctx.namex())){
+  try (final DataStreamerImpl<KeyCacheObject,CacheObject> ldr=ctx.kernalContext().<KeyCacheObject,CacheObject>dataStream().dataStreamer(ctx.namex())){
     ldr.allowOverwrite(true);
     ldr.skipStore(true);
-    final Collection<IgniteDataLoaderEntry> col=new ArrayList<>(ldr.perNodeBufferSize());
+    final Collection<DataStreamerEntry> col=new ArrayList<>(ldr.perNodeBufferSize());
     Collection<KeyCacheObject> keys0=ctx.cacheKeysView(keys);
     ctx.store().loadAllFromStore(null,keys0,new CIX2<KeyCacheObject,Object>(){
       @Override public void applyx(      KeyCacheObject key,      Object val){
-        col.add(new IgniteDataLoaderEntry(key,ctx.toCacheObject(val)));
+        col.add(new DataStreamerEntry(key,ctx.toCacheObject(val)));
         if (col.size() == ldr.perNodeBufferSize()) {
           ldr.addDataInternal(col);
           col.clear();
