@@ -2,15 +2,16 @@
   ctx.denyOnLocalRead();
   A.notNull(key,"key",val,"val");
   if (keyCheck)   validateCacheKey(key);
-  return asyncOp(new AsyncOp<GridCacheReturn<V>>(key){
-    @Override public IgniteInternalFuture<GridCacheReturn<V>> op(    IgniteTxLocalAdapter<K,V> tx){
+  return asyncOp(new AsyncOp<GridCacheReturn>(key){
+    @Override public IgniteInternalFuture<GridCacheReturn> op(    IgniteTxLocalAdapter tx){
       try {
         if (ctx.deploymentEnabled())         ctx.deploy().registerClass(val);
       }
  catch (      IgniteCheckedException e) {
         return new GridFinishedFuture<>(e);
       }
-      return tx.removeAllAsync(ctx,Collections.singletonList(key),null,true,ctx.vararg(F.<K,V>cacheContainsPeek(val)));
+      IgniteInternalFuture<GridCacheReturn> fut=(IgniteInternalFuture)tx.removeAllAsync(ctx,Collections.singletonList(key),null,true,ctx.equalsValArray(val));
+      return fut;
     }
     @Override public String toString(){
       return "removeAsync [key=" + key + ", val="+ val+ ']';

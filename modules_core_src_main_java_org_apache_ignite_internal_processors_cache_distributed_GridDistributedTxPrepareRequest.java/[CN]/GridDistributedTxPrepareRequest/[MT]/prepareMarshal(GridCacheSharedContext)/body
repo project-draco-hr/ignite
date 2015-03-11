@@ -1,0 +1,15 @@
+{
+  super.prepareMarshal(ctx);
+  if (writes != null)   marshalTx(writes,ctx);
+  if (reads != null)   marshalTx(reads,ctx);
+  if (grpLockKey != null && grpLockKeyBytes == null)   grpLockKeyBytes=ctx.marshaller().marshal(grpLockKey);
+  if (dhtVers != null) {
+    for (    IgniteTxKey key : dhtVers.keySet()) {
+      GridCacheContext cctx=ctx.cacheContext(key.cacheId());
+      key.prepareMarshal(cctx);
+    }
+    dhtVerKeys=dhtVers.keySet();
+    dhtVerVals=dhtVers.values();
+  }
+  if (txNodes != null)   txNodesBytes=ctx.marshaller().marshal(txNodes);
+}
