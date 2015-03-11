@@ -7,7 +7,7 @@
   validateCacheValue(newVal);
   ctx.denyOnLocalRead();
   IgniteInternalFuture<Boolean> fut=asyncOp(new AsyncOp<Boolean>(key){
-    @Override public IgniteInternalFuture<Boolean> op(    IgniteTxLocalAdapter<K,V> tx){
+    @Override public IgniteInternalFuture<Boolean> op(    IgniteTxLocalAdapter tx){
       if (ctx.deploymentEnabled()) {
         try {
           ctx.deploy().registerClass(oldVal);
@@ -16,9 +16,7 @@
           return new GridFinishedFuture<>(e);
         }
       }
-      V oldVal0=oldVal;
-      if (ctx.portableEnabled())       oldVal0=(V)ctx.marshalToPortable(oldVal);
-      return tx.putAllAsync(ctx,F.t(key,newVal),false,null,-1,ctx.equalsPeekArray(oldVal0)).chain((IgniteClosure<IgniteInternalFuture<GridCacheReturn<V>>,Boolean>)RET2FLAG);
+      return tx.putAllAsync(ctx,F.t(key,newVal),false,null,-1,ctx.equalsValArray(oldVal)).chain((IgniteClosure<IgniteInternalFuture<GridCacheReturn>,Boolean>)RET2FLAG);
     }
     @Override public String toString(){
       return "replaceAsync [key=" + key + ", oldVal="+ oldVal+ ", newVal="+ newVal+ ']';
