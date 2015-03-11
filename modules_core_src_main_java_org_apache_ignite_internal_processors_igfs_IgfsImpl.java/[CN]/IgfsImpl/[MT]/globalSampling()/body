@@ -1,17 +1,8 @@
 {
-  if (enterBusy()) {
-    try {
-      try {
-        return meta.sampling();
-      }
- catch (      IgniteCheckedException e) {
-        U.error(log,"Failed to get sampling state.",e);
-        return false;
-      }
-    }
-  finally {
-      busyLock.leaveBusy();
+  return safeOp(new Callable<Boolean>(){
+    @Override public Boolean call() throws Exception {
+      return meta.sampling();
     }
   }
- else   throw new IllegalStateException("Failed to get global sampling flag because Grid is stopping.");
+);
 }
