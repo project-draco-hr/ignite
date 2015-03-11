@@ -1,8 +1,12 @@
 {
-  try (Ignite ignite=Ignition.start("examples/config/example-cache.xml")){
+  try (Ignite ignite=Ignition.start("examples/config/example-compute.xml")){
     System.out.println();
     System.out.println(">>> Cache API example started.");
-    ignite.jcache(CACHE_NAME).clear();
-    atomicMapOperations();
-  }
+    CacheConfiguration<Integer,String> cfg=new CacheConfiguration<>();
+    cfg.setCacheMode(CacheMode.PARTITIONED);
+    cfg.setName(CACHE_NAME);
+    try (IgniteCache<Integer,String> cache=ignite.createCache(cfg)){
+      atomicMapOperations(cache);
+    }
+   }
  }

@@ -5,9 +5,9 @@
       CacheRendezvousAffinityFunction aff=(CacheRendezvousAffinityFunction)cc.getAffinity();
       if (aff.isExcludeNeighbors())       throw new IgniteCheckedException("For REPLICATED cache flag 'excludeNeighbors' in " + "CacheRendezvousAffinityFunction cannot be set [cacheName=" + cc.getName() + ']');
     }
-    if (cc.getDistributionMode() == NEAR_PARTITIONED) {
-      U.warn(log,"NEAR_PARTITIONED distribution mode cannot be used with REPLICATED cache, " + "will be changed to PARTITIONED_ONLY [cacheName=" + cc.getName() + ']');
-      cc.setDistributionMode(PARTITIONED_ONLY);
+    if (cc.getNearConfiguration() != null) {
+      U.warn(log,"Near cache cannot be used with REPLICATED cache, " + "will be ignored [cacheName=" + cc.getName() + ']');
+      cc.setNearConfiguration(null);
     }
   }
   if (cc.getCacheMode() == LOCAL && !cc.getAffinity().getClass().equals(LocalAffinityFunction.class))   U.warn(log,"CacheAffinityFunction configuration parameter will be ignored for local cache [cacheName=" + cc.getName() + ']');
