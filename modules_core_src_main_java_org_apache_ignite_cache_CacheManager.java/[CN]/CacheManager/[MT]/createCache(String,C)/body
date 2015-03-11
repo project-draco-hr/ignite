@@ -2,22 +2,16 @@
   ensureNotClosed();
   if (cacheCfg == null)   throw new NullPointerException();
   if (cacheName == null)   throw new NullPointerException();
-  CacheConfiguration igniteCacheCfg;
-  if (cacheCfg instanceof CompleteConfiguration)   igniteCacheCfg=new CacheConfiguration((CompleteConfiguration)cacheCfg);
+  if (getCache0(cacheName) != null)   throw new CacheException("Cache already exists [cacheName=" + cacheName + ", manager="+ uri+ ']');
+  CacheConfiguration<K,V> igniteCacheCfg;
+  if (cacheCfg instanceof CompleteConfiguration)   igniteCacheCfg=new CacheConfiguration<>((CompleteConfiguration<K,V>)cacheCfg);
  else {
-    igniteCacheCfg=new CacheConfiguration();
+    igniteCacheCfg=new CacheConfiguration<>();
     igniteCacheCfg.setTypes(cacheCfg.getKeyType(),cacheCfg.getValueType());
     igniteCacheCfg.setStoreValueBytes(cacheCfg.isStoreByValue());
   }
   igniteCacheCfg.setName(cacheName);
-  IgniteInternalFuture<?> fut=ignite.context().cache().dynamicStartCache(igniteCacheCfg,new GridNodePredicate(Collections.singleton(ignite.getLocalNodeId())));
-  try {
-    fut.get();
-  }
- catch (  IgniteCheckedException e) {
-    throw CU.convertToCacheException(e);
-  }
-  IgniteCache<K,V> res=ignite.jcache(cacheName);
+  IgniteCache<K,V> res=ignite.createCache(igniteCacheCfg);
   ((IgniteCacheProxy<K,V>)res).setCacheManager(this);
   if (res == null)   throw new CacheException();
   if (igniteCacheCfg.isManagementEnabled())   enableManagement(cacheName,true);
