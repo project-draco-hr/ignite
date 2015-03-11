@@ -4,8 +4,10 @@
   try {
     IgniteCache<K,V> cache=(IgniteCache<K,V>)jCacheProxies.get(name);
     if (cache == null) {
-      if (!registeredCaches.containsKey(name))       throw new IllegalArgumentException("Cache is not started: " + name);
-      DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(ctx.localNodeId(),null);
+      DynamicCacheDescriptor desc=registeredCaches.get(name);
+      if (desc == null || desc.cancelled())       throw new IllegalArgumentException("Cache is not started: " + name);
+      DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(ctx.localNodeId(),desc.cacheConfiguration(),null);
+      req.deploymentId(desc.deploymentId());
       F.first(initiateCacheChanges(F.asList(req))).get();
       cache=(IgniteCache<K,V>)jCacheProxies.get(name);
       if (cache == null)       throw new IllegalArgumentException("Cache is not started: " + name);
