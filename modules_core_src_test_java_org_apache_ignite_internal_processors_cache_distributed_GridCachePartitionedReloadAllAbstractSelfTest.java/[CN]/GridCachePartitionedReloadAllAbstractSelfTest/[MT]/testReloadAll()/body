@@ -1,20 +1,17 @@
 {
-  for (  GridCache<Integer,String> cache : caches) {
-    Iterable<Integer> keys=primaryKeysForCache(cache,100);
+  for (  IgniteCache<Integer,String> cache : caches) {
+    Iterable<Integer> keys=primaryKeys(cache,100);
     info("Values [cache=" + caches.indexOf(cache) + ", size="+ F.size(keys.iterator())+ ", keys="+ keys+ "]");
     for (    Integer key : keys)     map.put(key,"val" + key);
   }
-  Collection<GridCache<Integer,String>> emptyCaches=new ArrayList<>(caches);
-  for (  GridCache<Integer,String> cache : caches) {
-    info("Reloading cache: " + caches.indexOf(cache));
-    if (!nearEnabled()) {
-      for (      GridCache<Integer,String> eCache : emptyCaches)       assertEquals("Non-null values found in cache [cache=" + caches.indexOf(eCache) + ", size="+ eCache.size()+ ", size="+ eCache.size()+ ", entrySetSize="+ eCache.entrySet().size()+ "]",0,eCache.size());
-    }
-    cache.reloadAll(map.keySet());
+  CompletionListenerFuture fut=new CompletionListenerFuture();
+  caches.get(0).loadAll(map.keySet(),false,fut);
+  fut.get();
+  CacheAffinity aff=ignite(0).affinity(null);
+  for (  IgniteCache<Integer,String> cache : caches) {
     for (    Integer key : map.keySet()) {
-      if (cache.affinity().isPrimaryOrBackup(grid(caches.indexOf(cache)).localNode(),key) || nearEnabled())       assertEquals(map.get(key),cache.peek(key));
- else       assertNull(cache.peek(key));
+      if (aff.isPrimaryOrBackup(grid(caches.indexOf(cache)).localNode(),key))       assertEquals(map.get(key),cache.localPeek(key));
+ else       assertNull(cache.localPeek(key));
     }
-    emptyCaches.remove(cache);
   }
 }
