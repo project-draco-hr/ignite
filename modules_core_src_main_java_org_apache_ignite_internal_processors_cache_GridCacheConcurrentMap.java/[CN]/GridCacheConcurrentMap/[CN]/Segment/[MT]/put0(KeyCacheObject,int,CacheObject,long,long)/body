@@ -1,0 +1,39 @@
+{
+  try {
+    SegmentHeader hdr=this.hdr;
+    int c=hdr.size();
+    if (c++ > threshold) {
+      rehash();
+      hdr=this.hdr;
+    }
+    int hdrId=hdr.id();
+    GridCacheMapEntry[] tab=hdr.table();
+    int idx=hash & (tab.length - 1);
+    GridCacheMapEntry bin=tab[idx];
+    GridCacheMapEntry e=bin;
+    while (e != null && (e.hash() != hash || !key.equals(e.key)))     e=e.next(hdrId);
+    GridCacheMapEntry retVal;
+    if (e != null) {
+      retVal=e;
+      e.rawPut(val,ttl);
+    }
+ else {
+      GridCacheMapEntry next=bin != null ? bin : null;
+      GridCacheMapEntry newRoot=factory.create(ctx,topVer,key,hash,val,next,ttl,hdr.id());
+synchronized (newRoot) {
+        tab[idx]=newRoot;
+        retVal=newRoot;
+        if (!retVal.isInternal()) {
+          mapPubSize.increment();
+          pubSize.increment();
+        }
+      }
+      mapSize.increment();
+      hdr.size(c);
+    }
+    return retVal;
+  }
+  finally {
+    if (DEBUG)     checkSegmentConsistency();
+  }
+}
