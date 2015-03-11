@@ -1,0 +1,22 @@
+{
+  IgniteKernal ignite=(IgniteKernal)grid(0);
+  IgniteCache<Object,Object> jcache=ignite.jcache(null);
+  try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+    jcache.get("1");
+    jcache.put("1","11");
+    GridCacheAdapter<Object,Object> utilityCache=ignite.context().cache().utilityCache();
+    utilityCache.putIfAbsent("2","2");
+    try (IgniteInternalTx itx=utilityCache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
+      assertEquals(null,utilityCache.get("1"));
+      assertEquals("2",utilityCache.get("2"));
+      assertEquals(null,utilityCache.get("3"));
+      utilityCache.put("3","3");
+      itx.commit();
+    }
+     jcache.put("2","22");
+    tx.commit();
+  }
+   checkTransactionsCommitted();
+  checkEntries(null,"1","11","2","22","3",null);
+  checkEntries(CU.UTILITY_CACHE_NAME,"1",null,"2","2","3","3");
+}

@@ -1,17 +1,14 @@
 {
-  try (final IgniteDataStreamer<K,V> ldr=ctx.kernalContext().<K,V>dataStream().dataStreamer(ctx.namex(),false)){
+  try (final IgniteDataLoader<K,V> ldr=ctx.kernalContext().<K,V>dataLoad().dataLoader(ctx.namex(),false)){
     ldr.allowOverwrite(true);
     ldr.skipStore(true);
-    final Collection<Map.Entry<K,V>> col=new ArrayList<>(ldr.perNodeBufferSize());
-    ctx.store().loadAllFromStore(null,keys,new CIX2<K,V>(){
-      @Override public void applyx(      K key,      V val){
-        if (ctx.portableEnabled()) {
-          key=(K)ctx.marshalToPortable(key);
-          val=(V)ctx.marshalToPortable(val);
-        }
-        col.add(new GridMapEntry<>(key,val));
+    final Collection<IgniteDataLoaderEntry> col=new ArrayList<>(ldr.perNodeBufferSize());
+    Collection<KeyCacheObject> keys0=ctx.cacheKeysView(keys);
+    ctx.store().loadAllFromStore(null,keys0,new CIX2<KeyCacheObject,Object>(){
+      @Override public void applyx(      KeyCacheObject key,      Object val){
+        col.add(new IgniteDataLoaderEntry(key,ctx.toCacheObject(val)));
         if (col.size() == ldr.perNodeBufferSize()) {
-          ldr.addData(col);
+          ldr.addDataInternal(col);
           col.clear();
         }
       }

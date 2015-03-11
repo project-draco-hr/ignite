@@ -31,13 +31,13 @@
           GridNearCacheAdapter<CacheAffinityKey<String>,Object> near=(GridNearCacheAdapter<CacheAffinityKey<String>,Object>)((IgniteKernal)g).<CacheAffinityKey<String>,Object>internalCache();
           GridDhtCacheAdapter<CacheAffinityKey<String>,Object> dht=near.dht();
           for (          CacheAffinityKey<String> k : keys) {
-            GridNearCacheEntry<?,?> nearEntry=near.peekExx(k);
-            GridDhtCacheEntry<?,?> dhtEntry=dht.peekExx(k);
+            GridNearCacheEntry nearEntry=(GridNearCacheEntry)near.peekEx(k);
+            GridDhtCacheEntry dhtEntry=(GridDhtCacheEntry)dht.peekEx(k);
             X.println("Near entry [grid=" + g.name() + ", key="+ k+ ", entry="+ nearEntry);
             X.println("DHT entry [grid=" + g.name() + ", key="+ k+ ", entry="+ dhtEntry);
-            GridCacheMvccCandidate<?> nearCand=nearEntry == null ? null : F.first(nearEntry.localCandidates());
+            GridCacheMvccCandidate nearCand=nearEntry == null ? null : F.first(nearEntry.localCandidates());
             if (nearCand != null)             X.println("Near futures: " + nearEntry.context().mvcc().futures(nearCand.version()));
-            GridCacheMvccCandidate<?> dhtCand=dhtEntry == null ? null : F.first(dhtEntry.localCandidates());
+            GridCacheMvccCandidate dhtCand=dhtEntry == null ? null : F.first(dhtEntry.localCandidates());
             if (dhtCand != null)             X.println("Dht futures: " + dhtEntry.context().mvcc().futures(dhtCand.version()));
           }
         }
