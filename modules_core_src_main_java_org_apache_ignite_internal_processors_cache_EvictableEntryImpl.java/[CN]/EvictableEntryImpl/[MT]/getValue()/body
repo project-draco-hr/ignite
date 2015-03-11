@@ -1,16 +1,20 @@
 {
   try {
-    IgniteInternalTx<K,V> tx=cached.context().tm().userTx();
+    IgniteInternalTx tx=cached.context().tm().userTx();
     if (tx != null) {
-      GridTuple<V> peek=tx.peek(cached.context(),false,cached.key(),null);
-      if (peek != null)       return peek.get();
+      GridTuple<CacheObject> peek=tx.peek(cached.context(),false,cached.key(),null);
+      if (peek != null)       return peek.get().value(cached.context().cacheObjectContext(),false);
     }
-    if (cached.detached())     return cached.rawGet();
+    if (cached.detached()) {
+      CacheObject val=cached.rawGet();
+      return val != null ? val.<V>value(cached.context().cacheObjectContext(),false) : null;
+    }
     for (; ; ) {
-      GridCacheEntryEx<K,V> e=cached.context().cache().peekEx(cached.key());
+      GridCacheEntryEx e=cached.context().cache().peekEx(cached.key());
       if (e == null)       return null;
       try {
-        return e.peek(GridCachePeekMode.GLOBAL,CU.<K,V>empty());
+        CacheObject val=e.peek(GridCachePeekMode.GLOBAL,CU.empty0());
+        return val != null ? val.<V>value(cached.context().cacheObjectContext(),false) : null;
       }
  catch (      GridCacheEntryRemovedException ignored) {
       }
