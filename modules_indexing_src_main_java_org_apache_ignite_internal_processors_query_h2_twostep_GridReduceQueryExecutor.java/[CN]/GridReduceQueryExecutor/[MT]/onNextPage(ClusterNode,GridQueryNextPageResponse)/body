@@ -5,13 +5,8 @@
   QueryRun r=runs.get(qryReqId);
   if (r == null)   return;
   GridMergeIndex idx=r.tbls.get(msg.query()).getScanIndex(null);
-  if (msg.allRows() != -1) {
-    idx.addCount(msg.allRows());
-    r.latch.countDown();
-  }
-  idx.addPage(new GridResultPage<UUID>(node.id(),msg){
+  idx.addPage(new GridResultPage(node.id(),msg){
     @Override public void fetchNextPage(){
-      if (res.isLast())       return;
       try {
         ctx.io().sendUserMessage(F.asList(node),new GridQueryNextPageRequest(qryReqId,qry,pageSize),GridTopic.TOPIC_QUERY,false,0);
       }
@@ -21,4 +16,5 @@
     }
   }
 );
+  if (msg.allRows() != -1)   r.latch.countDown();
 }
