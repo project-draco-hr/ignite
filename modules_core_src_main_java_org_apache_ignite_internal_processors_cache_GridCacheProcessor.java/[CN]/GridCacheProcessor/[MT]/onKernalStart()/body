@@ -11,13 +11,15 @@
   validateCfg=false;
   for (  DynamicCacheDescriptor desc : registeredCaches.values()) {
     desc.checkValid();
-    IgnitePredicate filter=desc.cacheConfiguration().getNodeFilter();
+    CacheConfiguration ccfg=desc.cacheConfiguration();
+    IgnitePredicate filter=ccfg.getNodeFilter();
     if (filter.apply(ctx.discovery().localNode()) && !desc.locallyConfigured()) {
-      GridCacheContext ctx=createCache(desc.cacheConfiguration());
+      CacheObjectContext cacheObjCtx=ctx.cacheObjects().contextForCache(null,ccfg.getName(),ccfg);
+      GridCacheContext ctx=createCache(ccfg,cacheObjCtx);
       ctx.dynamicDeploymentId(desc.deploymentId());
       sharedCtx.addCacheContext(ctx);
       GridCacheAdapter cache=ctx.cache();
-      String name=desc.cacheConfiguration().getName();
+      String name=ccfg.getName();
       caches.put(name,cache);
       startCache(cache);
       proxies.put(name,new GridCacheProxyImpl(ctx,cache,null));
@@ -33,7 +35,7 @@
       if (order > 0 && order != maxPreloadOrder && cfg.getCacheMode() != LOCAL) {
         GridCompoundFuture<Object,Object> fut=(GridCompoundFuture<Object,Object>)preloadFuts.get(order);
         if (fut == null) {
-          fut=new GridCompoundFuture<>(ctx);
+          fut=new GridCompoundFuture<>();
           preloadFuts.put(order,fut);
         }
         fut.add(cache.preloader().syncFuture());
@@ -48,5 +50,5 @@
       if (cfg.getCacheMode() == REPLICATED || (cfg.getCacheMode() == PARTITIONED && cfg.getPreloadPartitionedDelay() >= 0))       cache.preloader().syncFuture().get();
     }
   }
-  ctx.portable().onCacheProcessorStarted();
+  ctx.cacheObjects().onCacheProcessorStarted();
 }
