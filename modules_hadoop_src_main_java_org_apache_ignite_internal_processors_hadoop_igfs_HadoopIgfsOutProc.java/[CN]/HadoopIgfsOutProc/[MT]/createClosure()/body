@@ -1,0 +1,15 @@
+{
+  return new IgniteClosure<IgniteInternalFuture<IgfsMessage>,T>(){
+    @Override public T apply(    IgniteInternalFuture<IgfsMessage> fut){
+      try {
+        IgfsControlResponse res=(IgfsControlResponse)fut.get();
+        if (res.hasError())         res.throwError();
+        return (T)res.response();
+      }
+ catch (      IgfsException|IgniteCheckedException e) {
+        throw new GridClosureException(e);
+      }
+    }
+  }
+;
+}

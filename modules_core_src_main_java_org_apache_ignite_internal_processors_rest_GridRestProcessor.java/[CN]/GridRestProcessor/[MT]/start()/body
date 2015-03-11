@@ -8,5 +8,16 @@
     addHandler(new DataStructuresCommandHandler(ctx));
     startTcpProtocol();
     startHttpProtocol();
+    for (    GridRestProtocol proto : protos) {
+      Collection<IgniteBiTuple<String,Object>> props=proto.getProperties();
+      if (props != null) {
+        for (        IgniteBiTuple<String,Object> p : props) {
+          String key=p.getKey();
+          if (key == null)           continue;
+          if (ctx.hasNodeAttribute(key))           throw new IgniteCheckedException("Node attribute collision for attribute [processor=GridRestProcessor, attr=" + key + ']');
+          ctx.addNodeAttribute(key,p.getValue());
+        }
+      }
+    }
   }
 }

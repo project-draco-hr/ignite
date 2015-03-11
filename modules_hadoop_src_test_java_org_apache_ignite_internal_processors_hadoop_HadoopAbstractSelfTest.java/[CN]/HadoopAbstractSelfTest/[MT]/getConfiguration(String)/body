@@ -1,0 +1,21 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  cfg.setHadoopConfiguration(hadoopConfiguration(gridName));
+  TcpCommunicationSpi commSpi=new TcpCommunicationSpi();
+  commSpi.setSharedMemoryPort(-1);
+  cfg.setCommunicationSpi(commSpi);
+  TcpDiscoverySpi discoSpi=(TcpDiscoverySpi)cfg.getDiscoverySpi();
+  discoSpi.setIpFinder(IP_FINDER);
+  if (igfsEnabled()) {
+    cfg.setCacheConfiguration(metaCacheConfiguration(),dataCacheConfiguration());
+    cfg.setFileSystemConfiguration(igfsConfiguration());
+  }
+  if (restEnabled()) {
+    ConnectorConfiguration clnCfg=new ConnectorConfiguration();
+    clnCfg.setPort(restPort++);
+    cfg.setConnectorConfiguration(clnCfg);
+  }
+  cfg.setLocalHost("127.0.0.1");
+  cfg.setPeerClassLoadingEnabled(false);
+  return cfg;
+}
