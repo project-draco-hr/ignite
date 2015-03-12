@@ -2,19 +2,23 @@
   ctx.denyOnFlags(F.asList(READ,SKIP_SWAP));
   if (F.isEmpty(keys))   return;
   if (keyCheck)   validateCacheKeys(keys);
-  Collection<K> unswap=new ArrayList<>(keys.size());
+  Collection<KeyCacheObject> unswap=new ArrayList<>(keys.size());
   for (  K key : keys) {
-    GridCacheEntryEx<K,V> entry=peekEx(key);
+    KeyCacheObject cacheKey=ctx.toCacheKeyObject(key);
+    GridCacheEntryEx entry=peekEx(cacheKey);
     try {
-      if (entry == null || entry.obsolete() || entry.isNewLocked())       unswap.add(key);
+      if (entry == null || entry.obsolete() || entry.isNewLocked()) {
+        if (entry != null)         cacheKey=entry.key();
+        unswap.add(cacheKey);
+      }
     }
  catch (    GridCacheEntryRemovedException ignored) {
     }
   }
-  Collection<GridCacheBatchSwapEntry<K,V>> swapped=ctx.swap().readAndRemove(unswap);
-  for (  GridCacheBatchSwapEntry<K,V> swapEntry : swapped) {
-    K key=swapEntry.key();
-    GridCacheEntryEx<K,V> entry=entryEx(key);
+  Collection<GridCacheBatchSwapEntry> swapped=ctx.swap().readAndRemove(unswap);
+  for (  GridCacheBatchSwapEntry swapEntry : swapped) {
+    KeyCacheObject key=swapEntry.key();
+    GridCacheEntryEx entry=entryEx(key);
     try {
       entry.initialValue(key,swapEntry);
     }

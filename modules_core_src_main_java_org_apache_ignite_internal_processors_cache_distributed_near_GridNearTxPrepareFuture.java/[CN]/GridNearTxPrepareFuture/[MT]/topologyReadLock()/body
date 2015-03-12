@@ -1,14 +1,14 @@
 {
   if (tx.activeCacheIds().isEmpty())   return cctx.exchange().lastTopologyFuture();
-  GridCacheContext<K,V> nonLocalCtx=null;
+  GridCacheContext<K,V> nonLocCtx=null;
   for (  int cacheId : tx.activeCacheIds()) {
     GridCacheContext<K,V> cacheCtx=cctx.cacheContext(cacheId);
     if (!cacheCtx.isLocal()) {
-      nonLocalCtx=cacheCtx;
+      nonLocCtx=cacheCtx;
       break;
     }
   }
-  if (nonLocalCtx == null)   return cctx.exchange().lastTopologyFuture();
-  nonLocalCtx.topology().readLock();
-  return nonLocalCtx.topology().topologyVersionFuture();
+  if (nonLocCtx == null)   return cctx.exchange().lastTopologyFuture();
+  nonLocCtx.topology().readLock();
+  return nonLocCtx.topology().topologyVersionFuture();
 }

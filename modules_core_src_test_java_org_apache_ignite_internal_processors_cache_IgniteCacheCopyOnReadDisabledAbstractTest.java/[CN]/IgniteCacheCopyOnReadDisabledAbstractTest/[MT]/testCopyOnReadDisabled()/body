@@ -1,0 +1,20 @@
+{
+  IgniteCache<TestKey,TestValue> cache=ignite(0).jcache(null);
+  for (int i=0; i < 100; i++) {
+    TestKey key=new TestKey(i);
+    TestValue val=new TestValue(i);
+    cache.put(key,val);
+    TestValue val0=cache.get(key);
+    assertNotSame(val,val0);
+    assertSame(val0,cache.localPeek(key));
+  }
+  TestKey key=new TestKey(0);
+  TestValue val0=cache.get(key);
+  TestValue invokeVal=cache.invoke(key,new EntryProcessor<TestKey,TestValue,TestValue>(){
+    @Override public TestValue process(    MutableEntry<TestKey,TestValue> entry,    Object... args){
+      return entry.getValue();
+    }
+  }
+);
+  assertSame(val0,invokeVal);
+}

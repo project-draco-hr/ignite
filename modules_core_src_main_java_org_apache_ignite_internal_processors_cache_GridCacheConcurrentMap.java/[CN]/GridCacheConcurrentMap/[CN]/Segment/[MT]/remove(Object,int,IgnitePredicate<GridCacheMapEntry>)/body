@@ -1,0 +1,34 @@
+{
+  lock();
+  try {
+    SegmentHeader hdr=this.hdr;
+    GridCacheMapEntry[] tbl=hdr.table();
+    int idx=hash & (tbl.length - 1);
+    GridCacheMapEntry bin=tbl[idx];
+    if (bin == null)     return null;
+    GridCacheMapEntry prev=null;
+    GridCacheMapEntry e=bin;
+    while (e != null && (e.hash() != hash || !key.equals(e.key))) {
+      prev=e;
+      e=e.next(hdr.id());
+    }
+    if (e != null) {
+      if (filter != null && !filter.apply(e))       return null;
+      if (prev == null)       tbl[idx]=e.next(hdr.id());
+ else       prev.next(hdr.id(),e.next(hdr.id()));
+synchronized (e) {
+        if (!e.isInternal() && !e.deleted()) {
+          mapPubSize.decrement();
+          pubSize.decrement();
+        }
+      }
+      mapSize.decrement();
+      hdr.decrementSize();
+    }
+    return e;
+  }
+  finally {
+    if (DEBUG)     checkSegmentConsistency();
+    unlock();
+  }
+}
