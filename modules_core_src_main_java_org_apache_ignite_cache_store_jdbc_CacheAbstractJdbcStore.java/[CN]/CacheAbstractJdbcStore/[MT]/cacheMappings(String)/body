@@ -5,9 +5,14 @@
   try {
     entryMappings=cacheMappings.get(cacheName);
     if (entryMappings != null)     return entryMappings;
-    Collection<CacheTypeMetadata> types=ignite().jcache(cacheName).getConfiguration(CacheConfiguration.class).getTypeMetadata();
+    CacheConfiguration ccfg=ignite().jcache(cacheName).getConfiguration(CacheConfiguration.class);
+    Collection<CacheTypeMetadata> types=ccfg.getTypeMetadata();
     entryMappings=U.newHashMap(types.size());
-    for (    CacheTypeMetadata type : types)     entryMappings.put(keyTypeId(type.getKeyType()),new EntryMapping(cacheName,dialect,type));
+    for (    CacheTypeMetadata type : types) {
+      Object keyTypeId=keyTypeId(type.getKeyType());
+      if (entryMappings.containsKey(keyTypeId))       throw new CacheException("Key type must be unique in type metadata [cache name=" + cacheName + ", key type="+ type.getKeyType()+ "]");
+      entryMappings.put(keyTypeId(type.getKeyType()),new EntryMapping(cacheName,dialect,type));
+    }
     Map<String,Map<Object,EntryMapping>> mappings=new HashMap<>(cacheMappings);
     mappings.put(cacheName,entryMappings);
     prepareBuilders(cacheName,types);
