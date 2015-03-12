@@ -5,10 +5,10 @@
   }
   for (  Map.Entry<String,GridCacheAdapter<?,?>> e : caches.entrySet()) {
     GridCacheAdapter cache=e.getValue();
-    if (maxPreloadOrder > 0) {
+    if (maxRebalanceOrder > 0) {
       CacheConfiguration cfg=cache.configuration();
-      int order=cfg.getPreloadOrder();
-      if (order > 0 && order != maxPreloadOrder && cfg.getCacheMode() != LOCAL) {
+      int order=cfg.getRebalanceOrder();
+      if (order > 0 && order != maxRebalanceOrder && cfg.getCacheMode() != LOCAL) {
         GridCompoundFuture<Object,Object> fut=(GridCompoundFuture<Object,Object>)preloadFuts.get(order);
         if (fut == null) {
           fut=new GridCompoundFuture<>();
@@ -23,8 +23,8 @@
   for (  GridCacheAdapter<?,?> cache : caches.values())   onKernalStart(cache);
   for (  GridCacheAdapter<?,?> cache : caches.values()) {
     CacheConfiguration cfg=cache.configuration();
-    if (cfg.getPreloadMode() == SYNC) {
-      if (cfg.getCacheMode() == REPLICATED || (cfg.getCacheMode() == PARTITIONED && cfg.getPreloadPartitionedDelay() >= 0))       cache.preloader().syncFuture().get();
+    if (cfg.getRebalanceMode() == SYNC) {
+      if (cfg.getCacheMode() == REPLICATED || (cfg.getCacheMode() == PARTITIONED && cfg.getRebalanceDelay() >= 0))       cache.preloader().syncFuture().get();
     }
   }
   ctx.cacheObjects().onCacheProcessorStarted();
