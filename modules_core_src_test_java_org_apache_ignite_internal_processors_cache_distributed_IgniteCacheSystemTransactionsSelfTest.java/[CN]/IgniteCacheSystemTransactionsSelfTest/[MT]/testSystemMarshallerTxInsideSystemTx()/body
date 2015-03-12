@@ -1,0 +1,22 @@
+{
+  IgniteKernal ignite=(IgniteKernal)grid(0);
+  GridCacheAdapter<Object,Object> utilityCache=ignite.context().cache().utilityCache();
+  try (IgniteInternalTx tx=utilityCache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
+    utilityCache.get("1");
+    utilityCache.put("1","11");
+    CacheProjection<String,String> marshallerCache=(GridCacheAdapter<String,String>)(GridCacheAdapter)ignite.context().cache().marshallerCache();
+    marshallerCache.putIfAbsent("2","2");
+    try (IgniteInternalTx itx=marshallerCache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
+      assertEquals(null,marshallerCache.get("1"));
+      assertEquals("2",marshallerCache.get("2"));
+      assertEquals(null,marshallerCache.get("3"));
+      marshallerCache.put("3","3");
+      itx.commit();
+    }
+     utilityCache.put("2","22");
+    tx.commit();
+  }
+   checkTransactionsCommitted();
+  checkEntries(CU.UTILITY_CACHE_NAME,1,"11",2,"22",3,null);
+  checkEntries(CU.MARSH_CACHE_NAME,1,null,2,"2",3,"3");
+}

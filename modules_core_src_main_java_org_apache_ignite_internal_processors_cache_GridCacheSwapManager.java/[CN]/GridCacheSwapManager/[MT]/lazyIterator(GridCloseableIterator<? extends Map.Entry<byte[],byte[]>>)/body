@@ -8,7 +8,8 @@
       cur=new Map.Entry<K,V>(){
         @Override public K getKey(){
           try {
-            return unmarshalKey(cur0.getKey(),cctx.deploy().globalLoader());
+            KeyCacheObject key=cctx.toCacheKeyObject(cur0.getKey());
+            return key.value(cctx.cacheObjectContext(),false);
           }
  catch (          IgniteCheckedException e) {
             throw new IgniteException(e);
@@ -16,9 +17,9 @@
         }
         @Override public V getValue(){
           try {
-            GridCacheSwapEntry<V> e=unmarshalSwapEntry(cur0.getValue());
+            GridCacheSwapEntry e=unmarshalSwapEntry(cur0.getValue());
             swapEntry(e);
-            return e.value();
+            return e.value().value(cctx.cacheObjectContext(),false);
           }
  catch (          IgniteCheckedException ex) {
             throw new IgniteException(ex);
@@ -37,8 +38,8 @@
     @Override protected void onRemove() throws IgniteCheckedException {
       if (cur == null)       throw new IllegalStateException("Method next() has not yet been called, or the remove() method " + "has already been called after the last call to the next() method.");
       try {
-        if (cctx.isDht())         cctx.dht().near().removex(cur.getKey(),CU.<K,V>empty());
- else         cctx.cache().removex(cur.getKey(),CU.<K,V>empty());
+        if (cctx.isDht())         cctx.dht().near().removex(cur.getKey());
+ else         cctx.cache().removex(cur.getKey());
       }
   finally {
         cur=null;
@@ -61,6 +62,6 @@
     }
   }
 ;
-  itSet.add(new GridWeakIterator<>(ret,iter,itQ));
+  itSet.add(new GridWeakIterator(ret,iter,itQ));
   return ret;
 }

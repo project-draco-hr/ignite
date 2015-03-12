@@ -1,17 +1,17 @@
 {
-  GridCacheMvccCandidate<K> prev;
-  GridCacheMvccCandidate<K> owner;
-  GridCacheMvccCandidate<K> cand;
-  V val;
+  GridCacheMvccCandidate prev;
+  GridCacheMvccCandidate owner;
+  GridCacheMvccCandidate cand;
+  CacheObject val;
   UUID locId=cctx.nodeId();
 synchronized (this) {
     checkObsolete();
-    GridCacheMvcc<K> mvcc=mvccExtras();
+    GridCacheMvcc mvcc=mvccExtras();
     if (mvcc == null) {
-      mvcc=new GridCacheMvcc<>(cctx);
+      mvcc=new GridCacheMvcc(cctx);
       mvccExtras(mvcc);
     }
-    GridCacheMvccCandidate<K> c=mvcc.localCandidate(locId,threadId);
+    GridCacheMvccCandidate c=mvcc.localCandidate(locId,threadId);
     if (c != null)     return reenter ? c.reenter() : null;
     prev=mvcc.anyOwner();
     boolean emptyBefore=mvcc.isEmpty();

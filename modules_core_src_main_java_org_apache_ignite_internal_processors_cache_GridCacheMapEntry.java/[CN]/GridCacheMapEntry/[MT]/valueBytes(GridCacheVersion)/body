@@ -1,24 +1,8 @@
 {
-  V val=null;
-  GridCacheValueBytes valBytes=GridCacheValueBytes.nil();
+  CacheObject val=null;
 synchronized (this) {
     checkObsolete();
-    if (ver == null || this.ver.equals(ver)) {
-      val=this.val;
-      ver=this.ver;
-      valBytes=valueBytesUnlocked();
-      if (valBytes.isNull() && cctx.offheapTiered() && valPtr != 0)       valBytes=offheapValueBytes();
-    }
- else     ver=null;
+    if (ver == null || this.ver.equals(ver))     val=valueBytesUnlocked();
   }
-  if (valBytes.isNull()) {
-    if (val != null)     valBytes=(val instanceof byte[]) ? GridCacheValueBytes.plain(val) : GridCacheValueBytes.marshaled(CU.marshal(cctx.shared(),val));
-    if (ver != null && !isOffHeapValuesOnly()) {
-synchronized (this) {
-        checkObsolete();
-        if (this.val == val)         this.valBytes=isStoreValueBytes() ? valBytes.getIfMarshaled() : null;
-      }
-    }
-  }
-  return valBytes;
+  return val;
 }

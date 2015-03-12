@@ -1,0 +1,23 @@
+{
+  if (!userObj)   return new KeyCacheObjectImpl(obj,null);
+  return new KeyCacheObjectImpl(obj,null){
+    @Nullable @Override public <T>T value(    CacheObjectContext ctx,    boolean cpy){
+      return super.value(ctx,false);
+    }
+    @Override public CacheObject prepareForCache(    CacheObjectContext ctx){
+      try {
+        if (!ctx.processor().immutable(val)) {
+          if (valBytes == null)           valBytes=ctx.processor().marshal(ctx,val);
+          ClassLoader ldr=ctx.p2pEnabled() ? IgniteUtils.detectClass(this.val).getClassLoader() : val.getClass().getClassLoader();
+          Object val=ctx.processor().unmarshal(ctx,valBytes,ldr);
+          return new KeyCacheObjectImpl(val,valBytes);
+        }
+        return new KeyCacheObjectImpl(val,valBytes);
+      }
+ catch (      IgniteCheckedException e) {
+        throw new IgniteException("Failed to marshal object: " + val,e);
+      }
+    }
+  }
+;
+}
