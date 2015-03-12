@@ -2,8 +2,8 @@
   while (!isCancelled()) {
     long now=U.currentTimeMillis();
     GridCacheVersion obsoleteVer=null;
-    for (Iterator<EntryWrapper<K,V>> it=pendingEntries.iterator(); it.hasNext(); ) {
-      EntryWrapper<K,V> wrapper=it.next();
+    for (Iterator<EntryWrapper> it=pendingEntries.iterator(); it.hasNext(); ) {
+      EntryWrapper wrapper=it.next();
       if (wrapper.expireTime <= now) {
         if (log.isDebugEnabled())         log.debug("Trying to remove expired entry from cache: " + wrapper);
         if (obsoleteVer == null)         obsoleteVer=cctx.versions().next();
@@ -15,7 +15,7 @@
     }
 synchronized (mux) {
       while (true) {
-        EntryWrapper<K,V> first=pendingEntries.firstx();
+        EntryWrapper first=pendingEntries.firstx();
         if (first != null) {
           long waitTime=first.expireTime - U.currentTimeMillis();
           if (waitTime > 0)           mux.wait(waitTime);

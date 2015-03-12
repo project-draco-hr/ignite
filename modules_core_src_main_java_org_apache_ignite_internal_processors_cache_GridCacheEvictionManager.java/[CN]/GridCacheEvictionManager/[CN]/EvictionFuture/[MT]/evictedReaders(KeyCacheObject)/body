@@ -1,0 +1,12 @@
+{
+  Collection<ClusterNode> mappedReaders=readers.get(key);
+  if (mappedReaders == null)   return Collections.emptyList();
+  Collection<IgniteBiTuple<ClusterNode,Long>> col=new LinkedList<>();
+  for (  Map.Entry<UUID,GridCacheEvictionResponse> e : resMap.entrySet()) {
+    ClusterNode node=cctx.node(e.getKey());
+    if (node == null || !mappedReaders.contains(node))     continue;
+    GridCacheEvictionResponse res=e.getValue();
+    if (!res.rejectedKeys().contains(key))     col.add(F.t(node,res.messageId()));
+  }
+  return col;
+}
