@@ -1,0 +1,20 @@
+{
+  for (int i=0; i < 500; ++i)   grid(0).jcache(null).put("key" + i,"value" + i);
+  if (async) {
+    IgniteCache<String,Integer> asyncCache=jcache().withAsync();
+    if (keysToRemove.size() == 1)     asyncCache.clear(F.first(keysToRemove));
+ else     asyncCache.clearAll(new HashSet(keysToRemove));
+    asyncCache.future().get();
+  }
+ else {
+    if (keysToRemove.size() == 1)     jcache().clear(F.first(keysToRemove));
+ else     jcache().clearAll(new HashSet(keysToRemove));
+  }
+  for (int i=0; i < 500; ++i) {
+    String key="key" + i;
+    boolean found=false;
+    for (int j=0; j < gridCount(); j++)     if (jcache(j).localPeek(key) != null)     found=true;
+    if (!keysToRemove.contains(key))     assertTrue("Not found key " + key,found);
+ else     assertFalse("Found removed key " + key,found);
+  }
+}
