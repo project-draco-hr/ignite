@@ -13,7 +13,7 @@
     desc.checkValid();
     CacheConfiguration ccfg=desc.cacheConfiguration();
     IgnitePredicate filter=ccfg.getNodeFilter();
-    if (filter.apply(ctx.discovery().localNode()) && !desc.locallyConfigured()) {
+    if (filter.apply(ctx.discovery().localNode())) {
       CacheObjectContext cacheObjCtx=ctx.cacheObjects().contextForCache(null,ccfg.getName(),ccfg);
       GridCacheContext ctx=createCache(ccfg,cacheObjCtx);
       ctx.dynamicDeploymentId(desc.deploymentId());
@@ -25,6 +25,16 @@
       proxies.put(name,new GridCacheProxyImpl(ctx,cache,null));
       jCacheProxies.put(name,new IgniteCacheProxy(ctx,cache,null,false));
     }
+  }
+  marshallerCache().context().preloader().syncFuture().listen(new CI1<IgniteInternalFuture<?>>(){
+    @Override public void apply(    IgniteInternalFuture<?> f){
+      ctx.marshallerContext().onMarshallerCacheReady(ctx);
+    }
+  }
+);
+  for (  Map.Entry<String,GridCacheAdapter<?,?>> e : caches.entrySet()) {
+    GridCacheAdapter cache=e.getValue();
+    if (!sysCaches.contains(e.getKey()))     publicProxies.put(e.getKey(),new GridCacheProxyImpl(cache.context(),cache,null));
   }
   for (  GridCacheSharedManager<?,?> mgr : sharedCtx.managers())   mgr.onKernalStart();
   for (  Map.Entry<String,GridCacheAdapter<?,?>> e : caches.entrySet()) {

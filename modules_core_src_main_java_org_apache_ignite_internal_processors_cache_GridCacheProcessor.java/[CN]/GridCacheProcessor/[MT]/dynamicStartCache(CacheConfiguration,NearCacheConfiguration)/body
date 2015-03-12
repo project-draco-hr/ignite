@@ -1,0 +1,28 @@
+{
+  Collection<DynamicCacheChangeRequest> reqs=new ArrayList<>(2);
+  if (ccfg != null) {
+    try {
+      CacheConfiguration cfg=new CacheConfiguration(ccfg);
+      CacheObjectContext cacheObjCtx=ctx.cacheObjects().contextForCache(null,ccfg.getName(),ccfg);
+      initialize(cfg,cacheObjCtx);
+      DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(cfg);
+      reqs.add(req);
+    }
+ catch (    IgniteCheckedException e) {
+      return new GridFinishedFuture(e);
+    }
+  }
+  if (nearCfg != null) {
+    if (ccfg == null) {
+      DynamicCacheDescriptor desc=registeredCaches.get(maskNull(nearCfg.getName()));
+      if (desc != null && !desc.cancelled())       ccfg=desc.cacheConfiguration();
+    }
+    if (ccfg == null)     return new GridFinishedFuture<>(new IgniteCheckedException("Failed to start near cache " + "(a cache with the given name is not started): " + nearCfg.getName()));
+    DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(ctx.localNodeId(),ccfg,nearCfg);
+    reqs.add(req);
+  }
+  GridCompoundFuture fut=new GridCompoundFuture();
+  for (  DynamicCacheStartFuture startFut : initiateCacheChanges(reqs))   fut.add(startFut);
+  fut.markInitialized();
+  return fut;
+}

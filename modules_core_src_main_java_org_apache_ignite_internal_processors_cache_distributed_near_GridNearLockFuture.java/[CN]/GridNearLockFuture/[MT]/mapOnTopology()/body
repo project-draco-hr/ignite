@@ -1,32 +1,24 @@
 {
+  cctx.topology().readLock();
   try {
-    cctx.topology().readLock();
-    try {
-      GridDhtTopologyFuture fut=cctx.topologyVersionFuture();
-      if (fut.isDone()) {
-        GridDiscoveryTopologySnapshot snapshot=fut.topologySnapshot();
-        if (tx != null) {
-          tx.topologyVersion(new AffinityTopologyVersion(snapshot.topologyVersion()));
-          tx.topologySnapshot(snapshot);
-        }
-        topSnapshot.compareAndSet(null,snapshot);
-        map(keys);
-        markInitialized();
-      }
- else {
-        fut.listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
-          @Override public void apply(          IgniteInternalFuture<AffinityTopologyVersion> t){
-            mapOnTopology();
-          }
-        }
-);
-      }
+    GridDhtTopologyFuture fut=cctx.topologyVersionFuture();
+    if (fut.isDone()) {
+      AffinityTopologyVersion topVer=fut.topologyVersion();
+      if (tx != null)       tx.topologyVersion(topVer);
+      this.topVer.compareAndSet(null,topVer);
+      map(keys);
+      markInitialized();
     }
-  finally {
-      cctx.topology().readUnlock();
+ else {
+      fut.listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
+        @Override public void apply(        IgniteInternalFuture<AffinityTopologyVersion> t){
+          mapOnTopology();
+        }
+      }
+);
     }
   }
- catch (  IgniteCheckedException e) {
-    onDone(e);
+  finally {
+    cctx.topology().readUnlock();
   }
 }
