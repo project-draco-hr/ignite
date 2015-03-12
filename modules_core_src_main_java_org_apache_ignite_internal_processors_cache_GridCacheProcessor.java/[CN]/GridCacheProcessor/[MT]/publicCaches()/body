@@ -1,3 +1,11 @@
 {
-  return publicProxies.values();
+  List<GridCache<?,?>> res=publicProxies;
+  if (res == null) {
+    res=new ArrayList<>(jCacheProxies.size());
+    for (    IgniteCacheProxy<?,?> proxy : jCacheProxies.values()) {
+      if (!sysCaches.contains(proxy.getName()))       res.add(proxy.legacyProxy());
+    }
+    publicProxies=res;
+  }
+  return res;
 }
