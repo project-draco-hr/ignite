@@ -1,6 +1,8 @@
 {
   try {
-    ctx.io().sendUserMessage(F.asList(node),new GridQueryFailResponse(qryReqId,err),GridTopic.TOPIC_QUERY,false,0);
+    GridQueryFailResponse msg=new GridQueryFailResponse(qryReqId,err);
+    if (node.isLocal())     h2.reduceQueryExecutor().onMessage(ctx.localNodeId(),msg);
+ else     ctx.io().send(node,GridTopic.TOPIC_QUERY,msg,GridIoPolicy.PUBLIC_POOL);
   }
  catch (  Exception e) {
     e.addSuppressed(err);

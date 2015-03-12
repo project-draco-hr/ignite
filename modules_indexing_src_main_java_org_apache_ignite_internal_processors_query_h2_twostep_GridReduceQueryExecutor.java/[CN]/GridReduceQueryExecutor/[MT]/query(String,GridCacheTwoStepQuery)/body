@@ -21,13 +21,13 @@
   r.latch=new CountDownLatch(r.tbls.size() * nodes.size());
   runs.put(qryReqId,r);
   try {
-    ctx.io().sendUserMessage(nodes,new GridQueryRequest(qryReqId,r.pageSize,space,qry.mapQueries()),GridTopic.TOPIC_QUERY,false,0);
+    send(nodes,new GridQueryRequest(qryReqId,r.pageSize,space,qry.mapQueries(),ctx.config().getMarshaller().marshal(qry.mapQueries())));
     r.latch.await();
     if (r.rmtErr != null)     throw new CacheException("Failed to run map query remotely.",r.rmtErr);
     GridCacheSqlQuery rdc=qry.reduceQuery();
     final ResultSet res=h2.executeSqlQueryWithTimer(space,r.conn,rdc.query(),F.asList(rdc.parameters()));
     for (    GridMergeTable tbl : r.tbls) {
-      if (!tbl.getScanIndex(null).fetchedAll())       ctx.io().sendUserMessage(nodes,new GridQueryCancelRequest(qryReqId),GridTopic.TOPIC_QUERY,false,0);
+      if (!tbl.getScanIndex(null).fetchedAll())       send(nodes,new GridQueryCancelRequest(qryReqId));
     }
     return new QueryCursorImpl<>(new Iter(res));
   }

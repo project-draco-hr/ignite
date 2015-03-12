@@ -8,7 +8,9 @@
   idx.addPage(new GridResultPage(node.id(),msg,false){
     @Override public void fetchNextPage(){
       try {
-        ctx.io().sendUserMessage(F.asList(node),new GridQueryNextPageRequest(qryReqId,qry,pageSize),GridTopic.TOPIC_QUERY,false,0);
+        GridQueryNextPageRequest msg0=new GridQueryNextPageRequest(qryReqId,qry,pageSize);
+        if (node.isLocal())         h2.mapQueryExecutor().onMessage(ctx.localNodeId(),msg0);
+ else         ctx.io().send(node,GridTopic.TOPIC_QUERY,msg0,GridIoPolicy.PUBLIC_POOL);
       }
  catch (      IgniteCheckedException e) {
         throw new IgniteException(e);
