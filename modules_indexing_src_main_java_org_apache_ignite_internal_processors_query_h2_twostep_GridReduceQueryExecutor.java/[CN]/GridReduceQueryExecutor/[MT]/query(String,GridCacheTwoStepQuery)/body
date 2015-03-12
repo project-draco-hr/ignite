@@ -1,6 +1,7 @@
 {
   long qryReqId=reqIdGen.incrementAndGet();
   QueryRun r=new QueryRun();
+  r.pageSize=1000;
   r.tbls=new ArrayList<>(qry.mapQueries().size());
   r.conn=h2.connectionForSpace(space);
   final Collection<ClusterNode> nodes=ctx.grid().cluster().forCacheNodes(space).nodes();
@@ -20,7 +21,7 @@
   r.latch=new CountDownLatch(r.tbls.size() * nodes.size());
   runs.put(qryReqId,r);
   try {
-    ctx.io().sendUserMessage(nodes,new GridQueryRequest(qryReqId,1000,space,qry.mapQueries()),GridTopic.TOPIC_QUERY,false,0);
+    ctx.io().sendUserMessage(nodes,new GridQueryRequest(qryReqId,r.pageSize,space,qry.mapQueries()),GridTopic.TOPIC_QUERY,false,0);
     r.latch.await();
     if (r.rmtErr != null)     throw new CacheException("Failed to run map query remotely.",r.rmtErr);
     GridCacheSqlQuery rdc=qry.reduceQuery();
