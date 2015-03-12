@@ -92,19 +92,19 @@
  else     println("Ok. But Hadoop client will not be able to talk to Ignite cluster without those JARs in classpath...");
   }
   File hadoopEtc=new File(hadoopDir,"etc" + File.separator + "hadoop");
-  File igniteDocs=new File(igniteHome,"docs");
-  if (!igniteDocs.canRead())   exit("Failed to read Ignite 'docs' folder at '" + igniteDocs.getAbsolutePath() + "'.",null);
+  File igniteHadoopCfg=igniteHadoopConfig(igniteHome);
+  if (!igniteHadoopCfg.canRead())   exit("Failed to read Ignite Hadoop 'config' folder at '" + igniteHadoopCfg.getAbsolutePath() + "'.",null);
   if (hadoopEtc.canWrite()) {
     if (ask("Replace 'core-site.xml' and 'mapred-site.xml' files with preconfigured templates " + "(existing files will be backed up)?")) {
-      replaceWithBackup(new File(igniteDocs,"core-site.ignite.xml"),new File(hadoopEtc,"core-site.xml"));
-      replaceWithBackup(new File(igniteDocs,"mapred-site.ignite.xml"),new File(hadoopEtc,"mapred-site.xml"));
+      replaceWithBackup(new File(igniteHadoopCfg,"core-site.ignite.xml"),new File(hadoopEtc,"core-site.xml"));
+      replaceWithBackup(new File(igniteHadoopCfg,"mapred-site.ignite.xml"),new File(hadoopEtc,"mapred-site.xml"));
     }
  else     println("Ok. You can configure them later, the templates are available at Ignite's 'docs' directory...");
   }
   if (!F.isEmpty(hiveHome)) {
     File hiveConfDir=new File(hiveHome + File.separator + "conf");
     if (!hiveConfDir.canWrite())     warn("Can not write to '" + hiveConfDir.getAbsolutePath() + "'. To run Hive queries you have to "+ "configure 'hive-site.xml' manually. The template is available at Ignite's 'docs' directory.");
- else     if (ask("Replace 'hive-site.xml' with preconfigured template (existing file will be backed up)?"))     replaceWithBackup(new File(igniteDocs,"hive-site.ignite.xml"),new File(hiveConfDir,"hive-site.xml"));
+ else     if (ask("Replace 'hive-site.xml' with preconfigured template (existing file will be backed up)?"))     replaceWithBackup(new File(igniteHadoopCfg,"hive-site.ignite.xml"),new File(hiveConfDir,"hive-site.xml"));
  else     println("Ok. You can configure it later, the template is available at Ignite's 'docs' directory...");
   }
   println("Apache Hadoop setup is complete.");
