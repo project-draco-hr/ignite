@@ -1,22 +1,20 @@
 {
-  Ignite ignite=Ignition.start("examples/config/example-compute.xml");
-  System.out.println();
-  System.out.println(">>> Cache star schema example started.");
-  CacheConfiguration<Integer,FactPurchase> factCacheCfg=new CacheConfiguration<>();
-  factCacheCfg.setCacheMode(CacheMode.PARTITIONED);
-  factCacheCfg.setName(PARTITIONED_CACHE_NAME);
-  CacheConfiguration<Integer,Object> dimCacheCfg=new CacheConfiguration<>();
-  dimCacheCfg.setCacheMode(CacheMode.REPLICATED);
-  dimCacheCfg.setName(REPLICATED_CACHE_NAME);
-  try (IgniteCache<Integer,FactPurchase> factCache=ignite.createCache(factCacheCfg);IgniteCache<Integer,Object> dimCache=ignite.createCache(dimCacheCfg)){
-    try {
+  try (Ignite ignite=Ignition.start("examples/config/example-compute.xml")){
+    System.out.println();
+    System.out.println(">>> Cache star schema example started.");
+    CacheConfiguration<Integer,FactPurchase> factCacheCfg=new CacheConfiguration<>();
+    factCacheCfg.setCacheMode(CacheMode.PARTITIONED);
+    factCacheCfg.setName(PARTITIONED_CACHE_NAME);
+    factCacheCfg.setQueryIndexEnabled(true);
+    CacheConfiguration<Integer,Object> dimCacheCfg=new CacheConfiguration<>();
+    dimCacheCfg.setCacheMode(CacheMode.REPLICATED);
+    dimCacheCfg.setName(REPLICATED_CACHE_NAME);
+    dimCacheCfg.setQueryIndexEnabled(true);
+    try (IgniteCache<Integer,FactPurchase> factCache=ignite.createCache(factCacheCfg);IgniteCache<Integer,Object> dimCache=ignite.createCache(dimCacheCfg)){
       populateDimensions(dimCache);
       populateFacts(factCache);
       queryStorePurchases(factCache);
       queryProductPurchases(factCache);
     }
-  finally {
-      Ignition.stop(false);
-    }
-  }
+   }
  }
