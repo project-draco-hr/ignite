@@ -1,15 +1,29 @@
 {
-  IgniteCache cache=ignite.jcache(PARTITIONED_CACHE);
-  Organization org1=new Organization("GridGain");
-  Organization org2=new Organization("Other");
-  Person p1=new Person(org1,"John","Doe",2000,"John Doe has Master Degree.");
-  Person p2=new Person(org1,"Jane","Doe",1000,"Jane Doe has Bachelor Degree.");
-  Person p3=new Person(org2,"John","Smith",1000,"John Smith has Bachelor Degree.");
-  Person p4=new Person(org2,"Jane","Smith",2000,"Jane Smith has Master Degree.");
-  cache.put(org1.id,org1);
-  cache.put(org2.id,org2);
-  cache.put(p1.key(),p1);
-  cache.put(p2.key(),p2);
-  cache.put(p3.key(),p3);
-  cache.put(p4.key(),p4);
+  int idGen=0;
+  List<Organization> orgs=new ArrayList<>();
+  for (int i=0; i < 3; i++) {
+    int id=idGen++;
+    Organization org=new Organization(id,"Org" + id);
+    orgs.add(org);
+    pCache.put(org.id,org);
+  }
+  List<Person> persons=new ArrayList<>();
+  for (int i=0; i < 5; i++) {
+    int id=idGen++;
+    Person person=new Person(id,orgs.get(i % orgs.size()),"name" + id,"lastname" + id,id * 100.0);
+    persons.add(person);
+    pCache.put(person.key(),person);
+  }
+  List<Product> products=new ArrayList<>();
+  for (int i=0; i < 10; i++) {
+    int id=idGen++;
+    Product product=new Product(id,"Product" + id,id * 1000);
+    products.add(product);
+    rCache.put(product.id,product);
+  }
+  for (int i=0; i < products.size() * 2; i++) {
+    int id=idGen++;
+    Purchase purchase=new Purchase(id,products.get(i % products.size()),persons.get(i % persons.size()));
+    pCache.put(purchase.key(),purchase);
+  }
 }
