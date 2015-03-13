@@ -7,13 +7,14 @@
   GridMergeIndex idx=r.tbls.get(msg.query()).getScanIndex(null);
   idx.addPage(new GridResultPage(node.id(),msg,false){
     @Override public void fetchNextPage(){
+      if (r.rmtErr != null)       throw new CacheException("Next page fetch failed.",r.rmtErr);
       try {
         GridQueryNextPageRequest msg0=new GridQueryNextPageRequest(qryReqId,qry,pageSize);
         if (node.isLocal())         h2.mapQueryExecutor().onMessage(ctx.localNodeId(),msg0);
  else         ctx.io().send(node,GridTopic.TOPIC_QUERY,msg0,GridIoPolicy.PUBLIC_POOL);
       }
  catch (      IgniteCheckedException e) {
-        throw new IgniteException(e);
+        throw new CacheException(e);
       }
     }
   }
