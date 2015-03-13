@@ -9,7 +9,7 @@ synchronized (this) {
     wasNew=isNew();
   }
   String taskName=cctx.kernalContext().job().currentTaskName();
-  V ret=readThrough(null,key,true,cctx.localNodeId(),taskName);
+  CacheObject ret=cctx.toCacheObject(readThrough(null,key,true,cctx.localNodeId(),taskName));
   boolean touch=false;
   try {
 synchronized (this) {
@@ -18,18 +18,18 @@ synchronized (this) {
       if (wasNew && !isNew())       return ret;
       if (startVer.equals(ver)) {
         releaseSwap();
-        V old=rawGetOrUnmarshalUnlocked(false);
+        CacheObject old=rawGetOrUnmarshalUnlocked(false);
         long expTime=CU.toExpireTime(ttl);
-        if (cctx.portableEnabled())         ret=(V)cctx.kernalContext().portable().detachPortable(ret);
+        ret=cctx.kernalContext().cacheObjects().prepareForCache(ret,cctx);
         if (ret != null) {
-          updateIndex(ret,null,expTime,nextVer,old);
+          updateIndex(ret,expTime,nextVer,old);
           if (cctx.deferredDelete() && !isInternal() && !detached()&& deletedUnlocked())           deletedUnlocked(false);
         }
  else {
           clearIndex(old);
           if (cctx.deferredDelete() && !isInternal() && !detached()&& !deletedUnlocked())           deletedUnlocked(true);
         }
-        update(ret,null,expTime,ttl,nextVer);
+        update(ret,expTime,ttl,nextVer);
         touch=true;
         return ret;
       }
