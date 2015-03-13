@@ -1,13 +1,13 @@
 {
   try {
     KeyCacheObject cacheKey=ctx.toCacheKeyObject(key);
-    GridCacheEntryEx e=peekEx(cacheKey);
-    boolean removed=true;
-    if (!ctx.isNear() && ctx.isSwapOrOffheapEnabled() && ctx.swap().containsKey(ctx.toCacheKeyObject(key)))     removed=entryEx(ctx.toCacheKeyObject(key)).clear(obsoleteVer,false,CU.empty0());
-    removed&=e != null && e.clear(obsoleteVer,false,filter);
-    return removed;
+    GridCacheEntryEx entry=ctx.isSwapOrOffheapEnabled() ? entryEx(cacheKey) : peekEx(cacheKey);
+    if (entry != null)     return entry.clear(obsoleteVer,false,filter);
   }
- catch (  IgniteCheckedException ex) {
+ catch (  GridDhtInvalidPartitionException e) {
+    return false;
+  }
+catch (  IgniteCheckedException ex) {
     U.error(log,"Failed to clearLocally entry for key: " + key,ex);
   }
   return false;

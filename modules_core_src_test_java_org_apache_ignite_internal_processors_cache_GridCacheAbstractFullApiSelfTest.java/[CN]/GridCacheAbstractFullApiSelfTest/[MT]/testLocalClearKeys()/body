@@ -1,21 +1,2 @@
 {
-  Map<String,List<String>> keys=addKeys();
-  Ignite g=grid(0);
-  Set<String> keysToRemove=new HashSet<>();
-  for (int i=0; i < gridCount(); ++i) {
-    List<String> gridKeys=keys.get(grid(i).name());
-    if (gridKeys.size() > 2) {
-      keysToRemove.add(gridKeys.get(0));
-      keysToRemove.add(gridKeys.get(1));
-      g=grid(i);
-      break;
-    }
-  }
-  g.<String,Integer>jcache(null).localClearAll(keysToRemove);
-  for (int i=0; i < 500; ++i) {
-    String key="key" + i;
-    boolean found=primaryIgnite(key).jcache(null).localPeek(key) != null;
-    if (keysToRemove.contains(key))     assertFalse("Found removed key " + key,found);
- else     assertTrue("Not found key " + key,found);
-  }
 }
