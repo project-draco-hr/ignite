@@ -2,8 +2,10 @@
   try {
     KeyCacheObject cacheKey=ctx.toCacheKeyObject(key);
     GridCacheEntryEx e=peekEx(cacheKey);
-    if (ctx.isSwapOrOffheapEnabled())     entryEx(ctx.toCacheKeyObject(key)).clear(ctx.versions().next(),false,CU.empty0());
-    return e != null && e.clear(obsoleteVer,false,filter);
+    boolean removed=true;
+    if (!ctx.isNear() && ctx.isSwapOrOffheapEnabled() && ctx.swap().containsKey(ctx.toCacheKeyObject(key)))     removed=entryEx(ctx.toCacheKeyObject(key)).clear(obsoleteVer,false,CU.empty0());
+    removed&=e != null && e.clear(obsoleteVer,false,filter);
+    return removed;
   }
  catch (  IgniteCheckedException ex) {
     U.error(log,"Failed to clearLocally entry for key: " + key,ex);
