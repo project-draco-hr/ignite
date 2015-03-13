@@ -1,0 +1,13 @@
+{
+  IgfsEx igfsEx=uni.getAdapter(IgfsEx.class);
+  if (igfsEx != null) {
+    Field workerMapFld=IgfsImpl.class.getDeclaredField("workerMap");
+    workerMapFld.setAccessible(true);
+    Map<IgfsPath,IgfsFileWorker> workerMap=(Map<IgfsPath,IgfsFileWorker>)workerMapFld.get(igfsEx);
+    for (    Map.Entry<IgfsPath,IgfsFileWorker> entry : workerMap.entrySet()) {
+      entry.getValue().cancel();
+      U.join(entry.getValue());
+    }
+  }
+  uni.format();
+}
