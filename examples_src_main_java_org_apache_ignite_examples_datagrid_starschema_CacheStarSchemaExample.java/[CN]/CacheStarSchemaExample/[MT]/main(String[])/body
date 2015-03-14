@@ -5,16 +5,16 @@
     CacheConfiguration<Integer,FactPurchase> factCacheCfg=new CacheConfiguration<>();
     factCacheCfg.setCacheMode(CacheMode.PARTITIONED);
     factCacheCfg.setName(PARTITIONED_CACHE_NAME);
-    factCacheCfg.setQueryIndexEnabled(true);
+    factCacheCfg.setIndexedTypes(Integer.class,FactPurchase.class);
     CacheConfiguration<Integer,Object> dimCacheCfg=new CacheConfiguration<>();
     dimCacheCfg.setCacheMode(CacheMode.REPLICATED);
     dimCacheCfg.setName(REPLICATED_CACHE_NAME);
-    dimCacheCfg.setQueryIndexEnabled(true);
+    dimCacheCfg.setIndexedTypes(Integer.class,DimStore.class,Integer.class,DimProduct.class);
     try (IgniteCache<Integer,FactPurchase> factCache=ignite.createCache(factCacheCfg);IgniteCache<Integer,Object> dimCache=ignite.createCache(dimCacheCfg)){
       populateDimensions(dimCache);
       populateFacts(factCache);
-      queryStorePurchases(factCache);
-      queryProductPurchases(factCache);
+      queryStorePurchases();
+      queryProductPurchases();
     }
    }
  }
