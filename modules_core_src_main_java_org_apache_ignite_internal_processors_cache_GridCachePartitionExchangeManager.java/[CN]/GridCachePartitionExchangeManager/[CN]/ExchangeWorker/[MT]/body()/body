@@ -32,10 +32,10 @@
           for (          GridCacheContext cacheCtx : cctx.cacheContexts()) {
             if (cacheCtx.isLocal())             continue;
             changed|=cacheCtx.topology().afterExchange(exchFut.exchangeId());
-            if (cacheCtx.events().isRecordable(EVT_CACHE_PRELOAD_STARTED)) {
+            if (cacheCtx.events().isRecordable(EVT_CACHE_REBALANCE_STARTED)) {
               if (!cacheCtx.isReplicated() || !startEvtFired) {
                 DiscoveryEvent discoEvt=exchFut.discoveryEvent();
-                cacheCtx.events().addPreloadEvent(-1,EVT_CACHE_PRELOAD_STARTED,discoEvt.eventNode(),discoEvt.type(),discoEvt.timestamp());
+                cacheCtx.events().addPreloadEvent(-1,EVT_CACHE_REBALANCE_STARTED,discoEvt.eventNode(),discoEvt.type(),discoEvt.timestamp());
               }
             }
           }
@@ -50,7 +50,7 @@
           }
         }
         for (        GridCacheContext cacheCtx : cctx.cacheContexts()) {
-          long delay=cacheCtx.config().getPreloadPartitionedDelay();
+          long delay=cacheCtx.config().getRebalanceDelay();
           GridDhtPreloaderAssignments<K,V> assigns=null;
           if (delay == 0 || forcePreload)           assigns=cacheCtx.preloader().assign(exchFut);
           assignsMap.put(cacheCtx.cacheId(),assigns);

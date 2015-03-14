@@ -1,0 +1,21 @@
+{
+  CacheConfiguration cache=defaultCacheConfiguration();
+  cache.setName(name);
+  cache.setCacheMode(cacheMode());
+  cache.setAtomicityMode(atomicityMode());
+  cache.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  cache.setRebalanceMode(CacheRebalanceMode.SYNC);
+  List<Class<?>> indexedTypes=new ArrayList<>(F.<Class<?>>asList(String.class,Organization.class));
+  if (CACHE_COMPLEX_KEYS.equals(name)) {
+    indexedTypes.addAll(F.<Class<?>>asList(PersonKey.class,Person.class));
+  }
+ else {
+    indexedTypes.addAll(F.<Class<?>>asList(CacheAffinityKey.class,Person.class));
+  }
+  if (!CACHE_NO_PRIMITIVES.equals(name)) {
+    indexedTypes.addAll(F.<Class<?>>asList(String.class,String.class,Integer.class,Integer.class));
+  }
+  cache.setIndexedTypes(indexedTypes.toArray(new Class[indexedTypes.size()]));
+  if (cacheMode() == PARTITIONED)   cache.setBackups(1);
+  return cache;
+}

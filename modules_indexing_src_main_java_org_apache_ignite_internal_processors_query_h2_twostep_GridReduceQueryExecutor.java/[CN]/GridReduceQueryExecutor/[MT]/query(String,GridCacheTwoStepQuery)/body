@@ -1,37 +1,43 @@
 {
   long qryReqId=reqIdGen.incrementAndGet();
   QueryRun r=new QueryRun();
+  r.pageSize=1000;
   r.tbls=new ArrayList<>(qry.mapQueries().size());
-  try {
-    r.conn=h2.connectionForSpace(space);
-  }
- catch (  IgniteCheckedException e) {
-    return new GridFinishedFuture<>(e);
-  }
-  Collection<ClusterNode> nodes=ctx.grid().cluster().nodes();
+  r.conn=h2.connectionForSpace(space);
+  final Collection<ClusterNode> nodes=ctx.grid().cluster().forCacheNodes(space).nodes();
   for (  GridCacheSqlQuery mapQry : qry.mapQueries()) {
     GridMergeTable tbl;
     try {
-      tbl=createTable(r.conn,mapQry);
+      tbl=createFunctionTable((JdbcConnection)r.conn,mapQry);
     }
  catch (    IgniteCheckedException e) {
-      return new GridFinishedFuture<>(e);
+      throw new IgniteException(e);
     }
-    tbl.getScanIndex(null).setNumberOfSources(nodes.size());
+    GridMergeIndex idx=tbl.getScanIndex(null);
+    for (    ClusterNode node : nodes)     idx.addSource(node.id());
     r.tbls.add(tbl);
+    curFunTbl.set(tbl);
   }
   r.latch=new CountDownLatch(r.tbls.size() * nodes.size());
-  this.runs.put(qryReqId,r);
+  runs.put(qryReqId,r);
   try {
-    ctx.io().sendUserMessage(nodes,new GridQueryRequest(qryReqId,1000,qry.mapQueries()),GridTopic.TOPIC_QUERY,false,0);
+    send(nodes,new GridQueryRequest(qryReqId,r.pageSize,space,qry.mapQueries(),ctx.config().getMarshaller().marshal(qry.mapQueries())));
     r.latch.await();
+    if (r.rmtErr != null)     throw new CacheException("Failed to run map query remotely.",r.rmtErr);
     GridCacheSqlQuery rdc=qry.reduceQuery();
-    final ResultSet res=h2.executeSqlQueryWithTimer(r.conn,rdc.query(),F.asList(rdc.parameters()));
-    for (    GridMergeTable tbl : r.tbls)     dropTable(r.conn,tbl.getName());
-    return new GridFinishedFuture(new Iter(res));
+    final ResultSet res=h2.executeSqlQueryWithTimer(space,r.conn,rdc.query(),F.asList(rdc.parameters()));
+    for (    GridMergeTable tbl : r.tbls) {
+      if (!tbl.getScanIndex(null).fetchedAll())       send(nodes,new GridQueryCancelRequest(qryReqId));
+    }
+    return new QueryCursorImpl<>(new Iter(res));
   }
- catch (  IgniteCheckedException|InterruptedException|SQLException e) {
+ catch (  IgniteCheckedException|InterruptedException|RuntimeException e) {
     U.closeQuiet(r.conn);
-    return new GridFinishedFuture<>(e);
+    if (e instanceof CacheException)     throw (CacheException)e;
+    throw new CacheException("Failed to run reduce query locally.",e);
+  }
+ finally {
+    if (!runs.remove(qryReqId,r))     U.warn(log,"Query run was already removed: " + qryReqId);
+    curFunTbl.remove();
   }
 }
