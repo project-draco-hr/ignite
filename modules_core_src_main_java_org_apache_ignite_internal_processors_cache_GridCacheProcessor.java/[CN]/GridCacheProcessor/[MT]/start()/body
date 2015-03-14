@@ -30,7 +30,7 @@
     CacheObjectContext cacheObjCtx=ctx.cacheObjects().contextForCache(null,cfg.getName(),cfg);
     initialize(cfg,cacheObjCtx);
     cfgs[i]=cfg;
-    if (caches.containsKey(cfg.getName())) {
+    if (caches.containsKey(maskNull(cfg.getName()))) {
       String cacheName=cfg.getName();
       if (cacheName != null)       throw new IgniteCheckedException("Duplicate cache name found (check configuration and " + "assign unique name to each cache): " + cacheName);
  else       throw new IgniteCheckedException("Default cache has already been configured (check configuration and " + "assign unique name to each cache).");
@@ -45,7 +45,7 @@
   for (  GridCacheSharedManager mgr : sharedCtx.managers())   mgr.start(sharedCtx);
   for (  Map.Entry<String,GridCacheAdapter<?,?>> e : caches.entrySet()) {
     GridCacheAdapter cache=e.getValue();
-    jCacheProxies.put(e.getKey(),new IgniteCacheProxy(cache.context(),cache,null,false));
+    jCacheProxies.put(maskNull(e.getKey()),new IgniteCacheProxy(cache.context(),cache,null,false));
   }
   transactions=new IgniteTransactionsImpl(sharedCtx);
   if (log.isDebugEnabled())   log.debug("Started cache processor.");
