@@ -7,8 +7,11 @@
     if (cache == null) {
       DynamicCacheDescriptor desc=registeredCaches.get(masked);
       if (desc == null || desc.cancelled())       throw new IllegalArgumentException("Cache is not started: " + name);
-      DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(ctx.localNodeId(),desc.cacheConfiguration(),null);
+      DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(ctx.localNodeId());
+      req.cacheName(name);
       req.deploymentId(desc.deploymentId());
+      req.startCacheConfiguration(desc.cacheConfiguration());
+      req.clientStartOnly(true);
       F.first(initiateCacheChanges(F.asList(req))).get();
       cache=(IgniteCache<K,V>)jCacheProxies.get(masked);
       if (cache == null)       throw new IllegalArgumentException("Cache is not started: " + name);
