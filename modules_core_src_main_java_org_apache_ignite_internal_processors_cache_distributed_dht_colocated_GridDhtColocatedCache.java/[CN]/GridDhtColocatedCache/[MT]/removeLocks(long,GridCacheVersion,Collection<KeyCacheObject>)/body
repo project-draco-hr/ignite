@@ -1,0 +1,46 @@
+{
+  if (keys.isEmpty())   return;
+  try {
+    int keyCnt=-1;
+    Map<ClusterNode,GridNearUnlockRequest> map=null;
+    Collection<KeyCacheObject> locKeys=new LinkedList<>();
+    for (    KeyCacheObject key : keys) {
+      GridCacheMvccCandidate lock=ctx.mvcc().removeExplicitLock(threadId,key,ver);
+      if (lock != null) {
+        AffinityTopologyVersion topVer=lock.topologyVersion();
+        if (map == null) {
+          Collection<ClusterNode> affNodes=CU.allNodes(ctx,topVer);
+          keyCnt=(int)Math.ceil((double)keys.size() / affNodes.size());
+          map=U.newHashMap(affNodes.size());
+        }
+        ClusterNode primary=ctx.affinity().primary(key,topVer);
+        if (!primary.isLocal()) {
+          GridNearUnlockRequest req=map.get(primary);
+          if (req == null) {
+            map.put(primary,req=new GridNearUnlockRequest(ctx.cacheId(),keyCnt));
+            req.version(ver);
+          }
+          GridCacheEntryEx entry=peekEx(key);
+          KeyCacheObject key0=entry != null ? entry.key() : key;
+          req.addKey(key0,ctx);
+        }
+ else         locKeys.add(key);
+      }
+    }
+    if (!locKeys.isEmpty())     removeLocks(ctx.localNodeId(),ver,locKeys,true);
+    if (map == null || map.isEmpty())     return;
+    Collection<GridCacheVersion> committed=ctx.tm().committedVersions(ver);
+    Collection<GridCacheVersion> rolledback=ctx.tm().rolledbackVersions(ver);
+    for (    Map.Entry<ClusterNode,GridNearUnlockRequest> mapping : map.entrySet()) {
+      ClusterNode n=mapping.getKey();
+      GridDistributedUnlockRequest req=mapping.getValue();
+      if (!F.isEmpty(req.keys())) {
+        req.completedVersions(committed,rolledback);
+        ctx.io().send(n,req,ctx.ioPolicy());
+      }
+    }
+  }
+ catch (  IgniteCheckedException ex) {
+    U.error(log,"Failed to unlock the lock for keys: " + keys,ex);
+  }
+}

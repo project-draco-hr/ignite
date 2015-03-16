@@ -1,7 +1,7 @@
 {
   if (key == null)   return null;
-  AffinityInfo affInfo=affinityCache(cacheName,new AffinityTopologyVersion(ctx.discovery().topologyVersion()));
+  AffinityInfo affInfo=affinityCache(cacheName,ctx.discovery().topologyVersionEx());
   if (affInfo == null || affInfo.mapper == null)   return null;
-  if (affInfo.portableEnabled)   key=ctx.portable().marshalToPortable(key);
+  if (key instanceof CacheObject)   key=((CacheObject)key).value(affInfo.cacheObjCtx,false);
   return affInfo.mapper.affinityKey(key);
 }

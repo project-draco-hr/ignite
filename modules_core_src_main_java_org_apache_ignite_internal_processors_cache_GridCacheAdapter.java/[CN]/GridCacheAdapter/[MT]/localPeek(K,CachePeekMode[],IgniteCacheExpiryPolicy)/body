@@ -4,11 +4,11 @@
   ctx.checkSecurity(GridSecurityPermission.CACHE_READ);
   PeekModes modes=parsePeekModes(peekModes);
   try {
-    if (ctx.portableEnabled())     key=(K)ctx.marshalToPortable(key);
-    V val=null;
+    KeyCacheObject cacheKey=ctx.toCacheKeyObject(key);
+    CacheObject cacheVal=null;
     if (!ctx.isLocal()) {
       AffinityTopologyVersion topVer=ctx.affinity().affinityTopologyVersion();
-      int part=ctx.affinity().partition(key);
+      int part=ctx.affinity().partition(cacheKey);
       boolean nearKey;
       if (!(modes.near && modes.primary && modes.backup)) {
         boolean keyPrimary=ctx.affinity().primary(ctx.localNode(),part,topVer);
@@ -39,22 +39,23 @@
       }
       if (nearKey && !ctx.isNear())       return null;
       if (modes.heap) {
-        GridCacheEntryEx<K,V> e=nearKey ? peekEx(key) : (ctx.isNear() ? ctx.near().dht().peekEx(key) : peekEx(key));
+        GridCacheEntryEx e=nearKey ? peekEx(cacheKey) : (ctx.isNear() ? ctx.near().dht().peekEx(cacheKey) : peekEx(cacheKey));
         if (e != null) {
-          val=e.peek(modes.heap,modes.offheap,modes.swap,topVer,plc);
+          cacheVal=e.peek(modes.heap,modes.offheap,modes.swap,topVer,plc);
           modes.offheap=false;
           modes.swap=false;
         }
       }
       if (modes.offheap || modes.swap) {
-        GridCacheSwapManager<K,V> swapMgr=ctx.isNear() ? ctx.near().dht().context().swap() : ctx.swap();
-        GridCacheSwapEntry<V> swapEntry=swapMgr.read(key,modes.offheap,modes.swap);
-        val=swapEntry != null ? swapEntry.value() : null;
+        GridCacheSwapManager swapMgr=ctx.isNear() ? ctx.near().dht().context().swap() : ctx.swap();
+        GridCacheSwapEntry swapEntry=swapMgr.read(cacheKey,modes.offheap,modes.swap);
+        cacheVal=swapEntry != null ? swapEntry.value() : null;
       }
     }
- else     val=localCachePeek0(key,modes.heap,modes.offheap,modes.swap,plc);
-    if (ctx.portableEnabled())     val=(V)ctx.unwrapPortableIfNeeded(val,ctx.keepPortable());
-    return val;
+ else     cacheVal=localCachePeek0(cacheKey,modes.heap,modes.offheap,modes.swap,plc);
+    Object val=CU.value(cacheVal,ctx,true);
+    val=ctx.unwrapPortableIfNeeded(val,ctx.keepPortable());
+    return (V)val;
   }
  catch (  GridCacheEntryRemovedException ignore) {
     if (log.isDebugEnabled())     log.debug("Got removed entry during 'peek': " + key);

@@ -4,7 +4,12 @@
   try {
     validate(qry);
     if (qry instanceof ContinuousQuery)     return queryContinuous((ContinuousQuery<K,V>)qry,false);
-    return doQuery(qry,projection(false));
+    if (qry instanceof SqlQuery) {
+      SqlQuery p=(SqlQuery)qry;
+      if (isReplicatedDataNode() || ctx.isLocal())       return doLocalQuery(p);
+      return ctx.kernalContext().query().queryTwoStep(ctx.name(),p.getType(),p.getSql(),p.getArgs());
+    }
+    return query(qry,projection(false));
   }
  catch (  Exception e) {
     if (e instanceof CacheException)     throw e;

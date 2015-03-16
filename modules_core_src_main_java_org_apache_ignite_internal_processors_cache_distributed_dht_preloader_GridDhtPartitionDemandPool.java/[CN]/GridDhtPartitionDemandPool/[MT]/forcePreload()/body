@@ -1,15 +1,15 @@
 {
   GridTimeoutObject obj=lastTimeoutObj.getAndSet(null);
   if (obj != null)   cctx.time().removeTimeoutObject(obj);
-  final GridDhtPartitionsExchangeFuture<K,V> exchFut=lastExchangeFut;
+  final GridDhtPartitionsExchangeFuture exchFut=lastExchangeFut;
   if (exchFut != null) {
-    if (log.isDebugEnabled())     log.debug("Forcing preload event for future: " + exchFut);
-    exchFut.listenAsync(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
+    if (log.isDebugEnabled())     log.debug("Forcing rebalance event for future: " + exchFut);
+    exchFut.listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
       @Override public void apply(      IgniteInternalFuture<AffinityTopologyVersion> t){
         cctx.shared().exchange().forcePreloadExchange(exchFut);
       }
     }
 );
   }
- else   if (log.isDebugEnabled())   log.debug("Ignoring force preload request (no topology event happened yet).");
+ else   if (log.isDebugEnabled())   log.debug("Ignoring force rebalance request (no topology event happened yet).");
 }

@@ -1,3 +1,10 @@
 {
-  return super.entrySet(CU.<K,V>empty());
+  final AffinityTopologyVersion topVer=ctx.discovery().topologyVersionEx();
+  return super.entrySet(new CacheEntryPredicateAdapter(){
+    @Override public boolean apply(    GridCacheEntryEx entry){
+      GridNearCacheEntry nearEntry=(GridNearCacheEntry)entry;
+      return nearEntry.valid(topVer);
+    }
+  }
+);
 }

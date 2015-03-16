@@ -1,3 +1,10 @@
 {
-  return closed.get() || cacheMgr != null && cacheMgr.isClosed();
+  if (cacheMgr != null && cacheMgr.isClosed())   return true;
+  gate.enter();
+  try {
+    return ctx.kernalContext().cache().context().closed(ctx);
+  }
+  finally {
+    gate.leave();
+  }
 }

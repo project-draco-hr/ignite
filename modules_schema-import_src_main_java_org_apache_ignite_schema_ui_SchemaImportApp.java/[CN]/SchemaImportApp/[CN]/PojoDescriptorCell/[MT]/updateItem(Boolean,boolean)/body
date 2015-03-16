@@ -1,0 +1,26 @@
+{
+  super.updateItem(item,empty);
+  setGraphic(null);
+  if (!empty) {
+    TableRow row=getTableRow();
+    if (row != null) {
+      final PojoDescriptor pojo=(PojoDescriptor)row.getItem();
+      if (pojo != null) {
+        if (prevGraphic == null || pojo != prevPojo) {
+          boolean isTbl=pojo.parent() != null;
+          CheckBox ch=new CheckBox();
+          ch.setAllowIndeterminate(false);
+          ch.indeterminateProperty().bindBidirectional(pojo.indeterminate());
+          ch.selectedProperty().bindBidirectional(pojo.useProperty());
+          Label lb=new Label(isTbl ? pojo.table() : pojo.schema());
+          Pane pnl=new HBox(5);
+          pnl.setPadding(new Insets(0,0,0,isTbl ? 25 : 5));
+          pnl.getChildren().addAll(ch,lb);
+          prevPojo=pojo;
+          prevGraphic=pnl;
+        }
+        setGraphic(prevGraphic);
+      }
+    }
+  }
+}

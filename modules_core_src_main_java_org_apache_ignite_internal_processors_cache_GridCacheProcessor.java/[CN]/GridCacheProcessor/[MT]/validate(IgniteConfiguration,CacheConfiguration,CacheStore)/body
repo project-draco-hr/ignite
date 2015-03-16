@@ -5,15 +5,15 @@
       CacheRendezvousAffinityFunction aff=(CacheRendezvousAffinityFunction)cc.getAffinity();
       if (aff.isExcludeNeighbors())       throw new IgniteCheckedException("For REPLICATED cache flag 'excludeNeighbors' in " + "CacheRendezvousAffinityFunction cannot be set [cacheName=" + cc.getName() + ']');
     }
-    if (cc.getNearConfiguration() != null) {
+    if (cc.getNearConfiguration() != null && ctx.discovery().cacheAffinityNode(ctx.discovery().localNode(),cc.getName())) {
       U.warn(log,"Near cache cannot be used with REPLICATED cache, " + "will be ignored [cacheName=" + cc.getName() + ']');
       cc.setNearConfiguration(null);
     }
   }
   if (cc.getCacheMode() == LOCAL && !cc.getAffinity().getClass().equals(LocalAffinityFunction.class))   U.warn(log,"CacheAffinityFunction configuration parameter will be ignored for local cache [cacheName=" + cc.getName() + ']');
-  if (cc.getPreloadMode() != CachePreloadMode.NONE) {
-    assertParameter(cc.getPreloadThreadPoolSize() > 0,"preloadThreadPoolSize > 0");
-    assertParameter(cc.getPreloadBatchSize() > 0,"preloadBatchSize > 0");
+  if (cc.getRebalanceMode() != CacheRebalanceMode.NONE) {
+    assertParameter(cc.getRebalanceThreadPoolSize() > 0,"rebalanceThreadPoolSize > 0");
+    assertParameter(cc.getRebalanceBatchSize() > 0,"rebalanceBatchSize > 0");
   }
   if (cc.getCacheMode() == PARTITIONED || cc.getCacheMode() == REPLICATED) {
     if (cc.getAtomicityMode() == ATOMIC && cc.getWriteSynchronizationMode() == FULL_ASYNC)     U.warn(log,"Cache write synchronization mode is set to FULL_ASYNC. All single-key 'put' and " + "'remove' operations will return 'null', all 'putx' and 'removex' operations will return" + " 'true' [cacheName=" + cc.getName() + ']');
@@ -31,15 +31,15 @@
   }
   if (cc.isReadThrough() && cfgStore == null)   throw new IgniteCheckedException("Cannot enable read-through (loader or store is not provided) " + "for cache: " + cc.getName());
   if (cc.isWriteThrough() && cfgStore == null)   throw new IgniteCheckedException("Cannot enable write-through (writer or store is not provided) " + "for cache: " + cc.getName());
-  long delay=cc.getPreloadPartitionedDelay();
+  long delay=cc.getRebalanceDelay();
   if (delay != 0) {
-    if (cc.getCacheMode() != PARTITIONED)     U.warn(log,"Preload delay is supported only for partitioned caches (will ignore): " + cc.getName(),"Will ignore preload delay for cache: " + cc.getName());
- else     if (cc.getPreloadMode() == SYNC) {
+    if (cc.getCacheMode() != PARTITIONED)     U.warn(log,"Rebalance delay is supported only for partitioned caches (will ignore): " + cc.getName(),"Will ignore rebalance delay for cache: " + cc.getName());
+ else     if (cc.getRebalanceMode() == SYNC) {
       if (delay < 0) {
-        U.warn(log,"Ignoring SYNC preload mode with manual preload start (node will not wait for " + "preloading to be finished): " + cc.getName(),"Node will not wait for preload in SYNC mode: " + cc.getName());
+        U.warn(log,"Ignoring SYNC rebalance mode with manual rebalance start (node will not wait for " + "rebalancing to be finished): " + cc.getName(),"Node will not wait for rebalance in SYNC mode: " + cc.getName());
       }
  else {
-        U.warn(log,"Using SYNC preload mode with preload delay (node will wait until preloading is " + "initiated for " + delay + "ms) for cache: "+ cc.getName(),"Node will wait until preloading is initiated for " + delay + "ms for cache: "+ cc.getName());
+        U.warn(log,"Using SYNC rebalance mode with rebalance delay (node will wait until rebalancing is " + "initiated for " + delay + "ms) for cache: "+ cc.getName(),"Node will wait until rebalancing is initiated for " + delay + "ms for cache: "+ cc.getName());
       }
     }
   }
@@ -62,10 +62,7 @@ default :
 throw new IllegalStateException("Unknown memory mode: " + cc.getMemoryMode());
 }
 if (cc.getMemoryMode() == CacheMemoryMode.OFFHEAP_VALUES) {
-if (cc.isQueryIndexEnabled()) throw new IgniteCheckedException("Cannot have query indexing enabled while values are stored off-heap. " + "You must either disable query indexing or disable off-heap values only flag for cache: " + cc.getName());
+if (GridQueryProcessor.isEnabled(cc)) throw new IgniteCheckedException("Cannot have query indexing enabled while values are stored off-heap. " + "You must either disable query indexing or disable off-heap values only flag for cache: " + cc.getName());
 }
-boolean igfsCache=CU.isIgfsCache(c,cc.getName());
-boolean utilityCache=CU.isUtilityCache(cc.getName());
-if (!igfsCache && !utilityCache && !cc.isQueryIndexEnabled()) U.warn(log,"Query indexing is disabled (queries will not work) for cache: '" + cc.getName() + "'. "+ "To enable change GridCacheConfiguration.isQueryIndexEnabled() property.","Query indexing is disabled (queries will not work) for cache: " + cc.getName());
 if (cc.getAtomicityMode() == ATOMIC) assertParameter(cc.getTransactionManagerLookupClassName() == null,"transaction manager can not be used with ATOMIC cache");
 }

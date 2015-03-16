@@ -12,28 +12,23 @@
  else             onError(null,null,new IgniteTxRollbackCheckedException("Invalid transaction state for " + "prepare [state=" + tx.state() + ", tx="+ this+ ']'));
             return;
           }
-          GridDiscoveryTopologySnapshot snapshot=topFut.topologySnapshot();
           tx.topologyVersion(topFut.topologyVersion());
-          tx.topologySnapshot(snapshot);
           cctx.mvcc().addFuture(this);
           prepare0();
         }
  catch (        TransactionTimeoutException|TransactionOptimisticException e) {
           onError(cctx.localNodeId(),null,e);
         }
-catch (        IgniteCheckedException e) {
-          tx.setRollbackOnly();
-          String msg="Failed to prepare transaction (will attempt rollback): " + this;
-          U.error(log,msg,e);
-          tx.rollbackAsync();
-          onError(null,null,new IgniteTxRollbackCheckedException(msg,e));
-        }
       }
  else {
-        topFut.syncNotify(false);
-        topFut.listenAsync(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
+        topFut.listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
           @Override public void apply(          IgniteInternalFuture<AffinityTopologyVersion> t){
-            prepare();
+            cctx.kernalContext().closure().runLocalSafe(new GridPlainRunnable(){
+              @Override public void run(){
+                prepare();
+              }
+            }
+);
           }
         }
 );

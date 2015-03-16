@@ -1,20 +1,12 @@
 {
   create(igfs,paths(DIR,SUBDIR,SUBSUBDIR),paths(FILE));
-  if (dual)   GridTestUtils.assertThrows(log,new Callable<Object>(){
-    @Override public Object call() throws Exception {
-      igfs.delete(SUBDIR,false);
-      return null;
-    }
+  checkExist(igfs,igfsSecondary,SUBDIR,SUBSUBDIR,FILE);
+  try {
+    boolean ok=igfs.delete(SUBDIR,false);
+    assertFalse(ok);
   }
-,IgniteCheckedException.class,"Failed to delete the path due to secondary file system exception:");
- else {
-    GridTestUtils.assertThrows(log,new Callable<Object>(){
-      @Override public Object call() throws Exception {
-        igfs.delete(SUBDIR,false);
-        return null;
-      }
-    }
-,IgfsDirectoryNotEmptyException.class,"Failed to remove directory (directory is not empty and " + "recursive flag is not set)");
+ catch (  IgfsDirectoryNotEmptyException idnee) {
+    U.debug("Expected: " + idnee);
   }
   checkExist(igfs,igfsSecondary,SUBDIR,SUBSUBDIR,FILE);
 }
