@@ -1,8 +1,12 @@
 {
-  if (isClosed())   return Collections.emptySet();
-  String[] resArr;
-synchronized (igniteMap) {
-    resArr=igniteMap.keySet().toArray(new String[igniteMap.keySet().size()]);
+  kernalGateway.readLockAnyway();
+  try {
+    if (kernalGateway.getState() != GridKernalState.STARTED)     return Collections.emptySet();
+    Collection<String> res=new ArrayList<>();
+    for (    GridCache<?,?> cache : ignite.context().cache().publicCaches())     res.add(cache.name());
+    return Collections.unmodifiableCollection(res);
   }
-  return Collections.unmodifiableCollection(Arrays.asList(resArr));
+  finally {
+    kernalGateway.readUnlock();
+  }
 }
