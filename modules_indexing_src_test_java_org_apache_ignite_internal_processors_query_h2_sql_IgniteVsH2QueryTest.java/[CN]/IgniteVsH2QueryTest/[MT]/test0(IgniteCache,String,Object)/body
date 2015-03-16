@@ -1,18 +1,8 @@
 {
-  log.info(">>>>> sql=" + sql + ", args="+ Arrays.toString(args));
-  log.info(">>> H2 db results :");
-  int dbResCount=0;
-  try (PreparedStatement st=conn.prepareStatement(sql)){
-    ResultSet rs=st.executeQuery();
-    while (rs.next()) {
-      GridStringBuilder sb=new GridStringBuilder();
-      for (int i=1; i <= rs.getMetaData().getColumnCount(); i++)       sb.a(rs.getObject(i) + ", ");
-      log.info(sb.toString());
-      dbResCount++;
-    }
-  }
-   List<List<?>> cacheRes=cache.queryFields(new SqlFieldsQuery(sql).setArgs(args)).getAll();
-  log.info(">>> Cache results (count=" + cacheRes.size() + "):");
-  for (  List<?> objects : cacheRes)   log.info(objects.toString());
-  assertEquals(dbResCount,cacheRes.size());
+  log.info("Sql=" + sql + ", args="+ Arrays.toString(args));
+  List<List<?>> h2Res=executeQueryOnH2(sql,args);
+  List<List<?>> cacheRes=cache.queryFields(new SqlFieldsQuery(sql).setArgs(args)).getAll();
+  print("H2 query result.",h2Res);
+  print("Ignite Cache query result.",cacheRes);
+  assertRsEquals(h2Res,cacheRes);
 }
