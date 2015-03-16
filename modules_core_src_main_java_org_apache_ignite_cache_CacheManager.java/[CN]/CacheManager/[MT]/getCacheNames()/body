@@ -1,6 +1,12 @@
 {
-  if (isClosed())   return Collections.emptySet();
-  Collection<String> res=new ArrayList<>();
-  for (  GridCache<?,?> cache : ignite.caches())   res.add(cache.name());
-  return Collections.unmodifiableCollection(res);
+  kernalGateway.readLockAnyway();
+  try {
+    if (kernalGateway.getState() != GridKernalState.STARTED)     return Collections.emptySet();
+    Collection<String> res=new ArrayList<>();
+    for (    GridCache<?,?> cache : ignite.context().cache().publicCaches())     res.add(cache.name());
+    return Collections.unmodifiableCollection(res);
+  }
+  finally {
+    kernalGateway.readUnlock();
+  }
 }

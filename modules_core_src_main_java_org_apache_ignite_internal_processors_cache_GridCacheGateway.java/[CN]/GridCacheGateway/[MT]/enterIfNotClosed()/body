@@ -1,0 +1,20 @@
+{
+  if (ctx.deploymentEnabled())   ctx.deploy().onEnter();
+  GridKernalGateway kernalGateway=ctx.kernalContext().gateway();
+  try {
+    kernalGateway.readLockAnyway();
+    if (kernalGateway.getState() != GridKernalState.STARTED || stopped) {
+      kernalGateway.readUnlock();
+      return false;
+    }
+  }
+ catch (  RuntimeException|Error e) {
+    try {
+      kernalGateway.readUnlock();
+    }
+ catch (    IllegalMonitorStateException ignore) {
+    }
+    throw e;
+  }
+  return true;
+}

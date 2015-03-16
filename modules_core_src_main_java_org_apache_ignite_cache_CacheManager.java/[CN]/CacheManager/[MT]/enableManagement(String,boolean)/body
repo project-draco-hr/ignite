@@ -1,9 +1,13 @@
 {
-  ensureNotClosed();
-  if (cacheName == null)   throw new NullPointerException();
-  IgniteCache<?,?> cache=getCache0(cacheName);
-  if (cache == null)   throw new CacheException("Cache not found: " + cacheName);
-  if (enabled)   registerCacheObject(cache.mxBean(),cacheName,CACHE_CONFIGURATION);
- else   unregisterCacheObject(cacheName,CACHE_CONFIGURATION);
-  cache.getConfiguration(CacheConfiguration.class).setManagementEnabled(enabled);
+  kernalGateway.readLock();
+  try {
+    IgniteCache<?,?> cache=getCache0(cacheName);
+    if (cache == null)     throw new CacheException("Cache not found: " + cacheName);
+    if (enabled)     registerCacheObject(cache.mxBean(),cacheName,CACHE_CONFIGURATION);
+ else     unregisterCacheObject(cacheName,CACHE_CONFIGURATION);
+    cache.getConfiguration(CacheConfiguration.class).setManagementEnabled(enabled);
+  }
+  finally {
+    kernalGateway.readUnlock();
+  }
 }
