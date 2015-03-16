@@ -3,19 +3,8 @@
     if (err == null) {
       if (!cacheCtx.isLocal())       cacheCtx.affinity().cleanUpCache(res.topologyVersion() - 10);
     }
-    if (!F.isEmpty(reqs)) {
-      for (      DynamicCacheChangeRequest req : reqs) {
-        if (F.eq(cacheCtx.name(),req.cacheName())) {
-          if (req.isStart()) {
-            if (!req.clientStartOnly() || cacheCtx.localNodeId().equals(req.initiatingNodeId()))             cacheCtx.preloader().onInitialExchangeComplete(err);
-          }
-        }
-      }
-    }
   }
-  if (!F.isEmpty(reqs)) {
-    for (    DynamicCacheChangeRequest req : reqs)     cctx.cache().onExchangeDone(req);
-  }
+  cctx.cache().onExchangeDone(exchId.topologyVersion(),reqs);
   cctx.exchange().onExchangeDone(this);
   if (super.onDone(res,err) && !dummy && !forcePreload) {
     if (log.isDebugEnabled())     log.debug("Completed partition exchange [localNode=" + cctx.localNodeId() + ", exchange= "+ this+ ']');

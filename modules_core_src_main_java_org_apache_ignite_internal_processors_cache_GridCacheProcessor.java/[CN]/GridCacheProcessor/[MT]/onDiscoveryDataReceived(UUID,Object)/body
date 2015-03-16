@@ -13,7 +13,12 @@
               ctx.discovery().setCacheFilter(req.cacheName(),ccfg.getNodeFilter(),ccfg.getNearConfiguration() != null,ccfg.getCacheMode() == LOCAL);
             }
           }
- else           registeredCaches.put(maskNull(req.cacheName()),new DynamicCacheDescriptor(ccfg,req.deploymentId()));
+ else {
+            DynamicCacheDescriptor desc=new DynamicCacheDescriptor(ccfg,req.deploymentId());
+            if (req.initiatingNodeId() == null)             desc.staticallyConfigured(true);
+            registeredCaches.put(maskNull(req.cacheName()),desc);
+            ctx.discovery().setCacheFilter(req.cacheName(),ccfg.getNodeFilter(),ccfg.getNearConfiguration() != null,ccfg.getCacheMode() == LOCAL);
+          }
         }
       }
  catch (      IgniteCheckedException e) {
