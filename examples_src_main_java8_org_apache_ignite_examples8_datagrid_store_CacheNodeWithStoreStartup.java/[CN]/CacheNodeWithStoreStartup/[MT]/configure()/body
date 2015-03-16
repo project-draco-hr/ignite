@@ -1,0 +1,33 @@
+{
+  IgniteConfiguration cfg=new IgniteConfiguration();
+  cfg.setLocalHost("127.0.0.1");
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  TcpDiscoveryVmIpFinder ipFinder=new TcpDiscoveryMulticastIpFinder();
+  ipFinder.setAddresses(Arrays.asList("127.0.0.1:47500..47509"));
+  discoSpi.setIpFinder(ipFinder);
+  CacheConfiguration<Long,Person> cacheCfg=new CacheConfiguration<>();
+  cacheCfg.setAtomicityMode(TRANSACTIONAL);
+  cacheCfg.setQueryIndexEnabled(true);
+  CacheStore<Long,Person> store;
+switch (STORE) {
+case DUMMY:
+    store=new CacheDummyPersonStore();
+  break;
+case SIMPLE_JDBC:
+store=new CacheJdbcPersonStore();
+break;
+case HIBERNATE:
+store=new CacheHibernatePersonStore();
+break;
+default :
+store=new CacheJdbcPojoPersonStore();
+cacheCfg.setTypeMetadata(typeMetadata());
+break;
+}
+cacheCfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory<>(store));
+cacheCfg.setReadThrough(true);
+cacheCfg.setWriteThrough(true);
+cfg.setDiscoverySpi(discoSpi);
+cfg.setCacheConfiguration(cacheCfg);
+return cfg;
+}

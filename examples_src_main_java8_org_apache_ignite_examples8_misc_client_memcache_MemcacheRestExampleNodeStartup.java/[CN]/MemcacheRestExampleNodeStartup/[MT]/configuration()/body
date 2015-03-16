@@ -1,0 +1,26 @@
+{
+  IgniteConfiguration cfg=new IgniteConfiguration();
+  cfg.setLocalHost("127.0.0.1");
+  cfg.setDeploymentMode(SHARED);
+  cfg.setPeerClassLoadingEnabled(true);
+  cfg.setConnectorConfiguration(new ConnectorConfiguration());
+  OptimizedMarshaller marsh=new OptimizedMarshaller();
+  marsh.setRequireSerializable(false);
+  cfg.setMarshaller(marsh);
+  CacheConfiguration cacheCfg=new CacheConfiguration();
+  cacheCfg.setAtomicityMode(TRANSACTIONAL);
+  cacheCfg.setWriteSynchronizationMode(FULL_SYNC);
+  cacheCfg.setRebalanceMode(SYNC);
+  cacheCfg.setAtomicityMode(TRANSACTIONAL);
+  CacheQueryConfiguration qryCfg=new CacheQueryConfiguration();
+  qryCfg.setIndexPrimitiveKey(true);
+  qryCfg.setIndexFixedTyping(false);
+  cacheCfg.setQueryConfiguration(qryCfg);
+  cfg.setCacheConfiguration(cacheCfg);
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  TcpDiscoveryVmIpFinder ipFinder=new TcpDiscoveryVmIpFinder();
+  ipFinder.setAddresses(Collections.singletonList("127.0.0.1:47500..47509"));
+  discoSpi.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(discoSpi);
+  return cfg;
+}
