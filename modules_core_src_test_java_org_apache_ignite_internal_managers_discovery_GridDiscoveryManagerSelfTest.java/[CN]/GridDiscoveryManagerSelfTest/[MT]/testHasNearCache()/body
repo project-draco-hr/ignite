@@ -2,7 +2,7 @@
   IgniteKernal g0=(IgniteKernal)startGrid(0);
   AffinityTopologyVersion zero=new AffinityTopologyVersion(0);
   AffinityTopologyVersion one=new AffinityTopologyVersion(1);
-  AffinityTopologyVersion two=new AffinityTopologyVersion(2);
+  AffinityTopologyVersion two=new AffinityTopologyVersion(2,2);
   AffinityTopologyVersion three=new AffinityTopologyVersion(3);
   AffinityTopologyVersion four=new AffinityTopologyVersion(4);
   AffinityTopologyVersion five=new AffinityTopologyVersion(5);
@@ -11,6 +11,10 @@
   assertFalse(g0.context().discovery().hasNearCache(CACHE_NAME,one));
   assertFalse(g0.context().discovery().hasNearCache(null,one));
   IgniteKernal g1=(IgniteKernal)startGrid(1);
+  grid(1).createCache(new NearCacheConfiguration());
+  NearCacheConfiguration near=new NearCacheConfiguration();
+  near.setName(CACHE_NAME);
+  grid(1).createCache(near);
   assertFalse(g0.context().discovery().hasNearCache(CACHE_NAME,one));
   assertTrue(g0.context().discovery().hasNearCache(CACHE_NAME,two));
   assertFalse(g0.context().discovery().hasNearCache(null,one));
@@ -30,7 +34,7 @@
   assertTrue(g1.context().discovery().hasNearCache(null,three));
   assertTrue(g2.context().discovery().hasNearCache(CACHE_NAME,three));
   assertTrue(g2.context().discovery().hasNearCache(null,three));
-  stopGrid(1);
+  stopGrid(2);
   for (; ; ) {
     if (F.forAll(Ignition.allGrids(),new IgnitePredicate<Ignite>(){
       @Override public boolean apply(      Ignite ignite){
@@ -48,11 +52,11 @@
   assertTrue(g0.context().discovery().hasNearCache(null,two));
   assertTrue(g0.context().discovery().hasNearCache(null,three));
   assertTrue(g0.context().discovery().hasNearCache(null,four));
-  assertTrue(g2.context().discovery().hasNearCache(CACHE_NAME,three));
-  assertTrue(g2.context().discovery().hasNearCache(CACHE_NAME,four));
-  assertTrue(g2.context().discovery().hasNearCache(null,three));
-  assertTrue(g2.context().discovery().hasNearCache(null,four));
-  stopGrid(2);
+  assertTrue(g1.context().discovery().hasNearCache(CACHE_NAME,three));
+  assertTrue(g1.context().discovery().hasNearCache(CACHE_NAME,four));
+  assertTrue(g1.context().discovery().hasNearCache(null,three));
+  assertTrue(g1.context().discovery().hasNearCache(null,four));
+  stopGrid(1);
   for (; ; ) {
     if (F.forAll(Ignition.allGrids(),new IgnitePredicate<Ignite>(){
       @Override public boolean apply(      Ignite ignite){
