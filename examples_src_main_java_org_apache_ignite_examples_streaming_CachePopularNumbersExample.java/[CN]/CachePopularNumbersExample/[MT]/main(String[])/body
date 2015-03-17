@@ -1,15 +1,15 @@
 {
   Ignition.setClientMode(true);
-  try (Ignite ignite=Ignition.start()){
+  try (Ignite ignite=Ignition.start("examples/config/example-compute.xml")){
     System.out.println();
     System.out.println(">>> Cache popular numbers example started.");
     CacheConfiguration<Integer,Long> cfg=new CacheConfiguration<>();
     cfg.setCacheMode(CacheMode.PARTITIONED);
     cfg.setName(STREAM_NAME);
     cfg.setIndexedTypes(Integer.class,Long.class);
-    cfg.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new CreatedExpiryPolicy(new Duration(SECONDS,5))));
+    cfg.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new CreatedExpiryPolicy(new Duration(SECONDS,1))));
     try (IgniteCache<Integer,Long> stmCache=ignite.createCache(cfg)){
-      if (ignite.cluster().forCacheNodes(STREAM_NAME).nodes().isEmpty()) {
+      if (ignite.cluster().forDataNodes(STREAM_NAME).nodes().isEmpty()) {
         System.out.println("Ignite does not have streaming cache configured: " + STREAM_NAME);
         return;
       }
@@ -20,7 +20,7 @@
       }
 );
       th.start();
-      long duration=3 * 60 * 60* 1000;
+      long duration=2 * 60 * 1000;
       long start=System.currentTimeMillis();
       while (System.currentTimeMillis() - start < duration) {
         SqlFieldsQuery top10=new SqlFieldsQuery("select _key, _val from Long order by _val desc, _key limit ?").setArgs(10);
@@ -32,5 +32,10 @@
       th.interrupt();
       th.join();
     }
-   }
+ catch (    CacheException e) {
+      e.printStackTrace();
+      System.out.println("Destroying cache for name '" + STREAM_NAME + "'. Please try again.");
+      ignite.destroyCache(STREAM_NAME);
+    }
+  }
  }
