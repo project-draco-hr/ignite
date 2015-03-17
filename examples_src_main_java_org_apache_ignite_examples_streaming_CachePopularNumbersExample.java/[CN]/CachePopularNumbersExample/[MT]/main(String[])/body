@@ -1,0 +1,36 @@
+{
+  Ignition.setClientMode(true);
+  try (Ignite ignite=Ignition.start()){
+    System.out.println();
+    System.out.println(">>> Cache popular numbers example started.");
+    CacheConfiguration<Integer,Long> cfg=new CacheConfiguration<>();
+    cfg.setCacheMode(CacheMode.PARTITIONED);
+    cfg.setName(STREAM_NAME);
+    cfg.setIndexedTypes(Integer.class,Long.class);
+    cfg.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new CreatedExpiryPolicy(new Duration(SECONDS,5))));
+    try (IgniteCache<Integer,Long> stmCache=ignite.createCache(cfg)){
+      if (ignite.cluster().forCacheNodes(STREAM_NAME).nodes().isEmpty()) {
+        System.out.println("Ignite does not have streaming cache configured: " + STREAM_NAME);
+        return;
+      }
+      Thread th=new Thread(new Runnable(){
+        @Override public void run(){
+          streamData(ignite);
+        }
+      }
+);
+      th.start();
+      long duration=3 * 60 * 60* 1000;
+      long start=System.currentTimeMillis();
+      while (System.currentTimeMillis() - start < duration) {
+        SqlFieldsQuery top10=new SqlFieldsQuery("select _key, _val from Long order by _val desc, _key limit ?").setArgs(10);
+        List<List<?>> results=stmCache.queryFields(top10).getAll();
+        for (        List<?> res : results)         System.out.println(res.get(0) + "=" + res.get(1));
+        System.out.println("----------------");
+        Thread.sleep(5000);
+      }
+      th.interrupt();
+      th.join();
+    }
+   }
+ }
