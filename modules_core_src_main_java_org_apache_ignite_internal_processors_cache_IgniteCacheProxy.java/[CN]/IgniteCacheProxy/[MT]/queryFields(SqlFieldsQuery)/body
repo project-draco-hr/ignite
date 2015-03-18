@@ -3,15 +3,8 @@
   GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
     validate(qry);
-    CacheQuery<List<?>> q=((GridCacheQueriesEx<K,V>)delegate.queries()).createSqlFieldsQuery(qry.getSql(),false);
-    if (qry.getPageSize() > 0)     q.pageSize(qry.getPageSize());
-    CacheQueryFuture<List<?>> fut=q.execute(qry.getArgs());
-    return new QueryCursorImpl<>(new ClIter<List<?>,List<?>>(fut){
-      @Override protected List<?> convert(      List<?> row){
-        return row;
-      }
-    }
-);
+    if (isReplicatedDataNode() || ctx.isLocal())     return doLocalFieldsQuery(qry);
+    return ctx.kernalContext().query().queryTwoStep(ctx.name(),qry.getSql(),qry.getArgs());
   }
  catch (  Exception e) {
     if (e instanceof CacheException)     throw e;
