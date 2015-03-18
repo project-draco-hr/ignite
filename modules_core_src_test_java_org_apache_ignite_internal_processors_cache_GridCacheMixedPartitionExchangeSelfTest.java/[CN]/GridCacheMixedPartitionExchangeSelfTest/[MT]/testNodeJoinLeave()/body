@@ -12,13 +12,18 @@
           int g=rnd.nextInt(4);
           int key=rnd.nextInt(keys);
           IgniteCache<Integer,Integer> prj=grid(g).jcache(null);
-          try (Transaction tx=grid(g).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
-            Integer val=prj.get(key);
-            val=val == null ? 1 : val + 1;
-            prj.put(key,val);
-            tx.commit();
+          try {
+            try (Transaction tx=grid(g).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+              Integer val=prj.get(key);
+              val=val == null ? 1 : val + 1;
+              prj.put(key,val);
+              tx.commit();
+            }
+           }
+ catch (          Exception e) {
+            if (!X.hasCause(e,ClusterTopologyCheckedException.class))             throw e;
           }
-         }
+        }
         return null;
       }
     }
