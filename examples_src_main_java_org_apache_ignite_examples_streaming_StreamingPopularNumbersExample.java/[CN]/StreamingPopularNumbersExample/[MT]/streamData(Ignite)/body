@@ -1,4 +1,9 @@
 {
-  final IgniteStreamer streamer=ignite.streamer("popular-numbers");
-  for (int i=0; i < CNT; i++)   streamer.addEvent(((Double)(RAND.nextGaussian() * 10)).intValue());
+  try (IgniteDataStreamer<Integer,Long> stmr=ignite.dataStreamer(STREAM_NAME)){
+    stmr.allowOverwrite(true);
+    stmr.updater(new IncrementingUpdater());
+    while (!Thread.currentThread().isInterrupted())     stmr.addData(RAND.nextInt(RANGE),1L);
+  }
+ catch (  IgniteInterruptedException ignore) {
+  }
 }
