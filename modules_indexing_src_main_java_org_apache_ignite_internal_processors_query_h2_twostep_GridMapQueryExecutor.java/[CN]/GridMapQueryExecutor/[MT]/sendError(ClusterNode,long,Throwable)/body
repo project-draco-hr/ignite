@@ -1,9 +1,11 @@
 {
   try {
-    ctx.io().sendUserMessage(F.asList(node),new GridQueryFailResponse(qryReqId,err));
+    GridQueryFailResponse msg=new GridQueryFailResponse(qryReqId,err);
+    if (node.isLocal())     h2.reduceQueryExecutor().onMessage(ctx.localNodeId(),msg);
+ else     ctx.io().send(node,GridTopic.TOPIC_QUERY,msg,GridIoPolicy.PUBLIC_POOL);
   }
- catch (  IgniteCheckedException e) {
+ catch (  Exception e) {
     e.addSuppressed(err);
-    log.error("Failed to send error message.",e);
+    U.error(log,"Failed to send error message.",e);
   }
 }

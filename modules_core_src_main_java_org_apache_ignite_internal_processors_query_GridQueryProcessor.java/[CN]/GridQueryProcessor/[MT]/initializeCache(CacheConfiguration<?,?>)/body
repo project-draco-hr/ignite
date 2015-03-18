@@ -1,0 +1,26 @@
+{
+  Map<TypeName,CacheTypeMetadata> declaredTypes=new HashMap<>();
+  idx.registerCache(ccfg);
+  if (!F.isEmpty(ccfg.getTypeMetadata())) {
+    for (    CacheTypeMetadata meta : ccfg.getTypeMetadata()) {
+      declaredTypes.put(new TypeName(ccfg.getName(),meta.getValueType()),meta);
+      int valTypeId=ctx.cacheObjects().typeId(meta.getValueType());
+      portableIds.put(valTypeId,meta.getValueType());
+      TypeDescriptor desc=processPortableMeta(ccfg,meta);
+      desc.registered(idx.registerType(ccfg.getName(),desc));
+      typesByName.put(new TypeName(ccfg.getName(),desc.name()),desc);
+      types.put(new TypeId(ccfg.getName(),valTypeId),desc);
+    }
+  }
+  Class<?>[] clss=ccfg.getIndexedTypes();
+  if (!F.isEmpty(clss)) {
+    for (int i=0; i < clss.length; i+=2) {
+      Class<?> keyCls=clss[i];
+      Class<?> valCls=clss[i + 1];
+      TypeDescriptor desc=processKeyAndValueClasses(ccfg,keyCls,valCls,declaredTypes);
+      desc.registered(idx.registerType(ccfg.getName(),desc));
+      typesByName.put(new TypeName(ccfg.getName(),desc.name()),desc);
+      types.put(new TypeId(ccfg.getName(),valCls),desc);
+    }
+  }
+}
