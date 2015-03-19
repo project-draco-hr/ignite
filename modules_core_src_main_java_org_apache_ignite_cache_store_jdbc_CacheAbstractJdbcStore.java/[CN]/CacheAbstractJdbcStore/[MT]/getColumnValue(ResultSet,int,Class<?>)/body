@@ -19,5 +19,16 @@
     }
  else     return EMPTY_COLUMN_VALUE;
   }
-  return rs.getObject(colIdx);
+  Object val=rs.getObject(colIdx);
+  if (type == UUID.class && val != null) {
+    if (val instanceof UUID)     return val;
+    if (val instanceof byte[]) {
+      ByteBuffer bb=ByteBuffer.wrap((byte[])val);
+      long most=bb.getLong();
+      long least=bb.getLong();
+      return new UUID(most,least);
+    }
+    if (val instanceof String)     return UUID.fromString((String)val);
+  }
+  return val;
 }

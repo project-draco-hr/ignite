@@ -1,2 +1,84 @@
 {
+  super(owner,480,180);
+  String title;
+  String iconFile;
+switch (type) {
+case WARN:
+    title="Warning";
+  iconFile="sign_warning";
+break;
+case ERROR:
+title="Error";
+iconFile="error";
+break;
+case CONFIRM:
+case CANCELLABLE_CONFIRM:
+title="Confirmation";
+iconFile="question";
+break;
+default :
+title="Information";
+iconFile="information";
+break;
+}
+setTitle(title);
+initStyle(StageStyle.UTILITY);
+initModality(Modality.APPLICATION_MODAL);
+initOwner(owner);
+setResizable(false);
+GridPaneEx contentPnl=paneEx(10,10,0,10);
+contentPnl.addColumn();
+contentPnl.addColumn(100,100,Double.MAX_VALUE,Priority.ALWAYS);
+contentPnl.add(hBox(0,true,imageView(iconFile,48)));
+final TextArea ta=new TextArea(msg);
+ta.setEditable(false);
+ta.setWrapText(true);
+ta.setFocusTraversable(false);
+contentPnl.add(ta);
+if (msg.split("\r\n|\r|\n").length < 4) showingProperty().addListener(new ChangeListener<Boolean>(){
+@Override public void changed(ObservableValue<? extends Boolean> val,Boolean oldVal,Boolean newVal){
+if (newVal) {
+ScrollBar scrollBar=(ScrollBar)ta.lookup(".scroll-bar:vertical");
+if (scrollBar != null) scrollBar.setDisable(true);
+}
+}
+}
+);
+final CheckBox rememberChoiceCh=checkBox("Remember choice","",false);
+if (rememberChoice) {
+contentPnl.skip(1);
+contentPnl.add(rememberChoiceCh);
+}
+HBox btns=hBox(10,true);
+btns.setAlignment(Pos.CENTER);
+if (MessageType.CONFIRM == type || MessageType.CANCELLABLE_CONFIRM == type) {
+res=Result.NO;
+btns.getChildren().addAll(button("Yes","Approve the request",new EventHandler<ActionEvent>(){
+@Override public void handle(ActionEvent e){
+res=rememberChoice && rememberChoiceCh.isSelected() ? Result.YES_TO_ALL : Result.YES;
+close();
+}
+}
+),button("No","Reject the request",new EventHandler<ActionEvent>(){
+@Override public void handle(ActionEvent e){
+res=rememberChoice && rememberChoiceCh.isSelected() ? Result.NO_TO_ALL : Result.NO;
+close();
+}
+}
+));
+if (MessageType.CANCELLABLE_CONFIRM == type) btns.getChildren().addAll(button("Cancel","Cancel the request",new EventHandler<ActionEvent>(){
+@Override public void handle(ActionEvent e){
+res=Result.CANCEL;
+close();
+}
+}
+));
+}
+ else btns.getChildren().add(button("OK","Close dialog",new EventHandler<ActionEvent>(){
+@Override public void handle(ActionEvent e){
+close();
+}
+}
+));
+setScene(scene(borderPane(null,contentPnl,btns,null,null)));
 }

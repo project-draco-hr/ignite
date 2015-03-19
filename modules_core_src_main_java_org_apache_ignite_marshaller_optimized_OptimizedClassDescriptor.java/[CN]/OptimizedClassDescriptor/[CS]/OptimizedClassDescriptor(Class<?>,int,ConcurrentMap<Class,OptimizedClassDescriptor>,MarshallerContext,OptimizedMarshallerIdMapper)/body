@@ -1,0 +1,248 @@
+{
+  this.cls=cls;
+  this.typeId=typeId;
+  this.clsMap=clsMap;
+  this.ctx=ctx;
+  this.mapper=mapper;
+  name=cls.getName();
+  excluded=MarshallerExclusions.isExcluded(cls);
+  if (!excluded) {
+    Class<?> parent;
+    if (cls == byte.class || cls == Byte.class) {
+      type=BYTE;
+      isPrimitive=true;
+    }
+ else     if (cls == short.class || cls == Short.class) {
+      type=SHORT;
+      isPrimitive=true;
+    }
+ else     if (cls == int.class || cls == Integer.class) {
+      type=INT;
+      isPrimitive=true;
+    }
+ else     if (cls == long.class || cls == Long.class) {
+      type=LONG;
+      isPrimitive=true;
+    }
+ else     if (cls == float.class || cls == Float.class) {
+      type=FLOAT;
+      isPrimitive=true;
+    }
+ else     if (cls == double.class || cls == Double.class) {
+      type=DOUBLE;
+      isPrimitive=true;
+    }
+ else     if (cls == char.class || cls == Character.class) {
+      type=CHAR;
+      isPrimitive=true;
+    }
+ else     if (cls == boolean.class || cls == Boolean.class) {
+      type=BOOLEAN;
+      isPrimitive=true;
+    }
+ else     if (cls == byte[].class)     type=BYTE_ARR;
+ else     if (cls == short[].class)     type=SHORT_ARR;
+ else     if (cls == int[].class)     type=INT_ARR;
+ else     if (cls == long[].class)     type=LONG_ARR;
+ else     if (cls == float[].class)     type=FLOAT_ARR;
+ else     if (cls == double[].class)     type=DOUBLE_ARR;
+ else     if (cls == char[].class)     type=CHAR_ARR;
+ else     if (cls == boolean[].class)     type=BOOLEAN_ARR;
+ else     if (cls.isArray())     type=OBJ_ARR;
+ else     if (cls == String.class)     type=STR;
+ else     if (cls.isEnum()) {
+      type=ENUM;
+      isEnum=true;
+      enumVals=cls.getEnumConstants();
+    }
+ else     if ((parent=cls.getSuperclass()) != null && parent.isEnum()) {
+      type=ENUM;
+      isEnum=true;
+      enumVals=parent.getEnumConstants();
+    }
+ else     if (cls == UUID.class)     type=UUID;
+ else     if (cls == Properties.class) {
+      type=PROPS;
+      try {
+        dfltsFieldOff=UNSAFE.objectFieldOffset(Properties.class.getDeclaredField("defaults"));
+      }
+ catch (      NoSuchFieldException e) {
+        throw new IOException(e);
+      }
+    }
+ else     if (cls == ArrayList.class)     type=ARRAY_LIST;
+ else     if (cls == HashMap.class) {
+      type=HASH_MAP;
+      try {
+        loadFactorFieldOff=UNSAFE.objectFieldOffset(HashMap.class.getDeclaredField("loadFactor"));
+      }
+ catch (      NoSuchFieldException e) {
+        throw new IOException(e);
+      }
+    }
+ else     if (cls == HashSet.class) {
+      type=HASH_SET;
+      try {
+        loadFactorFieldOff=UNSAFE.objectFieldOffset(HashMap.class.getDeclaredField("loadFactor"));
+      }
+ catch (      NoSuchFieldException e) {
+        throw new IOException(e);
+      }
+    }
+ else     if (cls == LinkedList.class)     type=LINKED_LIST;
+ else     if (cls == LinkedHashMap.class) {
+      type=LINKED_HASH_MAP;
+      try {
+        loadFactorFieldOff=UNSAFE.objectFieldOffset(HashMap.class.getDeclaredField("loadFactor"));
+        accessOrderFieldOff=UNSAFE.objectFieldOffset(LinkedHashMap.class.getDeclaredField("accessOrder"));
+      }
+ catch (      NoSuchFieldException e) {
+        throw new IOException(e);
+      }
+    }
+ else     if (cls == LinkedHashSet.class) {
+      type=LINKED_HASH_SET;
+      try {
+        loadFactorFieldOff=UNSAFE.objectFieldOffset(HashMap.class.getDeclaredField("loadFactor"));
+      }
+ catch (      NoSuchFieldException e) {
+        throw new IOException(e);
+      }
+    }
+ else     if (cls == Date.class)     type=DATE;
+ else     if (cls == Class.class) {
+      type=CLS;
+      isCls=true;
+    }
+ else {
+      Class<?> c=cls;
+      while ((writeReplaceMtd == null || readResolveMtd == null) && c != null && !c.equals(Object.class)) {
+        if (writeReplaceMtd == null) {
+          try {
+            writeReplaceMtd=c.getDeclaredMethod("writeReplace");
+            if (!isStatic(writeReplaceMtd.getModifiers()) && !(isPrivate(writeReplaceMtd.getModifiers()) && c != cls) && writeReplaceMtd.getReturnType().equals(Object.class))             writeReplaceMtd.setAccessible(true);
+ else             writeReplaceMtd=null;
+          }
+ catch (          NoSuchMethodException ignored) {
+          }
+        }
+        if (readResolveMtd == null) {
+          try {
+            readResolveMtd=c.getDeclaredMethod("readResolve");
+            if (!isStatic(readResolveMtd.getModifiers()) && !(isPrivate(readResolveMtd.getModifiers()) && c != cls) && readResolveMtd.getReturnType().equals(Object.class))             readResolveMtd.setAccessible(true);
+ else             readResolveMtd=null;
+          }
+ catch (          NoSuchMethodException ignored) {
+          }
+        }
+        c=c.getSuperclass();
+      }
+      if (Externalizable.class.isAssignableFrom(cls)) {
+        type=EXTERNALIZABLE;
+        try {
+          constructor=!Modifier.isStatic(cls.getModifiers()) && cls.getDeclaringClass() != null ? cls.getDeclaredConstructor(cls.getDeclaringClass()) : cls.getDeclaredConstructor();
+          constructor.setAccessible(true);
+        }
+ catch (        NoSuchMethodException e) {
+          throw new IOException("Externalizable class doesn't have default constructor: " + cls,e);
+        }
+      }
+ else {
+        type=SERIALIZABLE;
+        isSerial=Serializable.class.isAssignableFrom(cls);
+        writeObjMtds=new ArrayList<>();
+        readObjMtds=new ArrayList<>();
+        List<List<Field>> fields=new ArrayList<>();
+        List<List<T2<OptimizedFieldType,Long>>> fieldOffs=new ArrayList<>();
+        List<Map<String,IgniteBiTuple<Integer,OptimizedFieldType>>> fieldInfoMaps=new ArrayList<>();
+        List<List<IgniteBiTuple<Integer,OptimizedFieldType>>> fieldInfoLists=new ArrayList<>();
+        for (c=cls; c != null && !c.equals(Object.class); c=c.getSuperclass()) {
+          Method mtd;
+          try {
+            mtd=c.getDeclaredMethod("writeObject",ObjectOutputStream.class);
+            int mod=mtd.getModifiers();
+            if (!isStatic(mod) && isPrivate(mod) && mtd.getReturnType() == Void.TYPE)             mtd.setAccessible(true);
+ else             mtd=null;
+          }
+ catch (          NoSuchMethodException ignored) {
+            mtd=null;
+          }
+          writeObjMtds.add(mtd);
+          try {
+            mtd=c.getDeclaredMethod("readObject",ObjectInputStream.class);
+            int mod=mtd.getModifiers();
+            if (!isStatic(mod) && isPrivate(mod) && mtd.getReturnType() == Void.TYPE)             mtd.setAccessible(true);
+ else             mtd=null;
+          }
+ catch (          NoSuchMethodException ignored) {
+            mtd=null;
+          }
+          readObjMtds.add(mtd);
+          Field[] clsFields0=c.getDeclaredFields();
+          Arrays.sort(clsFields0,new Comparator<Field>(){
+            @Override public int compare(            Field f1,            Field f2){
+              return f1.getName().compareTo(f2.getName());
+            }
+          }
+);
+          List<Field> clsFields=new ArrayList<>(clsFields0.length);
+          List<T2<OptimizedFieldType,Long>> clsFieldOffs=new ArrayList<>(clsFields0.length);
+          for (int i=0; i < clsFields0.length; i++) {
+            Field f=clsFields0[i];
+            int mod=f.getModifiers();
+            if (!isStatic(mod) && !isTransient(mod)) {
+              OptimizedFieldType type=fieldType(f.getType());
+              clsFields.add(f);
+              clsFieldOffs.add(new T2<>(type,UNSAFE.objectFieldOffset(f)));
+            }
+          }
+          fields.add(clsFields);
+          fieldOffs.add(clsFieldOffs);
+          Map<String,IgniteBiTuple<Integer,OptimizedFieldType>> fieldInfoMap=null;
+          try {
+            Field serFieldsDesc=c.getDeclaredField("serialPersistentFields");
+            int mod=serFieldsDesc.getModifiers();
+            if (serFieldsDesc.getType() == ObjectStreamField[].class && isPrivate(mod) && isStatic(mod) && isFinal(mod)) {
+              serFieldsDesc.setAccessible(true);
+              ObjectStreamField[] serFields=(ObjectStreamField[])serFieldsDesc.get(null);
+              fieldInfoMap=new HashMap<>();
+              for (int i=0; i < serFields.length; i++) {
+                ObjectStreamField serField=serFields[i];
+                fieldInfoMap.put(serField.getName(),F.t(i,fieldType(serField.getType())));
+              }
+            }
+          }
+ catch (          NoSuchFieldException ignored) {
+          }
+catch (          IllegalAccessException e) {
+            throw new IOException("Failed to get value of 'serialPersistentFields' field in class: " + cls.getName(),e);
+          }
+          if (fieldInfoMap == null) {
+            fieldInfoMap=new HashMap<>();
+            for (int i=0; i < clsFields.size(); i++) {
+              Field f=clsFields.get(i);
+              fieldInfoMap.put(f.getName(),F.t(i,fieldType(f.getType())));
+            }
+          }
+          fieldInfoMaps.add(fieldInfoMap);
+          List<IgniteBiTuple<Integer,OptimizedFieldType>> fieldInfoList=new ArrayList<>(fieldInfoMap.values());
+          Collections.sort(fieldInfoList,new Comparator<IgniteBiTuple<Integer,OptimizedFieldType>>(){
+            @Override public int compare(            IgniteBiTuple<Integer,OptimizedFieldType> t1,            IgniteBiTuple<Integer,OptimizedFieldType> t2){
+              return t1.get1().compareTo(t2.get1());
+            }
+          }
+);
+          fieldInfoLists.add(fieldInfoList);
+        }
+        Collections.reverse(writeObjMtds);
+        Collections.reverse(readObjMtds);
+        Collections.reverse(fields);
+        Collections.reverse(fieldOffs);
+        Collections.reverse(fieldInfoMaps);
+        Collections.reverse(fieldInfoLists);
+        this.fields=new Fields(fields,fieldOffs,fieldInfoLists,fieldInfoMaps);
+      }
+    }
+  }
+  checksum=computeSerialVersionUid(cls,fields != null ? fields.ownFields() : null);
+}
