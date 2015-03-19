@@ -1,19 +1,6 @@
 {
   log.info("Sql=" + sql + ", args="+ Arrays.toString(args));
-  ResultSet h2Rs=null;
-  PreparedStatement st=null;
-  try {
-    st=conn.prepareStatement(sql);
-    for (int idx=0; idx < args.length; idx++) {
-      Object arg=args[idx];
-      fillArgByType(st,idx + 1,arg);
-    }
-    h2Rs=st.executeQuery();
-    List<List<?>> cacheRes=cache.queryFields(new SqlFieldsQuery(sql).setArgs(args)).getAll();
-    assertRsEquals(h2Rs,cacheRes,order);
-  }
-  finally {
-    U.closeQuiet(st);
-    U.closeQuiet(h2Rs);
-  }
+  List<List<?>> h2Res=executeH2Query(sql,args);
+  List<List<?>> cacheRes=cache.queryFields(new SqlFieldsQuery(sql).setArgs(args)).getAll();
+  assertRsEquals(h2Res,cacheRes,order);
 }
