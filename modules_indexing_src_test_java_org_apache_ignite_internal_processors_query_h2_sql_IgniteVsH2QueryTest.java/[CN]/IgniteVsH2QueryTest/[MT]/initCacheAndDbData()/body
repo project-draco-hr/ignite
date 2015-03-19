@@ -1,19 +1,20 @@
 {
   int idGen=0;
-  List<Organization> orgs=new ArrayList<>();
+  List<Organization> organizations=new ArrayList<>();
   for (int i=0; i < 3; i++) {
     int id=idGen++;
     Organization org=new Organization(id,"Org" + id);
-    orgs.add(org);
+    organizations.add(org);
     pCache.put(org.id,org);
     insertInDb(org);
   }
   List<Person> persons=new ArrayList<>();
   for (int i=0; i < 5; i++) {
     int id=idGen++;
-    Person person=new Person(id,orgs.get(i % orgs.size()),"name" + id,"lastname" + id,id * 100.0);
+    Organization org=organizations.get(i % organizations.size());
+    Person person=new Person(id,org,"name" + id,"lastName" + id,id * 100.0);
     persons.add(person);
-    pCache.put(person.key(),person);
+    pCache.put(new CacheAffinityKey<>(id,org.id),person);
     insertInDb(person);
   }
   List<Product> products=new ArrayList<>();
@@ -26,8 +27,9 @@
   }
   for (int i=0; i < products.size() * 2; i++) {
     int id=idGen++;
-    Purchase purchase=new Purchase(id,products.get(i % products.size()),persons.get(i % persons.size()));
-    pCache.put(purchase.key(),purchase);
+    Person person=persons.get(i % persons.size());
+    Purchase purchase=new Purchase(id,products.get(i % products.size()),person);
+    pCache.put(new CacheAffinityKey<>(id,person.id),purchase);
     insertInDb(purchase);
   }
 }
