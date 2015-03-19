@@ -1,0 +1,25 @@
+{
+  A.notNull(endpointCfg,"endpointCfg");
+  IgfsIpcEndpointType typ=endpointCfg.getType();
+  if (typ == null)   throw new IgniteCheckedException("Failed to create server endpoint (type is not specified)");
+switch (typ) {
+case SHMEM:
+{
+      IpcSharedMemoryServerEndpoint endpoint=new IpcSharedMemoryServerEndpoint();
+      endpoint.setPort(endpointCfg.getPort());
+      endpoint.setSize(endpointCfg.getMemorySize());
+      endpoint.setTokenDirectoryPath(endpointCfg.getTokenDirectoryPath());
+      return endpoint;
+    }
+case TCP:
+{
+    IpcServerTcpEndpoint endpoint=new IpcServerTcpEndpoint();
+    endpoint.setHost(endpointCfg.getHost());
+    endpoint.setPort(endpointCfg.getPort());
+    endpoint.setManagement(mgmt);
+    return endpoint;
+  }
+default :
+throw new IgniteCheckedException("Failed to create server endpoint (type is unknown): " + typ);
+}
+}

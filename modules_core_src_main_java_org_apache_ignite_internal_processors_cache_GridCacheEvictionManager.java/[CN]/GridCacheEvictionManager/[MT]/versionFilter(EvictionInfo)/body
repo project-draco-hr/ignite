@@ -1,9 +1,14 @@
 {
-  return cctx.vararg(new P1<Cache.Entry<K,V>>(){
-    @Override public boolean apply(    Cache.Entry<K,V> e){
-      GridCacheVersion ver=(GridCacheVersion)((CacheVersionedEntryImpl)e).version();
-      return info.version().equals(ver) && F.isAll(info.filter());
+  return new CacheEntryPredicate[]{new CacheEntryPredicateAdapter(){
+    @Override public boolean apply(    GridCacheEntryEx e){
+      try {
+        GridCacheVersion ver=e.version();
+        return info.version().equals(ver) && F.isAll(info.filter());
+      }
+ catch (      GridCacheEntryRemovedException err) {
+        return false;
+      }
     }
   }
-);
+};
 }

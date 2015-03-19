@@ -1,0 +1,32 @@
+{
+  if (store != null) {
+    if (key.internal())     return null;
+    Object storeKey=key.value(cctx.cacheObjectContext(),false);
+    if (convertPortable)     storeKey=cctx.unwrapPortableIfNeeded(storeKey,false);
+    if (log.isDebugEnabled())     log.debug("Loading value from store for key: " + storeKey);
+    boolean ses=initSession(tx);
+    Object val=null;
+    try {
+      val=singleThreadGate.load(storeKey);
+    }
+ catch (    ClassCastException e) {
+      handleClassCastException(e);
+    }
+catch (    CacheLoaderException e) {
+      throw new IgniteCheckedException(e);
+    }
+catch (    Exception e) {
+      throw new IgniteCheckedException(new CacheLoaderException(e));
+    }
+ finally {
+      if (ses)       endSession();
+    }
+    if (log.isDebugEnabled())     log.debug("Loaded value from store [key=" + key + ", val="+ val+ ']');
+    if (convert) {
+      val=convert(val);
+      return val;
+    }
+ else     return val;
+  }
+  return null;
+}

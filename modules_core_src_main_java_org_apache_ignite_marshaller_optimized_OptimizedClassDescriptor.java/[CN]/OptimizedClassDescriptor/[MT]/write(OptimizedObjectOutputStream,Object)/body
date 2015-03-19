@@ -1,97 +1,106 @@
 {
+  out.write(type);
 switch (type) {
-case TYPE_BYTE:
+case BYTE:
     out.writeByte((Byte)obj);
   break;
-case TYPE_SHORT:
+case SHORT:
 out.writeShort((Short)obj);
 break;
-case TYPE_INT:
+case INT:
 out.writeInt((Integer)obj);
 break;
-case TYPE_LONG:
+case LONG:
 out.writeLong((Long)obj);
 break;
-case TYPE_FLOAT:
+case FLOAT:
 out.writeFloat((Float)obj);
 break;
-case TYPE_DOUBLE:
+case DOUBLE:
 out.writeDouble((Double)obj);
 break;
-case TYPE_CHAR:
+case CHAR:
 out.writeChar((Character)obj);
 break;
-case TYPE_BOOLEAN:
+case BOOLEAN:
 out.writeBoolean((Boolean)obj);
 break;
-case TYPE_BYTE_ARR:
+case BYTE_ARR:
 out.writeByteArray((byte[])obj);
 break;
-case TYPE_SHORT_ARR:
+case SHORT_ARR:
 out.writeShortArray((short[])obj);
 break;
-case TYPE_INT_ARR:
+case INT_ARR:
 out.writeIntArray((int[])obj);
 break;
-case TYPE_LONG_ARR:
+case LONG_ARR:
 out.writeLongArray((long[])obj);
 break;
-case TYPE_FLOAT_ARR:
+case FLOAT_ARR:
 out.writeFloatArray((float[])obj);
 break;
-case TYPE_DOUBLE_ARR:
+case DOUBLE_ARR:
 out.writeDoubleArray((double[])obj);
 break;
-case TYPE_CHAR_ARR:
+case CHAR_ARR:
 out.writeCharArray((char[])obj);
 break;
-case TYPE_BOOLEAN_ARR:
+case BOOLEAN_ARR:
 out.writeBooleanArray((boolean[])obj);
 break;
-case TYPE_OBJ_ARR:
+case OBJ_ARR:
+OptimizedClassDescriptor compDesc=classDescriptor(clsMap,obj.getClass().getComponentType(),ctx,mapper);
+compDesc.writeTypeData(out);
 out.writeArray((Object[])obj);
 break;
-case TYPE_STR:
+case STR:
 out.writeString((String)obj);
 break;
-case TYPE_ENUM:
-out.writeInt(((Enum)obj).ordinal());
-break;
-case TYPE_UUID:
+case UUID:
 out.writeUuid((UUID)obj);
 break;
-case TYPE_PROPS:
+case PROPS:
 out.writeProperties((Properties)obj,dfltsFieldOff);
 break;
-case TYPE_ARRAY_LIST:
+case ARRAY_LIST:
 out.writeArrayList((ArrayList<?>)obj);
 break;
-case TYPE_HASH_MAP:
+case HASH_MAP:
 out.writeHashMap((HashMap<?,?>)obj,loadFactorFieldOff,false);
 break;
-case TYPE_HASH_SET:
-out.writeHashSet((HashSet<?>)obj,mapFieldOff,loadFactorFieldOff);
+case HASH_SET:
+out.writeHashSet((HashSet<?>)obj,HASH_SET_MAP_OFF,loadFactorFieldOff);
 break;
-case TYPE_LINKED_LIST:
+case LINKED_LIST:
 out.writeLinkedList((LinkedList<?>)obj);
 break;
-case TYPE_LINKED_HASH_MAP:
+case LINKED_HASH_MAP:
 out.writeLinkedHashMap((LinkedHashMap<?,?>)obj,loadFactorFieldOff,accessOrderFieldOff,false);
 break;
-case TYPE_LINKED_HASH_SET:
-out.writeLinkedHashSet((LinkedHashSet<?>)obj,mapFieldOff,loadFactorFieldOff);
+case LINKED_HASH_SET:
+out.writeLinkedHashSet((LinkedHashSet<?>)obj,HASH_SET_MAP_OFF,loadFactorFieldOff);
 break;
-case TYPE_DATE:
+case DATE:
 out.writeDate((Date)obj);
 break;
-case TYPE_CLS:
-OptimizedClassResolver.writeClass(out,OptimizedMarshallerUtils.classDescriptor((Class<?>)obj,obj));
+case CLS:
+OptimizedClassDescriptor clsDesc=classDescriptor(clsMap,(Class<?>)obj,ctx,mapper);
+clsDesc.writeTypeData(out);
 break;
-case TYPE_EXTERNALIZABLE:
+case ENUM:
+writeTypeData(out);
+out.writeInt(((Enum)obj).ordinal());
+break;
+case EXTERNALIZABLE:
+writeTypeData(out);
+out.writeShort(checksum);
 out.writeExternalizable(obj);
 break;
-case TYPE_SERIALIZABLE:
+case SERIALIZABLE:
 if (out.requireSerializable() && !isSerial) throw new NotSerializableException("Must implement java.io.Serializable or " + "set OptimizedMarshaller.setRequireSerializable() to false " + "(note that performance may degrade if object is not Serializable): "+ name);
+writeTypeData(out);
+out.writeShort(checksum);
 out.writeSerializable(obj,writeObjMtds,fields);
 break;
 default :

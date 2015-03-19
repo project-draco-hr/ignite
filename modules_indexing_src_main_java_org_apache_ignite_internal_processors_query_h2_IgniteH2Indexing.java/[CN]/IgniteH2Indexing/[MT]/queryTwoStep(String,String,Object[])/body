@@ -1,6 +1,26 @@
 {
   Connection c=connectionForSpace(space);
-  GridCacheTwoStepQuery twoStepQry=GridSqlQuerySplitter.split(c,sqlQry,params);
+  PreparedStatement stmt;
+  try {
+    stmt=c.prepareStatement(sqlQry);
+  }
+ catch (  SQLException e) {
+    throw new CacheException("Failed to parse query: " + sqlQry,e);
+  }
+  GridCacheTwoStepQuery twoStepQry;
+  Collection<GridQueryFieldMetadata> meta;
+  try {
+    twoStepQry=GridSqlQuerySplitter.split((JdbcPreparedStatement)stmt,params);
+    meta=meta(stmt.getMetaData());
+  }
+ catch (  SQLException e) {
+    throw new CacheException(e);
+  }
+ finally {
+    U.close(stmt,log);
+  }
   if (log.isDebugEnabled())   log.debug("Parsed query: `" + sqlQry + "` into two step query: "+ twoStepQry);
-  return queryTwoStep(space,twoStepQry);
+  QueryCursorImpl<List<?>> cursor=(QueryCursorImpl<List<?>>)queryTwoStep(space,twoStepQry);
+  cursor.fieldsMeta(meta);
+  return cursor;
 }
