@@ -1,17 +1,42 @@
 {
   if (uri == null)   uri=getDefaultURI();
   if (clsLdr == null)   clsLdr=getDefaultClassLoader();
+  GridFutureAdapter<CacheManager> fut;
+  boolean needStartMgr=false;
+  Map<URI,GridFutureAdapter<CacheManager>> uriMap;
 synchronized (cacheManagers) {
-    Map<URI,CacheManager> uriMap=cacheManagers.get(clsLdr);
+    uriMap=cacheManagers.get(clsLdr);
     if (uriMap == null) {
       uriMap=new HashMap<>();
       cacheManagers.put(clsLdr,uriMap);
     }
-    CacheManager mgr=uriMap.get(uri);
-    if (mgr == null || mgr.isClosed()) {
-      mgr=new CacheManager(uri,this,clsLdr,props);
-      uriMap.put(uri,mgr);
+    fut=uriMap.get(uri);
+    if (fut == null) {
+      needStartMgr=true;
+      fut=new GridFutureAdapter<>();
+      uriMap.put(uri,fut);
     }
-    return mgr;
+  }
+  if (needStartMgr) {
+    try {
+      CacheManager mgr=new CacheManager(uri,this,clsLdr,props);
+      fut.onDone(mgr);
+      return mgr;
+    }
+ catch (    Throwable e) {
+synchronized (cacheManagers) {
+        uriMap.remove(uri);
+      }
+      fut.onDone(e);
+      throw CU.convertToCacheException(U.cast(e));
+    }
+  }
+ else {
+    try {
+      return fut.get();
+    }
+ catch (    IgniteCheckedException e) {
+      throw CU.convertToCacheException(e);
+    }
   }
 }

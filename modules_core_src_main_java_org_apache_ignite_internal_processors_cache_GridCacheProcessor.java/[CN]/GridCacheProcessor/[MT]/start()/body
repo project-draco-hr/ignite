@@ -1,2 +1,50 @@
 {
+  if (ctx.config().isDaemon())   return;
+  DeploymentMode depMode=ctx.config().getDeploymentMode();
+  if (!F.isEmpty(ctx.config().getCacheConfiguration())) {
+    if (depMode != CONTINUOUS && depMode != SHARED)     U.warn(log,"Deployment mode for cache is not CONTINUOUS or SHARED " + "(it is recommended that you change deployment mode and restart): " + depMode,"Deployment mode for cache is not CONTINUOUS or SHARED.");
+  }
+  maxRebalanceOrder=validatePreloadOrder(ctx.config().getCacheConfiguration());
+  ctx.discovery().setCustomEventListener(new GridPlainInClosure<Serializable>(){
+    @Override public void apply(    Serializable evt){
+      if (evt instanceof DynamicCacheChangeBatch)       onCacheChangeRequested((DynamicCacheChangeBatch)evt);
+    }
+  }
+);
+  FileSystemConfiguration[] igfsCfgs=ctx.grid().configuration().getFileSystemConfiguration();
+  if (igfsCfgs != null) {
+    for (    FileSystemConfiguration igfsCfg : igfsCfgs) {
+      sysCaches.add(igfsCfg.getMetaCacheName());
+      sysCaches.add(igfsCfg.getDataCacheName());
+    }
+  }
+  if (IgniteComponentType.HADOOP.inClassPath())   sysCaches.add(CU.SYS_CACHE_HADOOP_MR);
+  sysCaches.add(CU.MARSH_CACHE_NAME);
+  sysCaches.add(CU.UTILITY_CACHE_NAME);
+  sysCaches.add(CU.ATOMICS_CACHE_NAME);
+  CacheConfiguration[] cfgs=ctx.config().getCacheConfiguration();
+  sharedCtx=createSharedContext(ctx);
+  ctx.performance().add("Disable serializable transactions (set 'txSerializableEnabled' to false)",!ctx.config().getTransactionConfiguration().isTxSerializableEnabled());
+  for (int i=0; i < cfgs.length; i++) {
+    CacheConfiguration<?,?> cfg=new CacheConfiguration(cfgs[i]);
+    CacheObjectContext cacheObjCtx=ctx.cacheObjects().contextForCache(null,cfg.getName(),cfg);
+    initialize(cfg,cacheObjCtx);
+    cfgs[i]=cfg;
+    String masked=maskNull(cfg.getName());
+    if (registeredCaches.containsKey(masked)) {
+      String cacheName=cfg.getName();
+      if (cacheName != null)       throw new IgniteCheckedException("Duplicate cache name found (check configuration and " + "assign unique name to each cache): " + cacheName);
+ else       throw new IgniteCheckedException("Default cache has already been configured (check configuration and " + "assign unique name to each cache).");
+    }
+    DynamicCacheDescriptor desc=new DynamicCacheDescriptor(cfg,IgniteUuid.randomUuid());
+    desc.locallyConfigured(true);
+    desc.staticallyConfigured(true);
+    registeredCaches.put(masked,desc);
+    ctx.discovery().setCacheFilter(cfg.getName(),cfg.getNodeFilter(),cfg.getNearConfiguration() != null,cfg.getCacheMode() == LOCAL);
+    if (sysCaches.contains(cfg.getName()))     stopSeq.addLast(cfg.getName());
+ else     stopSeq.addFirst(cfg.getName());
+  }
+  for (  GridCacheSharedManager mgr : sharedCtx.managers())   mgr.start(sharedCtx);
+  transactions=new IgniteTransactionsImpl(sharedCtx);
+  if (log.isDebugEnabled())   log.debug("Started cache processor.");
 }

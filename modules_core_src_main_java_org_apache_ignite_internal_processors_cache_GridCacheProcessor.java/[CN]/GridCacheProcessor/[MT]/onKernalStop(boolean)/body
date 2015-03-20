@@ -1,22 +1,11 @@
 {
   if (ctx.config().isDaemon())   return;
-  for (  GridCacheAdapter<?,?> cache : stopSeq) {
-    GridCacheContext ctx=cache.context();
-    if (isNearEnabled(ctx)) {
-      GridDhtCacheAdapter dht=ctx.near().dht();
-      if (dht != null) {
-        GridCacheContext<?,?> dhtCtx=dht.context();
-        for (        GridCacheManager mgr : dhtManagers(dhtCtx))         mgr.onKernalStop(cancel);
-        dht.onKernalStop();
-      }
-    }
-    List<GridCacheManager> mgrs=ctx.managers();
-    Collection<GridCacheManager> excludes=dhtExcludes(ctx);
-    for (ListIterator<GridCacheManager> it=mgrs.listIterator(mgrs.size()); it.hasPrevious(); ) {
-      GridCacheManager mgr=it.previous();
-      if (!excludes.contains(mgr))       mgr.onKernalStop(cancel);
-    }
-    cache.onKernalStop();
+  for (  String cacheName : stopSeq) {
+    GridCacheAdapter<?,?> cache=caches.get(maskNull(cacheName));
+    if (cache != null)     onKernalStop(cache,cancel);
+  }
+  for (  Map.Entry<String,GridCacheAdapter<?,?>> entry : caches.entrySet()) {
+    if (!stopSeq.contains(entry.getKey()))     onKernalStop(entry.getValue(),cancel);
   }
   List<? extends GridCacheSharedManager<?,?>> sharedMgrs=sharedCtx.managers();
   for (ListIterator<? extends GridCacheSharedManager<?,?>> it=sharedMgrs.listIterator(sharedMgrs.size()); it.hasPrevious(); ) {

@@ -1,0 +1,26 @@
+{
+  startGrids(3);
+  try {
+    hasCache=true;
+    startGrid(3);
+    for (int i=0; i < 4; i++) {
+      info("Checking ignite: " + i);
+      Ignite ignite=ignite(i);
+      IgniteCache<Object,Object> jcache=ignite.jcache(CACHE_NAME);
+      assertNotNull(jcache);
+      jcache.put(i,i);
+    }
+    hasCache=false;
+    startGrid(4);
+    for (int i=0; i < 5; i++) {
+      info("Checking ignite: " + i);
+      Ignite ignite=ignite(i);
+      IgniteCache<Object,Object> jcache=ignite.jcache(CACHE_NAME);
+      assertNotNull(jcache);
+      if (i != 4)       assertEquals(i,jcache.get(i));
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

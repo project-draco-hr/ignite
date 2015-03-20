@@ -1,0 +1,34 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  CacheConfiguration ccfgLoc=new CacheConfiguration();
+  ccfgLoc.setName(CACHE_LOCAL);
+  ccfgLoc.setCacheMode(LOCAL);
+  ccfgLoc.setWriteSynchronizationMode(FULL_SYNC);
+  ccfgLoc.setAtomicityMode(TRANSACTIONAL);
+  CacheConfiguration ccfgPartitioned=new CacheConfiguration();
+  ccfgPartitioned.setName(CACHE_PARTITIONED);
+  ccfgPartitioned.setCacheMode(PARTITIONED);
+  ccfgPartitioned.setBackups(1);
+  ccfgPartitioned.setWriteSynchronizationMode(FULL_SYNC);
+  NearCacheConfiguration nearCfg=new NearCacheConfiguration();
+  nearCfg.setName(CACHE_PARTITIONED);
+  ccfgPartitioned.setNearConfiguration(nearCfg);
+  ccfgPartitioned.setNodeFilter(new AttributeFilter(getTestGridName(0)));
+  ccfgPartitioned.setAtomicityMode(TRANSACTIONAL);
+  CacheConfiguration ccfgColocated=new CacheConfiguration();
+  ccfgColocated.setName(CACHE_COLOCATED);
+  ccfgColocated.setCacheMode(PARTITIONED);
+  ccfgColocated.setBackups(1);
+  ccfgColocated.setWriteSynchronizationMode(FULL_SYNC);
+  ccfgColocated.setAtomicityMode(TRANSACTIONAL);
+  CacheConfiguration ccfgReplicated=new CacheConfiguration();
+  ccfgReplicated.setName(CACHE_REPLICATED);
+  ccfgReplicated.setCacheMode(REPLICATED);
+  ccfgReplicated.setWriteSynchronizationMode(FULL_SYNC);
+  ccfgReplicated.setAtomicityMode(TRANSACTIONAL);
+  cfg.setCacheConfiguration(ccfgLoc,ccfgPartitioned,ccfgColocated,ccfgReplicated);
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setIpFinder(IP_FINDER);
+  cfg.setDiscoverySpi(discoSpi);
+  return cfg;
+}

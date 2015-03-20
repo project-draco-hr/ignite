@@ -1,0 +1,19 @@
+{
+  A.notNull(cacheCfg,"cacheCfg");
+  guard();
+  try {
+    try {
+      ctx.cache().dynamicStartCache(cacheCfg,null).get();
+    }
+ catch (    IgniteCheckedException e) {
+      if (!e.hasCause(IgniteCacheExistsException.class))       throw e;
+    }
+    return ctx.cache().publicJCache(cacheCfg.getName());
+  }
+ catch (  IgniteCheckedException e) {
+    throw CU.convertToCacheException(e);
+  }
+ finally {
+    unguard();
+  }
+}

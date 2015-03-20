@@ -1,0 +1,13 @@
+{
+  Class<?>[] itfs=Arrays.copyOf(itfClses,itfClses.length + 3);
+  itfs[itfClses.length]=itfCls;
+  itfs[itfClses.length + 1]=Serializable.class;
+  itfs[itfClses.length + 2]=WriteReplaceOwner.class;
+  return (T)Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),itfs,new InvocationHandler(){
+    @Override public Object invoke(    Object proxy,    Method mtd,    Object[] args) throws Throwable {
+      if ("writeReplace".equals(mtd.getName()) && mtd.getParameterTypes().length == 0)       return supressSerialization(proxy);
+      return mtd.invoke(obj,args);
+    }
+  }
+);
+}

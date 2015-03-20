@@ -1,11 +1,11 @@
 {
-  UsersClassLoader testClassLdr=new UsersClassLoader();
+  UsersClassLoader testClassLdr=(UsersClassLoader)grid(0).configuration().getClassLoader();
   Object val=testClassLdr.loadClass(TEST_VALUE).newInstance();
   IgniteCache<Object,Object> jcache=grid(0).jcache(null);
   for (int i=0; i < ITER_CNT; i++)   jcache.put(i,val);
   for (int i=0; i < ITER_CNT; i++) {
     int idx=i % gridCount();
-    if (idx == 0)     assertTrue(grid(0).configuration().getClassLoader() == jcache.get(i).getClass().getClassLoader() || jcache.get(i).getClass().getClassLoader() == testClassLdr);
- else     assertEquals(grid(idx).jcache(null).get(i).getClass().getClassLoader(),grid(idx).configuration().getClassLoader());
+    if (idx == 0)     assertEquals(testClassLdr,jcache.get(i).getClass().getClassLoader());
+ else     assertEquals(grid(idx).configuration().getClassLoader(),grid(idx).jcache(null).get(i).getClass().getClassLoader());
   }
 }
