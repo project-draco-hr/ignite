@@ -1,6 +1,14 @@
 {
+  boolean rmv=false;
   try {
-    if (obsoleteOrDeleted() || (filter != CU.empty0() && !cctx.isAll(this,filter)))     return false;
+synchronized (this) {
+      if (obsoleteOrDeleted())       return false;
+      if (checkExpired()) {
+        rmv=markObsolete0(cctx.versions().next(this.ver),true);
+        return false;
+      }
+    }
+    if (filter != CU.empty0() && !cctx.isAll(this,filter))     return false;
   }
  catch (  IgniteCheckedException e) {
     U.error(log,"An exception was thrown while filter checking.",e);
@@ -9,6 +17,12 @@
     Error err=e.getCause(Error.class);
     if (err != null)     throw err;
     return false;
+  }
+ finally {
+    if (rmv) {
+      onMarkedObsolete();
+      cctx.cache().map().removeEntry(this);
+    }
   }
   IgniteInternalTx tx=cctx.tm().localTxx();
   return tx == null || !tx.removed(txKey());

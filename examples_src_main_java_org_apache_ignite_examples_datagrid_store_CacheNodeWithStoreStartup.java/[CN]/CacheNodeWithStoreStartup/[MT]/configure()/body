@@ -7,23 +7,29 @@
   discoSpi.setIpFinder(ipFinder);
   CacheConfiguration<Long,Person> cacheCfg=new CacheConfiguration<>();
   cacheCfg.setAtomicityMode(TRANSACTIONAL);
-  CacheStore<Long,Person> store;
+  cacheCfg.setCacheStoreFactory(new Factory<CacheStore<? super Long,? super Person>>(){
+    @Override public CacheStore<? super Long,? super Person> create(){
+      CacheStore<Long,Person> store;
 switch (STORE) {
 case DUMMY:
-    store=new CacheDummyPersonStore();
-  break;
+        store=new CacheDummyPersonStore();
+      break;
 case SIMPLE_JDBC:
-store=new CacheJdbcPersonStore();
-break;
+    store=new CacheJdbcPersonStore();
+  break;
 case HIBERNATE:
 store=new CacheHibernatePersonStore();
 break;
 default :
+if (!STORE.equals(AUTO)) throw new IllegalStateException("Unexpected store configured: " + STORE);
 store=new CacheJdbcPojoPersonStore();
-cacheCfg.setTypeMetadata(typeMetadata());
 break;
 }
-cacheCfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory<>(store));
+return store;
+}
+}
+);
+if (STORE.equals(AUTO)) cacheCfg.setTypeMetadata(typeMetadata());
 cacheCfg.setReadThrough(true);
 cacheCfg.setWriteThrough(true);
 cfg.setDiscoverySpi(discoSpi);
