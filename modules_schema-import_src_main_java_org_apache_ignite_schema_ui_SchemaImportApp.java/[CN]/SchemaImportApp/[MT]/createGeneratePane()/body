@@ -16,7 +16,7 @@
 );
   TableColumn<PojoDescriptor,String> valClsCol=textColumn("Value Class Name","valueClassName","Value class name",new TextColumnValidator<PojoDescriptor>(){
     @Override public boolean valid(    PojoDescriptor rowVal,    String newVal){
-      boolean valid=checkClassName(rowVal,newVal,true);
+      boolean valid=checkClassName(rowVal,newVal,false);
       if (valid)       rowVal.valueClassName(newVal);
       return valid;
     }
@@ -32,6 +32,10 @@
   TableColumn<PojoField,String> dbTypeNameCol=tableColumn("DB Type","dbTypeName","Field type in database");
   TableColumn<PojoField,String> javaNameCol=textColumn("Java Name","javaName","Field name in POJO class",new TextColumnValidator<PojoField>(){
     @Override public boolean valid(    PojoField rowVal,    String newVal){
+      if (newVal.trim().isEmpty()) {
+        MessageBox.warningDialog(owner,"Java name must be non empty!");
+        return false;
+      }
       for (      PojoField field : curPojo.fields())       if (rowVal != field && newVal.equals(field.javaName())) {
         MessageBox.warningDialog(owner,"Java name must be unique!");
         return false;
