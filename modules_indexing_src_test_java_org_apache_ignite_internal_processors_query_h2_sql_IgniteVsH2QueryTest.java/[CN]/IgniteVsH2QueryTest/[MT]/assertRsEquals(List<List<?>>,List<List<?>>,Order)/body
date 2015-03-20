@@ -10,7 +10,15 @@ case ORDERED:
     }
   break;
 case RANDOM:
-for (List<?> row1 : rs1) assertTrue("Actual result set has to contain row.\n" + "Result set=" + rs2 + "\n"+ "Row="+ row1,rs2.contains(row1));
+Map<List<?>,Integer> rowsWithCnt1=extractUniqueueRowsWithCounts(rs1);
+Map<List<?>,Integer> rowsWithCnt2=extractUniqueueRowsWithCounts(rs2);
+assertEquals("Uniqueue rows count has to be equal.",rowsWithCnt1.size(),rowsWithCnt2.size());
+for (Map.Entry<List<?>,Integer> entry1 : rowsWithCnt1.entrySet()) {
+List<?> row=entry1.getKey();
+Integer cnt1=entry1.getValue();
+Integer cnt2=rowsWithCnt2.get(row);
+assertEquals("Row has different occurance number.\nRow=" + row,cnt1,cnt2);
+}
 break;
 default :
 throw new IllegalStateException();
