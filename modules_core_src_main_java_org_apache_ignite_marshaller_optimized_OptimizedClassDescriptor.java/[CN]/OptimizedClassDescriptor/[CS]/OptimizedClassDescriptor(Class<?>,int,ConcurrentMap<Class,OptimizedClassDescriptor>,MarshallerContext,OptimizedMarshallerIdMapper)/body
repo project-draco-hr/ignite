@@ -152,10 +152,7 @@
         isSerial=Serializable.class.isAssignableFrom(cls);
         writeObjMtds=new ArrayList<>();
         readObjMtds=new ArrayList<>();
-        List<List<Field>> fields=new ArrayList<>();
-        List<List<T2<OptimizedFieldType,Long>>> fieldOffs=new ArrayList<>();
-        List<Map<String,IgniteBiTuple<Integer,OptimizedFieldType>>> fieldInfoMaps=new ArrayList<>();
-        List<List<IgniteBiTuple<Integer,OptimizedFieldType>>> fieldInfoLists=new ArrayList<>();
+        List<ClassFields> fields=new ArrayList<>();
         for (c=cls; c != null && !c.equals(Object.class); c=c.getSuperclass()) {
           Method mtd;
           try {
@@ -179,36 +176,28 @@
           }
           readObjMtds.add(mtd);
           Field[] clsFields0=c.getDeclaredFields();
-          Arrays.sort(clsFields0,new Comparator<Field>(){
-            @Override public int compare(            Field f1,            Field f2){
-              return f1.getName().compareTo(f2.getName());
-            }
-          }
-);
-          List<Field> clsFields=new ArrayList<>(clsFields0.length);
-          List<T2<OptimizedFieldType,Long>> clsFieldOffs=new ArrayList<>(clsFields0.length);
-          for (int i=0; i < clsFields0.length; i++) {
-            Field f=clsFields0[i];
-            int mod=f.getModifiers();
-            if (!isStatic(mod) && !isTransient(mod)) {
-              OptimizedFieldType type=fieldType(f.getType());
-              clsFields.add(f);
-              clsFieldOffs.add(new T2<>(type,UNSAFE.objectFieldOffset(f)));
-            }
-          }
-          fields.add(clsFields);
-          fieldOffs.add(clsFieldOffs);
-          Map<String,IgniteBiTuple<Integer,OptimizedFieldType>> fieldInfoMap=null;
+          Map<String,Field> fieldNames=new HashMap<>();
+          for (          Field f : clsFields0)           fieldNames.put(f.getName(),f);
+          List<FieldInfo> clsFields=new ArrayList<>(clsFields0.length);
+          boolean hasSerialPersistentFields=false;
           try {
             Field serFieldsDesc=c.getDeclaredField("serialPersistentFields");
             int mod=serFieldsDesc.getModifiers();
             if (serFieldsDesc.getType() == ObjectStreamField[].class && isPrivate(mod) && isStatic(mod) && isFinal(mod)) {
+              hasSerialPersistentFields=true;
               serFieldsDesc.setAccessible(true);
               ObjectStreamField[] serFields=(ObjectStreamField[])serFieldsDesc.get(null);
-              fieldInfoMap=new HashMap<>();
               for (int i=0; i < serFields.length; i++) {
                 ObjectStreamField serField=serFields[i];
-                fieldInfoMap.put(serField.getName(),F.t(i,fieldType(serField.getType())));
+                FieldInfo fieldInfo;
+                if (!fieldNames.containsKey(serField.getName())) {
+                  fieldInfo=new FieldInfo(null,serField.getName(),-1,fieldType(serField.getType()));
+                }
+ else {
+                  Field f=fieldNames.get(serField.getName());
+                  fieldInfo=new FieldInfo(f,serField.getName(),UNSAFE.objectFieldOffset(f),fieldType(serField.getType()));
+                }
+                clsFields.add(fieldInfo);
               }
             }
           }
@@ -217,30 +206,28 @@
 catch (          IllegalAccessException e) {
             throw new IOException("Failed to get value of 'serialPersistentFields' field in class: " + cls.getName(),e);
           }
-          if (fieldInfoMap == null) {
-            fieldInfoMap=new HashMap<>();
-            for (int i=0; i < clsFields.size(); i++) {
-              Field f=clsFields.get(i);
-              fieldInfoMap.put(f.getName(),F.t(i,fieldType(f.getType())));
+          if (!hasSerialPersistentFields) {
+            for (int i=0; i < clsFields0.length; i++) {
+              Field f=clsFields0[i];
+              int mod=f.getModifiers();
+              if (!isStatic(mod) && !isTransient(mod)) {
+                FieldInfo fieldInfo=new FieldInfo(f,f.getName(),UNSAFE.objectFieldOffset(f),fieldType(f.getType()));
+                clsFields.add(fieldInfo);
+              }
             }
           }
-          fieldInfoMaps.add(fieldInfoMap);
-          List<IgniteBiTuple<Integer,OptimizedFieldType>> fieldInfoList=new ArrayList<>(fieldInfoMap.values());
-          Collections.sort(fieldInfoList,new Comparator<IgniteBiTuple<Integer,OptimizedFieldType>>(){
-            @Override public int compare(            IgniteBiTuple<Integer,OptimizedFieldType> t1,            IgniteBiTuple<Integer,OptimizedFieldType> t2){
-              return t1.get1().compareTo(t2.get1());
+          Collections.sort(clsFields,new Comparator<FieldInfo>(){
+            @Override public int compare(            FieldInfo t1,            FieldInfo t2){
+              return t1.name().compareTo(t2.name());
             }
           }
 );
-          fieldInfoLists.add(fieldInfoList);
+          fields.add(new ClassFields(clsFields));
         }
         Collections.reverse(writeObjMtds);
         Collections.reverse(readObjMtds);
         Collections.reverse(fields);
-        Collections.reverse(fieldOffs);
-        Collections.reverse(fieldInfoMaps);
-        Collections.reverse(fieldInfoLists);
-        this.fields=new Fields(fields,fieldOffs,fieldInfoLists,fieldInfoMaps);
+        this.fields=new Fields(fields);
       }
     }
   }
