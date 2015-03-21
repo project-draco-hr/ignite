@@ -2,13 +2,15 @@
   this.uri=uri;
   this.cachingProvider=cachingProvider;
   this.clsLdr=clsLdr;
-  this.props=props;
+  this.props=props == null ? new Properties() : props;
   try {
     if (uri.equals(cachingProvider.getDefaultURI())) {
       IgniteConfiguration cfg=new IgniteConfiguration();
-      TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
-      discoSpi.setIpFinder(IP_FINDER);
-      cfg.setDiscoverySpi(discoSpi);
+      if (getBoolean(IGNITE_JCACHE_DEFAULT_ISOLATED,true)) {
+        TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+        discoSpi.setIpFinder(new TcpDiscoveryVmIpFinder(true));
+        cfg.setDiscoverySpi(discoSpi);
+      }
       cfg.setGridName("CacheManager_" + igniteCnt.getAndIncrement());
       ignite=(IgniteKernal)IgnitionEx.start(cfg);
     }
