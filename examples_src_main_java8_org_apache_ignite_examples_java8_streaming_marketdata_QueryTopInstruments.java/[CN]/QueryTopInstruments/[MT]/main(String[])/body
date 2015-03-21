@@ -1,0 +1,15 @@
+{
+  Ignition.setClientMode(true);
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    if (!ExamplesUtils.hasServerNodes(ignite))     return;
+    IgniteCache<String,Instrument> instCache=ignite.getOrCreateCache(CacheConfig.instrumentCache());
+    SqlFieldsQuery top3qry=new SqlFieldsQuery("select symbol, (latest - open) from Instrument order by (latest - open) desc limit 3");
+    while (true) {
+      List<List<?>> top3=instCache.query(top3qry).getAll();
+      List<?> row=top3.get(0);
+      if (row.get(0) != null)       System.out.println("Top Performing Instruments:");
+      ExamplesUtils.printQueryResults(top3);
+      Thread.sleep(5000);
+    }
+  }
+ }
