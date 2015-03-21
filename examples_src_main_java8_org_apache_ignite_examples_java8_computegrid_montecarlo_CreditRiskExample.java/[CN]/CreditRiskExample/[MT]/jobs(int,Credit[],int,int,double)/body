@@ -1,0 +1,18 @@
+{
+  int iterPerNode=Math.round(iter / (float)clusterSize);
+  int lastNodeIter=iter - (clusterSize - 1) * iterPerNode;
+  Collection<IgniteCallable<Double>> clos=new ArrayList<>(clusterSize);
+  for (int i=0; i < clusterSize; i++) {
+    final int nodeIter=i == clusterSize - 1 ? lastNodeIter : iterPerNode;
+    clos.add(new IgniteCallable<Double>(){
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public Double call(){
+        return new CreditRiskManager().calculateCreditRiskMonteCarlo(portfolio,horizon,nodeIter,percentile);
+      }
+    }
+);
+  }
+  return clos;
+}
