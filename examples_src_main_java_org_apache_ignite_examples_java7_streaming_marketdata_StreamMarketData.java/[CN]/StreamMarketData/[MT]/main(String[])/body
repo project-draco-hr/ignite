@@ -4,8 +4,8 @@
     if (!ExamplesUtils.hasServerNodes(ignite))     return;
     IgniteCache<String,MarketTick> mktCache=ignite.getOrCreateCache(CacheConfig.marketTicksCache());
     IgniteCache<String,Instrument> instCache=ignite.getOrCreateCache(CacheConfig.instrumentCache());
-    try (IgniteDataStreamer<String,MarketTick> stmr=ignite.dataStreamer(mktCache.getName())){
-      stmr.receiver(new StreamVisitor<>(new IgniteBiInClosure<IgniteCache<String,MarketTick>,Map.Entry<String,MarketTick>>(){
+    try (IgniteDataStreamer<String,MarketTick> mktStmr=ignite.dataStreamer(mktCache.getName())){
+      mktStmr.receiver(new StreamVisitor<>(new IgniteBiInClosure<IgniteCache<String,MarketTick>,Map.Entry<String,MarketTick>>(){
         @Override public void apply(        IgniteCache<String,MarketTick> mktCache,        Map.Entry<String,MarketTick> e){
           String symbol=e.getKey();
           MarketTick tick=e.getValue();
@@ -20,7 +20,7 @@
         for (int j=0; j < INSTRUMENTS.length; j++) {
           double price=round2(INITIAL_PRICES[j] + RAND.nextGaussian());
           MarketTick tick=new MarketTick(INSTRUMENTS[j],price);
-          stmr.addData(tick.symbol(),tick);
+          mktStmr.addData(tick.symbol(),tick);
         }
       }
     }
