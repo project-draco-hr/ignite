@@ -1,0 +1,14 @@
+{
+  CacheConfiguration<Integer,String> cacheCfg=new CacheConfiguration<>();
+  cacheCfg.setName(DYNAMIC_CACHE_NAME);
+  IgniteCache<Integer,String> c=grid().createCache(cacheCfg);
+  for (int i=0; i < 3; i++)   c.put(i,"value" + i);
+  assertEquals(3,c.size());
+  for (int i=0; i < 2; i++) {
+    dynamicSvc.cacheEvict(i);
+    dynamicSvc.cacheEvict(i);
+  }
+  assertEquals(4,dynamicSvc.called());
+  assertEquals(1,c.size());
+  assertEquals("value2",c.get(2));
+}
