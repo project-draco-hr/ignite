@@ -1,12 +1,16 @@
 {
   guard();
+  IgniteInternalFuture<?> stopFut;
   try {
-    ctx.cache().dynamicStopCache(cacheName).get();
+    stopFut=ctx.cache().dynamicStopCache(cacheName);
+  }
+  finally {
+    unguard();
+  }
+  try {
+    stopFut.get();
   }
  catch (  IgniteCheckedException e) {
     throw CU.convertToCacheException(e);
-  }
- finally {
-    unguard();
   }
 }
