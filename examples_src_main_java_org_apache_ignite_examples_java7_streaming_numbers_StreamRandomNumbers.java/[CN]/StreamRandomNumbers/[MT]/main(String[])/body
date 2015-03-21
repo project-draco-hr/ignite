@@ -1,0 +1,19 @@
+{
+  Ignition.setClientMode(true);
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    if (!ExamplesUtils.hasServerNodes(ignite))     return;
+    IgniteCache<Integer,Long> stmCache=ignite.getOrCreateCache(CacheConfig.randomNumbersCache());
+    try (IgniteDataStreamer<Integer,Long> stmr=ignite.dataStreamer(stmCache.getName())){
+      stmr.allowOverwrite(true);
+      stmr.receiver(new StreamTransformer<>(new CacheEntryProcessor<Integer,Long,Object>(){
+        @Override public Object process(        MutableEntry<Integer,Long> e,        Object... arg){
+          Long val=e.getValue();
+          e.setValue(val == null ? 1L : val + 1);
+          return null;
+        }
+      }
+));
+      while (true)       stmr.addData(RAND.nextInt(RANGE),1L);
+    }
+   }
+ }
