@@ -1,14 +1,17 @@
 {
   Ignition.setClientMode(true);
   try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
-    try (IgniteCache<Integer,Long> stmCache=ignite.getOrCreateCache(CacheConfig.configure())){
-      if (!ExamplesUtils.hasServerNodes(ignite))       return;
-      while (true) {
-        SqlFieldsQuery top10=new SqlFieldsQuery("select _key, _val from Long order by _val desc limit 10");
-        List<List<?>> results=stmCache.queryFields(top10).getAll();
-        ExamplesUtils.printQueryResults(results);
-        Thread.sleep(5000);
-      }
+    if (!ExamplesUtils.hasServerNodes(ignite))     return;
+    IgniteCache<Integer,Long> stmCache=ignite.getOrCreateCache(CacheConfig.configure());
+    SqlFieldsQuery top10Qry=new SqlFieldsQuery("select _key, _val from Long order by _val desc limit 10");
+    SqlFieldsQuery statsQry=new SqlFieldsQuery("select avg(_val), min(_val), max(_val) from Long");
+    while (true) {
+      List<List<?>> top10=stmCache.query(top10Qry).getAll();
+      List<List<?>> stats=stmCache.query(statsQry).getAll();
+      List<?> row=stats.get(0);
+      if (row.get(0) != null)       System.out.printf("Query results [avg=%.2f, min=%d, max=%d]%n",row.get(0),row.get(1),row.get(2));
+      ExamplesUtils.printQueryResults(top10);
+      Thread.sleep(5000);
     }
-   }
+  }
  }
