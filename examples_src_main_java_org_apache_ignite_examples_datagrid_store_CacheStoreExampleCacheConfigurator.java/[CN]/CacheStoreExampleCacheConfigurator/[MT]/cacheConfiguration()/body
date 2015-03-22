@@ -1,10 +1,4 @@
 {
-  IgniteConfiguration cfg=new IgniteConfiguration();
-  cfg.setLocalHost("127.0.0.1");
-  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
-  TcpDiscoveryVmIpFinder ipFinder=new TcpDiscoveryMulticastIpFinder();
-  ipFinder.setAddresses(Arrays.asList("127.0.0.1:47500..47509"));
-  discoSpi.setIpFinder(ipFinder);
   CacheConfiguration<Long,Person> cacheCfg=new CacheConfiguration<>();
   cacheCfg.setAtomicityMode(TRANSACTIONAL);
   cacheCfg.setCacheStoreFactory(new Factory<CacheStore<? super Long,? super Person>>(){
@@ -20,10 +14,11 @@ case SIMPLE_JDBC:
 case HIBERNATE:
 store=new CacheHibernatePersonStore();
 break;
-default :
-if (!STORE.equals(AUTO)) throw new IllegalStateException("Unexpected store configured: " + STORE);
+case AUTO:
 store=new CacheJdbcPojoPersonStore();
 break;
+default :
+throw new IllegalStateException("Unexpected store configured: " + STORE);
 }
 return store;
 }
@@ -32,7 +27,5 @@ return store;
 if (STORE.equals(AUTO)) cacheCfg.setTypeMetadata(typeMetadata());
 cacheCfg.setReadThrough(true);
 cacheCfg.setWriteThrough(true);
-cfg.setDiscoverySpi(discoSpi);
-cfg.setCacheConfiguration(cacheCfg);
-return cfg;
+return cacheCfg;
 }
