@@ -1,2 +1,21 @@
 {
+  for (  GridCacheAdapter<?,?> cache : caches.values()) {
+    GridCacheContext<?,?> cacheCtx=cache.context();
+    if (F.eq(cacheCtx.startTopologyVersion(),topVer)) {
+      cacheCtx.preloader().onInitialExchangeComplete(err);
+      String masked=maskNull(cacheCtx.name());
+      jCacheProxies.put(masked,new IgniteCacheProxy(cache.context(),cache,null,false));
+    }
+  }
+  if (!F.isEmpty(reqs) && err == null) {
+    for (    DynamicCacheChangeRequest req : reqs) {
+      String masked=maskNull(req.cacheName());
+      if (req.stop()) {
+        prepareCacheStop(req);
+        DynamicCacheDescriptor desc=registeredCaches.get(masked);
+        if (desc != null && desc.cancelled() && desc.deploymentId().equals(req.deploymentId()))         registeredCaches.remove(masked,desc);
+      }
+      completeStartFuture(req);
+    }
+  }
 }
