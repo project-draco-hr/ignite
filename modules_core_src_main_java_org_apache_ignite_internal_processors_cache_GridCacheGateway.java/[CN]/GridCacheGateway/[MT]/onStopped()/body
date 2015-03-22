@@ -1,10 +1,22 @@
 {
   stopped=true;
-  ctx.kernalContext().gateway().writeLock();
+  boolean interrupted=false;
+  while (true) {
+    if (rwLock.tryWriteLock())     break;
+ else {
+      try {
+        U.sleep(200);
+      }
+ catch (      IgniteInterruptedCheckedException ignore) {
+        interrupted=true;
+      }
+    }
+  }
+  if (interrupted)   Thread.currentThread().interrupt();
   try {
     stopped=true;
   }
   finally {
-    ctx.kernalContext().gateway().writeUnlock();
+    rwLock.writeUnlock();
   }
 }
