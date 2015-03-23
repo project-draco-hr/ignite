@@ -1,0 +1,24 @@
+{
+  ExamplesUtils.checkMinMemory(MIN_MEMORY);
+  initializeDatabase();
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    System.out.println();
+    System.out.println(">>> Cache auto store load data example started.");
+    CacheConfiguration<Long,Person> cacheCfg=CacheConfig.jdbcPojoStoreCache();
+    try (IgniteCache<Long,Person> cache=ignite.createCache(cacheCfg)){
+      System.out.println(">>> Load cache from database using custom script.");
+      System.out.println(">>> Cache size: " + cache.size());
+      long start=System.currentTimeMillis();
+      cache.loadCache(null,"java.lang.Long","select * from PERSON where id <= 3");
+      long end=System.currentTimeMillis();
+      System.out.println(">>> Loaded " + cache.size() + " keys with backups in "+ (end - start)+ "ms.");
+      System.out.println(">>> Load cache from database.");
+      cache.clear();
+      System.out.println(">>> Cache size: " + cache.size());
+      start=System.currentTimeMillis();
+      cache.loadCache(null);
+      end=System.currentTimeMillis();
+      System.out.println(">>> Loaded " + cache.size() + " keys with backups in "+ (end - start)+ "ms.");
+    }
+   }
+ }
