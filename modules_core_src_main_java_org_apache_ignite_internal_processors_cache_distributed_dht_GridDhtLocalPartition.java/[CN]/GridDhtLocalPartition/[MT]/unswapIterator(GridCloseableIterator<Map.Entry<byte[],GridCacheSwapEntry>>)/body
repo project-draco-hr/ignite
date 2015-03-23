@@ -3,7 +3,7 @@
   return new Iterator<GridDhtCacheEntry>(){
     /** 
  */
-    KeyCacheObject lastKey;
+    GridDhtCacheEntry lastEntry;
     @Override public boolean hasNext(){
       return it.hasNext();
     }
@@ -11,24 +11,16 @@
       Map.Entry<byte[],GridCacheSwapEntry> entry=it.next();
       byte[] keyBytes=entry.getKey();
       try {
-        lastKey=cctx.toCacheKeyObject(keyBytes);
-        GridDhtCacheEntry res=(GridDhtCacheEntry)cctx.cache().entryEx(lastKey,false);
-        res.unswap(true,true);
-        return res;
+        KeyCacheObject key=cctx.toCacheKeyObject(keyBytes);
+        lastEntry=(GridDhtCacheEntry)cctx.cache().entryEx(key,false);
+        return lastEntry;
       }
  catch (      IgniteCheckedException e) {
         throw new CacheException(e);
       }
     }
     @Override public void remove(){
-      if (lastKey == null)       throw new IllegalStateException();
-      map.remove(lastKey);
-      try {
-        cctx.swap().remove(lastKey);
-      }
- catch (      IgniteCheckedException e) {
-        U.error(log,"Failed to remove swap entry for key: " + lastKey);
-      }
+      map.remove(lastEntry.key(),lastEntry);
     }
   }
 ;
