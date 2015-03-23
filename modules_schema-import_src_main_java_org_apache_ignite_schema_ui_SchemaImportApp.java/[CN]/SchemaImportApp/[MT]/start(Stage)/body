@@ -3,9 +3,34 @@
   if (prefsFile.exists())   try (BufferedInputStream in=new BufferedInputStream(new FileInputStream(prefsFile))){
     prefs.load(in);
   }
- catch (  IOException ignore) {
+ catch (  IOException e) {
+    log.log(Level.SEVERE,"Failed to load preferences. Default preferences will be used",e);
   }
-  for (  String arg : getParameters().getRaw())   for (  String pref : PREFS)   overrideParam(pref,arg);
+  for (  String arg : getParameters().getRaw()) {
+    if (arg.startsWith(CUSTOM_PREFS)) {
+      String customPrefsFileName=arg.substring(CUSTOM_PREFS.length());
+      if (customPrefsFileName.isEmpty())       log.log(Level.WARNING,"Path to file with custom preferences is not specified.");
+ else {
+        File customPrefsFile=U.resolveIgnitePath(customPrefsFileName);
+        if (customPrefsFile == null)         log.log(Level.WARNING,"Failed to resolve path to file with custom preferences: " + customPrefsFile);
+ else {
+          Properties customPrefs=new Properties();
+          try (BufferedInputStream in=new BufferedInputStream(new FileInputStream(customPrefsFile))){
+            customPrefs.load(in);
+          }
+ catch (          IOException e) {
+            log.log(Level.SEVERE,"Failed to load custom preferences.",e);
+          }
+          String igniteHome=GridFilenameUtils.separatorsToUnix(U.getIgniteHome());
+          for (          Map.Entry<Object,Object> prop : customPrefs.entrySet()) {
+            String key=prop.getKey().toString();
+            String val=prop.getValue().toString().replaceAll("%IGNITE_HOME%",igniteHome);
+            prefs.setProperty(key,val);
+          }
+        }
+      }
+    }
+  }
   for (  Preset preset : presets) {
     String key="presets." + preset.pref + ".";
     preset.jar=getStringProp(key + "jar",preset.jar);
