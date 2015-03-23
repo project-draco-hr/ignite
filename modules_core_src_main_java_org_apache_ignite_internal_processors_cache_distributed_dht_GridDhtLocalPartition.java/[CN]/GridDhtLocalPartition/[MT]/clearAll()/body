@@ -2,19 +2,37 @@
   GridCacheVersion clearVer=cctx.versions().next();
   boolean swap=cctx.isSwapOrOffheapEnabled();
   boolean rec=cctx.events().isRecordable(EVT_CACHE_REBALANCE_OBJECT_UNLOADED);
-  for (Iterator<GridDhtCacheEntry> it=map.values().iterator(); it.hasNext(); ) {
-    GridDhtCacheEntry cached=it.next();
+  Iterator<GridDhtCacheEntry> it=map.values().iterator();
+  GridCloseableIterator<Map.Entry<byte[],GridCacheSwapEntry>> swapIt=null;
+  if (swap && GridQueryProcessor.isEnabled(cctx.config())) {
+    Iterator<GridDhtCacheEntry> unswapIt=null;
     try {
-      if (cached.clearInternal(clearVer,swap)) {
-        it.remove();
-        if (!cached.isInternal()) {
-          mapPubSize.decrement();
-          if (rec)           cctx.events().addEvent(cached.partition(),cached.key(),cctx.localNodeId(),(IgniteUuid)null,null,EVT_CACHE_REBALANCE_OBJECT_UNLOADED,null,false,cached.rawGet(),cached.hasValue(),null,null,null);
+      swapIt=cctx.swap().iterator(id);
+      unswapIt=unswapIterator(swapIt);
+    }
+ catch (    Exception e) {
+      U.error(log,"Failed to clear swap for evicted partition: " + this,e);
+    }
+    if (unswapIt != null)     it=F.concat(it,unswapIt);
+  }
+  try {
+    while (it.hasNext()) {
+      GridDhtCacheEntry cached=it.next();
+      try {
+        if (cached.clearInternal(clearVer,swap)) {
+          it.remove();
+          if (!cached.isInternal()) {
+            mapPubSize.decrement();
+            if (rec)             cctx.events().addEvent(cached.partition(),cached.key(),cctx.localNodeId(),(IgniteUuid)null,null,EVT_CACHE_REBALANCE_OBJECT_UNLOADED,null,false,cached.rawGet(),cached.hasValue(),null,null,null);
+          }
         }
       }
+ catch (      IgniteCheckedException e) {
+        U.error(log,"Failed to clear cache entry for evicted partition: " + cached,e);
+      }
     }
- catch (    IgniteCheckedException e) {
-      U.error(log,"Failed to clear cache entry for evicted partition: " + cached,e);
-    }
+  }
+  finally {
+    U.close(swapIt,log);
   }
 }
