@@ -1,0 +1,15 @@
+{
+  testAttribute=false;
+  try {
+    int clientNode=nodeCount() + 1;
+    startGrid(clientNode);
+    IgniteCache cache=ignite(clientNode).createCache("modules/spring/src/test/java/org/apache/ignite/internal/filtered-cache.xml","modules/core/src/test/config/cache.xml");
+    assertEquals(cache.getName(),CACHE_NAME);
+    IgniteCache clientCache1=ignite(clientNode).createNearCache(CACHE_NAME,"modules/core/src/test/config/cache.xml");
+    IgniteCache clientCache2=ignite(clientNode).getOrCreateNearCache(CACHE_NAME,"modules/core/src/test/config/cache.xml");
+    assertEquals(clientCache1,clientCache2);
+  }
+  finally {
+    stopGrid(nodeCount() + 1);
+  }
+}
