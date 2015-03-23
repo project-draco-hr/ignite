@@ -25,19 +25,27 @@
  * {@inheritDoc} 
  */
     @Override protected void succeeded(){
-      super.succeeded();
-      pojosTbl.setItems(pojos);
-      if (!pojos.isEmpty())       pojosTbl.getSelectionModel().clearAndSelect(0);
-      curTbl=pojosTbl;
-      pojosTbl.requestFocus();
-      unlockUI(connLayerPnl,connPnl,nextBtn);
-      hdrPane.setLeft(genIcon);
-      titleLb.setText("Generate XML And POJOs");
-      subTitleLb.setText(jdbcUrlTf.getText());
-      rootPane.setCenter(genLayerPnl);
-      prevBtn.setDisable(false);
-      nextBtn.setText("Generate");
-      tooltip(nextBtn,"Generate XML and POJO files");
+      try {
+        super.succeeded();
+        pojosTbl.setItems(pojos);
+        if (pojos.isEmpty()) {
+          MessageBox.warningDialog(owner,"No tables found in database. Recheck JDBC URL.\n" + "JDBC URL: " + jdbcUrl);
+          return;
+        }
+ else         pojosTbl.getSelectionModel().clearAndSelect(0);
+        curTbl=pojosTbl;
+        pojosTbl.requestFocus();
+        hdrPane.setLeft(genIcon);
+        titleLb.setText("Generate XML And POJOs");
+        subTitleLb.setText(jdbcUrlTf.getText());
+        rootPane.setCenter(genLayerPnl);
+        prevBtn.setDisable(false);
+        nextBtn.setText("Generate");
+        tooltip(nextBtn,"Generate XML and POJO files");
+      }
+  finally {
+        unlockUI(connLayerPnl,connPnl,nextBtn);
+      }
     }
     /** 
  * {@inheritDoc} 
