@@ -1,0 +1,12 @@
+{
+  ApplicationContext springCtx=applicationContext(cfgUrl);
+  Map<String,CacheConfiguration> cfgMap;
+  try {
+    cfgMap=springCtx.getBeansOfType(CacheConfiguration.class);
+  }
+ catch (  BeansException e) {
+    throw new IgniteCheckedException("Failed to instantiate bean [type=" + CacheConfiguration.class + ", err="+ e.getMessage()+ ']',e);
+  }
+  if (cfgMap == null || cfgMap.isEmpty())   throw new IgniteCheckedException("Failed to find cache configuration in: " + cfgUrl);
+  return F.t(cfgMap.values(),new GridSpringResourceContextImpl(springCtx));
+}

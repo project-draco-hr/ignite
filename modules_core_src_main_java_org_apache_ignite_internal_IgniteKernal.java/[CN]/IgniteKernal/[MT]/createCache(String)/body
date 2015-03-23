@@ -1,0 +1,13 @@
+{
+  if (springCfgPath == null) {
+    return createCache((CacheConfiguration)null);
+  }
+ else {
+    URL url=U.resolveSpringUrl(springCfgPath);
+    IgniteSpringProcessor spring=SPRING.create(false);
+    IgniteBiTuple<Collection<CacheConfiguration>,? extends GridSpringResourceContext> cfgMap=spring.loadCacheConfigurations(url);
+    if (cfgMap.size() != 1)     throw new IgniteCheckedException("File " + url.toString() + " should have one cache configuration");
+    for (    CacheConfiguration cfg : cfgMap.get1())     return createCache(cfg);
+  }
+  return null;
+}
