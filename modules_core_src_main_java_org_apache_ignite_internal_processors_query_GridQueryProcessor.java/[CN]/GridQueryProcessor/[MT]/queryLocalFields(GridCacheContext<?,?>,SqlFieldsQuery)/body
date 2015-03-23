@@ -1,0 +1,21 @@
+{
+  if (!busyLock.enterBusy())   throw new IllegalStateException("Failed to execute query (grid is stopping).");
+  try {
+    String space=cctx.name();
+    String sql=qry.getSql();
+    Object[] args=qry.getArgs();
+    GridQueryFieldsResult res=idx.queryFields(space,sql,F.asList(args),idx.backupFilter());
+    if (ctx.event().isRecordable(EVT_CACHE_QUERY_EXECUTED)) {
+      ctx.event().record(new CacheQueryExecutedEvent<>(ctx.discovery().localNode(),"SQL query executed.",EVT_CACHE_QUERY_EXECUTED,CacheQueryType.SQL,null,null,sql,null,null,args,null,null));
+    }
+    QueryCursorImpl<List<?>> cursor=new QueryCursorImpl<>(new GridQueryCacheObjectsIterator(res.iterator(),cctx,cctx.keepPortable()));
+    cursor.fieldsMeta(res.metaData());
+    return cursor;
+  }
+ catch (  IgniteCheckedException e) {
+    throw new CacheException(e);
+  }
+ finally {
+    busyLock.leaveBusy();
+  }
+}
