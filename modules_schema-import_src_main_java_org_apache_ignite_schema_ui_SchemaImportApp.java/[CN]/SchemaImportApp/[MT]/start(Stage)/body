@@ -21,12 +21,7 @@
  catch (        IOException e) {
           log.log(Level.SEVERE,"Failed to load custom preferences.",e);
         }
-        String igniteHome=GridFilenameUtils.separatorsToUnix(U.getIgniteHome());
-        for (        Map.Entry<Object,Object> prop : customPrefs.entrySet()) {
-          String key=prop.getKey().toString();
-          String val=prop.getValue().toString().replaceAll("%IGNITE_HOME%",igniteHome);
-          prefs.setProperty(key,val);
-        }
+        prefs.putAll(customPrefs);
       }
     }
   }
@@ -64,11 +59,11 @@
  else   primaryStage.centerOnScreen();
   String userHome=System.getProperty("user.home").replace('\\','/');
   rdbmsCb.getSelectionModel().select(getIntProp(PREF_JDBC_DB_PRESET,0));
-  jdbcDrvJarTf.setText(getStringProp(PREF_JDBC_DRIVER_JAR,"h2.jar"));
+  jdbcDrvJarTf.setText(resolveFilePath(PREF_JDBC_DRIVER_JAR,"h2.jar"));
   jdbcDrvClsTf.setText(getStringProp(PREF_JDBC_DRIVER_CLASS,"org.h2.Driver"));
   jdbcUrlTf.setText(getStringProp(PREF_JDBC_URL,"jdbc:h2:" + userHome + "/ignite-schema-import/db"));
   userTf.setText(getStringProp(PREF_JDBC_USER,"sa"));
-  outFolderTf.setText(getStringProp(PREF_OUT_FOLDER,userHome + "/ignite-schema-import/out"));
+  outFolderTf.setText(resolveFilePath(PREF_OUT_FOLDER,userHome + "/ignite-schema-import/out"));
   pkgTf.setText(getStringProp(PREF_POJO_PACKAGE,"org.apache.ignite"));
   pojoIncludeKeysCh.setSelected(getBoolProp(PREF_POJO_INCLUDE,true));
   pojoConstructorCh.setSelected(getBoolProp(PREF_POJO_CONSTRUCTOR,false));
