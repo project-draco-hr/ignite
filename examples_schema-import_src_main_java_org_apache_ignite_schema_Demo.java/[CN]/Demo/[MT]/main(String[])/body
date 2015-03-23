@@ -2,7 +2,12 @@
   System.out.println(">>> Start demo...");
   IgniteConfiguration cfg=new IgniteConfiguration();
   CacheConfiguration ccfg=new CacheConfiguration<>();
-  ccfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(CacheConfig.store()));
+  ccfg.setCacheStoreFactory(new Factory<CacheStore>(){
+    @Override public CacheStore create(){
+      return CacheConfig.store();
+    }
+  }
+);
   ccfg.setReadThrough(true);
   ccfg.setWriteThrough(true);
   ccfg.setWriteBehindEnabled(true);
@@ -10,7 +15,7 @@
   cfg.setCacheConfiguration(ccfg);
   try (Ignite ignite=Ignition.start(cfg)){
     IgniteCache<PersonKey,Person> cache=ignite.jcache(null);
-    cache.loadCache(null,"org.apache.ignite.examples.demo.PersonKey","select * from PERSON where ID = 3");
-    System.out.println(">>> Loaded Person: " + cache.get(new PersonKey(3)));
+    cache.loadCache(null,"org.apache.ignite.schema.PersonKey","select * from PERSON where ID <= 3");
+    for (    Cache.Entry<PersonKey,Person> aCache : cache)     System.out.println(">>> Loaded Person: " + aCache);
   }
  }
