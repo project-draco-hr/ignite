@@ -1,0 +1,29 @@
+{
+  String space=cctx.name();
+  String sqlQry=qry.getSql();
+  Connection c=connectionForSpace(space);
+  PreparedStatement stmt;
+  try {
+    stmt=c.prepareStatement(sqlQry);
+  }
+ catch (  SQLException e) {
+    throw new CacheException("Failed to parse query: " + sqlQry,e);
+  }
+  GridCacheTwoStepQuery twoStepQry;
+  Collection<GridQueryFieldMetadata> meta;
+  try {
+    twoStepQry=GridSqlQuerySplitter.split((JdbcPreparedStatement)stmt,qry.getArgs());
+    meta=meta(stmt.getMetaData());
+  }
+ catch (  SQLException e) {
+    throw new CacheException(e);
+  }
+ finally {
+    U.close(stmt,log);
+  }
+  if (log.isDebugEnabled())   log.debug("Parsed query: `" + sqlQry + "` into two step query: "+ twoStepQry);
+  twoStepQry.pageSize(qry.getPageSize());
+  QueryCursorImpl<List<?>> cursor=(QueryCursorImpl<List<?>>)queryTwoStep(cctx,twoStepQry);
+  cursor.fieldsMeta(meta);
+  return cursor;
+}

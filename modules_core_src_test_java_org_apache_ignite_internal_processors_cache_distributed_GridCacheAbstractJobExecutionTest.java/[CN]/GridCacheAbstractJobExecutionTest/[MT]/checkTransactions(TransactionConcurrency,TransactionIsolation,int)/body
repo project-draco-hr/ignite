@@ -5,6 +5,8 @@
   info("Grid 3: " + grid(3).localNode().id());
   Ignite ignite=grid(0);
   Collection<ComputeTaskFuture<?>> futs=new LinkedList<>();
+  final String key="TestKey";
+  info("Primary node for test key: " + grid(0).affinity(null).mapKeyToNode(key));
   IgniteCompute comp=ignite.compute().withAsync();
   for (int i=0; i < jobCnt; i++) {
     comp.apply(new CX1<Integer,Void>(){
@@ -12,10 +14,10 @@
       @Override public Void applyx(      final Integer i){
         IgniteCache<String,int[]> cache=ignite.jcache(null);
         try (Transaction tx=ignite.transactions().txStart(concur,isolation)){
-          int[] arr=cache.get("TestKey");
+          int[] arr=cache.get(key);
           if (arr == null)           arr=new int[jobCnt];
           arr[i]=1;
-          cache.put("TestKey",arr);
+          cache.put(key,arr);
           int c=cntr.getAndIncrement();
           if (c % 50 == 0)           X.println("Executing transaction [i=" + i + ", c="+ c+ ']');
           tx.commit();
@@ -31,12 +33,11 @@
     info("Running iteration: " + i);
     for (int g=0; g < GRID_CNT; g++) {
       info("Will check grid: " + g);
-      GridCacheEntryEx testEntry=((IgniteKernal)grid(i)).internalCache(null).peekEx("TestKey");
-      info("Entry: " + testEntry);
+      info("Value: " + grid(i).jcache(null).localPeek(key));
     }
     IgniteCache<String,int[]> c=grid(i).jcache(null);
     try (Transaction tx=grid(i).transactions().txStart(concur,isolation)){
-      int[] arr=c.get("TestKey");
+      int[] arr=c.get(key);
       assertNotNull(arr);
       assertEquals(jobCnt,arr.length);
       for (      int j : arr)       assertEquals(1,j);

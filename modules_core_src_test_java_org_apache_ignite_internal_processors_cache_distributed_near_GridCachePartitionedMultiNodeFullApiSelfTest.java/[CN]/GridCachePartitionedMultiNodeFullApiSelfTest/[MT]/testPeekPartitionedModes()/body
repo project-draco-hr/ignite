@@ -1,16 +1,20 @@
 {
   jcache().put("key",1);
   for (int i=0; i < gridCount(); i++) {
-    boolean nearEnabled=nearEnabled(jcache(i));
-    Integer nearPeekVal=nearEnabled ? 1 : null;
     IgniteCache<String,Integer> c=jcache(i);
-    if (c.unwrap(Ignite.class).affinity(null).isBackup(grid(i).localNode(),"key")) {
+    assertEquals((Integer)1,c.get("key"));
+    boolean nearEnabled=nearEnabled(c);
+    if (nearEnabled)     assertTrue(((IgniteKernal)ignite(i)).internalCache().context().isNear());
+    Integer nearPeekVal=nearEnabled ? 1 : null;
+    CacheAffinity<Object> aff=ignite(i).affinity(null);
+    info("Affinity nodes [nodes=" + F.nodeIds(aff.mapKeyToPrimaryAndBackups("key")) + ", locNode="+ ignite(i).cluster().localNode().id()+ ']');
+    if (aff.isBackup(grid(i).localNode(),"key")) {
       assertNull(c.localPeek("key",NEAR));
       assertEquals((Integer)1,c.localPeek("key",BACKUP));
     }
- else     if (!c.unwrap(Ignite.class).affinity(null).isPrimaryOrBackup(grid(i).localNode(),"key")) {
-      assertEquals((Integer)1,jcache(i).get("key"));
-      assertEquals(nearPeekVal,c.localPeek("key",NEAR));
+ else     if (!aff.isPrimaryOrBackup(grid(i).localNode(),"key")) {
+      assertEquals((Integer)1,c.get("key"));
+      assertEquals("Failed to validate near value for node: " + i,nearPeekVal,c.localPeek("key",NEAR));
       assertNull(c.localPeek("key",PRIMARY,BACKUP));
     }
   }

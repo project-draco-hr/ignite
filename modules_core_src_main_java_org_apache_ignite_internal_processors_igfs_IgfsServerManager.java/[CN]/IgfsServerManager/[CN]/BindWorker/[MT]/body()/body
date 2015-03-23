@@ -2,9 +2,9 @@
   kernalStartLatch.await();
   while (!isCancelled()) {
     Thread.sleep(REBIND_INTERVAL);
-    Iterator<IgniteBiTuple<Map<String,String>,Boolean>> it=bindCfgs.iterator();
+    Iterator<IgniteBiTuple<IgfsIpcEndpointConfiguration,Boolean>> it=bindCfgs.iterator();
     while (it.hasNext()) {
-      IgniteBiTuple<Map<String,String>,Boolean> cfg=it.next();
+      IgniteBiTuple<IgfsIpcEndpointConfiguration,Boolean> cfg=it.next();
       IgfsServer ipcSrv=new IgfsServer(igfsCtx,cfg.get1(),cfg.get2());
       try {
         ipcSrv.start();
@@ -13,7 +13,7 @@
         it.remove();
       }
  catch (      IgniteCheckedException e) {
-        if (GridWorker.log.isDebugEnabled())         GridWorker.log.debug("Failed to bind IGFS endpoint [cfg=" + cfg + ", err="+ e.getMessage()+ ']');
+        if (log.isDebugEnabled())         log.debug("Failed to bind IGFS endpoint [cfg=" + cfg + ", err="+ e.getMessage()+ ']');
       }
     }
     if (bindCfgs.isEmpty())     break;

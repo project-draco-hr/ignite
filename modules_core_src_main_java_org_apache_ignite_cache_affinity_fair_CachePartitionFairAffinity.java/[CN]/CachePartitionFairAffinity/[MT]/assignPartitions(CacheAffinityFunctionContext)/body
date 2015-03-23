@@ -2,12 +2,9 @@
   List<ClusterNode> topSnapshot=ctx.currentTopologySnapshot();
   if (topSnapshot.size() == 1) {
     ClusterNode primary=topSnapshot.get(0);
-    List<List<ClusterNode>> assignments=new ArrayList<>(parts);
-    for (int i=0; i < parts; i++)     assignments.add(Collections.singletonList(primary));
-    return assignments;
+    return Collections.nCopies(parts,Collections.singletonList(primary));
   }
-  IgniteBiTuple<List<List<ClusterNode>>,Map<UUID,PartitionSet>> cp=createCopy(ctx,topSnapshot);
-  List<List<ClusterNode>> assignment=cp.get1();
+  List<List<ClusterNode>> assignment=createCopy(ctx);
   int tiers=Math.min(ctx.backups() + 1,topSnapshot.size());
   Map<Integer,Queue<Integer>> pendingParts=new HashMap<>();
   FullAssignmentMap fullMap=new FullAssignmentMap(tiers,assignment,topSnapshot);

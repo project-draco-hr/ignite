@@ -1,7 +1,11 @@
 {
-  try (Ignite ignite=Ignition.start("examples/config/example-cache.xml")){
-    ignite.jcache(CACHE_NAME).clear();
-    putGet();
-    putAllGetAll();
-  }
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    CacheConfiguration<Integer,String> cfg=new CacheConfiguration<>();
+    cfg.setCacheMode(CacheMode.PARTITIONED);
+    cfg.setName(CACHE_NAME);
+    try (IgniteCache<Integer,String> cache=ignite.createCache(cfg)){
+      putGet(cache);
+      putAllGetAll(cache);
+    }
+   }
  }

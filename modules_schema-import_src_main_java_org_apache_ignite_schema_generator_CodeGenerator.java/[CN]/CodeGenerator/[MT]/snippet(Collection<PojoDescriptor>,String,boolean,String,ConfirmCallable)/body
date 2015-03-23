@@ -1,0 +1,55 @@
+{
+  File pkgFolder=new File(outFolder,pkg.replace('.',File.separatorChar));
+  File cacheConfig=new File(pkgFolder,"CacheConfig.java");
+  if (cacheConfig.exists()) {
+    MessageBox.Result choice=askOverwrite.confirm(cacheConfig.getName());
+    if (CANCEL == choice)     throw new IllegalStateException("Java snippet generation was canceled!");
+    if (NO == choice || NO_TO_ALL == choice)     return;
+  }
+  Collection<String> src=new ArrayList<>(256);
+  header(src,pkg,"org.apache.ignite.cache.*;org.apache.ignite.cache.store.*;" + "org.apache.ignite.cache.store.jdbc.*;;javax.sql.*;java.sql.Types;java.util.*;","CacheConfig","CacheConfig");
+  add1(src,"/** Configure cache store. */");
+  add1(src,"public static CacheStore store() {");
+  add2(src,"DataSource dataSource = null; // TODO create data source.");
+  add0(src,"");
+  add2(src,"CacheJdbcPojoStore store = new CacheJdbcPojoStore();");
+  add2(src,"store.setDataSource(dataSource);");
+  add0(src,"");
+  add2(src,"return store;");
+  add1(src,"}");
+  add0(src,"");
+  add1(src,"/** Configure cache types metadata. */");
+  add1(src,"public static Collection<CacheTypeMetadata> typeMetadata() {");
+  add2(src,"// Configure cache types. ");
+  add2(src,"Collection<CacheTypeMetadata> meta = new ArrayList<>();");
+  add0(src,"");
+  boolean first=true;
+  for (  PojoDescriptor pojo : pojos) {
+    String tbl=pojo.table();
+    add2(src,"// " + tbl + ".");
+    add2(src,(first ? "CacheTypeMetadata " : "") + "type = new CacheTypeMetadata();");
+    add2(src,"type.setDatabaseSchema(\"" + pojo.schema() + "\");");
+    add2(src,"type.setDatabaseTable(\"" + tbl + "\");");
+    add2(src,"type.setKeyType(\"" + pkg + "."+ pojo.keyClassName()+ "\");");
+    add2(src,"type.setValueType(\"" + pkg + "."+ pojo.valueClassName()+ "\");");
+    add0(src,"");
+    add2(src,"meta.add(type);");
+    add0(src,"");
+    add2(src,"// Key fields for " + tbl + ".");
+    add2(src,(first ? "Collection<CacheTypeFieldMetadata> " : "") + "keys = new ArrayList<>();");
+    addFields(src,"keys",pojo.keyFields());
+    add2(src,"type.setKeyFields(keys);");
+    add0(src,"");
+    add2(src,"// Value fields for " + tbl + ".");
+    add2(src,(first ? "Collection<CacheTypeFieldMetadata> " : "") + "vals = new ArrayList<>();");
+    addFields(src,"vals",pojo.valueFields(includeKeys));
+    add2(src,"type.setValueFields(vals);");
+    add0(src,"");
+    first=false;
+  }
+  add0(src,"");
+  add2(src,"return meta;");
+  add1(src,"}");
+  add0(src,"}");
+  write(src,cacheConfig);
+}

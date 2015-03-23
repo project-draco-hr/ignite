@@ -1,0 +1,79 @@
+{
+  owner=primaryStage;
+  if (prefsFile.exists())   try (BufferedInputStream in=new BufferedInputStream(new FileInputStream(prefsFile))){
+    prefs.load(in);
+  }
+ catch (  IOException e) {
+    log.log(Level.SEVERE,"Failed to load preferences. Default preferences will be used",e);
+  }
+  List<String> params=getParameters().getRaw();
+  if (!params.isEmpty()) {
+    String customPrefsFileName=params.get(0);
+    if (customPrefsFileName.isEmpty())     log.log(Level.WARNING,"Path to file with custom preferences is not specified.");
+ else {
+      File customPrefsFile=U.resolveIgnitePath(customPrefsFileName);
+      if (customPrefsFile == null)       log.log(Level.WARNING,"Failed to resolve path to file with custom preferences: " + customPrefsFile);
+ else {
+        Properties customPrefs=new Properties();
+        try (BufferedInputStream in=new BufferedInputStream(new FileInputStream(customPrefsFile))){
+          customPrefs.load(in);
+        }
+ catch (        IOException e) {
+          log.log(Level.SEVERE,"Failed to load custom preferences.",e);
+        }
+        String igniteHome=GridFilenameUtils.separatorsToUnix(U.getIgniteHome());
+        for (        Map.Entry<Object,Object> prop : customPrefs.entrySet()) {
+          String key=prop.getKey().toString();
+          String val=prop.getValue().toString().replaceAll("%IGNITE_HOME%",igniteHome);
+          prefs.setProperty(key,val);
+        }
+      }
+    }
+  }
+  for (  Preset preset : presets) {
+    String key="presets." + preset.pref + ".";
+    preset.jar=getStringProp(key + "jar",preset.jar);
+    preset.drv=getStringProp(key + "drv",preset.drv);
+    preset.url=getStringProp(key + "url",preset.url);
+    preset.user=getStringProp(key + "user",preset.user);
+  }
+  primaryStage.setTitle("Apache Ignite Auto Schema Import Utility");
+  primaryStage.getIcons().addAll(image("ignite",16),image("ignite",24),image("ignite",32),image("ignite",48),image("ignite",64),image("ignite",128));
+  pi=progressIndicator(50);
+  createGeneratePane();
+  hdrPane=createHeaderPane();
+  rootPane=borderPane(hdrPane,createConnectionPane(),createButtonsPane(),null,null);
+  primaryStage.setScene(scene(rootPane));
+  primaryStage.setWidth(650);
+  primaryStage.setMinWidth(650);
+  primaryStage.setHeight(650);
+  primaryStage.setMinHeight(650);
+  prev();
+  if (prefs.getProperty(PREF_WINDOW_X) != null) {
+    int x=getIntProp(PREF_WINDOW_X,100);
+    int y=getIntProp(PREF_WINDOW_Y,100);
+    int w=getIntProp(PREF_WINDOW_WIDTH,650);
+    int h=getIntProp(PREF_WINDOW_HEIGHT,650);
+    if (!Screen.getScreensForRectangle(x,y,w,h).isEmpty()) {
+      primaryStage.setX(x);
+      primaryStage.setY(y);
+      primaryStage.setWidth(w);
+      primaryStage.setHeight(h);
+    }
+  }
+ else   primaryStage.centerOnScreen();
+  String userHome=System.getProperty("user.home").replace('\\','/');
+  rdbmsCb.getSelectionModel().select(getIntProp(PREF_JDBC_DB_PRESET,0));
+  jdbcDrvJarTf.setText(getStringProp(PREF_JDBC_DRIVER_JAR,"h2.jar"));
+  jdbcDrvClsTf.setText(getStringProp(PREF_JDBC_DRIVER_CLASS,"org.h2.Driver"));
+  jdbcUrlTf.setText(getStringProp(PREF_JDBC_URL,"jdbc:h2:" + userHome + "/ignite-schema-import/db"));
+  userTf.setText(getStringProp(PREF_JDBC_USER,"sa"));
+  outFolderTf.setText(getStringProp(PREF_OUT_FOLDER,userHome + "/ignite-schema-import/out"));
+  pkgTf.setText(getStringProp(PREF_POJO_PACKAGE,"org.apache.ignite"));
+  pojoIncludeKeysCh.setSelected(getBoolProp(PREF_POJO_INCLUDE,true));
+  pojoConstructorCh.setSelected(getBoolProp(PREF_POJO_CONSTRUCTOR,false));
+  xmlSingleFileCh.setSelected(getBoolProp(PREF_XML_SINGLE,true));
+  regexTf.setText(getStringProp(PREF_NAMING_PATTERN,"(\\w+)"));
+  replaceTf.setText(getStringProp(PREF_NAMING_REPLACE,"$1_SomeText"));
+  primaryStage.show();
+}

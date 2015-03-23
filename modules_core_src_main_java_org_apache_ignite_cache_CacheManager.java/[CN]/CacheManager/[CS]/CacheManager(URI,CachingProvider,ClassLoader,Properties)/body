@@ -2,5 +2,25 @@
   this.uri=uri;
   this.cachingProvider=cachingProvider;
   this.clsLdr=clsLdr;
-  this.props=props;
+  this.props=props == null ? new Properties() : props;
+  try {
+    if (uri.equals(cachingProvider.getDefaultURI())) {
+      IgniteConfiguration cfg=new IgniteConfiguration();
+      if (getBoolean(IGNITE_JCACHE_DEFAULT_ISOLATED,true)) {
+        TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+        discoSpi.setIpFinder(new TcpDiscoveryVmIpFinder(true));
+        cfg.setDiscoverySpi(discoSpi);
+      }
+      cfg.setGridName("CacheManager_" + igniteCnt.getAndIncrement());
+      ignite=(IgniteKernal)IgnitionEx.start(cfg);
+    }
+ else     ignite=(IgniteKernal)IgnitionEx.start(uri.toURL());
+    kernalGateway=ignite.context().gateway();
+  }
+ catch (  IgniteCheckedException e) {
+    throw CU.convertToCacheException(e);
+  }
+catch (  MalformedURLException e) {
+    throw new CacheException(e);
+  }
 }

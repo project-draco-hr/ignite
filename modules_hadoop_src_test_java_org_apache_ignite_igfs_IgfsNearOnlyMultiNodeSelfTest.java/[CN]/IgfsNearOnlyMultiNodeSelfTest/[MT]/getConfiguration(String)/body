@@ -4,20 +4,18 @@
   discoSpi.setIpFinder(IP_FINDER);
   cfg.setDiscoverySpi(discoSpi);
   FileSystemConfiguration igfsCfg=new FileSystemConfiguration();
-  igfsCfg.setDataCacheName("partitioned");
-  igfsCfg.setMetaCacheName("partitioned");
+  igfsCfg.setDataCacheName("data");
+  igfsCfg.setMetaCacheName("meta");
   igfsCfg.setName("igfs");
-  igfsCfg.setIpcEndpointConfiguration(new HashMap<String,String>(){
-{
-      put("type","shmem");
-      put("port",String.valueOf(IpcSharedMemoryServerEndpoint.DFLT_IPC_PORT + cnt));
-    }
-  }
-);
+  IgfsIpcEndpointConfiguration endpointCfg=new IgfsIpcEndpointConfiguration();
+  endpointCfg.setType(IgfsIpcEndpointType.SHMEM);
+  endpointCfg.setPort(IpcSharedMemoryServerEndpoint.DFLT_IPC_PORT + cnt);
+  igfsCfg.setIpcEndpointConfiguration(endpointCfg);
   igfsCfg.setBlockSize(512 * 1024);
   cfg.setFileSystemConfiguration(igfsCfg);
-  cfg.setCacheConfiguration(cacheConfiguration(gridName));
+  cfg.setCacheConfiguration(cacheConfiguration(gridName,"data"),cacheConfiguration(gridName,"meta"));
   cfg.setIncludeEventTypes(EVT_TASK_FAILED,EVT_TASK_FINISHED,EVT_JOB_MAPPED);
+  if (cnt == 0)   cfg.setClientMode(true);
   cnt++;
   return cfg;
 }

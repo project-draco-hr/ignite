@@ -1,0 +1,23 @@
+{
+  ExamplesUtils.checkMinMemory(MIN_MEMORY);
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    System.out.println();
+    System.out.println(">>> Cache data streamer example started.");
+    CacheConfiguration<Integer,String> cfg=new CacheConfiguration<>();
+    cfg.setCacheMode(CacheMode.PARTITIONED);
+    cfg.setName(CACHE_NAME);
+    try (IgniteCache<Integer,String> cache=ignite.createCache(cfg)){
+      long start=System.currentTimeMillis();
+      try (IgniteDataStreamer<Integer,String> stmr=ignite.dataStreamer(CACHE_NAME)){
+        stmr.perNodeBufferSize(1024);
+        stmr.perNodeParallelOperations(8);
+        for (int i=0; i < ENTRY_COUNT; i++) {
+          stmr.addData(i,Integer.toString(i));
+          if (i > 0 && i % 10000 == 0)           System.out.println("Loaded " + i + " keys.");
+        }
+      }
+       long end=System.currentTimeMillis();
+      System.out.println(">>> Loaded " + ENTRY_COUNT + " keys in "+ (end - start)+ "ms.");
+    }
+   }
+ }

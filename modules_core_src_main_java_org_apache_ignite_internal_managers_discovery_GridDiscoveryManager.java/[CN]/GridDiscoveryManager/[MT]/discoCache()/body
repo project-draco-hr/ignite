@@ -1,5 +1,9 @@
 {
-  DiscoCache cur;
-  while ((cur=discoCache.get()) == null)   if (discoCache.compareAndSet(null,cur=new DiscoCache(localNode(),getSpi().getRemoteNodes())))   return cur;
-  return cur;
+  Snapshot cur;
+  while ((cur=topSnap.get()) == null) {
+    if (topSnap.compareAndSet(null,cur=new Snapshot(AffinityTopologyVersion.ZERO,new DiscoCache(localNode(),getSpi().getRemoteNodes())))) {
+      return cur.discoCache;
+    }
+  }
+  return cur.discoCache;
 }

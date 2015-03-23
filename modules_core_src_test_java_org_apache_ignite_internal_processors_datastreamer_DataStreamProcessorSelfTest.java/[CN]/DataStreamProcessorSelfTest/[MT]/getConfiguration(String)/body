@@ -1,0 +1,30 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi spi=new TcpDiscoverySpi();
+  spi.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(spi);
+  cfg.setIncludeProperties();
+  cfg.setMarshaller(new OptimizedMarshaller(false));
+  if (useCache) {
+    CacheConfiguration cc=defaultCacheConfiguration();
+    cc.setCacheMode(mode);
+    cc.setAtomicityMode(TRANSACTIONAL);
+    if (nearEnabled) {
+      NearCacheConfiguration nearCfg=new NearCacheConfiguration();
+      cc.setNearConfiguration(nearCfg);
+    }
+    cc.setWriteSynchronizationMode(FULL_SYNC);
+    cc.setEvictSynchronized(false);
+    if (store != null) {
+      cc.setCacheStoreFactory(new IgniteReflectionFactory<CacheStore>(TestStore.class));
+      cc.setReadThrough(true);
+      cc.setWriteThrough(true);
+    }
+    cfg.setCacheConfiguration(cc);
+  }
+ else {
+    cfg.setCacheConfiguration();
+    cfg.setClientMode(true);
+  }
+  return cfg;
+}

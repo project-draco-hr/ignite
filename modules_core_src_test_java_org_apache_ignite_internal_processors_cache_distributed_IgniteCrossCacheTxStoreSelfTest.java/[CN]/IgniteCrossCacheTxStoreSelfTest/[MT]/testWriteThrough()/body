@@ -1,12 +1,6 @@
 {
   IgniteEx grid=grid(0);
-  TestStore firstStore=null;
-  for (  CacheConfiguration ccfg : grid(0).configuration().getCacheConfiguration()) {
-    if (ccfg.getCacheStoreFactory() != null) {
-      firstStore=(TestStore)ccfg.getCacheStoreFactory().create();
-      break;
-    }
-  }
+  TestStore firstStore=(TestStore)firstStores.get(grid.name());
   assertNotNull(firstStore);
   Collection<String> evts=firstStore.events();
   try (Transaction tx=grid.transactions().txStart()){
@@ -25,5 +19,5 @@
     cacheB.put("7","7");
     tx.commit();
   }
-   assertEqualsCollections(F.asList("writeAll cacheA 2","writeAll cacheB 2","deleteAll cacheA 2","deleteAll cacheB 2","write cacheA","delete cacheA","write cacheB","txEnd true"),evts);
+   assertEqualsCollections(F.asList("writeAll cacheA 2","writeAll cacheB 2","deleteAll cacheA 2","deleteAll cacheB 2","write cacheA","delete cacheA","write cacheB","sessionEnd true"),evts);
 }

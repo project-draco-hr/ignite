@@ -1,4 +1,16 @@
 {
-  CacheManager cacheMgr=getCacheManager();
-  if (cacheMgr != null)   cacheMgr.destroyCache(getName());
+  if (!gate.enterIfNotClosed())   return;
+  IgniteInternalFuture<?> fut;
+  try {
+    fut=ctx.kernalContext().cache().dynamicStopCache(ctx.name());
+  }
+  finally {
+    gate.leave();
+  }
+  try {
+    fut.get();
+  }
+ catch (  IgniteCheckedException e) {
+    throw cacheException(e);
+  }
 }
