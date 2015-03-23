@@ -9,20 +9,8 @@
     cacheCfg.setReadThrough(true);
     cacheCfg.setWriteThrough(true);
     try (IgniteCache<Long,Person> cache=ignite.getOrCreateCache(cacheCfg)){
-      long start=System.currentTimeMillis();
-      cache.loadCache(null,ENTRY_COUNT);
-      long end=System.currentTimeMillis();
-      System.out.println(">>> Loaded " + cache.size() + " keys with backups in "+ (end - start)+ "ms.");
-      try (Transaction tx=ignite.transactions().txStart()){
-        Person val=cache.get(id);
-        System.out.println("Read value: " + val);
-        val=cache.getAndPut(id,new Person(id,"Isaac","Newton"));
-        System.out.println("Overwrote old value: " + val);
-        val=cache.get(id);
-        System.out.println("Read value: " + val);
-        tx.commit();
-      }
-       System.out.println("Read value after commit: " + cache.get(id));
+      loadCache(cache);
+      executeTransaction(cache);
     }
    }
  }
