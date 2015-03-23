@@ -1,8 +1,7 @@
 {
   A.notNull(key,"key");
-  ClusterNode loc=ctx.discovery().localNode();
-  if (ctx.discovery().cacheNode(loc,cacheName) && ctx.cache().cache(cacheName).configuration().getCacheMode() == LOCAL)   return Collections.singletonList(loc);
-  AffinityTopologyVersion topVer=new AffinityTopologyVersion(ctx.discovery().topologyVersion());
+  AffinityTopologyVersion topVer=ctx.discovery().topologyVersionEx();
   AffinityInfo affInfo=affinityCache(cacheName,topVer);
+  if (affInfo == null)   return Collections.emptyList();
   return primaryAndBackups(affInfo,key);
 }

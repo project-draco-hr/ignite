@@ -1,9 +1,10 @@
 {
-  final IgniteKernal kernal=(IgniteKernal)grid(0);
+  final IgniteEx kernal=grid(0);
   CacheConfiguration ccfg=new CacheConfiguration();
+  ccfg.setCacheMode(CacheMode.REPLICATED);
   ccfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
   ccfg.setName(DYNAMIC_CACHE_NAME);
-  kernal.context().cache().dynamicStartCache(ccfg,null).get();
+  kernal.createCache(ccfg);
   info(">>>>>>> Deployed dynamic cache");
   startGrid(nodeCount());
   try {
@@ -11,7 +12,8 @@
     cache.put("1","1");
     for (int g=0; g < nodeCount() + 1; g++) {
       assertEquals("1",grid(g).jcache(DYNAMIC_CACHE_NAME).get("1"));
-      assertEquals(nodeCount() + 1,grid(g).affinity(DYNAMIC_CACHE_NAME).mapKeyToPrimaryAndBackups(0).size());
+      Collection<ClusterNode> nodes=grid(g).affinity(DYNAMIC_CACHE_NAME).mapKeyToPrimaryAndBackups(0);
+      assertEquals(nodeCount() + 1,nodes.size());
     }
     kernal.context().cache().dynamicStopCache(DYNAMIC_CACHE_NAME).get();
     startGrid(nodeCount() + 1);

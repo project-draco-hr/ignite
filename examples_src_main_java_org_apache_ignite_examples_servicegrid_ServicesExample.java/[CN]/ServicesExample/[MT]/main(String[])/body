@@ -1,13 +1,8 @@
 {
+  Ignition.setClientMode(true);
   try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
-    ClusterGroup rmts=ignite.cluster().forRemotes();
-    if (rmts.nodes().isEmpty()) {
-      System.err.println(">>>");
-      System.err.println(">>> Must start at least one remote node using " + ExampleNodeStartup.class.getSimpleName() + '.');
-      System.err.println(">>>");
-      return;
-    }
-    IgniteServices svcs=ignite.services(rmts);
+    if (!ExamplesUtils.hasServerNodes(ignite))     return;
+    IgniteServices svcs=ignite.services(ignite.cluster().forServers());
     try {
       svcs.deployClusterSingleton("myClusterSingletonService",new SimpleMapServiceImpl());
       svcs.deployNodeSingleton("myNodeSingletonService",new SimpleMapServiceImpl());

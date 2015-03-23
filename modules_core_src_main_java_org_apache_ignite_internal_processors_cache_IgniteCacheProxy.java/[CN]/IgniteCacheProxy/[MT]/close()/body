@@ -1,12 +1,16 @@
 {
   if (!gate.enterIfNotClosed())   return;
+  IgniteInternalFuture<?> fut;
   try {
-    ctx.kernalContext().cache().dynamicStopCache(ctx.name()).get();
+    fut=ctx.kernalContext().cache().dynamicStopCache(ctx.name());
+  }
+  finally {
+    gate.leave();
+  }
+  try {
+    fut.get();
   }
  catch (  IgniteCheckedException e) {
     throw cacheException(e);
-  }
- finally {
-    gate.leave();
   }
 }

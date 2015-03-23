@@ -3,9 +3,28 @@
   if (prefsFile.exists())   try (BufferedInputStream in=new BufferedInputStream(new FileInputStream(prefsFile))){
     prefs.load(in);
   }
- catch (  IOException ignore) {
+ catch (  IOException e) {
+    log.log(Level.SEVERE,"Failed to load preferences. Default preferences will be used",e);
   }
-  for (  String arg : getParameters().getRaw())   for (  String pref : PREFS)   overrideParam(pref,arg);
+  List<String> params=getParameters().getRaw();
+  if (!params.isEmpty()) {
+    String customPrefsFileName=params.get(0);
+    if (customPrefsFileName.isEmpty())     log.log(Level.WARNING,"Path to file with custom preferences is not specified.");
+ else {
+      File customPrefsFile=U.resolveIgnitePath(customPrefsFileName);
+      if (customPrefsFile == null)       log.log(Level.WARNING,"Failed to resolve path to file with custom preferences: " + customPrefsFile);
+ else {
+        Properties customPrefs=new Properties();
+        try (BufferedInputStream in=new BufferedInputStream(new FileInputStream(customPrefsFile))){
+          customPrefs.load(in);
+        }
+ catch (        IOException e) {
+          log.log(Level.SEVERE,"Failed to load custom preferences.",e);
+        }
+        prefs.putAll(customPrefs);
+      }
+    }
+  }
   for (  Preset preset : presets) {
     String key="presets." + preset.pref + ".";
     preset.jar=getStringProp(key + "jar",preset.jar);
@@ -31,8 +50,8 @@
     int w=getIntProp(PREF_WINDOW_WIDTH,650);
     int h=getIntProp(PREF_WINDOW_HEIGHT,650);
     if (!Screen.getScreensForRectangle(x,y,w,h).isEmpty()) {
-      if (x > 0)       primaryStage.setX(x);
-      if (y > 0)       primaryStage.setY(y);
+      primaryStage.setX(x);
+      primaryStage.setY(y);
       primaryStage.setWidth(w);
       primaryStage.setHeight(h);
     }
@@ -40,11 +59,11 @@
  else   primaryStage.centerOnScreen();
   String userHome=System.getProperty("user.home").replace('\\','/');
   rdbmsCb.getSelectionModel().select(getIntProp(PREF_JDBC_DB_PRESET,0));
-  jdbcDrvJarTf.setText(getStringProp(PREF_JDBC_DRIVER_JAR,"h2.jar"));
+  jdbcDrvJarTf.setText(resolveFilePath(PREF_JDBC_DRIVER_JAR,"h2.jar"));
   jdbcDrvClsTf.setText(getStringProp(PREF_JDBC_DRIVER_CLASS,"org.h2.Driver"));
   jdbcUrlTf.setText(getStringProp(PREF_JDBC_URL,"jdbc:h2:" + userHome + "/ignite-schema-import/db"));
   userTf.setText(getStringProp(PREF_JDBC_USER,"sa"));
-  outFolderTf.setText(getStringProp(PREF_OUT_FOLDER,userHome + "/ignite-schema-import/out"));
+  outFolderTf.setText(resolveFilePath(PREF_OUT_FOLDER,userHome + "/ignite-schema-import/out"));
   pkgTf.setText(getStringProp(PREF_POJO_PACKAGE,"org.apache.ignite"));
   pojoIncludeKeysCh.setSelected(getBoolProp(PREF_POJO_INCLUDE,true));
   pojoConstructorCh.setSelected(getBoolProp(PREF_POJO_CONSTRUCTOR,false));

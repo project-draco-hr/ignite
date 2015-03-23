@@ -14,8 +14,8 @@
   FileSystemConfiguration[] igfsCfgs=ctx.grid().configuration().getFileSystemConfiguration();
   if (igfsCfgs != null) {
     for (    FileSystemConfiguration igfsCfg : igfsCfgs) {
-      sysCaches.add(igfsCfg.getMetaCacheName());
-      sysCaches.add(igfsCfg.getDataCacheName());
+      sysCaches.add(maskNull(igfsCfg.getMetaCacheName()));
+      sysCaches.add(maskNull(igfsCfg.getDataCacheName()));
     }
   }
   if (IgniteComponentType.HADOOP.inClassPath())   sysCaches.add(CU.SYS_CACHE_HADOOP_MR);
@@ -26,6 +26,7 @@
   sharedCtx=createSharedContext(ctx);
   ctx.performance().add("Disable serializable transactions (set 'txSerializableEnabled' to false)",!ctx.config().getTransactionConfiguration().isTxSerializableEnabled());
   for (int i=0; i < cfgs.length; i++) {
+    checkSerializable(cfgs[i]);
     CacheConfiguration<?,?> cfg=new CacheConfiguration(cfgs[i]);
     CacheObjectContext cacheObjCtx=ctx.cacheObjects().contextForCache(null,cfg.getName(),cfg);
     initialize(cfg,cacheObjCtx);
@@ -41,7 +42,7 @@
     desc.staticallyConfigured(true);
     registeredCaches.put(masked,desc);
     ctx.discovery().setCacheFilter(cfg.getName(),cfg.getNodeFilter(),cfg.getNearConfiguration() != null,cfg.getCacheMode() == LOCAL);
-    if (sysCaches.contains(cfg.getName()))     stopSeq.addLast(cfg.getName());
+    if (sysCaches.contains(maskNull(cfg.getName())))     stopSeq.addLast(cfg.getName());
  else     stopSeq.addFirst(cfg.getName());
   }
   for (  GridCacheSharedManager mgr : sharedCtx.managers())   mgr.start(sharedCtx);
