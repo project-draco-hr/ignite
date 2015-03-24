@@ -3,7 +3,7 @@
   IgniteInternalFuture<?> fut=null;
   try {
     startGrid(0);
-    final GridCache<Integer,Integer> cache=((IgniteKernal)grid(0)).cache(null);
+    final GridCache<Integer,Integer> cache=((IgniteKernal)grid(0)).getCache(null);
     assertNotNull(cache);
     for (int i=0; i < ENTRY_CNT; i++)     cache.put(i,i);
     cache.evictAll();
@@ -24,12 +24,12 @@
 ,10);
     startGrid(1);
     done.set(true);
-    int size=grid(1).jcache(null).localSize();
+    int size=grid(1).cache(null).localSize();
     info("New node cache size: " + size);
     if (size != ENTRY_CNT) {
       Set<Integer> keySet=new TreeSet<>();
       int next=0;
-      for (      IgniteCache.Entry<Integer,Integer> e : grid(1).<Integer,Integer>jcache(null).localEntries())       keySet.add(e.getKey());
+      for (      IgniteCache.Entry<Integer,Integer> e : grid(1).<Integer,Integer>cache(null).localEntries())       keySet.add(e.getKey());
       for (      Integer i : keySet) {
         while (next < i)         info("Missing key: " + next++);
         next++;
