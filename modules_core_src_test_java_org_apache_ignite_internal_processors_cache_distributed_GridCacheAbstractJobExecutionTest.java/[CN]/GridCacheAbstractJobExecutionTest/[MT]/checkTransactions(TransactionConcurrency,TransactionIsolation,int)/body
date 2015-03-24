@@ -12,7 +12,7 @@
     comp.apply(new CX1<Integer,Void>(){
       @IgniteInstanceResource private Ignite ignite;
       @Override public Void applyx(      final Integer i){
-        IgniteCache<String,int[]> cache=ignite.jcache(null);
+        IgniteCache<String,int[]> cache=ignite.cache(null);
         try (Transaction tx=ignite.transactions().txStart(concur,isolation)){
           int[] arr=cache.get(key);
           if (arr == null)           arr=new int[jobCnt];
@@ -33,9 +33,9 @@
     info("Running iteration: " + i);
     for (int g=0; g < GRID_CNT; g++) {
       info("Will check grid: " + g);
-      info("Value: " + grid(i).jcache(null).localPeek(key));
+      info("Value: " + grid(i).cache(null).localPeek(key));
     }
-    IgniteCache<String,int[]> c=grid(i).jcache(null);
+    IgniteCache<String,int[]> c=grid(i).cache(null);
     try (Transaction tx=grid(i).transactions().txStart(concur,isolation)){
       int[] arr=c.get(key);
       assertNotNull(arr);

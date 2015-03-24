@@ -1,16 +1,12 @@
 {
   System.out.println(">>> Start demo...");
   IgniteConfiguration cfg=new IgniteConfiguration();
-  CacheConfiguration ccfg=new CacheConfiguration<>();
-  ccfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(CacheConfig.store()));
-  ccfg.setReadThrough(true);
-  ccfg.setWriteThrough(true);
-  ccfg.setWriteBehindEnabled(true);
-  ccfg.setTypeMetadata(CacheConfig.typeMetadata());
+  CacheConfiguration ccfg=CacheConfig.cache(CACHE_NAME,new H2DemoStoreFactory());
   cfg.setCacheConfiguration(ccfg);
   try (Ignite ignite=Ignition.start(cfg)){
-    IgniteCache<PersonKey,Person> cache=ignite.jcache(null);
-    cache.loadCache(null,"org.apache.ignite.examples.demo.PersonKey","select * from PERSON where ID = 3");
-    System.out.println(">>> Loaded Person: " + cache.get(new PersonKey(3)));
+    IgniteCache<PersonKey,Person> cache=ignite.cache(CACHE_NAME);
+    preload(cache);
+    readThrough(cache);
+    transaction(ignite,cache);
   }
  }
