@@ -1,0 +1,25 @@
+{
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    System.out.println();
+    System.out.println(">>> Cache asynchronous API example started.");
+    CacheConfiguration<Integer,String> cfg=new CacheConfiguration<>();
+    cfg.setCacheMode(CacheMode.PARTITIONED);
+    cfg.setName(CACHE_NAME);
+    try (IgniteCache<Integer,String> cache=ignite.createCache(cfg)){
+      IgniteCache<Integer,String> asyncCache=cache.withAsync();
+      Collection<IgniteFuture<?>> futs=new ArrayList<>();
+      for (int i=0; i < 10; i++) {
+        asyncCache.put(i,String.valueOf(i));
+        futs.add(asyncCache.future());
+      }
+      for (      IgniteFuture<?> fut : futs)       fut.get();
+      asyncCache.get(1);
+      asyncCache.<String>future().listen(new IgniteInClosure<IgniteFuture<String>>(){
+        @Override public void apply(        IgniteFuture<String> fut){
+          System.out.println("Get operation completed [value=" + fut.get() + ']');
+        }
+      }
+);
+    }
+   }
+ }

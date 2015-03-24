@@ -10,5 +10,9 @@
   }
   if (nonLocCtx == null)   return cctx.exchange().lastTopologyFuture();
   nonLocCtx.topology().readLock();
+  if (nonLocCtx.topology().stopping()) {
+    onDone(new IgniteCheckedException("Failed to perform cache operation (cache is stopped): " + nonLocCtx.name()));
+    return null;
+  }
   return nonLocCtx.topology().topologyVersionFuture();
 }

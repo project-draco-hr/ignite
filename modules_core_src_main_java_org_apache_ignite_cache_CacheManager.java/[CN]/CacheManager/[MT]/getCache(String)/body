@@ -1,9 +1,14 @@
 {
-  ensureNotClosed();
-  IgniteCache<K,V> cache=findCache(cacheName);
-  if (cache != null) {
-    if (cache.getConfiguration(Configuration.class).getKeyType() != Object.class)     throw new IllegalArgumentException();
-    if (cache.getConfiguration(Configuration.class).getValueType() != Object.class)     throw new IllegalArgumentException();
+  kernalGateway.readLock();
+  try {
+    IgniteCache<K,V> cache=getCache0(cacheName);
+    if (cache != null) {
+      if (cache.getConfiguration(Configuration.class).getKeyType() != Object.class)       throw new IllegalArgumentException();
+      if (cache.getConfiguration(Configuration.class).getValueType() != Object.class)       throw new IllegalArgumentException();
+    }
+    return cache;
   }
-  return cache;
+  finally {
+    kernalGateway.readUnlock();
+  }
 }

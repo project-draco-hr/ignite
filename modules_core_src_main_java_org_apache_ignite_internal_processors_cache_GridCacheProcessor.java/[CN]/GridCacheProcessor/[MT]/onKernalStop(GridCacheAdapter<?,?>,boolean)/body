@@ -1,0 +1,19 @@
+{
+  GridCacheContext ctx=cache.context();
+  if (isNearEnabled(ctx)) {
+    GridDhtCacheAdapter dht=ctx.near().dht();
+    if (dht != null) {
+      GridCacheContext<?,?> dhtCtx=dht.context();
+      for (      GridCacheManager mgr : dhtManagers(dhtCtx))       mgr.onKernalStop(cancel);
+      dht.onKernalStop();
+    }
+  }
+  List<GridCacheManager> mgrs=ctx.managers();
+  Collection<GridCacheManager> excludes=dhtExcludes(ctx);
+  for (ListIterator<GridCacheManager> it=mgrs.listIterator(mgrs.size()); it.hasPrevious(); ) {
+    GridCacheManager mgr=it.previous();
+    if (!excludes.contains(mgr))     mgr.onKernalStop(cancel);
+  }
+  cache.onKernalStop();
+  if (ctx.events().isRecordable(EventType.EVT_CACHE_STOPPED))   ctx.events().addEvent(EventType.EVT_CACHE_STOPPED);
+}

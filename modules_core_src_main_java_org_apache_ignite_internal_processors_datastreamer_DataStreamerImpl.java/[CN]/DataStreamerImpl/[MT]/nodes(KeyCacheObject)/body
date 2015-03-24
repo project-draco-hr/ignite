@@ -1,4 +1,11 @@
 {
   GridAffinityProcessor aff=ctx.affinity();
-  return !allowOverwrite() ? aff.mapKeyToPrimaryAndBackups(cacheName,key) : Collections.singletonList(aff.mapKeyToNode(cacheName,key));
+  List<ClusterNode> res=null;
+  if (!allowOverwrite())   res=aff.mapKeyToPrimaryAndBackups(cacheName,key);
+ else {
+    ClusterNode node=aff.mapKeyToNode(cacheName,key);
+    if (node != null)     res=Collections.singletonList(node);
+  }
+  if (F.isEmpty(res))   throw new ClusterTopologyServerNotFoundException("Failed to find server node for cache (all affinity " + "nodes have left the grid or cache was stopped): " + cacheName);
+  return res;
 }

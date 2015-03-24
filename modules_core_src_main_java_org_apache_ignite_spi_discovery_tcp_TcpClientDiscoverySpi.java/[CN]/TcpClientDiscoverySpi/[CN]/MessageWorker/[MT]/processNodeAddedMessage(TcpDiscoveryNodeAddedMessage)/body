@@ -12,9 +12,9 @@
         }
         topHist.clear();
         if (msg.topologyHistory() != null)         topHist.putAll(msg.topologyHistory());
-        Collection<Map<Integer,Object>> dataList=msg.oldNodesDiscoveryData();
-        if (dataList != null) {
-          for (          Map<Integer,Object> discoData : dataList)           exchange.onExchange(newNodeId,discoData);
+        Map<UUID,Map<Integer,Object>> dataMap=msg.oldNodesDiscoveryData();
+        if (dataMap != null) {
+          for (          Map.Entry<UUID,Map<Integer,Object>> entry : dataMap.entrySet())           exchange.onExchange(newNodeId,entry.getKey(),entry.getValue());
         }
         locNode.setAttributes(node.attributes());
         locNode.visible(true);
@@ -28,7 +28,7 @@
     if (topChanged) {
       if (log.isDebugEnabled())       log.debug("Added new node to topology: " + node);
       Map<Integer,Object> data=msg.newNodeDiscoveryData();
-      if (data != null)       exchange.onExchange(newNodeId,data);
+      if (data != null)       exchange.onExchange(newNodeId,newNodeId,data);
     }
   }
 }

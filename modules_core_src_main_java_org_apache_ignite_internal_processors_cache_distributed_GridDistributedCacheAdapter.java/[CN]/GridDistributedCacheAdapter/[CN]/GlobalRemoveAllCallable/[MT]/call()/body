@@ -4,13 +4,13 @@
   ctx.affinity().affinityReadyFuture(topVer).get();
   ctx.gate().enter();
   try {
-    if (ctx.affinity().affinityTopologyVersion() != topVer)     return null;
+    if (!ctx.affinity().affinityTopologyVersion().equals(topVer))     return null;
     GridDhtCacheAdapter<K,V> dht;
     if (cacheAdapter instanceof GridNearCacheAdapter)     dht=((GridNearCacheAdapter<K,V>)cacheAdapter).dht();
  else     dht=(GridDhtCacheAdapter<K,V>)cacheAdapter;
     try (DataStreamerImpl<KeyCacheObject,Object> dataLdr=(DataStreamerImpl)ignite.dataStreamer(cacheName)){
       ((DataStreamerImpl)dataLdr).maxRemapCount(0);
-      dataLdr.updater(DataStreamerCacheUpdaters.<KeyCacheObject,Object>batched());
+      dataLdr.receiver(DataStreamerCacheUpdaters.<KeyCacheObject,Object>batched());
       for (      GridDhtLocalPartition locPart : dht.topology().currentLocalPartitions()) {
         if (!locPart.isEmpty() && locPart.primary(topVer)) {
           for (          GridDhtCacheEntry o : locPart.entries()) {
