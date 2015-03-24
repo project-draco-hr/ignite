@@ -1,38 +1,24 @@
 {
-  final GridCache<Long,Long> cache=populate();
+  final IgniteCache<Long,Long> cache=populate();
   IgniteInternalFuture<?> offHeapFut=multithreadedAsync(new Runnable(){
     @Override public void run(){
-      try {
-        Iterator<Map.Entry<Long,Long>> ohIt=cache.offHeapIterator();
-        int cnt=0;
-        while (ohIt.hasNext()) {
-          Map.Entry<Long,Long> e=ohIt.next();
-          assertEquals(e.getKey(),e.getValue());
-          cnt++;
-        }
-        assertEquals(cache.offHeapEntriesCount(),cnt);
+      int cnt=0;
+      for (      Cache.Entry<Long,Long> e : cache.localEntries(CachePeekMode.OFFHEAP)) {
+        assertEquals(e.getKey(),e.getValue());
+        cnt++;
       }
- catch (      IgniteCheckedException ignored) {
-        fail();
-      }
+      assertEquals(cache.localSize(CachePeekMode.OFFHEAP),cnt);
     }
   }
 ,20);
   IgniteInternalFuture<?> swapFut=multithreadedAsync(new Runnable(){
     @Override public void run(){
-      try {
-        Iterator<Map.Entry<Long,Long>> ohIt=cache.swapIterator();
-        int cnt=0;
-        while (ohIt.hasNext()) {
-          Map.Entry<Long,Long> e=ohIt.next();
-          assertEquals(e.getKey(),e.getValue());
-          cnt++;
-        }
-        assertEquals(ENTRY_CNT - cache.offHeapEntriesCount(),cnt);
+      int cnt=0;
+      for (      Cache.Entry<Long,Long> e : cache.localEntries(CachePeekMode.SWAP)) {
+        assertEquals(e.getKey(),e.getValue());
+        cnt++;
       }
- catch (      IgniteCheckedException ignored) {
-        fail();
-      }
+      assertEquals(ENTRY_CNT - cache.localSize(CachePeekMode.OFFHEAP),cnt);
     }
   }
 ,20);
