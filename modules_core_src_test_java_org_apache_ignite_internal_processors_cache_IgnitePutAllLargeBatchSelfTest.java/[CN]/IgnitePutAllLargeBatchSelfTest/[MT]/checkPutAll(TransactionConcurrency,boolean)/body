@@ -3,14 +3,14 @@
   startGrids(GRID_CNT);
   awaitPartitionMapExchange();
   try {
-    GridCache<Object,Object> cache=((IgniteKernal)grid(0)).getCache(null);
+    IgniteCache<Object,Object> cache=grid(0).cache(null);
     int keyCnt=200;
     for (int i=0; i < keyCnt; i++)     cache.put(i,i);
     for (int g=1; g < 2; g++) {
       for (int i=30; i < 70; i++)       ((IgniteKernal)grid(g)).getCache(null).get(i);
     }
     info(">>> Starting test tx.");
-    try (Transaction tx=cache.txStart(concurrency,TransactionIsolation.REPEATABLE_READ)){
+    try (Transaction tx=grid(0).transactions().txStart(concurrency,TransactionIsolation.REPEATABLE_READ)){
       Map<Integer,Integer> map=new LinkedHashMap<>();
       for (int i=0; i < keyCnt; i++)       map.put(i,i * i);
       cache.getAll(map.keySet());
