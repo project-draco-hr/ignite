@@ -1,12 +1,11 @@
 {
   System.out.println(">>> Start demo...");
-  IgniteConfiguration cfg=new IgniteConfiguration();
-  CacheConfiguration ccfg=CacheConfig.cache(CACHE_NAME,new H2DemoStoreFactory());
-  cfg.setCacheConfiguration(ccfg);
-  try (Ignite ignite=Ignition.start(cfg)){
-    IgniteCache<PersonKey,Person> cache=ignite.cache(CACHE_NAME);
-    preload(cache);
-    readThrough(cache);
-    transaction(ignite,cache);
-  }
+  try (Ignite ignite=Ignition.start()){
+    CacheConfiguration<PersonKey,Person> cfg=CacheConfig.cache("PersonCache",new H2DemoStoreFactory<>());
+    try (IgniteCache<PersonKey,Person> cache=ignite.getOrCreateCache(cfg)){
+      preload(cache);
+      readThrough(cache);
+      transaction(ignite,cache);
+    }
+   }
  }
