@@ -28,6 +28,7 @@
   add2(src,"Collection<CacheTypeMetadata> meta = new ArrayList<>();");
   add0(src,"");
   boolean first=true;
+  boolean firstGrp=true;
   for (  PojoDescriptor pojo : pojos) {
     String tbl=pojo.table();
     add2(src,"// " + tbl + ".");
@@ -59,14 +60,15 @@
       add2(src,(first ? "Map<String, LinkedHashMap<String, IgniteBiTuple<Class<?>, Boolean>>> " : "") + " grps = new LinkedHashMap<>();");
       add0(src,"");
       for (      Map.Entry<String,Map<String,IndexItem>> group : groups.entrySet()) {
-        add2(src,(first ? "LinkedHashMap<String, IgniteBiTuple<Class<?>, Boolean>> " : "") + "grpItems = new LinkedHashMap<>();");
+        add2(src,(firstGrp ? "LinkedHashMap<String, IgniteBiTuple<Class<?>, Boolean>> " : "") + "grpItems = new LinkedHashMap<>();");
         add0(src,"");
         for (        Map.Entry<String,IndexItem> grpItem : group.getValue().entrySet()) {
           IndexItem idxCol=grpItem.getValue();
-          add2(src,"grpItems.put(\"" + grpItem.getKey() + "\", "+ "new IgniteBiTuple<>("+ javaTypeName(idxCol.type())+ ".class, "+ idxCol.descending()+ "));");
+          add2(src,"grpItems.put(\"" + grpItem.getKey() + "\", "+ "new IgniteBiTuple<Class<?>, Boolean>>("+ javaTypeName(idxCol.type())+ ".class, "+ idxCol.descending()+ "));");
         }
         add0(src,"");
         add2(src,"grps.put(\"" + group.getKey() + "\", grpItems);");
+        firstGrp=false;
       }
       add2(src,"type.setGroups(grps);");
       add0(src,"");
