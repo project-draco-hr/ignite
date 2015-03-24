@@ -5,9 +5,11 @@
     if (convertPortable)     storeKey=cctx.unwrapPortableIfNeeded(storeKey,false);
     if (log.isDebugEnabled())     log.debug("Loading value from store for key: " + storeKey);
     initSession(tx);
+    boolean thewEx=true;
     Object val=null;
     try {
       val=singleThreadGate.load(storeKey);
+      thewEx=false;
     }
  catch (    ClassCastException e) {
       handleClassCastException(e);
@@ -19,7 +21,7 @@ catch (    Exception e) {
       throw new IgniteCheckedException(new CacheLoaderException(e));
     }
  finally {
-      endSession(tx);
+      endSession(tx,thewEx);
     }
     if (log.isDebugEnabled())     log.debug("Loaded value from store [key=" + key + ", val="+ val+ ']');
     if (convert) {
