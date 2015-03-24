@@ -3,11 +3,11 @@
   startGrids(GRID_CNT);
   awaitPartitionMapExchange();
   try {
-    GridCache<Object,Object> cache=((IgniteKernal)grid(0)).cache(null);
+    GridCache<Object,Object> cache=((IgniteKernal)grid(0)).getCache(null);
     int keyCnt=200;
     for (int i=0; i < keyCnt; i++)     cache.put(i,i);
     for (int g=1; g < 2; g++) {
-      for (int i=30; i < 70; i++)       ((IgniteKernal)grid(g)).cache(null).get(i);
+      for (int i=30; i < 70; i++)       ((IgniteKernal)grid(g)).getCache(null).get(i);
     }
     info(">>> Starting test tx.");
     try (Transaction tx=cache.txStart(concurrency,TransactionIsolation.REPEATABLE_READ)){
@@ -39,7 +39,7 @@
       }
     }
     for (int g=0; g < GRID_CNT; g++) {
-      IgniteCache<Object,Object> checkCache=grid(g).jcache(null);
+      IgniteCache<Object,Object> checkCache=grid(g).cache(null);
       ClusterNode checkNode=grid(g).localNode();
       for (int i=0; i < keyCnt; i++) {
         if (grid(g).affinity(null).isPrimaryOrBackup(checkNode,i))         assertEquals(i * i,checkCache.localPeek(i,CachePeekMode.PRIMARY,CachePeekMode.BACKUP));

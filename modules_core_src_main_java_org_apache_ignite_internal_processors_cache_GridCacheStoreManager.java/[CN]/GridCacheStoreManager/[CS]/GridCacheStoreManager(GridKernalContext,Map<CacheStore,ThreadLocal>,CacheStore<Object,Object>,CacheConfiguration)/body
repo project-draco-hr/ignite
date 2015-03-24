@@ -1,2 +1,16 @@
 {
+  this.cfgStore=cfgStore;
+  store=cacheStoreWrapper(ctx,cfgStore,cfg);
+  singleThreadGate=store == null ? null : new CacheStoreBalancingWrapper<>(store);
+  writeThrough=cfg.isWriteThrough();
+  ThreadLocal<SessionData> sesHolder0=null;
+  if (cfgStore != null) {
+    sesHolder0=sesHolders.get(cfgStore);
+    if (sesHolder0 == null) {
+      ThreadLocalSession locSes=new ThreadLocalSession();
+      if (ctx.resource().injectStoreSession(cfgStore,locSes))       sesHolder0=locSes.sesHolder;
+    }
+  }
+  sesHolder=sesHolder0;
+  locStore=U.hasAnnotation(cfgStore,CacheLocalStore.class);
 }

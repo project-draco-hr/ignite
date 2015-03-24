@@ -9,12 +9,12 @@
     IgniteEx kernal0=grid(g);
     for (    IgniteInternalFuture f : kernal0.context().cache().context().exchange().exchangeFutures())     f.get();
     info("Getting cache for node: " + g);
-    assertNotNull(grid(g).jcache(DYNAMIC_CACHE_NAME));
+    assertNotNull(grid(g).cache(DYNAMIC_CACHE_NAME));
   }
-  grid(0).jcache(DYNAMIC_CACHE_NAME).put("1","1");
-  for (int g=0; g < nodeCount(); g++)   assertEquals("1",grid(g).jcache(DYNAMIC_CACHE_NAME).get("1"));
+  grid(0).cache(DYNAMIC_CACHE_NAME).put("1","1");
+  for (int g=0; g < nodeCount(); g++)   assertEquals("1",grid(g).cache(DYNAMIC_CACHE_NAME).get("1"));
   final IgniteCache[] caches=new IgniteCache[nodeCount()];
-  for (int g=0; g < nodeCount(); g++)   caches[g]=grid(g).jcache(DYNAMIC_CACHE_NAME);
+  for (int g=0; g < nodeCount(); g++)   caches[g]=grid(g).cache(DYNAMIC_CACHE_NAME);
   kernal.context().cache().dynamicStopCache(DYNAMIC_CACHE_NAME).get();
   for (int g=0; g < nodeCount(); g++) {
     final IgniteKernal kernal0=(IgniteKernal)grid(g);
@@ -22,7 +22,7 @@
     for (    IgniteInternalFuture f : kernal0.context().cache().context().exchange().exchangeFutures())     f.get();
     GridTestUtils.assertThrows(log,new Callable<Object>(){
       @Override public Object call() throws Exception {
-        return kernal0.jcache(DYNAMIC_CACHE_NAME);
+        return kernal0.cache(DYNAMIC_CACHE_NAME);
       }
     }
 ,IllegalArgumentException.class,null);
