@@ -1,5 +1,6 @@
 {
-  IgniteCache<CacheAffinityKey<UUID>,Person> cache=Ignition.ignite().cache(CACHE_NAME);
-  QueryCursor<List<?>> cursor=cache.query(new SqlFieldsQuery("select avg(salary) from Person, " + "Organization where Person.orgId = Organization.id and " + "lower(Organization.name) = lower(?)").setArgs("GridGain"));
-  print("Average salary for 'GridGain' employees: " + cursor.getAll());
+  IgniteCache<CacheAffinityKey<UUID>,Person> cache=Ignition.ignite().cache(PERSONS_CACHE_NAME);
+  String sql="select avg(salary) " + "from Person, \"" + ORGANIZATIONS_CACHE_NAME + "\".Organization as org "+ "where Person.orgId = org.id "+ "and lower(org.name) = lower(?)";
+  QueryCursor<List<?>> cursor=cache.query(new SqlFieldsQuery(sql).setArgs("GridGain"));
+  print("Average salary for 'GridGain' employees: ",cursor.getAll());
 }
