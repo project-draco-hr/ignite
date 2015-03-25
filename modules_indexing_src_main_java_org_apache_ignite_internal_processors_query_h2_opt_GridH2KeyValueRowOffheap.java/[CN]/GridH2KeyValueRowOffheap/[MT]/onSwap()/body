@@ -1,2 +1,19 @@
 {
+  Lock l=lock(ptr);
+  try {
+    final long p=ptr + OFFSET_VALUE_REF;
+    final GridUnsafeMemory mem=desc.memory();
+    final long valPtr=mem.readLongVolatile(p);
+    if (valPtr == 0)     return;
+    desc.guard().finalizeLater(new Runnable(){
+      @Override public void run(){
+        mem.casLong(p,valPtr,0);
+        mem.release(valPtr,mem.readInt(valPtr) + OFFSET_VALUE);
+      }
+    }
+);
+  }
+  finally {
+    l.unlock();
+  }
 }
