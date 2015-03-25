@@ -9,7 +9,7 @@
 ;
   try {
     grid(0).events().localListen(lsnr,EVT_CACHE_OBJECT_LOCKED,EVT_CACHE_OBJECT_UNLOCKED);
-    IgniteCache<String,Integer> cache=jcache();
+    GridCacheAdapter<String,Integer> cache=((IgniteKernal)grid(0)).internalCache();
     try (Transaction tx=transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
       int key=0;
       for (int i=0; i < 1000; i++) {
@@ -25,7 +25,7 @@
           break;
         }
       }
-      ((GridCacheProjectionEx<String,Integer>)cache).getAllOutTx(F.asList("key" + key));
+      cache.getAllOutTx(F.asList("key" + key));
     }
      assertTrue(GridTestUtils.waitForCondition(new PA(){
       @Override public boolean apply(){
