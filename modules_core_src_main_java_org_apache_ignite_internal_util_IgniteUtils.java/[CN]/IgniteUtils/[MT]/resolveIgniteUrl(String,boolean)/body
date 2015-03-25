@@ -1,6 +1,5 @@
 {
   File f=resolveIgnitePath(path);
-  if (f == null)   f=resolveIgnitePath("os/" + path);
   if (f != null) {
     try {
       return f.toURI().toURL();
@@ -8,6 +7,10 @@
  catch (    MalformedURLException e) {
     }
   }
-  String locPath=(metaInf ? "META-INF/" : "") + path.replaceAll("\\\\","/");
-  return Thread.currentThread().getContextClassLoader().getResource(locPath);
+  ClassLoader clsLdr=Thread.currentThread().getContextClassLoader();
+  if (clsLdr != null) {
+    String locPath=(metaInf ? "META-INF/" : "") + path.replaceAll("\\\\","/");
+    return clsLdr.getResource(locPath);
+  }
+ else   return null;
 }

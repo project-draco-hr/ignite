@@ -1,15 +1,24 @@
 {
   PojoMethodsCache mc=mtdsCache.get(cacheName).get(typeName);
-  Object obj=mc.newInstance();
+  if (mc == null)   throw new CacheLoaderException("Failed to find cache type metadata for type: " + typeName);
   try {
+    if (mc.simple) {
+      CacheTypeFieldMetadata field=F.first(fields);
+      return (R)getColumnValue(rs,loadColIdxs.get(field.getDatabaseName()),mc.cls);
+    }
+    Object obj=mc.ctor.newInstance();
     for (    CacheTypeFieldMetadata field : fields) {
       Method setter=mc.setters.get(field.getJavaName());
+      if (setter == null)       throw new CacheLoaderException("Failed to find setter in POJO class [class name=" + typeName + ", property="+ field.getJavaName()+ "]");
       Integer colIdx=loadColIdxs.get(field.getDatabaseName());
       setter.invoke(obj,getColumnValue(rs,colIdx,field.getJavaType()));
     }
     return (R)obj;
   }
- catch (  Exception e) {
+ catch (  SQLException e) {
     throw new CacheLoaderException("Failed to read object of class: " + typeName,e);
+  }
+catch (  Exception e) {
+    throw new CacheLoaderException("Failed to construct instance of class: " + typeName,e);
   }
 }

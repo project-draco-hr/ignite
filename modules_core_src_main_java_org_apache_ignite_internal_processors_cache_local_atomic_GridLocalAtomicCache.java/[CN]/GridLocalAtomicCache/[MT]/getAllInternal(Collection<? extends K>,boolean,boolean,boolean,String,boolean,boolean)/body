@@ -8,14 +8,15 @@
   final IgniteCacheExpiryPolicy expiry=expiryPolicy(prj != null ? prj.expiry() : null);
   boolean success=true;
   for (  K key : keys) {
-    if (key == null)     continue;
-    GridCacheEntryEx<K,V> entry=null;
+    if (key == null)     throw new NullPointerException("Null key.");
+    GridCacheEntryEx entry=null;
+    KeyCacheObject cacheKey=ctx.toCacheKeyObject(key);
     while (true) {
       try {
-        entry=swapOrOffheap ? entryEx(key) : peekEx(key);
+        entry=swapOrOffheap ? entryEx(cacheKey) : peekEx(cacheKey);
         if (entry != null) {
-          V v=entry.innerGet(null,swapOrOffheap,false,false,true,true,!skipVals,false,subjId,null,taskName,expiry);
-          if (v != null)           vals.put(key,v);
+          CacheObject v=entry.innerGet(null,swapOrOffheap,false,false,true,true,!skipVals,false,subjId,null,taskName,expiry);
+          if (v != null)           ctx.addResult(vals,cacheKey,v,skipVals,false,deserializePortable,true);
  else           success=false;
         }
  else {

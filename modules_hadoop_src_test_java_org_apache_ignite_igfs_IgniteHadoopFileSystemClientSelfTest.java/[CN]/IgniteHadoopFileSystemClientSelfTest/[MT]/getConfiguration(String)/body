@@ -1,0 +1,18 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setIpFinder(new TcpDiscoveryVmIpFinder(true));
+  cfg.setDiscoverySpi(discoSpi);
+  FileSystemConfiguration igfsCfg=new FileSystemConfiguration();
+  igfsCfg.setDataCacheName("partitioned");
+  igfsCfg.setMetaCacheName("replicated");
+  igfsCfg.setName("igfs");
+  igfsCfg.setBlockSize(512 * 1024);
+  IgfsIpcEndpointConfiguration endpointCfg=new IgfsIpcEndpointConfiguration();
+  endpointCfg.setType(IgfsIpcEndpointType.TCP);
+  endpointCfg.setPort(DFLT_IPC_PORT);
+  igfsCfg.setIpcEndpointConfiguration(endpointCfg);
+  cfg.setCacheConfiguration(cacheConfiguration());
+  cfg.setFileSystemConfiguration(igfsCfg);
+  return cfg;
+}

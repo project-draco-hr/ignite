@@ -1,0 +1,36 @@
+{
+  reader.setBuffer(buf);
+  if (!reader.beforeMessageRead())   return false;
+  if (!super.readFrom(buf,reader))   return false;
+switch (reader.state()) {
+case 3:
+    entries=reader.readCollection("entries",MessageCollectionItemType.MSG);
+  if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 4:
+errBytes=reader.readByteArray("errBytes");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 5:
+futId=reader.readIgniteUuid("futId");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 6:
+invalidParts=reader.readCollection("invalidParts",MessageCollectionItemType.INT);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 7:
+miniId=reader.readIgniteUuid("miniId");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 8:
+topVer=reader.readLong("topVer");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 9:
+ver=reader.readMessage("ver");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+}
+return true;
+}

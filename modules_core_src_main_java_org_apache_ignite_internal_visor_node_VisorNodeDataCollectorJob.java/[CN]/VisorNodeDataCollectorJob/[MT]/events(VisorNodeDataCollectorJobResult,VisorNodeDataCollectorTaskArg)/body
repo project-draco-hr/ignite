@@ -4,7 +4,7 @@
  else {
       res.taskMonitoringEnabled(arg.taskMonitoringEnabled());
       if (arg.taskMonitoringEnabled()) {
-        ClusterNodeLocalMap<String,VisorComputeMonitoringHolder> storage=ignite.nodeLocalMap();
+        ConcurrentMap<String,VisorComputeMonitoringHolder> storage=ignite.cluster().nodeLocalMap();
         VisorComputeMonitoringHolder holder=storage.get(COMPUTE_MONITORING_HOLDER_KEY);
         if (holder == null) {
           VisorComputeMonitoringHolder holderNew=new VisorComputeMonitoringHolder();
@@ -15,7 +15,7 @@
         res.taskMonitoringEnabled(ignite.allEventsUserRecordable(VISOR_TASK_EVTS));
       }
     }
-    res.events().addAll(collectEvents(ignite,arg.eventsOrderKey(),arg.eventsThrottleCounterKey(),arg.taskMonitoringEnabled()));
+    events0(res,arg.eventsOrderKey(),arg.eventsThrottleCounterKey(),arg.taskMonitoringEnabled());
   }
  catch (  Throwable eventsEx) {
     res.eventsEx(eventsEx);

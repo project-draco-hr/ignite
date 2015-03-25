@@ -6,7 +6,7 @@
       rsrcMgr.inject(spi);
       spi.setNodeAttributes(Collections.<String,Object>singletonMap(TEST_ATTRIBUTE_NAME,"true"),fromString("99.99.99"));
       spi.setListener(new DiscoverySpiListener(){
-        @SuppressWarnings({"NakedNotify"}) @Override public void onDiscovery(        int type,        long topVer,        ClusterNode node,        Collection<ClusterNode> topSnapshot,        Map<Long,Collection<ClusterNode>> topHist){
+        @SuppressWarnings({"NakedNotify"}) @Override public void onDiscovery(        int type,        long topVer,        ClusterNode node,        Collection<ClusterNode> topSnapshot,        Map<Long,Collection<ClusterNode>> topHist,        Serializable data){
           info("Discovery event [type=" + type + ", node="+ node+ ']');
 synchronized (mux) {
             mux.notifyAll();
@@ -16,19 +16,9 @@ synchronized (mux) {
 );
       spi.setDataExchange(new DiscoverySpiDataExchange(){
         @Override public Map<Integer,Object> collect(        UUID nodeId){
-          return new HashMap<Integer,Object>();
+          return new HashMap<>();
         }
-        @Override public void onExchange(        Map<Integer,Object> data){
-        }
-      }
-);
-      spi.setAuthenticator(new DiscoverySpiNodeAuthenticator(){
-        @Override public GridSecurityContext authenticateNode(        ClusterNode n,        GridSecurityCredentials cred){
-          GridSecuritySubject subj=getGridSecuritySubject(GridSecuritySubjectType.REMOTE_NODE,n.id());
-          return new GridSecurityContext(subj);
-        }
-        @Override public boolean isGlobalNodeAuthentication(){
-          return false;
+        @Override public void onExchange(        UUID nodeId,        Map<Integer,Object> data){
         }
       }
 );

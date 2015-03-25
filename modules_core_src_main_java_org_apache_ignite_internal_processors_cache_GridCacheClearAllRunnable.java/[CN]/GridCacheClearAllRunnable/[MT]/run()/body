@@ -1,12 +1,12 @@
 {
-  Iterator<GridCacheEntryEx<K,V>> iter=cache.map().stripedEntryIterator(id,totalCnt);
+  Iterator<GridCacheEntryEx> iter=cache.map().stripedEntryIterator(id,totalCnt);
   while (iter.hasNext())   clearEntry(iter.next());
   if (!ctx.isNear()) {
     if (ctx.swap().offHeapEnabled()) {
       if (ctx.config().isQueryIndexEnabled()) {
-        for (Iterator<Map.Entry<K,V>> it=ctx.swap().lazyOffHeapIterator(); it.hasNext(); ) {
-          Map.Entry<K,V> e=it.next();
-          if (owns(e.getKey()))           clearEntry(cache.entryEx(e.getKey()));
+        for (Iterator<KeyCacheObject> it=ctx.swap().offHeapKeyIterator(true,true,-1L); it.hasNext(); ) {
+          KeyCacheObject key=it.next();
+          if (owns(key))           clearEntry(cache.entryEx(key));
         }
       }
  else       if (id == 0)       ctx.swap().clearOffHeap();
@@ -14,17 +14,17 @@
     if (ctx.isSwapOrOffheapEnabled()) {
       if (ctx.swap().swapEnabled()) {
         if (ctx.config().isQueryIndexEnabled()) {
-          Iterator<Map.Entry<K,V>> it=null;
+          Iterator<KeyCacheObject> it=null;
           try {
-            it=ctx.swap().lazySwapIterator();
+            it=ctx.swap().swapKeyIterator(true,true,-1L);
           }
  catch (          IgniteCheckedException e) {
             U.error(log,"Failed to get iterator over swap.",e);
           }
           if (it != null) {
             while (it.hasNext()) {
-              Map.Entry<K,V> e=it.next();
-              if (owns(e.getKey()))               clearEntry(cache.entryEx(e.getKey()));
+              KeyCacheObject key=it.next();
+              if (owns(key))               clearEntry(cache.entryEx(key));
             }
           }
         }

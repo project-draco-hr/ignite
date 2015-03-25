@@ -18,25 +18,25 @@
       return true;
     }
   }
-,EventType.EVT_CACHE_PRELOAD_STOPPED);
+,EventType.EVT_CACHE_REBALANCE_STOPPED);
   g2.events().localListen(new IgnitePredicate<Event>(){
     @Override public boolean apply(    Event evt){
       l2.countDown();
       return true;
     }
   }
-,EventType.EVT_CACHE_PRELOAD_STOPPED);
+,EventType.EVT_CACHE_REBALANCE_STOPPED);
   info("Beginning to wait for cache1 repartition.");
   GridDhtCacheAdapter<String,Integer> d0=dht(0);
   GridDhtCacheAdapter<String,Integer> d1=dht(1);
   GridDhtCacheAdapter<String,Integer> d2=dht(2);
   checkMaps(false,d0,d1,d2);
-  internalCache(c1).forceRepartition();
+  c1.rebalance();
   l1.await();
   info("Cache1 is repartitioned.");
   checkMaps(false,d0,d1,d2);
   info("Beginning to wait for cache2 repartition.");
-  internalCache(c2).forceRepartition();
+  c2.rebalance();
   l2.await();
   info("Cache2 is repartitioned.");
   checkMaps(true,d0,d1,d2);

@@ -1,0 +1,17 @@
+{
+  boolean success=false;
+  try {
+    TxContext ctx=txCtx.get();
+    if (ctx == null)     txCtx.set(ctx=new TxContext());
+    lockKey(key);
+    ctx.locked(key);
+    success=true;
+    return null;
+  }
+ catch (  IgniteCheckedException e) {
+    throw new CacheException(e);
+  }
+ finally {
+    if (!success)     rollbackCurrentTx();
+  }
+}

@@ -1,0 +1,15 @@
+{
+  if (connInProgress == 0)   return null;
+  try {
+    Future<GridTuple3<InetSocketAddress,Socket,Exception>> fut=completionSrvc.take();
+    connInProgress--;
+    return fut.get();
+  }
+ catch (  InterruptedException e) {
+    Thread.currentThread().interrupt();
+    throw new IgniteSpiException("Thread has been interrupted.",e);
+  }
+catch (  ExecutionException e) {
+    throw new IgniteSpiException(e);
+  }
+}

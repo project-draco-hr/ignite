@@ -1,0 +1,14 @@
+{
+  for (  Map.Entry<ClusterNode,List<GridDhtCacheEntry>> mapping : mappings.entrySet()) {
+    ClusterNode n=mapping.getKey();
+    GridDistributedTxMapping m=dst.get(n.id());
+    List<GridDhtCacheEntry> entries=mapping.getValue();
+    for (    GridDhtCacheEntry entry : entries) {
+      IgniteTxEntry txEntry=txMap.get(entry.txKey());
+      if (txEntry != null) {
+        if (m == null)         dst.put(n.id(),m=new GridDistributedTxMapping(n));
+        m.add(txEntry);
+      }
+    }
+  }
+}

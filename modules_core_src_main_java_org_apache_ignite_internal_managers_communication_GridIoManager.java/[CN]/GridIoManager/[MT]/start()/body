@@ -6,6 +6,7 @@
   sysPool=ctx.getSystemExecutorService();
   mgmtPool=ctx.getManagementExecutorService();
   utilityCachePool=ctx.utilityCachePool();
+  marshCachePool=ctx.marshallerCachePool();
   affPool=Executors.newFixedThreadPool(1);
   getSpi().setListener(commLsnr=new CommunicationListener<Serializable>(){
     @Override public void onMessage(    UUID nodeId,    Serializable msg,    IgniteRunnable msgC){
@@ -31,12 +32,12 @@
       @Override public MessageWriter writer(){
         return new DirectMessageWriter();
       }
-      @Override public MessageReader reader(){
-        return new DirectMessageReader(msgFactory);
+      @Override public MessageReader reader(      MessageFactory factory){
+        return new DirectMessageReader(msgFactory,this);
       }
     }
 ;
   }
-  msgFactory=new GridIoMessageFactory(formatter,ctx.plugins().extensions(MessageFactory.class));
+  msgFactory=new GridIoMessageFactory(ctx.plugins().extensions(MessageFactory.class));
   if (log.isDebugEnabled())   log.debug(startInfo());
 }
