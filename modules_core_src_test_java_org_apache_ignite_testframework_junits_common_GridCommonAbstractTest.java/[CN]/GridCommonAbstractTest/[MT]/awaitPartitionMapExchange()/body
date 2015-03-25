@@ -1,15 +1,14 @@
 {
   for (  Ignite g : G.allGrids()) {
-    for (    GridCache<?,?> c : ((IgniteEx)g).cachesx()) {
-      CacheConfiguration cfg=c.configuration();
+    for (    CacheConfiguration cfg : g.configuration().getCacheConfiguration()) {
       if (cfg.getCacheMode() == PARTITIONED && cfg.getRebalanceMode() != NONE && g.cluster().nodes().size() > 1) {
         AffinityFunction aff=cfg.getAffinity();
-        GridDhtCacheAdapter<?,?> dht=dht(c);
+        GridDhtCacheAdapter<?,?> dht=dht(g,cfg);
         GridDhtPartitionTopology top=dht.topology();
         for (int p=0; p < aff.partitions(); p++) {
           long start=0;
           for (int i=0; ; i++) {
-            Collection<ClusterNode> affNodes=c.affinity().mapPartitionToPrimaryAndBackups(p);
+            Collection<ClusterNode> affNodes=g.affinity(cfg.getName()).mapPartitionToPrimaryAndBackups(p);
             int exp=affNodes.size();
             Collection<ClusterNode> owners=top.nodes(p,AffinityTopologyVersion.NONE);
             int actual=owners.size();
