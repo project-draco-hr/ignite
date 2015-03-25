@@ -1,15 +1,23 @@
 {
-  try (Ignite ignite=Ignition.start("examples/config/example-cache.xml")){
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
     System.out.println();
     System.out.println(">>> Cache query example started.");
-    ignite.jcache(CACHE_NAME).removeAll();
-    initialize();
-    sqlQuery();
-    sqlQueryWithJoin();
-    textQuery();
-    sqlQueryWithAggregation();
-    sqlFieldsQuery();
-    sqlFieldsQueryWithJoin();
-    print("Cache query example finished.");
+    CacheConfiguration<?,?> orgCacheCfg=new CacheConfiguration<>(ORG_CACHE);
+    orgCacheCfg.setCacheMode(CacheMode.PARTITIONED);
+    orgCacheCfg.setIndexedTypes(UUID.class,Organization.class);
+    CacheConfiguration<?,?> personCacheCfg=new CacheConfiguration<>(PERSON_CACHE);
+    personCacheCfg.setCacheMode(CacheMode.PARTITIONED);
+    personCacheCfg.setIndexedTypes(AffinityKey.class,Person.class);
+    try (IgniteCache<?,?> orgCache=ignite.createCache(orgCacheCfg);IgniteCache<?,?> personCache=ignite.createCache(personCacheCfg)){
+      initialize();
+      scanQuery();
+      sqlQuery();
+      sqlQueryWithJoin();
+      textQuery();
+      sqlQueryWithAggregation();
+      sqlFieldsQuery();
+      sqlFieldsQueryWithJoin();
+    }
+     print("Cache query example finished.");
   }
  }

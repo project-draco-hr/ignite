@@ -1,0 +1,18 @@
+{
+  cachesLoc=(GridCache<Integer,Integer>[])Array.newInstance(GridCache.class,GRID_CNT);
+  cachesPartitioned=(GridCache<Integer,Integer>[])Array.newInstance(GridCache.class,GRID_CNT);
+  cachesColocated=(GridCache<Integer,Integer>[])Array.newInstance(GridCache.class,GRID_CNT);
+  cachesReplicated=(GridCache<Integer,Integer>[])Array.newInstance(GridCache.class,GRID_CNT);
+  for (int i=0; i < GRID_CNT; i++) {
+    Ignite ignite=startGrid(i);
+    if (i == 1) {
+      NearCacheConfiguration nearCfg=new NearCacheConfiguration();
+      ignite.createNearCache(CACHE_PARTITIONED,nearCfg);
+    }
+    if (i == 2)     ignite.cache(CACHE_PARTITIONED);
+    cachesLoc[i]=((IgniteKernal)ignite).getCache(CACHE_LOCAL);
+    cachesPartitioned[i]=((IgniteKernal)ignite).getCache(CACHE_PARTITIONED);
+    cachesColocated[i]=((IgniteKernal)ignite).getCache(CACHE_COLOCATED);
+    cachesReplicated[i]=((IgniteKernal)ignite).getCache(CACHE_REPLICATED);
+  }
+}

@@ -11,14 +11,19 @@
         while (!finished.get()) {
           int g=rnd.nextInt(4);
           int key=rnd.nextInt(keys);
-          IgniteCache<Integer,Integer> prj=grid(g).jcache(null);
-          try (Transaction tx=grid(g).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
-            Integer val=prj.get(key);
-            val=val == null ? 1 : val + 1;
-            prj.put(key,val);
-            tx.commit();
+          IgniteCache<Integer,Integer> prj=grid(g).cache(null);
+          try {
+            try (Transaction tx=grid(g).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+              Integer val=prj.get(key);
+              val=val == null ? 1 : val + 1;
+              prj.put(key,val);
+              tx.commit();
+            }
+           }
+ catch (          Exception e) {
+            if (!X.hasCause(e,ClusterTopologyCheckedException.class))             throw e;
           }
-         }
+        }
         return null;
       }
     }
@@ -33,14 +38,14 @@
     U.sleep(500);
     finished.set(true);
     fut.get();
-    long topVer=grid(0).cluster().topologyVersion();
-    assertEquals(29,topVer);
+    AffinityTopologyVersion topVer=new AffinityTopologyVersion(grid(0).cluster().topologyVersion());
+    assertEquals(29,topVer.topologyVersion());
     for (int i=0; i < 4; i++) {
       IgniteKernal grid=(IgniteKernal)grid(i);
       GridCacheContext<Object,Object> cctx=grid.internalCache(null).context();
-      IgniteInternalFuture<Long> verFut=cctx.affinity().affinityReadyFuture(topVer);
-      assertEquals((Long)topVer,verFut.get());
-      assertEquals((Long)topVer,cctx.topologyVersionFuture().get());
+      IgniteInternalFuture<AffinityTopologyVersion> verFut=cctx.affinity().affinityReadyFuture(topVer);
+      assertEquals(topVer,verFut.get());
+      assertEquals(topVer,cctx.topologyVersionFuture().get());
     }
   }
   finally {

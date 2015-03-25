@@ -1,7 +1,7 @@
 {
-  GridDhtPartitionsFullMessage m=new GridDhtPartitionsFullMessage(null,null,-1);
-  for (  GridCacheContext<K,V> cacheCtx : cctx.cacheContexts()) {
-    if (!cacheCtx.isLocal())     m.addFullPartitionsMap(cacheCtx.cacheId(),cacheCtx.topology().partitionMap(true));
+  GridDhtPartitionsFullMessage m=new GridDhtPartitionsFullMessage(null,null,AffinityTopologyVersion.NONE);
+  for (  GridCacheContext cacheCtx : cctx.cacheContexts()) {
+    if (!cacheCtx.isLocal() && cacheCtx.started())     m.addFullPartitionsMap(cacheCtx.cacheId(),cacheCtx.topology().partitionMap(true));
   }
   for (  GridClientPartitionTopology top : cctx.exchange().clientTopologies())   m.addFullPartitionsMap(top.cacheId(),top.partitionMap(true));
   if (log.isDebugEnabled())   log.debug("Sending all partitions [nodeIds=" + U.nodeIds(nodes) + ", msg="+ m+ ']');

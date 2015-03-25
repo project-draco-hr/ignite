@@ -1,6 +1,6 @@
 {
-  IgniteCache<CacheAffinityKey<UUID>,Person> cache=Ignition.ignite().jcache(CACHE_NAME);
-  String joinSql="from Person, Organization " + "where Person.orgId = Organization.id " + "and lower(Organization.name) = lower(?)";
-  print("Following people are 'GridGain' employees: ",cache.query(new SqlQuery(Person.class,joinSql).setArgs("GridGain")).getAll());
-  print("Following people are 'Other' employees: ",cache.query(new SqlQuery(Person.class,joinSql).setArgs("Other")).getAll());
+  IgniteCache<AffinityKey<UUID>,Person> cache=Ignition.ignite().cache(PERSON_CACHE);
+  String joinSql="from Person, \"" + ORG_CACHE + "\".Organization as org "+ "where Person.orgId = org.id "+ "and lower(org.name) = lower(?)";
+  print("Following people are 'GridGain' employees: ",cache.query(new SqlQuery<AffinityKey<UUID>,Person>(Person.class,joinSql).setArgs("GridGain")).getAll());
+  print("Following people are 'Other' employees: ",cache.query(new SqlQuery<AffinityKey<UUID>,Person>(Person.class,joinSql).setArgs("Other")).getAll());
 }

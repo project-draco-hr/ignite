@@ -1,0 +1,19 @@
+{
+  try {
+    Server.createTcpServer("-tcpDaemon").start();
+    JdbcConnectionPool dataSrc=JdbcConnectionPool.create("jdbc:h2:tcp://localhost/mem:ExampleDb","sa","");
+    RunScript.execute(dataSrc.getConnection(),new StringReader(CREATE_TABLE));
+    RunScript.execute(dataSrc.getConnection(),new StringReader(POPULATE_TABLE));
+  }
+ catch (  SQLException e) {
+    throw new IgniteException("Failed to start database TCP server",e);
+  }
+  try {
+    do {
+      System.out.println("Type 'q' and press 'Enter' to stop H2 TCP server...");
+    }
+ while ('q' != System.in.read());
+  }
+ catch (  IOException ignored) {
+  }
+}
