@@ -1,0 +1,17 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  if (gridName.matches(".*\\d")) {
+    String idStr=UUID.randomUUID().toString();
+    char[] chars=idStr.toCharArray();
+    chars[chars.length - 3]='0';
+    chars[chars.length - 2]='0';
+    chars[chars.length - 1]=gridName.charAt(gridName.length() - 1);
+    cfg.setNodeId(UUID.fromString(new String(chars)));
+  }
+  CacheConfiguration<Integer,Integer> cacheCfg=new CacheConfiguration<>();
+  cacheCfg.setCacheMode(CacheMode.PARTITIONED);
+  cacheCfg.setBackups(backupCnt);
+  cfg.setCacheConfiguration(cacheCfg);
+  cfg.setCommunicationSpi(new FilteredCommunicationSpi());
+  return cfg;
+}
