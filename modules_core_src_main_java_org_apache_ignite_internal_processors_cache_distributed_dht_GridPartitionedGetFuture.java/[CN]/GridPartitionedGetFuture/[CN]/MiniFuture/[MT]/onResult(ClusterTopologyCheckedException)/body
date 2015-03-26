@@ -1,6 +1,16 @@
 {
   if (log.isDebugEnabled())   log.debug("Remote node left grid while sending or waiting for reply (will retry): " + this);
-  AffinityTopologyVersion updTopVer=new AffinityTopologyVersion(cctx.discovery().topologyVersion());
-  map(keys.keySet(),F.t(node,keys),updTopVer);
-  onDone(Collections.<K,V>emptyMap());
+  final AffinityTopologyVersion updTopVer=new AffinityTopologyVersion(cctx.discovery().topologyVersion());
+  final GridFutureRemapTimeoutObject timeout=new GridFutureRemapTimeoutObject(this,cctx.kernalContext().config().getNetworkTimeout(),updTopVer,e);
+  cctx.affinity().affinityReadyFuture(updTopVer).listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
+    @Override public void apply(    IgniteInternalFuture<AffinityTopologyVersion> fut){
+      if (timeout.finish()) {
+        cctx.kernalContext().timeout().removeTimeoutObject(timeout);
+        map(keys.keySet(),F.t(node,keys),updTopVer);
+        onDone(Collections.<K,V>emptyMap());
+      }
+    }
+  }
+);
+  cctx.kernalContext().timeout().addTimeoutObject(timeout);
 }
