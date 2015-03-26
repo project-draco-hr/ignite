@@ -1,0 +1,17 @@
+{
+  daemon=true;
+  Ignite dNode=startGrid(nodeCount());
+  try {
+    CacheConfiguration cfg=new CacheConfiguration(DYNAMIC_CACHE_NAME);
+    try (IgniteCache cache=ignite(0).createCache(cfg)){
+      for (int i=0; i < 100; i++) {
+        assertFalse(ignite(0).affinity(DYNAMIC_CACHE_NAME).mapKeyToPrimaryAndBackups(i).contains(dNode.cluster().localNode()));
+        cache.put(i,i);
+      }
+    }
+   }
+  finally {
+    stopGrid(nodeCount());
+    daemon=false;
+  }
+}
