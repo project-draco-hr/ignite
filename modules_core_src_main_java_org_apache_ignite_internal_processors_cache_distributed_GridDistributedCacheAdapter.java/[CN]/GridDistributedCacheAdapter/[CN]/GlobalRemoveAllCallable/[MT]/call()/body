@@ -6,7 +6,11 @@
   try {
     if (!ctx.affinity().affinityTopologyVersion().equals(topVer))     return null;
     GridDhtCacheAdapter<K,V> dht;
-    if (cacheAdapter instanceof GridNearCacheAdapter)     dht=((GridNearCacheAdapter<K,V>)cacheAdapter).dht();
+    GridNearCacheAdapter<K,V> near=null;
+    if (cacheAdapter instanceof GridNearCacheAdapter) {
+      near=((GridNearCacheAdapter<K,V>)cacheAdapter);
+      dht=near.dht();
+    }
  else     dht=(GridDhtCacheAdapter<K,V>)cacheAdapter;
     try (DataStreamerImpl<KeyCacheObject,Object> dataLdr=(DataStreamerImpl)ignite.dataStreamer(cacheName)){
       ((DataStreamerImpl)dataLdr).maxRemapCount(0);
@@ -23,7 +27,13 @@
       it=dht.context().swap().swapKeyIterator(true,false,topVer);
       while (it.hasNext())       dataLdr.removeDataInternal(it.next());
     }
-   }
+     if (near != null) {
+      GridCacheVersion obsoleteVer=ctx.versions().next();
+      for (      GridCacheEntryEx e : near.map().allEntries0()) {
+        if (!e.valid(topVer) && e.markObsolete(obsoleteVer))         near.removeEntry(e);
+      }
+    }
+  }
   finally {
     ctx.gate().leave();
   }
