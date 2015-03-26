@@ -2,13 +2,13 @@
   try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
     System.out.println();
     System.out.println(">>> Cache query example started.");
-    CacheConfiguration<?,?> orgCacheCfg=new CacheConfiguration<>(ORG_CACHE);
+    CacheConfiguration<UUID,Organization> orgCacheCfg=new CacheConfiguration<>(ORG_CACHE);
     orgCacheCfg.setCacheMode(CacheMode.PARTITIONED);
     orgCacheCfg.setIndexedTypes(UUID.class,Organization.class);
-    CacheConfiguration<?,?> personCacheCfg=new CacheConfiguration<>(PERSON_CACHE);
+    CacheConfiguration<AffinityKey<UUID>,Person> personCacheCfg=new CacheConfiguration<>(PERSON_CACHE);
     personCacheCfg.setCacheMode(CacheMode.PARTITIONED);
     personCacheCfg.setIndexedTypes(AffinityKey.class,Person.class);
-    try (IgniteCache<?,?> orgCache=ignite.createCache(orgCacheCfg);IgniteCache<?,?> personCache=ignite.createCache(personCacheCfg)){
+    try (IgniteCache<UUID,Organization> orgCache=ignite.createCache(orgCacheCfg);IgniteCache<AffinityKey<UUID>,Person> personCache=ignite.createCache(personCacheCfg)){
       initialize();
       scanQuery();
       sqlQuery();
