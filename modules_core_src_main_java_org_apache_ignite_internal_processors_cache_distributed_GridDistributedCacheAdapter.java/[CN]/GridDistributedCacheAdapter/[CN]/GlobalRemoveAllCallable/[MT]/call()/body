@@ -17,7 +17,9 @@
       dataLdr.receiver(DataStreamerCacheUpdaters.<KeyCacheObject,Object>batched());
       for (      GridDhtLocalPartition locPart : dht.topology().currentLocalPartitions()) {
         if (!locPart.isEmpty() && locPart.primary(topVer)) {
-          for (          GridDhtCacheEntry o : locPart.entries())           dataLdr.removeDataInternal(o.key());
+          for (          GridDhtCacheEntry o : locPart.entries()) {
+            if (!o.obsoleteOrDeleted())             dataLdr.removeDataInternal(o.key());
+          }
         }
       }
       Iterator<KeyCacheObject> it=dht.context().swap().offHeapKeyIterator(true,false,topVer);
