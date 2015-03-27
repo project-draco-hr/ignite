@@ -1,0 +1,13 @@
+{
+  MBeanServer mBeanSrv=ignite.configuration().getMBeanServer();
+  ObjectName registeredObjName=getObjectName(name,beanType);
+  try {
+    if (mBeanSrv.queryNames(registeredObjName,null).isEmpty()) {
+      IgniteStandardMXBean bean=beanType.equals(CACHE_CONFIGURATION) ? new IgniteStandardMXBean((CacheMXBean)mxbean,CacheMXBean.class) : new IgniteStandardMXBean((CacheStatisticsMXBean)mxbean,CacheStatisticsMXBean.class);
+      mBeanSrv.registerMBean(bean,registeredObjName);
+    }
+  }
+ catch (  Exception e) {
+    throw new CacheException("Failed to register MBean: " + registeredObjName,e);
+  }
+}

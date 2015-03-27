@@ -9,17 +9,22 @@
     CacheConfiguration cc=defaultCacheConfiguration();
     cc.setCacheMode(mode);
     cc.setAtomicityMode(TRANSACTIONAL);
-    cc.setDistributionMode(nearEnabled ? NEAR_PARTITIONED : PARTITIONED_ONLY);
+    if (nearEnabled) {
+      NearCacheConfiguration nearCfg=new NearCacheConfiguration();
+      cc.setNearConfiguration(nearCfg);
+    }
     cc.setWriteSynchronizationMode(FULL_SYNC);
     cc.setEvictSynchronized(false);
-    cc.setEvictNearSynchronized(false);
     if (store != null) {
-      cc.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+      cc.setCacheStoreFactory(new IgniteReflectionFactory<CacheStore>(TestStore.class));
       cc.setReadThrough(true);
       cc.setWriteThrough(true);
     }
     cfg.setCacheConfiguration(cc);
   }
- else   cfg.setCacheConfiguration();
+ else {
+    cfg.setCacheConfiguration();
+    cfg.setClientMode(true);
+  }
   return cfg;
 }

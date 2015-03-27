@@ -6,8 +6,8 @@
     startGrid(3);
     try (IgniteDataStreamer<String,TestObject> ldr=ignite.dataStreamer(null)){
       ldr.allowOverwrite(true);
-      ldr.updater(new IgniteDataStreamer.Updater<String,TestObject>(){
-        @Override public void update(        IgniteCache<String,TestObject> cache,        Collection<Map.Entry<String,TestObject>> entries){
+      ldr.receiver(new StreamReceiver<String,TestObject>(){
+        @Override public void receive(        IgniteCache<String,TestObject> cache,        Collection<Map.Entry<String,TestObject>> entries){
           for (          Map.Entry<String,TestObject> e : entries) {
             assertTrue(e.getKey() instanceof String);
             assertTrue(e.getValue() instanceof TestObject);
@@ -18,7 +18,7 @@
 );
       for (int i=0; i < 100; i++)       ldr.addData(String.valueOf(i),new TestObject(i));
     }
-     IgniteCache<String,TestObject> cache=ignite.jcache(null);
+     IgniteCache<String,TestObject> cache=ignite.cache(null);
     for (int i=0; i < 100; i++) {
       TestObject val=cache.get(String.valueOf(i));
       assertNotNull(val);

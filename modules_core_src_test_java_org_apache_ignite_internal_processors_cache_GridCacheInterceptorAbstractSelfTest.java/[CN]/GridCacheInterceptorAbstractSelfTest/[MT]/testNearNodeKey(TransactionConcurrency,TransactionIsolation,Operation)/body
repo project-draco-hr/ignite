@@ -1,15 +1,11 @@
 {
-  interceptor.retInterceptor=new InterceptorAdapter(){
-    @Nullable @Override public Object onBeforePut(    Cache.Entry entry,    Object newVal){
-      return (Integer)newVal + 1;
-    }
-  }
-;
+  interceptor.retInterceptor=new PutIncrementInterceptor();
   String key1=primaryKey(0);
   String key2=backupKey(0);
   String key3=nearKey(0);
   interceptor.disabled=true;
   jcache(1).putAll(F.asMap(key1,1,key2,2,key3,3));
+  atomicClockModeDelay(jcache(1));
   interceptor.disabled=false;
   log.info("Update [op=" + op + ", key1="+ key1+ ", key2="+ key2+ ", key3="+ key3+ ", txConcurrency="+ txConcurrency+ ", txIsolation="+ txIsolation+ ']');
   if (txConcurrency != null) {

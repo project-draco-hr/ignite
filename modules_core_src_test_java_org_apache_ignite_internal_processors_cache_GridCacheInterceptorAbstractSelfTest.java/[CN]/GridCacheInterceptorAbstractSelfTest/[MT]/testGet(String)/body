@@ -1,22 +1,12 @@
 {
-  interceptor.retInterceptor=new InterceptorAdapter(){
-    @Nullable @Override public Object onGet(    Object key,    Object val){
-      return null;
-    }
-  }
-;
+  interceptor.retInterceptor=new NullGetInterceptor();
   log.info("Get 1.");
   IgniteCache<String,Integer> cache=jcache(0);
   assertEquals(null,cache.get(key));
   assertEquals(1,interceptor.invokeCnt.get());
   assertEquals(0,interceptor.getMap.size());
   interceptor.reset();
-  interceptor.retInterceptor=new InterceptorAdapter(){
-    @Nullable @Override public Object onGet(    Object key,    Object val){
-      return 1;
-    }
-  }
-;
+  interceptor.retInterceptor=new OneGetInterceptor();
   log.info("Get 2.");
   assertEquals((Integer)1,cache.get(key));
   assertEquals(1,interceptor.invokeCnt.get());
@@ -25,12 +15,7 @@
   interceptor.disabled=true;
   cache.put(key,100);
   interceptor.disabled=false;
-  interceptor.retInterceptor=new InterceptorAdapter(){
-    @Nullable @Override public Object onGet(    Object key,    Object val){
-      return null;
-    }
-  }
-;
+  interceptor.retInterceptor=new NullGetInterceptor();
   log.info("Get 3.");
   assertEquals(null,cache.get(key));
   assertEquals(1,interceptor.invokeCnt.get());
@@ -38,12 +23,7 @@
   assertEquals(100,interceptor.getMap.get(key));
   checkCacheValue(key,100);
   interceptor.reset();
-  interceptor.retInterceptor=new InterceptorAdapter(){
-    @Nullable @Override public Object onGet(    Object key,    Object val){
-      return (Integer)val + 1;
-    }
-  }
-;
+  interceptor.retInterceptor=new GetIncrementInterceptor();
   log.info("Get 4.");
   assertEquals((Integer)101,cache.get(key));
   assertEquals(1,interceptor.invokeCnt.get());
@@ -51,12 +31,7 @@
   assertEquals(100,interceptor.getMap.get(key));
   checkCacheValue(key,100);
   interceptor.reset();
-  interceptor.retInterceptor=new InterceptorAdapter(){
-    @Nullable @Override public Object onGet(    Object key,    Object val){
-      return (Integer)val + 1;
-    }
-  }
-;
+  interceptor.retInterceptor=new GetIncrementInterceptor();
   log.info("GetAsync 1.");
   IgniteCache<String,Integer> cacheAsync=cache.withAsync();
   cacheAsync.get(key);

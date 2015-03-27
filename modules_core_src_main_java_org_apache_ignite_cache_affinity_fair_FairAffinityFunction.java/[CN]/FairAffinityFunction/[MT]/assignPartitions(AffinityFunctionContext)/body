@@ -1,0 +1,26 @@
+{
+  List<ClusterNode> topSnapshot=ctx.currentTopologySnapshot();
+  if (topSnapshot.size() == 1) {
+    ClusterNode primary=topSnapshot.get(0);
+    return Collections.nCopies(parts,Collections.singletonList(primary));
+  }
+  List<List<ClusterNode>> assignment=createCopy(ctx);
+  int tiers=Math.min(ctx.backups() + 1,topSnapshot.size());
+  Map<Integer,Queue<Integer>> pendingParts=new HashMap<>();
+  FullAssignmentMap fullMap=new FullAssignmentMap(tiers,assignment,topSnapshot);
+  for (int tier=0; tier < tiers; tier++) {
+    Queue<Integer> pending=pendingParts.get(tier);
+    for (int part=0; part < parts; part++) {
+      if (fullMap.assignments.get(part).size() < tier + 1) {
+        if (pending == null) {
+          pending=new LinkedList<>();
+          pendingParts.put(tier,pending);
+        }
+        if (!pending.contains(part))         pending.add(part);
+      }
+    }
+    assignPending(tier,pendingParts,fullMap,topSnapshot);
+    balance(tier,pendingParts,fullMap,topSnapshot);
+  }
+  return fullMap.assignments;
+}

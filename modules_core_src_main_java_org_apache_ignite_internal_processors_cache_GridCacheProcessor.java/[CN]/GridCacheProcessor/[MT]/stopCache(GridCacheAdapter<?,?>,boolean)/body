@@ -1,0 +1,28 @@
+{
+  GridCacheContext ctx=cache.context();
+  sharedCtx.removeCacheContext(ctx);
+  cache.stop();
+  if (isNearEnabled(ctx)) {
+    GridDhtCacheAdapter dht=ctx.near().dht();
+    if (dht != null) {
+      dht.stop();
+      GridCacheContext<?,?> dhtCtx=dht.context();
+      List<GridCacheManager> dhtMgrs=dhtManagers(dhtCtx);
+      for (ListIterator<GridCacheManager> it=dhtMgrs.listIterator(dhtMgrs.size()); it.hasPrevious(); ) {
+        GridCacheManager mgr=it.previous();
+        mgr.stop(cancel);
+      }
+    }
+  }
+  List<GridCacheManager> mgrs=ctx.managers();
+  Collection<GridCacheManager> excludes=dhtExcludes(ctx);
+  for (ListIterator<GridCacheManager> it=mgrs.listIterator(mgrs.size()); it.hasPrevious(); ) {
+    GridCacheManager mgr=it.previous();
+    if (!excludes.contains(mgr))     mgr.stop(cancel);
+  }
+  ctx.kernalContext().query().onCacheStop(ctx);
+  ctx.kernalContext().continuous().onCacheStop(ctx);
+  U.stopLifecycleAware(log,lifecycleAwares(cache.configuration(),ctx.jta().tmLookup(),ctx.store().configuredStore()));
+  if (log.isInfoEnabled())   log.info("Stopped cache: " + cache.name());
+  cleanup(ctx);
+}

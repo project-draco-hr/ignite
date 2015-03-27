@@ -1,10 +1,5 @@
 {
-  interceptor.retInterceptor=new InterceptorAdapter(){
-    @Nullable @Override public Object onBeforePut(    Cache.Entry entry,    Object newVal){
-      return (Integer)newVal + 1;
-    }
-  }
-;
+  interceptor.retInterceptor=new PutIncrementInterceptor();
   Map<String,Integer> map=new HashMap<>();
   final String key1;
   String key2;
@@ -37,13 +32,7 @@
   assertEquals(3,interceptor.afterPutMap.get(key2));
   assertEquals(4,interceptor.afterPutMap.get(key3));
   interceptor.reset();
-  interceptor.retInterceptor=new InterceptorAdapter(){
-    @Nullable @Override public Object onBeforePut(    Cache.Entry entry,    Object newVal){
-      if (entry.getKey().equals(key1))       return null;
-      return (Integer)newVal + 1;
-    }
-  }
-;
+  interceptor.retInterceptor=new BatchPutInterceptor1(key1);
   map.put(key1,100);
   map.put(key2,200);
   map.put(key3,300);

@@ -1,0 +1,27 @@
+{
+  Ignition.setClientMode(true);
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    if (!ExamplesUtils.hasServerNodes(ignite))     return;
+    IgniteCache<String,Double> mktCache=ignite.getOrCreateCache(CacheConfig.marketTicksCache());
+    final IgniteCache<String,Instrument> instCache=ignite.getOrCreateCache(CacheConfig.instrumentCache());
+    try (IgniteDataStreamer<String,Double> mktStmr=ignite.dataStreamer(mktCache.getName())){
+      mktStmr.receiver(new StreamVisitor<String,Double>(){
+        @Override public void apply(        IgniteCache<String,Double> cache,        Map.Entry<String,Double> e){
+          String symbol=e.getKey();
+          Double tick=e.getValue();
+          Instrument inst=instCache.get(symbol);
+          if (inst == null)           inst=new Instrument(symbol);
+          inst.update(tick);
+          instCache.put(symbol,inst);
+        }
+      }
+);
+      while (true) {
+        for (int j=0; j < INSTRUMENTS.length; j++) {
+          double price=round2(INITIAL_PRICES[j] + RAND.nextGaussian());
+          mktStmr.addData(INSTRUMENTS[j],price);
+        }
+      }
+    }
+   }
+ }

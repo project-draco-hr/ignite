@@ -1,0 +1,17 @@
+{
+  ExchangeFutureSet exchFuts0=exchFuts;
+  if (exchFuts0 != null) {
+    int skipped=0;
+    for (    GridDhtPartitionsExchangeFuture fut : exchFuts0.values()) {
+      skipped++;
+      if (skipped == EXCH_FUT_CLEANUP_HISTORY_SIZE) {
+        for (        GridCacheContext cacheCtx : cctx.cacheContexts()) {
+          if (err == null) {
+            if (!cacheCtx.isLocal())             cacheCtx.affinity().cleanUpCache(fut.topologyVersion());
+          }
+        }
+      }
+      if (skipped > 10)       fut.cleanUp();
+    }
+  }
+}

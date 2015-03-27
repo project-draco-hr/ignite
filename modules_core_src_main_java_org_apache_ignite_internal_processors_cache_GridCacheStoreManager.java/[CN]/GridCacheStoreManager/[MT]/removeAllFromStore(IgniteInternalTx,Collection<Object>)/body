@@ -7,9 +7,11 @@
   if (store != null) {
     Collection<Object> keys0=convertPortable ? cctx.unwrapPortablesIfNeeded(keys,false) : keys;
     if (log.isDebugEnabled())     log.debug("Removing values from cache store [keys=" + keys0 + ']');
-    boolean ses=initSession(tx);
+    initSession(tx);
+    boolean thewEx=true;
     try {
       store.deleteAll(keys0);
+      thewEx=false;
     }
  catch (    ClassCastException e) {
       handleClassCastException(e);
@@ -20,7 +22,7 @@ catch (    Exception e) {
       throw new IgniteCheckedException(e);
     }
  finally {
-      if (ses)       endSession();
+      endSession(tx,thewEx);
     }
     if (log.isDebugEnabled())     log.debug("Removed values from cache store [keys=" + keys0 + ']');
     return true;

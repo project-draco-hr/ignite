@@ -1,0 +1,14 @@
+{
+  PersonKey key=new PersonKey(5);
+  System.out.println();
+  System.out.println(">>> Update salary and write-through to database for person with ID: " + key.getId());
+  try (Transaction tx=ignite.transactions().txStart()){
+    Person p=cache.get(key);
+    System.out.println(">>> Loaded person from database: " + p);
+    double salary=p.getSalary();
+    p.setSalary(salary * 1.2);
+    cache.put(key,p);
+    tx.commit();
+  }
+   System.out.println(">>> Updated person: " + cache.get(key));
+}

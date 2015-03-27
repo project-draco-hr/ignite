@@ -8,9 +8,11 @@
     if (store != null) {
       EntriesView entries=new EntriesView((Map)map);
       if (log.isDebugEnabled())       log.debug("Storing values in cache store [entries=" + entries + ']');
-      boolean ses=initSession(tx);
+      initSession(tx);
+      boolean thewEx=true;
       try {
         store.writeAll(entries);
+        thewEx=false;
       }
  catch (      ClassCastException e) {
         handleClassCastException(e);
@@ -25,7 +27,7 @@ catch (      Exception e) {
         throw new IgniteCheckedException(e);
       }
  finally {
-        if (ses)         endSession();
+        endSession(tx,thewEx);
       }
       if (log.isDebugEnabled())       log.debug("Stored value in cache store [entries=" + entries + ']');
       return true;
