@@ -21,20 +21,27 @@
         }
       }
  catch (      Exception e) {
+        log.error("Unexpected exception in topology-change-thread: " + e,e);
         throw F.wrap(e);
       }
     }
   }
 ,TOP_CHANGE_THREAD_CNT,"topology-change-thread");
-  while (!fut.isDone()) {
-    if (tx) {
-      remove(grid(0),jcache(),half,concurrency,isolation);
-      put(grid(0),jcache(),half,concurrency,isolation);
-    }
+  try {
+    while (!fut.isDone()) {
+      if (tx) {
+        remove(grid(0),jcache(),half,concurrency,isolation);
+        put(grid(0),jcache(),half,concurrency,isolation);
+      }
  else {
-      remove(jcache(),half);
-      put(jcache(),half);
+        remove(jcache(),half);
+        put(jcache(),half);
+      }
     }
+  }
+ catch (  Exception e) {
+    log.error("Unexpected exception: " + e,e);
+    throw e;
   }
   fut.get();
 }
