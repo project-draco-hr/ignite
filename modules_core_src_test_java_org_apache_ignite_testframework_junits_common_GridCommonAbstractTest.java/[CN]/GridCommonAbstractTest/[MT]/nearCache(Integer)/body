@@ -1,0 +1,11 @@
+{
+  List<Ignite> allGrids=Ignition.allGrids();
+  assertFalse("There are no alive nodes.",F.isEmpty(allGrids));
+  Affinity<Integer> aff=allGrids.get(0).affinity(null);
+  Collection<ClusterNode> nodes=aff.mapKeyToPrimaryAndBackups(key);
+  for (  Ignite ignite : allGrids) {
+    if (!nodes.contains(ignite.cluster().localNode()))     return ignite.cache(null);
+  }
+  fail();
+  return null;
+}

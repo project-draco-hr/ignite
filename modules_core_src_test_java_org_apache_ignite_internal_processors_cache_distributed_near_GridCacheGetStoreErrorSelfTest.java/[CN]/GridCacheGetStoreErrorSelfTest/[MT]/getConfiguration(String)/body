@@ -5,19 +5,9 @@
   c.setDiscoverySpi(disco);
   CacheConfiguration cc=defaultCacheConfiguration();
   cc.setCacheMode(cacheMode);
-  cc.setDistributionMode(nearEnabled ? NEAR_PARTITIONED : PARTITIONED_ONLY);
+  if (nearEnabled)   cc.setNearConfiguration(new NearCacheConfiguration());
   cc.setAtomicityMode(TRANSACTIONAL);
-  CacheStore store=new CacheStoreAdapter<Object,Object>(){
-    @Override public Object load(    Object key){
-      throw new IgniteException("Failed to get key from store: " + key);
-    }
-    @Override public void write(    Cache.Entry<?,?> entry){
-    }
-    @Override public void delete(    Object key){
-    }
-  }
-;
-  cc.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+  cc.setCacheStoreFactory(new IgniteReflectionFactory<CacheStore>(TestStore.class));
   cc.setReadThrough(true);
   cc.setWriteThrough(true);
   cc.setLoadPreviousValue(true);

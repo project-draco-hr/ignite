@@ -1,6 +1,7 @@
 {
+  ExecutorService pool=null;
   try {
-    ExecutorService pool=Executors.newFixedThreadPool(maxPoolSz);
+    pool=Executors.newFixedThreadPool(maxPoolSz);
     Collection<Future<?>> futs=new ArrayList<>();
     if (args != null && args.length > 0) {
       if (args.length % 2 != 0)       throw new CacheLoaderException("Expected even number of arguments, but found: " + args.length);
@@ -53,5 +54,8 @@
   }
  catch (  IgniteCheckedException e) {
     throw new CacheLoaderException("Failed to load cache",e.getCause());
+  }
+ finally {
+    U.shutdownNow(getClass(),pool,log);
   }
 }

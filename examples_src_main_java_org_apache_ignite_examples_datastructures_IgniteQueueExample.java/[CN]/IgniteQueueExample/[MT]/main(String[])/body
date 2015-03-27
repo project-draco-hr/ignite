@@ -1,12 +1,18 @@
 {
-  try (Ignite ignite=Ignition.start("examples/config/example-cache.xml")){
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
     System.out.println();
     System.out.println(">>> Ignite queue example started.");
-    String queueName=UUID.randomUUID().toString();
-    queue=initializeQueue(ignite,queueName);
-    readFromQueue(ignite);
-    writeToQueue(ignite);
-    clearAndRemoveQueue();
-  }
+    CacheConfiguration<Object,Object> cfg=new CacheConfiguration<>();
+    cfg.setCacheMode(CacheMode.PARTITIONED);
+    cfg.setName(CACHE_NAME);
+    cfg.setAtomicWriteOrderMode(CacheAtomicWriteOrderMode.PRIMARY);
+    try (IgniteCache<Object,Object> cache=ignite.createCache(cfg)){
+      String queueName=UUID.randomUUID().toString();
+      queue=initializeQueue(ignite,queueName);
+      readFromQueue(ignite);
+      writeToQueue(ignite);
+      clearAndRemoveQueue();
+    }
+   }
    System.out.println("Cache queue example finished.");
 }

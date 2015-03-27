@@ -1,0 +1,21 @@
+{
+  if (idx == null)   return;
+  if (!busyLock.enterBusy())   return;
+  try {
+    idx.unregisterCache(cctx.config());
+    Iterator<Map.Entry<TypeId,TypeDescriptor>> it=types.entrySet().iterator();
+    while (it.hasNext()) {
+      Map.Entry<TypeId,TypeDescriptor> entry=it.next();
+      if (F.eq(cctx.name(),entry.getKey().space)) {
+        it.remove();
+        typesByName.remove(new TypeName(cctx.name(),entry.getValue().name()));
+      }
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    U.error(log,"Failed to clear indexing on cache stop (will ignore): " + cctx.name(),e);
+  }
+ finally {
+    busyLock.leaveBusy();
+  }
+}

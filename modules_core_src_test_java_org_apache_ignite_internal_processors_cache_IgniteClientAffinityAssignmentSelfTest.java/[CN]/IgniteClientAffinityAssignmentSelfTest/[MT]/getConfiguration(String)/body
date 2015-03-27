@@ -1,14 +1,16 @@
 {
   IgniteConfiguration cfg=super.getConfiguration(gridName);
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(ipFinder);
   if (cache) {
     CacheConfiguration ccfg=new CacheConfiguration();
     ccfg.setCacheMode(CacheMode.PARTITIONED);
     ccfg.setBackups(1);
     ccfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
-    ccfg.setDistributionMode(client ? CLIENT_ONLY : PARTITIONED_ONLY);
-    if (aff == 0)     ccfg.setAffinity(new CacheRendezvousAffinityFunction(false,PARTS));
- else     ccfg.setAffinity(new CachePartitionFairAffinity(PARTS));
+    ccfg.setNearConfiguration(null);
+    if (aff == 0)     ccfg.setAffinity(new RendezvousAffinityFunction(false,PARTS));
+ else     ccfg.setAffinity(new FairAffinityFunction(PARTS));
     cfg.setCacheConfiguration(ccfg);
   }
+ else   cfg.setClientMode(true);
   return cfg;
 }

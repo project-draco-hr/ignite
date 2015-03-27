@@ -3,9 +3,11 @@
     if (key instanceof GridCacheInternal)     return false;
     if (convertPortable)     key=cctx.unwrapPortableIfNeeded(key,false);
     if (log.isDebugEnabled())     log.debug("Removing value from cache store [key=" + key + ']');
-    boolean ses=initSession(tx);
+    initSession(tx);
+    boolean thewEx=true;
     try {
       store.delete(key);
+      thewEx=false;
     }
  catch (    ClassCastException e) {
       handleClassCastException(e);
@@ -17,7 +19,7 @@ catch (    Exception e) {
       throw new IgniteCheckedException(new CacheWriterException(e));
     }
  finally {
-      if (ses)       endSession();
+      endSession(tx,thewEx);
     }
     if (log.isDebugEnabled())     log.debug("Removed value from cache store [key=" + key + ']');
     return true;

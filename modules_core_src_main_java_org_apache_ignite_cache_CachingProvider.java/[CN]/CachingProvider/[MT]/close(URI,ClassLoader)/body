@@ -1,9 +1,18 @@
 {
-  CacheManager mgr;
+  GridFutureAdapter<CacheManager> fut;
 synchronized (cacheManagers) {
-    Map<URI,CacheManager> uriMap=cacheManagers.get(clsLdr);
+    Map<URI,GridFutureAdapter<CacheManager>> uriMap=cacheManagers.get(clsLdr);
     if (uriMap == null)     return;
-    mgr=uriMap.remove(uri);
+    fut=uriMap.remove(uri);
   }
-  if (mgr != null)   mgr.close();
+  if (fut != null) {
+    CacheManager mgr;
+    try {
+      mgr=fut.get();
+    }
+ catch (    Exception ignored) {
+      return;
+    }
+    mgr.close();
+  }
 }

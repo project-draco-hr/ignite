@@ -1,0 +1,30 @@
+{
+  if (data instanceof DynamicCacheChangeBatch) {
+    DynamicCacheChangeBatch batch=(DynamicCacheChangeBatch)data;
+    for (    DynamicCacheChangeRequest req : batch.requests()) {
+      DynamicCacheDescriptor existing=registeredCaches.get(maskNull(req.cacheName()));
+      if (req.start() && !req.clientStartOnly()) {
+        CacheConfiguration ccfg=req.startCacheConfiguration();
+        if (existing != null) {
+          if (existing.locallyConfigured()) {
+            existing.deploymentId(req.deploymentId());
+            existing.addRemoteConfiguration(rmtNodeId,req.startCacheConfiguration());
+            ctx.discovery().setCacheFilter(req.cacheName(),ccfg.getNodeFilter(),ccfg.getNearConfiguration() != null,ccfg.getCacheMode() == LOCAL);
+          }
+        }
+ else {
+          DynamicCacheDescriptor desc=new DynamicCacheDescriptor(ccfg,req.deploymentId());
+          if (req.initiatingNodeId() == null)           desc.staticallyConfigured(true);
+          registeredCaches.put(maskNull(req.cacheName()),desc);
+          ctx.discovery().setCacheFilter(req.cacheName(),ccfg.getNodeFilter(),ccfg.getNearConfiguration() != null,ccfg.getCacheMode() == LOCAL);
+        }
+      }
+    }
+    if (!F.isEmpty(batch.clientNodes())) {
+      for (      Map.Entry<String,Map<UUID,Boolean>> entry : batch.clientNodes().entrySet()) {
+        String cacheName=entry.getKey();
+        for (        Map.Entry<UUID,Boolean> tup : entry.getValue().entrySet())         ctx.discovery().addClientNode(cacheName,tup.getKey(),tup.getValue());
+      }
+    }
+  }
+}
