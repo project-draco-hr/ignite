@@ -12,20 +12,18 @@
   for (int i=0; i < gridCount(); i++) {
     for (int j=0; j < 5; j++) {
       try {
-        GridCache<Object,Object> cache=((IgniteKernal)grid(i)).getCache(null);
-        for (        Cache.Entry<Object,Object> entry : cache.localEntries(new CachePeekMode[]{CachePeekMode.ALL})) {
-          cache.remove(entry.getKey());
-        }
+        IgniteCache<Object,Object> cache=grid(i).cache(null);
+        for (        Cache.Entry<Object,Object> entry : cache.localEntries(new CachePeekMode[]{CachePeekMode.ALL}))         cache.remove(entry.getKey());
         break;
       }
- catch (      CachePartialUpdateCheckedException e) {
+ catch (      IgniteException e) {
         if (j == 4)         throw new Exception("Failed to clear cache for grid: " + i,e);
         U.warn(log,"Failed to clear cache for grid (will retry in 500 ms) [gridIdx=" + i + ", err="+ e.getMessage()+ ']');
         U.sleep(500);
       }
     }
   }
-  for (int i=0; i < gridCount(); i++)   assertEquals("Cache is not empty [entrySet=" + ((IgniteKernal)grid(i)).getCache(null).entrySet() + ", i="+ i+ ']',0,((IgniteKernal)grid(i)).getCache(null).size());
+  for (int i=0; i < gridCount(); i++)   assertEquals("Cache is not empty [entrySet=" + grid(i).cache(null).localEntries() + ", i="+ i+ ']',0,grid(i).cache(null).localSize());
   for (int i=0; i < gridCount(); i++) {
     GridContinuousProcessor proc=grid(i).context().continuous();
     assertEquals(String.valueOf(i),2,((Map)U.field(proc,"locInfos")).size());
