@@ -1,27 +1,18 @@
 {
+  GridCacheAdapter<Integer,String> cache0=cache;
+  if (cache0 == null)   return false;
+  String old;
   try {
-    GridCacheAdapter<Integer,String> cache0=cache;
-    if (cache0 == null)     return false;
-    for (int i=0; i < CACHE_UPDATE_RETRIES_CNT; i++) {
-      try {
-        String old;
-        try {
-          old=cache0.tryPutIfAbsent(id,clsName);
-        }
- catch (        GridCacheTryPutFailedException ignored) {
-          return false;
-        }
-        if (old != null && !old.equals(clsName))         throw new IgniteException("Type ID collision occurred in OptimizedMarshaller. Use " + "OptimizedMarshallerIdMapper to resolve it [id=" + id + ", clsName1="+ clsName+ "clsName2="+ old+ ']');
-        break;
-      }
- catch (      IgniteCheckedException e) {
-        if (i == CACHE_UPDATE_RETRIES_CNT - 1)         throw e;
- else         U.error(log,"Failed to update marshaller cache, will retry: " + e);
-      }
+    old=cache0.tryPutIfAbsent(id,clsName);
+    if (old != null && !old.equals(clsName)) {
+      U.warn(log,"Type ID collision occurred in marshaller (this can cause performance degradation). " + "Use marshaller configuration to resolve it [id=" + id + ", clsName1="+ clsName+ "clsName2="+ old+ ']');
+      return false;
     }
+    failedCnt=0;
+    return true;
   }
- catch (  IgniteCheckedException e) {
-    throw U.convertException(e);
+ catch (  CachePartialUpdateCheckedException|GridCacheTryPutFailedException e) {
+    if (failedCnt++ >= 10)     U.warn(log,e,"Marshaller failed to register class for more than 10 times " + "(this can cause performance degradation).");
+    return false;
   }
-  return true;
 }
