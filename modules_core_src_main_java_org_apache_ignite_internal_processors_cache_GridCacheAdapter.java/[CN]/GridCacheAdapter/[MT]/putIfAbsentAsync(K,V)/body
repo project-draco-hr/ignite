@@ -4,7 +4,7 @@
   A.notNull(key,"key",val,"val");
   if (keyCheck)   validateCacheKey(key);
   validateCacheValue(val);
-  IgniteInternalFuture<V> fut=ctx.wrapClone(asyncOp(new AsyncOp<V>(key){
+  IgniteInternalFuture<V> fut=asyncOp(new AsyncOp<V>(key){
     @Override public IgniteInternalFuture<V> op(    IgniteTxLocalAdapter tx){
       return tx.putAllAsync(ctx,F.t(key,val),true,null,-1,ctx.noValArray()).chain((IgniteClosure<IgniteInternalFuture<GridCacheReturn>,V>)RET2VAL);
     }
@@ -12,7 +12,7 @@
       return "putIfAbsentAsync [key=" + key + ", val="+ val+ ']';
     }
   }
-));
+);
   if (statsEnabled)   fut.listen(new UpdatePutTimeStatClosure<V>(metrics0(),start));
   return fut;
 }

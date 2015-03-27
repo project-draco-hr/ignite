@@ -3,7 +3,7 @@
   long start=statsEnabled ? System.nanoTime() : 0L;
   A.notNull(key,"key");
   if (keyCheck)   validateCacheKey(key);
-  V prevVal=ctx.cloneOnFlag(syncOp(new SyncOp<V>(true){
+  V prevVal=syncOp(new SyncOp<V>(true){
     @Override public V op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
       V ret=(V)tx.removeAllAsync(ctx,Collections.singletonList(key),entry,true,filter).get().value();
       if (ctx.config().getInterceptor() != null)       return (V)ctx.config().getInterceptor().onBeforeRemove(new CacheEntryImpl(key,ret)).get2();
@@ -13,7 +13,7 @@
       return "remove [key=" + key + ", filter="+ Arrays.toString(filter)+ ']';
     }
   }
-));
+);
   if (statsEnabled)   metrics0().addRemoveAndGetTimeNanos(System.nanoTime() - start);
   return prevVal;
 }

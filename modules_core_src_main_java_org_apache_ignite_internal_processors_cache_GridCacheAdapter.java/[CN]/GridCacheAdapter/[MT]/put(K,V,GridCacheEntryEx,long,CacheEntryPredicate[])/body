@@ -4,7 +4,7 @@
   A.notNull(key,"key",val,"val");
   if (keyCheck)   validateCacheKey(key);
   validateCacheValue(val);
-  V prevVal=ctx.cloneOnFlag(syncOp(new SyncOp<V>(true){
+  V prevVal=syncOp(new SyncOp<V>(true){
     @Override public V op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
       return (V)tx.putAllAsync(ctx,F.t(key,val),true,cached,ttl,filter).get().value();
     }
@@ -12,7 +12,7 @@
       return "put [key=" + key + ", val="+ val+ ", filter="+ Arrays.toString(filter)+ ']';
     }
   }
-));
+);
   if (statsEnabled)   metrics0().addPutAndGetTimeNanos(System.nanoTime() - start);
   return prevVal;
 }
