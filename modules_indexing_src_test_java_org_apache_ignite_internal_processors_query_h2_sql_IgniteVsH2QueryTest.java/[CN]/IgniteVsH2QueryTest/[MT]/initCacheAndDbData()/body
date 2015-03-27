@@ -1,0 +1,34 @@
+{
+  int idGen=0;
+  List<Organization> organizations=new ArrayList<>();
+  for (int i=0; i < 3; i++) {
+    int id=idGen++;
+    Organization org=new Organization(id,"Org" + id);
+    organizations.add(org);
+    pCache.put(org.id,org);
+    insertInDb(org);
+  }
+  List<Person> persons=new ArrayList<>();
+  for (int i=0; i < 5; i++) {
+    int id=idGen++;
+    Person person=new Person(id,organizations.get(i % organizations.size()),"name" + id,"lastName" + id,id * 100.0);
+    if (id == organizations.size() + 1)     person.lastName=null;
+    persons.add(person);
+    pCache.put(person.key(),person);
+    insertInDb(person);
+  }
+  List<Product> products=new ArrayList<>();
+  for (int i=0; i < 10; i++) {
+    int id=idGen++;
+    Product product=new Product(id,"Product" + id,id * 1000);
+    products.add(product);
+    rCache.put(product.id,product);
+    insertInDb(product);
+  }
+  for (int i=0; i < products.size() * 2; i++) {
+    int id=idGen++;
+    Purchase purchase=new Purchase(id,products.get(i % products.size()),persons.get(i % persons.size()));
+    pCache.put(purchase.key(),purchase);
+    insertInDb(purchase);
+  }
+}
