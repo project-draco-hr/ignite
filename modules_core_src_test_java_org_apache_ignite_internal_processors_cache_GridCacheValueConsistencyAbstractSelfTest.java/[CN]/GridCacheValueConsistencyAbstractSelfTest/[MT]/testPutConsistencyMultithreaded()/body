@@ -1,0 +1,29 @@
+{
+  for (int i=0; i < 20; i++) {
+    log.info("Iteration: " + i);
+    final int range=100;
+    final int iterCnt=100;
+    final AtomicInteger threadId=new AtomicInteger();
+    final AtomicInteger iters=new AtomicInteger();
+    multithreadedAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        Random rnd=new Random();
+        int g=threadId.getAndIncrement();
+        Ignite ignite=grid(g);
+        IgniteCache<Object,Object> cache=ignite.cache(null);
+        log.info("Update thread: " + ignite.name());
+        Thread.currentThread().setName("UpdateThread-" + ignite.name());
+        Long val=(long)g;
+        while (true) {
+          int i=iters.getAndIncrement();
+          if (i >= iterCnt)           break;
+          int k=rnd.nextInt(range);
+          cache.put(k,val);
+        }
+        return null;
+      }
+    }
+,gridCount()).get();
+    checkConsistency(range);
+  }
+}
