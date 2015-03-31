@@ -1,6 +1,7 @@
 {
   VisorCacheStoreConfiguration cfg=new VisorCacheStoreConfiguration();
-  CacheStore store=((IgniteKernal)ignite).internalCache(ccfg.getName()).context().store().configuredStore();
+  GridCacheAdapter<Object,Object> c=((IgniteKernal)ignite).internalCache(ccfg.getName());
+  CacheStore store=c != null && c.context().started() ? c.context().store().configuredStore() : null;
   cfg.jdbcStore=store instanceof CacheAbstractJdbcStore;
   cfg.store=compactClass(store);
   cfg.storeFactory=compactClass(ccfg.getCacheStoreFactory());
