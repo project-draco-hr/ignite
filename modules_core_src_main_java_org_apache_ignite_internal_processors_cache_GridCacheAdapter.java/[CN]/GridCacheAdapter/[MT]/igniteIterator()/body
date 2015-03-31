@@ -1,12 +1,13 @@
 {
   if (!ctx.isSwapOrOffheapEnabled() && ctx.kernalContext().discovery().size() == 1)   return localIteratorHonorExpirePolicy();
+  final GridCacheProjectionImpl<K,V> prj=ctx.projectionPerCall();
   CacheQueryFuture<Map.Entry<K,V>> fut=queries().createScanQuery(null).keepAll(false).execute();
   return ctx.itHolder().iterator(fut,new CacheIteratorConverter<Cache.Entry<K,V>,Map.Entry<K,V>>(){
     @Override protected Cache.Entry<K,V> convert(    Map.Entry<K,V> e){
       return new CacheEntryImpl<>(e.getKey(),e.getValue());
     }
     @Override protected void remove(    Cache.Entry<K,V> item){
-      ctx.gate().enter();
+      GridCacheProjectionImpl<K,V> prev=ctx.gate().enter(prj);
       try {
         removex(item.getKey());
       }
@@ -14,7 +15,7 @@
         throw CU.convertToCacheException(e);
       }
  finally {
-        ctx.gate().leave();
+        ctx.gate().leave(prev);
       }
     }
   }
