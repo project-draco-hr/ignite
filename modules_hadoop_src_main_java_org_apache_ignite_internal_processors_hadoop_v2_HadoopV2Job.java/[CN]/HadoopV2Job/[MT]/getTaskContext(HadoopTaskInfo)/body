@@ -7,8 +7,9 @@
   Class<?> cls=taskCtxClsPool.poll();
   try {
     if (cls == null) {
-      HadoopClassLoader ldr=new HadoopClassLoader(rsrcMgr.classPath());
+      HadoopClassLoader ldr=new HadoopClassLoader(rsrcMgr.classPath(),"hadoop-" + info.jobId() + "-"+ info.type()+ "-"+ info.taskNumber());
       cls=ldr.loadClass(HadoopV2TaskContext.class.getName());
+      fullCtxClsQueue.add(cls);
     }
     Constructor<?> ctr=cls.getConstructor(HadoopTaskInfo.class,HadoopJob.class,HadoopJobId.class,UUID.class,DataInput.class);
     if (jobConfData == null) synchronized (jobConf) {

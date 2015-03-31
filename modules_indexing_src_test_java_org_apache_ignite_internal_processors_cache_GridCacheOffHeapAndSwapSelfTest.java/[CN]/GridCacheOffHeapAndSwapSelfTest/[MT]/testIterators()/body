@@ -1,17 +1,13 @@
 {
-  GridCache<Long,Long> cache=populate();
+  IgniteCache<Long,Long> cache=populate();
   int cnt=0;
-  Iterator<Map.Entry<Long,Long>> ohIt=cache.offHeapIterator();
-  while (ohIt.hasNext()) {
-    Map.Entry<Long,Long> e=ohIt.next();
+  for (  Cache.Entry<Long,Long> e : cache.localEntries(CachePeekMode.OFFHEAP)) {
     assertEquals(e.getKey(),e.getValue());
     cnt++;
   }
   int cnt0=cnt;
   assertTrue(cnt > 0);
-  Iterator<Map.Entry<Long,Long>> sIt=cache.swapIterator();
-  while (sIt.hasNext()) {
-    Map.Entry<Long,Long> e=sIt.next();
+  for (  Cache.Entry<Long,Long> e : cache.localEntries(CachePeekMode.SWAP)) {
     assertEquals(e.getKey(),e.getValue());
     cnt++;
   }
