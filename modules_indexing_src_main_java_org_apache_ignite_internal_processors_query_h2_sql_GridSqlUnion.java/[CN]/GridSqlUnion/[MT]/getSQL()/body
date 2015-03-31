@@ -1,0 +1,40 @@
+{
+  StringBuilder buff=new StringBuilder();
+  buff.append('(').append(left.getSQL()).append(')');
+switch (unionType) {
+case SelectUnion.UNION_ALL:
+    buff.append("\nUNION ALL\n");
+  break;
+case SelectUnion.UNION:
+buff.append("\nUNION\n");
+break;
+case SelectUnion.INTERSECT:
+buff.append("\nINTERSECT\n");
+break;
+case SelectUnion.EXCEPT:
+buff.append("\nEXCEPT\n");
+break;
+default :
+throw new CacheException("type=" + unionType);
+}
+buff.append('(').append(right.getSQL()).append(')');
+if (!sort.isEmpty()) {
+buff.append("\nORDER BY ");
+boolean first=true;
+for (Map.Entry<GridSqlElement,GridSqlSortColumn> entry : sort.entrySet()) {
+if (first) first=false;
+ else buff.append(", ");
+GridSqlElement expression=entry.getKey();
+int idx=select.indexOf(expression);
+if (idx >= 0) buff.append(idx + 1);
+ else buff.append('=').append(StringUtils.unEnclose(expression.getSQL()));
+GridSqlSortColumn type=entry.getValue();
+if (!type.asc()) buff.append(" DESC");
+if (type.nullsFirst()) buff.append(" NULLS FIRST");
+ else if (type.nullsLast()) buff.append(" NULLS LAST");
+}
+}
+if (limit != null) buff.append(" LIMIT ").append(StringUtils.unEnclose(limit.getSQL()));
+if (offset != null) buff.append(" OFFSET ").append(StringUtils.unEnclose(offset.getSQL()));
+return buff.toString();
+}
