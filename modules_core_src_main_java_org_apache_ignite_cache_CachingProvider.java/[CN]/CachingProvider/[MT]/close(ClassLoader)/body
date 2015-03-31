@@ -1,9 +1,8 @@
 {
-  Collection<CacheManager> mgrs;
+  Map<URI,GridFutureAdapter<CacheManager>> uriMap;
 synchronized (cacheManagers) {
-    Map<URI,CacheManager> uriMap=cacheManagers.remove(clsLdr);
-    if (uriMap == null)     return;
-    mgrs=uriMap.values();
+    uriMap=cacheManagers.remove(clsLdr);
   }
-  for (  CacheManager mgr : mgrs)   mgr.close();
+  if (uriMap == null)   return;
+  closeManagers(uriMap.values());
 }

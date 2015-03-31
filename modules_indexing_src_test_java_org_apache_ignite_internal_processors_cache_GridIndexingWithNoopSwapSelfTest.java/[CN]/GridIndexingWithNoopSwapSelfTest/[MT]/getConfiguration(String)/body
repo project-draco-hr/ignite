@@ -4,19 +4,16 @@
   disco.setIpFinder(ipFinder);
   c.setDiscoverySpi(disco);
   c.setSwapSpaceSpi(new NoopSwapSpaceSpi());
-  CacheConfiguration cc=defaultCacheConfiguration();
+  CacheConfiguration<?,?> cc=defaultCacheConfiguration();
   cc.setCacheMode(PARTITIONED);
   cc.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
   cc.setRebalanceMode(SYNC);
   cc.setSwapEnabled(true);
-  cc.setDistributionMode(CacheDistributionMode.NEAR_PARTITIONED);
-  cc.setEvictNearSynchronized(false);
-  cc.setEvictionPolicy(new CacheFifoEvictionPolicy(1000));
+  cc.setNearConfiguration(new NearCacheConfiguration());
+  cc.setEvictionPolicy(new FifoEvictionPolicy(1000));
   cc.setBackups(1);
   cc.setAtomicityMode(TRANSACTIONAL);
-  CacheQueryConfiguration qcfg=new CacheQueryConfiguration();
-  qcfg.setIndexPrimitiveKey(true);
-  cc.setQueryConfiguration(qcfg);
+  cc.setIndexedTypes(Integer.class,ObjectValue.class);
   c.setCacheConfiguration(cc);
   return c;
 }

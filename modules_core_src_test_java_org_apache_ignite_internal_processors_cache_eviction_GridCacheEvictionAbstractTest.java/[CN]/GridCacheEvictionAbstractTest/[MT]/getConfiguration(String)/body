@@ -2,15 +2,18 @@
   IgniteConfiguration c=super.getConfiguration(gridName);
   CacheConfiguration cc=defaultCacheConfiguration();
   cc.setCacheMode(mode);
-  cc.setDistributionMode(nearEnabled ? NEAR_PARTITIONED : PARTITIONED_ONLY);
   cc.setEvictionPolicy(createPolicy(plcMax));
-  cc.setNearEvictionPolicy(createNearPolicy(nearMax));
   cc.setEvictSynchronized(evictSync);
-  cc.setEvictNearSynchronized(evictNearSync);
   cc.setSwapEnabled(false);
   cc.setWriteSynchronizationMode(syncCommit ? FULL_SYNC : FULL_ASYNC);
   cc.setStartSize(plcMax);
   cc.setAtomicityMode(TRANSACTIONAL);
+  if (nearEnabled) {
+    NearCacheConfiguration nearCfg=new NearCacheConfiguration();
+    nearCfg.setNearEvictionPolicy(createNearPolicy(nearMax));
+    cc.setNearConfiguration(nearCfg);
+  }
+ else   cc.setNearConfiguration(null);
   if (mode == PARTITIONED)   cc.setBackups(1);
   if (filter != null)   cc.setEvictionFilter(filter);
   c.setCacheConfiguration(cc);

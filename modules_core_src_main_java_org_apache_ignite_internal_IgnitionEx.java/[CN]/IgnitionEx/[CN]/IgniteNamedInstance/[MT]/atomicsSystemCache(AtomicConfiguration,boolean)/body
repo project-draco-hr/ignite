@@ -1,16 +1,16 @@
 {
-  CacheConfiguration ccfg=new CacheConfiguration();
-  ccfg.setName(CU.ATOMICS_CACHE_NAME);
-  ccfg.setAtomicityMode(TRANSACTIONAL);
-  ccfg.setSwapEnabled(false);
-  ccfg.setQueryIndexEnabled(false);
-  ccfg.setRebalanceMode(SYNC);
-  ccfg.setWriteSynchronizationMode(FULL_SYNC);
-  ccfg.setCacheMode(cfg.getCacheMode());
-  if (cfg.getCacheMode() == PARTITIONED) {
-    ccfg.setBackups(cfg.getBackups());
-    ccfg.setDistributionMode(client ? NEAR_ONLY : NEAR_PARTITIONED);
+  if (!client) {
+    CacheConfiguration ccfg=new CacheConfiguration();
+    ccfg.setName(CU.ATOMICS_CACHE_NAME);
+    ccfg.setAtomicityMode(TRANSACTIONAL);
+    ccfg.setSwapEnabled(false);
+    ccfg.setRebalanceMode(SYNC);
+    ccfg.setWriteSynchronizationMode(FULL_SYNC);
+    ccfg.setCacheMode(cfg.getCacheMode());
+    ccfg.setNodeFilter(CacheConfiguration.ALL_NODES);
+    ccfg.setNearConfiguration(new NearCacheConfiguration());
+    if (cfg.getCacheMode() == PARTITIONED)     ccfg.setBackups(cfg.getBackups());
+    return ccfg;
   }
- else   ccfg.setDistributionMode(client ? NEAR_ONLY : PARTITIONED_ONLY);
-  return ccfg;
+  return null;
 }

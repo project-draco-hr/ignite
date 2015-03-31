@@ -17,12 +17,7 @@
   map.put(key1,1);
   map.put(key2,2);
   map.put(key3,3);
-  interceptor.retInterceptor=new InterceptorAdapter(){
-    @Nullable @Override public IgniteBiTuple onBeforeRemove(    Cache.Entry entry){
-      return new IgniteBiTuple(false,999);
-    }
-  }
-;
+  interceptor.retInterceptor=new BeforeRemoveInterceptor(new IgniteBiTuple(false,999));
   log.info("Batch remove 1: " + op);
   batchRemove(0,op,map);
   checkCacheValue(key1,null);
@@ -34,12 +29,7 @@
   jcache(0).putAll(map);
   interceptor.disabled=false;
   interceptor.reset();
-  interceptor.retInterceptor=new InterceptorAdapter(){
-    @Nullable @Override public IgniteBiTuple onBeforeRemove(    Cache.Entry entry){
-      return new IgniteBiTuple(false,999);
-    }
-  }
-;
+  interceptor.retInterceptor=new BeforeRemoveInterceptor(new IgniteBiTuple(false,999));
   log.info("Batch remove 2: " + op);
   batchRemove(0,op,map);
   checkCacheValue(key1,null);
@@ -57,12 +47,7 @@
   jcache(0).putAll(map);
   interceptor.disabled=false;
   interceptor.reset();
-  interceptor.retInterceptor=new InterceptorAdapter(){
-    @Nullable @Override public IgniteBiTuple onBeforeRemove(    Cache.Entry entry){
-      return new IgniteBiTuple(entry.getKey().equals(key1),999);
-    }
-  }
-;
+  interceptor.retInterceptor=new BatchRemoveInterceptor(key1);
   log.info("Batch remove 3: " + op);
   batchRemove(0,op,map);
   checkCacheValue(key1,1);

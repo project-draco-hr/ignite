@@ -1,0 +1,19 @@
+{
+  OptimizedClassDescriptor desc=clsMap.get(cls);
+  if (desc == null) {
+    int typeId=resolveTypeId(cls.getName(),mapper);
+    boolean registered;
+    try {
+      registered=ctx.registerClass(typeId,cls);
+    }
+ catch (    IgniteCheckedException e) {
+      throw new IOException("Failed to register class: " + cls.getName(),e);
+    }
+    desc=new OptimizedClassDescriptor(cls,registered ? typeId : 0,clsMap,ctx,mapper);
+    if (registered) {
+      OptimizedClassDescriptor old=clsMap.putIfAbsent(cls,desc);
+      if (old != null)       desc=old;
+    }
+  }
+  return desc;
+}

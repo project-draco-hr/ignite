@@ -7,7 +7,7 @@
       return;
     }
     int i=0;
-    long topVer=topSnapshot.get().topologyVersion();
+    AffinityTopologyVersion topVer=GridNearLockFuture.this.topVer.get();
     for (    KeyCacheObject k : keys) {
       while (true) {
         GridNearCacheEntry entry=cctx.near().entryExx(k,topVer);
@@ -33,7 +33,7 @@
               oldVal=oldValTup.get2();
             }
           }
-          entry.resetFromPrimary(newVal,lockVer,dhtVer,node.id());
+          entry.resetFromPrimary(newVal,lockVer,dhtVer,node.id(),topVer);
           if (inTx() && implicitTx() && tx.onePhaseCommit()) {
             boolean pass=res.filterResult(i);
             tx.entry(cctx.txKey(k)).filters(pass ? CU.empty0() : CU.alwaysFalse0Arr());

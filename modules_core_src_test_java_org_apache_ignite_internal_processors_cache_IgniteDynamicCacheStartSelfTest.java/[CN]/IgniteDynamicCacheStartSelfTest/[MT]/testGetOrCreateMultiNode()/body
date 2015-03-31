@@ -1,0 +1,30 @@
+{
+  try {
+    final AtomicInteger cnt=new AtomicInteger();
+    final AtomicReference<Throwable> err=new AtomicReference<>();
+    GridTestUtils.runMultiThreaded(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        int idx=cnt.getAndIncrement();
+        try {
+          CacheConfiguration cfg=new CacheConfiguration(DYNAMIC_CACHE_NAME);
+          ignite(idx).getOrCreateCache(cfg);
+        }
+ catch (        Exception e) {
+          err.compareAndSet(null,e);
+        }
+        return null;
+      }
+    }
+,nodeCount(),"starter");
+    assertNull(err.get());
+    for (int i=0; i < nodeCount(); i++) {
+      GridCacheContext<Object,Object> ctx=((IgniteKernal)ignite(i)).internalCache(DYNAMIC_CACHE_NAME).context();
+      assertTrue(ctx.affinityNode());
+      assertFalse(ctx.isNear());
+    }
+    lightCheckDynamicCache();
+  }
+  finally {
+    ignite(0).destroyCache(DYNAMIC_CACHE_NAME);
+  }
+}

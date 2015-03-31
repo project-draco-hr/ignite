@@ -1,0 +1,17 @@
+{
+  SCHEDULER.schedule(new CAX(){
+    @Override public void applyx(){
+      for (; ; ) {
+        Cursor c=ignite.cluster().<UUID,Cursor>nodeLocalMap().get(id);
+        if (c == null)         break;
+        long untouchedTime=U.currentTimeMillis() - c.lastAccessTime;
+        if (untouchedTime < RMV_DELAY) {
+          scheduleRemoval(id,RMV_DELAY - untouchedTime);
+          break;
+        }
+ else         if (remove(id,c))         break;
+      }
+    }
+  }
+,delay,TimeUnit.MILLISECONDS);
+}

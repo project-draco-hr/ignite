@@ -10,21 +10,18 @@
     throw new IgniteException("Failed to wait for cache preloader start [cacheName=" + ctx.name() + "]",e);
   }
   if (ctx.deploymentEnabled())   ctx.deploy().onEnter();
+  rwLock.readLock();
+  if (stopped) {
+    rwLock.readUnlock();
+    throw new IllegalStateException("Dynamic cache has been stopped: " + ctx.name());
+  }
   try {
-    ctx.kernalContext().gateway().readLock();
     GridCacheProjectionImpl<K,V> prev=ctx.projectionPerCall();
     if (prev != null || prj != null)     ctx.projectionPerCall(prj);
     return prev;
   }
- catch (  IllegalStateException e) {
-    throw e;
-  }
-catch (  RuntimeException|Error e) {
-    try {
-      ctx.kernalContext().gateway().readUnlock();
-    }
- catch (    IllegalMonitorStateException ignore) {
-    }
+ catch (  RuntimeException e) {
+    rwLock.readUnlock();
     throw e;
   }
 }

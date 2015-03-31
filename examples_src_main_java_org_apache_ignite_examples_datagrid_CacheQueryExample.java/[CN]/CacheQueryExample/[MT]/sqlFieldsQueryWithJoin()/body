@@ -1,6 +1,7 @@
 {
-  IgniteCache<?,?> cache=Ignition.ignite().jcache(CACHE_NAME);
-  QueryCursor<List<?>> cursor=cache.queryFields(sql("select concat(firstName, ' ', lastName), " + "Organization.name from Person, Organization where " + "Person.orgId = Organization.id"));
+  IgniteCache<AffinityKey<UUID>,Person> cache=Ignition.ignite().cache(PERSON_CACHE);
+  String sql="select concat(firstName, ' ', lastName), org.name " + "from Person, \"" + ORG_CACHE + "\".Organization as org "+ "where Person.orgId = org.id";
+  QueryCursor<List<?>> cursor=cache.query(new SqlFieldsQuery(sql));
   List<List<?>> res=cursor.getAll();
   print("Names of all employees and organizations they belong to:",res);
 }

@@ -1,0 +1,47 @@
+{
+  try {
+    final AtomicInteger cnt=new AtomicInteger(nodeCount());
+    final AtomicReference<Throwable> err=new AtomicReference<>();
+    final int clientCnt=2;
+    try {
+      testAttribute=false;
+      for (int i=0; i < clientCnt; i++)       startGrid(nodeCount() + i);
+      cnt.set(nodeCount());
+      final CacheConfiguration<Object,Object> cacheCfg=new CacheConfiguration<>(DYNAMIC_CACHE_NAME);
+      cacheCfg.setNodeFilter(NODE_FILTER);
+      if (nearOnly)       ignite(0).createCache(cacheCfg);
+      GridTestUtils.runMultiThreaded(new Callable<Object>(){
+        @Override public Object call() throws Exception {
+          int idx=cnt.getAndIncrement();
+          try {
+            if (nearOnly)             ignite(idx).getOrCreateNearCache(DYNAMIC_CACHE_NAME,new NearCacheConfiguration<>());
+ else             ignite(idx).getOrCreateCache(cacheCfg,new NearCacheConfiguration<>());
+          }
+ catch (          Exception ex) {
+            err.compareAndSet(null,ex);
+          }
+          return null;
+        }
+      }
+,clientCnt,"starter");
+      assertNull(err.get());
+      for (int i=0; i < nodeCount(); i++) {
+        GridCacheContext<Object,Object> ctx=((IgniteKernal)ignite(i)).internalCache(DYNAMIC_CACHE_NAME).context();
+        assertTrue(ctx.affinityNode());
+        assertFalse(ctx.isNear());
+      }
+      for (int i=0; i < clientCnt; i++) {
+        GridCacheContext<Object,Object> ctx=((IgniteKernal)ignite(nodeCount() + i)).internalCache(DYNAMIC_CACHE_NAME).context();
+        assertFalse(ctx.affinityNode());
+        assertTrue("Cache is not near for index: " + (nodeCount() + i),ctx.isNear());
+      }
+      lightCheckDynamicCache();
+    }
+  finally {
+      for (int i=0; i < clientCnt; i++)       stopGrid(nodeCount() + i);
+    }
+  }
+  finally {
+    ignite(0).destroyCache(DYNAMIC_CACHE_NAME);
+  }
+}

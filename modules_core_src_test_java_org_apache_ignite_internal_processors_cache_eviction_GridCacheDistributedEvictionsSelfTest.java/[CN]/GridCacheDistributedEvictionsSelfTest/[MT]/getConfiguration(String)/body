@@ -7,12 +7,14 @@
   CacheConfiguration cc=defaultCacheConfiguration();
   cc.setCacheMode(mode);
   cc.setAtomicityMode(TRANSACTIONAL);
-  cc.setDistributionMode(nearEnabled ? NEAR_PARTITIONED : PARTITIONED_ONLY);
+  if (nearEnabled) {
+    NearCacheConfiguration nearCfg=new NearCacheConfiguration();
+    cc.setNearConfiguration(nearCfg);
+  }
   cc.setSwapEnabled(false);
   cc.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
-  cc.setEvictionPolicy(new CacheFifoEvictionPolicy<>(10));
+  cc.setEvictionPolicy(new FifoEvictionPolicy<>(10));
   cc.setEvictSynchronized(evictSync);
-  cc.setEvictNearSynchronized(evictNearSync);
   cc.setEvictSynchronizedKeyBufferSize(1);
   cc.setAffinity(new GridCacheModuloAffinityFunction(gridCnt,1));
   c.setCacheConfiguration(cc);
