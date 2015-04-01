@@ -1,0 +1,11 @@
+{
+  IgniteCache<Integer,Integer> cache=jcache(0);
+  long time=DEFAULT_TIME_TO_LIVE + 2000;
+  List<Integer> keys=primaryKeys(cache,SIZE);
+  for (int i=0; i < SIZE; i++)   cache.withExpiryPolicy(new TouchedExpiryPolicy(new Duration(MILLISECONDS,time))).put(keys.get(i),i);
+  checkSizeBeforeLive(cache,SIZE);
+  Thread.sleep(DEFAULT_TIME_TO_LIVE + 500);
+  checkSizeBeforeLive(cache,SIZE);
+  Thread.sleep(time - DEFAULT_TIME_TO_LIVE + 500);
+  checkSizeAfterLive();
+}
