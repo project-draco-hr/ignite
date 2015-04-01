@@ -1,0 +1,21 @@
+{
+  CacheConfiguration ccfg=super.cacheConfiguration(gridName);
+  if (ccfg.getCacheMode() != CacheMode.LOCAL)   assertEquals(1,ccfg.getBackups());
+  assertTrue(ccfg.isCopyOnRead());
+  assertEquals(FULL_SYNC,ccfg.getWriteSynchronizationMode());
+  ccfg.setCacheStoreFactory(singletonFactory(new CacheStoreAdapter(){
+    @Override public void loadCache(    IgniteBiInClosure clo,    Object... args){
+      clo.apply(new TestKey(1),new TestValue());
+    }
+    @Override public Object load(    Object key) throws CacheLoaderException {
+      return null;
+    }
+    @Override public void write(    Cache.Entry entry) throws CacheWriterException {
+    }
+    @Override public void delete(    Object key) throws CacheWriterException {
+    }
+  }
+));
+  ccfg.setInterceptor(new TestInterceptor());
+  return ccfg;
+}
