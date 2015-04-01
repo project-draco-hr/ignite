@@ -1,8 +1,8 @@
 {
   if (atomicityMode() == TRANSACTIONAL) {
     String key="1";
-    for (int i=0; i < gridCount(); i++)     assertFalse("Invalid result on grid: " + i,cache(i).containsKey(key));
-    GridCache<String,Integer> cache=cache(0);
+    for (int i=0; i < gridCount(); i++)     assertFalse("Invalid result on grid: " + i,jcache(i).containsKey(key));
+    IgniteCache<String,Integer> cache=jcache(0);
     for (    TransactionConcurrency conc : TransactionConcurrency.values()) {
       for (      TransactionIsolation iso : TransactionIsolation.values()) {
         try (Transaction tx=grid(0).transactions().txStart(conc,iso)){
@@ -11,7 +11,7 @@
           cache.put(key,1);
           assertTrue("Invalid result on grid inside tx",cache.containsKey(key));
         }
-         for (int i=0; i < gridCount(); i++)         assertFalse("Invalid result on grid: " + i,cache(i).containsKey(key));
+         for (int i=0; i < gridCount(); i++)         assertFalse("Invalid result on grid: " + i,jcache(i).containsKey(key));
       }
     }
   }

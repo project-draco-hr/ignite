@@ -1,0 +1,13 @@
+{
+  for (  Ignite grid : Ignition.allGrids()) {
+    final GridCacheAdapter cache=((IgniteKernal)grid).internalCache(null);
+    if (cache == null)     continue;
+    GridTestUtils.waitForCondition(new GridAbsPredicate(){
+      @Override public boolean apply(){
+        return cache.context().affinity().affinityTopologyVersion().topologyVersion() == topVer;
+      }
+    }
+,5000);
+    assertEquals(topVer,cache.context().affinity().affinityTopologyVersion().topologyVersion());
+  }
+}

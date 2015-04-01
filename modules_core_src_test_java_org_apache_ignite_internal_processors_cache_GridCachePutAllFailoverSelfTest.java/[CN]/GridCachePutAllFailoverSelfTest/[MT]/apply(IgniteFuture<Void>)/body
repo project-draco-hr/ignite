@@ -1,0 +1,12 @@
+{
+  ComputeTaskFuture<?> taskFut=(ComputeTaskFuture<?>)f;
+  try {
+    taskFut.get();
+  }
+ catch (  IgniteException e) {
+    log.error("Job failed",e);
+    jobFailed.set(true);
+  }
+  resQueue.remove(taskFut);
+  if (inputExhausted.get() && resQueue.isEmpty())   emptyLatch.countDown();
+}

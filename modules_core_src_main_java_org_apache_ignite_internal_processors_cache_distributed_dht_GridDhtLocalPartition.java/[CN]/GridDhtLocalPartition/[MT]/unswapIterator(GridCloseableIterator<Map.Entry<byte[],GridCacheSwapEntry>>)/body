@@ -1,0 +1,28 @@
+{
+  if (it == null)   return null;
+  return new Iterator<GridDhtCacheEntry>(){
+    /** 
+ */
+    GridDhtCacheEntry lastEntry;
+    @Override public boolean hasNext(){
+      return it.hasNext();
+    }
+    @Override public GridDhtCacheEntry next(){
+      Map.Entry<byte[],GridCacheSwapEntry> entry=it.next();
+      byte[] keyBytes=entry.getKey();
+      try {
+        KeyCacheObject key=cctx.toCacheKeyObject(keyBytes);
+        lastEntry=(GridDhtCacheEntry)cctx.cache().entryEx(key,false);
+        lastEntry.unswap(true);
+        return lastEntry;
+      }
+ catch (      IgniteCheckedException e) {
+        throw new CacheException(e);
+      }
+    }
+    @Override public void remove(){
+      map.remove(lastEntry.key(),lastEntry);
+    }
+  }
+;
+}
