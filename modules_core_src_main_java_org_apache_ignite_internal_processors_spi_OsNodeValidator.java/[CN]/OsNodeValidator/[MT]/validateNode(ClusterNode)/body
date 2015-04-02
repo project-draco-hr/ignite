@@ -1,0 +1,14 @@
+{
+  ClusterNode locNode=ctx.discovery().localNode();
+  String locBuildVer=locNode.attribute(ATTR_BUILD_VER);
+  String rmtBuildVer=node.attribute(ATTR_BUILD_VER);
+  if (!F.eq(rmtBuildVer,locBuildVer)) {
+    if (!locBuildVer.equals(rmtBuildVer)) {
+      String errMsg="Local node and remote node have different version numbers " + "(node will not join, Ignite does not support rolling updates, " + "so versions must be exactly the same) "+ "[locBuildVer=" + locBuildVer + ", rmtBuildVer="+ rmtBuildVer+ ", locNodeAddrs="+ U.addressesAsString(locNode)+ ", rmtNodeAddrs="+ U.addressesAsString(node)+ ", locNodeId="+ locNode.id()+ ", rmtNodeId="+ node.id()+ ']';
+      LT.warn(log,null,errMsg);
+      if (log.isDebugEnabled())       log.debug(errMsg);
+      return new IgniteSpiNodeValidationResult(node.id(),errMsg,errMsg);
+    }
+  }
+  return null;
+}
