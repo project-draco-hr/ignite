@@ -1,14 +1,16 @@
 {
   IgniteConfiguration cfg=super.getConfiguration(gridName);
-  CacheConfiguration cache=new CacheConfiguration();
-  cache.setCacheMode(cacheMode());
-  cache.setAtomicityMode(atomicityMode());
-  cache.setMemoryMode(memoryMode());
-  cache.setOffHeapMaxMemory(0);
-  cache.setEvictionPolicy(new LruEvictionPolicy(MAX_CACHE_SIZE));
-  cache.setIndexedTypes(Integer.class,Integer.class);
-  cache.setBackups(2);
-  cache.setCacheStoreFactory(singletonFactory(new CacheStoreAdapter(){
+  CacheConfiguration ccfg=new CacheConfiguration();
+  ccfg.setCacheMode(cacheMode());
+  ccfg.setAtomicityMode(atomicityMode());
+  ccfg.setMemoryMode(memoryMode());
+  ccfg.setOffHeapMaxMemory(0);
+  ccfg.setEvictionPolicy(new LruEvictionPolicy(MAX_CACHE_SIZE));
+  ccfg.setIndexedTypes(Integer.class,Integer.class);
+  ccfg.setBackups(2);
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  ccfg.setRebalanceMode(SYNC);
+  ccfg.setCacheStoreFactory(singletonFactory(new CacheStoreAdapter(){
     @Override public void loadCache(    IgniteBiInClosure clo,    Object... args){
       for (int i=0; i < SIZE; i++)       clo.apply(i,i);
     }
@@ -21,8 +23,8 @@
     }
   }
 ));
-  cache.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new TouchedExpiryPolicy(new Duration(MILLISECONDS,DEFAULT_TIME_TO_LIVE))));
-  cfg.setCacheConfiguration(cache);
+  ccfg.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new TouchedExpiryPolicy(new Duration(MILLISECONDS,DEFAULT_TIME_TO_LIVE))));
+  cfg.setCacheConfiguration(ccfg);
   ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(IP_FINDER);
   return cfg;
 }
