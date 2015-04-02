@@ -7,10 +7,22 @@
   cache.setOffHeapMaxMemory(0);
   cache.setEvictionPolicy(new LruEvictionPolicy(MAX_CACHE_SIZE));
   cache.setIndexedTypes(Integer.class,Integer.class);
+  cache.setBackups(2);
+  cache.setCacheStoreFactory(singletonFactory(new CacheStoreAdapter(){
+    @Override public void loadCache(    IgniteBiInClosure clo,    Object... args){
+      for (int i=0; i < SIZE; i++)       clo.apply(i,i);
+    }
+    @Override public Object load(    Object key) throws CacheLoaderException {
+      return key;
+    }
+    @Override public void write(    Cache.Entry entry) throws CacheWriterException {
+    }
+    @Override public void delete(    Object key) throws CacheWriterException {
+    }
+  }
+));
   cache.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new TouchedExpiryPolicy(new Duration(MILLISECONDS,DEFAULT_TIME_TO_LIVE))));
   cfg.setCacheConfiguration(cache);
-  TcpDiscoverySpi disco=new TcpDiscoverySpi();
-  disco.setIpFinder(IP_FINDER);
-  cfg.setDiscoverySpi(disco);
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(IP_FINDER);
   return cfg;
 }
