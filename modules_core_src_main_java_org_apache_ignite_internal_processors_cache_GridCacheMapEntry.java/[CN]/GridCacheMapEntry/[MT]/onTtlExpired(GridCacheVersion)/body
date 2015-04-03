@@ -7,16 +7,20 @@ synchronized (this) {
       boolean hasOldBytes=valPtr != 0;
       boolean expired=checkExpired();
       if (expired) {
-        if (cctx.deferredDelete() && !detached() && !isInternal()) {
-          if (!deletedUnlocked()) {
-            update(null,0L,0L,ver);
-            deletedUnlocked(true);
-            deferred=true;
+        if (!obsolete()) {
+          if (cctx.deferredDelete() && !detached() && !isInternal()) {
+            if (!deletedUnlocked()) {
+              update(null,0L,0L,ver);
+              deletedUnlocked(true);
+              deferred=true;
+            }
+          }
+ else {
+            if (markObsolete0(obsoleteVer,true))             obsolete=true;
           }
         }
- else {
-          if (markObsolete0(obsoleteVer,true))           obsolete=true;
-        }
+        clearIndex(saveValueForIndexUnlocked());
+        releaseSwap();
         if (cctx.events().isRecordable(EVT_CACHE_OBJECT_EXPIRED)) {
           cctx.events().addEvent(partition(),key,cctx.localNodeId(),null,EVT_CACHE_OBJECT_EXPIRED,null,false,expiredVal,expiredVal != null || hasOldBytes,null,null,null);
         }
