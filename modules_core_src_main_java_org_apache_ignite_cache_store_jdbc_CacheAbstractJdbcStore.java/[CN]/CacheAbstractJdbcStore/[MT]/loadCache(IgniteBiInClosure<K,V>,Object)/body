@@ -1,12 +1,12 @@
 {
   ExecutorService pool=null;
   try {
+    String cacheName=session().cacheName();
     pool=Executors.newFixedThreadPool(maxPoolSz);
     Collection<Future<?>> futs=new ArrayList<>();
     if (args != null && args.length > 0) {
       if (args.length % 2 != 0)       throw new CacheLoaderException("Expected even number of arguments, but found: " + args.length);
       if (log.isDebugEnabled())       log.debug("Start loading entries from db using user queries from arguments");
-      String cacheName=session().cacheName();
       for (int i=0; i < args.length; i+=2) {
         String keyType=args[i].toString();
         String selQry=args[i + 1].toString();
@@ -16,10 +16,10 @@
     }
  else {
       Collection<EntryMapping> entryMappings=cacheMappings(session().cacheName()).values();
-      if (log.isDebugEnabled())       log.debug("Start loading all cache types entries from db");
       for (      EntryMapping em : entryMappings) {
         if (parallelLoadCacheMinThreshold > 0) {
           Connection conn=null;
+          log.debug("Start parallel loading entries of one type from db [cache name=" + cacheName + ", key type="+ em.keyType()+ " ]");
           try {
             conn=connection();
             PreparedStatement stmt=conn.prepareStatement(em.loadCacheSelRangeQry);
@@ -47,10 +47,14 @@
             U.closeQuiet(conn);
           }
         }
- else         futs.add(pool.submit(loadCacheFull(em,clo)));
+ else {
+          if (log.isDebugEnabled())           log.debug("Start loading entries of one type from db [cache name=" + cacheName + ", key type="+ em.keyType()+ " ]");
+          futs.add(pool.submit(loadCacheFull(em,clo)));
+        }
       }
     }
     for (    Future<?> fut : futs)     U.get(fut);
+    if (log.isDebugEnabled())     log.debug("Finished load cache: " + cacheName + " from db");
   }
  catch (  IgniteCheckedException e) {
     throw new CacheLoaderException("Failed to load cache",e.getCause());
