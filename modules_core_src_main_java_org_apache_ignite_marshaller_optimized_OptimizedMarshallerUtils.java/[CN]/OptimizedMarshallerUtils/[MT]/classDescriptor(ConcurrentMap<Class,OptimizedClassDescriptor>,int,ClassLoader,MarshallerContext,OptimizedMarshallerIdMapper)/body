@@ -1,5 +1,11 @@
 {
-  Class cls=ctx.getClass(id,ldr);
+  Class cls;
+  try {
+    cls=ctx.getClass(id,ldr);
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IOException("Failed to resolve class for ID: " + id,e);
+  }
   OptimizedClassDescriptor desc=clsMap.get(cls);
   if (desc == null) {
     OptimizedClassDescriptor old=clsMap.putIfAbsent(cls,desc=new OptimizedClassDescriptor(cls,resolveTypeId(cls.getName(),mapper),clsMap,ctx,mapper));
