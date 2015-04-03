@@ -1,0 +1,21 @@
+{
+  CacheConfiguration ccfg=new CacheConfiguration(cfg);
+  IgnitePredicate nodeFilter=ccfg.getNodeFilter();
+  ClusterNode locNode=ctx.discovery().localNode();
+  boolean affNodeStart=!clientStartOnly && nodeFilter.apply(locNode);
+  boolean clientNodeStart=locNode.id().equals(initiatingNodeId);
+  if (sharedCtx.cacheContext(CU.cacheId(cfg.getName())) != null)   return;
+  if (affNodeStart || clientNodeStart) {
+    if (clientNodeStart && !affNodeStart) {
+      if (nearCfg != null)       ccfg.setNearConfiguration(nearCfg);
+    }
+    CacheObjectContext cacheObjCtx=ctx.cacheObjects().contextForCache(null,ccfg.getName(),ccfg);
+    GridCacheContext cacheCtx=createCache(ccfg,cacheType,cacheObjCtx);
+    cacheCtx.startTopologyVersion(topVer);
+    cacheCtx.dynamicDeploymentId(deploymentId);
+    sharedCtx.addCacheContext(cacheCtx);
+    caches.put(maskNull(cacheCtx.name()),cacheCtx.cache());
+    startCache(cacheCtx.cache());
+    onKernalStart(cacheCtx.cache());
+  }
+}
