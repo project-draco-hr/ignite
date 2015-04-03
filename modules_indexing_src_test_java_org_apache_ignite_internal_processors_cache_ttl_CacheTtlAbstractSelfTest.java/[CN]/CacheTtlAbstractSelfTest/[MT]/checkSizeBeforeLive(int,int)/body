@@ -1,0 +1,16 @@
+{
+  for (int i=0; i < gridCnt; ++i) {
+    IgniteCache<Integer,Integer> cache=jcache(i);
+    log.info("Size [node=" + i + ", heap="+ cache.localSize(ONHEAP)+ ", offheap="+ cache.localSize(OFFHEAP)+ ", swap="+ cache.localSize(SWAP)+ ']');
+    if (memoryMode() == CacheMemoryMode.OFFHEAP_TIERED) {
+      assertEquals("Unexpected size, node: " + i,0,cache.localSize(ONHEAP));
+      assertEquals("Unexpected size, node: " + i,size,cache.localSize(OFFHEAP));
+    }
+ else {
+      assertEquals("Unexpected size, node: " + i,size > MAX_CACHE_SIZE ? MAX_CACHE_SIZE : size,cache.localSize(ONHEAP));
+      assertEquals("Unexpected size, node: " + i,size > MAX_CACHE_SIZE ? size - MAX_CACHE_SIZE : 0,cache.localSize(OFFHEAP));
+    }
+    for (int key=0; key < size; key++)     assertNotNull(cache.localPeek(key));
+    assertFalse(cache.query(new SqlQuery<>(Integer.class,"_val >= 0")).getAll().isEmpty());
+  }
+}
