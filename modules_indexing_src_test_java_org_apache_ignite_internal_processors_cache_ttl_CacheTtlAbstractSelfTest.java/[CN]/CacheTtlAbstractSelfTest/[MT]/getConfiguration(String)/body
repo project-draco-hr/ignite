@@ -1,0 +1,30 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  CacheConfiguration ccfg=new CacheConfiguration();
+  ccfg.setCacheMode(cacheMode());
+  ccfg.setAtomicityMode(atomicityMode());
+  ccfg.setMemoryMode(memoryMode());
+  ccfg.setOffHeapMaxMemory(0);
+  ccfg.setEvictionPolicy(new LruEvictionPolicy(MAX_CACHE_SIZE));
+  ccfg.setIndexedTypes(Integer.class,Integer.class);
+  ccfg.setBackups(2);
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  ccfg.setRebalanceMode(SYNC);
+  ccfg.setCacheStoreFactory(singletonFactory(new CacheStoreAdapter(){
+    @Override public void loadCache(    IgniteBiInClosure clo,    Object... args){
+      for (int i=0; i < SIZE; i++)       clo.apply(i,i);
+    }
+    @Override public Object load(    Object key) throws CacheLoaderException {
+      return key;
+    }
+    @Override public void write(    Cache.Entry entry) throws CacheWriterException {
+    }
+    @Override public void delete(    Object key) throws CacheWriterException {
+    }
+  }
+));
+  ccfg.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new TouchedExpiryPolicy(new Duration(MILLISECONDS,DEFAULT_TIME_TO_LIVE))));
+  cfg.setCacheConfiguration(ccfg);
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(IP_FINDER);
+  return cfg;
+}
