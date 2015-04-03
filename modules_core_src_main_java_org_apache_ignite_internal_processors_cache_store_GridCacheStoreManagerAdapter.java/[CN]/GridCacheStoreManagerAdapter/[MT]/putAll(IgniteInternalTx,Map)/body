@@ -1,0 +1,37 @@
+{
+  if (F.isEmpty(map))   return true;
+  if (map.size() == 1) {
+    Map.Entry<Object,IgniteBiTuple<Object,GridCacheVersion>> e=((Map<Object,IgniteBiTuple<Object,GridCacheVersion>>)map).entrySet().iterator().next();
+    return put(tx,e.getKey(),e.getValue().get1(),e.getValue().get2());
+  }
+ else {
+    if (store != null) {
+      EntriesView entries=new EntriesView(map);
+      if (log.isDebugEnabled())       log.debug("Storing values in cache store [entries=" + entries + ']');
+      sessionInit0(tx);
+      boolean thewEx=true;
+      try {
+        store.writeAll(entries);
+        thewEx=false;
+      }
+ catch (      ClassCastException e) {
+        handleClassCastException(e);
+      }
+catch (      Exception e) {
+        if (!(e instanceof CacheWriterException))         e=new CacheWriterException(e);
+        if (!entries.isEmpty()) {
+          List<Object> keys=new ArrayList<>(entries.size());
+          for (          Cache.Entry<?,?> entry : entries)           keys.add(entry.getKey());
+          throw new CacheStorePartialUpdateException(keys,e);
+        }
+        throw new IgniteCheckedException(e);
+      }
+ finally {
+        sessionEnd0(tx,thewEx);
+      }
+      if (log.isDebugEnabled())       log.debug("Stored value in cache store [entries=" + entries + ']');
+      return true;
+    }
+    return false;
+  }
+}
