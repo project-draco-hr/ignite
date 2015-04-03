@@ -1,5 +1,7 @@
 {
-  AffinityTopologyVersion topVer=tx != null ? tx.topologyVersionSnapshot() : cctx.mvcc().lastExplicitLockTopologyVersion(threadId);
+  AffinityTopologyVersion topVer=cctx.mvcc().lastExplicitLockTopologyVersion(threadId);
+  if (topVer != null && tx != null)   tx.topologyVersion(topVer);
+  if (topVer == null && tx != null)   topVer=tx.topologyVersionSnapshot();
   if (topVer != null) {
     this.topVer.compareAndSet(null,topVer);
     map(keys);

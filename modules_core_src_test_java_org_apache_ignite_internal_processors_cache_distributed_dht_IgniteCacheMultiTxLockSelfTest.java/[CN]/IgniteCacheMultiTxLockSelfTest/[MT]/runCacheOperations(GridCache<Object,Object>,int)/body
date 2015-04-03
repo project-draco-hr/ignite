@@ -1,0 +1,32 @@
+{
+  Thread t=new Thread(){
+    @Override public void run(){
+      while (run) {
+        TreeMap<Integer,String> vals=generateValues(keys);
+        try {
+          U.debug(log,"Will lock key: " + vals.firstKey());
+          cache.lock(vals.firstKey(),0);
+          try {
+            U.debug(log,"Will run cache op: " + vals);
+            if (ThreadLocalRandom.current().nextDouble(1) < 0.65)             cache.putAll(vals);
+ else             cache.removeAll(vals.keySet());
+          }
+ catch (          Exception e) {
+            U.error(log(),"Failed cache operation.",e);
+          }
+ finally {
+            U.debug(log,"Will unlock key: " + vals.firstKey());
+            cache.unlock(vals.firstKey());
+          }
+          U.sleep(100);
+        }
+ catch (        Exception e) {
+          U.error(log(),"Failed unlock.",e);
+        }
+      }
+    }
+  }
+;
+  t.start();
+  return t;
+}
