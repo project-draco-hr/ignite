@@ -9,7 +9,8 @@
   List<GridSqlElement> mapExps=new ArrayList<>(srcSelect.allExpressions());
   GridSqlElement[] rdcExps=new GridSqlElement[srcSelect.select().size()];
   Set<String> colNames=new HashSet<>();
-  for (int i=0, len=mapExps.size(); i < len; i++)   splitSelectExpression(mapExps,rdcExps,colNames,i);
+  boolean aggregateFound=false;
+  for (int i=0, len=mapExps.size(); i < len; i++)   aggregateFound|=splitSelectExpression(mapExps,rdcExps,colNames,i);
   mapQry.clearSelect();
   for (  GridSqlElement exp : mapExps)   mapQry.addSelectExpression(exp);
   for (  GridSqlElement rdcExp : rdcExps)   rdcQry.addSelectExpression(rdcExp);
@@ -23,9 +24,13 @@
     mapQry.having(null);
   }
   if (!srcSelect.sort().isEmpty()) {
+    if (aggregateFound)     mapQry.clearSort();
     for (    GridSqlSortColumn sortCol : srcSelect.sort().values())     rdcQry.addSort(column(((GridSqlAlias)mapExps.get(sortCol.column())).alias()),sortCol);
   }
-  if (srcSelect.limit() != null)   rdcQry.limit(srcSelect.limit());
+  if (srcQry.limit() != null) {
+    if (aggregateFound)     mapQry.limit(null);
+    rdcQry.limit(srcQry.limit());
+  }
   if (srcSelect.offset() != null) {
     mapQry.offset(null);
     rdcQry.offset(srcSelect.offset());
