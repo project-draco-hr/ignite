@@ -1,0 +1,42 @@
+{
+  for (  CacheConfiguration cfg : cfgs) {
+    CacheConfiguration template=new CacheConfiguration(cfg);
+    if (cfg.getName() != null && cfg.getName().endsWith("*")) {
+      template.setName(cfg.getName().substring(0,cfg.getName().length() - 1));
+      boolean found=false;
+      if (wildcardNameCfgs != null) {
+        for (        CacheConfiguration cfg0 : wildcardNameCfgs) {
+          if (F.eq(cfg0.getName(),template.getName())) {
+            found=true;
+            break;
+          }
+        }
+      }
+ else       wildcardNameCfgs=new ArrayList<>(cfgs.size());
+      if (!found)       wildcardNameCfgs.add(template);
+    }
+ else {
+      boolean found=false;
+      if (exactNameCfgs != null) {
+        for (        CacheConfiguration cfg0 : exactNameCfgs) {
+          if (F.eq(cfg0.getName(),template.getName())) {
+            found=true;
+            break;
+          }
+        }
+      }
+ else       exactNameCfgs=new ArrayList<>(cfgs.size());
+      if (!found)       exactNameCfgs.add(template);
+    }
+  }
+  if (wildcardNameCfgs != null) {
+    Collections.sort(wildcardNameCfgs,new Comparator<CacheConfiguration>(){
+      @Override public int compare(      CacheConfiguration cfg1,      CacheConfiguration cfg2){
+        Integer len1=cfg1.getName() != null ? cfg1.getName().length() : 0;
+        Integer len2=cfg2.getName() != null ? cfg2.getName().length() : 0;
+        return len2.compareTo(len1);
+      }
+    }
+);
+  }
+}

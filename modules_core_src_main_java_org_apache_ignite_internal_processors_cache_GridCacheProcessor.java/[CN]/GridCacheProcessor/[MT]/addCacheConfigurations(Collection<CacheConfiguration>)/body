@@ -1,0 +1,16 @@
+{
+  GridCacheAdapter<CacheTemplateConfigurationKey,TemplateConfigurations> utilityCache=utilityCache();
+  final int RETRY_CNT=5;
+  for (int i=0; i < RETRY_CNT; i++) {
+    try {
+      utilityCache.invoke(new CacheTemplateConfigurationKey(),new AddCacheTemplateProcessor(cfgs));
+      break;
+    }
+ catch (    IgniteCheckedException e) {
+      if (i < RETRY_CNT - 1) {
+        if (log.isDebugEnabled())         log.debug("Failed to save cache template configuration, will retry: " + e);
+      }
+ else       throw e;
+    }
+  }
+}
