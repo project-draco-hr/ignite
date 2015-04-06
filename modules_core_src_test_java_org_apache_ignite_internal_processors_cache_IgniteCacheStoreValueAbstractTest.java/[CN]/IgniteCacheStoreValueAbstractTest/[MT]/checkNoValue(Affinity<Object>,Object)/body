@@ -4,9 +4,12 @@
     GridCacheEntryEx e=cache0.peekEx(key);
     if (e == null && cache0.isNear())     e=((GridNearCacheAdapter)cache0).dht().peekEx(key);
     if (e != null) {
+      KeyCacheObject keyObj=e.key();
+      assertNotNull(keyObj);
+      assertEquals(KeyCacheObjectImpl.class,keyObj.getClass());
+      assertNotNull("Unexpected value, node: " + g,GridTestUtils.getFieldValue(keyObj,CacheObjectAdapter.class,"val"));
       CacheObject obj=e.rawGet();
       if (obj != null) {
-        assertNotNull(obj);
         assertEquals(CacheObjectImpl.class,obj.getClass());
         assertNull("Unexpected value, node: " + g,GridTestUtils.getFieldValue(obj,CacheObjectAdapter.class,"val"));
         assertNotNull(obj.value(cache0.context().cacheObjectContext(),true));
