@@ -11,17 +11,16 @@
     }
   }
 );
+  Set<String> internalCaches=new HashSet<>();
   FileSystemConfiguration[] igfsCfgs=ctx.grid().configuration().getFileSystemConfiguration();
   if (igfsCfgs != null) {
     for (    FileSystemConfiguration igfsCfg : igfsCfgs) {
-      sysCaches.add(maskNull(igfsCfg.getMetaCacheName()));
-      sysCaches.add(maskNull(igfsCfg.getDataCacheName()));
+      internalCaches.add(maskNull(igfsCfg.getMetaCacheName()));
+      internalCaches.add(maskNull(igfsCfg.getDataCacheName()));
     }
   }
-  if (IgniteComponentType.HADOOP.inClassPath())   sysCaches.add(CU.SYS_CACHE_HADOOP_MR);
-  sysCaches.add(CU.MARSH_CACHE_NAME);
-  sysCaches.add(CU.UTILITY_CACHE_NAME);
-  sysCaches.add(CU.ATOMICS_CACHE_NAME);
+  if (IgniteComponentType.HADOOP.inClassPath())   internalCaches.add(CU.SYS_CACHE_HADOOP_MR);
+  internalCaches.add(CU.ATOMICS_CACHE_NAME);
   CacheConfiguration[] cfgs=ctx.config().getCacheConfiguration();
   sharedCtx=createSharedContext(ctx);
   ctx.performance().add("Disable serializable transactions (set 'txSerializableEnabled' to false)",!ctx.config().getTransactionConfiguration().isTxSerializableEnabled());
@@ -37,12 +36,17 @@
       if (cacheName != null)       throw new IgniteCheckedException("Duplicate cache name found (check configuration and " + "assign unique name to each cache): " + U.maskName(cacheName));
  else       throw new IgniteCheckedException("Default cache has already been configured (check configuration and " + "assign unique name to each cache).");
     }
-    DynamicCacheDescriptor desc=new DynamicCacheDescriptor(cfg,IgniteUuid.randomUuid());
+    CacheType cacheType;
+    if (CU.isUtilityCache(cfg.getName()))     cacheType=CacheType.UTILITY;
+ else     if (CU.isMarshallerCache(cfg.getName()))     cacheType=CacheType.MARSHALLER;
+ else     if (internalCaches.contains(maskNull(cfg.getName())))     cacheType=CacheType.INTERNAL;
+ else     cacheType=CacheType.USER;
+    DynamicCacheDescriptor desc=new DynamicCacheDescriptor(cfg,cacheType,IgniteUuid.randomUuid());
     desc.locallyConfigured(true);
     desc.staticallyConfigured(true);
     registeredCaches.put(masked,desc);
     ctx.discovery().setCacheFilter(cfg.getName(),cfg.getNodeFilter(),cfg.getNearConfiguration() != null,cfg.getCacheMode() == LOCAL);
-    if (sysCaches.contains(maskNull(cfg.getName())))     stopSeq.addLast(cfg.getName());
+    if (!cacheType.userCache())     stopSeq.addLast(cfg.getName());
  else     stopSeq.addFirst(cfg.getName());
   }
   for (  GridCacheSharedManager mgr : sharedCtx.managers())   mgr.start(sharedCtx);
