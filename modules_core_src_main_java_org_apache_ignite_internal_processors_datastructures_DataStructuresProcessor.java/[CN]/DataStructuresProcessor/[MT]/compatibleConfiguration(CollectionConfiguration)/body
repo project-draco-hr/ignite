@@ -1,0 +1,19 @@
+{
+  String cacheName=findCompatibleConfiguration(cfg);
+  if (cacheName == null) {
+    try (IgniteInternalTx tx=utilityDataCache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
+      cacheName=findCompatibleConfiguration(cfg);
+      if (cacheName == null) {
+        List<CacheConfiguration> oldVal=utilityDataCache.get(DATA_STRUCTURES_CACHE_KEY);
+        cacheName=getCacheName(cfg,oldVal != null ? oldVal.size() : 0);
+        CacheConfiguration newCfg=cacheConfiguration(cfg,cacheName);
+        ctx.cache().dynamicStartCache(newCfg,cacheName,null,CacheType.DATASTRUCTURE,false).get();
+        List<CacheConfiguration> newVal=oldVal != null ? new ArrayList(oldVal) : new ArrayList<CacheConfiguration>();
+        newVal.add(newCfg);
+        utilityDataCache.put(DATA_STRUCTURES_CACHE_KEY,newVal);
+      }
+      tx.commit();
+    }
+   }
+  return cacheName;
+}
