@@ -1,7 +1,7 @@
 {
   ExecutorService pool=null;
+  String cacheName=session().cacheName();
   try {
-    String cacheName=session().cacheName();
     pool=Executors.newFixedThreadPool(maxPoolSz);
     Collection<Future<?>> futs=new ArrayList<>();
     if (args != null && args.length > 0) {
@@ -18,7 +18,7 @@
       Collection<EntryMapping> entryMappings=cacheMappings(session().cacheName()).values();
       for (      EntryMapping em : entryMappings) {
         if (parallelLoadCacheMinThreshold > 0) {
-          log.debug("Start parallel loading entries of one type from db [cache name=" + cacheName + ", key type="+ em.keyType()+ " ]");
+          log.debug("Multithread loading entries from db [cache name=" + cacheName + ", key type="+ em.keyType()+ " ]");
           Connection conn=null;
           try {
             conn=connection();
@@ -48,16 +48,16 @@
           }
         }
  else {
-          if (log.isDebugEnabled())           log.debug("Start loading entries of one type from db [cache name=" + cacheName + ", key type="+ em.keyType()+ " ]");
+          if (log.isDebugEnabled())           log.debug("Single thread loading entries from db [cache name=" + cacheName + ", key type="+ em.keyType()+ " ]");
           futs.add(pool.submit(loadCacheFull(em,clo)));
         }
       }
     }
     for (    Future<?> fut : futs)     U.get(fut);
-    if (log.isDebugEnabled())     log.debug("Finished load cache: " + cacheName + " from db");
+    if (log.isDebugEnabled())     log.debug("Cache loaded from db: " + cacheName);
   }
  catch (  IgniteCheckedException e) {
-    throw new CacheLoaderException("Failed to load cache",e.getCause());
+    throw new CacheLoaderException("Failed to load cache: " + cacheName,e.getCause());
   }
  finally {
     U.shutdownNow(getClass(),pool,log);
