@@ -1,10 +1,11 @@
 {
   List<Object[]> rows=new ArrayList<>();
   int cnt=0;
-  List<?> next=savedNext != null ? savedNext : fut.next();
-  while (next != null && cnt < pageSize) {
-    Object[] row=new Object[next.size()];
-    for (int i=0; i < next.size(); i++) {
+  while (cur.hasNext() && cnt < pageSize) {
+    List<?> next=cur.next();
+    int sz=next.size();
+    Object[] row=new Object[sz];
+    for (int i=0; i < sz; i++) {
       Object o=next.get(i);
       if (o == null)       row[i]=null;
  else       if (isKnownType(o))       row[i]=o;
@@ -12,7 +13,6 @@
     }
     rows.add(row);
     cnt++;
-    next=fut.next();
   }
-  return new IgniteBiTuple<List<Object[]>,List<?>>(rows,next);
+  return rows;
 }
