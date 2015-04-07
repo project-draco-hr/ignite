@@ -1,0 +1,17 @@
+{
+  Ignition.setClientMode(true);
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    if (!ExamplesUtils.hasServerNodes(ignite))     return;
+    IgniteCache<AffinityUuid,String> stmCache=ignite.getOrCreateCache(CacheConfig.wordCache());
+    try (IgniteDataStreamer<AffinityUuid,String> stmr=ignite.dataStreamer(stmCache.getName())){
+      while (true) {
+        InputStream in=StreamWords.class.getResourceAsStream("alice-in-wonderland.txt");
+        try (LineNumberReader rdr=new LineNumberReader(new InputStreamReader(in))){
+          for (String line=rdr.readLine(); line != null; line=rdr.readLine()) {
+            for (            String word : line.split(" "))             if (!word.isEmpty())             stmr.addData(new AffinityUuid(word),word);
+          }
+        }
+       }
+    }
+   }
+ }

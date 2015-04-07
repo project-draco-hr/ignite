@@ -18,11 +18,15 @@
       CacheObject obj=e.rawGet();
       if (obj != null) {
         assertEquals(CacheObjectImpl.class,obj.getClass());
-        assertNull("Unexpected value, node: " + g,GridTestUtils.getFieldValue(obj,CacheObjectAdapter.class,"val"));
-        assertNotNull(obj.value(cache0.context().cacheObjectContext(),true));
-        assertNull("Unexpected value after value() requested1: " + g,GridTestUtils.getFieldValue(obj,CacheObjectAdapter.class,"val"));
-        assertNotNull(obj.value(cache0.context().cacheObjectContext(),false));
-        assertNull("Unexpected value after value() requested2: " + g,GridTestUtils.getFieldValue(obj,CacheObjectAdapter.class,"val"));
+        assertNotNull("Unexpected value, node: " + g,GridTestUtils.getFieldValue(obj,CacheObjectAdapter.class,"val"));
+        Object val0=obj.value(cache0.context().cacheObjectContext(),true);
+        assertNotNull("Unexpected value after value() requested1: " + g,GridTestUtils.getFieldValue(obj,CacheObjectAdapter.class,"val"));
+        Object val1=obj.value(cache0.context().cacheObjectContext(),true);
+        assertNotNull("Unexpected value after value() requested2: " + g,GridTestUtils.getFieldValue(obj,CacheObjectAdapter.class,"val"));
+        assertSame(val0,val1);
+        Object val2=obj.value(cache0.context().cacheObjectContext(),false);
+        assertNotNull("Unexpected value after value() requested3: " + g,GridTestUtils.getFieldValue(obj,CacheObjectAdapter.class,"val"));
+        assertSame(val1,val2);
       }
  else       assertFalse(aff.isPrimaryOrBackup(grid(g).localNode(),key));
     }
