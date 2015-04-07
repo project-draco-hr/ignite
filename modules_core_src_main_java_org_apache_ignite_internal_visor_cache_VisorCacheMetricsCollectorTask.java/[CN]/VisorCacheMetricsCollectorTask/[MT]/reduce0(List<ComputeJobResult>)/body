@@ -2,16 +2,14 @@
   Map<String,VisorCacheAggregatedMetrics> grpAggrMetrics=U.newHashMap(results.size());
   for (  ComputeJobResult res : results) {
     if (res.getException() == null && res.getData() instanceof Map<?,?>) {
-      Map<String,IgniteBiTuple<Boolean,VisorCacheMetrics>> cms=res.getData();
-      for (      Map.Entry<String,IgniteBiTuple<Boolean,VisorCacheMetrics>> entry : cms.entrySet()) {
-        VisorCacheAggregatedMetrics am=grpAggrMetrics.get(entry.getKey());
+      Collection<VisorCacheMetrics> cms=res.getData();
+      for (      VisorCacheMetrics cm : cms) {
+        VisorCacheAggregatedMetrics am=grpAggrMetrics.get(cm.name());
         if (am == null) {
-          String cacheName=entry.getKey();
-          GridCacheProcessor proc=ignite.context().cache();
-          am=new VisorCacheAggregatedMetrics(cacheName,proc.cacheMode(cacheName),entry.getValue().get1());
-          grpAggrMetrics.put(entry.getKey(),am);
+          am=VisorCacheAggregatedMetrics.from(cm);
+          grpAggrMetrics.put(cm.name(),am);
         }
-        am.metrics().put(res.getNode().id(),entry.getValue().get2());
+        am.metrics().put(res.getNode().id(),cm);
       }
     }
   }
