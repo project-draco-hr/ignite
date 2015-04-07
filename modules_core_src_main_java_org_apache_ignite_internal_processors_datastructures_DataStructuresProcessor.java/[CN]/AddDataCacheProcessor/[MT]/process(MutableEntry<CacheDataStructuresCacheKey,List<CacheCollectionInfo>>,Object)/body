@@ -2,15 +2,15 @@
   List<CacheCollectionInfo> list=entry.getValue();
   if (list == null) {
     list=new ArrayList<>();
-    list.add(new CacheCollectionInfo("datastructeres_0",cfg));
+    String newName="datastructeres_" + 0;
+    list.add(new CacheCollectionInfo(newName,cfg));
     entry.setValue(list);
-    return new T2<>("datastructeres_0",null);
+    return newName;
   }
-  for (  CacheCollectionInfo col : list) {
-    if (col.cfg.atomicityMode() == cfg.atomicityMode() && col.cfg.memoryMode() == cfg.memoryMode() && col.cfg.cacheMode() == cfg.cacheMode() && col.cfg.backups() == cfg.backups() && col.cfg.offHeapMaxMem() == cfg.offHeapMaxMem())     return new T2<>(col.cacheName,null);
-  }
+  String oldName=findCompatibleConfiguration(cfg,list);
+  if (oldName != null)   return oldName;
   String newName="datastructeres_" + list.size();
   List<CacheCollectionInfo> newList=new ArrayList<>(list);
   newList.add(new CacheCollectionInfo(newName,cfg));
-  return new T2<>(newName,null);
+  return newName;
 }
