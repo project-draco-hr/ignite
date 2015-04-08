@@ -1,0 +1,15 @@
+{
+  String masked=maskNull(cacheCfg.getName());
+  DynamicCacheDescriptor desc=registeredTemplates.get(masked);
+  if (desc != null)   return;
+  DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(cacheCfg.getName(),ctx.localNodeId());
+  CacheConfiguration cfg=new CacheConfiguration(cacheCfg);
+  req.template(true);
+  req.startCacheConfiguration(cfg);
+  req.deploymentId(IgniteUuid.randomUuid());
+  TemplateConfigurationFuture fut=new TemplateConfigurationFuture(req.cacheName(),req.deploymentId());
+  TemplateConfigurationFuture old=(TemplateConfigurationFuture)pendingTemplateFuts.putIfAbsent(maskNull(cacheCfg.getName()),fut);
+  if (old != null)   fut=old;
+  ctx.discovery().sendCustomEvent(new DynamicCacheChangeBatch(Collections.singleton(req)));
+  fut.get();
+}
