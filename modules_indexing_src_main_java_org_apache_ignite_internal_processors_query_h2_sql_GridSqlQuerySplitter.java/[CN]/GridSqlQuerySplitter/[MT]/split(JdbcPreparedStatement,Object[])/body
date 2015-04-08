@@ -28,7 +28,7 @@
   final String mergeTable=TABLE_FUNC_NAME + "()";
   GridSqlSelect mapQry=srcQry.clone();
   GridSqlSelect rdcQry=new GridSqlSelect().from(new GridSqlFunction("PUBLIC",TABLE_FUNC_NAME));
-  List<GridSqlElement> mapExps=F.addAll(new ArrayList<GridSqlElement>(),srcQry.select(false).iterator());
+  List<GridSqlElement> mapExps=F.addAll(new ArrayList<GridSqlElement>(srcQry.allColumns()),srcQry.select(false));
   GridSqlElement[] rdcExps=new GridSqlElement[srcQry.visibleColumns()];
   Set<String> colNames=new HashSet<>();
   boolean aggregateFound=false;
@@ -36,6 +36,7 @@
   mapQry.clearSelect();
   for (  GridSqlElement exp : mapExps)   mapQry.addSelectExpression(exp,true);
   for (  GridSqlElement rdcExp : rdcExps)   rdcQry.addSelectExpression(rdcExp,true);
+  for (int i=rdcExps.length; i < mapExps.size(); i++)   rdcQry.addSelectExpression(column(((GridSqlAlias)mapExps.get(i)).alias()),false);
   if (srcQry.hasGroupBy()) {
     mapQry.clearGroups();
     for (    int col : srcQry.groupColumns())     mapQry.addGroupExpression(column(((GridSqlAlias)mapExps.get(col)).alias()));
