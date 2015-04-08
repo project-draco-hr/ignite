@@ -3,7 +3,7 @@
     if (valBytes == null)     valBytes=ctx.processor().marshal(ctx,val);
     if (ctx.storeValue()) {
       ClassLoader ldr=ctx.p2pEnabled() ? IgniteUtils.detectClass(this.val).getClassLoader() : val.getClass().getClassLoader();
-      Object val=ctx.processor().unmarshal(ctx,valBytes,ldr);
+      Object val=this.val != null && ctx.processor().immutable(this.val) ? this.val : ctx.processor().unmarshal(ctx,valBytes,ldr);
       return new CacheObjectImpl(val,valBytes);
     }
     return new CacheObjectImpl(null,valBytes);
