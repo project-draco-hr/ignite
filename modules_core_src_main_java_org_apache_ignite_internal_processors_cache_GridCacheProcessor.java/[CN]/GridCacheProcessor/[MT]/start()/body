@@ -41,13 +41,26 @@
  else     if (CU.isMarshallerCache(cfg.getName()))     cacheType=CacheType.MARSHALLER;
  else     if (internalCaches.contains(maskNull(cfg.getName())))     cacheType=CacheType.INTERNAL;
  else     cacheType=CacheType.USER;
-    DynamicCacheDescriptor desc=new DynamicCacheDescriptor(cfg,cacheType,IgniteUuid.randomUuid());
+    boolean template=cfg.getName() != null && cfg.getName().endsWith("*");
+    DynamicCacheDescriptor desc=new DynamicCacheDescriptor(cfg,cacheType,template,IgniteUuid.randomUuid());
     desc.locallyConfigured(true);
     desc.staticallyConfigured(true);
-    registeredCaches.put(masked,desc);
-    ctx.discovery().setCacheFilter(cfg.getName(),cfg.getNodeFilter(),cfg.getNearConfiguration() != null,cfg.getCacheMode() == LOCAL);
-    if (!cacheType.userCache())     stopSeq.addLast(cfg.getName());
- else     stopSeq.addFirst(cfg.getName());
+    if (!template) {
+      registeredCaches.put(masked,desc);
+      ctx.discovery().setCacheFilter(cfg.getName(),cfg.getNodeFilter(),cfg.getNearConfiguration() != null,cfg.getCacheMode() == LOCAL);
+      if (!cacheType.userCache())       stopSeq.addLast(cfg.getName());
+ else       stopSeq.addFirst(cfg.getName());
+    }
+ else {
+      if (log.isDebugEnabled())       log.debug("Use cache configuration as template: " + cfg);
+      registeredTemplates.put(masked,desc);
+    }
+    if (cfg.getName() == null) {
+      DynamicCacheDescriptor desc0=new DynamicCacheDescriptor(cfg,cacheType,true,IgniteUuid.randomUuid());
+      desc0.locallyConfigured(true);
+      desc0.staticallyConfigured(true);
+      registeredTemplates.put(masked,desc0);
+    }
   }
   for (  GridCacheSharedManager mgr : sharedCtx.managers())   mgr.start(sharedCtx);
   transactions=new IgniteTransactionsImpl(sharedCtx);
