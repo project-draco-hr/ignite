@@ -1,0 +1,43 @@
+{
+  int idGen=0;
+  List<Organization> organizations=new ArrayList<>();
+  for (int i=0; i < ORG_CNT; i++) {
+    int id=idGen++;
+    Organization org=new Organization(id,"Org" + id);
+    organizations.add(org);
+    pCache.put(org.id,org);
+    insertInDb(org);
+  }
+  List<Address> addreses=new ArrayList<>();
+  for (int i=0; i < ADDR_CNT; i++) {
+    int id=idGen++;
+    Address addr=new Address(id,"Addr" + id);
+    addreses.add(addr);
+    rCache.put(addr.id,addr);
+    insertInDb(addr);
+  }
+  List<Person> persons=new ArrayList<>();
+  for (int i=0; i < PERS_CNT; i++) {
+    int id=idGen++;
+    Person person=new Person(id,organizations.get(i % organizations.size()),"name" + id,"lastName" + id,id * 100.0,addreses.get(i % addreses.size()));
+    if (id == organizations.size() + 1)     person.lastName=null;
+    persons.add(person);
+    pCache.put(person.key(),person);
+    insertInDb(person);
+  }
+  List<Product> products=new ArrayList<>();
+  for (int i=0; i < PROD_CNT; i++) {
+    int id=idGen++;
+    Product product=new Product(id,"Product" + id,id * 1000);
+    products.add(product);
+    rCache.put(product.id,product);
+    insertInDb(product);
+  }
+  for (int i=0; i < PURCH_CNT; i++) {
+    int id=idGen++;
+    Person person=persons.get(i % persons.size());
+    Purchase purchase=new Purchase(id,products.get(i % products.size()),person.orgId,person);
+    pCache.put(purchase.key(),purchase);
+    insertInDb(purchase);
+  }
+}
