@@ -1,0 +1,14 @@
+{
+  StartNodeCallable call=queue.poll();
+  if (call == null)   return false;
+  IgniteInternalFuture<ClusterStartNodeResult> fut=ctx.closure().callLocalSafe(call,true);
+  comp.add(fut);
+  if (cnt.decrementAndGet() == 0)   comp.markInitialized();
+  fut.listen(new CI1<IgniteInternalFuture<ClusterStartNodeResult>>(){
+    @Override public void apply(    IgniteInternalFuture<ClusterStartNodeResult> f){
+      runNextNodeCallable(queue,comp,cnt);
+    }
+  }
+);
+  return true;
+}
