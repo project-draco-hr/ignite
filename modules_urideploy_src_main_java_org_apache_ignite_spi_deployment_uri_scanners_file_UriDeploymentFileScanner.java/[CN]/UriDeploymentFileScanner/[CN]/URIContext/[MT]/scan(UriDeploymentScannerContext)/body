@@ -1,0 +1,28 @@
+{
+  final Set<File> foundFiles=scanCtx.isFirstScan() ? new HashSet<File>() : U.<File>newHashSet(tstampCache.size());
+  GridDeploymentFileHandler hnd=new GridDeploymentFileHandler(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void handle(    File file){
+      foundFiles.add(file);
+      handleFile(file,scanCtx);
+    }
+  }
+;
+  GridDeploymentFolderScannerHelper.scanFolder(scanDir,garFilter,hnd);
+  if (scanCtx.isFirstScan() && foundFiles.isEmpty())   U.warn(scanCtx.getLogger(),"No GAR-units found in: " + U.hidePassword(scanCtx.getUri().toString()));
+  if (!scanCtx.isFirstScan()) {
+    Collection<File> deletedFiles=new HashSet<>(tstampCache.keySet());
+    deletedFiles.removeAll(foundFiles);
+    if (!deletedFiles.isEmpty()) {
+      List<String> uris=new ArrayList<>();
+      for (      File file : deletedFiles) {
+        uris.add(getFileUri(file.getAbsolutePath()));
+      }
+      tstampCache.keySet().removeAll(deletedFiles);
+      garDirFilesTstampCache.keySet().removeAll(deletedFiles);
+      scanCtx.getListener().onDeletedFiles(uris);
+    }
+  }
+}

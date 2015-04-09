@@ -1,0 +1,29 @@
+{
+  scannerThread=new IgniteSpiThread(gridName,"grid-uri-scanner",log){
+    @SuppressWarnings({"BusyWait"}) @Override protected void body() throws InterruptedException {
+      try {
+        while (!isInterrupted()) {
+          try {
+            scanner.scan(UriDeploymentScannerManager.this);
+          }
+  finally {
+            if (firstScan) {
+              firstScan=false;
+              lsnr.onFirstScanFinished();
+            }
+          }
+          Thread.sleep(freq);
+        }
+      }
+  finally {
+        if (firstScan) {
+          firstScan=false;
+          lsnr.onFirstScanFinished();
+        }
+      }
+    }
+  }
+;
+  scannerThread.start();
+  if (log.isDebugEnabled())   log.debug("Grid URI deployment scanner started: " + this);
+}
