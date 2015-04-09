@@ -1,4 +1,20 @@
 {
+  if (err == null) {
+    AffinityTopologyVersion topVer=exchFut.topologyVersion();
+    if (log.isDebugEnabled())     log.debug("Exchange done [topVer=" + topVer + ", fut="+ exchFut+ ']');
+    while (true) {
+      AffinityTopologyVersion readyVer=readyTopVer.get();
+      if (readyVer.compareTo(topVer) >= 0)       break;
+      if (readyTopVer.compareAndSet(readyVer,topVer))       break;
+    }
+    for (    Map.Entry<AffinityTopologyVersion,AffinityReadyFuture> entry : readyFuts.entrySet()) {
+      if (entry.getKey().compareTo(topVer) <= 0) {
+        if (log.isDebugEnabled())         log.debug("Completing created topology ready future " + "[ver=" + topVer + ", fut="+ entry.getValue()+ ']');
+        entry.getValue().onDone(topVer);
+      }
+    }
+  }
+ else   if (log.isDebugEnabled())   log.debug("Exchange done with error [fut=" + exchFut + ", err="+ err+ ']');
   ExchangeFutureSet exchFuts0=exchFuts;
   if (exchFuts0 != null) {
     int skipped=0;
