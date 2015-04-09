@@ -1,0 +1,17 @@
+{
+  UUID locNodeId=getLocalNodeId();
+  Socket sock=null;
+  for (int i=0; i < reconCnt; i++) {
+    try {
+      sock=openSocket(addr);
+      writeToSocket(sock,new TcpDiscoveryHandshakeRequest(locNodeId));
+      TcpDiscoveryHandshakeResponse res=readMessage(sock,null,netTimeout);
+      break;
+    }
+ catch (    IOException|IgniteCheckedException e) {
+      e.printStackTrace();
+      U.closeQuiet(sock);
+    }
+  }
+  return sock;
+}
