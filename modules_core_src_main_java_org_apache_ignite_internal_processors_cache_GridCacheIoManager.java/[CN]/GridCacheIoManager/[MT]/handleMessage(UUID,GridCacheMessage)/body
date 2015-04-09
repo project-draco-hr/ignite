@@ -1,0 +1,14 @@
+{
+  int msgIdx=cacheMsg.lookupIndex();
+  IgniteBiInClosure<UUID,GridCacheMessage> c=null;
+  if (msgIdx >= 0) {
+    IgniteBiInClosure[] cacheClsHandlers=idxClsHandlers.get(cacheMsg.cacheId());
+    if (cacheClsHandlers != null)     c=cacheClsHandlers[msgIdx];
+  }
+  if (c == null)   c=clsHandlers.get(new ListenerKey(cacheMsg.cacheId(),cacheMsg.getClass()));
+  if (c == null) {
+    if (log.isDebugEnabled())     log.debug("Received message without registered handler (will ignore) [msg=" + cacheMsg + ", nodeId="+ nodeId+ ']');
+    return;
+  }
+  onMessage0(nodeId,cacheMsg,c);
+}
