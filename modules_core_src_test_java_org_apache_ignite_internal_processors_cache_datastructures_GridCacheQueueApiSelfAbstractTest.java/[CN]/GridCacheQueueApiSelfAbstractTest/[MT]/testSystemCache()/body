@@ -1,0 +1,13 @@
+{
+  CollectionConfiguration colCfg=collectionConfiguration();
+  IgniteQueue queue=grid(0).queue("Queue1",0,colCfg);
+  final CacheConfiguration ccfg=getQueueCache(queue);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      grid(0).cache(ccfg.getName());
+      return null;
+    }
+  }
+,IllegalStateException.class,"Failed to get cache because it is a system cache");
+  assertNotNull(((IgniteKernal)grid(0)).internalCache(ccfg.getName()));
+}
