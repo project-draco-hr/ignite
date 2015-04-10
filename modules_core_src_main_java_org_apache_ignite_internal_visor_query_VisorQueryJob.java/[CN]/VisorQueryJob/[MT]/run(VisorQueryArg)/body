@@ -10,9 +10,13 @@
       VisorQueryCursor<Cache.Entry<Object,Object>> cur=new VisorQueryCursor<>(c.query(qry));
       List<Object[]> rows=fetchScanQueryRows(cur,arg.pageSize());
       long duration=U.currentTimeMillis() - start;
-      ignite.cluster().<String,VisorQueryCursorHolder>nodeLocalMap().put(qryId,new VisorQueryCursorHolder<>(cur,false));
-      scheduleResultSetHolderRemoval(qryId);
-      return new IgniteBiTuple<>(null,new VisorQueryResultEx(ignite.localNode().id(),qryId,SCAN_COL_NAMES,rows,cur.hasNext(),duration));
+      boolean hasNext=cur.hasNext();
+      if (hasNext) {
+        ignite.cluster().<String,VisorQueryCursor>nodeLocalMap().put(qryId,cur);
+        scheduleResultSetHolderRemoval(qryId);
+      }
+ else       cur.close();
+      return new IgniteBiTuple<>(null,new VisorQueryResultEx(ignite.localNode().id(),qryId,SCAN_COL_NAMES,rows,hasNext,duration));
     }
  else {
       SqlFieldsQuery qry=new SqlFieldsQuery(arg.queryTxt());
@@ -26,10 +30,13 @@
         for (        GridQueryFieldMetadata col : meta)         names.add(new VisorQueryField(col.schemaName(),col.typeName(),col.fieldName(),col.fieldTypeName()));
         List<Object[]> rows=fetchSqlQueryRows(cur,arg.pageSize());
         long duration=U.currentTimeMillis() - start;
-        ConcurrentMap<String,VisorQueryCursorHolder<List<?>>> storage=ignite.cluster().nodeLocalMap();
-        storage.put(qryId,new VisorQueryCursorHolder<>(cur,false));
-        scheduleResultSetHolderRemoval(qryId);
-        return new IgniteBiTuple<>(null,new VisorQueryResultEx(ignite.localNode().id(),qryId,names,rows,cur.hasNext(),duration));
+        boolean hasNext=cur.hasNext();
+        if (hasNext) {
+          ignite.cluster().<String,VisorQueryCursor<List<?>>>nodeLocalMap().put(qryId,cur);
+          scheduleResultSetHolderRemoval(qryId);
+        }
+ else         cur.close();
+        return new IgniteBiTuple<>(null,new VisorQueryResultEx(ignite.localNode().id(),qryId,names,rows,hasNext,duration));
       }
     }
   }

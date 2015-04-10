@@ -1,14 +1,17 @@
 {
   ignite.context().timeout().addTimeoutObject(new GridTimeoutObjectAdapter(RMV_DELAY){
     @Override public void onTimeout(){
-      ConcurrentMap<String,VisorQueryCursorHolder> storage=ignite.cluster().nodeLocalMap();
-      VisorQueryCursorHolder holder=storage.get(id);
-      if (holder != null) {
-        if (holder.accessed()) {
-          holder.accessed(false);
-          scheduleResultSetHolderRemoval(id);
+      ConcurrentMap<String,VisorQueryCursor> storage=ignite.cluster().nodeLocalMap();
+      VisorQueryCursor cur=storage.get(qryId);
+      if (cur != null) {
+        if (cur.accessed()) {
+          cur.accessed(false);
+          scheduleResultSetHolderRemoval(qryId);
         }
- else         storage.remove(id);
+ else {
+          storage.remove(qryId);
+          cur.close();
+        }
       }
     }
   }
