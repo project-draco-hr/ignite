@@ -1,0 +1,10 @@
+{
+  GridCacheAdapter<Integer,Integer> cache=((IgniteKernal)grid(0)).internalCache(null);
+  Integer key=backupKey(grid(0).cache(null));
+  cache.lock(key,0);
+  stopGrid(1);
+  cache.unlock(key);
+  GridCacheEntryEx entry=cache.peekEx(key);
+  assertTrue("Remote MVCC is not empty: " + entry,entry == null || entry.remoteMvccSnapshot().isEmpty());
+  startGrid(1);
+}
