@@ -1,0 +1,23 @@
+{
+  if (node instanceof Element && "a".equals(node.getNodeName().toLowerCase())) {
+    Element element=(Element)node;
+    String href=element.getAttribute("href");
+    if (href != null && !href.isEmpty()) {
+      URL url=null;
+      try {
+        url=new URL(href);
+      }
+ catch (      MalformedURLException e) {
+        try {
+          url=new URL(baseUrl.getProtocol(),baseUrl.getHost(),baseUrl.getPort(),href.charAt(0) == '/' ? href : baseUrl.getFile() + '/' + href);
+        }
+ catch (        MalformedURLException e1) {
+          U.error(scanCtx.getLogger(),"Skipping bad URL: " + href,e1);
+        }
+      }
+      if (url != null)       res.add(url.toString());
+    }
+  }
+  NodeList childNodes=node.getChildNodes();
+  for (int i=0; i < childNodes.getLength(); i++)   findReferences(childNodes.item(i),res,baseUrl,scanCtx);
+}

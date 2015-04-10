@@ -8,6 +8,13 @@
   consistentId=U.consistentId(addrs,discPort);
   byte[] mtr=U.readByteArray(in);
   if (mtr != null)   metrics=ClusterMetricsSnapshot.deserialize(mtr,0);
+  int size=in.readInt();
+  Map<Integer,CacheMetrics> cacheMetrics=size > 0 ? U.<Integer,CacheMetrics>newHashMap(size) : Collections.<Integer,CacheMetrics>emptyMap();
+  for (int i=0; i < size; i++) {
+    int id=in.readInt();
+    CacheMetricsSnapshot m=(CacheMetricsSnapshot)in.readObject();
+    cacheMetrics.put(id,m);
+  }
   order=in.readLong();
   intOrder=in.readLong();
   ver=(IgniteProductVersion)in.readObject();
