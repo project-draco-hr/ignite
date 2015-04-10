@@ -1,0 +1,13 @@
+{
+  if (log.isDebugEnabled())   log.debug("Deployment class loader cleaner has been started.");
+  while (!isInterrupted()) {
+    Thread.sleep(5000);
+    for (    DiscoveryDeploymentClassLoader ldr : p2pLdrs.values()) {
+      if (ring.node(ldr.nodeId()) == null) {
+        ldr.onNodeLeft();
+        p2pLdrs.remove(ldr.nodeId(),ldr);
+      }
+ else       ldr.closeConnectionIfNotUsed();
+    }
+  }
+}

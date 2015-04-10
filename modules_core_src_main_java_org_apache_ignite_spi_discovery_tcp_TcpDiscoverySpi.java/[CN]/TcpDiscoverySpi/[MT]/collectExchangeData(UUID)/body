@@ -1,20 +1,10 @@
 {
-  boolean p2pEnaled=ignite.configuration().isPeerClassLoadingEnabled();
   Map<Integer,Object> data=exchange.collect(nodeId);
   Map<Integer,byte[]> data0=U.newHashMap(data.size());
   for (  Map.Entry<Integer,Object> entry : data.entrySet()) {
     try {
       byte[] bytes=marsh.marshal(entry.getValue());
       data0.put(entry.getKey(),bytes);
-      if (p2pEnaled) {
-        ClassLoader ldr;
-        if (entry.getValue() instanceof GridPeerDeployAware)         ldr=((GridPeerDeployAware)entry.getValue()).classLoader();
- else         ldr=entry.getValue().getClass().getClassLoader();
-        log.info("Add loader: " + entry.getValue() + " "+ ldr);
-        if (ldr != null) {
-          if (exchangeLdrs.add(ldr))           log.info("Added loader: " + ldr);
-        }
-      }
     }
  catch (    IgniteCheckedException e) {
       U.error(log,"Failed to marshal discovery data " + "[comp=" + entry.getKey() + ", data="+ entry.getValue()+ ']',e);

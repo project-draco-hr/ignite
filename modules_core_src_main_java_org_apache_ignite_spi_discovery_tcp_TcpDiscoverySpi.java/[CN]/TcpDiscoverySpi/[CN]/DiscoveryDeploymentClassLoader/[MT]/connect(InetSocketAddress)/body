@@ -1,17 +1,19 @@
 {
-  UUID locNodeId=getLocalNodeId();
-  Socket sock=null;
+  TcpDiscoveryHandshakeRequest req=new TcpDiscoveryHandshakeRequest(getLocalNodeId());
   for (int i=0; i < reconCnt; i++) {
+    Socket sock=null;
+    long tstamp=U.currentTimeMillis();
     try {
       sock=openSocket(addr);
-      writeToSocket(sock,new TcpDiscoveryHandshakeRequest(locNodeId));
+      writeToSocket(sock,req);
       TcpDiscoveryHandshakeResponse res=readMessage(sock,null,netTimeout);
-      break;
+      if (!res.creatorNodeId().equals(nodeId))       return null;
+      stats.onClientSocketInitialized(U.currentTimeMillis() - tstamp);
+      return sock;
     }
  catch (    IOException|IgniteCheckedException e) {
-      e.printStackTrace();
       U.closeQuiet(sock);
     }
   }
-  return sock;
+  return null;
 }
