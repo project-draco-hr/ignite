@@ -1,5 +1,5 @@
 {
-  Collection<DynamicCacheChangeRequest> reqs=new ArrayList<>(registeredCaches.size());
+  Collection<DynamicCacheChangeRequest> reqs=new ArrayList<>(registeredCaches.size() + registeredTemplates.size());
   for (  DynamicCacheDescriptor desc : registeredCaches.values()) {
     if (!desc.cancelled()) {
       DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(desc.cacheConfiguration().getName(),null);
@@ -8,6 +8,13 @@
       req.deploymentId(desc.deploymentId());
       reqs.add(req);
     }
+  }
+  for (  DynamicCacheDescriptor desc : registeredTemplates.values()) {
+    DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(desc.cacheConfiguration().getName(),null);
+    req.startCacheConfiguration(desc.cacheConfiguration());
+    req.template(true);
+    req.deploymentId(desc.deploymentId());
+    reqs.add(req);
   }
   DynamicCacheChangeBatch req=new DynamicCacheChangeBatch(reqs);
   req.clientNodes(ctx.discovery().clientNodesMap());

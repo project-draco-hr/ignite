@@ -18,22 +18,6 @@
     }
   }
   if (having != null)   buff.append("\nHAVING ").append(StringUtils.unEnclose(having.getSQL()));
-  if (!sort.isEmpty()) {
-    buff.append("\nORDER BY ");
-    buff.resetCount();
-    for (    Map.Entry<GridSqlElement,GridSqlSortColumn> entry : sort.entrySet()) {
-      buff.appendExceptFirst(", ");
-      GridSqlElement expression=entry.getKey();
-      int idx=select.indexOf(expression);
-      if (idx >= 0)       buff.append(idx + 1);
- else       buff.append('=').append(StringUtils.unEnclose(expression.getSQL()));
-      GridSqlSortColumn type=entry.getValue();
-      if (!type.asc())       buff.append(" DESC");
-      if (type.nullsFirst())       buff.append(" NULLS FIRST");
- else       if (type.nullsLast())       buff.append(" NULLS LAST");
-    }
-  }
-  if (limit != null)   buff.append(" LIMIT ").append(StringUtils.unEnclose(limit.getSQL()));
-  if (offset != null)   buff.append(" OFFSET ").append(StringUtils.unEnclose(offset.getSQL()));
+  getSortLimitSQL(buff);
   return buff.toString();
 }
