@@ -1,0 +1,40 @@
+{
+  final CountDownLatch srvsReadyLatch=new CountDownLatch(2);
+  final CountDownLatch clientReadyLatch=new CountDownLatch(1);
+  GridJavaProcess node1=null;
+  GridJavaProcess node2=null;
+  GridJavaProcess clientNode=null;
+  try {
+    node1=GridJavaProcess.exec(CacheConfigurationP2PTestServer.class.getName(),null,log,new CI1<String>(){
+      @Override public void apply(      String s){
+        info("Server node1: " + s);
+        if (s.contains(NODE_START_MSG))         srvsReadyLatch.countDown();
+      }
+    }
+,null,null,null);
+    node2=GridJavaProcess.exec(CacheConfigurationP2PTestServer.class.getName(),null,log,new CI1<String>(){
+      @Override public void apply(      String s){
+        info("Server node2: " + s);
+        if (s.contains(NODE_START_MSG))         srvsReadyLatch.countDown();
+      }
+    }
+,null,null,null);
+    assertTrue(srvsReadyLatch.await(60,SECONDS));
+    String str=U.getIgniteHome() + "/modules/extdata/p2p/target/classes/";
+    clientNode=GridJavaProcess.exec(CLIENT_CLS_NAME,null,log,new CI1<String>(){
+      @Override public void apply(      String s){
+        info("Client node: " + s);
+        if (s.contains(NODE_START_MSG))         clientReadyLatch.countDown();
+      }
+    }
+,null,null,str);
+    assertTrue(clientReadyLatch.await(60,SECONDS));
+    int exitCode=clientNode.getProcess().waitFor();
+    assertEquals("Unexpected exit code",0,exitCode);
+  }
+  finally {
+    if (node1 != null)     node1.killProcess();
+    if (node2 != null)     node2.killProcess();
+    if (clientNode != null)     clientNode.killProcess();
+  }
+}
