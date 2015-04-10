@@ -1,0 +1,31 @@
+{
+  IgnitePredicate<ClusterNode> evenP=new IgnitePredicate<ClusterNode>(){
+    @Override public boolean apply(    ClusterNode node){
+      return node.order() % 2 == 0;
+    }
+  }
+;
+  IgnitePredicate<ClusterNode> oddP=new IgnitePredicate<ClusterNode>(){
+    @Override public boolean apply(    ClusterNode node){
+      return node.order() % 2 == 1;
+    }
+  }
+;
+  ClusterGroup remotes=ignite.cluster().forRemotes();
+  ClusterGroup evenYoungest=remotes.forPredicate(evenP).forYoungest();
+  ClusterGroup evenOldest=remotes.forPredicate(evenP).forOldest();
+  ClusterGroup oddYoungest=remotes.forPredicate(oddP).forYoungest();
+  ClusterGroup oddOldest=remotes.forPredicate(oddP).forOldest();
+  int clusterSize=ignite.cluster().nodes().size();
+  assertEquals(grid(gridMaxOrder(clusterSize,true)).localNode().id(),evenYoungest.node().id());
+  assertEquals(grid(1).localNode().id(),evenOldest.node().id());
+  assertEquals(grid(gridMaxOrder(clusterSize,false)).localNode().id(),oddYoungest.node().id());
+  assertEquals(grid(2).localNode().id(),oddOldest.node().id());
+  try (Ignite g4=startGrid(NODES_CNT);Ignite g5=startGrid(NODES_CNT + 1)){
+    clusterSize=g4.cluster().nodes().size();
+    assertEquals(grid(gridMaxOrder(clusterSize,true)).localNode().id(),evenYoungest.node().id());
+    assertEquals(grid(1).localNode().id(),evenOldest.node().id());
+    assertEquals(grid(gridMaxOrder(clusterSize,false)).localNode().id(),oddYoungest.node().id());
+    assertEquals(grid(2).localNode().id(),oddOldest.node().id());
+  }
+ }
