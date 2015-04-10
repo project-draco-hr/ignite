@@ -1,0 +1,19 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(IP_FINDER);
+  cfg.getTransactionConfiguration().setTxSerializableEnabled(true);
+  cfg.setDiscoverySpi(disco);
+  BasicWarmupClosure warmupClosure=new BasicWarmupClosure();
+  warmupClosure.setGridCount(2);
+  warmupClosure.setIterationCount(10);
+  warmupClosure.setKeyRange(10);
+  cfg.setWarmupClosure(warmupClosure);
+  CacheConfiguration<Integer,Integer> cacheCfg=new CacheConfiguration<>();
+  cacheCfg.setCacheMode(CacheMode.PARTITIONED);
+  cacheCfg.setAtomicityMode(CacheAtomicityMode.ATOMIC);
+  cacheCfg.setBackups(1);
+  cacheCfg.setName("test");
+  cfg.setCacheConfiguration(cacheCfg);
+  return cfg;
+}
