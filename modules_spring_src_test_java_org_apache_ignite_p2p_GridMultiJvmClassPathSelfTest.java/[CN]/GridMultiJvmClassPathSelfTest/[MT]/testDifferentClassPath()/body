@@ -1,0 +1,36 @@
+{
+  final CountDownLatch killedLatch=new CountDownLatch(2);
+  final CountDownLatch readyLatch=new CountDownLatch(2);
+  GridJavaProcess proc1=GridJavaProcess.exec(GridMultiJvmClassPathSelfTest.class,null,log,new CI1<String>(){
+    @Override public void apply(    String s){
+      info("Process 1 prints: " + s);
+      if (s.startsWith(START))       readyLatch.countDown();
+    }
+  }
+,new CA(){
+    @Override public void apply(){
+      info("Process 1 is killed");
+      killedLatch.countDown();
+    }
+  }
+,null,null);
+  GridJavaProcess proc2=GridJavaProcess.exec(GridMultiJvmClassPathSelfTest.class,null,log,new CI1<String>(){
+    @Override public void apply(    String s){
+      info("Process 2 prints: " + s);
+      if (s.contains(START))       readyLatch.countDown();
+    }
+  }
+,new CA(){
+    @Override public void apply(){
+      info("Process 2 is killed");
+      killedLatch.countDown();
+    }
+  }
+,null,GridTestProperties.getProperty("p2p.uri.cls"));
+  readyLatch.await();
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    proc1.kill();
+    proc2.kill();
+    killedLatch.await();
+  }
+ }
