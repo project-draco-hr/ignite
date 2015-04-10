@@ -1,12 +1,21 @@
 {
   IgniteConfiguration cfg=new IgniteConfiguration();
-  Ignite ignite=Ignition.start(cfg);
-  int nodes=ignite.cluster().nodes().size();
-  if (nodes != 3)   throw new Exception("Unexpected nodes number: " + nodes);
-  CacheConfiguration<Integer,Organization1> ccfg1=new CacheConfiguration<>();
-  ccfg1.setNodeFilter(new CacheAllNodesFilter());
-  ccfg1.setIndexedTypes(Integer.class,Organization1.class);
-  IgniteCache<Integer,Organization1> cache1=ignite.createCache(ccfg1);
-  for (int i=0; i < 500; i++)   cache1.put(i,new Organization1("org-" + i));
-  Thread.sleep(5000);
-}
+  try (Ignite ignite=Ignition.start(cfg)){
+    int nodes=ignite.cluster().nodes().size();
+    if (nodes != 3)     throw new Exception("Unexpected nodes number: " + nodes);
+    CacheConfiguration<Integer,Organization1> ccfg1=new CacheConfiguration<>();
+    ccfg1.setName("cache1");
+    ccfg1.setNodeFilter(new CacheAllNodesFilter());
+    ccfg1.setIndexedTypes(Integer.class,Organization1.class);
+    System.out.println("Create cache1.");
+    IgniteCache<Integer,Organization1> cache1=ignite.createCache(ccfg1);
+    for (int i=0; i < 500; i++)     cache1.put(i,new Organization1("org-" + i));
+    System.out.println("Sleep some time.");
+    Thread.sleep(5000);
+    System.out.println("Create cache2.");
+    CacheConfiguration<Integer,Organization2> ccfg2=new CacheConfiguration<>();
+    ccfg2.setName("cache2");
+    ccfg2.setIndexedTypes(Integer.class,Organization1.class);
+    IgniteCache<Integer,Organization2> cache2=ignite.createCache(ccfg2);
+  }
+ }

@@ -47,13 +47,9 @@ synchronized (mux) {
   hbsSnd.start();
   chkStatusSnd=new CheckStatusSender();
   chkStatusSnd.start();
-  if (ipFinder.isShared()) {
-    ipFinderCleaner=new IpFinderCleaner();
-    ipFinderCleaner.start();
-  }
-  if (ignite.configuration().isPeerClassLoadingEnabled()) {
-    p2pLdrCleaner=new DeploymentClassLoadersCleaner();
-    p2pLdrCleaner.start();
+  if (ipFinder.isShared() || ignite.configuration().isPeerClassLoadingEnabled()) {
+    cleaner=new DiscoveryCleaner();
+    cleaner.start();
   }
   if (log.isDebugEnabled() && !restart)   log.debug(startInfo());
   if (restart)   getSpiContext().registerPort(tcpSrvr.port,TCP);
