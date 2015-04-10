@@ -6,6 +6,7 @@
     if (joinLatch.getCount() > 0) {
       Collection<TcpDiscoveryNode> top=msg.topology();
       if (top != null) {
+        gridStartTime=msg.gridStartTime();
         for (        TcpDiscoveryNode n : top) {
           if (n.order() > 0)           n.visible(true);
           rmtNodes.put(n.id(),n);
@@ -14,8 +15,7 @@
         if (msg.topologyHistory() != null)         topHist.putAll(msg.topologyHistory());
         Map<UUID,Map<Integer,byte[]>> dataMap=msg.oldNodesDiscoveryData();
         if (dataMap != null) {
-          for (          Map.Entry<UUID,Map<Integer,byte[]>> entry : dataMap.entrySet()) {
-          }
+          for (          Map.Entry<UUID,Map<Integer,byte[]>> entry : dataMap.entrySet())           onExchange(newNodeId,entry.getKey(),entry.getValue(),null);
         }
         locNode.setAttributes(node.attributes());
         locNode.visible(true);
@@ -29,6 +29,7 @@
     if (topChanged) {
       if (log.isDebugEnabled())       log.debug("Added new node to topology: " + node);
       Map<Integer,byte[]> data=msg.newNodeDiscoveryData();
+      if (data != null)       onExchange(newNodeId,newNodeId,data,null);
     }
   }
 }

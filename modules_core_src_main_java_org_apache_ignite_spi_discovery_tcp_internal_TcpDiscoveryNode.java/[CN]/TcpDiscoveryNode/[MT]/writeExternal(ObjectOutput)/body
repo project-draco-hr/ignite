@@ -5,11 +5,18 @@
   U.writeCollection(out,hostNames);
   out.writeInt(discPort);
   byte[] mtr=null;
+  ClusterMetrics metrics=this.metrics;
   if (metrics != null) {
     mtr=new byte[ClusterMetricsSnapshot.METRICS_SIZE];
     ClusterMetricsSnapshot.serialize(mtr,0,metrics);
   }
   U.writeByteArray(out,mtr);
+  Map<Integer,CacheMetrics> cacheMetrics=this.cacheMetrics;
+  out.writeInt(cacheMetrics == null ? 0 : cacheMetrics.size());
+  if (!F.isEmpty(cacheMetrics))   for (  Map.Entry<Integer,CacheMetrics> m : cacheMetrics.entrySet()) {
+    out.writeInt(m.getKey());
+    out.writeObject(m.getValue());
+  }
   out.writeLong(order);
   out.writeLong(intOrder);
   out.writeObject(ver);

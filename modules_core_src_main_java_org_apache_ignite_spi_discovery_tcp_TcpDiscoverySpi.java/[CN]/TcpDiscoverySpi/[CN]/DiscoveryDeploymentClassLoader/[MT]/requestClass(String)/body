@@ -1,13 +1,21 @@
 {
-  sock=connect();
-  if (sock == null)   throw new ClassNotFoundException("Failed to load class, can not connect to peer node " + "[cls=" + name + ", node="+ nodeId+ ']');
-  try {
-    writeToSocket(sock,new TcpDiscoveryGetClassRequest(getLocalNodeId(),name));
-    TcpDiscoveryGetClassResponse res=readMessage(sock,null,netTimeout);
-    return res;
+  TcpDiscoveryGetClassRequest msg=new TcpDiscoveryGetClassRequest(getLocalNodeId(),name);
+  for (int i=0; i < reconCnt; i++) {
+    if (sock == null) {
+      TcpDiscoveryNode node0=node;
+      if (node0 == null)       return null;
+      sock=connect(node0);
+      if (sock == null)       break;
+    }
+    try {
+      return request(sock,msg);
+    }
+ catch (    IOException|IgniteCheckedException e) {
+      U.closeQuiet(sock);
+      sock=null;
+    }
   }
- catch (  IOException|IgniteCheckedException e) {
-    e.printStackTrace();
-    throw new ClassNotFoundException("Failed to load class: " + name,e);
-  }
+  node=null;
+  p2pLdrs.remove(nodeId,this);
+  return null;
 }
