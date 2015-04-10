@@ -3,10 +3,10 @@
   if (igfsEx != null) {
     Field workerMapFld=IgfsImpl.class.getDeclaredField("workerMap");
     workerMapFld.setAccessible(true);
-    Map<IgfsPath,IgfsFileWorker> workerMap=(Map<IgfsPath,IgfsFileWorker>)workerMapFld.get(igfsEx);
-    for (    Map.Entry<IgfsPath,IgfsFileWorker> entry : workerMap.entrySet()) {
+    Map<IgfsPath,IgfsFileWorkerBatch> workerMap=(Map<IgfsPath,IgfsFileWorkerBatch>)workerMapFld.get(igfs);
+    for (    Map.Entry<IgfsPath,IgfsFileWorkerBatch> entry : workerMap.entrySet()) {
       entry.getValue().cancel();
-      U.join(entry.getValue());
+      entry.getValue().await();
     }
   }
   uni.format();
