@@ -1,0 +1,25 @@
+{
+  String scanDirPath=uri.getPath();
+  File scanDir=null;
+  if (scanDirPath != null)   scanDir=new File(scanDirPath);
+  if (scanDir == null || !scanDir.isDirectory())   throw new IgniteSpiException("URI is either not provided or is not a directory: " + U.hidePassword(uri.toString()));
+  FileFilter garFilter=new FileFilter(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public boolean accept(    File pathname){
+      return scanCtx.getFilter().accept(null,pathname.getName());
+    }
+  }
+;
+  FileFilter garDirFilesFilter=new FileFilter(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public boolean accept(    File pathname){
+      return pathname.isFile();
+    }
+  }
+;
+  return new URIContext(scanDir,garFilter,garDirFilesFilter);
+}

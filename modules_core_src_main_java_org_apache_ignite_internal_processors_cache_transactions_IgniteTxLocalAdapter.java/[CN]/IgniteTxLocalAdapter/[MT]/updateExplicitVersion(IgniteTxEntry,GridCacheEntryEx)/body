@@ -3,7 +3,10 @@
     GridCacheMvccCandidate explicitCand=entry.localOwner();
     if (explicitCand != null) {
       GridCacheVersion explicitVer=explicitCand.version();
-      if (!explicitVer.equals(xidVer) && explicitCand.threadId() == threadId && !explicitCand.tx()) {
+      boolean locCand=false;
+      if (explicitCand.nearLocal() || explicitCand.local())       locCand=cctx.localNodeId().equals(explicitCand.nodeId());
+ else       if (explicitCand.dhtLocal())       locCand=cctx.localNodeId().equals(explicitCand.otherNodeId());
+      if (!explicitVer.equals(xidVer) && explicitCand.threadId() == threadId && !explicitCand.tx() && locCand) {
         txEntry.explicitVersion(explicitVer);
         if (explicitVer.isLess(minVer))         minVer=explicitVer;
       }
