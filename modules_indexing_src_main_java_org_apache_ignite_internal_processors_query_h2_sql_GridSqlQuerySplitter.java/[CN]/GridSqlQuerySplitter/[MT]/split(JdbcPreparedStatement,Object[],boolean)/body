@@ -32,7 +32,7 @@
   GridSqlElement[] rdcExps=new GridSqlElement[srcQry.visibleColumns()];
   Set<String> colNames=new HashSet<>();
   boolean aggregateFound=false;
-  for (int i=0, len=mapExps.size(); i < len; i++)   aggregateFound|=splitSelectExpression(mapExps,rdcExps,colNames,i);
+  for (int i=0, len=mapExps.size(); i < len; i++)   aggregateFound|=splitSelectExpression(mapExps,rdcExps,colNames,i,colocated);
   mapQry.clearSelect();
   for (  GridSqlElement exp : mapExps)   mapQry.addSelectExpression(exp,true);
   for (  GridSqlElement rdcExp : rdcExps)   rdcQry.addSelectExpression(rdcExp,true);
@@ -40,9 +40,11 @@
   if (srcQry.hasGroupBy()) {
     mapQry.clearGroups();
     for (    int col : srcQry.groupColumns())     mapQry.addGroupExpression(column(((GridSqlAlias)mapExps.get(col)).alias()));
-    for (    int col : srcQry.groupColumns())     rdcQry.addGroupExpression(column(((GridSqlAlias)mapExps.get(col)).alias()));
+    if (!colocated) {
+      for (      int col : srcQry.groupColumns())       rdcQry.addGroupExpression(column(((GridSqlAlias)mapExps.get(col)).alias()));
+    }
   }
-  if (srcQry.having() != null) {
+  if (srcQry.having() != null && !colocated) {
     rdcQry.whereAnd(column(columnName(srcQry.havingColumn())));
     mapQry.having(null);
   }
