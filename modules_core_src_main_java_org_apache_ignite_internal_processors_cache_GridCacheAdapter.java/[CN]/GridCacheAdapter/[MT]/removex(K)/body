@@ -1,7 +1,17 @@
 {
   boolean statsEnabled=ctx.config().isStatisticsEnabled();
   long start=statsEnabled ? System.nanoTime() : 0L;
-  boolean rmv=removex(key,CU.empty0());
+  A.notNull(key,"key");
+  if (keyCheck)   validateCacheKey(key);
+  boolean rmv=syncOp(new SyncOp<Boolean>(true){
+    @Override public Boolean op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
+      return tx.removeAllAsync(ctx,Collections.singletonList(key),null,false,CU.empty0()).get().success();
+    }
+    @Override public String toString(){
+      return "removex [key=" + key + ']';
+    }
+  }
+);
   if (statsEnabled && rmv)   metrics0().addRemoveTimeNanos(System.nanoTime() - start);
   return rmv;
 }
