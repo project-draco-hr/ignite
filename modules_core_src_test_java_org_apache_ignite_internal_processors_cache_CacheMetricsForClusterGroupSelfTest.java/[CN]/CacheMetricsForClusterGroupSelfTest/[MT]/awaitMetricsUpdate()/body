@@ -1,0 +1,12 @@
+{
+  final CountDownLatch latch=new CountDownLatch((GRID_CNT + 1) * 2);
+  IgnitePredicate<Event> lsnr=new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event ignore){
+      latch.countDown();
+      return true;
+    }
+  }
+;
+  for (int i=0; i < GRID_CNT; i++)   grid(i).events().localListen(lsnr,EVT_NODE_METRICS_UPDATED);
+  latch.await();
+}

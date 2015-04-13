@@ -1,0 +1,13 @@
+{
+  Marshaller marshaller=getConfiguration().getMarshaller();
+  ClusterGroup grp=ignite.cluster().forYoungest();
+  ClusterNode node=grp.node();
+  byte[] arr=marshaller.marshal(grp);
+  ClusterGroup obj=marshaller.unmarshal(arr,null);
+  assertEquals(node.id(),obj.node().id());
+  try (Ignite ignore=startGrid()){
+    obj=marshaller.unmarshal(arr,null);
+    assertEquals(grp.node().id(),obj.node().id());
+    assertFalse(node.id().equals(obj.node().id()));
+  }
+ }
