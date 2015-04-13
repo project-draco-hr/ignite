@@ -1,7 +1,17 @@
 {
   final boolean statsEnabled=ctx.config().isStatisticsEnabled();
   final long start=statsEnabled ? System.nanoTime() : 0L;
-  IgniteInternalFuture<V> fut=removeAsync(key,null,filter);
-  if (statsEnabled)   fut.listen(new UpdateRemoveTimeStatClosure<V>(metrics0(),start));
+  A.notNull(key,"key");
+  if (keyCheck)   validateCacheKey(key);
+  IgniteInternalFuture<Boolean> fut=asyncOp(new AsyncOp<Boolean>(key){
+    @Override public IgniteInternalFuture<Boolean> op(    IgniteTxLocalAdapter tx){
+      return tx.removeAllAsync(ctx,Collections.singletonList(key),null,false,filter).chain((IgniteClosure<IgniteInternalFuture<GridCacheReturn>,Boolean>)RET2FLAG);
+    }
+    @Override public String toString(){
+      return "removeAsync [key=" + key + ", filter="+ Arrays.toString(filter)+ ']';
+    }
+  }
+);
+  if (statsEnabled)   fut.listen(new UpdateRemoveTimeStatClosure<Boolean>(metrics0(),start));
   return fut;
 }
