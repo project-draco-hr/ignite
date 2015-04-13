@@ -1,0 +1,45 @@
+{
+  Ignition.setClientMode(true);
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    if (!ExamplesUtils.hasServerNodes(ignite))     return;
+    IgniteCache<Integer,Long> stmCache=ignite.getOrCreateCache(CacheConfig.randomNumbersCache());
+    try (IgniteDataStreamer<Integer,Long> stmr=ignite.dataStreamer(stmCache.getName())){
+      stmr.allowOverwrite(true);
+      stmr.receiver(new StreamTransformer<Integer,Long>(){
+        @Override public Object process(        MutableEntry<Integer,Long> e,        Object... objects) throws EntryProcessorException {
+          Long val=e.getValue();
+          e.setValue(val == null ? 1L : val + 1);
+          return null;
+        }
+      }
+);
+      InetAddress addr=InetAddress.getLocalHost();
+      IgniteSocketStreamer<String,Integer,Long> sockStmr=new IgniteSocketStreamer<>();
+      sockStmr.setAddr(addr);
+      sockStmr.setPort(PORT);
+      sockStmr.setDelimiter(DELIM);
+      sockStmr.setIgnite(ignite);
+      sockStmr.setStreamer(stmr);
+      sockStmr.setConverter(new SocketMessageConverter<String>(){
+        @Override public String convert(        byte[] msg){
+          try {
+            return new String(msg,"ASCII");
+          }
+ catch (          UnsupportedEncodingException e) {
+            throw new IgniteException(e);
+          }
+        }
+      }
+);
+      sockStmr.setTupleExtractor(new StreamTupleExtractor<String,Integer,Long>(){
+        @Override public Map.Entry<Integer,Long> extract(        String input){
+          String[] pair=input.split("=");
+          return new IgniteBiTuple<>(Integer.parseInt(pair[0]),Long.parseLong(pair[1]));
+        }
+      }
+);
+      sockStmr.start();
+      sendData(addr,PORT);
+    }
+   }
+ }
