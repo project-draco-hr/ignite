@@ -1,5 +1,7 @@
 {
-  CacheQuery<List<?>> qry=((IgniteKernal)grid(0)).getCache(null).queries().createSqlFieldsQuery("select age from Person where orgId = ?");
-  Collection<IgniteBiTuple<Integer,Integer>> res=qry.execute(new AverageRemoteReducer(),1).get();
-  assertEquals("Average",30,F.reduce(res,new AverageLocalReducer()).intValue());
+  SqlFieldsQuery qry=new SqlFieldsQuery("select age from Person where orgId = ?");
+  qry.setArgs(1);
+  Collection<List<?>> res=grid(0).cache(null).query(qry).getAll();
+  IgniteBiTuple<Integer,Integer> redRes=F.reduce(res,new AverageRemoteReducer());
+  assertEquals("Average",30,F.reduce(Collections.singleton(redRes),new AverageLocalReducer()).intValue());
 }
