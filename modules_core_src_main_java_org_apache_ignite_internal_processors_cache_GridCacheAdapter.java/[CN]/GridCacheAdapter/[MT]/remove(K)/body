@@ -3,17 +3,15 @@
   long start=statsEnabled ? System.nanoTime() : 0L;
   A.notNull(key,"key");
   if (keyCheck)   validateCacheKey(key);
-  V prevVal=syncOp(new SyncOp<V>(true){
-    @Override public V op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
-      V ret=tx.removeAllAsync(ctx,Collections.singletonList(key),null,true,CU.empty0()).get().value();
-      if (ctx.config().getInterceptor() != null)       return (V)ctx.config().getInterceptor().onBeforeRemove(new CacheEntryImpl(key,ret)).get2();
-      return ret;
+  boolean rmv=syncOp(new SyncOp<Boolean>(true){
+    @Override public Boolean op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
+      return tx.removeAllAsync(ctx,Collections.singletonList(key),null,false,CU.empty0()).get().success();
     }
     @Override public String toString(){
-      return "remove [key=" + key + ']';
+      return "removex [key=" + key + ']';
     }
   }
 );
-  if (statsEnabled)   metrics0().addRemoveAndGetTimeNanos(System.nanoTime() - start);
-  return prevVal;
+  if (statsEnabled && rmv)   metrics0().addRemoveTimeNanos(System.nanoTime() - start);
+  return rmv;
 }
