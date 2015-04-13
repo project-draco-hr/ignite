@@ -1,10 +1,12 @@
 {
   A.notNull(key,"key",oldVal,"oldVal",newVal,"newVal");
   if (keyCheck)   validateCacheKey(key);
-  return syncOp(new SyncOp<GridCacheReturn>(true){
-    @Override public GridCacheReturn op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
+  validateCacheValue(oldVal);
+  validateCacheValue(newVal);
+  return syncOp(new SyncOp<Boolean>(true){
+    @Override public Boolean op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
       if (ctx.deploymentEnabled())       ctx.deploy().registerClass(oldVal);
-      return (GridCacheReturn)tx.putAllAsync(ctx,F.t(key,newVal),true,null,-1,ctx.equalsValArray(oldVal)).get();
+      return tx.putAllAsync(ctx,F.t(key,newVal),false,null,-1,ctx.equalsValArray(oldVal)).get().success();
     }
     @Override public String toString(){
       return "replace [key=" + key + ", oldVal="+ oldVal+ ", newVal="+ newVal+ ']';
