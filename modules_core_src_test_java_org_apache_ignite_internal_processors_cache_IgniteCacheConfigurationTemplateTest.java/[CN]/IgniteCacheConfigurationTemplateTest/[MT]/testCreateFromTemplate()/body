@@ -1,0 +1,31 @@
+{
+  addTemplate=true;
+  Ignite ignite0=startGrid(0);
+  checkCreate(ignite0,"org.apache.ignite.test.cache1",4);
+  checkCreated(ignite0,"org.apache.ignite.test.cache1");
+  Ignite ignite1=startGrid(1);
+  checkCreated(ignite1,"org.apache.ignite.test.cache1");
+  checkCreate(ignite1,"org.apache.ignite1",3);
+  checkCreated(ignite1,"org.apache.ignite1");
+  checkCreated(ignite0,"org.apache.ignite1");
+  checkCreate(ignite0,"org.apache1",2);
+  checkCreated(ignite0,"org.apache1");
+  checkCreated(ignite1,"org.apache1");
+  addTemplate=false;
+  clientMode=true;
+  Ignite ignite2=startGrid(2);
+  assertNotNull(ignite2.cache("org.apache.ignite.test.cache1"));
+  assertNotNull(ignite2.cache("org.apache.ignite1"));
+  assertNotNull(ignite2.cache("org.apache1"));
+  CacheConfiguration template1=new CacheConfiguration();
+  template1.setName(TEMPLATE3);
+  template1.setBackups(5);
+  ignite2.addCacheConfiguration(template1);
+  checkCreate(ignite0,"org.apache.ignite.test2.cache1",5);
+  checkCreated(ignite0,"org.apache.ignite.test2.cache1");
+  checkCreated(ignite1,"org.apache.ignite.test2.cache1");
+  checkCreated(ignite2,"org.apache.ignite.test2.cache1");
+  Ignite ignite3=startGrid(3);
+  checkCreate(ignite3,"org.apache.ignite.test2.cache2",5);
+  checkNoTemplateCaches(4);
+}

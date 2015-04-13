@@ -1,2 +1,15 @@
 {
+  for (  String uri : uriList) {
+    assertParameter(uri != null,"uriList.get(X) != null");
+    String encUri=encodeUri(uri.replaceAll("\\\\","/"));
+    URI uriObj;
+    try {
+      uriObj=new URI(encUri);
+    }
+ catch (    URISyntaxException e) {
+      throw new IgniteSpiException("Failed to parse URI [uri=" + U.hidePassword(uri) + ", encodedUri="+ U.hidePassword(encUri)+ ']',e);
+    }
+    if (uriObj.getScheme() == null || uriObj.getScheme().trim().isEmpty())     throw new IgniteSpiException("Failed to get 'scheme' from URI [uri=" + U.hidePassword(uri) + ", encodedUri="+ U.hidePassword(encUri)+ ']');
+    uriEncodedList.add(uriObj);
+  }
 }

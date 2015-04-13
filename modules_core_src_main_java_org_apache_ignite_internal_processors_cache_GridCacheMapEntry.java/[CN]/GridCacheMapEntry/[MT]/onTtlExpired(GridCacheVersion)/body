@@ -3,7 +3,7 @@
   boolean deferred=false;
   try {
 synchronized (this) {
-      CacheObject expiredVal=val;
+      CacheObject expiredVal=saveValueForIndexUnlocked();
       boolean hasOldBytes=valPtr != 0;
       boolean expired=checkExpired();
       if (expired) {
@@ -19,7 +19,7 @@ synchronized (this) {
             if (markObsolete0(obsoleteVer,true))             obsolete=true;
           }
         }
-        clearIndex(saveValueForIndexUnlocked());
+        clearIndex(expiredVal);
         releaseSwap();
         if (cctx.events().isRecordable(EVT_CACHE_OBJECT_EXPIRED)) {
           cctx.events().addEvent(partition(),key,cctx.localNodeId(),null,EVT_CACHE_OBJECT_EXPIRED,null,false,expiredVal,expiredVal != null || hasOldBytes,null,null,null);
