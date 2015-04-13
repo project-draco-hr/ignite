@@ -1,3 +1,17 @@
 {
-  removeAll(keys,CU.empty0());
+  boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  long start=statsEnabled ? System.nanoTime() : 0L;
+  A.notNull(keys,"keys");
+  if (F.isEmpty(keys))   return;
+  if (keyCheck)   validateCacheKeys(keys);
+  syncOp(new SyncInOp(keys.size() == 1){
+    @Override public void inOp(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
+      tx.removeAllAsync(ctx,keys,null,false,CU.empty0()).get();
+    }
+    @Override public String toString(){
+      return "removeAll [keys=" + keys + ']';
+    }
+  }
+);
+  if (statsEnabled)   metrics0().addRemoveTimeNanos(System.nanoTime() - start);
 }
