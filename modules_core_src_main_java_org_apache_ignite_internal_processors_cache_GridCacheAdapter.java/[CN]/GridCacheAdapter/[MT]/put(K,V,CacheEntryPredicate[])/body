@@ -4,15 +4,15 @@
   A.notNull(key,"key",val,"val");
   if (keyCheck)   validateCacheKey(key);
   validateCacheValue(val);
-  V prevVal=syncOp(new SyncOp<V>(true){
-    @Override public V op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
-      return (V)tx.putAllAsync(ctx,F.t(key,val),true,null,-1,filter).get().value();
+  Boolean stored=syncOp(new SyncOp<Boolean>(true){
+    @Override public Boolean op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
+      return tx.putAllAsync(ctx,F.t(key,val),false,null,-1,filter).get().success();
     }
     @Override public String toString(){
-      return "put [key=" + key + ", val="+ val+ ", filter="+ Arrays.toString(filter)+ ']';
+      return "putx [key=" + key + ", val="+ val+ ", filter="+ Arrays.toString(filter)+ ']';
     }
   }
 );
-  if (statsEnabled)   metrics0().addPutAndGetTimeNanos(System.nanoTime() - start);
-  return prevVal;
+  if (statsEnabled)   metrics0().addPutTimeNanos(System.nanoTime() - start);
+  return stored;
 }
