@@ -19,5 +19,37 @@
     assertNotNull(cache.get(key));
     assertFalse(map.containsKey(key));
   }
+  cacheSkipStore.removeAll(data.keySet());
+  for (  String key : keys) {
+    assertNull(cacheSkipStore.get(key));
+    assertNull(cache.get(key));
+    assertFalse(map.containsKey(key));
+  }
+  tx.commit();
+  tx=txs.txStart(txConcurrency,txIsolation);
+  Map<String,Integer> map=new HashMap<>();
+  for (int i=0; i < keys.size() / 2; i++)   map.put(keys.get(i),i);
+  cacheSkipStore.putAll(map);
+  map.clear();
+  for (int i=keys.size() / 2; i < keys.size(); i++)   map.put(keys.get(i),i);
+  cache.putAll(map);
+  for (int i=0; i < keys.size() / 2; i++) {
+    String key=keys.get(i);
+    assertNotNull(cacheSkipStore.get(key));
+    assertNotNull(cache.get(key));
+    assertFalse(map.containsKey(key));
+  }
+  for (int i=keys.size() / 2; i < keys.size(); i++) {
+    String key=keys.get(i);
+    assertNotNull(cacheSkipStore.get(key));
+    assertNotNull(cache.get(key));
+    assertTrue(map.containsKey(key));
+  }
+  cache.removeAll();
+  for (  String key : keys) {
+    assertNull(cacheSkipStore.get(key));
+    assertNull(cache.get(key));
+    assertFalse(map.containsKey(key));
+  }
   tx.commit();
 }
