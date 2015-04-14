@@ -68,12 +68,13 @@
     assertNotNull(cache.get(key));
     assertTrue(map.containsKey(key));
   }
-  cache.removeAll();
+  cache.removeAll(data.keySet());
   for (  String key : keys) {
     assertNull(cacheSkipStore.get(key));
     assertNull(cache.get(key));
     assertFalse(map.containsKey(key));
   }
+  assertTrue(map.size() == 0);
   String newKey="New key";
   assertFalse(map.containsKey(newKey));
   cacheSkipStore.put(newKey,1);
@@ -88,4 +89,11 @@
   it.remove();
   assertNull(cacheSkipStore.get(rmvKey));
   assertTrue(map.containsKey(rmvKey));
+  assertTrue(cache.size(CachePeekMode.ALL) == 0);
+  assertTrue(cacheSkipStore.size(CachePeekMode.ALL) == 0);
+  cache.remove(rmvKey);
+  assertTrue(map.size() == 0);
+  if (atomicityMode() == CacheAtomicityMode.TRANSACTIONAL) {
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,TransactionConcurrency.OPTIMISTIC,TransactionIsolation.READ_COMMITTED);
+  }
 }
