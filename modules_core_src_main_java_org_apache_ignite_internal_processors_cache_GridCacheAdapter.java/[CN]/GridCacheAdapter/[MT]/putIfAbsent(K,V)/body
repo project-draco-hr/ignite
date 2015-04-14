@@ -1,14 +1,18 @@
 {
+  boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  long start=statsEnabled ? System.nanoTime() : 0L;
   A.notNull(key,"key",val,"val");
   if (keyCheck)   validateCacheKey(key);
   validateCacheValue(val);
-  return syncOp(new SyncOp<V>(true){
-    @Override public V op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
-      return (V)tx.putAllAsync(ctx,F.t(key,val),true,null,-1,ctx.noValArray()).get().value();
+  Boolean stored=syncOp(new SyncOp<Boolean>(true){
+    @Override public Boolean op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
+      return tx.putAllAsync(ctx,F.t(key,val),false,null,-1,ctx.noValArray()).get().success();
     }
     @Override public String toString(){
-      return "putIfAbsent [key=" + key + ", val="+ val+ ']';
+      return "putxIfAbsent [key=" + key + ", val="+ val+ ']';
     }
   }
 );
+  if (statsEnabled && stored)   metrics0().addPutTimeNanos(System.nanoTime() - start);
+  return stored;
 }

@@ -1,22 +1,2 @@
 {
-  if (isLocalNodeCoordinator()) {
-    if (msg.verified()) {
-      stats.onRingMessageReceived(msg);
-      addMessage(new TcpDiscoveryDiscardMessage(getLocalNodeId(),msg.id()));
-      return;
-    }
-    msg.verify(getLocalNodeId());
-    msg.topologyVersion(ring.topologyVersion());
-  }
-  if (msg.verified()) {
-    DiscoverySpiListener lsnr=TcpDiscoverySpi.this.lsnr;
-    TcpDiscoverySpiState spiState=spiStateCopy();
-    Map<Long,Collection<ClusterNode>> hist;
-synchronized (mux) {
-      hist=new TreeMap<>(topHist);
-    }
-    Collection<ClusterNode> snapshot=hist.get(msg.topologyVersion());
-    if (lsnr != null && (spiState == CONNECTED || spiState == DISCONNECTING))     lsnr.onDiscovery(DiscoveryCustomEvent.EVT_DISCOVERY_CUSTOM_EVT,msg.topologyVersion(),ring.node(msg.creatorNodeId()),snapshot,hist,msg.message());
-  }
-  if (ring.hasRemoteNodes())   sendMessageAcrossRing(msg);
 }

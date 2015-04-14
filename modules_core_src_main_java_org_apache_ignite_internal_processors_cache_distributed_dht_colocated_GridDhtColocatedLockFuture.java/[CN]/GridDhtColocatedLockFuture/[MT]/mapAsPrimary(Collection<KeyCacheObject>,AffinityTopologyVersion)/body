@@ -1,15 +1,19 @@
 {
   Collection<KeyCacheObject> distributedKeys=new ArrayList<>(keys.size());
+  boolean explicit=false;
   for (  KeyCacheObject key : keys) {
     if (!cctx.affinity().primary(cctx.localNode(),key,topVer)) {
       for (      KeyCacheObject k : keys)       cctx.mvcc().removeExplicitLock(threadId,k,lockVer);
       return false;
     }
-    addLocalKey(key,topVer,distributedKeys);
+    explicit|=addLocalKey(key,topVer,distributedKeys);
     if (isDone())     return true;
   }
   trackable=false;
-  if (tx != null)   tx.colocatedLocallyMapped(true);
+  if (tx != null) {
+    if (explicit)     tx.markExplicit(cctx.localNodeId());
+    tx.colocatedLocallyMapped(true);
+  }
   if (!distributedKeys.isEmpty()) {
     if (tx != null) {
       for (      KeyCacheObject key : distributedKeys)       tx.addKeyMapping(cctx.txKey(key),cctx.localNode());

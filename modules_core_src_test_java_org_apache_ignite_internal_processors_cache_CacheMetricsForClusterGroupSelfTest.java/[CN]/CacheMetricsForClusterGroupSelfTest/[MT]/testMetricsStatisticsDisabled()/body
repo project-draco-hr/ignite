@@ -1,0 +1,17 @@
+{
+  createCaches(false);
+  populateCacheData(cache1,ENTRY_CNT_CACHE1);
+  populateCacheData(cache2,ENTRY_CNT_CACHE2);
+  readCacheData(cache1,ENTRY_CNT_CACHE1);
+  readCacheData(cache2,ENTRY_CNT_CACHE2);
+  awaitMetricsUpdate();
+  Collection<ClusterNode> nodes=grid(0).cluster().forRemotes().nodes();
+  for (  ClusterNode node : nodes) {
+    Map<Integer,CacheMetrics> metrics=((TcpDiscoveryNode)node).cacheMetrics();
+    assertNotNull(metrics);
+    assertTrue(metrics.isEmpty());
+  }
+  assertMetrics(cache1);
+  assertMetrics(cache2);
+  closeCaches();
+}
