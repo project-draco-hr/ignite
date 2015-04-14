@@ -1,21 +1,7 @@
 {
   GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
-    IgniteInternalFuture<?> fut=ctx.cache().loadAll(keys,replaceExisting);
-    if (completionLsnr != null) {
-      fut.listen(new CI1<IgniteInternalFuture<?>>(){
-        @Override public void apply(        IgniteInternalFuture<?> fut){
-          try {
-            fut.get();
-            completionLsnr.onCompletion();
-          }
- catch (          IgniteCheckedException e) {
-            completionLsnr.onException(cacheException(e));
-          }
-        }
-      }
-);
-    }
+    delegate.loadAll(keys,replaceExisting,completionLsnr);
   }
   finally {
     gate.leave(prev);
