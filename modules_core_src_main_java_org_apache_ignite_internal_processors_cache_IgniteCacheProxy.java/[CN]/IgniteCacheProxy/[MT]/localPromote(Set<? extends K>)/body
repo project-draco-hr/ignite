@@ -1,9 +1,14 @@
 {
-  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
   try {
-    lockFreeCache.localPromote(keys);
-  }
+    GridCacheProjectionImpl<K,V> prev=onEnter(prj);
+    try {
+      delegate.promoteAll(keys);
+    }
   finally {
-    gate.leave(prev);
+      onLeave(prev);
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw cacheException(e);
   }
 }

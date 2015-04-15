@@ -1,9 +1,13 @@
 {
-  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+  GridCacheProjectionImpl<K,V> prev=onEnter(prj);
   try {
-    return lockFreeCache.containsKey(key);
+    if (isAsync()) {
+      setFuture(delegate.containsKeyAsync(key));
+      return false;
+    }
+ else     return delegate.containsKey(key);
   }
   finally {
-    gate.leave(prev);
+    onLeave(prev);
   }
 }

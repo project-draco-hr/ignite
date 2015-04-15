@@ -1,9 +1,13 @@
 {
-  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+  GridCacheProjectionImpl<K,V> prev=onEnter(prj);
   try {
-    lockFreeCache.clear(key);
+    if (isAsync())     setFuture(delegate.clearAsync(key));
+ else     delegate.clear(key);
   }
-  finally {
-    gate.leave(prev);
+ catch (  IgniteCheckedException e) {
+    throw cacheException(e);
+  }
+ finally {
+    onLeave(prev);
   }
 }

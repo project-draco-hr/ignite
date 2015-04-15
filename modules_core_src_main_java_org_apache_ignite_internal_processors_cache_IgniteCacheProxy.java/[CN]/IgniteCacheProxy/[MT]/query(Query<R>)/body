@@ -1,9 +1,26 @@
 {
-  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+  A.notNull(qry,"qry");
+  GridCacheProjectionImpl<K,V> prev=onEnter(prj);
   try {
-    return lockFreeCache.query(qry);
+    validate(qry);
+    if (qry instanceof ContinuousQuery)     return (QueryCursor<R>)queryContinuous((ContinuousQuery<K,V>)qry,qry.isLocal());
+    if (qry instanceof SqlQuery) {
+      SqlQuery p=(SqlQuery)qry;
+      if (isReplicatedDataNode() || ctx.isLocal() || qry.isLocal())       return (QueryCursor<R>)new QueryCursorImpl<>(ctx.kernalContext().query().<K,V>queryLocal(ctx,p));
+      return (QueryCursor<R>)ctx.kernalContext().query().queryTwoStep(ctx,p);
+    }
+    if (qry instanceof SqlFieldsQuery) {
+      SqlFieldsQuery p=(SqlFieldsQuery)qry;
+      if (isReplicatedDataNode() || ctx.isLocal() || qry.isLocal())       return (QueryCursor<R>)ctx.kernalContext().query().queryLocalFields(ctx,p);
+      return (QueryCursor<R>)ctx.kernalContext().query().queryTwoStep(ctx,p);
+    }
+    return (QueryCursor<R>)query(qry,projection(qry.isLocal()));
   }
-  finally {
-    gate.leave(prev);
+ catch (  Exception e) {
+    if (e instanceof CacheException)     throw e;
+    throw new CacheException(e);
+  }
+ finally {
+    onLeave(prev);
   }
 }

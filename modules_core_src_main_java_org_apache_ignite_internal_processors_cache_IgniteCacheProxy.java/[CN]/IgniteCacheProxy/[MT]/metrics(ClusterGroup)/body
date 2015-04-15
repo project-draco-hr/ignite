@@ -1,9 +1,17 @@
 {
-  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+  GridCacheProjectionImpl<K,V> prev=onEnter(prj);
   try {
-    return lockFreeCache.metrics(grp);
+    List<CacheMetrics> metrics=new ArrayList<>(grp.nodes().size());
+    for (    ClusterNode node : grp.nodes()) {
+      Map<Integer,CacheMetrics> nodeCacheMetrics=((TcpDiscoveryNode)node).cacheMetrics();
+      if (nodeCacheMetrics != null) {
+        CacheMetrics e=nodeCacheMetrics.get(context().cacheId());
+        if (e != null)         metrics.add(e);
+      }
+    }
+    return new CacheMetricsSnapshot(ctx.cache().metrics(),metrics);
   }
   finally {
-    gate.leave(prev);
+    onLeave(prev);
   }
 }

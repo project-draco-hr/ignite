@@ -1,9 +1,12 @@
 {
-  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+  GridCacheProjectionImpl<K,V> prev=onEnter(prj);
   try {
-    lockFreeCache.deregisterCacheEntryListener(lsnrCfg);
+    ctx.continuousQueries().cancelJCacheQuery(lsnrCfg);
   }
-  finally {
-    gate.leave(prev);
+ catch (  IgniteCheckedException e) {
+    throw cacheException(e);
+  }
+ finally {
+    onLeave(prev);
   }
 }
