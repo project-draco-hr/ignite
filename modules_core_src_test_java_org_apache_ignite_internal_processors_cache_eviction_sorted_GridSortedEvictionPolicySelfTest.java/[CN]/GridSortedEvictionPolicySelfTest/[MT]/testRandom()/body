@@ -1,0 +1,26 @@
+{
+  try {
+    startGrid();
+    SortedEvictionPolicy<String,String> p=policy();
+    int max=10;
+    p.setMaxSize(max);
+    Random rand=new Random();
+    int keys=31;
+    MockEntry[] fifos=new MockEntry[keys];
+    for (int i=0; i < fifos.length; i++)     fifos[i]=new MockEntry(Integer.toString(i));
+    int runs=5000000;
+    for (int i=0; i < runs; i++) {
+      boolean rmv=rand.nextBoolean();
+      int j=rand.nextInt(fifos.length);
+      MockEntry e=entry(fifos,j);
+      if (rmv)       fifos[j]=new MockEntry(Integer.toString(j));
+      p.onEntryAccessed(rmv,e);
+    }
+    info(p);
+    int curSize=p.getCurrentSize();
+    assertTrue("curSize <= max [curSize=" + curSize + ", max="+ max+ ']',curSize <= max);
+  }
+  finally {
+    stopAllGrids();
+  }
+}
