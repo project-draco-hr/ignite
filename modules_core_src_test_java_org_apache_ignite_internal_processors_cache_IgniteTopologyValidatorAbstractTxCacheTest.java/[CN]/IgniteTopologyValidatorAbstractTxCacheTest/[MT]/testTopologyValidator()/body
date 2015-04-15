@@ -1,0 +1,16 @@
+{
+  try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.OPTIMISTIC,TransactionIsolation.REPEATABLE_READ)){
+    putBefore(tx);
+  }
+   try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.PESSIMISTIC,TransactionIsolation.REPEATABLE_READ)){
+    putBefore(tx);
+  }
+   startGrid(1);
+  try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.OPTIMISTIC,TransactionIsolation.REPEATABLE_READ)){
+    putAfter(tx);
+  }
+   jcache().remove("1");
+  try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.PESSIMISTIC,TransactionIsolation.REPEATABLE_READ)){
+    putAfter(tx);
+  }
+ }
