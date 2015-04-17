@@ -2,6 +2,19 @@
   if (log.isDebugEnabled())   log.debug("Processing dht atomic update request [nodeId=" + nodeId + ", req="+ req+ ']');
   GridCacheVersion ver=req.writeVersion();
   GridDhtAtomicUpdateResponse res=new GridDhtAtomicUpdateResponse(ctx.cacheId(),req.futureVersion());
+  if (req.classError() != null) {
+    res.onError(req.classError());
+    try {
+      ctx.io().send(nodeId,res,ctx.ioPolicy());
+    }
+ catch (    ClusterTopologyCheckedException ignored) {
+      U.warn(log,"Failed to send DHT atomic update response to node because it left grid: " + req.nodeId());
+    }
+catch (    IgniteCheckedException e) {
+      U.error(log,"Failed to send DHT atomic update response (did node leave grid?) [nodeId=" + nodeId + ", req="+ req+ ']',e);
+    }
+    return;
+  }
   Boolean replicate=ctx.isDrEnabled();
   boolean intercept=req.forceTransformBackups() && ctx.config().getInterceptor() != null;
   String taskName=ctx.kernalContext().task().resolveTaskName(req.taskNameHash());
