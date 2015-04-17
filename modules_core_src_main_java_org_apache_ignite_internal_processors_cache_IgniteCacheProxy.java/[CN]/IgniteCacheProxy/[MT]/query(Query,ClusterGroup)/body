@@ -3,18 +3,18 @@
   final CacheQueryFuture<Map.Entry<K,V>> fut;
   if (filter instanceof ScanQuery) {
     IgniteBiPredicate<K,V> p=((ScanQuery)filter).getFilter();
-    qry=ctx.queries().createScanQuery(p != null ? p : ACCEPT_ALL,prjCtx != null ? prjCtx.isKeepPortable() : false);
+    qry=ctx.queries().createScanQuery(p != null ? p : ACCEPT_ALL,opCtx.isKeepPortable());
     if (grp != null)     qry.projection(grp);
     fut=qry.execute();
   }
  else   if (filter instanceof TextQuery) {
     TextQuery p=(TextQuery)filter;
-    qry=ctx.queries().createFullTextQuery(p.getType(),p.getText(),prjCtx != null ? prjCtx.isKeepPortable() : false);
+    qry=ctx.queries().createFullTextQuery(p.getType(),p.getText(),opCtx.isKeepPortable());
     if (grp != null)     qry.projection(grp);
     fut=qry.execute();
   }
  else   if (filter instanceof SpiQuery) {
-    qry=ctx.queries().createSpiQuery(prjCtx != null ? prjCtx.isKeepPortable() : false);
+    qry=ctx.queries().createSpiQuery(opCtx.isKeepPortable());
     if (grp != null)     qry.projection(grp);
     fut=qry.execute(((SpiQuery)filter).getArgs());
   }
