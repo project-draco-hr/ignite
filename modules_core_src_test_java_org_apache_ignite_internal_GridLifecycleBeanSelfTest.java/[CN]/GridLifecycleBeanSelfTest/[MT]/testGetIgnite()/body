@@ -1,0 +1,25 @@
+{
+  final AtomicBoolean done=new AtomicBoolean();
+  bean=new LifeCycleBaseBean(){
+    /** 
+ */
+    @IgniteInstanceResource private Ignite ignite;
+    @Override public void onLifecycleEvent(    LifecycleEventType evt){
+      super.onLifecycleEvent(evt);
+      if (evt == LifecycleEventType.AFTER_NODE_START) {
+        Ignite ignite0=Ignition.ignite(ignite.name());
+        assertNotNull(ignite0);
+        assertNotNull(ignite0.cluster().localNode());
+        done.set(true);
+      }
+    }
+  }
+;
+  try {
+    startGrid();
+    assertTrue(done.get());
+  }
+  finally {
+    stopAllGrids();
+  }
+}
