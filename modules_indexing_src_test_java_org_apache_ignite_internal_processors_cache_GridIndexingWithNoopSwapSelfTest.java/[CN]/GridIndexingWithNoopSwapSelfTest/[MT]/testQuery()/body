@@ -1,12 +1,11 @@
 {
-  GridCacheAdapter<Integer,ObjectValue> cache=((IgniteKernal)ignite).internalCache(null);
+  IgniteCache<Integer,ObjectValue> cache=ignite.cache(null);
   int cnt=10;
-  for (int i=0; i < cnt; i++)   cache.put(i,new ObjectValue("test" + i,i));
+  for (int i=0; i < cnt; i++)   cache.getAndPut(i,new ObjectValue("test" + i,i));
   for (int i=0; i < cnt; i++) {
-    assertNotNull(localPeek(cache,i));
-    cache.evict(i);
+    assertNotNull(cache.localPeek(i,ONHEAP_PEEK_MODES));
+    cache.localEvict(Collections.singleton(i));
   }
-  CacheQuery<Map.Entry<Integer,ObjectValue>> qry=cache.queries().createSqlQuery(ObjectValue.class,"intVal >= ? order by intVal");
-  qry.enableDedup(true);
-  assertEquals(0,qry.execute(0).get().size());
+  SqlQuery<Integer,ObjectValue> qry=new SqlQuery(ObjectValue.class,"intVal >= ? order by intVal");
+  assertEquals(0,cache.query(qry.setArgs(0)).getAll().size());
 }

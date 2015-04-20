@@ -1,11 +1,11 @@
 {
   ctx.checkSecurity(SecurityPermission.CACHE_READ);
   if (F.isEmpty(keys))   return Collections.emptyMap();
-  GridCacheProjectionImpl<K,V> prj=ctx.projectionPerCall();
-  UUID subjId=ctx.subjectIdPerCall(null,prj);
+  CacheOperationContext opCtx=ctx.operationContextPerCall();
+  UUID subjId=ctx.subjectIdPerCall(null,opCtx);
   Map<K,V> vals=new HashMap<>(keys.size(),1.0f);
   if (keyCheck)   validateCacheKeys(keys);
-  final IgniteCacheExpiryPolicy expiry=expiryPolicy(prj != null ? prj.expiry() : null);
+  final IgniteCacheExpiryPolicy expiry=expiryPolicy(opCtx != null ? opCtx.expiry() : null);
   boolean success=true;
   for (  K key : keys) {
     if (key == null)     throw new NullPointerException("Null key.");
@@ -37,5 +37,5 @@ catch (      GridCacheFilterFailedException ignored) {
     }
   }
   if (success || !storeEnabled)   return vals;
-  return getAllAsync(keys,prj == null || !prj.skipStore(),null,false,subjId,taskName,deserializePortable,false,expiry,skipVals).get();
+  return getAllAsync(keys,opCtx == null || !opCtx.skipStore(),null,false,subjId,taskName,deserializePortable,false,expiry,skipVals).get();
 }
