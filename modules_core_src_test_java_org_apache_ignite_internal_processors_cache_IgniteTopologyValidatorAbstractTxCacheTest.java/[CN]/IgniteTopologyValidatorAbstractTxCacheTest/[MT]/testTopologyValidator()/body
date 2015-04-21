@@ -14,6 +14,13 @@
   }
    assertEmpty(null);
   assertEmpty(CACHE_NAME_1);
+  assertEmpty(CACHE_NAME_2);
+  try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.PESSIMISTIC,TransactionIsolation.REPEATABLE_READ)){
+    putValid(null);
+    putInvalid(CACHE_NAME_1);
+  }
+   assertEmpty(null);
+  assertEmpty(CACHE_NAME_1);
   startGrid(1);
   try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.OPTIMISTIC,TransactionIsolation.REPEATABLE_READ)){
     putValid(CACHE_NAME_1);
@@ -26,6 +33,12 @@
   }
    remove(CACHE_NAME_1);
   startGrid(2);
+  try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.PESSIMISTIC,TransactionIsolation.REPEATABLE_READ)){
+    putValid(null);
+    putInvalid(CACHE_NAME_1);
+  }
+   assertEmpty(null);
+  assertEmpty(CACHE_NAME_1);
   try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.OPTIMISTIC,TransactionIsolation.REPEATABLE_READ)){
     putValid(CACHE_NAME_1);
     commitFailed(tx);
@@ -33,4 +46,18 @@
    try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.PESSIMISTIC,TransactionIsolation.REPEATABLE_READ)){
     putInvalid(CACHE_NAME_1);
   }
- }
+   try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.OPTIMISTIC,TransactionIsolation.REPEATABLE_READ)){
+    putValid(null);
+    putValid(CACHE_NAME_2);
+    tx.commit();
+  }
+   remove(null);
+  remove(CACHE_NAME_2);
+  try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.PESSIMISTIC,TransactionIsolation.REPEATABLE_READ)){
+    putValid(null);
+    putValid(CACHE_NAME_2);
+    tx.commit();
+  }
+   remove(null);
+  remove(CACHE_NAME_2);
+}
