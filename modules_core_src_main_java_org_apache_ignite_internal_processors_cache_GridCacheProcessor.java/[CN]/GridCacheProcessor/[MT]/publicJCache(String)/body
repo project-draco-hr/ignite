@@ -1,26 +1,3 @@
 {
-  if (log.isDebugEnabled())   log.debug("Getting public cache for name: " + cacheName);
-  if (sysCaches.contains(maskNull(cacheName)))   throw new IllegalStateException("Failed to get cache because it is a system cache: " + cacheName);
-  try {
-    String masked=maskNull(cacheName);
-    IgniteCache<K,V> cache=(IgniteCache<K,V>)jCacheProxies.get(masked);
-    if (cache == null) {
-      DynamicCacheDescriptor desc=registeredCaches.get(masked);
-      if (desc == null || desc.cancelled())       throw new IllegalArgumentException("Cache is not started: " + cacheName);
-      DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(cacheName,ctx.localNodeId());
-      req.cacheName(cacheName);
-      req.deploymentId(desc.deploymentId());
-      CacheConfiguration cfg=new CacheConfiguration(desc.cacheConfiguration());
-      cfg.setNearConfiguration(null);
-      req.startCacheConfiguration(cfg);
-      req.clientStartOnly(true);
-      F.first(initiateCacheChanges(F.asList(req))).get();
-      cache=(IgniteCache<K,V>)jCacheProxies.get(masked);
-      if (cache == null)       throw new IllegalArgumentException("Cache is not started: " + cacheName);
-    }
-    return cache;
-  }
- catch (  IgniteCheckedException e) {
-    throw CU.convertToCacheException(e);
-  }
+  return publicJCache(cacheName,true);
 }

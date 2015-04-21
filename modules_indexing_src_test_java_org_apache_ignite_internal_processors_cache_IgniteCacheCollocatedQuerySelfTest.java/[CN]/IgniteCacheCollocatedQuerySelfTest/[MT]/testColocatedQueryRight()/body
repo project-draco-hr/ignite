@@ -1,0 +1,16 @@
+{
+  IgniteCache<AffinityUuid,Purchase> c=ignite(0).cache(null);
+  Random rnd=new GridRandom(SEED);
+  for (int i=0; i < PURCHASES; i++) {
+    Purchase p=new Purchase();
+    p.productId=rnd.nextInt(PRODUCTS);
+    p.price=rnd.nextInt(MAX_PRICE);
+    c.put(new AffinityUuid(p.productId),p);
+  }
+  List<List<?>> res1=query(c,false);
+  List<List<?>> res2=query(c,true);
+  X.println("res1: " + res1);
+  X.println("res2: " + res2);
+  assertFalse(res1.isEmpty());
+  assertEquals(res1.toString(),res2.toString());
+}

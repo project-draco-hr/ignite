@@ -1,7 +1,9 @@
 {
   if (log.isDebugEnabled())   log.debug("Getting public cache for name: " + name);
-  if (sysCaches.contains(name))   throw new IllegalStateException("Failed to get cache because it is system cache: " + name);
+  DynamicCacheDescriptor desc=registeredCaches.get(maskNull(name));
+  if (desc == null || desc.cancelled())   throw new IllegalArgumentException("Cache is not started: " + name);
+  if (!desc.cacheType().userCache())   throw new IllegalStateException("Failed to get cache because it is a system cache: " + name);
   IgniteCacheProxy<K,V> jcache=(IgniteCacheProxy<K,V>)jCacheProxies.get(maskNull(name));
-  if (jcache == null)   throw new IllegalArgumentException("Cache is not configured: " + name);
-  return jcache.legacyProxy();
+  if (jcache == null)   throw new IllegalArgumentException("Cache is not started: " + name);
+  return jcache.internalProxy();
 }

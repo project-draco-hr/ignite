@@ -1,12 +1,13 @@
 {
   int max=this.max;
+  int batchSize=this.batchSize;
   int startSize=queue.sizex();
-  for (int i=0; i < startSize && queue.sizex() > max; i++) {
-    EvictableEntry<K,V> entry=queue.poll();
-    if (entry == null)     break;
-    if (!entry.evict()) {
-      entry.removeMeta();
-      touch(entry);
+  if (startSize >= max + batchSize) {
+    for (int i=max; i < startSize && queue.sizex() > max; i++) {
+      EvictableEntry<K,V> entry=queue.poll();
+      if (entry == null)       break;
+      Node<EvictableEntry<K,V>> meta=entry.removeMeta();
+      if (meta != null && !entry.evict())       touch(entry);
     }
   }
 }

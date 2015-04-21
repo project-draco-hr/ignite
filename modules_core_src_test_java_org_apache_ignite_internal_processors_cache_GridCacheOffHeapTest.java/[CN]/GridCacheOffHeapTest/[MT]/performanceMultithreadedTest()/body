@@ -1,7 +1,7 @@
 {
   Ignite g=startGrid();
   try {
-    final GridCache<Integer,Integer> c=((IgniteKernal)g).internalCache(null);
+    final GridCacheAdapter<Integer,Integer> c=((IgniteKernal)g).internalCache(null);
     final long start=System.currentTimeMillis();
     final AtomicInteger keyGen=new AtomicInteger();
     final int reserveSize=1024 * 1024;
@@ -10,7 +10,7 @@
         while (true) {
           int val=keyGen.addAndGet(reserveSize);
           for (int i=val - reserveSize; i < val; i++) {
-            c.put(i,i);
+            c.getAndPut(i,i);
             if (i % 500000 == 0) {
               long dur=System.currentTimeMillis() - start;
               long keySize=c.size() + c.offHeapEntriesCount();

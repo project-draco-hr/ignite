@@ -1,16 +1,6 @@
 {
   IgniteCache<Integer,String> cache=jcache(0);
-  int key=0;
-  while (true) {
-    boolean found=false;
-    for (    ClusterNode n : grid(0).cluster().nodes()) {
-      if (!grid(0).affinity(null).isPrimaryOrBackup(n,key)) {
-        found=true;
-        break;
-      }
-    }
-    if (found)     break;
-  }
+  int key=nearKey(cache);
   assertNull(cache.getAndPut(key,"val"));
-  checkStoreUsage(1,1,0,1);
+  checkStoreUsage(1,1,0,nearCacheConfiguration() == null ? 2 : 1);
 }
