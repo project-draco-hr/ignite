@@ -2,13 +2,13 @@
   final int ENTRY_CNT=500;
   for (int i=0; i < ENTRY_CNT; i++)   cache.getAndPut(new Key(i),new Person("p-" + i,i));
   try {
-    CacheQuery<Map.Entry<Key,Person>> qry=cache.queries().createScanQuery(new IgniteBiPredicate<Key,Person>(){
+    CacheQuery<Map.Entry<Key,Person>> qry=cache.context().queries().createScanQuery(new IgniteBiPredicate<Key,Person>(){
       @Override public boolean apply(      Key key,      Person p){
         assertEquals(key.id,(Integer)p.salary);
         return key.id % 2 == 0;
       }
     }
-);
+,false);
     Collection<Map.Entry<Key,Person>> res=qry.execute().get();
     assertEquals(ENTRY_CNT / 2,res.size());
     for (    Map.Entry<Key,Person> e : res) {
@@ -17,7 +17,7 @@
       assertEquals(k.id,(Integer)p.salary);
       assertEquals(0,k.id % 2);
     }
-    qry=cache.queries().createScanQuery(null);
+    qry=cache.context().queries().createScanQuery(null,false);
     res=qry.execute().get();
     assertEquals(ENTRY_CNT,res.size());
     testMultithreaded(cache,ENTRY_CNT / 2);

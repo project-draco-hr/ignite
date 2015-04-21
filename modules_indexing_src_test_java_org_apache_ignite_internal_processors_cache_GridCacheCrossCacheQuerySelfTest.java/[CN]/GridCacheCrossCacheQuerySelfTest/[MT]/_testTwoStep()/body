@@ -1,8 +1,8 @@
 {
   String cache="partitioned";
-  CacheQueries<Integer,FactPurchase> qx=((IgniteKernal)ignite).<Integer,FactPurchase>getCache(cache).queries();
+  GridQueryProcessor qryProc=((IgniteKernal)ignite).context().query();
   GridCacheTwoStepQuery q=new GridCacheTwoStepQuery("select cast(sum(x) as long) from _cnts_ where ? = ?",1,1);
   q.addMapQuery("_cnts_","select count(*) x from \"partitioned\".FactPurchase where ? = ?",2,2);
-  Object cnt=qx.execute(cache,q).getAll().iterator().next().get(0);
+  Object cnt=qryProc.queryTwoStep(cache,q).getAll().iterator().next().get(0);
   assertEquals(10L,cnt);
 }
