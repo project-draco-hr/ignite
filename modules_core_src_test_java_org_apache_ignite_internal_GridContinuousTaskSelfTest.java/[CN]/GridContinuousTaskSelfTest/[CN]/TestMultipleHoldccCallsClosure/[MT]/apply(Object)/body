@@ -1,0 +1,21 @@
+{
+  counter++;
+  if (counter == 2)   return success;
+  jobCtx.holdcc(4000);
+  try {
+    jobCtx.holdcc();
+  }
+ catch (  IllegalStateException e) {
+    success=true;
+    log.info("Second holdcc() threw IllegalStateException as expected.");
+  }
+ finally {
+    new Timer().schedule(new TimerTask(){
+      @Override public void run(){
+        jobCtx.callcc();
+      }
+    }
+,1000);
+  }
+  return false;
+}

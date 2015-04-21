@@ -1,7 +1,8 @@
 {
-  GridCacheProjectionImpl<K,V> prev=gate.enter(prj);
+  CacheOperationContext prev=gate.enter(opCtx);
   try {
-    return delegate.setSkipStore(skipStore);
+    if (opCtx != null && opCtx.skipStore() == skipStore)     return this;
+    return new GridCacheProxyImpl<>(ctx,delegate,opCtx != null ? opCtx.setSkipStore(skipStore) : new CacheOperationContext(true,null,false,null));
   }
   finally {
     gate.leave(prev);
