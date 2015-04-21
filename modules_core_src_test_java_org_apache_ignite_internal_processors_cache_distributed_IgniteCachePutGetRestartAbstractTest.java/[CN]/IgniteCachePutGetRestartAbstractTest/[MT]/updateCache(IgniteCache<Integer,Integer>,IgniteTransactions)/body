@@ -1,0 +1,14 @@
+{
+  int val=expVal + 1;
+  try {
+    try (Transaction tx=txs.txStart(OPTIMISTIC,REPEATABLE_READ)){
+      for (int i=0; i < ENTRY_CNT; i++)       cache.put(i,val);
+      tx.commit();
+      expVal=val;
+      log.info("Updated cache, new value: " + val);
+    }
+   }
+ catch (  IgniteException e) {
+    log.error("Update failed: " + e,e);
+  }
+}
