@@ -1,0 +1,33 @@
+{
+  final LongAdder8 cnt=new LongAdder8();
+  final AtomicBoolean finished=new AtomicBoolean();
+  final int pPut=P_PUT;
+  final int pGet=P_PUT + P_GET;
+  final IgniteCache<Integer,Integer> cache=ignite.cache(null);
+  multithreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      int c=MEASUREMENT_CNT;
+      for (; c > 0; c--) {
+        U.sleep(1000);
+        info("Ops/sec: " + cnt.sumThenReset());
+      }
+      finished.set(true);
+      return null;
+    }
+  }
+,1);
+  multithreaded(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      while (!finished.get()) {
+        int p=RND.nextInt(100);
+        int key=RND.nextInt(KEYS);
+        if (p >= 0 && p < pPut)         cache.put(key,0);
+ else         if (p >= pPut && p < pGet)         cache.get(key);
+ else         cache.remove(key);
+        cnt.increment();
+      }
+      return null;
+    }
+  }
+,THREADS);
+}
