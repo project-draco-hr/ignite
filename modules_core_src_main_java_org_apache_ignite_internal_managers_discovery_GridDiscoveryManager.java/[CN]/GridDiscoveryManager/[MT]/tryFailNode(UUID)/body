@@ -1,7 +1,13 @@
 {
-  if (!getSpi().pingNode(nodeId)) {
-    getSpi().failNode(nodeId);
-    return true;
+  if (!busyLock.enterBusy())   return false;
+  try {
+    if (!getSpi().pingNode(nodeId)) {
+      getSpi().failNode(nodeId);
+      return true;
+    }
+    return false;
   }
-  return false;
+  finally {
+    busyLock.leaveBusy();
+  }
 }
