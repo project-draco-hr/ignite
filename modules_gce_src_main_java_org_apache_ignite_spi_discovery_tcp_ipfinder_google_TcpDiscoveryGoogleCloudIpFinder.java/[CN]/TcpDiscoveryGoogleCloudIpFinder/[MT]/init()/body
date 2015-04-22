@@ -10,7 +10,7 @@
       }
       GoogleCredential credential;
       try {
-        credential=new GoogleCredential.Builder().setTransport(httpTransport).setJsonFactory(JacksonFactory.getDefaultInstance()).setServiceAccountId(serviceAccountId).setServiceAccountPrivateKeyFromP12File(new File(serviceAccountP12FilePath)).setServiceAccountScopes(Collections.singleton(StorageScopes.DEVSTORAGE_READ_WRITE)).build();
+        credential=new GoogleCredential.Builder().setTransport(httpTransport).setJsonFactory(JacksonFactory.getDefaultInstance()).setServiceAccountId(serviceAccountId).setServiceAccountPrivateKeyFromP12File(new File(serviceAccountP12FilePath)).setServiceAccountScopes(Collections.singleton(StorageScopes.DEVSTORAGE_FULL_CONTROL)).build();
       }
  catch (      Exception e) {
         throw new IgniteSpiException("Failed to authenticate on Google Cloud Platform",e);
@@ -19,7 +19,36 @@
         storage=new Storage.Builder(httpTransport,JacksonFactory.getDefaultInstance(),credential).setApplicationName(projectName).build();
       }
  catch (      Exception e) {
-        throw new IgniteSpiException("Failed to open a storage for given project name: " + projectName);
+        throw new IgniteSpiException("Failed to open a storage for given project name: " + projectName,e);
+      }
+      boolean createBucket=false;
+      try {
+        Storage.Buckets.Get getBucket=storage.buckets().get(bucketName);
+        getBucket.setProjection("full");
+        getBucket.execute();
+      }
+ catch (      GoogleJsonResponseException e) {
+        if (e.getStatusCode() == 404) {
+          U.warn(log,"Bucket doesn't exist, will create it [bucketName=" + bucketName + "]");
+          createBucket=true;
+        }
+ else         throw new IgniteSpiException("Failed to open the bucket: " + bucketName,e);
+      }
+catch (      Exception e) {
+        throw new IgniteSpiException("Failed to open the bucket: " + bucketName,e);
+      }
+      if (createBucket) {
+        Bucket newBucket=new Bucket();
+        newBucket.setName(bucketName);
+        try {
+          Storage.Buckets.Insert insertBucket=storage.buckets().insert(projectName,newBucket);
+          insertBucket.setProjection("full");
+          insertBucket.setPredefinedDefaultObjectAcl("projectPrivate");
+          insertBucket.execute();
+        }
+ catch (        Exception e) {
+          throw new IgniteSpiException("Failed to create the bucket: " + bucketName,e);
+        }
       }
     }
   finally {
