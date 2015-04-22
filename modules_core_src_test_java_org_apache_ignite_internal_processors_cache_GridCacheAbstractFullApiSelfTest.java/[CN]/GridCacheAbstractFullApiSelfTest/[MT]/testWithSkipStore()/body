@@ -17,10 +17,22 @@
   keys=new ArrayList<>(1000);
   for (int i=0; i < 1000; i++)   keys.add("key_" + i);
   for (int i=0; i < keys.size(); ++i)   cache.put(keys.get(i),i);
-  for (  String key : keys) {
+  for (int i=0; i < keys.size(); ++i) {
+    String key=keys.get(i);
     assertNotNull(cacheSkipStore.get(key));
     assertNotNull(cache.get(key));
-    assertTrue(map.containsKey(key));
+    assertEquals(i,map.get(key));
+  }
+  for (int i=0; i < keys.size(); ++i) {
+    String key=keys.get(i);
+    Integer val1=-1;
+    cacheSkipStore.put(key,val1);
+    assertEquals(i,map.get(key));
+    assertEquals(val1,cacheSkipStore.get(key));
+    Integer val2=-2;
+    assertEquals(val1,cacheSkipStore.invoke(key,new SetValueProcessor(val2)));
+    assertEquals(i,map.get(key));
+    assertEquals(val2,cacheSkipStore.get(key));
   }
   for (  String key : keys) {
     cacheSkipStore.remove(key);
@@ -33,6 +45,22 @@
     assertNull(cacheSkipStore.get(key));
     assertNull(cache.get(key));
     assertFalse(map.containsKey(key));
+    map.put(key,0);
+    Integer val=-1;
+    assertNull(cacheSkipStore.invoke(key,new SetValueProcessor(val)));
+    assertEquals(0,map.get(key));
+    assertEquals(val,cacheSkipStore.get(key));
+    cache.remove(key);
+    map.put(key,0);
+    assertTrue(cacheSkipStore.putIfAbsent(key,val));
+    assertEquals(val,cacheSkipStore.get(key));
+    assertEquals(0,map.get(key));
+    cache.remove(key);
+    map.put(key,0);
+    assertNull(cacheSkipStore.getAndPut(key,val));
+    assertEquals(val,cacheSkipStore.get(key));
+    assertEquals(0,map.get(key));
+    cache.remove(key);
   }
   assertFalse(cacheSkipStore.iterator().hasNext());
   assertTrue(map.size() == 0);
@@ -94,12 +122,12 @@
   assertTrue(cacheSkipStore.size(CachePeekMode.ALL) == 0);
   cache.remove(rmvKey);
   assertTrue(map.size() == 0);
-  if (atomicityMode() == CacheAtomicityMode.TRANSACTIONAL) {
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,TransactionConcurrency.OPTIMISTIC,TransactionIsolation.READ_COMMITTED);
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,TransactionConcurrency.OPTIMISTIC,TransactionIsolation.REPEATABLE_READ);
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,TransactionConcurrency.OPTIMISTIC,TransactionIsolation.SERIALIZABLE);
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,TransactionConcurrency.PESSIMISTIC,TransactionIsolation.READ_COMMITTED);
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,TransactionConcurrency.PESSIMISTIC,TransactionIsolation.REPEATABLE_READ);
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,TransactionConcurrency.PESSIMISTIC,TransactionIsolation.SERIALIZABLE);
+  if (txEnabled()) {
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,OPTIMISTIC,READ_COMMITTED);
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,OPTIMISTIC,REPEATABLE_READ);
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,OPTIMISTIC,SERIALIZABLE);
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,PESSIMISTIC,READ_COMMITTED);
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,PESSIMISTIC,REPEATABLE_READ);
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,PESSIMISTIC,SERIALIZABLE);
   }
 }
