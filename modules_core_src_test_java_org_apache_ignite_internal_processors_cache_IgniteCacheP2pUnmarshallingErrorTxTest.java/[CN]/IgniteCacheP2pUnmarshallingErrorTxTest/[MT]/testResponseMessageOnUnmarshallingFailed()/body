@@ -1,4 +1,8 @@
 {
-  readCnt.set(100);
-  failPessimictic();
-}
+  readCnt.set(1000);
+  try (Transaction tx=grid(0).transactions().txStart(TransactionConcurrency.PESSIMISTIC,TransactionIsolation.REPEATABLE_READ)){
+    TestKey tstKey=new TestKey(String.valueOf(++key));
+    jcache(0).put(tstKey,"");
+    jcache(0).lock(tstKey).lock();
+  }
+ }
