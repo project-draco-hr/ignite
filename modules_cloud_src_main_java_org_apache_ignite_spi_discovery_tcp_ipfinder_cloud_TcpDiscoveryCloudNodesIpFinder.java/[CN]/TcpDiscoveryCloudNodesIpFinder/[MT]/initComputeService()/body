@@ -1,0 +1,28 @@
+{
+  if (initGuard.compareAndSet(false,true))   try {
+    if (provider == null)     throw new IgniteSpiException("Cloud provider is not set.");
+    if (identity == null)     throw new IgniteSpiException("Cloud identity is not set.");
+    try {
+      ContextBuilder ctxBuilder=ContextBuilder.newBuilder(provider);
+      ctxBuilder.credentials(identity,credential);
+      ctxBuilder.modules(ImmutableSet.<Module>of(new Log4JLoggingModule(),new SshjSshClientModule()));
+      computeService=ctxBuilder.buildView(ComputeServiceContext.class).getComputeService();
+    }
+ catch (    Exception e) {
+      throw new IgniteSpiException("Failed to connect to the provider: " + provider,e);
+    }
+    if (discoveryPort == null)     discoveryPort=TcpDiscoverySpi.DFLT_PORT;
+  }
+  finally {
+    initLatch.countDown();
+  }
+ else {
+    try {
+      U.await(initLatch);
+    }
+ catch (    IgniteInterruptedCheckedException e) {
+      throw new IgniteSpiException("Thread has been interrupted.",e);
+    }
+    if (computeService == null)     throw new IgniteSpiException("Ip finder has not been initialized properly.");
+  }
+}

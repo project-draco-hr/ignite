@@ -1,0 +1,15 @@
+{
+  initComputeService();
+  Collection<InetSocketAddress> addresses=new LinkedList<>();
+  try {
+    for (    ComputeMetadata node : computeService.listNodes()) {
+      NodeMetadata metadata=computeService.getNodeMetadata(node.getId());
+      for (      String addr : metadata.getPrivateAddresses())       addresses.add(new InetSocketAddress(addr,discoveryPort));
+      for (      String addr : metadata.getPublicAddresses())       addresses.add(new InetSocketAddress(addr,discoveryPort));
+    }
+  }
+ catch (  Exception e) {
+    throw new IgniteSpiException("Failed to get registered addresses for the provider: " + provider);
+  }
+  return addresses;
+}
