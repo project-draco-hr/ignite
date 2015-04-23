@@ -1,9 +1,11 @@
 {
-  if (coctx != null && coctx.processor().isPortableObject(obj))   return Utils.serialize(obj,null);
-  try {
-    return obj.valueBytes(coctx);
+  if (obj.type() == CacheObject.TYPE_REGULAR) {
+    try {
+      return obj.valueBytes(coctx);
+    }
+ catch (    IgniteCheckedException e) {
+      throw DbException.convert(e);
+    }
   }
- catch (  IgniteCheckedException e) {
-    throw DbException.convert(e);
-  }
+  return Utils.serialize(obj.value(coctx,false),null);
 }
