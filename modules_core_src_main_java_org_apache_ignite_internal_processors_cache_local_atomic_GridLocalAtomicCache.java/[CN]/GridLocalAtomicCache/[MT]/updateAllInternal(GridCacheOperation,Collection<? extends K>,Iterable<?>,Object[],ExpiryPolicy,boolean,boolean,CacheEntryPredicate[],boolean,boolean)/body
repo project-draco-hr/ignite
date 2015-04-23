@@ -5,7 +5,7 @@
   String taskName=ctx.kernalContext().job().currentTaskName();
   GridCacheVersion ver=ctx.versions().next();
   UUID subjId=ctx.subjectIdPerCall(null);
-  if (storeEnabled && keys.size() > 1) {
+  if (writeThrough && keys.size() > 1) {
     return updateWithBatch(op,keys,vals,invokeArgs,expiryPlc,ver,filter,subjId,taskName);
   }
   Iterator<?> valsIter=vals != null ? vals.iterator() : null;
@@ -22,7 +22,7 @@
       GridCacheEntryEx entry=null;
       try {
         entry=entryEx(cacheKey);
-        GridTuple3<Boolean,Object,EntryProcessorResult<Object>> t=entry.innerUpdateLocal(ver,val == null ? DELETE : op,val,invokeArgs,storeEnabled,storeEnabled,retval,expiryPlc,true,true,filter,intercept,subjId,taskName);
+        GridTuple3<Boolean,Object,EntryProcessorResult<Object>> t=entry.innerUpdateLocal(ver,val == null ? DELETE : op,val,invokeArgs,writeThrough,readThrough,retval,expiryPlc,true,true,filter,intercept,subjId,taskName);
         if (op == TRANSFORM) {
           if (t.get3() != null) {
             Map<K,EntryProcessorResult> computedMap;
