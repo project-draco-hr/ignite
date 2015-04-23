@@ -14,8 +14,9 @@
   }
   cache.removeAll(new HashSet<>(keys));
   for (  String key : keys)   assertNull(cache.get(key));
-  keys=new ArrayList<>(1000);
-  for (int i=0; i < 1000; i++)   keys.add("key_" + i);
+  final int KEYS=500;
+  keys=new ArrayList<>(KEYS);
+  for (int i=0; i < KEYS; i++)   keys.add("key_" + i);
   for (int i=0; i < keys.size(); ++i)   cache.put(keys.get(i),i);
   for (int i=0; i < keys.size(); ++i) {
     String key=keys.get(i);
@@ -65,7 +66,7 @@
   assertFalse(cacheSkipStore.iterator().hasNext());
   assertTrue(map.size() == 0);
   assertTrue(cache.size(CachePeekMode.ALL) == 0);
-  Map<String,Integer> data=new HashMap<>();
+  Map<String,Integer> data=new LinkedHashMap<>();
   for (int i=0; i < keys.size(); i++)   data.put(keys.get(i),i);
   cacheSkipStore.putAll(data);
   for (  String key : keys) {
@@ -122,12 +123,4 @@
   assertTrue(cacheSkipStore.size(CachePeekMode.ALL) == 0);
   cache.remove(rmvKey);
   assertTrue(map.size() == 0);
-  if (txEnabled()) {
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,OPTIMISTIC,READ_COMMITTED);
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,OPTIMISTIC,REPEATABLE_READ);
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,OPTIMISTIC,SERIALIZABLE);
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,PESSIMISTIC,READ_COMMITTED);
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,PESSIMISTIC,REPEATABLE_READ);
-    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,PESSIMISTIC,SERIALIZABLE);
-  }
 }
