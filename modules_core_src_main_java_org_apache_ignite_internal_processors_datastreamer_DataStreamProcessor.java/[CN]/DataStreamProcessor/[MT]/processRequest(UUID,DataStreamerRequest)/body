@@ -5,6 +5,26 @@
   }
   try {
     if (log.isDebugEnabled())     log.debug("Processing data load request: " + req);
+    AffinityTopologyVersion locAffVer=ctx.cache().context().exchange().readyAffinityVersion();
+    AffinityTopologyVersion rmtAffVer=req.topologyVersion();
+    if (locAffVer.compareTo(rmtAffVer) < 0) {
+      if (log.isDebugEnabled())       log.debug("Received request has higher affinity topology version [request=" + req + ", locTopVer="+ locAffVer+ ", rmtTopVer="+ rmtAffVer+ ']');
+      IgniteInternalFuture<?> fut=ctx.cache().context().exchange().affinityReadyFuture(rmtAffVer);
+      if (fut != null && !fut.isDone()) {
+        fut.listen(new CI1<IgniteInternalFuture<?>>(){
+          @Override public void apply(          IgniteInternalFuture<?> t){
+            ctx.closure().runLocalSafe(new Runnable(){
+              @Override public void run(){
+                processRequest(nodeId,req);
+              }
+            }
+,false);
+          }
+        }
+);
+        return;
+      }
+    }
     Object topic;
     try {
       topic=marsh.unmarshal(req.responseTopicBytes(),null);
