@@ -1,6 +1,8 @@
 {
   String type=key ? pojo.keyClassName() : pojo.valueClassName();
   File out=new File(pkgFolder,type + ".java");
+  checkValidJavaIdentifier(pkg,true,"Package",type);
+  checkValidJavaIdentifier(type,false,"Type",type);
   if (out.exists()) {
     MessageBox.Result choice=askOverwrite.confirm(out.getName());
     if (CANCEL == choice)     throw new IllegalStateException("POJO generation was canceled!");
@@ -14,6 +16,7 @@
   Collection<PojoField> fields=key ? pojo.keyFields() : pojo.valueFields(includeKeys);
   for (  PojoField field : fields) {
     String fldName=field.javaName();
+    checkValidJavaIdentifier(fldName,false,"Field",type);
     add1(src,"/** Value for " + fldName + ". */");
     if (key && field.affinityKey())     add1(src,"@AffinityKeyMapped");
     add1(src,"private " + javaTypeName(field) + " "+ fldName+ ";");
