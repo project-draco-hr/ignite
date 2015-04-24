@@ -1,5 +1,5 @@
 {
-  if (leaveLatch != null)   return;
+  if (getSpiContext().isStopping())   return;
   if (getLocalNodeId().equals(msg.nodeId())) {
     if (joinLatch.getCount() > 0) {
       long topVer=msg.topologyVersion();
@@ -7,6 +7,7 @@
       notifyDiscovery(EVT_NODE_JOINED,topVer,locNode,updateTopologyHistory(topVer));
       joinErr=null;
       joinLatch.countDown();
+      stats.onJoinFinished();
     }
  else     if (log.isDebugEnabled())     log.debug("Discarding node add finished message (this message has already been processed) " + "[msg=" + msg + ", locNode="+ locNode+ ']');
   }

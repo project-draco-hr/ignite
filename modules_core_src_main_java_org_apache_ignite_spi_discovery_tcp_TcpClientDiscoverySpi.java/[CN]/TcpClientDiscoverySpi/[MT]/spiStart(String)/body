@@ -44,10 +44,21 @@
   locNode=new TcpDiscoveryNode(getLocalNodeId(),addrs.get1(),addrs.get2(),0,metricsProvider,locNodeVer);
   locNode.setAttributes(locNodeAttrs);
   locNode.local(true);
+  sockWriter=new SocketWriter();
+  sockWriter.start();
+  sockReader=new SocketReader();
+  sockReader.start();
   sockTimeoutWorker=new SocketTimeoutWorker();
   sockTimeoutWorker.start();
-  joinTopology(false);
-  disconnectHnd=new DisconnectHandler();
-  disconnectHnd.start();
+  msgWorker=new MessageWorker();
+  msgWorker.start();
+  try {
+    joinLatch.await();
+    if (joinErr != null)     throw joinErr;
+  }
+ catch (  InterruptedException e) {
+    throw new IgniteSpiException("Thread has been interrupted.",e);
+  }
+  timer.schedule(new HeartbeatSender(),hbFreq,hbFreq);
   if (log.isDebugEnabled())   log.debug(startInfo());
 }

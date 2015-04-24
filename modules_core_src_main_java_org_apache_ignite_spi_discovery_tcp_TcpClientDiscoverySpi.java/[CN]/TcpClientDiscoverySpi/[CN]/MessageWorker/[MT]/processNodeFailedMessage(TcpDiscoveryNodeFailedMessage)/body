@@ -1,5 +1,13 @@
 {
-  if (leaveLatch != null)   return;
+  if (getSpiContext().isStopping()) {
+    if (!getLocalNodeId().equals(msg.creatorNodeId()) && getLocalNodeId().equals(msg.failedNodeId())) {
+      if (leaveLatch.getCount() > 0) {
+        log.debug("Remote node fail this node while node is stopping [locNode=" + getLocalNodeId() + ", rmtNode="+ msg.creatorNodeId()+ ']');
+        leaveLatch.countDown();
+      }
+    }
+    return;
+  }
   if (!getLocalNodeId().equals(msg.creatorNodeId())) {
     TcpDiscoveryNode node=rmtNodes.remove(msg.failedNodeId());
     if (node == null) {

@@ -1,23 +1,19 @@
 {
-  if (leaveLatch != null)   return;
+  if (getSpiContext().isStopping())   return;
+  if (getLocalNodeId().equals(msg.creatorNodeId())) {
+  }
   if (getLocalNodeId().equals(msg.creatorNodeId())) {
     if (msg.success()) {
       pending=true;
       try {
-        for (        TcpDiscoveryAbstractMessage pendingMsg : msg.pendingMessages())         processMessage(pendingMsg);
+        for (        TcpDiscoveryAbstractMessage pendingMsg : msg.pendingMessages())         processDiscoveryMessage(pendingMsg);
       }
   finally {
         pending=false;
       }
-      joinErr=null;
-      reconFailed=false;
-      joinLatch.countDown();
     }
  else {
-      joinErr=null;
-      reconFailed=true;
-      getSpiContext().recordEvent(new DiscoveryEvent(locNode,"Client node disconnected: " + locNode,EVT_CLIENT_NODE_DISCONNECTED,locNode));
-      joinLatch.countDown();
+      getSpiContext().recordEvent(new DiscoveryEvent(locNode,"Client node disconnected: " + locNode,EVT_NODE_SEGMENTED,locNode));
     }
   }
  else   if (log.isDebugEnabled())   log.debug("Discarding reconnect message for another client: " + msg);
