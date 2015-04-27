@@ -1,19 +1,26 @@
 {
   GridCacheContext ctx=cctx.cacheContext(msg.cacheId());
 switch (msg.directType()) {
-case 30:
+case 14:
 {
-      GridDhtLockRequest req=(GridDhtLockRequest)msg;
-      GridDhtLockResponse res=new GridDhtLockResponse(ctx.cacheId(),req.version(),req.futureId(),req.miniId(),0);
+      GridCacheEvictionRequest req=(GridCacheEvictionRequest)msg;
+      GridCacheEvictionResponse res=new GridCacheEvictionResponse(ctx.cacheId(),req.futureId(),req.classError() != null);
       sendResponseOnFailedMessage(nodeId,res,cctx,ctx.ioPolicy());
     }
   break;
+case 30:
+{
+  GridDhtLockRequest req=(GridDhtLockRequest)msg;
+  GridDhtLockResponse res=new GridDhtLockResponse(ctx.cacheId(),req.version(),req.futureId(),req.miniId(),0);
+  sendResponseOnFailedMessage(nodeId,res,cctx,ctx.ioPolicy());
+}
+break;
 case 34:
 {
-  GridDhtTxPrepareRequest req=(GridDhtTxPrepareRequest)msg;
-  GridDhtTxPrepareResponse res=new GridDhtTxPrepareResponse(req.version(),req.futureId(),req.miniId());
-  res.error(req.classError());
-  sendResponseOnFailedMessage(nodeId,res,cctx,req.policy());
+GridDhtTxPrepareRequest req=(GridDhtTxPrepareRequest)msg;
+GridDhtTxPrepareResponse res=new GridDhtTxPrepareResponse(req.version(),req.futureId(),req.miniId());
+res.error(req.classError());
+sendResponseOnFailedMessage(nodeId,res,cctx,req.policy());
 }
 break;
 case 38:
@@ -28,8 +35,22 @@ case 40:
 {
 GridNearAtomicUpdateRequest req=(GridNearAtomicUpdateRequest)msg;
 GridNearAtomicUpdateResponse res=new GridNearAtomicUpdateResponse(ctx.cacheId(),nodeId,req.futureVersion());
-res.onError(req.classError());
+res.error(req.classError());
 sendResponseOnFailedMessage(nodeId,res,cctx,ctx.ioPolicy());
+}
+break;
+case 42:
+{
+GridDhtForceKeysRequest req=(GridDhtForceKeysRequest)msg;
+GridDhtForceKeysResponse res=new GridDhtForceKeysResponse(ctx.cacheId(),req.futureId(),req.miniId());
+res.error(req.classError());
+sendResponseOnFailedMessage(nodeId,res,cctx,ctx.ioPolicy());
+}
+break;
+case 45:
+{
+GridDhtPartitionSupplyMessage req=(GridDhtPartitionSupplyMessage)msg;
+U.error(log,"Supply message cannot be unmarshalled.",req.classError());
 }
 break;
 case 49:
@@ -38,6 +59,18 @@ GridNearGetRequest req=(GridNearGetRequest)msg;
 GridNearGetResponse res=new GridNearGetResponse(ctx.cacheId(),req.futureId(),req.miniId(),req.version());
 res.error(req.classError());
 sendResponseOnFailedMessage(nodeId,res,cctx,ctx.ioPolicy());
+}
+break;
+case 50:
+{
+GridNearGetResponse res=(GridNearGetResponse)msg;
+GridPartitionedGetFuture fut=(GridPartitionedGetFuture)ctx.mvcc().future(res.version(),res.futureId());
+if (fut == null) {
+if (log.isDebugEnabled()) log.debug("Failed to find future for get response [sender=" + nodeId + ", res="+ res+ ']');
+return;
+}
+res.error(res.classError());
+fut.onResult(nodeId,res);
 }
 break;
 case 51:
