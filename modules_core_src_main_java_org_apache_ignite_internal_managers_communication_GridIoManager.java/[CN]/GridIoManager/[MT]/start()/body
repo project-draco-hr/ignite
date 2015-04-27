@@ -40,13 +40,12 @@
   }
   MessageFactory[] msgs=ctx.plugins().extensions(MessageFactory.class);
   if (msgs == null)   msgs=EMPTY;
-  MessageFactory qryMsgs=null;
-  try {
-    qryMsgs=U.newInstance("org.apache.ignite.internal.processors.query.h2.twostep.msg.GridH2ValueMessageFactory");
+  List<MessageFactory> compMsgs=new ArrayList<>();
+  for (  IgniteComponentType compType : IgniteComponentType.values()) {
+    MessageFactory f=compType.messageFactory();
+    if (f != null)     compMsgs.add(f);
   }
- catch (  IgniteCheckedException e) {
-  }
-  if (qryMsgs != null)   msgs=F.concat(msgs,qryMsgs);
+  if (!compMsgs.isEmpty())   msgs=F.concat(msgs,compMsgs.toArray(new MessageFactory[compMsgs.size()]));
   msgFactory=new GridIoMessageFactory(msgs);
   if (log.isDebugEnabled())   log.debug(startInfo());
 }
