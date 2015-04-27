@@ -1,0 +1,21 @@
+{
+  for (int attempt=0; attempt < 3; ++attempt) {
+    final Ignite ignite=startGrid(0);
+    Set<IgniteFuture> futs=new HashSet<>();
+    try (final DataStreamerImpl dataLdr=(DataStreamerImpl)ignite.dataStreamer(null)){
+      dataLdr.maxRemapCount(0);
+      final AtomicInteger igniteId=new AtomicInteger(1);
+      IgniteInternalFuture<?> fut=GridTestUtils.runMultiThreadedAsync(new Callable<Object>(){
+        @Override public Object call() throws Exception {
+          for (int i=1; i < 5; ++i)           startGrid(igniteId.incrementAndGet());
+          return true;
+        }
+      }
+,2,"startedGridThread");
+      Random random=new Random();
+      while (!fut.isDone())       futs.add(dataLdr.addData(random.nextInt(100000),random.nextInt(100000)));
+    }
+     for (    IgniteFuture f : futs)     f.get();
+    stopAllGrids();
+  }
+}
