@@ -11,5 +11,16 @@
     }
   }
 ,EventType.EVT_NODE_FAILED,EventType.EVT_NODE_LEFT);
-  ctx.io().addMessageListener(GridTopic.TOPIC_QUERY,this);
+  ctx.io().addMessageListener(GridTopic.TOPIC_QUERY,new GridMessageListener(){
+    @Override public void onMessage(    UUID nodeId,    Object msg){
+      if (!busyLock.enterBusy())       return;
+      try {
+        GridMapQueryExecutor.this.onMessage(nodeId,msg);
+      }
+  finally {
+        busyLock.leaveBusy();
+      }
+    }
+  }
+);
 }
