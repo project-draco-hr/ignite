@@ -1,0 +1,14 @@
+{
+  try {
+    GenericApplicationContext springCtx=prepareSpringContext(excludedProps);
+    XmlBeanDefinitionReader reader=new XmlBeanDefinitionReader(springCtx);
+    reader.setValidationMode(XmlBeanDefinitionReader.VALIDATION_XSD);
+    reader.loadBeanDefinitions(new InputStreamResource(cfgStream));
+    springCtx.refresh();
+    return springCtx;
+  }
+ catch (  BeansException e) {
+    if (X.hasCause(e,ClassNotFoundException.class))     throw new IgniteCheckedException("Failed to instantiate Spring XML application context " + "(make sure all classes used in Spring configuration are present at CLASSPATH) ",e);
+ else     throw new IgniteCheckedException("Failed to instantiate Spring XML application context [err=" + e.getMessage() + ']',e);
+  }
+}
