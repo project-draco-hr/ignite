@@ -1,15 +1,31 @@
 {
   if (log.isDebugEnabled())   log.debug("Processing check prepared transaction requests [nodeId=" + nodeId + ", req="+ req+ ']');
-  boolean prepared=ctx.tm().txsPreparedOrCommitted(req.nearXidVersion(),req.transactions());
-  GridCacheOptimisticCheckPreparedTxResponse res=new GridCacheOptimisticCheckPreparedTxResponse(req.version(),req.futureId(),req.miniId(),prepared);
-  try {
-    if (log.isDebugEnabled())     log.debug("Sending check prepared transaction response [nodeId=" + nodeId + ", res="+ res+ ']');
-    ctx.io().send(nodeId,res,req.system() ? UTILITY_CACHE_POOL : SYSTEM_POOL);
+  IgniteInternalFuture<Boolean> fut=ctx.tm().txsPreparedOrCommitted(req.nearXidVersion(),req.transactions());
+  if (fut == null || fut.isDone()) {
+    boolean prepared;
+    try {
+      prepared=fut == null ? true : fut.get();
+    }
+ catch (    IgniteCheckedException e) {
+      U.error(log,"Check prepared transaction future failed [req=" + req + ']',e);
+      prepared=false;
+    }
+    sendCheckPreparedResponse(nodeId,req,prepared);
   }
- catch (  ClusterTopologyCheckedException ignored) {
-    if (log.isDebugEnabled())     log.debug("Failed to send check prepared transaction response (did node leave grid?) [nodeId=" + nodeId + ", res="+ res+ ']');
-  }
-catch (  IgniteCheckedException e) {
-    U.error(log,"Failed to send response to node [nodeId=" + nodeId + ", res="+ res+ ']',e);
+ else {
+    fut.listen(new CI1<IgniteInternalFuture<Boolean>>(){
+      @Override public void apply(      IgniteInternalFuture<Boolean> fut){
+        boolean prepared;
+        try {
+          prepared=fut.get();
+        }
+ catch (        IgniteCheckedException e) {
+          U.error(log,"Check prepared transaction future failed [req=" + req + ']',e);
+          prepared=false;
+        }
+        sendCheckPreparedResponse(nodeId,req,prepared);
+      }
+    }
+);
   }
 }
