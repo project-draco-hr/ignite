@@ -1,11 +1,8 @@
 {
-  if (!F.isEmpty(dhtMap) || !F.isEmpty(nearMap)) {
-    boolean sync=finish(dhtMap,nearMap);
-    markInitialized();
-    if (!sync)     onComplete();
-  }
- else {
-    markInitialized();
-    onComplete();
-  }
+  boolean sync;
+  if (!F.isEmpty(dhtMap) || !F.isEmpty(nearMap))   sync=finish(dhtMap,nearMap);
+ else   if (!commit && !F.isEmpty(tx.lockTransactionNodes()))   sync=rollbackLockTransactions(tx.lockTransactionNodes());
+ else   sync=false;
+  markInitialized();
+  if (!sync)   onComplete();
 }
