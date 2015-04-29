@@ -1,0 +1,17 @@
+{
+  try {
+    Collection<TableDescriptor> tbls=tables(schema(spaceName));
+    Class<?> keyCls=getClass(objectContext(spaceName),key);
+    for (    TableDescriptor tbl : tbls) {
+      if (tbl != tblToUpdate && tbl.type().keyClass().isAssignableFrom(keyCls)) {
+        if (tbl.tbl.update(key,null,0,true)) {
+          if (tbl.luceneIdx != null)           tbl.luceneIdx.remove(key);
+          return;
+        }
+      }
+    }
+  }
+ catch (  Exception e) {
+    throw new IgniteCheckedException("Failed to remove key: " + key,e);
+  }
+}

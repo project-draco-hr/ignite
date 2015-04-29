@@ -1,0 +1,27 @@
+{
+  IgniteCache<Integer,Integer> cache=jcache(0);
+  Map<Integer,Integer> map=new LinkedHashMap<>();
+  map.put(nearKey(cache),1);
+  map.put(primaryKey(cache),1);
+  TestCommunicationSpi spi=(TestCommunicationSpi)ignite(0).configuration().getCommunicationSpi();
+  spi.sndFail=true;
+  try {
+    try {
+      cache.putAll(map);
+      fail("Put should fail.");
+    }
+ catch (    CacheException e) {
+      log.info("Expected exception: " + e);
+      assertFalse(X.hasCause(e,AssertionError.class));
+    }
+    for (int i=0; i < gridCount(); i++) {
+      for (      Integer key : map.keySet())       assertNull(jcache(i).localPeek(key));
+    }
+    spi.sndFail=false;
+    cache.putAll(map);
+    for (    Map.Entry<Integer,Integer> e : map.entrySet())     assertEquals(e.getValue(),cache.get(e.getKey()));
+  }
+  finally {
+    spi.sndFail=false;
+  }
+}
