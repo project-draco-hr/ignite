@@ -1,0 +1,58 @@
+{
+  if (initGuard.compareAndSet(false,true))   try {
+    if (provider == null)     throw new IgniteSpiException("Cloud provider is not set.");
+    if (identity == null)     throw new IgniteSpiException("Cloud identity is not set.");
+    if (credential != null && credentialPath != null)     throw new IgniteSpiException("Both credential and credentialPath are set. Use only one method.");
+    if (credentialPath != null)     credential=getPrivateKeyFromFile();
+    try {
+      ContextBuilder ctxBuilder=ContextBuilder.newBuilder(provider);
+      ctxBuilder.credentials(identity,credential);
+      Properties properties=new Properties();
+      properties.setProperty(Constants.PROPERTY_SO_TIMEOUT,JCLOUD_CONNECTION_TIMEOUT);
+      properties.setProperty(Constants.PROPERTY_CONNECTION_TIMEOUT,JCLOUD_CONNECTION_TIMEOUT);
+      if (!F.isEmpty(regions))       properties.setProperty(LocationConstants.PROPERTY_REGIONS,keysSetToStr(regions));
+      if (!F.isEmpty(zones))       properties.setProperty(LocationConstants.PROPERTY_ZONES,keysSetToStr(zones));
+      ctxBuilder.overrides(properties);
+      computeService=ctxBuilder.buildView(ComputeServiceContext.class).getComputeService();
+      if (!F.isEmpty(zones) || !F.isEmpty(regions)) {
+        nodesFilter=new Predicate<ComputeMetadata>(){
+          @Override public boolean apply(          ComputeMetadata computeMetadata){
+            String region=null;
+            String zone=null;
+            Location location=computeMetadata.getLocation();
+            while (location != null) {
+switch (location.getScope()) {
+case ZONE:
+                zone=location.getId();
+              break;
+case REGION:
+            region=location.getId();
+          break;
+      }
+      location=location.getParent();
+    }
+    if (regions != null && region != null && !regions.contains(region))     return false;
+    if (zones != null && zone != null && !zones.contains(zone))     return false;
+    return true;
+  }
+}
+;
+}
+}
+ catch (Exception e) {
+throw new IgniteSpiException("Failed to connect to the provider: " + provider,e);
+}
+}
+  finally {
+initLatch.countDown();
+}
+ else {
+try {
+U.await(initLatch);
+}
+ catch (IgniteInterruptedCheckedException e) {
+throw new IgniteSpiException("Thread has been interrupted.",e);
+}
+if (computeService == null) throw new IgniteSpiException("Ip finder has not been initialized properly.");
+}
+}
