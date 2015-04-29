@@ -1,0 +1,15 @@
+{
+  if (log.isDebugEnabled())   log.debug("Unswap [space=" + spaceName + ", key="+ key+ ", val="+ val+ "]");
+  if (ctx.indexing().enabled()) {
+    CacheObjectContext coctx=cacheObjectContext(spaceName);
+    ctx.indexing().onUnswap(spaceName,key.value(coctx,false),val.value(coctx,false));
+  }
+  if (idx == null)   return;
+  if (!busyLock.enterBusy())   throw new IllegalStateException("Failed to process swap event (grid is stopping).");
+  try {
+    idx.onUnswap(spaceName,key,val);
+  }
+  finally {
+    busyLock.leaveBusy();
+  }
+}
