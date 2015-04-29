@@ -1,4 +1,34 @@
 {
+  if (nearTxCheck) {
+    UUID nearNodeId=tx.eventNodeId();
+    if (cctx.localNodeId().equals(nearNodeId)) {
+      IgniteInternalFuture<Boolean> fut=cctx.tm().txCommitted(tx.nearXidVersion());
+      fut.listen(new CI1<IgniteInternalFuture<Boolean>>(){
+        @Override public void apply(        IgniteInternalFuture<Boolean> fut){
+          try {
+            onDone(fut.get());
+          }
+ catch (          IgniteCheckedException e) {
+            onDone(e);
+          }
+        }
+      }
+);
+    }
+ else {
+      MiniFuture fut=new MiniFuture(tx.eventNodeId());
+      add(fut);
+      GridCacheOptimisticCheckPreparedTxRequest req=new GridCacheOptimisticCheckPreparedTxRequest(tx,0,true,futureId(),fut.futureId());
+      try {
+        cctx.io().send(nearNodeId,req,tx.ioPolicy());
+      }
+ catch (      IgniteCheckedException e) {
+        fut.onError(e);
+      }
+      markInitialized();
+    }
+    return;
+  }
   int locTxNum=nodeTransactions(cctx.localNodeId());
   if (locTxNum > 1) {
     IgniteInternalFuture<Boolean> fut=cctx.tm().txsPreparedOrCommitted(tx.nearXidVersion(),locTxNum);

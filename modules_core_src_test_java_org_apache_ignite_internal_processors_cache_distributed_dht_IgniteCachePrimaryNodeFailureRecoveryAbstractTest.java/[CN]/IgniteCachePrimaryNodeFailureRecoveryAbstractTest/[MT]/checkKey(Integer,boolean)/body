@@ -1,0 +1,11 @@
+{
+  Affinity<Integer> aff=ignite(2).affinity(null);
+  Collection<ClusterNode> nodes=aff.mapKeyToPrimaryAndBackups(key);
+  assertFalse(nodes.isEmpty());
+  for (  ClusterNode node : nodes) {
+    Ignite ignite=grid(node);
+    IgniteCache<Integer,Integer> cache=ignite.cache(null);
+    if (expNull)     assertNull("Unexpected value for: " + ignite.name(),cache.localPeek(key));
+ else     assertEquals("Unexpected value for: " + ignite.name(),key,cache.localPeek(key));
+  }
+}
