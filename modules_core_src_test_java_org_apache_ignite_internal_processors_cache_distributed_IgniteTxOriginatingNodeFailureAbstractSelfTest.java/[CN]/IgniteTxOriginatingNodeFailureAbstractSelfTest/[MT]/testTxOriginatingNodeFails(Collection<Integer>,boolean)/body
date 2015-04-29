@@ -17,7 +17,7 @@
     nodes.remove(txNode);
     nodeMap.put(key,nodes);
   }
-  info("Starting tx [values=" + map + ", topVer="+ ((IgniteKernal)grid(1)).context().discovery().topologyVersion()+ ']');
+  info("Starting optimistic tx " + "[values=" + map + ", topVer="+ (grid(1)).context().discovery().topologyVersion()+ ']');
   if (partial)   ignoreMessages(grid(1).localNode().id(),ignoreMessageClass());
   final Ignite txIgniteNode=G.ignite(txNode.id());
   GridTestUtils.runAsync(new Callable<Object>(){
@@ -26,6 +26,7 @@
       assertNotNull(cache);
       TransactionProxyImpl tx=(TransactionProxyImpl)txIgniteNode.transactions().txStart();
       IgniteInternalTx txEx=GridTestUtils.getFieldValue(tx,"tx");
+      assertTrue(txEx.optimistic());
       cache.putAll(map);
       try {
         txEx.prepareAsync().get(3,TimeUnit.SECONDS);
