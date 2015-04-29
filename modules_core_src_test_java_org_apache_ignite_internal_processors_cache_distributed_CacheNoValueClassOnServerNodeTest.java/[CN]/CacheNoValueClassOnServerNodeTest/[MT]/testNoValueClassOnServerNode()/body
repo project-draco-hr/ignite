@@ -1,0 +1,32 @@
+{
+  try {
+    Class.forName("org.apache.ignite.tests.p2p.cache.Person");
+    fail();
+  }
+ catch (  ClassNotFoundException ignore) {
+  }
+  try (Ignite ignite=Ignition.start(createConfiguration())){
+    CacheConfiguration cfg=new CacheConfiguration();
+    cfg.setCopyOnRead(true);
+    ignite.createCache(cfg);
+    final CountDownLatch clientReadyLatch=new CountDownLatch(1);
+    Collection<String> jvmArgs=Arrays.asList("-ea","-DIGNITE_QUIET=false");
+    GridJavaProcess clientNode=null;
+    try {
+      String cp=U.getIgniteHome() + "/modules/extdata/p2p/target/classes/";
+      clientNode=GridJavaProcess.exec(CLIENT_CLS_NAME,null,log,new CI1<String>(){
+        @Override public void apply(        String s){
+          info("Client node: " + s);
+          if (s.contains(NODE_START_MSG))           clientReadyLatch.countDown();
+        }
+      }
+,null,jvmArgs,cp);
+      assertTrue(clientReadyLatch.await(60,SECONDS));
+      int exitCode=clientNode.getProcess().waitFor();
+      assertEquals("Unexpected exit code",0,exitCode);
+    }
+  finally {
+      if (clientNode != null)       clientNode.killProcess();
+    }
+  }
+ }
