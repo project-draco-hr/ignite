@@ -1,2 +1,167 @@
 {
+  for (  final IgniteSpi spi : spis) {
+    try {
+      spi.onContextInitialized(new IgniteSpiContext(){
+        @Override public boolean isStopping(){
+          return ctx.isStopping();
+        }
+        @Override public Collection<ClusterNode> remoteNodes(){
+          return ctx.discovery().remoteNodes();
+        }
+        @Override public Collection<ClusterNode> nodes(){
+          return ctx.discovery().allNodes();
+        }
+        @Override public ClusterNode localNode(){
+          return ctx.discovery().localNode();
+        }
+        @Override public Collection<ClusterNode> remoteDaemonNodes(){
+          final Collection<ClusterNode> all=ctx.discovery().daemonNodes();
+          return !localNode().isDaemon() ? all : F.view(all,new IgnitePredicate<ClusterNode>(){
+            @Override public boolean apply(            ClusterNode n){
+              return n.isDaemon();
+            }
+          }
+);
+        }
+        @Nullable @Override public ClusterNode node(        UUID nodeId){
+          A.notNull(nodeId,"nodeId");
+          return ctx.discovery().node(nodeId);
+        }
+        @Override public boolean pingNode(        UUID nodeId){
+          A.notNull(nodeId,"nodeId");
+          return ctx.discovery().pingNode(nodeId);
+        }
+        @Override public void send(        ClusterNode node,        Serializable msg,        String topic) throws IgniteSpiException {
+          A.notNull(node,"node");
+          A.notNull(msg,"msg");
+          A.notNull(topic,"topic");
+          try {
+            if (msg instanceof Message)             ctx.io().send(node,topic,(Message)msg,SYSTEM_POOL);
+ else             ctx.io().sendUserMessage(asList(node),msg,topic,false,0);
+          }
+ catch (          IgniteCheckedException e) {
+            throw unwrapException(e);
+          }
+        }
+        @SuppressWarnings("deprecation") @Override public void addMessageListener(        GridMessageListener lsnr,        String topic){
+          A.notNull(lsnr,"lsnr");
+          A.notNull(topic,"topic");
+          ctx.io().addMessageListener(topic,lsnr);
+        }
+        @SuppressWarnings("deprecation") @Override public boolean removeMessageListener(        GridMessageListener lsnr,        String topic){
+          A.notNull(lsnr,"lsnr");
+          A.notNull(topic,"topic");
+          return ctx.io().removeMessageListener(topic,lsnr);
+        }
+        @Override public void addLocalEventListener(        GridLocalEventListener lsnr,        int... types){
+          A.notNull(lsnr,"lsnr");
+          ctx.event().addLocalEventListener(lsnr,types);
+        }
+        @Override public boolean removeLocalEventListener(        GridLocalEventListener lsnr){
+          A.notNull(lsnr,"lsnr");
+          return ctx.event().removeLocalEventListener(lsnr);
+        }
+        @Override public boolean isEventRecordable(        int... types){
+          for (          int t : types)           if (!ctx.event().isRecordable(t))           return false;
+          return true;
+        }
+        @Override public void recordEvent(        Event evt){
+          A.notNull(evt,"evt");
+          if (ctx.event().isRecordable(evt.type()))           ctx.event().record(evt);
+        }
+        @Override public void registerPort(        int port,        IgnitePortProtocol proto){
+          ctx.ports().registerPort(port,proto,spi.getClass());
+        }
+        @Override public void deregisterPort(        int port,        IgnitePortProtocol proto){
+          ctx.ports().deregisterPort(port,proto,spi.getClass());
+        }
+        @Override public void deregisterPorts(){
+          ctx.ports().deregisterPorts(spi.getClass());
+        }
+        @Nullable @Override public <K,V>V get(        String cacheName,        K key){
+          return ctx.cache().<K,V>jcache(cacheName).get(key);
+        }
+        @Nullable @Override public <K,V>V put(        String cacheName,        K key,        V val,        long ttl){
+          try {
+            if (ttl > 0) {
+              ExpiryPolicy plc=new TouchedExpiryPolicy(new Duration(MILLISECONDS,ttl));
+              IgniteCache<K,V> cache=ctx.cache().<K,V>publicJCache(cacheName).withExpiryPolicy(plc);
+              return cache.getAndPut(key,val);
+            }
+ else             return ctx.cache().<K,V>jcache(cacheName).getAndPut(key,val);
+          }
+ catch (          IgniteCheckedException e) {
+            throw CU.convertToCacheException(e);
+          }
+        }
+        @Nullable @Override public <K,V>V putIfAbsent(        String cacheName,        K key,        V val,        long ttl){
+          try {
+            if (ttl > 0) {
+              ExpiryPolicy plc=new TouchedExpiryPolicy(new Duration(MILLISECONDS,ttl));
+              IgniteCache<K,V> cache=ctx.cache().<K,V>publicJCache(cacheName).withExpiryPolicy(plc);
+              return cache.getAndPutIfAbsent(key,val);
+            }
+ else             return ctx.cache().<K,V>jcache(cacheName).getAndPutIfAbsent(key,val);
+          }
+ catch (          IgniteCheckedException e) {
+            throw CU.convertToCacheException(e);
+          }
+        }
+        @Nullable @Override public <K,V>V remove(        String cacheName,        K key){
+          return ctx.cache().<K,V>jcache(cacheName).getAndRemove(key);
+        }
+        @Override public <K>boolean containsKey(        String cacheName,        K key){
+          return ctx.cache().cache(cacheName).containsKey(key);
+        }
+        @Override public int partition(        String cacheName,        Object key){
+          return ctx.cache().cache(cacheName).affinity().partition(key);
+        }
+        @Override public IgniteNodeValidationResult validateNode(        ClusterNode node){
+          for (          GridComponent comp : ctx) {
+            IgniteNodeValidationResult err=comp.validateNode(node);
+            if (err != null)             return err;
+          }
+          return null;
+        }
+        @Override public Collection<SecuritySubject> authenticatedSubjects(){
+          try {
+            return ctx.security().authenticatedSubjects();
+          }
+ catch (          IgniteCheckedException e) {
+            throw U.convertException(e);
+          }
+        }
+        @Override public SecuritySubject authenticatedSubject(        UUID subjId){
+          try {
+            return ctx.security().authenticatedSubject(subjId);
+          }
+ catch (          IgniteCheckedException e) {
+            throw U.convertException(e);
+          }
+        }
+        @Override public MessageFormatter messageFormatter(){
+          return ctx.io().formatter();
+        }
+        @Override public MessageFactory messageFactory(){
+          return ctx.io().messageFactory();
+        }
+        @Override public boolean tryFailNode(        UUID nodeId){
+          return ctx.discovery().tryFailNode(nodeId);
+        }
+        /** 
+ * @param e Exception to handle.
+ * @return GridSpiException Converted exception.
+ */
+        private IgniteSpiException unwrapException(        IgniteCheckedException e){
+          if (e.getCause() instanceof IgniteSpiException)           return (IgniteSpiException)e.getCause();
+          return new IgniteSpiException("Failed to execute SPI context method.",e);
+        }
+      }
+);
+    }
+ catch (    IgniteSpiException e) {
+      throw new IgniteCheckedException("Failed to initialize SPI context.",e);
+    }
+  }
+  onKernalStart0();
 }
