@@ -38,6 +38,14 @@
     }
 ;
   }
-  msgFactory=new GridIoMessageFactory(ctx.plugins().extensions(MessageFactory.class));
+  MessageFactory[] msgs=ctx.plugins().extensions(MessageFactory.class);
+  if (msgs == null)   msgs=EMPTY;
+  List<MessageFactory> compMsgs=new ArrayList<>();
+  for (  IgniteComponentType compType : IgniteComponentType.values()) {
+    MessageFactory f=compType.messageFactory();
+    if (f != null)     compMsgs.add(f);
+  }
+  if (!compMsgs.isEmpty())   msgs=F.concat(msgs,compMsgs.toArray(new MessageFactory[compMsgs.size()]));
+  msgFactory=new GridIoMessageFactory(msgs);
   if (log.isDebugEnabled())   log.debug(startInfo());
 }
