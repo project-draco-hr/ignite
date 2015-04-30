@@ -1,0 +1,32 @@
+{
+  Collection<ClusterNode> nodes=call.nodes(ctx);
+  call.topologyVersion(ctx.affinity().affinityTopologyVersion());
+  IgniteInternalFuture<Collection<Object>> fut=ctx.closures().callAsyncNoFailover(BROADCAST,F.asSet((Callable<Object>)call),nodes,true);
+  fut.listen(new IgniteInClosure<IgniteInternalFuture<Collection<Object>>>(){
+    @Override public void apply(    IgniteInternalFuture<Collection<Object>> fut){
+      try {
+        Collection<Object> res=fut.get();
+        onInit();
+        for (        Object locRes : res) {
+          if (locRes == FAIL) {
+            if (retries-- > 0)             init();
+ else {
+              onDone(new ClusterTopologyException("Failed to wait topology."));
+              return;
+            }
+          }
+          onLocal(locRes);
+        }
+        allDone();
+      }
+ catch (      IgniteCheckedException e) {
+        if (X.hasCause(e,ClusterTopologyException.class)) {
+          if (retries-- > 0)           init();
+ else           onDone(e);
+        }
+ else         onDone(e);
+      }
+    }
+  }
+);
+}

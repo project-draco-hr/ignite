@@ -1,0 +1,15 @@
+{
+  try {
+    IgniteInternalFuture<Object> fut=null;
+    ctx.kernalContext().task().setThreadContext(TC_TIMEOUT,timeout);
+    fut=new ClearFuture(ctx,clearCall);
+    if (fut != null)     fut.get();
+  }
+ catch (  ClusterGroupEmptyCheckedException ignore) {
+    if (log.isDebugEnabled())     log.debug("All remote nodes left while cache clearLocally [cacheName=" + name() + "]");
+  }
+catch (  ComputeTaskTimeoutCheckedException e) {
+    U.warn(log,"Timed out waiting for remote nodes to finish cache clear (consider increasing " + "'networkTimeout' configuration property) [cacheName=" + name() + "]");
+    throw e;
+  }
+}
