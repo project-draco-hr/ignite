@@ -1,46 +1,43 @@
 {
   int locTxNum=nodeTransactions(cctx.localNodeId());
-  if (locTxNum > 1 && !cctx.tm().txsPreparedOrCommitted(tx.nearXidVersion(),locTxNum)) {
-    onDone(false);
-    markInitialized();
-    return;
-  }
-  for (  Map.Entry<UUID,Collection<UUID>> entry : txNodes.entrySet()) {
-    UUID nodeId=entry.getKey();
-    if (!nodes.containsKey(nodeId) && nodeId.equals(cctx.localNodeId()))     continue;
-    if (nodeId.equals(failedNodeId)) {
-      for (      UUID id : entry.getValue()) {
-        if (txNodes.containsKey(id) || id.equals(cctx.localNodeId()))         continue;
-        MiniFuture fut=new MiniFuture(id);
-        add(fut);
-        GridCacheOptimisticCheckPreparedTxRequest req=new GridCacheOptimisticCheckPreparedTxRequest(tx,nodeTransactions(id),futureId(),fut.futureId());
-        try {
-          cctx.io().send(id,req,tx.ioPolicy());
-        }
- catch (        ClusterTopologyCheckedException ignored) {
-          fut.onNodeLeft();
-        }
-catch (        IgniteCheckedException e) {
-          fut.onError(e);
-          break;
-        }
+  if (locTxNum > 1) {
+    IgniteInternalFuture<Boolean> fut=cctx.tm().txsPreparedOrCommitted(tx.nearXidVersion(),locTxNum);
+    if (fut == null || fut.isDone()) {
+      boolean prepared;
+      try {
+        prepared=fut == null ? true : fut.get();
+      }
+ catch (      IgniteCheckedException e) {
+        U.error(log,"Check prepared transaction future failed: " + e,e);
+        prepared=false;
+      }
+      if (!prepared) {
+        onDone(false);
+        markInitialized();
+        return;
       }
     }
  else {
-      MiniFuture fut=new MiniFuture(nodeId);
-      add(fut);
-      GridCacheOptimisticCheckPreparedTxRequest req=new GridCacheOptimisticCheckPreparedTxRequest(tx,nodeTransactions(nodeId),futureId(),fut.futureId());
-      try {
-        cctx.io().send(nodeId,req,tx.ioPolicy());
+      fut.listen(new CI1<IgniteInternalFuture<Boolean>>(){
+        @Override public void apply(        IgniteInternalFuture<Boolean> fut){
+          boolean prepared;
+          try {
+            prepared=fut.get();
+          }
+ catch (          IgniteCheckedException e) {
+            U.error(log,"Check prepared transaction future failed: " + e,e);
+            prepared=false;
+          }
+          if (!prepared) {
+            onDone(false);
+            markInitialized();
+          }
+ else           proceedPrepare();
+        }
       }
- catch (      ClusterTopologyCheckedException ignored) {
-        fut.onNodeLeft();
-      }
-catch (      IgniteCheckedException e) {
-        fut.onError(e);
-        break;
-      }
+);
+      return;
     }
   }
-  markInitialized();
+  proceedPrepare();
 }
