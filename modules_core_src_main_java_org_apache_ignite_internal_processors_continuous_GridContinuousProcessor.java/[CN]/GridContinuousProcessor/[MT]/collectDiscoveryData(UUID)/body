@@ -1,18 +1,12 @@
 {
   if (!nodeId.equals(ctx.localNodeId())) {
-    pendingLock.lock();
-    try {
-      DiscoveryData data=new DiscoveryData(ctx.localNodeId());
-      for (      Map.Entry<UUID,LocalRoutineInfo> e : locInfos.entrySet()) {
-        UUID routineId=e.getKey();
-        LocalRoutineInfo info=e.getValue();
-        data.addItem(new DiscoveryDataItem(routineId,info.prjPred,info.hnd,info.bufSize,info.interval));
-      }
-      return data;
+    DiscoveryData data=new DiscoveryData(ctx.localNodeId(),clientInfos);
+    for (    Map.Entry<UUID,LocalRoutineInfo> e : locInfos.entrySet()) {
+      UUID routineId=e.getKey();
+      LocalRoutineInfo info=e.getValue();
+      data.addItem(new DiscoveryDataItem(routineId,info.prjPred,info.hnd,info.bufSize,info.interval));
     }
-  finally {
-      pendingLock.unlock();
-    }
+    return data;
   }
  else   return null;
 }
