@@ -2,9 +2,9 @@
   IgniteConfiguration cfg=super.getConfiguration(gridName);
   if (cfg.isClientMode() != null && cfg.isClientMode()) {
     TcpDiscoveryVmIpFinder clientFinder=new TcpDiscoveryVmIpFinder();
-    Collection<String> addrs=new ArrayList<>(ipFinder.getRegisteredAddresses().size());
-    for (    InetSocketAddress sockAddr : ipFinder.getRegisteredAddresses())     addrs.add(sockAddr.getHostString() + ":" + sockAddr.getPort());
-    clientFinder.setAddresses(addrs);
+    String firstSrvAddr=F.first(ipFinder.getRegisteredAddresses()).toString();
+    if (firstSrvAddr.startsWith("/"))     firstSrvAddr=firstSrvAddr.substring(1);
+    clientFinder.setAddresses(Collections.singletonList(firstSrvAddr));
     TcpClientDiscoverySpi discoverySpi=new TcpClientDiscoverySpi();
     discoverySpi.setIpFinder(clientFinder);
     cfg.setDiscoverySpi(discoverySpi);
