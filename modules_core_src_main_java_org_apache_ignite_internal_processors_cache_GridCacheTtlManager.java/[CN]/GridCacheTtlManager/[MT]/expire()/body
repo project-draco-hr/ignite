@@ -1,13 +1,12 @@
 {
   long now=U.currentTimeMillis();
-  int size=pendingEntries.sizex();
   GridCacheVersion obsoleteVer=null;
-  while (!sizeLimited || size-- > 0) {
+  for (int size=pendingEntries.sizex(); size > 0; size--) {
     EntryWrapper e=pendingEntries.firstx();
     if (e == null || e.expireTime > now)     return;
     if (pendingEntries.remove(e)) {
       if (obsoleteVer == null)       obsoleteVer=cctx.versions().next();
-      if (log.isDebugEnabled())       log.debug("Trying to remove expired entry from cache: " + e);
+      if (log.isTraceEnabled())       log.trace("Trying to remove expired entry from cache: " + e);
       e.entry.onTtlExpired(obsoleteVer);
     }
   }
