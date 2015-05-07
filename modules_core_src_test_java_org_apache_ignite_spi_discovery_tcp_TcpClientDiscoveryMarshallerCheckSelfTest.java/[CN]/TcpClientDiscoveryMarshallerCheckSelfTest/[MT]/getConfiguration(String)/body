@@ -1,0 +1,21 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  if (gridName.endsWith("0")) {
+    TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+    discoSpi.setIpFinder(ipFinder);
+    cfg.setDiscoverySpi(discoSpi);
+    cfg.setLocalHost("127.0.0.1");
+    cfg.setMarshaller(new JdkMarshaller());
+  }
+ else {
+    TcpClientDiscoverySpi disco=new TcpClientDiscoverySpi();
+    TcpDiscoveryVmIpFinder clientIpFinder=new TcpDiscoveryVmIpFinder();
+    String addr=F.first(ipFinder.getRegisteredAddresses()).toString();
+    if (addr.startsWith("/"))     addr=addr.substring(1);
+    clientIpFinder.setAddresses(Collections.singleton(addr));
+    disco.setIpFinder(clientIpFinder);
+    cfg.setDiscoverySpi(disco);
+    cfg.setMarshaller(new OptimizedMarshaller());
+  }
+  return cfg;
+}
