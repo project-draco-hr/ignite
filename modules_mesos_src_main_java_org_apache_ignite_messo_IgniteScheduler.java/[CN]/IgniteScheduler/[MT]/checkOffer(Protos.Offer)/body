@@ -1,0 +1,22 @@
+{
+  double cpus=-1;
+  double mem=-1;
+  for (  Protos.Resource resource : offer.getResourcesList()) {
+    if (resource.getName().equals(CPUS)) {
+      if (resource.getType().equals(Protos.Value.Type.SCALAR))       cpus=resource.getScalar().getValue();
+ else       log.debug("Cpus resource was not a scalar: " + resource.getType().toString());
+    }
+ else     if (resource.getName().equals(MEM)) {
+      if (resource.getType().equals(Protos.Value.Type.SCALAR))       mem=resource.getScalar().getValue();
+ else       log.debug("Mem resource was not a scalar: " + resource.getType().toString());
+    }
+ else     if (resource.getName().equals("disk"))     log.debug("Ignoring disk resources from offer");
+  }
+  if (cpus < 0)   log.debug("No cpus resource present");
+  if (mem < 0)   log.debug("No mem resource present");
+  if (cpus >= 1 && MIN_MEMORY <= mem)   return new Pair<>(cpus,mem);
+ else {
+    log.info("Offer not sufficient for slave request:\n" + offer.getResourcesList().toString() + "\n"+ offer.getAttributesList().toString()+ "\nRequested for slave:\n"+ "  cpus:  "+ cpus+ "\n"+ "  mem:   "+ mem);
+    return null;
+  }
+}
