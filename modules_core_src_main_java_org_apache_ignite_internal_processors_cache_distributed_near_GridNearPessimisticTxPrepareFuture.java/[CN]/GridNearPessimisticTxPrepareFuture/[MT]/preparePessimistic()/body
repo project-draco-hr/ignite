@@ -26,13 +26,13 @@
     for (    IgniteTxEntry txEntry : m.writes()) {
       if (txEntry.op() == TRANSFORM)       req.addDhtVersion(txEntry.txKey(),null);
     }
-    final MiniFuture fut=new MiniFuture(m,null);
+    final MiniFuture fut=new MiniFuture(m);
     req.miniId(fut.futureId());
     add(fut);
     if (node.isLocal()) {
       cctx.tm().txHandler().prepareTx(node.id(),tx,req,new CI1<GridNearTxPrepareResponse>(){
         @Override public void apply(        GridNearTxPrepareResponse res){
-          fut.onResult(node.id(),res);
+          fut.onResult(res);
         }
       }
 );
@@ -42,7 +42,7 @@
         cctx.io().send(node,req,tx.ioPolicy());
       }
  catch (      IgniteCheckedException e) {
-        fut.onResult(e);
+        fut.onError(e);
       }
     }
   }
