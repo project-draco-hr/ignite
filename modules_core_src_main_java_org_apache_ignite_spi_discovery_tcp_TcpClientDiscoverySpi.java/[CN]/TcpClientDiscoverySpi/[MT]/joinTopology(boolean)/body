@@ -1,5 +1,6 @@
 {
   Collection<InetSocketAddress> addrs=null;
+  long startTime=U.currentTimeMillis();
   while (true) {
     if (Thread.currentThread().isInterrupted())     throw new InterruptedException();
     while (addrs == null || addrs.isEmpty()) {
@@ -9,6 +10,7 @@
       }
  else {
         U.warn(log,"No addresses registered in the IP finder (will retry in 2000ms): " + ipFinder);
+        if ((U.currentTimeMillis() - startTime) > openConnTimeout)         return null;
         Thread.sleep(2000);
       }
     }
@@ -49,6 +51,7 @@ it.remove();
 }
 if (addrs.isEmpty()) {
 U.warn(log,"Failed to connect to any address from IP finder (will retry to join topology " + "in 2000ms): " + addrs0);
+if ((U.currentTimeMillis() - startTime) > openConnTimeout) return null;
 Thread.sleep(2000);
 }
 }
