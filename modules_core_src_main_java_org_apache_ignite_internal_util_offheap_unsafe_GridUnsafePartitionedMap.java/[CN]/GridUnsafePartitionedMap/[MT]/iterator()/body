@@ -1,16 +1,6 @@
 {
-  return new GridCloseableIteratorAdapter<IgniteBiTuple<byte[],byte[]>>(){
-    private int p;
-    private GridCloseableIterator<IgniteBiTuple<byte[],byte[]>> curIt;
-{
-      try {
-        advance();
-      }
- catch (      IgniteCheckedException e) {
-        e.printStackTrace();
-      }
-    }
-    private void advance() throws IgniteCheckedException {
+  return new PartitionedMapCloseableIterator<IgniteBiTuple<byte[],byte[]>>(){
+    protected void advance() throws IgniteCheckedException {
       curIt=null;
       while (p < parts) {
         curIt=mapFor(p++).iterator();
@@ -18,24 +8,6 @@
  else         curIt.close();
       }
       curIt=null;
-    }
-    @Override protected IgniteBiTuple<byte[],byte[]> onNext() throws IgniteCheckedException {
-      if (curIt == null)       throw new NoSuchElementException();
-      IgniteBiTuple<byte[],byte[]> t=curIt.next();
-      if (!curIt.hasNext()) {
-        curIt.close();
-        advance();
-      }
-      return t;
-    }
-    @Override protected boolean onHasNext(){
-      return curIt != null;
-    }
-    @Override protected void onRemove(){
-      throw new UnsupportedOperationException();
-    }
-    @Override protected void onClose() throws IgniteCheckedException {
-      if (curIt != null)       curIt.close();
     }
   }
 ;
