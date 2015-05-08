@@ -1,15 +1,15 @@
 {
   if (!swapEnabled() && !offHeapEnabled())   return new GridEmptyCloseableIterator<>();
   checkIteratorQueue();
-  if (offHeapEnabled() && !swapEnabled())   return rawOffHeapIterator();
-  if (swapEnabled() && !offHeapEnabled())   return rawSwapIterator();
+  if (offHeapEnabled() && !swapEnabled())   return rawOffHeapIterator(true,true);
+  if (swapEnabled() && !offHeapEnabled())   return rawSwapIterator(true,true);
   return new GridCloseableIteratorAdapter<Map.Entry<byte[],byte[]>>(){
     private GridCloseableIterator<Map.Entry<byte[],byte[]>> it;
     private boolean offheapFlag=true;
     private boolean done;
     private Map.Entry<byte[],byte[]> cur;
 {
-      it=rawOffHeapIterator();
+      it=rawOffHeapIterator(true,true);
       advance();
     }
     private void advance() throws IgniteCheckedException {
@@ -17,7 +17,7 @@
       it.close();
       if (offheapFlag) {
         offheapFlag=false;
-        it=rawSwapIterator();
+        it=rawSwapIterator(true,true);
         if (!it.hasNext()) {
           it.close();
           done=true;
