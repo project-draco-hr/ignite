@@ -1,16 +1,3 @@
 {
-  Ignite ignite0=startGrid(0);
-  Affinity<Integer> aff=ignite0.affinity(null);
-  IgniteCache<Integer,Object> cache0=ignite0.cache(null);
-  for (int i=0; i < 1000; i++)   cache0.put(i + 10000,new byte[1024]);
-  Ignite ignite1=startGrid(1);
-  Integer key=70;
-  assertTrue(aff.isPrimary(ignite1.cluster().localNode(),key));
-  try (Transaction tx=ignite0.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
-    cache0.get(key);
-    tx.commit();
-  }
-   GridCacheAdapter cacheAdapter=((IgniteKernal)ignite(0)).context().cache().internalCache();
-  assertEquals(0,cacheAdapter.context().tm().idMapSize());
-  startGrid(2);
+  txNoWrite(true);
 }

@@ -22,13 +22,14 @@
     nodes.remove(primaryNode);
     nodeMap.put(key,nodes);
   }
-  info("Starting tx [values=" + map + ", topVer="+ ((IgniteKernal)grid(1)).context().discovery().topologyVersion()+ ']');
+  info("Starting tx [values=" + map + ", topVer="+ grid(1).context().discovery().topologyVersion()+ ']');
   assertNotNull(cache);
   try (Transaction tx=grid(0).transactions().txStart()){
     cache.getAll(keys);
     cache.putAll(map);
     TransactionProxyImpl txProxy=(TransactionProxyImpl)tx;
     IgniteInternalTx txEx=txProxy.tx();
+    assertTrue(txEx.pessimistic());
     if (commmit) {
       txEx.prepare();
       info(">>> Stopping primary node " + primaryNode);
