@@ -1,6 +1,6 @@
 {
   Map<Class<? extends Annotation>,T2<List<GridResourceField>,List<GridResourceMethod>>> annMap=new HashMap<>();
-  Collection<GridResourceField> recursiveFieldsList=new ArrayList<>();
+  List<Field> recursiveFieldsList=new ArrayList<>();
   boolean allowImplicitInjection=!GridNoImplicitInjection.class.isAssignableFrom(cls);
   for (Class cls0=cls; !cls0.equals(Object.class); cls0=cls0.getSuperclass()) {
     for (    Field field : cls0.getDeclaredFields()) {
@@ -14,7 +14,7 @@
         t2.get1().add(new GridResourceField(field,ann));
       }
       if (allowImplicitInjection && fieldAnns.length == 0 && GridResourceUtils.mayRequireResources(field)) {
-        recursiveFieldsList.add(new GridResourceField(field,null));
+        recursiveFieldsList.add(field);
       }
     }
     for (    Method mtd : cls0.getDeclaredMethods()) {
@@ -28,7 +28,7 @@
       }
     }
   }
-  recursiveFields=GridResourceField.toArray(recursiveFieldsList);
+  recursiveFields=recursiveFieldsList.isEmpty() ? U.EMPTY_FIELDS : recursiveFieldsList.toArray(new Field[recursiveFieldsList.size()]);
   this.annMap=IgniteUtils.limitedMap(annMap.size());
   for (  Map.Entry<Class<? extends Annotation>,T2<List<GridResourceField>,List<GridResourceMethod>>> entry : annMap.entrySet()) {
     GridResourceField[] fields=GridResourceField.toArray(entry.getValue().get1());
