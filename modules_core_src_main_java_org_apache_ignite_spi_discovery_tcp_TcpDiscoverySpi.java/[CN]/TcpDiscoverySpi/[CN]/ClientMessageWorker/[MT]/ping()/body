@@ -1,0 +1,25 @@
+{
+  if (isNodeStopping())   return false;
+  SettableFuture<Boolean> fut;
+  while (true) {
+    fut=pingFut.get();
+    if (fut != null)     break;
+    fut=new SettableFuture<>();
+    if (pingFut.compareAndSet(null,fut)) {
+      TcpDiscoveryPingRequest pingReq=new TcpDiscoveryPingRequest(getLocalNodeId(),nodeId);
+      pingReq.verify(getLocalNodeId());
+      addMessage(pingReq);
+      break;
+    }
+  }
+  try {
+    return fut.get(ackTimeout,TimeUnit.MILLISECONDS);
+  }
+ catch (  ExecutionException e) {
+    throw new IgniteSpiException("Internal error: ping future cannot be done with exception",e);
+  }
+catch (  TimeoutException ignored) {
+    if (pingFut.compareAndSet(fut,null))     fut.set(false);
+    return false;
+  }
+}
