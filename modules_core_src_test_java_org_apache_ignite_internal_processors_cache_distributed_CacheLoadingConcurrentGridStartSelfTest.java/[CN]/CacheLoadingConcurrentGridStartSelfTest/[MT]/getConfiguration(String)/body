@@ -3,20 +3,7 @@
   CacheConfiguration ccfg=new CacheConfiguration();
   ccfg.setCacheMode(PARTITIONED);
   ccfg.setBackups(1);
-  CacheStore<Integer,String> store=new CacheStoreAdapter<Integer,String>(){
-    @Override public void loadCache(    IgniteBiInClosure<Integer,String> f,    Object... args){
-      for (int i=0; i < KEYS_CNT; i++)       f.apply(i,Integer.toString(i));
-    }
-    @Nullable @Override public String load(    Integer i) throws CacheLoaderException {
-      return null;
-    }
-    @Override public void write(    Cache.Entry<? extends Integer,? extends String> entry) throws CacheWriterException {
-    }
-    @Override public void delete(    Object o) throws CacheWriterException {
-    }
-  }
-;
-  ccfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(store));
+  ccfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(new TestCacheStoreAdapter()));
   cfg.setCacheConfiguration(ccfg);
   return cfg;
 }

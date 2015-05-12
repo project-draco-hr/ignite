@@ -1,0 +1,15 @@
+{
+  List<List<?>> lists=new ArrayList<>();
+  for (  GridCacheSqlQuery mapQry : qry.mapQueries()) {
+    ResultSet rs=h2.executeSqlQueryWithTimer(space,c,"SELECT PLAN FROM " + mapQry.alias(),null);
+    lists.add(F.asList(getPlan(rs)));
+  }
+  for (  GridCacheSqlQuery mapQry : qry.mapQueries()) {
+    GridMergeTable tbl=createFunctionTable(c,mapQry,false);
+    curFunTbl.set(tbl);
+  }
+  GridCacheSqlQuery rdc=qry.reduceQuery();
+  ResultSet rs=h2.executeSqlQueryWithTimer(space,c,"EXPLAIN " + rdc.query(),F.asList(rdc.parameters()));
+  lists.add(F.asList(getPlan(rs)));
+  return new QueryCursorImpl<>(lists.iterator());
+}
