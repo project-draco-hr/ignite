@@ -1,0 +1,17 @@
+{
+  final long start=U.currentTimeMillis();
+  Throwable err=null;
+  R res=null;
+  try {
+    res=clo.apply();
+    return res;
+  }
+ catch (  GridClosureException e) {
+    err=e.unwrap();
+    throw (IgniteCheckedException)err;
+  }
+ finally {
+    GridCacheQueryMetricsAdapter metrics=(GridCacheQueryMetricsAdapter)cctx.cache().queries().metrics();
+    onExecuted(cctx,metrics,res,err,start,U.currentTimeMillis() - start,log);
+  }
+}
