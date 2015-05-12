@@ -1,10 +1,11 @@
 {
   if (params == null)   params=GridCacheSqlQuery.EMPTY_PARAMS;
-  GridSqlQuery qry0=GridSqlQueryParser.parse(stmt);
+  final GridSqlQuery qry0=GridSqlQueryParser.parse(stmt);
   GridSqlSelect srcQry;
   if (qry0 instanceof GridSqlSelect)   srcQry=(GridSqlSelect)qry0;
  else {
     srcQry=new GridSqlSelect().from(new GridSqlSubquery(qry0));
+    srcQry.explain(qry0.explain());
     GridSqlSelect left=leftest(qry0);
     int c=0;
     for (    GridSqlElement expr : left.select(true)) {
@@ -27,7 +28,8 @@
   }
   final String mergeTable=TABLE_FUNC_NAME + "()";
   GridSqlSelect mapQry=srcQry.clone();
-  GridSqlSelect rdcQry=new GridSqlSelect().from(new GridSqlFunction("PUBLIC",TABLE_FUNC_NAME));
+  mapQry.explain(false);
+  GridSqlSelect rdcQry=new GridSqlSelect().from(new GridSqlFunction(null,TABLE_FUNC_NAME));
   List<GridSqlElement> mapExps=F.addAll(new ArrayList<GridSqlElement>(srcQry.allColumns()),srcQry.select(false));
   GridSqlElement[] rdcExps=new GridSqlElement[srcQry.visibleColumns()];
   Set<String> colNames=new HashSet<>();
@@ -66,5 +68,6 @@
   }
   GridCacheTwoStepQuery res=new GridCacheTwoStepQuery(rdcQry.getSQL(),findParams(rdcQry,params,new ArrayList<>()).toArray());
   res.addMapQuery(mergeTable,mapQry.getSQL(),findParams(mapQry,params,new ArrayList<>(params.length)).toArray());
+  res.explain(qry0.explain());
   return res;
 }

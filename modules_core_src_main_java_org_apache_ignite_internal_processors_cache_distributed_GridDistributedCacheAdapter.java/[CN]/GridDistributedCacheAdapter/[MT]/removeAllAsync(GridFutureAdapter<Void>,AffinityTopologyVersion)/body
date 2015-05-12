@@ -1,7 +1,8 @@
 {
   Collection<ClusterNode> nodes=ctx.grid().cluster().forDataNodes(name()).nodes();
   if (!nodes.isEmpty()) {
-    IgniteInternalFuture<?> rmvFut=ctx.closures().callAsyncNoFailover(BROADCAST,new GlobalRemoveAllCallable<>(name(),topVer),nodes,true);
+    CacheOperationContext opCtx=ctx.operationContextPerCall();
+    IgniteInternalFuture<?> rmvFut=ctx.closures().callAsyncNoFailover(BROADCAST,new GlobalRemoveAllCallable<>(name(),topVer,opCtx != null && opCtx.skipStore()),nodes,true);
     rmvFut.listen(new IgniteInClosure<IgniteInternalFuture<?>>(){
       @Override public void apply(      IgniteInternalFuture<?> fut){
         try {
