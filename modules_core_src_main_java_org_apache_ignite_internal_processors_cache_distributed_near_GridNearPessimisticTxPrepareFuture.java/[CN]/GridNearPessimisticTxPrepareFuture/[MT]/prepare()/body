@@ -1,0 +1,18 @@
+{
+  if (!tx.state(PREPARING)) {
+    if (tx.setRollbackOnly()) {
+      if (tx.timedOut())       onDone(new IgniteTxTimeoutCheckedException("Transaction timed out and was rolled back: " + tx));
+ else       onDone(new IgniteCheckedException("Invalid transaction state for prepare " + "[state=" + tx.state() + ", tx="+ this+ ']'));
+    }
+ else     onDone(new IgniteTxRollbackCheckedException("Invalid transaction state for prepare " + "[state=" + tx.state() + ", tx="+ this+ ']'));
+    return;
+  }
+  try {
+    tx.userPrepare();
+    cctx.mvcc().addFuture(this);
+    preparePessimistic();
+  }
+ catch (  IgniteCheckedException e) {
+    onDone(e);
+  }
+}
