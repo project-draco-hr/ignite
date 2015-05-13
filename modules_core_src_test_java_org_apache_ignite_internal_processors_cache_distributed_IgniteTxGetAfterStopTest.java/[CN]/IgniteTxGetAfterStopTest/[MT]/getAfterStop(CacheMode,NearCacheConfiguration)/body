@@ -1,0 +1,21 @@
+{
+  this.cacheMode=cacheMode;
+  this.nearCfg=nearCfg;
+  startGrids();
+  IgniteCache<Integer,Integer> cache0=jcache(0);
+  IgniteCache<Integer,Integer> cache1=jcache(1);
+  Integer key0=primaryKey(cache0);
+  Integer key1=primaryKey(cache1);
+  try (Transaction tx=ignite(0).transactions().txStart()){
+    log.info("Put: " + key0);
+    cache0.put(key0,key0);
+    log.info("Stop node.");
+    stopGrid(3);
+    log.info("Get: " + key1);
+    cache0.get(key1);
+    log.info("Commit.");
+    tx.commit();
+  }
+   assertEquals(key0,cache0.get(key0));
+  assertNull(cache1.get(key1));
+}
