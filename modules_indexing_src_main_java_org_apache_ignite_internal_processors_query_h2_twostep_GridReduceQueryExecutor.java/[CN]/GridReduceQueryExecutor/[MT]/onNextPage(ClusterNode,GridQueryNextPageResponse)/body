@@ -28,6 +28,9 @@
     return;
   }
   idx.addPage(page);
-  if (msg.code() == GridQueryNextPageResponse.CODE_RETRY)   r.retry=true;
-  if (msg.allRows() != -1)   r.latch.countDown();
+  if (msg.retry() != null) {
+    r.retry=msg.retry();
+    while (r.latch.getCount() != 0)     r.latch.countDown();
+  }
+ else   if (msg.allRows() != -1)   r.latch.countDown();
 }
