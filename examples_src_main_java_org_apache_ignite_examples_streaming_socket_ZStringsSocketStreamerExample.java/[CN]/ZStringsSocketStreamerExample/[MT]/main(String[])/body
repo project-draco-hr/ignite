@@ -2,19 +2,10 @@
   Ignition.setClientMode(true);
   try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
     if (!ExamplesUtils.hasServerNodes(ignite))     return;
-    IgniteCache<Integer,Long> stmCache=ignite.getOrCreateCache(CacheConfig.randomNumbersCache());
-    try (IgniteDataStreamer<Integer,Long> stmr=ignite.dataStreamer(stmCache.getName())){
-      stmr.allowOverwrite(true);
-      stmr.receiver(new StreamTransformer<Integer,Long>(){
-        @Override public Object process(        MutableEntry<Integer,Long> e,        Object... objects) throws EntryProcessorException {
-          Long val=e.getValue();
-          e.setValue(val == null ? 1L : val + 1);
-          return null;
-        }
-      }
-);
+    IgniteCache<AffinityUuid,String> stmCache=ignite.getOrCreateCache(CacheConfig.wordCache());
+    try (IgniteDataStreamer<AffinityUuid,String> stmr=ignite.dataStreamer(stmCache.getName())){
       InetAddress addr=InetAddress.getLocalHost();
-      IgniteSocketStreamer<String,Integer,Long> sockStmr=new IgniteSocketStreamer<>();
+      IgniteSocketStreamer<String,AffinityUuid,String> sockStmr=new IgniteSocketStreamer<>();
       sockStmr.setAddr(addr);
       sockStmr.setPort(PORT);
       sockStmr.setDelimiter(DELIM);
@@ -31,10 +22,9 @@
         }
       }
 );
-      sockStmr.setTupleExtractor(new StreamTupleExtractor<String,Integer,Long>(){
-        @Override public Map.Entry<Integer,Long> extract(        String input){
-          String[] pair=input.split("=");
-          return new IgniteBiTuple<>(Integer.parseInt(pair[0]),Long.parseLong(pair[1]));
+      sockStmr.setTupleExtractor(new StreamTupleExtractor<String,AffinityUuid,String>(){
+        @Override public Map.Entry<AffinityUuid,String> extract(        String word){
+          return new IgniteBiTuple<>(new AffinityUuid(word),word);
         }
       }
 );
