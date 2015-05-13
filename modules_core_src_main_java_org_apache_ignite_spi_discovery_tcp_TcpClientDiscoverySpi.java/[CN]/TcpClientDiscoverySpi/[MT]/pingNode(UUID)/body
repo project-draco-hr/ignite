@@ -1,5 +1,4 @@
 {
-  if (getSpiContext().isStopping())   return false;
   if (nodeId.equals(getLocalNodeId()))   return true;
   TcpDiscoveryNode node=rmtNodes.get(nodeId);
   if (node == null || !node.visible())   return false;
@@ -8,7 +7,13 @@
     fut=new GridFutureAdapter<>();
     GridFutureAdapter<Boolean> oldFut=pingFuts.putIfAbsent(nodeId,fut);
     if (oldFut != null)     fut=oldFut;
- else     sockWriter.sendMessage(new TcpDiscoveryClientPingRequest(getLocalNodeId(),nodeId));
+ else {
+      if (getSpiContext().isStopping()) {
+        if (pingFuts.remove(nodeId,fut))         fut.onDone(false);
+        return false;
+      }
+      sockWriter.sendMessage(new TcpDiscoveryClientPingRequest(getLocalNodeId(),nodeId));
+    }
   }
   final GridFutureAdapter<Boolean> finalFut=fut;
   timer.schedule(new TimerTask(){
