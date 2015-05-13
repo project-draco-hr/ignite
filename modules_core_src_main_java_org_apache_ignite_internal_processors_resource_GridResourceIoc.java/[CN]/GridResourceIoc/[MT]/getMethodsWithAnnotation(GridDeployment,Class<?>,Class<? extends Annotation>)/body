@@ -1,16 +1,5 @@
 {
-  GridResourceMethod[] mtds=getMethodsFromCache(cls,annCls);
-  if (mtds == null) {
-    List<GridResourceMethod> mtdsList=new ArrayList<>();
-    for (Class cls0=cls; !cls0.equals(Object.class); cls0=cls0.getSuperclass()) {
-      for (      Method mtd : cls0.getDeclaredMethods()) {
-        Annotation ann=mtd.getAnnotation(annCls);
-        if (ann != null)         mtdsList.add(new GridResourceMethod(mtd,ann));
-      }
-    }
-    if (mtdsList.isEmpty())     mtds=GridResourceMethod.EMPTY_ARRAY;
- else     mtds=mtdsList.toArray(new GridResourceMethod[mtdsList.size()]);
-    cacheMethods(dep,cls,annCls,mtds);
-  }
-  return mtds;
+  ClassDescriptor desc=descriptor(dep,cls);
+  T2<GridResourceField[],GridResourceMethod[]> t2=desc.annotatedMembers(annCls);
+  return t2 == null ? GridResourceMethod.EMPTY_ARRAY : t2.get2();
 }
