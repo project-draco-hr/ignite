@@ -26,9 +26,12 @@
               Collections.sort(keys);
               int c=0;
               try {
-                try (Transaction tx=ignite.transactions().txStart(txConcurrency(),REPEATABLE_READ)){
+                IgniteTransactions txs=ignite.transactions();
+                try (Transaction tx=txs.txStart(txConcurrency(),REPEATABLE_READ)){
                   c=txCntr.incrementAndGet();
-                  if (c % logFreq == 0)                   info(">>> Tx iteration started [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
+                  if (c % logFreq == 0) {
+                    info(">>> Tx iteration started [cnt=" + c + ", keys="+ keys+ ", locNodeId="+ locNodeId+ ']');
+                  }
                   for (                  int key : keys) {
                     int op=cacheOp();
                     if (op == 1)                     cache.put(key,Integer.toString(key));
@@ -38,16 +41,17 @@
                   tx.commit();
                 }
                }
- catch (              ClusterTopologyException|CacheException e) {
-                if (e instanceof CacheException && !(e.getCause() instanceof ClusterTopologyException))                 throw e;
+ catch (              IgniteException|CacheException ignored) {
               }
-              if (c % logFreq == 0)               info(">>> Tx iteration finished [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
+              if (c % logFreq == 0) {
+                info(">>> Tx iteration finished [cnt=" + c + ", keys="+ keys+ ", locNodeId="+ locNodeId+ ']');
+              }
             }
             info(">>> " + Thread.currentThread().getName() + " finished.");
           }
  catch (          Exception e) {
             err.compareAndSet(null,e);
-            error("Failed to put value in cache.",e);
+            error("Unexpected exception in put-worker.",e);
           }
         }
       }
@@ -73,7 +77,7 @@
           }
  catch (          Exception e) {
             err.compareAndSet(null,e);
-            error("Failed to restart grid node.",e);
+            error("Unexpected exception in restart-worker.",e);
           }
         }
       }
