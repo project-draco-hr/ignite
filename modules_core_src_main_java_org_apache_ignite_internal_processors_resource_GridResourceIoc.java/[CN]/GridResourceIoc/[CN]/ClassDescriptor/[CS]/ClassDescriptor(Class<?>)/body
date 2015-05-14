@@ -4,20 +4,18 @@
   boolean allowImplicitInjection=!GridNoImplicitInjection.class.isAssignableFrom(cls);
   for (Class cls0=cls; !cls0.equals(Object.class); cls0=cls0.getSuperclass()) {
     for (    Field field : cls0.getDeclaredFields()) {
-      InjectRecursively injectRecursively=field.getAnnotation(InjectRecursively.class);
-      if (injectRecursively != null || (allowImplicitInjection && field.getName().startsWith("this$") || field.getName().startsWith("val$"))) {
+      Annotation[] fieldAnns=field.getAnnotations();
+      for (      Annotation ann : fieldAnns) {
+        T2<List<GridResourceField>,List<GridResourceMethod>> t2=annMap.get(ann.annotationType());
+        if (t2 == null) {
+          t2=new T2<List<GridResourceField>,List<GridResourceMethod>>(new ArrayList<GridResourceField>(),new ArrayList<GridResourceMethod>());
+          annMap.put(ann.annotationType(),t2);
+        }
+        t2.get1().add(new GridResourceField(field,ann));
+      }
+      if (allowImplicitInjection && fieldAnns.length == 0 && GridResourceUtils.mayRequireResources(field)) {
         field.setAccessible(true);
         recursiveFieldsList.add(field);
-      }
- else {
-        for (        Annotation ann : field.getAnnotations()) {
-          T2<List<GridResourceField>,List<GridResourceMethod>> t2=annMap.get(ann.annotationType());
-          if (t2 == null) {
-            t2=new T2<List<GridResourceField>,List<GridResourceMethod>>(new ArrayList<GridResourceField>(),new ArrayList<GridResourceMethod>());
-            annMap.put(ann.annotationType(),t2);
-          }
-          t2.get1().add(new GridResourceField(field,ann));
-        }
       }
     }
     for (    Method mtd : cls0.getDeclaredMethods()) {
