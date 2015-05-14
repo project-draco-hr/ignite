@@ -20,7 +20,7 @@ synchronized (this) {
       if (delta <= 0)       expired=true;
     }
     CacheObject val=this.val;
-    hasOldBytes=valPtr != 0;
+    hasOldBytes=hasOffHeapPointer();
     if ((unmarshal || isOffHeapValuesOnly()) && !expired && val == null && hasOldBytes)     val=rawGetOrUnmarshalUnlocked(tmp);
     boolean valid=valid(tx != null ? tx.topologyVersion() : cctx.affinity().affinityTopologyVersion());
     if (val == null && !hasOldBytes && readSwap) {
@@ -92,7 +92,7 @@ synchronized (this) {
         CacheObject prevVal=rawGetOrUnmarshalUnlocked(false);
         long expTime=CU.toExpireTime(ttl);
         if (loadedFromStore)         updateIndex(ret,expTime,nextVer,prevVal);
-        boolean hadValPtr=valPtr != 0;
+        boolean hadValPtr=hasOffHeapPointer();
         update(ret,expTime,ttl,nextVer);
         if (hadValPtr && cctx.offheapTiered())         cctx.swap().removeOffheap(key);
         if (cctx.deferredDelete() && deletedUnlocked() && !isInternal()&& !detached())         deletedUnlocked(false);

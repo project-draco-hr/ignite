@@ -5,4 +5,17 @@
   U.join(msgWorker,log);
   U.join(sockWriter,log);
   U.join(sockReader,log);
+  leaveLatch.countDown();
+  joinLatch.countDown();
+  getSpiContext().deregisterPorts();
+  Collection<ClusterNode> rmts=getRemoteNodes();
+  DiscoverySpiListener lsnr=this.lsnr;
+  if (lsnr != null) {
+    for (    ClusterNode n : rmts) {
+      rmtNodes.remove(n.id());
+      Collection<ClusterNode> top=updateTopologyHistory(topVer + 1);
+      lsnr.onDiscovery(EVT_NODE_FAILED,topVer,n,top,new TreeMap<>(topHist),null);
+    }
+  }
+  rmtNodes.clear();
 }
