@@ -3,9 +3,8 @@
   startClientNodes(2);
   checkNodes(2,2);
   IgniteMessaging msg=grid(masterName).message();
-  UUID id=null;
+  UUID id=msg.remoteListen(null,new MessageListener());
   try {
-    id=msg.remoteListen(null,new MessageListener());
     msgLatch=new CountDownLatch(2);
     msg.send(null,"Message 1");
     await(msgLatch);
@@ -17,6 +16,6 @@
     await(msgLatch);
   }
   finally {
-    if (id != null)     msg.stopRemoteListen(id);
+    msg.stopRemoteListen(id);
   }
 }
