@@ -5,9 +5,9 @@
     if (depMode != CONTINUOUS && depMode != SHARED)     U.warn(log,"Deployment mode for cache is not CONTINUOUS or SHARED " + "(it is recommended that you change deployment mode and restart): " + depMode,"Deployment mode for cache is not CONTINUOUS or SHARED.");
   }
   maxRebalanceOrder=validatePreloadOrder(ctx.config().getCacheConfiguration());
-  ctx.discovery().setCustomEventListener(new GridPlainInClosure<Serializable>(){
-    @Override public void apply(    Serializable evt){
-      if (evt instanceof DynamicCacheChangeBatch)       onCacheChangeRequested((DynamicCacheChangeBatch)evt);
+  ctx.discovery().setCustomEventListener(DynamicCacheChangeBatch.class,new CustomEventListener<DynamicCacheChangeBatch>(){
+    @Override public void onCustomEvent(    ClusterNode snd,    DynamicCacheChangeBatch msg){
+      onCacheChangeRequested(msg);
     }
   }
 );
