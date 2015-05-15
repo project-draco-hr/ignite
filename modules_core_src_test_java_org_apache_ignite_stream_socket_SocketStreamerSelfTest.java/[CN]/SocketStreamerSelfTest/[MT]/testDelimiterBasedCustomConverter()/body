@@ -1,0 +1,29 @@
+{
+  SocketMessageConverter<Tuple> converter=new SocketMessageConverter<Tuple>(){
+    @Override public Tuple convert(    byte[] msg){
+      int i=(msg[0] & 0xFF) << 24;
+      i|=(msg[1] & 0xFF) << 16;
+      i|=(msg[2] & 0xFF) << 8;
+      i|=msg[3] & 0xFF;
+      return new Tuple(i);
+    }
+  }
+;
+  test(converter,DELIM,new Runnable(){
+    @Override public void run(){
+      try (Socket sock=new Socket(InetAddress.getLocalHost(),port);OutputStream os=new BufferedOutputStream(sock.getOutputStream())){
+        for (int i=0; i < CNT; i++) {
+          os.write(i >>> 24);
+          os.write(i >>> 16);
+          os.write(i >>> 8);
+          os.write(i);
+          os.write(DELIM);
+        }
+      }
+ catch (      IOException e) {
+        throw new IgniteException(e);
+      }
+    }
+  }
+);
+}
