@@ -2,6 +2,12 @@
   if (getSpiContext().isStopping())   return;
   if (getLocalNodeId().equals(msg.nodeId())) {
     if (joinLatch.getCount() > 0) {
+      Map<UUID,Map<Integer,byte[]>> dataMap=msg.clientDiscoData();
+      if (dataMap != null) {
+        for (        Map.Entry<UUID,Map<Integer,byte[]>> entry : dataMap.entrySet())         onExchange(getLocalNodeId(),entry.getKey(),entry.getValue(),null);
+      }
+      locNode.setAttributes(msg.clientNodeAttributes());
+      locNode.visible(true);
       long topVer=msg.topologyVersion();
       locNode.order(topVer);
       notifyDiscovery(EVT_NODE_JOINED,topVer,locNode,updateTopologyHistory(topVer));
