@@ -1,2 +1,29 @@
 {
+  if (isLocalNodeCoordinator()) {
+    boolean sndNext;
+    if (!msg.verified()) {
+      msg.verify(getLocalNodeId());
+      msg.topologyVersion(ring.topologyVersion());
+      notifyDiscoveryListener(msg);
+      sndNext=true;
+    }
+ else     sndNext=false;
+    if (sndNext && ring.hasRemoteNodes())     sendMessageAcrossRing(msg);
+ else {
+      stats.onRingMessageReceived(msg);
+      try {
+        DiscoverySpiCustomMessage msgObj=marsh.unmarshal(msg.messageBytes(),U.gridClassLoader());
+        DiscoverySpiCustomMessage nextMsg=msgObj.newMessageOnRingEnd();
+        if (nextMsg != null)         addMessage(new TcpDiscoveryCustomEventMessage(getLocalNodeId(),marsh.marshal(nextMsg)));
+      }
+ catch (      IgniteCheckedException e) {
+        U.error(log,"Failed to unmarshal discovery custom message.",e);
+      }
+      addMessage(new TcpDiscoveryDiscardMessage(getLocalNodeId(),msg.id()));
+    }
+  }
+ else {
+    if (msg.verified())     notifyDiscoveryListener(msg);
+    if (ring.hasRemoteNodes())     sendMessageAcrossRing(msg);
+  }
 }
