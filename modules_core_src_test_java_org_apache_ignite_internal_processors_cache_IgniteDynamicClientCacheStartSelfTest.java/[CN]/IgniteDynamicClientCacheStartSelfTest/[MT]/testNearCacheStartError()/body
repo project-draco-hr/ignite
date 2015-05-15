@@ -1,0 +1,25 @@
+{
+  ccfg=new CacheConfiguration();
+  final String cacheName=null;
+  Ignite ignite0=startGrid(0);
+  checkCache(ignite0,cacheName,true,false);
+  client=true;
+  final Ignite ignite1=startGrid(1);
+  checkCache(ignite1,cacheName,false,false);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      ignite1.getOrCreateNearCache(cacheName,new NearCacheConfiguration<>());
+      return null;
+    }
+  }
+,IgniteException.class,null);
+  checkCache(ignite1,cacheName,false,false);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      ignite1.createNearCache(cacheName,new NearCacheConfiguration<>());
+      return null;
+    }
+  }
+,IgniteException.class,null);
+  checkCache(ignite1,cacheName,false,false);
+}
