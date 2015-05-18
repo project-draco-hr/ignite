@@ -1,0 +1,13 @@
+{
+  log.info("Test cache [memMode=" + memoryMode + ", atomicityMode="+ atomicityMode+ ", cacheMode="+ cacheMode+ ']');
+  CacheConfiguration cfg=cacheConfiguration(grid(0).name(),memoryMode,atomicityMode,cacheMode,"Cache");
+  try (IgniteCache jcache=grid(0).getOrCreateCache(cfg)){
+    GridCacheAdapter<Integer,String> cache=((IgniteKernal)grid(0)).internalCache(jcache.getName());
+    Integer key=primaryKey(grid(0).cache(null));
+    cache.put(key,"val");
+    GridCacheEntryEx entry=cache.entryEx(key);
+    entry.unswap(true);
+    assertNotNull(entry);
+    assertEquals(entry.getClass(),entryCls);
+  }
+ }
