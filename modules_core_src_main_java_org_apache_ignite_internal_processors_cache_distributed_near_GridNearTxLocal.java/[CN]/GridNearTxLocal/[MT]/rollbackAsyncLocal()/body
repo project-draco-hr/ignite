@@ -2,7 +2,7 @@
   if (log.isDebugEnabled())   log.debug("Rolling back colocated tx locally: " + this);
   final GridDhtTxFinishFuture fut=new GridDhtTxFinishFuture<>(cctx,this,false);
   cctx.mvcc().addFuture(fut);
-  IgniteInternalFuture<IgniteInternalTx> prep=prepFut.get();
+  IgniteInternalFuture<?> prep=prepFut.get();
   if (prep == null || prep.isDone()) {
     try {
       if (prep != null)       prep.get();
@@ -12,8 +12,8 @@
     }
     fut.finish();
   }
- else   prep.listen(new CI1<IgniteInternalFuture<IgniteInternalTx>>(){
-    @Override public void apply(    IgniteInternalFuture<IgniteInternalTx> f){
+ else   prep.listen(new CI1<IgniteInternalFuture<?>>(){
+    @Override public void apply(    IgniteInternalFuture<?> f){
       try {
         f.get();
       }
