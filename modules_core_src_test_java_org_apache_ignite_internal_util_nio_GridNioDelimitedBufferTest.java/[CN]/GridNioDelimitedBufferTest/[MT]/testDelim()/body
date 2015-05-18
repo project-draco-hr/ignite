@@ -1,0 +1,17 @@
+{
+  byte[] delim="aabb".getBytes(ASCII);
+  List<String> strs=Arrays.asList("za","zaa","zaab","zab","zaabaababbbbabaab");
+  int buffSize=0;
+  for (  String str : strs)   buffSize+=str.length() + delim.length;
+  ByteBuffer buff=ByteBuffer.allocate(buffSize);
+  for (  String str : strs) {
+    buff.put(str.getBytes(ASCII));
+    buff.put(delim);
+  }
+  buff.flip();
+  byte[] msg;
+  GridNioDelimitedBuffer delimBuff=new GridNioDelimitedBuffer(delim);
+  List<String> res=new ArrayList<>(strs.size());
+  while ((msg=delimBuff.read(buff)) != null)   res.add(new String(msg,ASCII));
+  assertEquals(strs,res);
+}
