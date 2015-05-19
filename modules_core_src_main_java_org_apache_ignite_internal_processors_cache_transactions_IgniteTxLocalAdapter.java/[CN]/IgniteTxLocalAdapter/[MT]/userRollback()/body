@@ -8,11 +8,9 @@
     try {
       if (near())       for (      IgniteTxEntry e : allEntries())       evictNearEntry(e,false);
       cctx.tm().rollbackTx(this);
-      Collection<CacheStoreManager> stores=stores();
-      if (stores != null && !stores.isEmpty() && (near() || F.first(stores).isWriteToStoreFromDht())) {
-        if (!internal()) {
-          for (          CacheStoreManager store : stores)           store.sessionEnd(this,false);
-        }
+      if (!internal()) {
+        Collection<CacheStoreManager> stores=stores();
+        if (stores != null && !stores.isEmpty() && (near() || F.first(stores).isWriteToStoreFromDht()))         sessionEnd(stores,false);
       }
     }
  catch (    Error|IgniteCheckedException|RuntimeException e) {

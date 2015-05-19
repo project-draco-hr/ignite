@@ -1,8 +1,11 @@
 {
   IgniteEx grid=grid(0);
   TestStore firstStore=(TestStore)firstStores.get(grid.name());
+  TestStore secondStore=(TestStore)secondStores.get(grid.name());
   assertNotNull(firstStore);
-  Collection<String> evts=firstStore.events();
+  assertNotNull(secondStore);
+  Collection<String> firstStoreEvts=firstStore.events();
+  Collection<String> secondStoreEvts=secondStore.events();
   try (Transaction tx=grid.transactions().txStart()){
     IgniteCache<Object,Object> cacheA=grid.cache("cacheA");
     IgniteCache<Object,Object> cacheB=grid.cache("cacheB");
@@ -19,5 +22,6 @@
     cacheB.put("7","7");
     tx.commit();
   }
-   assertEqualsCollections(F.asList("writeAll cacheA 2","writeAll cacheB 2","deleteAll cacheA 2","deleteAll cacheB 2","write cacheA","delete cacheA","write cacheB","sessionEnd true"),evts);
+   assertEqualsCollections(F.asList("writeAll cacheA 2","writeAll cacheB 2","deleteAll cacheA 2","deleteAll cacheB 2","write cacheA","delete cacheA","write cacheB","sessionEnd true"),firstStoreEvts);
+  assertEquals(0,secondStoreEvts.size());
 }
