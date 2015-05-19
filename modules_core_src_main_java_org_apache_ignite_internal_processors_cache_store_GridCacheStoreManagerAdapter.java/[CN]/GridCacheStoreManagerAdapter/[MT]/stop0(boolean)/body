@@ -9,4 +9,15 @@
       U.error(log(),"Failed to stop cache store.",e);
     }
   }
+  if (sesLsnrs != null) {
+    for (    CacheStoreSessionListener lsnr : sesLsnrs) {
+      if (lsnr instanceof LifecycleAware)       ((LifecycleAware)lsnr).stop();
+      try {
+        cctx.kernalContext().resource().cleanupGeneric(lsnr);
+      }
+ catch (      IgniteCheckedException e) {
+        U.error(log,"Failed to remove injected resources from store session listener (ignoring): " + lsnr,e);
+      }
+    }
+  }
 }
