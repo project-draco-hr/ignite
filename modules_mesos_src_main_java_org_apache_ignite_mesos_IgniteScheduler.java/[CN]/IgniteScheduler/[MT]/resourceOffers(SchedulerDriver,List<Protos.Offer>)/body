@@ -2,16 +2,16 @@
 synchronized (mux) {
     log.info("resourceOffers() with {} offers",offers.size());
     for (    Protos.Offer offer : offers) {
-      Tuple<Double,Double> cpuMem=checkOffer(offer);
-      if (cpuMem == null) {
+      IgniteTask igniteTask=checkOffer(offer);
+      if (igniteTask == null) {
         schedulerDriver.declineOffer(offer.getId());
         continue;
       }
       Protos.TaskID taskId=Protos.TaskID.newBuilder().setValue(Integer.toString(taskIdGenerator.incrementAndGet())).build();
       log.info("Launching task {}",taskId.getValue());
-      Protos.TaskInfo task=createTask(offer,cpuMem,taskId);
+      Protos.TaskInfo task=createTask(offer,igniteTask,taskId);
       schedulerDriver.launchTasks(Collections.singletonList(offer.getId()),Collections.singletonList(task),Protos.Filters.newBuilder().setRefuseSeconds(1).build());
-      tasks.put(taskId.getValue(),offer.getHostname());
+      tasks.put(taskId.getValue(),igniteTask);
     }
   }
 }

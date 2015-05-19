@@ -1,6 +1,8 @@
 {
-  double cpus=-1;
-  double mem=-1;
+  if (checkLimit(clusterLimit.instances(),tasks.size()))   return null;
+  double cpus=-2;
+  double mem=-2;
+  double disk=-2;
   for (  Protos.Resource resource : offer.getResourcesList()) {
     if (resource.getName().equals(CPUS)) {
       if (resource.getType().equals(Protos.Value.Type.SCALAR))       cpus=resource.getScalar().getValue();
@@ -10,11 +12,10 @@
       if (resource.getType().equals(Protos.Value.Type.SCALAR))       mem=resource.getScalar().getValue();
  else       log.debug("Mem resource was not a scalar: " + resource.getType().toString());
     }
- else     if (resource.getName().equals("disk"))     log.debug("Ignoring disk resources from offer");
+ else     if (resource.getType().equals(Protos.Value.Type.SCALAR))     disk=resource.getScalar().getValue();
+ else     log.debug("Disk resource was not a scalar: " + resource.getType().toString());
   }
-  if (cpus < 0)   log.debug("No cpus resource present");
-  if (mem < 0)   log.debug("No mem resource present");
-  if (cpus >= 1 && MIN_MEMORY <= mem)   return new Tuple<>(cpus,mem);
+  if (checkLimit(clusterLimit.memory(),mem) && checkLimit(clusterLimit.cpus(),cpus) && checkLimit(clusterLimit.disk(),disk)&& MIN_MEMORY <= mem)   return new IgniteTask(offer.getHostname(),cpus,mem,disk);
  else {
     log.info("Offer not sufficient for slave request:\n" + offer.getResourcesList().toString() + "\n"+ offer.getAttributesList().toString()+ "\nRequested for slave:\n"+ "  cpus:  "+ cpus+ "\n"+ "  mem:   "+ mem);
     return null;
