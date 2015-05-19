@@ -1,0 +1,11 @@
+{
+  TcpDiscoveryVmIpFinder clientFinder=new TcpDiscoveryVmIpFinder();
+  Collection<InetSocketAddress> srvAddrs=srvIpFinder.getRegisteredAddresses();
+  if (srvAddrs.isEmpty())   throw new IgniteException("Failed to create client IpFinder, no server addresses registered.");
+  String firstSrvAddr=F.first(srvAddrs).toString();
+  if (firstSrvAddr.startsWith("/"))   firstSrvAddr=firstSrvAddr.substring(1);
+  clientFinder.setAddresses(Collections.singletonList(firstSrvAddr));
+  TcpClientDiscoverySpi res=new TcpClientDiscoverySpi();
+  res.setIpFinder(clientFinder);
+  return res;
+}
