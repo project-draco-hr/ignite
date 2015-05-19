@@ -14,7 +14,21 @@
       }
       if (updated)       scheduleResendPartitions();
     }
- else     exchangeFuture(msg.exchangeId(),null,null).onReceive(node.id(),msg);
+ else {
+      if (msg.client()) {
+        IgniteInternalFuture<?> fut=affinityReadyFuture(msg.exchangeId().topologyVersion());
+        if (fut != null) {
+          fut.listen(new CI1<IgniteInternalFuture<?>>(){
+            @Override public void apply(            IgniteInternalFuture<?> fut){
+              processSinglePartitionClientUpdate(node,msg);
+            }
+          }
+);
+        }
+ else         processSinglePartitionClientUpdate(node,msg);
+      }
+ else       exchangeFuture(msg.exchangeId(),null,null).onReceive(node.id(),msg);
+    }
   }
   finally {
     leaveBusy();

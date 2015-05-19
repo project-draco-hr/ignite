@@ -1,5 +1,9 @@
 {
-  ClusterNode oldest=CU.oldest(cctx);
+  ClusterNode oldest=CU.oldestAliveCacheServerNode(cctx,AffinityTopologyVersion.NONE);
+  if (oldest == null) {
+    if (log.isDebugEnabled())     log.debug("Skip partitions refresh, there are no server nodes [loc=" + cctx.localNodeId() + ']');
+    return;
+  }
   if (log.isDebugEnabled())   log.debug("Refreshing partitions [oldest=" + oldest.id() + ", loc="+ cctx.localNodeId()+ ']');
   Collection<ClusterNode> rmts=null;
   try {
