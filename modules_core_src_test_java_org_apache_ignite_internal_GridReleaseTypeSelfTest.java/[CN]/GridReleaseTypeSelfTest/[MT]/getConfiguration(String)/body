@@ -1,14 +1,24 @@
 {
   IgniteConfiguration cfg=super.getConfiguration(gridName);
-  final int idx=cnt.getAndIncrement();
-  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi(){
-    @Override public void setNodeAttributes(    Map<String,Object> attrs,    IgniteProductVersion ver){
-      super.setNodeAttributes(attrs,ver);
-      if (idx % 2 == 0)       attrs.put(IgniteNodeAttributes.ATTR_BUILD_VER,firstNodeVer);
- else       attrs.put(IgniteNodeAttributes.ATTR_BUILD_VER,secondNodeVer);
+  TcpDiscoverySpiAdapter discoSpi;
+  if (clientMode) {
+    discoSpi=new TcpClientDiscoverySpi(){
+      @Override public void setNodeAttributes(      Map<String,Object> attrs,      IgniteProductVersion ver){
+        super.setNodeAttributes(attrs,ver);
+        attrs.put(IgniteNodeAttributes.ATTR_BUILD_VER,nodeVer);
+      }
     }
-  }
 ;
+  }
+ else {
+    discoSpi=new TcpDiscoverySpi(){
+      @Override public void setNodeAttributes(      Map<String,Object> attrs,      IgniteProductVersion ver){
+        super.setNodeAttributes(attrs,ver);
+        attrs.put(IgniteNodeAttributes.ATTR_BUILD_VER,nodeVer);
+      }
+    }
+;
+  }
   discoSpi.setIpFinder(IP_FINDER);
   cfg.setDiscoverySpi(discoSpi);
   return cfg;
