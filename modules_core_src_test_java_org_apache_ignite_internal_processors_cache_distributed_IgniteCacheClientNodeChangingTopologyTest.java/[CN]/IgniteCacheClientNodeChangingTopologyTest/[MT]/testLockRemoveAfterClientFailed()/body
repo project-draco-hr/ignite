@@ -1,0 +1,27 @@
+{
+  ccfg=new CacheConfiguration();
+  ccfg.setCacheMode(PARTITIONED);
+  ccfg.setBackups(1);
+  ccfg.setAtomicityMode(TRANSACTIONAL);
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  ccfg.setRebalanceMode(SYNC);
+  IgniteEx ignite0=startGrid(0);
+  IgniteEx ignite1=startGrid(1);
+  client=true;
+  Ignite ignite2=startGrid(2);
+  assertTrue(ignite2.configuration().isClientMode());
+  IgniteCache<Integer,Integer> cache2=ignite2.cache(null);
+  Lock lock2=cache2.lock(0);
+  lock2.lock();
+  ignite2.close();
+  IgniteCache<Integer,Integer> cache1=ignite1.cache(null);
+  Lock lock1=cache1.lock(0);
+  assertTrue(lock1.tryLock(5000,TimeUnit.MILLISECONDS));
+  lock1.unlock();
+  ignite2=startGrid(2);
+  assertTrue(ignite2.configuration().isClientMode());
+  cache2=ignite2.cache(null);
+  lock2=cache2.lock(0);
+  assertTrue(lock2.tryLock(5000,TimeUnit.MILLISECONDS));
+  lock2.unlock();
+}
