@@ -1,12 +1,8 @@
 {
   IgniteConfiguration cfg=super.getConfiguration(gridName);
-  if (client)   cfg.setDiscoverySpi(createClientDiscovery(ipFinder));
- else {
-    TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
-    discoSpi.setIpFinder(ipFinder);
-    cfg.setDiscoverySpi(discoSpi);
-  }
-  cfg.setLocalHost("127.0.0.1");
+  TcpDiscoverySpiAdapter discoSpi=client ? new TcpClientDiscoverySpi() : new TcpDiscoverySpi();
+  discoSpi.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(discoSpi);
   cfg.setCacheConfiguration();
   return cfg;
 }
