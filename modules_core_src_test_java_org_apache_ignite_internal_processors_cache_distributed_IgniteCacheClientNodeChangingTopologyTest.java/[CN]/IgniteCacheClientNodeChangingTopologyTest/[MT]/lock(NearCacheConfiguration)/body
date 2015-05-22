@@ -1,0 +1,53 @@
+{
+  ccfg=new CacheConfiguration();
+  ccfg.setCacheMode(PARTITIONED);
+  ccfg.setBackups(1);
+  ccfg.setAtomicityMode(TRANSACTIONAL);
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  ccfg.setRebalanceMode(SYNC);
+  ccfg.setNearConfiguration(nearCfg);
+  IgniteEx ignite0=startGrid(0);
+  IgniteEx ignite1=startGrid(1);
+  client=true;
+  final Ignite ignite2=startGrid(2);
+  assertTrue(ignite2.configuration().isClientMode());
+  final List<Integer> keys=new ArrayList<>();
+  for (int i=0; i < 100; i++)   keys.add(i);
+  TestCommunicationSpi spi=(TestCommunicationSpi)ignite2.configuration().getCommunicationSpi();
+  spi.blockMessages(GridNearLockRequest.class,ignite0.localNode().id());
+  spi.blockMessages(GridNearLockRequest.class,ignite1.localNode().id());
+  final IgniteCache<Integer,Integer> cache=ignite2.cache(null);
+  final CountDownLatch lockedLatch=new CountDownLatch(1);
+  final CountDownLatch unlockLatch=new CountDownLatch(1);
+  IgniteInternalFuture<Lock> lockFut=GridTestUtils.runAsync(new Callable<Lock>(){
+    @Override public Lock call() throws Exception {
+      Thread.currentThread().setName("put-thread");
+      Lock lock=cache.lockAll(keys);
+      lock.lock();
+      log.info("Locked");
+      lockedLatch.countDown();
+      unlockLatch.await();
+      lock.unlock();
+      return lock;
+    }
+  }
+);
+  client=false;
+  IgniteEx ignite3=startGrid(3);
+  log.info("Stop block.");
+  assertEquals(1,lockedLatch.getCount());
+  spi.stopBlock();
+  assertTrue(lockedLatch.await(3000,TimeUnit.MILLISECONDS));
+  IgniteCache<Integer,Integer> cache0=ignite0.cache(null);
+  for (  Integer key : keys) {
+    Lock lock=cache0.lock(key);
+    assertFalse(lock.tryLock());
+  }
+  unlockLatch.countDown();
+  lockFut.get();
+  for (  Integer key : keys) {
+    Lock lock=cache0.lock(key);
+    assertTrue(lock.tryLock());
+    lock.unlock();
+  }
+}
