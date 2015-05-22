@@ -34,7 +34,7 @@
   log.info("Stop block1.");
   spi.stopBlock();
   putFut.get();
-  checkData(map,4);
+  checkData(map,cache,4);
   ignite3.close();
   for (int i=0; i < 100; i++)   map.put(i,i + 1);
   spi.blockMessages(GridNearLockRequest.class,ignite0.localNode().id());
@@ -54,11 +54,11 @@
   log.info("Stop block2.");
   spi.stopBlock();
   putFut.get();
-  checkData(map,4);
+  checkData(map,cache,4);
   for (int i=0; i < 100; i++)   map.put(i,i + 2);
   try (Transaction tx=ignite2.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
     cache.putAll(map);
     tx.commit();
   }
-   checkData(map,4);
+   checkData(map,cache,4);
 }
