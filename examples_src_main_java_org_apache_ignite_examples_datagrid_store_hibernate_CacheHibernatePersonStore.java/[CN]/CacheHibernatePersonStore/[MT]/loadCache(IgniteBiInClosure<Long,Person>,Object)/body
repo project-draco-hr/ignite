@@ -1,10 +1,10 @@
 {
   if (args == null || args.length == 0 || args[0] == null)   throw new CacheLoaderException("Expected entry count parameter is not provided.");
   final int entryCnt=(Integer)args[0];
-  Session ses=session(null);
+  Session hibSes=ses.attachment();
   try {
     int cnt=0;
-    List res=ses.createCriteria(Person.class).list();
+    List res=hibSes.createCriteria(Person.class).list();
     if (res != null) {
       Iterator iter=res.iterator();
       while (cnt < entryCnt && iter.hasNext()) {
@@ -17,8 +17,5 @@
   }
  catch (  HibernateException e) {
     throw new CacheLoaderException("Failed to load values from cache store.",e);
-  }
- finally {
-    end(ses,null);
   }
 }
