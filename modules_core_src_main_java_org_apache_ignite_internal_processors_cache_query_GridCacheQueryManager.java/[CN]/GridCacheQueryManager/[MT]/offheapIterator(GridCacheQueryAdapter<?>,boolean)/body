@@ -1,0 +1,11 @@
+{
+  IgniteBiPredicate<K,V> filter=qry.scanFilter();
+  if (cctx.offheapTiered() && filter != null) {
+    OffheapIteratorClosure c=new OffheapIteratorClosure(filter,qry.keepPortable());
+    return cctx.swap().rawOffHeapIterator(c,true,backups);
+  }
+ else {
+    Iterator<Map.Entry<byte[],byte[]>> it=cctx.swap().rawOffHeapIterator(true,backups);
+    return scanIterator(it,filter,qry.keepPortable());
+  }
+}
