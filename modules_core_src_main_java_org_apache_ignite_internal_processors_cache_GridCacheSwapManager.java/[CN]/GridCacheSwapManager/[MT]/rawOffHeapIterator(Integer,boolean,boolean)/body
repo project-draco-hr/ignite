@@ -20,7 +20,9 @@
   }
 ;
   AffinityTopologyVersion ver=cctx.affinity().affinityTopologyVersion();
-  Set<Integer> parts=primary ? cctx.affinity().primaryPartitions(cctx.localNodeId(),ver) : cctx.affinity().backupPartitions(cctx.localNodeId(),ver);
+  Set<Integer> parts;
+  if (part == null)   parts=primary ? cctx.affinity().primaryPartitions(cctx.localNodeId(),ver) : cctx.affinity().backupPartitions(cctx.localNodeId(),ver);
+ else   parts=Collections.singleton(part);
   return new CloseablePartitionsIterator<Map.Entry<byte[],byte[]>,IgniteBiTuple<byte[],byte[]>>(parts){
     private Map.Entry<byte[],byte[]> cur;
     @Override protected Map.Entry<byte[],byte[]> onNext(){
