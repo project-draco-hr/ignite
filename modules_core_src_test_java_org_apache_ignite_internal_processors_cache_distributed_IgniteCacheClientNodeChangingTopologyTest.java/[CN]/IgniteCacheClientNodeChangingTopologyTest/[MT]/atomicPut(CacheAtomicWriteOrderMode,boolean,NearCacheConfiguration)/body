@@ -8,11 +8,14 @@
   ccfg.setRebalanceMode(SYNC);
   IgniteEx ignite0=startGrid(0);
   IgniteEx ignite1=startGrid(1);
+  ccfg.setNearConfiguration(nearCfg);
   client=true;
+  ccfg.setNearConfiguration(null);
   Ignite ignite2=startGrid(2);
   assertTrue(ignite2.configuration().isClientMode());
   final Map<Integer,Integer> map=new HashMap<>();
-  for (int i=0; i < 100; i++)   map.put(i,i);
+  final int KEYS=putAll ? 100 : 1;
+  for (int i=0; i < KEYS; i++)   map.put(i,i);
   TestCommunicationSpi spi=(TestCommunicationSpi)ignite2.configuration().getCommunicationSpi();
   spi.blockMessages(GridNearAtomicUpdateRequest.class,ignite0.localNode().id());
   spi.blockMessages(GridNearAtomicUpdateRequest.class,ignite1.localNode().id());
@@ -21,7 +24,8 @@
   IgniteInternalFuture<?> putFut=GridTestUtils.runAsync(new Callable<Object>(){
     @Override public Object call() throws Exception {
       Thread.currentThread().setName("put-thread");
-      cache.putAll(map);
+      if (putAll)       cache.putAll(map);
+ else       cache.put(0,0);
       return null;
     }
   }
@@ -35,12 +39,13 @@
   checkData(map,cache,4);
   ignite3.close();
   map.clear();
-  for (int i=0; i < 100; i++)   map.put(i,i + 1);
+  for (int i=0; i < KEYS; i++)   map.put(i,i + 1);
   spi.blockMessages(GridNearAtomicUpdateRequest.class,ignite0.localNode().id());
   putFut=GridTestUtils.runAsync(new Callable<Object>(){
     @Override public Object call() throws Exception {
       Thread.currentThread().setName("put-thread");
-      cache.putAll(map);
+      if (putAll)       cache.putAll(map);
+ else       cache.put(0,1);
       return null;
     }
   }
@@ -52,7 +57,8 @@
   spi.stopBlock();
   putFut.get();
   checkData(map,cache,4);
-  for (int i=0; i < 100; i++)   map.put(i,i + 2);
-  cache.putAll(map);
+  for (int i=0; i < KEYS; i++)   map.put(i,i + 2);
+  if (putAll)   cache.putAll(map);
+ else   cache.put(0,2);
   checkData(map,cache,4);
 }
