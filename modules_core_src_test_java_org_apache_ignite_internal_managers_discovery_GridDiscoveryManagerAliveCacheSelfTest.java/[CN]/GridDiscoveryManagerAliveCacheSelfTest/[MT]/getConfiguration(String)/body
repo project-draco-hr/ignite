@@ -8,8 +8,15 @@
   cCfg.setWriteSynchronizationMode(FULL_SYNC);
   TcpDiscoverySpiAdapter disc;
   if (clientMode && ((gridName.charAt(gridName.length() - 1) - '0') & 1) != 0)   disc=new TcpClientDiscoverySpi();
- else   disc=new TcpDiscoverySpi();
+ else {
+    TcpDiscoverySpi srvDisc=new TcpDiscoverySpi();
+    srvDisc.setMaxMissedClientHeartbeats(50);
+    disc=srvDisc;
+  }
+  disc.setHeartbeatFrequency(500);
   disc.setIpFinder(IP_FINDER);
+  disc.setAckTimeout(1000);
+  disc.setSocketTimeout(1000);
   cfg.setCacheConfiguration(cCfg);
   cfg.setDiscoverySpi(disc);
   return cfg;
