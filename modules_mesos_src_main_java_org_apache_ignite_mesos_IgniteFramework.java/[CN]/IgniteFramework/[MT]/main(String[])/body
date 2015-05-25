@@ -5,15 +5,15 @@
     System.out.println("Enabling checkpoint for the framework");
     frameworkBuilder.setCheckpoint(true);
   }
-  ClusterProperties clusterProperties=ClusterProperties.from(args.length == 1 ? args[0] : null);
-  String baseUrl=String.format("http://%s:%d",formatInetAddress(InetAddress.getLocalHost()),4444);
+  ClusterProperties clusterProps=ClusterProperties.from(args.length == 1 ? args[0] : null);
+  String baseUrl=String.format("http://%s:%d",clusterProps.httpServerHost(),clusterProps.httpServerPort());
   URI httpServerBaseUri=URI.create(baseUrl);
-  ResourceConfig rc=new ResourceConfig().registerInstances(new ResourceController(clusterProperties.userLibs(),clusterProperties.igniteCfg(),clusterProperties.igniteWorkDir()));
+  ResourceConfig rc=new ResourceConfig().registerInstances(new ResourceController(clusterProps.userLibs(),clusterProps.igniteCfg(),clusterProps.igniteWorkDir()));
   HttpServer httpServer=GrizzlyHttpServerFactory.createHttpServer(httpServerBaseUri,rc);
   ResourceProvider provider=new ResourceProvider();
-  IgniteProvider igniteProvider=new IgniteProvider(clusterProperties.igniteWorkDir());
-  provider.init(clusterProperties,igniteProvider,baseUrl);
-  Scheduler scheduler=new IgniteScheduler(clusterProperties,provider);
+  IgniteProvider igniteProvider=new IgniteProvider(clusterProps.igniteWorkDir());
+  provider.init(clusterProps,igniteProvider,baseUrl);
+  Scheduler scheduler=new IgniteScheduler(clusterProps,provider);
   MesosSchedulerDriver driver;
   if (System.getenv("MESOS_AUTHENTICATE") != null) {
     System.out.println("Enabling authentication for the framework");
@@ -27,11 +27,11 @@
     }
     Protos.Credential credential=Protos.Credential.newBuilder().setPrincipal(System.getenv("DEFAULT_PRINCIPAL")).setSecret(ByteString.copyFrom(System.getenv("DEFAULT_SECRET").getBytes())).build();
     frameworkBuilder.setPrincipal(System.getenv("DEFAULT_PRINCIPAL"));
-    driver=new MesosSchedulerDriver(scheduler,frameworkBuilder.build(),clusterProperties.masterUrl(),credential);
+    driver=new MesosSchedulerDriver(scheduler,frameworkBuilder.build(),clusterProps.masterUrl(),credential);
   }
  else {
     frameworkBuilder.setPrincipal("ignite-framework-java");
-    driver=new MesosSchedulerDriver(scheduler,frameworkBuilder.build(),clusterProperties.masterUrl());
+    driver=new MesosSchedulerDriver(scheduler,frameworkBuilder.build(),clusterProps.masterUrl());
   }
   int status=driver.run() == Protos.Status.DRIVER_STOPPED ? 0 : 1;
   httpServer.shutdown();
