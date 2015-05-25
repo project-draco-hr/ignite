@@ -2,9 +2,11 @@
   if (args == null || args.length == 0 || args[0] == null)   throw new CacheLoaderException("Expected entry count parameter is not provided.");
   final int entryCnt=(Integer)args[0];
   Connection conn=ses.attachment();
-  try (PreparedStatement st=conn.prepareStatement("select * from PERSONS");ResultSet rs=st.executeQuery()){
+  try (PreparedStatement stmt=conn.prepareStatement("select * from PERSONS limit ?")){
+    stmt.setInt(1,entryCnt);
+    ResultSet rs=stmt.executeQuery();
     int cnt=0;
-    while (cnt < entryCnt && rs.next()) {
+    while (rs.next()) {
       Person person=new Person(rs.getLong(1),rs.getString(2),rs.getString(3));
       clo.apply(person.getId(),person);
       cnt++;
