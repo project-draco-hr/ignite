@@ -1,0 +1,20 @@
+{
+  IgniteCache<Integer,Integer> cache=ignite.cache(null);
+  GridCacheContext cctx=((IgniteCacheProxy)cache).context();
+  Map<Integer,Map<Integer,Integer>> entries=new HashMap<>();
+  for (int i=0; i < KEY_CNT; i++) {
+    cache.put(i,i);
+    int part=cctx.affinity().partition(i);
+    Map<Integer,Integer> partEntries=entries.get(part);
+    if (partEntries == null)     entries.put(part,partEntries=new HashMap<>());
+    partEntries.put(i,i);
+  }
+  for (int i=0; i < cctx.affinity().partitions(); i++) {
+    CacheQuery<Map.Entry<Integer,Integer>> qry=((IgniteCacheProxy<Integer,Integer>)cache).context().queries().createScanQuery(null,i,false);
+    CacheQueryFuture<Map.Entry<Integer,Integer>> fut=qry.execute();
+    Map<Integer,Integer> exp=entries.get(i);
+    Collection<Map.Entry<Integer,Integer>> actual=fut.get();
+    if (exp == null)     assertTrue(actual.isEmpty());
+ else     for (    Map.Entry<Integer,Integer> entry : actual)     assertTrue(entry.getValue().equals(exp.get(entry.getKey())));
+  }
+}

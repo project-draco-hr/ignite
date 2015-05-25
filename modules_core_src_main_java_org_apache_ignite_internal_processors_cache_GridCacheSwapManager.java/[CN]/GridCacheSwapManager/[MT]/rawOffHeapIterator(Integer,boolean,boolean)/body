@@ -1,0 +1,41 @@
+{
+  if (!offheapEnabled || (!primary && !backup))   return new GridEmptyCloseableIterator<>();
+  if (primary && backup)   return new GridCloseableIteratorAdapter<Map.Entry<byte[],byte[]>>(){
+    private GridCloseableIterator<IgniteBiTuple<byte[],byte[]>> it=offheap.iterator(spaceName);
+    private Map.Entry<byte[],byte[]> cur;
+    @Override protected Map.Entry<byte[],byte[]> onNext(){
+      return cur=it.next();
+    }
+    @Override protected boolean onHasNext(){
+      return it.hasNext();
+    }
+    @Override protected void onRemove() throws IgniteCheckedException {
+      KeyCacheObject key=cctx.toCacheKeyObject(cur.getKey());
+      int part=cctx.affinity().partition(key);
+      offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+    }
+    @Override protected void onClose() throws IgniteCheckedException {
+      it.close();
+    }
+  }
+;
+  AffinityTopologyVersion ver=cctx.affinity().affinityTopologyVersion();
+  Set<Integer> parts;
+  if (part == null)   parts=primary ? cctx.affinity().primaryPartitions(cctx.localNodeId(),ver) : cctx.affinity().backupPartitions(cctx.localNodeId(),ver);
+ else   parts=Collections.singleton(part);
+  return new CloseablePartitionsIterator<Map.Entry<byte[],byte[]>,IgniteBiTuple<byte[],byte[]>>(parts){
+    private Map.Entry<byte[],byte[]> cur;
+    @Override protected Map.Entry<byte[],byte[]> onNext(){
+      return cur=super.onNext();
+    }
+    @Override protected GridCloseableIterator<IgniteBiTuple<byte[],byte[]>> partitionIterator(    int part) throws IgniteCheckedException {
+      return offheap.iterator(spaceName,part);
+    }
+    @Override protected void onRemove() throws IgniteCheckedException {
+      KeyCacheObject key=cctx.toCacheKeyObject(cur.getKey());
+      int part=cctx.affinity().partition(key);
+      offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+    }
+  }
+;
+}
