@@ -1,0 +1,19 @@
+{
+  int partsCnt=cctx.affinity().partitions();
+  for (int p=0; p < partsCnt; p++) {
+    List<ClusterNode> owners=cctx.topology().owners(p);
+    if (F.isEmpty(owners))     continue;
+    ClusterNode owner=F.rand(owners);
+    Map<String,Set<Integer>> nodePartsMap=gridPartsMap.get(owner);
+    if (nodePartsMap == null) {
+      nodePartsMap=new HashMap<>();
+      gridPartsMap.put(owner,nodePartsMap);
+    }
+    Set<Integer> parts=nodePartsMap.get(cctx.name());
+    if (parts == null) {
+      parts=new TreeSet<>();
+      nodePartsMap.put(cctx.name(),parts);
+    }
+    parts.add(p);
+  }
+}
