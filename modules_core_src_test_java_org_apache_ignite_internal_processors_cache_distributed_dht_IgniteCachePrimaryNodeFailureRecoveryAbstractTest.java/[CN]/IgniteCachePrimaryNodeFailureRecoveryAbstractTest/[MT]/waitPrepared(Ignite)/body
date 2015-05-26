@@ -1,0 +1,18 @@
+{
+  final IgniteTxManager tm=((IgniteKernal)ignite).context().cache().context().tm();
+  boolean wait=GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      GridDhtTxLocal locTx=null;
+      for (      IgniteInternalTx tx : tm.txs()) {
+        if (tx instanceof GridDhtTxLocal) {
+          assertNull("Only one tx is expected.",locTx);
+          locTx=(GridDhtTxLocal)tx;
+        }
+      }
+      log.info("Wait for tx, state: " + (locTx != null ? locTx.state() : null));
+      return locTx != null && locTx.state() == PREPARED;
+    }
+  }
+,5000);
+  assertTrue("Failed to wait for tx.",wait);
+}
