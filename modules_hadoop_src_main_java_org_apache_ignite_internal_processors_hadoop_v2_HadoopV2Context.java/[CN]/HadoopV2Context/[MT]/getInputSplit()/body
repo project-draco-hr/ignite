@@ -6,9 +6,12 @@
       HadoopFileBlock fileBlock=(HadoopFileBlock)split;
       inputSplit=new FileSplit(new Path(fileBlock.file()),fileBlock.start(),fileBlock.length(),null);
     }
- else     if (split instanceof HadoopExternalSplit)     throw new UnsupportedOperationException();
- else     if (split instanceof HadoopSplitWrapper)     inputSplit=(InputSplit)HadoopUtils.unwrapSplit((HadoopSplitWrapper)split);
- else     throw new IllegalStateException();
+ else     try {
+      inputSplit=(InputSplit)((HadoopV2TaskContext)ctx).getNativeSplit(split);
+    }
+ catch (    IgniteCheckedException e) {
+      throw new IllegalStateException(e);
+    }
   }
   return inputSplit;
 }
