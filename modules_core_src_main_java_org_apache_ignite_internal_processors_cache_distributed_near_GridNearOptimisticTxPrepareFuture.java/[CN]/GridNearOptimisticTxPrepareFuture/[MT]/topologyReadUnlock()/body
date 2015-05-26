@@ -1,0 +1,13 @@
+{
+  if (!tx.activeCacheIds().isEmpty()) {
+    GridCacheContext<?,?> nonLocCtx=null;
+    for (    int cacheId : tx.activeCacheIds()) {
+      GridCacheContext<?,?> cacheCtx=cctx.cacheContext(cacheId);
+      if (!cacheCtx.isLocal()) {
+        nonLocCtx=cacheCtx;
+        break;
+      }
+    }
+    if (nonLocCtx != null)     nonLocCtx.topology().readUnlock();
+  }
+}
