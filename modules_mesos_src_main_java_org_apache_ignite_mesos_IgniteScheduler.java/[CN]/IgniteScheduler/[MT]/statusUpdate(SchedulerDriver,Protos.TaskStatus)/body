@@ -1,9 +1,7 @@
 {
   final String taskId=taskStatus.getTaskId().getValue();
-  log.info("statusUpdate() task {} is in state {}",taskId,taskStatus.getState());
-switch (taskStatus.getState()) {
-case TASK_FAILED:
-case TASK_FINISHED:
+  log.info("Received update event task: [{}] is in state: [{}]",taskId,taskStatus.getState());
+  if (taskStatus.getState().equals(Protos.TaskState.TASK_FAILED) || taskStatus.getState().equals(Protos.TaskState.TASK_ERROR) || taskStatus.getState().equals(Protos.TaskState.TASK_FINISHED)|| taskStatus.getState().equals(Protos.TaskState.TASK_KILLED)|| taskStatus.getState().equals(Protos.TaskState.TASK_LOST)) {
 synchronized (mux) {
       IgniteTask failedTask=tasks.remove(taskId);
       if (failedTask != null) {
@@ -13,6 +11,5 @@ synchronized (mux) {
         schedulerDriver.requestResources(requests);
       }
     }
-  break;
-}
+  }
 }

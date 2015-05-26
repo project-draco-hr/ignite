@@ -1,5 +1,5 @@
 {
-  if (clusterLimit.instances() <= tasks.size())   return null;
+  if (clusterProps.instances() <= tasks.size())   return null;
   double cpus=-1;
   double mem=-1;
   double disk=-1;
@@ -15,7 +15,7 @@
  else     if (resource.getName().equals(DISK))     if (resource.getType().equals(Protos.Value.Type.SCALAR))     disk=resource.getScalar().getValue();
  else     log.debug("Disk resource was not a scalar: {}",resource.getType());
   }
-  if (cpus < clusterLimit.minCpuPerNode() && mem < clusterLimit.minMemoryPerNode()) {
+  if (cpus < clusterProps.minCpuPerNode() || mem < clusterProps.minMemoryPerNode()) {
     log.debug("Offer not sufficient for slave request: {}",offer.getResourcesList());
     return null;
   }
@@ -27,9 +27,9 @@
     totalMem+=task.mem();
     totalDisk+=task.disk();
   }
-  cpus=Math.min(clusterLimit.cpus() - totalCpus,Math.min(cpus,clusterLimit.cpusPerNode()));
-  mem=Math.min(clusterLimit.memory() - totalMem,Math.min(mem,clusterLimit.memoryPerNode()));
-  disk=Math.min(clusterLimit.disk() - totalDisk,Math.min(disk,clusterLimit.diskPerNode()));
+  cpus=Math.min(clusterProps.cpus() - totalCpus,Math.min(cpus,clusterProps.cpusPerNode()));
+  mem=Math.min(clusterProps.memory() - totalMem,Math.min(mem,clusterProps.memoryPerNode()));
+  disk=Math.min(clusterProps.disk() - totalDisk,Math.min(disk,clusterProps.diskPerNode()));
   if (cpus > 0 && mem > 0)   return new IgniteTask(offer.getHostname(),cpus,mem,disk);
  else {
     log.debug("Offer not sufficient for slave request: {}",offer.getResourcesList());

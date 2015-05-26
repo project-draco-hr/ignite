@@ -7,9 +7,8 @@
   }
   ClusterProperties clusterProps=ClusterProperties.from(args.length >= 1 ? args[0] : null);
   String baseUrl=String.format("http://%s:%d",clusterProps.httpServerHost(),clusterProps.httpServerPort());
-  URI httpServerBaseUri=URI.create(baseUrl);
-  ResourceConfig rc=new ResourceConfig().registerInstances(new ResourceController(clusterProps.userLibs(),clusterProps.igniteCfg(),clusterProps.igniteWorkDir()));
-  HttpServer httpServer=GrizzlyHttpServerFactory.createHttpServer(httpServerBaseUri,rc);
+  JettyServer httpServer=new JettyServer();
+  httpServer.start(new InetSocketAddress(clusterProps.httpServerHost(),clusterProps.httpServerPort()),new ResourceHandler(clusterProps.userLibs(),clusterProps.igniteCfg(),clusterProps.igniteWorkDir()));
   ResourceProvider provider=new ResourceProvider();
   IgniteProvider igniteProvider=new IgniteProvider(clusterProps.igniteWorkDir());
   provider.init(clusterProps,igniteProvider,baseUrl);
@@ -34,7 +33,7 @@
     driver=new MesosSchedulerDriver(scheduler,frameworkBuilder.build(),clusterProps.masterUrl());
   }
   int status=driver.run() == Protos.Status.DRIVER_STOPPED ? 0 : 1;
-  httpServer.shutdown();
+  httpServer.stop();
   driver.stop();
   System.exit(status);
 }

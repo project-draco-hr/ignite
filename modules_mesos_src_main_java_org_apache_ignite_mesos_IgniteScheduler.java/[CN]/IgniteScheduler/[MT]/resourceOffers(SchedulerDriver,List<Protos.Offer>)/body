@@ -1,6 +1,6 @@
 {
 synchronized (mux) {
-    log.info("resourceOffers() with {} offers",offers.size());
+    log.debug("Offers resources: {} ",offers.size());
     for (    Protos.Offer offer : offers) {
       IgniteTask igniteTask=checkOffer(offer);
       if (igniteTask == null) {
@@ -8,7 +8,7 @@ synchronized (mux) {
         continue;
       }
       Protos.TaskID taskId=Protos.TaskID.newBuilder().setValue(Integer.toString(taskIdGenerator.incrementAndGet())).build();
-      log.info("Launching task {}",taskId.getValue());
+      log.info("Launching task: [{}]",igniteTask);
       Protos.TaskInfo task=createTask(offer,igniteTask,taskId);
       schedulerDriver.launchTasks(Collections.singletonList(offer.getId()),Collections.singletonList(task),Protos.Filters.newBuilder().setRefuseSeconds(1).build());
       tasks.put(taskId.getValue(),igniteTask);
