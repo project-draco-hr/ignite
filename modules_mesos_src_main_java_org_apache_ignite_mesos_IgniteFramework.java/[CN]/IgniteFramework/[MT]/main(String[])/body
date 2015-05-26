@@ -2,10 +2,10 @@
   final int frameworkFailoverTimeout=0;
   Protos.FrameworkInfo.Builder frameworkBuilder=Protos.FrameworkInfo.newBuilder().setName(IGNITE_FRAMEWORK_NAME).setUser("").setFailoverTimeout(frameworkFailoverTimeout);
   if (System.getenv("MESOS_CHECKPOINT") != null) {
-    System.out.println("Enabling checkpoint for the framework");
+    log.info("Enabling checkpoint for the framework");
     frameworkBuilder.setCheckpoint(true);
   }
-  ClusterProperties clusterProps=ClusterProperties.from(args.length == 1 ? args[0] : null);
+  ClusterProperties clusterProps=ClusterProperties.from(args.length >= 1 ? args[0] : null);
   String baseUrl=String.format("http://%s:%d",clusterProps.httpServerHost(),clusterProps.httpServerPort());
   URI httpServerBaseUri=URI.create(baseUrl);
   ResourceConfig rc=new ResourceConfig().registerInstances(new ResourceController(clusterProps.userLibs(),clusterProps.igniteCfg(),clusterProps.igniteWorkDir()));
@@ -16,13 +16,13 @@
   Scheduler scheduler=new IgniteScheduler(clusterProps,provider);
   MesosSchedulerDriver driver;
   if (System.getenv("MESOS_AUTHENTICATE") != null) {
-    System.out.println("Enabling authentication for the framework");
+    log.info("Enabling authentication for the framework");
     if (System.getenv("DEFAULT_PRINCIPAL") == null) {
-      System.err.println("Expecting authentication principal in the environment");
+      log.error("Expecting authentication principal in the environment");
       System.exit(1);
     }
     if (System.getenv("DEFAULT_SECRET") == null) {
-      System.err.println("Expecting authentication secret in the environment");
+      log.error("Expecting authentication secret in the environment");
       System.exit(1);
     }
     Protos.Credential credential=Protos.Credential.newBuilder().setPrincipal(System.getenv("DEFAULT_PRINCIPAL")).setSecret(ByteString.copyFrom(System.getenv("DEFAULT_SECRET").getBytes())).build();
