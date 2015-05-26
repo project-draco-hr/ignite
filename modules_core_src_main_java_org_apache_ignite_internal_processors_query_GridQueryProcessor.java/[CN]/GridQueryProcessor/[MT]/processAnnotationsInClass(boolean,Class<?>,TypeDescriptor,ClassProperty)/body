@@ -1,5 +1,12 @@
 {
-  if (U.isJdk(cls))   return;
+  if (U.isJdk(cls) || idx.isGeometryClass(cls)) {
+    if (parent == null && !key && idx.isSqlType(cls)) {
+      String idxName="_val_idx";
+      type.addIndex(idxName,idx.isGeometryClass(cls) ? GEO_SPATIAL : SORTED);
+      type.addFieldToIndex(idxName,"_VAL",0,false);
+    }
+    return;
+  }
   if (parent != null && parent.knowsClass(cls))   throw new IgniteCheckedException("Recursive reference found in type: " + cls.getName());
   if (parent == null) {
     QueryTextField txtAnnCls=cls.getAnnotation(QueryTextField.class);
