@@ -1,16 +1,14 @@
 {
-  target.listen(new IgniteInClosure<IgniteInternalFuture<Collection<R>>>(){
+  ClusterNode node=nodes.poll();
+  fut=(GridCacheQueryFutureAdapter<?,?,R>)(node.isLocal() ? qryMgr.queryLocal(bean) : qryMgr.queryDistributed(bean,Collections.singleton(node)));
+  fut.listen(new IgniteInClosure<IgniteInternalFuture<Collection<R>>>(){
     @Override public void apply(    IgniteInternalFuture<Collection<R>> fut){
       try {
         onDone(fut.get());
       }
  catch (      IgniteCheckedException e) {
-        if (F.isEmpty(backups))         onDone(e);
- else {
-          Set<ClusterNode> backup=Collections.singleton(backups.poll());
-          target=(GridCacheQueryFutureAdapter<?,?,R>)qryMgr.queryDistributed(bean,backup);
-          init();
-        }
+        if (F.isEmpty(nodes))         onDone(e);
+ else         init();
       }
     }
   }
