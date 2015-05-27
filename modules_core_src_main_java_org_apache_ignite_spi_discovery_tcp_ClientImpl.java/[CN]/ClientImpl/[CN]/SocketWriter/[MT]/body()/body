@@ -1,0 +1,34 @@
+{
+  TcpDiscoveryAbstractMessage msg=null;
+  while (!Thread.currentThread().isInterrupted()) {
+    Socket sock;
+synchronized (mux) {
+      sock=this.sock;
+      if (sock == null) {
+        mux.wait();
+        continue;
+      }
+      if (msg == null)       msg=queue.poll();
+      if (msg == null) {
+        mux.wait();
+        continue;
+      }
+    }
+    for (    IgniteInClosure<TcpDiscoveryAbstractMessage> msgLsnr : adapter.sendMsgLsnrs)     msgLsnr.apply(msg);
+    try {
+      adapter.writeToSocket(sock,msg);
+      msg=null;
+    }
+ catch (    IOException e) {
+      if (log.isDebugEnabled())       U.error(log,"Failed to send node left message (will stop anyway) [sock=" + sock + ']',e);
+      U.closeQuiet(sock);
+synchronized (mux) {
+        if (sock == this.sock)         this.sock=null;
+      }
+    }
+catch (    IgniteCheckedException e) {
+      U.error(log,"Failed to send message: " + msg,e);
+      msg=null;
+    }
+  }
+}

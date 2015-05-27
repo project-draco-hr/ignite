@@ -1,0 +1,40 @@
+{
+synchronized (mux) {
+    spiState=DISCONNECTED;
+  }
+  if (debugMode) {
+    if (!log.isInfoEnabled())     throw new IgniteSpiException("Info log level should be enabled for TCP discovery to work " + "in debug mode.");
+    debugLog=new ConcurrentLinkedDeque<>();
+    U.quietAndWarn(log,"TCP discovery SPI is configured in debug mode.");
+  }
+  fromAddrs.clear();
+  noResAddrs.clear();
+  msgWorker=new RingMessageWorker();
+  msgWorker.start();
+  tcpSrvr=new TcpServer();
+  adapter.initLocalNode(tcpSrvr.port,true);
+  locNode=adapter.locNode;
+  tcpSrvr.start();
+  ring.localNode(locNode);
+  if (adapter.ipFinder.isShared())   registerLocalNodeAddress();
+ else {
+    if (F.isEmpty(adapter.ipFinder.getRegisteredAddresses()))     throw new IgniteSpiException("Non-shared IP finder must have IP addresses specified in " + "GridTcpDiscoveryIpFinder.getRegisteredAddresses() configuration property " + "(specify list of IP addresses in configuration).");
+    ipFinderHasLocAddr=adapter.ipFinderHasLocalAddress();
+  }
+  if (adapter.getStatisticsPrintFrequency() > 0 && log.isInfoEnabled()) {
+    statsPrinter=new StatisticsPrinter();
+    statsPrinter.start();
+  }
+  adapter.stats.onJoinStarted();
+  joinTopology();
+  adapter.stats.onJoinFinished();
+  hbsSnd=new HeartbeatsSender();
+  hbsSnd.start();
+  chkStatusSnd=new CheckStatusSender();
+  chkStatusSnd.start();
+  if (adapter.ipFinder.isShared()) {
+    ipFinderCleaner=new IpFinderCleaner();
+    ipFinderCleaner.start();
+  }
+  adapter.printStartInfo();
+}

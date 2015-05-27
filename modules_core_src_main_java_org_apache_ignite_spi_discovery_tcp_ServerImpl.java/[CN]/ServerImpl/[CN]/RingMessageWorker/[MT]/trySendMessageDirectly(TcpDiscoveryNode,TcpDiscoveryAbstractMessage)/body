@@ -1,0 +1,27 @@
+{
+  if (node.isClient()) {
+    TcpDiscoveryNode routerNode=ring.node(node.clientRouterNodeId());
+    if (routerNode == null)     throw new IgniteSpiException("Router node for client does not exist: " + node);
+    if (routerNode.isClient())     throw new IgniteSpiException("Router node is a client node: " + node);
+    if (routerNode.id().equals(getLocalNodeId())) {
+      ClientMessageWorker worker=clientMsgWorkers.get(node.id());
+      msg.verify(getLocalNodeId());
+      worker.addMessage(msg);
+      return;
+    }
+    trySendMessageDirectly(routerNode,msg);
+    return;
+  }
+  IgniteSpiException ex=null;
+  for (  InetSocketAddress addr : adapter.getNodeAddresses(node,U.sameMacs(locNode,node))) {
+    try {
+      sendMessageDirectly(msg,addr,null);
+      ex=null;
+      break;
+    }
+ catch (    IgniteSpiException e) {
+      ex=e;
+    }
+  }
+  if (ex != null)   throw ex;
+}

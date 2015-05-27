@@ -1,0 +1,20 @@
+{
+  timer.cancel();
+  if (msgWorker != null && msgWorker.isAlive()) {
+    msgWorker.addMessage(SPI_STOP);
+    try {
+      if (!leaveLatch.await(adapter.netTimeout,MILLISECONDS))       U.warn(log,"Failed to left node: timeout [nodeId=" + locNode + ']');
+    }
+ catch (    InterruptedException ignored) {
+    }
+  }
+  for (  GridFutureAdapter<Boolean> fut : pingFuts.values())   fut.onDone(false);
+  rmtNodes.clear();
+  U.interrupt(msgWorker);
+  U.interrupt(sockWriter);
+  U.interrupt(sockReader);
+  U.join(msgWorker,log);
+  U.join(sockWriter,log);
+  U.join(sockReader,log);
+  adapter.printStopInfo();
+}

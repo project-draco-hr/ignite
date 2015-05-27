@@ -1,0 +1,58 @@
+{
+  Collection<InetSocketAddress> addrs=null;
+  long startTime=U.currentTimeMillis();
+  while (true) {
+    if (Thread.currentThread().isInterrupted())     throw new InterruptedException();
+    while (addrs == null || addrs.isEmpty()) {
+      addrs=adapter.resolvedAddresses();
+      if (!F.isEmpty(addrs)) {
+        if (log.isDebugEnabled())         log.debug("Resolved addresses from IP finder: " + addrs);
+      }
+ else {
+        U.warn(log,"No addresses registered in the IP finder (will retry in 2000ms): " + adapter.ipFinder);
+        if (adapter.joinTimeout > 0 && (U.currentTimeMillis() - startTime) > adapter.joinTimeout)         return null;
+        Thread.sleep(2000);
+      }
+    }
+    Collection<InetSocketAddress> addrs0=new ArrayList<>(addrs);
+    Iterator<InetSocketAddress> it=addrs.iterator();
+    while (it.hasNext()) {
+      if (Thread.currentThread().isInterrupted())       throw new InterruptedException();
+      InetSocketAddress addr=it.next();
+      Socket sock=null;
+      try {
+        long ts=U.currentTimeMillis();
+        IgniteBiTuple<Socket,UUID> t=initConnection(addr);
+        sock=t.get1();
+        UUID rmtNodeId=t.get2();
+        adapter.stats.onClientSocketInitialized(U.currentTimeMillis() - ts);
+        locNode.clientRouterNodeId(rmtNodeId);
+        TcpDiscoveryAbstractMessage msg=recon ? new TcpDiscoveryClientReconnectMessage(getLocalNodeId(),rmtNodeId,lastMsgId) : new TcpDiscoveryJoinRequestMessage(locNode,adapter.collectExchangeData(getLocalNodeId()));
+        msg.client(true);
+        adapter.writeToSocket(sock,msg);
+        int res=adapter.readReceipt(sock,adapter.ackTimeout);
+switch (res) {
+case RES_OK:
+          return sock;
+case RES_CONTINUE_JOIN:
+case RES_WAIT:
+        U.closeQuiet(sock);
+      break;
+default :
+    if (log.isDebugEnabled())     log.debug("Received unexpected response to join request: " + res);
+  U.closeQuiet(sock);
+}
+}
+ catch (IOException|IgniteCheckedException e) {
+if (log.isDebugEnabled()) U.error(log,"Failed to establish connection with address: " + addr,e);
+U.closeQuiet(sock);
+it.remove();
+}
+}
+if (addrs.isEmpty()) {
+U.warn(log,"Failed to connect to any address from IP finder (will retry to join topology " + "in 2000ms): " + addrs0);
+if (adapter.joinTimeout > 0 && (U.currentTimeMillis() - startTime) > adapter.joinTimeout) return null;
+Thread.sleep(2000);
+}
+}
+}

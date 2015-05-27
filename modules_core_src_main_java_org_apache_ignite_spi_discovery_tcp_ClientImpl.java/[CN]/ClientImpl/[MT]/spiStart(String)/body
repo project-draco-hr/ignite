@@ -1,0 +1,19 @@
+{
+  adapter.initLocalNode(0,true);
+  locNode=adapter.locNode;
+  sockWriter=new SocketWriter();
+  sockWriter.start();
+  sockReader=new SocketReader();
+  sockReader.start();
+  msgWorker=new MessageWorker();
+  msgWorker.start();
+  try {
+    joinLatch.await();
+    if (joinErr != null)     throw joinErr;
+  }
+ catch (  InterruptedException e) {
+    throw new IgniteSpiException("Thread has been interrupted.",e);
+  }
+  timer.schedule(new HeartbeatSender(),adapter.hbFreq,adapter.hbFreq);
+  adapter.printStartInfo();
+}
