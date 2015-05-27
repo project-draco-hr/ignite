@@ -1,0 +1,24 @@
+{
+  Protos.Offer offer=createOffer("hostname",1,1024);
+  DriverMock mock=new DriverMock();
+  ClusterProperties clustProp=new ClusterProperties();
+  clustProp.cpus(4);
+  clustProp.memory(2000);
+  scheduler.setClusterProps(clustProp);
+  double totalMem=0, totalCpu=0;
+  for (int i=0; i < 2; i++) {
+    scheduler.resourceOffers(mock,Collections.singletonList(offer));
+    assertNotNull(mock.launchedTask);
+    assertEquals(1,mock.launchedTask.size());
+    Protos.TaskInfo taskInfo=mock.launchedTask.iterator().next();
+    totalCpu+=resources(taskInfo.getResourcesList(),IgniteScheduler.CPUS);
+    totalMem+=resources(taskInfo.getResourcesList(),IgniteScheduler.MEM);
+    mock.clear();
+  }
+  assertEquals(2.0,totalCpu);
+  assertEquals(2000.0,totalMem);
+  scheduler.resourceOffers(mock,Collections.singletonList(offer));
+  assertNull(mock.launchedTask);
+  Protos.OfferID declinedOffer=mock.declinedOffer;
+  assertEquals(offer.getId(),declinedOffer);
+}
