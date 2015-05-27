@@ -1,0 +1,11 @@
+{
+  final UUID locUuid=cctx.localNodeId();
+  GridCacheAffinityManager affMgr=cctx.affinity();
+  AffinityTopologyVersion topVer=affMgr.affinityTopologyVersion();
+  return F.first(F.view(affMgr.backups(part,topVer),new IgnitePredicate<ClusterNode>(){
+    @Override public boolean apply(    ClusterNode node){
+      return !node.id().equals(locUuid);
+    }
+  }
+)).id();
+}
