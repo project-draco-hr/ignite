@@ -1,0 +1,16 @@
+{
+  Value v=peekValue(VAL_COL);
+  while (v == null && waitTime > 0) {
+    long start=System.nanoTime();
+    try {
+      wait(waitTime);
+    }
+ catch (    InterruptedException e) {
+      throw new IgniteInterruptedException(e);
+    }
+    long t=System.nanoTime() - start;
+    if (t > 0)     waitTime-=TimeUnit.NANOSECONDS.toMillis(t);
+    v=peekValue(VAL_COL);
+  }
+  return v;
+}
