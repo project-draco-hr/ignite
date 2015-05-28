@@ -3,8 +3,9 @@
   for (  Protos.Offer offer : offers) {
     Protos.TaskID taskId;
     Protos.TaskInfo task;
+    IgniteTask igniteTask;
 synchronized (mux) {
-      IgniteTask igniteTask=checkOffer(offer);
+      igniteTask=checkOffer(offer);
       if (igniteTask == null) {
         schedulerDriver.declineOffer(offer.getId());
         continue;
@@ -12,16 +13,15 @@ synchronized (mux) {
       taskId=Protos.TaskID.newBuilder().setValue(Integer.toString(taskIdGenerator.incrementAndGet())).build();
       log.info("Launching task: {}",igniteTask);
       task=createTask(offer,igniteTask,taskId);
-      tasks.put(taskId.getValue(),igniteTask);
     }
     try {
       schedulerDriver.launchTasks(Collections.singletonList(offer.getId()),Collections.singletonList(task),Protos.Filters.newBuilder().setRefuseSeconds(1).build());
     }
  catch (    Exception e) {
-synchronized (mux) {
-        tasks.remove(taskId.getValue());
-      }
       log.error("Failed launch task. Task id: {}. Task info: {}",taskId,task);
+    }
+synchronized (mux) {
+      tasks.put(taskId.getValue(),igniteTask);
     }
   }
 }
