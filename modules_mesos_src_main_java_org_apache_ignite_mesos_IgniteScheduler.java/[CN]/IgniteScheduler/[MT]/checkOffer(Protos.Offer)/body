@@ -5,7 +5,7 @@
   double disk=-1;
   if (clusterProps.hostnameConstraint() != null && clusterProps.hostnameConstraint().matcher(offer.getHostname()).matches())   return null;
   for (  Protos.Resource resource : offer.getResourcesList()) {
-    if (resource.getName().equals(CPUS)) {
+    if (resource.getName().equals(CPU)) {
       if (resource.getType().equals(Protos.Value.Type.SCALAR))       cpus=resource.getScalar().getValue();
  else       log.debug("Cpus resource was not a scalar: {}" + resource.getType());
     }
@@ -31,6 +31,10 @@
   cpus=Math.min(clusterProps.cpus() - totalCpus,Math.min(cpus,clusterProps.cpusPerNode()));
   mem=Math.min(clusterProps.memory() - totalMem,Math.min(mem,clusterProps.memoryPerNode()));
   disk=Math.min(clusterProps.disk() - totalDisk,Math.min(disk,clusterProps.diskPerNode()));
+  if ((clusterProps.cpusPerNode() != ClusterProperties.UNLIMITED && clusterProps.cpusPerNode() != cpus) || (clusterProps.memoryPerNode() != ClusterProperties.UNLIMITED && clusterProps.memoryPerNode() != mem)) {
+    log.debug("Offer not sufficient for slave request: {}",offer.getResourcesList());
+    return null;
+  }
   if (cpus > 0 && mem > 0)   return new IgniteTask(offer.getHostname(),cpus,mem,disk);
  else {
     log.debug("Offer not sufficient for slave request: {}",offer.getResourcesList());
