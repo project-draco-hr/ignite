@@ -1,10 +1,10 @@
 {
-  if (adapter.getSpiContext().isStopping())   return;
+  if (spi.getSpiContext().isStopping())   return;
   if (getLocalNodeId().equals(msg.nodeId())) {
     if (joinLatch.getCount() > 0) {
       Map<UUID,Map<Integer,byte[]>> dataMap=msg.clientDiscoData();
       if (dataMap != null) {
-        for (        Map.Entry<UUID,Map<Integer,byte[]>> entry : dataMap.entrySet())         adapter.onExchange(getLocalNodeId(),entry.getKey(),entry.getValue(),null);
+        for (        Map.Entry<UUID,Map<Integer,byte[]>> entry : dataMap.entrySet())         spi.onExchange(getLocalNodeId(),entry.getKey(),entry.getValue(),null);
       }
       locNode.setAttributes(msg.clientNodeAttributes());
       locNode.visible(true);
@@ -13,7 +13,7 @@
       notifyDiscovery(EVT_NODE_JOINED,topVer,locNode,updateTopologyHistory(topVer));
       joinErr=null;
       joinLatch.countDown();
-      adapter.stats.onJoinFinished();
+      spi.stats.onJoinFinished();
     }
  else     if (log.isDebugEnabled())     log.debug("Discarding node add finished message (this message has already been processed) " + "[msg=" + msg + ", locNode="+ locNode+ ']');
   }
@@ -26,13 +26,13 @@
     long topVer=msg.topologyVersion();
     node.order(topVer);
     node.visible(true);
-    if (adapter.locNodeVer.equals(node.version()))     node.version(adapter.locNodeVer);
+    if (spi.locNodeVer.equals(node.version()))     node.version(spi.locNodeVer);
     NavigableSet<ClusterNode> top=updateTopologyHistory(topVer);
     if (!pending && joinLatch.getCount() > 0) {
       if (log.isDebugEnabled())       log.debug("Discarding node add finished message (join process is not finished): " + msg);
       return;
     }
     notifyDiscovery(EVT_NODE_JOINED,topVer,node,top);
-    adapter.stats.onNodeJoined();
+    spi.stats.onNodeJoined();
   }
 }

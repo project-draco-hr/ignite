@@ -12,29 +12,29 @@ synchronized (mux) {
   msgWorker=new RingMessageWorker();
   msgWorker.start();
   tcpSrvr=new TcpServer();
-  adapter.initLocalNode(tcpSrvr.port,true);
-  locNode=adapter.locNode;
+  spi.initLocalNode(tcpSrvr.port,true);
+  locNode=spi.locNode;
   tcpSrvr.start();
   ring.localNode(locNode);
-  if (adapter.ipFinder.isShared())   registerLocalNodeAddress();
+  if (spi.ipFinder.isShared())   registerLocalNodeAddress();
  else {
-    if (F.isEmpty(adapter.ipFinder.getRegisteredAddresses()))     throw new IgniteSpiException("Non-shared IP finder must have IP addresses specified in " + "GridTcpDiscoveryIpFinder.getRegisteredAddresses() configuration property " + "(specify list of IP addresses in configuration).");
-    ipFinderHasLocAddr=adapter.ipFinderHasLocalAddress();
+    if (F.isEmpty(spi.ipFinder.getRegisteredAddresses()))     throw new IgniteSpiException("Non-shared IP finder must have IP addresses specified in " + "GridTcpDiscoveryIpFinder.getRegisteredAddresses() configuration property " + "(specify list of IP addresses in configuration).");
+    ipFinderHasLocAddr=spi.ipFinderHasLocalAddress();
   }
-  if (adapter.getStatisticsPrintFrequency() > 0 && log.isInfoEnabled()) {
+  if (spi.getStatisticsPrintFrequency() > 0 && log.isInfoEnabled()) {
     statsPrinter=new StatisticsPrinter();
     statsPrinter.start();
   }
-  adapter.stats.onJoinStarted();
+  spi.stats.onJoinStarted();
   joinTopology();
-  adapter.stats.onJoinFinished();
+  spi.stats.onJoinFinished();
   hbsSnd=new HeartbeatsSender();
   hbsSnd.start();
   chkStatusSnd=new CheckStatusSender();
   chkStatusSnd.start();
-  if (adapter.ipFinder.isShared()) {
+  if (spi.ipFinder.isShared()) {
     ipFinderCleaner=new IpFinderCleaner();
     ipFinderCleaner.start();
   }
-  adapter.printStartInfo();
+  spi.printStartInfo();
 }

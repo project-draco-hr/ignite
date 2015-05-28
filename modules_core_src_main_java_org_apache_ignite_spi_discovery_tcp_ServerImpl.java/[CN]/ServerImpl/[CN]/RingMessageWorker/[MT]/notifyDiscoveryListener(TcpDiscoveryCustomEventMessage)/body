@@ -1,5 +1,5 @@
 {
-  DiscoverySpiListener lsnr=adapter.lsnr;
+  DiscoverySpiListener lsnr=spi.lsnr;
   TcpDiscoverySpiState spiState=spiStateCopy();
   Map<Long,Collection<ClusterNode>> hist;
 synchronized (mux) {
@@ -10,9 +10,9 @@ synchronized (mux) {
     TcpDiscoveryNode node=ring.node(msg.creatorNodeId());
     if (node != null) {
       try {
-        DiscoverySpiCustomMessage msgObj=msg.message(adapter.marsh);
+        DiscoverySpiCustomMessage msgObj=msg.message(spi.marsh);
         lsnr.onDiscovery(DiscoveryCustomEvent.EVT_DISCOVERY_CUSTOM_EVT,msg.topologyVersion(),node,snapshot,hist,msgObj);
-        if (msgObj.isMutable())         msg.message(msgObj,adapter.marsh.marshal(msgObj));
+        if (msgObj.isMutable())         msg.message(msgObj,spi.marsh.marshal(msgObj));
       }
  catch (      Throwable e) {
         U.error(log,"Failed to unmarshal discovery custom message.",e);

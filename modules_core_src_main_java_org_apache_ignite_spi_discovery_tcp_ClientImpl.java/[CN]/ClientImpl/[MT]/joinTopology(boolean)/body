@@ -4,13 +4,13 @@
   while (true) {
     if (Thread.currentThread().isInterrupted())     throw new InterruptedException();
     while (addrs == null || addrs.isEmpty()) {
-      addrs=adapter.resolvedAddresses();
+      addrs=spi.resolvedAddresses();
       if (!F.isEmpty(addrs)) {
         if (log.isDebugEnabled())         log.debug("Resolved addresses from IP finder: " + addrs);
       }
  else {
-        U.warn(log,"No addresses registered in the IP finder (will retry in 2000ms): " + adapter.ipFinder);
-        if (adapter.joinTimeout > 0 && (U.currentTimeMillis() - startTime) > adapter.joinTimeout)         return null;
+        U.warn(log,"No addresses registered in the IP finder (will retry in 2000ms): " + spi.ipFinder);
+        if (spi.joinTimeout > 0 && (U.currentTimeMillis() - startTime) > spi.joinTimeout)         return null;
         Thread.sleep(2000);
       }
     }
@@ -25,12 +25,12 @@
         IgniteBiTuple<Socket,UUID> t=initConnection(addr);
         sock=t.get1();
         UUID rmtNodeId=t.get2();
-        adapter.stats.onClientSocketInitialized(U.currentTimeMillis() - ts);
+        spi.stats.onClientSocketInitialized(U.currentTimeMillis() - ts);
         locNode.clientRouterNodeId(rmtNodeId);
-        TcpDiscoveryAbstractMessage msg=recon ? new TcpDiscoveryClientReconnectMessage(getLocalNodeId(),rmtNodeId,lastMsgId) : new TcpDiscoveryJoinRequestMessage(locNode,adapter.collectExchangeData(getLocalNodeId()));
+        TcpDiscoveryAbstractMessage msg=recon ? new TcpDiscoveryClientReconnectMessage(getLocalNodeId(),rmtNodeId,lastMsgId) : new TcpDiscoveryJoinRequestMessage(locNode,spi.collectExchangeData(getLocalNodeId()));
         msg.client(true);
-        adapter.writeToSocket(sock,msg);
-        int res=adapter.readReceipt(sock,adapter.ackTimeout);
+        spi.writeToSocket(sock,msg);
+        int res=spi.readReceipt(sock,spi.ackTimeout);
 switch (res) {
 case RES_OK:
           return sock;
@@ -51,7 +51,7 @@ it.remove();
 }
 if (addrs.isEmpty()) {
 U.warn(log,"Failed to connect to any address from IP finder (will retry to join topology " + "in 2000ms): " + addrs0);
-if (adapter.joinTimeout > 0 && (U.currentTimeMillis() - startTime) > adapter.joinTimeout) return null;
+if (spi.joinTimeout > 0 && (U.currentTimeMillis() - startTime) > spi.joinTimeout) return null;
 Thread.sleep(2000);
 }
 }
