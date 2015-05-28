@@ -1,0 +1,30 @@
+{
+  if (keyNodes == null) {
+    for (    Ignite ignite : G.allGrids()) {
+      IgniteCache<Integer,Integer> cache=ignite.cache(null);
+      assertNull("Unexpected value for: " + ignite.name(),cache.localPeek(key));
+    }
+    for (    Ignite ignite : G.allGrids()) {
+      IgniteCache<Integer,Integer> cache=ignite.cache(null);
+      assertNull("Unexpected value for: " + ignite.name(),cache.get(key));
+    }
+  }
+ else {
+    boolean found=false;
+    for (    ClusterNode node : keyNodes) {
+      try {
+        Ignite ignite=grid(node);
+        found=true;
+        IgniteCache<Integer,Integer> cache=ignite.cache(null);
+        assertEquals("Unexpected value for: " + ignite.name(),key,key);
+      }
+ catch (      IgniteIllegalStateException ignore) {
+      }
+    }
+    assertTrue("Failed to find key node.",found);
+    for (    Ignite ignite : G.allGrids()) {
+      IgniteCache<Integer,Integer> cache=ignite.cache(null);
+      assertEquals("Unexpected value for: " + ignite.name(),key,cache.get(key));
+    }
+  }
+}

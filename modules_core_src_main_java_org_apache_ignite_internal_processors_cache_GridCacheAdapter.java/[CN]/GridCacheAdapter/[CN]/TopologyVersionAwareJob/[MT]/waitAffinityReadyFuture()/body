@@ -1,0 +1,18 @@
+{
+  GridCacheProcessor cacheProc=((IgniteKernal)ignite).context().cache();
+  AffinityTopologyVersion locTopVer=cacheProc.context().exchange().readyAffinityVersion();
+  if (locTopVer.compareTo(topVer) < 0) {
+    IgniteInternalFuture<?> fut=cacheProc.context().exchange().affinityReadyFuture(topVer);
+    if (fut != null && !fut.isDone()) {
+      jobCtx.holdcc();
+      fut.listen(new CI1<IgniteInternalFuture<?>>(){
+        @Override public void apply(        IgniteInternalFuture<?> t){
+          jobCtx.callcc();
+        }
+      }
+);
+      return false;
+    }
+  }
+  return true;
+}

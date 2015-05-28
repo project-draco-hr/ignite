@@ -2,7 +2,11 @@
   A.notNull(nearCfg,"nearCfg");
   guard();
   try {
-    ctx.cache().dynamicStartCache(null,cacheName,nearCfg,false).get();
+    IgniteInternalCache<Object,Object> internalCache=ctx.cache().cache(cacheName);
+    if (internalCache == null)     ctx.cache().dynamicStartCache(null,cacheName,nearCfg,false).get();
+ else {
+      if (internalCache.configuration().getNearConfiguration() == null)       ctx.cache().dynamicStartCache(null,cacheName,nearCfg,false).get();
+    }
     return ctx.cache().publicJCache(cacheName);
   }
  catch (  IgniteCheckedException e) {
