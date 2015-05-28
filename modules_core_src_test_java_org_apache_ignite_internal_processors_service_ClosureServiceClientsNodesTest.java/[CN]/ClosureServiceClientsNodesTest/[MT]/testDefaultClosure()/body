@@ -1,0 +1,17 @@
+{
+  Set<String> srvNames=new HashSet<>(NODES_CNT - 1);
+  for (int i=1; i < NODES_CNT; ++i)   srvNames.add(getTestGridName(i));
+  for (int i=0; i < NODES_CNT; i++) {
+    Ignite ignite=grid(i);
+    Collection<String> res=ignite.compute().broadcast(new IgniteCallable<String>(){
+      @IgniteInstanceResource Ignite ignite;
+      @Override public String call() throws Exception {
+        assertFalse(ignite.configuration().isClientMode());
+        return ignite.name();
+      }
+    }
+);
+    assertEquals(res.size(),NODES_CNT - 1);
+    for (    String name : res)     assertTrue(srvNames.contains(name));
+  }
+}
