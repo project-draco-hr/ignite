@@ -1,0 +1,50 @@
+{
+  ccfg=new CacheConfiguration();
+  ccfg.setCacheMode(PARTITIONED);
+  ccfg.setBackups(1);
+  ccfg.setAtomicityMode(ATOMIC);
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  ccfg.setAtomicWriteOrderMode(writeOrder);
+  ccfg.setRebalanceMode(SYNC);
+  IgniteEx ignite0=startGrid(0);
+  IgniteEx ignite1=startGrid(1);
+  IgniteEx ignite2=startGrid(2);
+  client=true;
+  Ignite ignite3=startGrid(3);
+  assertTrue(ignite3.configuration().isClientMode());
+  final Map<Integer,Integer> map=new HashMap<>();
+  map.put(primaryKey(ignite0.cache(null)),0);
+  map.put(primaryKey(ignite1.cache(null)),1);
+  map.put(primaryKey(ignite2.cache(null)),2);
+  TestCommunicationSpi spi=(TestCommunicationSpi)ignite3.configuration().getCommunicationSpi();
+  spi.blockMessages(GridNearAtomicUpdateRequest.class,ignite0.localNode().id());
+  spi.blockMessages(GridNearAtomicUpdateRequest.class,ignite1.localNode().id());
+  spi.blockMessages(GridNearAtomicUpdateRequest.class,ignite2.localNode().id());
+  spi.record(GridNearAtomicUpdateRequest.class);
+  final IgniteCache<Integer,Integer> cache=ignite3.cache(null);
+  assertEquals(writeOrder,cache.getConfiguration(CacheConfiguration.class).getAtomicWriteOrderMode());
+  IgniteInternalFuture<?> putFut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      Thread.currentThread().setName("put-thread");
+      cache.putAll(map);
+      return null;
+    }
+  }
+);
+  IgniteEx ignite4=startGrid(4);
+  assertTrue(ignite4.configuration().isClientMode());
+  assertFalse(putFut.isDone());
+  log.info("Stop block.");
+  spi.stopBlock();
+  putFut.get();
+  spi.record(null);
+  checkData(map,null,cache,5);
+  List<Object> msgs=spi.recordedMessages();
+  assertEquals(3,msgs.size());
+  for (  Object msg : msgs)   assertTrue(((GridNearAtomicUpdateRequest)msg).clientRequest());
+  map.put(primaryKey(ignite0.cache(null)),3);
+  map.put(primaryKey(ignite1.cache(null)),4);
+  map.put(primaryKey(ignite2.cache(null)),5);
+  cache.putAll(map);
+  checkData(map,null,cache,5);
+}

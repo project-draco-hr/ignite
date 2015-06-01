@@ -1,0 +1,22 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(ipFinder);
+  CacheConfiguration ccfg1=new CacheConfiguration();
+  ccfg1.setName(CACHE1);
+  ccfg1.setCacheMode(PARTITIONED);
+  ccfg1.setBackups(1);
+  ccfg1.setNodeFilter(new AttributeFilter(CACHE1_ATTR));
+  CacheConfiguration ccfg2=new CacheConfiguration();
+  ccfg2.setName(CACHE2);
+  ccfg2.setCacheMode(PARTITIONED);
+  ccfg2.setNodeFilter(new AttributeFilter(CACHE2_ATTR));
+  List<CacheConfiguration> ccfgs=new ArrayList<>();
+  Map<String,String> attrs=new HashMap<>();
+  if (cache1)   attrs.put(CACHE1_ATTR,"true");
+  if (cache1 || startClientCache)   ccfgs.add(ccfg1);
+  if (cache2)   attrs.put(CACHE2_ATTR,"true");
+  if (cache2 || startClientCache)   ccfgs.add(ccfg2);
+  cfg.setUserAttributes(attrs);
+  cfg.setCacheConfiguration(ccfgs.toArray(new CacheConfiguration[ccfgs.size()]));
+  return cfg;
+}

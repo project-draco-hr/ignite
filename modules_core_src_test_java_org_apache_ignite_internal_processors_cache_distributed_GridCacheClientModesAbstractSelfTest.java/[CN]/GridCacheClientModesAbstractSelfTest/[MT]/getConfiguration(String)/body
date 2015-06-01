@@ -1,8 +1,10 @@
 {
   IgniteConfiguration cfg=super.getConfiguration(gridName);
-  if (gridCnt.getAndIncrement() == 0) {
+  int cnt=gridCnt.incrementAndGet();
+  if ((cnt == gridCount() && isClientStartedLast()) || (cnt == 1 && !isClientStartedLast())) {
     cfg.setClientMode(true);
     nearOnlyGridName=gridName;
   }
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setForceServerMode(true);
   return cfg;
 }
