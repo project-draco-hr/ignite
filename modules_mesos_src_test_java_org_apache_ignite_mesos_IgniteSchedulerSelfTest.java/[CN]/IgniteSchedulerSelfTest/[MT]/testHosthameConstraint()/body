@@ -1,0 +1,14 @@
+{
+  Protos.Offer offer=createOffer("hostname",8,10240);
+  DriverMock mock=new DriverMock();
+  ClusterProperties clustProp=new ClusterProperties();
+  clustProp.hostnameConstraint(Pattern.compile("hostname"));
+  scheduler.setClusterProps(clustProp);
+  scheduler.resourceOffers(mock,Collections.singletonList(offer));
+  assertNotNull(mock.declinedOffer);
+  assertEquals(offer.getId(),mock.declinedOffer);
+  offer=createOffer("hostnameAccept",8,10240);
+  scheduler.resourceOffers(mock,Collections.singletonList(offer));
+  assertNotNull(mock.launchedTask);
+  assertEquals(1,mock.launchedTask.size());
+}

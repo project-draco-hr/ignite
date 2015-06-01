@@ -38,7 +38,8 @@
       if (offheapFlag) {
         KeyCacheObject key=cctx.toCacheKeyObject(cur.getKey());
         int part=cctx.affinity().partition(key);
-        offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+        boolean rmv=offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+        if (rmv && cctx.config().isStatisticsEnabled())         cctx.cache().metrics0().onOffHeapRemove();
       }
  else       it.removeX();
     }

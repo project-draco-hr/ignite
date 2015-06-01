@@ -1,0 +1,21 @@
+{
+  ThreadLocalRandom rnd=ThreadLocalRandom.current();
+  final int NODE_CNT=10;
+  for (int iter=0; iter < 1; iter++) {
+    log.info("Iteration: " + iter);
+    for (int i=0; i < NODE_CNT; i++) {
+      cache1=rnd.nextBoolean();
+      cache2=rnd.nextBoolean();
+      log.info("Start node [idx=" + i + ", cache1="+ cache1+ ", cache2="+ cache2+ ']');
+      startGrid(i);
+      awaitPartitionMapExchange();
+    }
+    LinkedHashSet<Integer> stopSeq=new LinkedHashSet<>();
+    while (stopSeq.size() != NODE_CNT)     stopSeq.add(rnd.nextInt(0,NODE_CNT));
+    for (    Integer idx : stopSeq) {
+      log.info("Stop node: " + idx);
+      stopGrid(idx);
+      awaitPartitionMapExchange();
+    }
+  }
+}
