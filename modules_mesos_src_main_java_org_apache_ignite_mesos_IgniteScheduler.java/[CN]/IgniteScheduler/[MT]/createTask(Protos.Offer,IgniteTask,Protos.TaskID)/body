@@ -1,0 +1,15 @@
+{
+  String cfgUrl=clusterProps.igniteConfigUrl() != null ? clusterProps.igniteConfigUrl() : resourceProvider.igniteConfigUrl();
+  Protos.CommandInfo.Builder builder=Protos.CommandInfo.newBuilder().setEnvironment(Protos.Environment.newBuilder().addVariables(Protos.Environment.Variable.newBuilder().setName("IGNITE_TCP_DISCOVERY_ADDRESSES").setValue(getAddress(offer.getHostname())))).addUris(Protos.CommandInfo.URI.newBuilder().setValue(clusterProps.ignitePackageUrl() != null ? clusterProps.ignitePackageUrl() : resourceProvider.igniteUrl()).setExtract(true)).addUris(Protos.CommandInfo.URI.newBuilder().setValue(cfgUrl));
+  Collection<String> usersLibs=new ArrayList<>();
+  if (clusterProps.usersLibsUrl() != null && !clusterProps.usersLibsUrl().isEmpty())   Collections.addAll(usersLibs,clusterProps.usersLibsUrl().split(DELIM));
+  if (resourceProvider.resourceUrl() != null && !resourceProvider.resourceUrl().isEmpty())   usersLibs.addAll(resourceProvider.resourceUrl());
+  for (  String url : usersLibs)   builder.addUris(Protos.CommandInfo.URI.newBuilder().setValue(url));
+  String cfgName=resourceProvider.configName();
+  if (clusterProps.igniteConfigUrl() != null) {
+    String[] split=clusterProps.igniteConfigUrl().split("/");
+    cfgName=split[split.length - 1];
+  }
+  builder.setValue("find . -maxdepth 1 -name \"*.jar\" -exec cp {} ./gridgain-community-*/libs/ \\; && " + "./gridgain-community-*/bin/ignite.sh " + cfgName + " -J-Xmx"+ String.valueOf((int)igniteTask.mem() + "m")+ " -J-Xms"+ String.valueOf((int)igniteTask.mem())+ "m");
+  return Protos.TaskInfo.newBuilder().setName("Ignite node " + taskId.getValue()).setTaskId(taskId).setSlaveId(offer.getSlaveId()).setCommand(builder).addResources(Protos.Resource.newBuilder().setName(CPU).setType(Protos.Value.Type.SCALAR).setScalar(Protos.Value.Scalar.newBuilder().setValue(igniteTask.cpuCores()))).addResources(Protos.Resource.newBuilder().setName(MEM).setType(Protos.Value.Type.SCALAR).setScalar(Protos.Value.Scalar.newBuilder().setValue(igniteTask.mem()))).addResources(Protos.Resource.newBuilder().setName(DISK).setType(Protos.Value.Type.SCALAR).setScalar(Protos.Value.Scalar.newBuilder().setValue(igniteTask.disk()))).build();
+}
