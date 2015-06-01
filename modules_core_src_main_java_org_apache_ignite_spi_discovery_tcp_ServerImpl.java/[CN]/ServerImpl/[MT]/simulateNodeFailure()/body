@@ -1,0 +1,21 @@
+{
+  U.warn(log,"Simulating node failure: " + getLocalNodeId());
+  U.interrupt(tcpSrvr);
+  U.join(tcpSrvr,log);
+  U.interrupt(hbsSnd);
+  U.join(hbsSnd,log);
+  U.interrupt(chkStatusSnd);
+  U.join(chkStatusSnd,log);
+  U.interrupt(ipFinderCleaner);
+  U.join(ipFinderCleaner,log);
+  Collection<SocketReader> tmp;
+synchronized (mux) {
+    tmp=U.arrayList(readers);
+  }
+  U.interrupt(tmp);
+  U.joinThreads(tmp,log);
+  U.interrupt(msgWorker);
+  U.join(msgWorker,log);
+  U.interrupt(statsPrinter);
+  U.join(statsPrinter,log);
+}

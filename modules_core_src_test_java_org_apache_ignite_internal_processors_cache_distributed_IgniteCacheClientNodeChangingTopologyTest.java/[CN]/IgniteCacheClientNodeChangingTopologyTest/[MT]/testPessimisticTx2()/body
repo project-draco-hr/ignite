@@ -1,0 +1,51 @@
+{
+  ccfg=new CacheConfiguration();
+  ccfg.setCacheMode(PARTITIONED);
+  ccfg.setBackups(1);
+  ccfg.setAtomicityMode(TRANSACTIONAL);
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  ccfg.setRebalanceMode(SYNC);
+  IgniteEx ignite0=startGrid(0);
+  IgniteEx ignite1=startGrid(1);
+  IgniteEx ignite2=startGrid(2);
+  client=true;
+  final Ignite ignite3=startGrid(3);
+  assertTrue(ignite3.configuration().isClientMode());
+  AffinityTopologyVersion topVer1=new AffinityTopologyVersion(4,0);
+  assertEquals(topVer1,ignite0.context().cache().internalCache(null).context().topology().topologyVersion());
+  TestCommunicationSpi spi=(TestCommunicationSpi)ignite3.configuration().getCommunicationSpi();
+  final Integer key1=0;
+  final Integer key2=7;
+  spi.blockMessages(GridNearLockRequest.class,ignite0.localNode().id());
+  spi.blockMessages(GridNearLockRequest.class,ignite1.localNode().id());
+  spi.blockMessages(GridNearLockRequest.class,ignite2.localNode().id());
+  final IgniteCache<Integer,Integer> cache=ignite3.cache(null);
+  IgniteInternalFuture<?> putFut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      Thread.currentThread().setName("put-thread");
+      try (Transaction tx=ignite3.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+        cache.put(key1,1);
+        cache.put(key2,2);
+        tx.commit();
+      }
+       return null;
+    }
+  }
+);
+  client=false;
+  IgniteEx ignite4=startGrid(4);
+  AffinityTopologyVersion topVer2=new AffinityTopologyVersion(5,0);
+  assertEquals(topVer2,ignite0.context().cache().internalCache(null).context().topology().topologyVersion());
+  GridCacheAffinityManager aff=ignite0.context().cache().internalCache(null).context().affinity();
+  List<ClusterNode> nodes1=aff.nodes(key1,topVer1);
+  List<ClusterNode> nodes2=aff.nodes(key1,topVer2);
+  assertEquals(nodes1,nodes2);
+  nodes1=aff.nodes(key2,topVer1);
+  nodes2=aff.nodes(key2,topVer2);
+  assertFalse(nodes1.get(0).equals(nodes2.get(0)));
+  assertFalse(putFut.isDone());
+  log.info("Stop block.");
+  spi.stopBlock();
+  putFut.get();
+  checkData(F.asMap(key1,1,key2,2),null,cache,5);
+}
