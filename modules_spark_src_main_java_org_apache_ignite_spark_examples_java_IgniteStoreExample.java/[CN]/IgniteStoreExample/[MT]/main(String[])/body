@@ -1,0 +1,9 @@
+{
+  SparkConf conf=new SparkConf();
+  conf.setAppName("Ignite processing example");
+  JavaSparkContext sc=new JavaSparkContext(conf);
+  JavaIgniteContext<String,String> ignite=new JavaIgniteContext<>(sc,new ExampleConfiguration());
+  JavaRDD<String> lines=sc.textFile(args[0]).filter(PREDICATE);
+  ignite.fromCache("partitioned").saveValues(lines);
+  ignite.fromCache("partitioned").savePairs(lines.mapToPair(TO_PAIR_F));
+}

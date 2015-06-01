@@ -1,0 +1,12 @@
+{
+  SparkConf conf=new SparkConf();
+  conf.setAppName("Ignite processing example");
+  JavaSparkContext sc=new JavaSparkContext(conf);
+  JavaIgniteContext<Object,String> ignite=new JavaIgniteContext<>(sc,new ExampleConfiguration());
+  JavaIgniteRDD<Object,String> scanRdd=ignite.fromCache("partitioned");
+  JavaRDD<String> processedRdd=scanRdd.filter(FILTER_F).map(TO_VALUE_F);
+  JavaIgniteRDD<Object,String> results=ignite.fromCache("results");
+  results.saveValues(processedRdd);
+  ignite.fromCache("indexed").objectSql("Person","age > ? and organizationId = ?",20,12).collect();
+  DataFrame df=ignite.fromCache("indexed").sql("select name, age from Person where age > ?",20);
+}
