@@ -1,7 +1,12 @@
 {
   try {
-    IgfsInputStreamAdapter stream=igfs.open(path,bufSize);
-    return new HadoopIgfsStreamDelegate(this,stream,stream.fileInfo().length());
+    return IgfsUserContext.doAs(user,new IgniteOutClosure<HadoopIgfsStreamDelegate>(){
+      @Override public HadoopIgfsStreamDelegate apply(){
+        IgfsInputStreamAdapter stream=igfs.open(path,bufSize);
+        return new HadoopIgfsStreamDelegate(HadoopIgfsInProc.this,stream,stream.fileInfo().length());
+      }
+    }
+);
   }
  catch (  IgniteException e) {
     throw new IgniteCheckedException(e);

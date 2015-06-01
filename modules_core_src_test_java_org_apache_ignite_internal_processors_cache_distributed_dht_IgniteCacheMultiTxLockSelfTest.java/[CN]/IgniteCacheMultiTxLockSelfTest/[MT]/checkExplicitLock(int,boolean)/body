@@ -1,0 +1,32 @@
+{
+  Collection<Thread> threads=new ArrayList<>();
+  try {
+    IgniteEx grid1=startGrid(1);
+    assertFalse(grid1.configuration().isClientMode());
+    threads.add(runCacheOperations(grid1.cachex(CACHE_NAME),keys));
+    TimeUnit.SECONDS.sleep(3L);
+    client=testClient;
+    IgniteEx grid2=startGrid(2);
+    assertEquals((Object)testClient,grid2.configuration().isClientMode());
+    client=false;
+    threads.add(runCacheOperations(grid2.cachex(CACHE_NAME),keys));
+    TimeUnit.SECONDS.sleep(3L);
+    IgniteEx grid3=startGrid(3);
+    assertFalse(grid3.configuration().isClientMode());
+    if (testClient)     log.info("Started client node: " + grid3.name());
+    threads.add(runCacheOperations(grid3.cachex(CACHE_NAME),keys));
+    TimeUnit.SECONDS.sleep(3L);
+    IgniteEx grid4=startGrid(4);
+    assertFalse(grid4.configuration().isClientMode());
+    threads.add(runCacheOperations(grid4.cachex(CACHE_NAME),keys));
+    TimeUnit.SECONDS.sleep(3L);
+    stopThreads(threads);
+    for (int i=1; i <= 4; i++) {
+      IgniteTxManager tm=((IgniteKernal)grid(i)).internalCache(CACHE_NAME).context().tm();
+      assertEquals("txMap is not empty:" + i,0,tm.idMapSize());
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}
