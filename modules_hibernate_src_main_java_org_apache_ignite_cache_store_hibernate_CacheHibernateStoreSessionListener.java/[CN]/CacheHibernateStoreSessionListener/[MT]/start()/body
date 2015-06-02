@@ -1,0 +1,21 @@
+{
+  if (sesFactory == null && F.isEmpty(hibernateCfgPath))   throw new IgniteException("Either session factory or Hibernate configuration file is required by " + getClass().getSimpleName() + '.');
+  if (!F.isEmpty(hibernateCfgPath)) {
+    if (sesFactory == null) {
+      try {
+        URL url=new URL(hibernateCfgPath);
+        sesFactory=new Configuration().configure(url).buildSessionFactory();
+      }
+ catch (      MalformedURLException ignored) {
+      }
+      if (sesFactory == null) {
+        File cfgFile=new File(hibernateCfgPath);
+        if (cfgFile.exists())         sesFactory=new Configuration().configure(cfgFile).buildSessionFactory();
+      }
+      if (sesFactory == null)       sesFactory=new Configuration().configure(hibernateCfgPath).buildSessionFactory();
+      if (sesFactory == null)       throw new IgniteException("Failed to resolve Hibernate configuration file: " + hibernateCfgPath);
+      closeSesOnStop=true;
+    }
+ else     U.warn(log,"Hibernate configuration file configured in " + getClass().getSimpleName() + " will be ignored (session factory is already set).");
+  }
+}

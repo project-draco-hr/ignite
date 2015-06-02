@@ -1,17 +1,11 @@
 {
-  System.out.println(">>> Removing key: " + key);
-  Connection conn=null;
-  try {
-    conn=connection();
-    try (PreparedStatement st=conn.prepareStatement("delete from PERSONS where id=?")){
-      st.setLong(1,(Long)key);
-      st.executeUpdate();
-    }
-   }
- catch (  SQLException e) {
-    throw new CacheWriterException("Failed to remove object: " + key,e);
+  System.out.println(">>> Store delete [key=" + key + ']');
+  Connection conn=ses.attachment();
+  try (PreparedStatement st=conn.prepareStatement("delete from PERSONS where id=?")){
+    st.setLong(1,(Long)key);
+    st.executeUpdate();
   }
- finally {
-    end(conn);
+ catch (  SQLException e) {
+    throw new CacheWriterException("Failed to delete object [key=" + key + ']',e);
   }
 }

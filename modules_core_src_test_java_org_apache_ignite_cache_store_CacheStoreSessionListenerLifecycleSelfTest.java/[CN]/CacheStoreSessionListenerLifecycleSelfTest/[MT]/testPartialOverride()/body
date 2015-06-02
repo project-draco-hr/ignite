@@ -1,0 +1,27 @@
+{
+  try {
+    Ignite ignite=startGrid();
+    for (int i=0; i < 2; i++) {
+      String name="cache-" + i;
+      CacheConfiguration cacheCfg=cacheConfiguration(name);
+      cacheCfg.setAtomicityMode(TRANSACTIONAL);
+      if (i == 0) {
+        cacheCfg.setCacheStoreSessionListenerFactories(new SessionListenerFactory(name + " 1"),new SessionListenerFactory(name + " 2"));
+      }
+      ignite.createCache(cacheCfg);
+    }
+    ignite.cache("cache-0").put(1,1);
+    ignite.cache("cache-1").put(1,1);
+    try (Transaction tx=ignite.transactions().txStart()){
+      ignite.cache("cache-0").put(2,2);
+      ignite.cache("cache-0").put(3,3);
+      ignite.cache("cache-1").put(2,2);
+      ignite.cache("cache-1").put(3,3);
+      tx.commit();
+    }
+   }
+  finally {
+    stopGrid();
+  }
+  assertEqualsCollections(Arrays.asList("Shared 1 START","Shared 2 START","cache-0 1 START","cache-0 2 START","cache-0 1 SESSION START cache-0","cache-0 2 SESSION START cache-0","cache-0 1 SESSION END cache-0","cache-0 2 SESSION END cache-0","Shared 1 SESSION START cache-1","Shared 2 SESSION START cache-1","Shared 1 SESSION END cache-1","Shared 2 SESSION END cache-1","cache-0 1 SESSION START cache-0","cache-0 2 SESSION START cache-0","Shared 1 SESSION START cache-1","Shared 2 SESSION START cache-1","cache-0 1 SESSION END cache-0","cache-0 2 SESSION END cache-0","Shared 1 SESSION END cache-1","Shared 2 SESSION END cache-1","cache-0 1 STOP","cache-0 2 STOP","Shared 1 STOP","Shared 2 STOP"),evts);
+}
