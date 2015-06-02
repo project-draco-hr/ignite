@@ -1,12 +1,12 @@
 {
   try (Ignite ignite=Ignition.start("modules/spring/src/test/config/node.xml")){
-    CacheConfiguration<Integer,String> cfg=new CacheConfiguration<>();
-    CacheJdbcBlobStoreFactory<Integer,String> factory=new CacheJdbcBlobStoreFactory();
-    factory.setUser("GridGain");
-    factory.setDataSourceBean("simpleDataSource");
-    cfg.setCacheStoreFactory(factory);
-    try (IgniteCache<Integer,String> cache=ignite.getOrCreateCache(cfg)){
-      checkStore(cache,JdbcDataSource.class);
-    }
+    try (Ignite ignite1=Ignition.start("modules/spring/src/test/config/node1.xml")){
+      try (IgniteCache<Integer,String> cache=ignite.getOrCreateCache(cacheConfiguration())){
+        try (IgniteCache<Integer,String> cache1=ignite1.getOrCreateCache(cacheConfiguration())){
+          checkStore(cache,JdbcDataSource.class);
+          checkStore(cache1,ConnectionPoolDataSource.class);
+        }
+       }
+     }
    }
  }
