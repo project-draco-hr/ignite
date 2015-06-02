@@ -1,3 +1,11 @@
 {
-  return storeEnabled() && store() != null;
+  if (!storeEnabled())   return false;
+  Collection<Integer> cacheIds=activeCacheIds();
+  if (!cacheIds.isEmpty()) {
+    for (    int cacheId : cacheIds) {
+      CacheStoreManager store=cctx.cacheContext(cacheId).store();
+      if (store.configured())       return true;
+    }
+  }
+  return false;
 }
