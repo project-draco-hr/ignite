@@ -1,0 +1,13 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  if (client) {
+    TcpDiscoveryVmIpFinder clientFinder=new TcpDiscoveryVmIpFinder();
+    Collection<String> addrs=new ArrayList<>(ipFinder.getRegisteredAddresses().size());
+    for (    InetSocketAddress sockAddr : ipFinder.getRegisteredAddresses())     addrs.add(sockAddr.getHostString() + ":" + sockAddr.getPort());
+    clientFinder.setAddresses(addrs);
+    cfg.setDiscoverySpi(new TcpDiscoverySpi().setIpFinder(clientFinder));
+    cfg.setClientMode(true);
+  }
+  cfg.setLocalHost("127.0.0.1");
+  return cfg;
+}

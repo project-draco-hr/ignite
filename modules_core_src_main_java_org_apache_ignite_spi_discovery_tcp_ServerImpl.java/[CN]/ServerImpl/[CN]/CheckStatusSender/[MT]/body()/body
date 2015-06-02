@@ -1,0 +1,20 @@
+{
+  if (log.isDebugEnabled())   log.debug("Status check sender has been started.");
+  long checkTimeout=(long)spi.maxMissedHbs * spi.hbFreq + 50;
+  long lastSent=0;
+  while (!isInterrupted()) {
+    if (lastSent < locNode.lastUpdateTime())     lastSent=locNode.lastUpdateTime();
+    long timeout=(lastSent + checkTimeout) - U.currentTimeMillis();
+    if (timeout > 0)     Thread.sleep(timeout);
+    if (spiStateCopy() != CONNECTED) {
+      if (log.isDebugEnabled())       log.debug("Stopping status check sender (SPI is not connected to topology).");
+      return;
+    }
+    if (locNode.lastUpdateTime() > lastSent || !ring.hasRemoteNodes()) {
+      if (log.isDebugEnabled())       log.debug("Skipping status check send " + "[locNodeLastUpdate=" + U.format(locNode.lastUpdateTime()) + ", hasRmts="+ ring.hasRemoteNodes()+ ']');
+      continue;
+    }
+    lastSent=U.currentTimeMillis();
+    msgWorker.addMessage(new TcpDiscoveryStatusCheckMessage(locNode,null));
+  }
+}

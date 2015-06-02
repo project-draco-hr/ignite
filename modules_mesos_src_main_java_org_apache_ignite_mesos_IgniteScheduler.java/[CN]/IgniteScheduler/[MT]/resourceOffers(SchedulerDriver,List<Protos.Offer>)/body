@@ -1,0 +1,21 @@
+{
+  log.log(Level.FINE,"Offers resources: {0}",offers.size());
+  for (  Protos.Offer offer : offers) {
+    IgniteTask igniteTask=checkOffer(offer);
+    if (igniteTask == null) {
+      schedulerDriver.declineOffer(offer.getId());
+      continue;
+    }
+    Protos.TaskID taskId=Protos.TaskID.newBuilder().setValue(Integer.toString(taskIdGenerator.incrementAndGet())).build();
+    log.log(Level.INFO,"Launching task: {0}",igniteTask);
+    Protos.TaskInfo task=createTask(offer,igniteTask,taskId);
+    try {
+      schedulerDriver.launchTasks(Collections.singletonList(offer.getId()),Collections.singletonList(task),Protos.Filters.newBuilder().setRefuseSeconds(1).build());
+    }
+ catch (    RuntimeException e) {
+      log.log(Level.SEVERE,"Failed launch task. Task id: {0}. Task info: {1}",new Object[]{taskId,task,e});
+      throw e;
+    }
+    tasks.put(taskId.getValue(),igniteTask);
+  }
+}

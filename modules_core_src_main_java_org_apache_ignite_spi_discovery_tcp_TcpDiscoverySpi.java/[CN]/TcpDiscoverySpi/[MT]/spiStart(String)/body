@@ -1,3 +1,59 @@
 {
-  spiStart0(false);
+  if (!forceSrvMode && (Boolean.TRUE.equals(ignite.configuration().isClientMode()))) {
+    if (ackTimeout == 0)     ackTimeout=DFLT_ACK_TIMEOUT_CLIENT;
+    if (sockTimeout == 0)     sockTimeout=DFLT_SOCK_TIMEOUT_CLIENT;
+    impl=new ClientImpl(this);
+    ctxInitLatch.countDown();
+  }
+ else {
+    if (ackTimeout == 0)     ackTimeout=DFLT_ACK_TIMEOUT;
+    if (sockTimeout == 0)     sockTimeout=DFLT_SOCK_TIMEOUT;
+    impl=new ServerImpl(this);
+  }
+  assertParameter(ipFinder != null,"ipFinder != null");
+  assertParameter(hbFreq > 0,"heartbeatFreq > 0");
+  assertParameter(netTimeout > 0,"networkTimeout > 0");
+  assertParameter(sockTimeout > 0,"sockTimeout > 0");
+  assertParameter(ackTimeout > 0,"ackTimeout > 0");
+  assertParameter(ipFinderCleanFreq > 0,"ipFinderCleanFreq > 0");
+  assertParameter(locPort > 1023,"localPort > 1023");
+  assertParameter(locPortRange >= 0,"localPortRange >= 0");
+  assertParameter(locPort + locPortRange <= 0xffff,"locPort + locPortRange <= 0xffff");
+  assertParameter(maxAckTimeout > ackTimeout,"maxAckTimeout > ackTimeout");
+  assertParameter(reconCnt > 0,"reconnectCnt > 0");
+  assertParameter(maxMissedHbs > 0,"maxMissedHeartbeats > 0");
+  assertParameter(maxMissedClientHbs > 0,"maxMissedClientHeartbeats > 0");
+  assertParameter(threadPri > 0,"threadPri > 0");
+  assertParameter(statsPrintFreq >= 0,"statsPrintFreq >= 0");
+  try {
+    locHost=U.resolveLocalHost(locAddr);
+  }
+ catch (  IOException e) {
+    throw new IgniteSpiException("Unknown local address: " + locAddr,e);
+  }
+  if (log.isDebugEnabled()) {
+    log.debug(configInfo("localHost",locHost.getHostAddress()));
+    log.debug(configInfo("localPort",locPort));
+    log.debug(configInfo("localPortRange",locPortRange));
+    log.debug(configInfo("threadPri",threadPri));
+    log.debug(configInfo("networkTimeout",netTimeout));
+    log.debug(configInfo("sockTimeout",sockTimeout));
+    log.debug(configInfo("ackTimeout",ackTimeout));
+    log.debug(configInfo("maxAckTimeout",maxAckTimeout));
+    log.debug(configInfo("reconnectCount",reconCnt));
+    log.debug(configInfo("ipFinder",ipFinder));
+    log.debug(configInfo("ipFinderCleanFreq",ipFinderCleanFreq));
+    log.debug(configInfo("heartbeatFreq",hbFreq));
+    log.debug(configInfo("maxMissedHeartbeats",maxMissedHbs));
+    log.debug(configInfo("statsPrintFreq",statsPrintFreq));
+  }
+  if (netTimeout < 3000)   U.warn(log,"Network timeout is too low (at least 3000 ms recommended): " + netTimeout);
+  registerMBean(gridName,this,TcpDiscoverySpiMBean.class);
+  if (ipFinder instanceof TcpDiscoveryMulticastIpFinder) {
+    TcpDiscoveryMulticastIpFinder mcastIpFinder=((TcpDiscoveryMulticastIpFinder)ipFinder);
+    if (mcastIpFinder.getLocalAddress() == null)     mcastIpFinder.setLocalAddress(locAddr);
+  }
+  sockTimeoutWorker=new SocketTimeoutWorker();
+  sockTimeoutWorker.start();
+  impl.spiStart(gridName);
 }

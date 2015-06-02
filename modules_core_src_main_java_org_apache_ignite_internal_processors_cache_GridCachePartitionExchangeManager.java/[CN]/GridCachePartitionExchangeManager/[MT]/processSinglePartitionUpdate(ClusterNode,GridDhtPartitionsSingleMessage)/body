@@ -14,7 +14,18 @@
       }
       if (updated)       scheduleResendPartitions();
     }
- else     exchangeFuture(msg.exchangeId(),null,null).onReceive(node.id(),msg);
+ else {
+      if (msg.client()) {
+        final GridDhtPartitionsExchangeFuture exchFut=exchangeFuture(msg.exchangeId(),null,null);
+        exchFut.listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
+          @Override public void apply(          IgniteInternalFuture<AffinityTopologyVersion> fut){
+            exchFut.onReceive(node.id(),msg);
+          }
+        }
+);
+      }
+ else       exchangeFuture(msg.exchangeId(),null,null).onReceive(node.id(),msg);
+    }
   }
   finally {
     leaveBusy();
