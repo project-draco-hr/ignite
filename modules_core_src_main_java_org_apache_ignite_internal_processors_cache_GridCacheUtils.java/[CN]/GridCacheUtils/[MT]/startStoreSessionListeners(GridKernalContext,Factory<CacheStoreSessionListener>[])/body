@@ -1,0 +1,13 @@
+{
+  if (factories == null)   return null;
+  Collection<CacheStoreSessionListener> lsnrs=new ArrayList<>(factories.length);
+  for (  Factory<CacheStoreSessionListener> factory : factories) {
+    CacheStoreSessionListener lsnr=factory.create();
+    if (lsnr != null) {
+      ctx.resource().injectGeneric(lsnr);
+      if (lsnr instanceof LifecycleAware)       ((LifecycleAware)lsnr).start();
+      lsnrs.add(lsnr);
+    }
+  }
+  return lsnrs;
+}
