@@ -1,8 +1,8 @@
 {
   try (Ignite ignite=Ignition.start("modules/spring/src/test/config/store-cache.xml")){
-    IgniteCache<Integer,String> cache=ignite.cache("test");
-    CacheJdbcBlobStore store=(CacheJdbcBlobStore)cache.getConfiguration(CacheConfiguration.class).getCacheStoreFactory().create();
-    assertEquals("GridGain",GridTestUtils.getFieldValue(store,CacheJdbcBlobStore.class,"user"));
-    assertEquals(JdbcDataSource.class,GridTestUtils.getFieldValue(store,CacheJdbcBlobStore.class,"dataSrc").getClass());
-  }
+    try (Ignite ignite1=Ignition.start("modules/spring/src/test/config/store-cache1.xml")){
+      checkStore(ignite.<Integer,String>cache(CACHE_NAME),JdbcDataSource.class);
+      checkStore(ignite1.<Integer,String>cache(CACHE_NAME),ConnectionPoolDataSource.class);
+    }
+   }
  }
