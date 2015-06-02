@@ -1,8 +1,46 @@
 {
-  ClusterProperties clusterProps=ClusterProperties.from(args.length >= 1 ? args[0] : null);
   YarnConfiguration conf=new YarnConfiguration();
   YarnClient yarnClient=YarnClient.createYarnClient();
   yarnClient.init(conf);
   yarnClient.start();
   YarnClientApplication app=yarnClient.createApplication();
+  ContainerLaunchContext amContainer=Records.newRecord(ContainerLaunchContext.class);
+  amContainer.setCommands(Collections.singletonList(" $JAVA_HOME/bin/java -Xmx256M org.apache.ignite.yarn.ApplicationMaster" + " 1>" + LOG_DIR_EXPANSION_VAR + "/stdout"+ " 2>"+ LOG_DIR_EXPANSION_VAR+ "/stderr"));
+  final LocalResource appMasterJar=Records.newRecord(LocalResource.class);
+  setupAppMasterJar(new Path("/user/ntikhonov/ignite-yarn.jar"),appMasterJar,conf);
+  final LocalResource igniteZip=Records.newRecord(LocalResource.class);
+  setupAppMasterJar(new Path("/user/ntikhonov/gridgain-community-fabric-1.0.6.zip"),igniteZip,conf);
+  FileSystem fileSystem=FileSystem.get(conf);
+  Path path=fileSystem.makeQualified(new Path("/user/ntikhonov/gridgain-community-fabric-1.0.6/bin/ignite.sh"));
+  System.out.println("Path: " + path);
+  System.out.println("Path URI: " + path.toUri().toString());
+  amContainer.setLocalResources(new HashMap<String,LocalResource>(){
+{
+      put("ignite-yarn.jar",appMasterJar);
+      put("ignite",igniteZip);
+    }
+  }
+);
+  Map<String,String> appMasterEnv=new HashMap<String,String>();
+  setupAppMasterEnv(appMasterEnv,conf);
+  amContainer.setEnvironment(appMasterEnv);
+  Resource capability=Records.newRecord(Resource.class);
+  capability.setMemory(256);
+  capability.setVirtualCores(1);
+  ApplicationSubmissionContext appContext=app.getApplicationSubmissionContext();
+  appContext.setApplicationName("simple-yarn-app");
+  appContext.setAMContainerSpec(amContainer);
+  appContext.setResource(capability);
+  appContext.setQueue("default");
+  ApplicationId appId=appContext.getApplicationId();
+  System.out.println("Submitting application " + appId);
+  yarnClient.submitApplication(appContext);
+  ApplicationReport appReport=yarnClient.getApplicationReport(appId);
+  YarnApplicationState appState=appReport.getYarnApplicationState();
+  while (appState != YarnApplicationState.FINISHED && appState != YarnApplicationState.KILLED && appState != YarnApplicationState.FAILED) {
+    Thread.sleep(100);
+    appReport=yarnClient.getApplicationReport(appId);
+    appState=appReport.getYarnApplicationState();
+  }
+  System.out.println("Application " + appId + " finished with"+ " state "+ appState+ " at "+ appReport.getFinishTime());
 }

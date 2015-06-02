@@ -1,37 +1,4 @@
 {
-  final String command=args[0];
-  final int n=Integer.valueOf(args[1]);
-  Configuration conf=new YarnConfiguration();
-  AMRMClient<AMRMClient.ContainerRequest> rmClient=AMRMClient.createAMRMClient();
-  rmClient.init(conf);
-  rmClient.start();
-  NMClient nmClient=NMClient.createNMClient();
-  nmClient.init(conf);
-  nmClient.start();
-  rmClient.registerApplicationMaster("",0,"");
-  Priority priority=Records.newRecord(Priority.class);
-  priority.setPriority(0);
-  Resource capability=Records.newRecord(Resource.class);
-  capability.setMemory(128);
-  capability.setVirtualCores(1);
-  for (int i=0; i < n; ++i) {
-    AMRMClient.ContainerRequest containerAsk=new AMRMClient.ContainerRequest(capability,null,null,priority);
-    rmClient.addContainerRequest(containerAsk);
-  }
-  int responseId=0;
-  int completedContainers=0;
-  while (completedContainers < n) {
-    AllocateResponse response=rmClient.allocate(responseId++);
-    for (    Container container : response.getAllocatedContainers()) {
-      ContainerLaunchContext ctx=Records.newRecord(ContainerLaunchContext.class);
-      ctx.setCommands(Collections.singletonList(command + " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR+ "/stdout"+ " 2>"+ ApplicationConstants.LOG_DIR_EXPANSION_VAR+ "/stderr"));
-      nmClient.startContainer(container,ctx);
-    }
-    for (    ContainerStatus status : response.getCompletedContainersStatuses()) {
-      ++completedContainers;
-      System.out.println("Completed container " + status.getContainerId());
-    }
-    Thread.sleep(100);
-  }
-  rmClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED,"","");
+  ApplicationMaster master=new ApplicationMaster();
+  master.runMainLoop();
 }
