@@ -9,12 +9,11 @@
   if (cfgStore != null) {
     sesHolder0=((Map<CacheStore,ThreadLocal>)sesHolders).get(cfgStore);
     if (sesHolder0 == null) {
-      ThreadLocalSession locSes=new ThreadLocalSession();
-      if (ctx.resource().injectStoreSession(cfgStore,locSes)) {
-        sesHolder0=locSes.sesHolder;
-        sesHolders.put(cfgStore,sesHolder0);
-      }
+      sesHolder0=new ThreadLocal<>();
+      locSes=new ThreadLocalSession(sesHolder0);
+      if (ctx.resource().injectStoreSession(cfgStore,locSes))       sesHolders.put(cfgStore,sesHolder0);
     }
+ else     locSes=new ThreadLocalSession(sesHolder0);
   }
   sesHolder=sesHolder0;
   locStore=U.hasAnnotation(cfgStore,CacheLocalStore.class);
