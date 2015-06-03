@@ -2,7 +2,10 @@
   for (  Container container : containers) {
     try {
       ContainerLaunchContext ctx=Records.newRecord(ContainerLaunchContext.class);
-      ctx.setCommands(Lists.newArrayList("ls " + " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout"+ " 2>"+ ApplicationConstants.LOG_DIR_EXPANSION_VAR+ "/stderr"));
+      final LocalResource igniteZip=Records.newRecord(LocalResource.class);
+      setupAppMasterJar(new Path("/user/ntikhonov/gridgain-community-fabric-1.0.6.zip"),igniteZip,configuration);
+      ctx.setLocalResources(Collections.singletonMap("ignite",igniteZip));
+      ctx.setCommands(Lists.newArrayList("$LOCAL_DIRS/ignite/*/bin/ignite.sh" + " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout"+ " 2>"+ ApplicationConstants.LOG_DIR_EXPANSION_VAR+ "/stderr"));
       System.out.println("[AM] Launching container " + container.getId());
       nmClient.startContainer(container,ctx);
     }
