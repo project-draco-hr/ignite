@@ -14,21 +14,26 @@
   fqry.setArgs(qry.getArgs());
   fqry.setPageSize(qry.getPageSize());
   final QueryCursor<List<?>> res=queryTwoStep(cctx,fqry);
-  final Iterator<List<?>> iter0=res.iterator();
-  Iterator<Cache.Entry<K,V>> iter=new Iterator<Cache.Entry<K,V>>(){
-    @Override public boolean hasNext(){
-      return iter0.hasNext();
-    }
-    @Override public Cache.Entry<K,V> next(){
-      List<?> l=iter0.next();
-      return new CacheEntryImpl<>((K)l.get(0),(V)l.get(1));
-    }
-    @Override public void remove(){
-      throw new UnsupportedOperationException();
+  final Iterable<Cache.Entry<K,V>> converted=new Iterable<Cache.Entry<K,V>>(){
+    @Override public Iterator<Cache.Entry<K,V>> iterator(){
+      final Iterator<List<?>> iter0=res.iterator();
+      return new Iterator<Cache.Entry<K,V>>(){
+        @Override public boolean hasNext(){
+          return iter0.hasNext();
+        }
+        @Override public Cache.Entry<K,V> next(){
+          List<?> l=iter0.next();
+          return new CacheEntryImpl<>((K)l.get(0),(V)l.get(1));
+        }
+        @Override public void remove(){
+          throw new UnsupportedOperationException();
+        }
+      }
+;
     }
   }
 ;
-  return new QueryCursorImpl<Cache.Entry<K,V>>(iter){
+  return new QueryCursorImpl<Cache.Entry<K,V>>(converted){
     @Override public void close(){
       res.close();
     }
