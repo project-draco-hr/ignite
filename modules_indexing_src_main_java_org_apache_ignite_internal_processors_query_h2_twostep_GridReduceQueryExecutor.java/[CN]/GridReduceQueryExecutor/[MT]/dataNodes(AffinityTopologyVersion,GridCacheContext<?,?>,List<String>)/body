@@ -1,0 +1,26 @@
+{
+  String space=cctx.name();
+  Set<ClusterNode> nodes=new HashSet<>(ctx.discovery().cacheAffinityNodes(space,topVer));
+  if (F.isEmpty(nodes))   throw new CacheException("No data nodes found for cache: " + space);
+  if (!F.isEmpty(extraSpaces)) {
+    for (    String extraSpace : extraSpaces) {
+      GridCacheContext<?,?> extraCctx=cacheContext(extraSpace);
+      if (extraCctx.isLocal())       continue;
+      if (cctx.isReplicated() && !extraCctx.isReplicated())       throw new CacheException("Queries running on replicated cache should not contain JOINs " + "with partitioned tables.");
+      Collection<ClusterNode> extraNodes=ctx.discovery().cacheAffinityNodes(extraSpace,topVer);
+      if (F.isEmpty(extraNodes))       throw new CacheException("No data nodes found for cache: " + extraSpace);
+      if (cctx.isReplicated() && extraCctx.isReplicated()) {
+        nodes.retainAll(extraNodes);
+        if (nodes.isEmpty() && !isPreloadingActive(topVer))         throw new CacheException("Caches '" + cctx.name() + "' and '"+ extraSpace+ "' have distinct set of data nodes.");
+      }
+ else       if (!cctx.isReplicated() && extraCctx.isReplicated()) {
+        if (!extraNodes.containsAll(nodes) && !isPreloadingActive(topVer))         throw new CacheException("Caches '" + cctx.name() + "' and '"+ extraSpace+ "' have distinct set of data nodes.");
+      }
+ else       if (!cctx.isReplicated() && !extraCctx.isReplicated()) {
+        if ((extraNodes.size() != nodes.size() || !nodes.containsAll(extraNodes)) && !isPreloadingActive(topVer))         throw new CacheException("Caches '" + cctx.name() + "' and '"+ extraSpace+ "' have distinct set of data nodes.");
+      }
+ else       throw new IllegalStateException();
+    }
+  }
+  return nodes;
+}

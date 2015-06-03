@@ -1,0 +1,21 @@
+{
+  Collection<Integer> partIds=parts == null ? null : wrap(parts);
+  for (  String cacheName : cacheNames) {
+    GridCacheContext<?,?> cctx=cacheContext(cacheName,topVer);
+    int partsCnt=cctx.affinity().partitions();
+    if (parts == null)     partIds=cctx.affinity().primaryPartitions(ctx.localNodeId(),topVer);
+    for (    int partId : partIds) {
+      GridDhtLocalPartition part=cctx.topology().localPartition(partId,topVer,false);
+      if (partId >= partsCnt)       break;
+      if (part != null) {
+        part.owningFuture().get();
+        if (part.reserve()) {
+          reserved.add(part);
+          continue;
+        }
+      }
+      return false;
+    }
+  }
+  return true;
+}
