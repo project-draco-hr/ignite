@@ -1,11 +1,16 @@
 {
-  if (!busyLock.readLock().tryLock())   return;
-  try {
-    if (started.compareAndSet(false,true))     refreshPartitions();
-  }
+  cctx.kernalContext().closure().runLocalSafe(new Runnable(){
+    @Override public void run(){
+      if (!busyLock.readLock().tryLock())       return;
+      try {
+        if (started.compareAndSet(false,true))         refreshPartitions();
+      }
   finally {
-    busyLock.readLock().unlock();
-    cctx.time().removeTimeoutObject(this);
-    pendingResend.compareAndSet(this,null);
+        busyLock.readLock().unlock();
+        cctx.time().removeTimeoutObject(ResendTimeoutObject.this);
+        pendingResend.compareAndSet(ResendTimeoutObject.this,null);
+      }
+    }
   }
+);
 }
