@@ -1,7 +1,7 @@
 {
   if (initGuard.compareAndSet(false,true)) {
-    if (serviceAccountId == null || serviceAccountP12FilePath == null || projectName == null || bucketName == null) {
-      throw new IgniteSpiException("One or more of the required parameters is not set [serviceAccountId=" + serviceAccountId + ", serviceAccountP12FilePath="+ serviceAccountP12FilePath+ ", projectName="+ projectName+ ", bucketName="+ bucketName+ "]");
+    if (srvcAccountId == null || srvcAccountP12FilePath == null || projectName == null || bucketName == null) {
+      throw new IgniteSpiException("One or more of the required parameters is not set [serviceAccountId=" + srvcAccountId + ", serviceAccountP12FilePath="+ srvcAccountP12FilePath+ ", projectName="+ projectName+ ", bucketName="+ bucketName+ "]");
     }
     try {
       NetHttpTransport httpTransport;
@@ -11,15 +11,15 @@
  catch (      GeneralSecurityException|IOException e) {
         throw new IgniteSpiException(e);
       }
-      GoogleCredential credential;
+      GoogleCredential cred;
       try {
-        credential=new GoogleCredential.Builder().setTransport(httpTransport).setJsonFactory(JacksonFactory.getDefaultInstance()).setServiceAccountId(serviceAccountId).setServiceAccountPrivateKeyFromP12File(new File(serviceAccountP12FilePath)).setServiceAccountScopes(Collections.singleton(StorageScopes.DEVSTORAGE_FULL_CONTROL)).build();
+        cred=new GoogleCredential.Builder().setTransport(httpTransport).setJsonFactory(JacksonFactory.getDefaultInstance()).setServiceAccountId(srvcAccountId).setServiceAccountPrivateKeyFromP12File(new File(srvcAccountP12FilePath)).setServiceAccountScopes(Collections.singleton(StorageScopes.DEVSTORAGE_FULL_CONTROL)).build();
       }
  catch (      Exception e) {
         throw new IgniteSpiException("Failed to authenticate on Google Cloud Platform",e);
       }
       try {
-        storage=new Storage.Builder(httpTransport,JacksonFactory.getDefaultInstance(),credential).setApplicationName(projectName).build();
+        storage=new Storage.Builder(httpTransport,JacksonFactory.getDefaultInstance(),cred).setApplicationName(projectName).build();
       }
  catch (      Exception e) {
         throw new IgniteSpiException("Failed to open a storage for given project name: " + projectName,e);
