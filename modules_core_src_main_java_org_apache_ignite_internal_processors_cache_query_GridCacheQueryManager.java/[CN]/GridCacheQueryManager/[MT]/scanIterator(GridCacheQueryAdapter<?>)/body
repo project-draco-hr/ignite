@@ -1,15 +1,16 @@
 {
-  CacheProjection<K,V> prj0=cctx.cache();
+  IgniteInternalCache<K,V> prj0=cctx.cache();
   if (qry.keepPortable())   prj0=prj0.keepPortable();
-  final CacheProjection<K,V> prj=prj0;
+  final IgniteInternalCache<K,V> prj=prj0;
   final IgniteBiPredicate<K,V> keyValFilter=qry.scanFilter();
   injectResources(keyValFilter);
   final GridDhtCacheAdapter dht=cctx.isLocal() ? null : (cctx.isNear() ? cctx.near().dht() : cctx.dht());
   final ExpiryPolicy plc=cctx.expiry();
+  final boolean backups=qry.includeBackups() || cctx.isReplicated();
   final GridCloseableIteratorAdapter<IgniteBiTuple<K,V>> heapIt=new GridCloseableIteratorAdapter<IgniteBiTuple<K,V>>(){
     private IgniteBiTuple<K,V> next;
     private IgniteCacheExpiryPolicy expiryPlc=cctx.cache().expiryPolicy(plc);
-    private Iterator<K> iter=qry.includeBackups() || cctx.isReplicated() ? prj.keySet().iterator() : prj.primaryKeySet().iterator();
+    private Iterator<K> iter=backups ? prj.keySetx().iterator() : prj.primaryKeySet().iterator();
 {
       advance();
     }
@@ -70,8 +71,8 @@
   if (cctx.isSwapOrOffheapEnabled()) {
     List<GridIterator<IgniteBiTuple<K,V>>> iters=new ArrayList<>(3);
     iters.add(heapIt);
-    if (cctx.isOffHeapEnabled())     iters.add(offheapIterator(qry));
-    if (cctx.swap().swapEnabled())     iters.add(swapIterator(qry));
+    if (cctx.isOffHeapEnabled())     iters.add(offheapIterator(qry,backups));
+    if (cctx.swap().swapEnabled())     iters.add(swapIterator(qry,backups));
     it=new CompoundIterator<>(iters);
   }
  else   it=heapIt;

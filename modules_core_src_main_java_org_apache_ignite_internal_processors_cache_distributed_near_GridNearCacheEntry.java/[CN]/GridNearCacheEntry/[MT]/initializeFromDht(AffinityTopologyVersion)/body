@@ -10,14 +10,16 @@ synchronized (this) {
             checkObsolete();
             if (isNew() || !valid(topVer)) {
               update(e.value(),e.expireTime(),e.ttl(),e.isNew() ? ver : e.version());
-              if (cctx.deferredDelete()) {
+              if (cctx.deferredDelete() && !isNew() && !isInternal()) {
                 boolean deleted=val == null;
                 if (deleted != deletedUnlocked()) {
                   deletedUnlocked(deleted);
                   if (deleted)                   enqueueVer=e.version();
                 }
               }
-              recordNodeId(cctx.affinity().primary(key,topVer).id(),topVer);
+              ClusterNode primaryNode=cctx.affinity().primary(key,topVer);
+              if (primaryNode == null)               this.topVer=-1L;
+ else               recordNodeId(primaryNode.id(),topVer);
               dhtVer=e.isNew() || e.isDeleted() ? null : e.version();
               return true;
             }

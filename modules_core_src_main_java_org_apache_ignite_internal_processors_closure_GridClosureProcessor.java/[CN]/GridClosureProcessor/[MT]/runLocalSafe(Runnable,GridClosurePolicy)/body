@@ -3,7 +3,10 @@
     return runLocal(c,plc);
   }
  catch (  Throwable e) {
-    if (e instanceof Error)     U.error(log,"Closure execution failed with error.",e);
+    if (e instanceof Error) {
+      U.error(log,"Closure execution failed with error.",e);
+      throw (Error)e;
+    }
     if (e.getCause() instanceof RejectedExecutionException) {
       U.warn(log,"Closure execution has been rejected (will execute in the same thread) [plc=" + plc + ", closure="+ c+ ']');
       try {
@@ -11,7 +14,10 @@
         return new GridFinishedFuture();
       }
  catch (      Throwable t) {
-        if (t instanceof Error)         U.error(log,"Closure execution failed with error.",t);
+        if (t instanceof Error) {
+          U.error(log,"Closure execution failed with error.",t);
+          throw t;
+        }
         return new GridFinishedFuture(U.cast(t));
       }
     }

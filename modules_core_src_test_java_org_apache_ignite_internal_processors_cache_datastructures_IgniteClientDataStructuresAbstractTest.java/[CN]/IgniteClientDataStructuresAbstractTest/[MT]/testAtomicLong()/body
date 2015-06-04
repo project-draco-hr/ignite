@@ -1,0 +1,18 @@
+{
+  Ignite clientNode=clientIgnite();
+  Ignite srvNode=serverNode();
+  assertNull(clientNode.atomicLong("long1",1L,false));
+  try (IgniteAtomicLong cntr=clientNode.atomicLong("long1",1L,true)){
+    assertNotNull(cntr);
+    assertEquals(1L,cntr.get());
+    assertEquals(1L,cntr.getAndAdd(1));
+    assertEquals(2L,cntr.get());
+    IgniteAtomicLong cntr0=srvNode.atomicLong("long1",1L,false);
+    assertNotNull(cntr0);
+    assertEquals(2L,cntr0.get());
+    assertEquals(3L,cntr0.incrementAndGet());
+    assertEquals(3L,cntr.get());
+  }
+   assertNull(clientNode.atomicLong("long1",1L,false));
+  assertNull(srvNode.atomicLong("long1",1L,false));
+}

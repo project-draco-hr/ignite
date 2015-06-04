@@ -22,6 +22,10 @@
           }
  else {
             primary=cctx.affinity().primary(key,topVer);
+            if (primary == null) {
+              onDone(new ClusterTopologyServerNotFoundException("Failed to map keys for cache " + "(all partition nodes left the grid)."));
+              return savedVers;
+            }
             if (!primary.isLocal() && cctx.cache().configuration().isStatisticsEnabled() && !skipVals)             near.metrics0().onRead(false);
           }
         }
@@ -42,7 +46,13 @@
         add(new GridFinishedFuture<>(Collections.singletonMap(key0,val0)));
       }
  else {
-        if (primary == null)         primary=cctx.affinity().primary(key,topVer);
+        if (primary == null) {
+          primary=cctx.affinity().primary(key,topVer);
+          if (primary == null) {
+            onDone(new ClusterTopologyServerNotFoundException("Failed to map keys for cache " + "(all partition nodes left the grid)."));
+            return savedVers;
+          }
+        }
         GridNearCacheEntry nearEntry=allowLocRead ? near.peekExx(key) : null;
         entry=nearEntry;
         if (savedVers == null)         savedVers=U.newHashMap(3);

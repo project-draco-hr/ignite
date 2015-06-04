@@ -6,9 +6,10 @@
     @Override public void apply(    byte[] rmv){
       if (rmv == null)       return;
       try {
+        if (cctx.config().isStatisticsEnabled())         cctx.cache().metrics0().onSwapRemove();
         GridCacheSwapEntry entry=swapEntry(unmarshalSwapEntry(rmv));
         if (entry == null)         return;
-        qryMgr.onUnswap(key.value(cctx.cacheObjectContext(),false),entry.value().value(cctx.cacheObjectContext(),false),entry.valueBytes());
+        qryMgr.onUnswap(key,entry.value());
       }
  catch (      IgniteCheckedException e) {
         throw new IgniteException(e);
@@ -19,6 +20,7 @@
   int part=cctx.affinity().partition(key);
   if (offheapEnabled) {
     byte[] val=offheap.remove(spaceName,part,key.value(cctx.cacheObjectContext(),false),key.valueBytes(cctx.cacheObjectContext()));
+    if (val != null && cctx.config().isStatisticsEnabled())     cctx.cache().metrics0().onOffHeapRemove();
     if (val != null) {
       if (c != null)       c.apply(val);
       return;

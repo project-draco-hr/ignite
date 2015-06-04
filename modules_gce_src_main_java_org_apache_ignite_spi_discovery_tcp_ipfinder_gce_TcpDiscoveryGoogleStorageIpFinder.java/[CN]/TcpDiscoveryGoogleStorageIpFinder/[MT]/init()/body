@@ -1,0 +1,70 @@
+{
+  if (initGuard.compareAndSet(false,true)) {
+    if (srvcAccountId == null || srvcAccountP12FilePath == null || projectName == null || bucketName == null) {
+      throw new IgniteSpiException("One or more of the required parameters is not set [serviceAccountId=" + srvcAccountId + ", serviceAccountP12FilePath="+ srvcAccountP12FilePath+ ", projectName="+ projectName+ ", bucketName="+ bucketName+ "]");
+    }
+    try {
+      NetHttpTransport httpTransport;
+      try {
+        httpTransport=GoogleNetHttpTransport.newTrustedTransport();
+      }
+ catch (      GeneralSecurityException|IOException e) {
+        throw new IgniteSpiException(e);
+      }
+      GoogleCredential cred;
+      try {
+        cred=new GoogleCredential.Builder().setTransport(httpTransport).setJsonFactory(JacksonFactory.getDefaultInstance()).setServiceAccountId(srvcAccountId).setServiceAccountPrivateKeyFromP12File(new File(srvcAccountP12FilePath)).setServiceAccountScopes(Collections.singleton(StorageScopes.DEVSTORAGE_FULL_CONTROL)).build();
+      }
+ catch (      Exception e) {
+        throw new IgniteSpiException("Failed to authenticate on Google Cloud Platform",e);
+      }
+      try {
+        storage=new Storage.Builder(httpTransport,JacksonFactory.getDefaultInstance(),cred).setApplicationName(projectName).build();
+      }
+ catch (      Exception e) {
+        throw new IgniteSpiException("Failed to open a storage for given project name: " + projectName,e);
+      }
+      boolean createBucket=false;
+      try {
+        Storage.Buckets.Get getBucket=storage.buckets().get(bucketName);
+        getBucket.setProjection("full");
+        getBucket.execute();
+      }
+ catch (      GoogleJsonResponseException e) {
+        if (e.getStatusCode() == 404) {
+          U.warn(log,"Bucket doesn't exist, will create it [bucketName=" + bucketName + "]");
+          createBucket=true;
+        }
+ else         throw new IgniteSpiException("Failed to open the bucket: " + bucketName,e);
+      }
+catch (      Exception e) {
+        throw new IgniteSpiException("Failed to open the bucket: " + bucketName,e);
+      }
+      if (createBucket) {
+        Bucket newBucket=new Bucket();
+        newBucket.setName(bucketName);
+        try {
+          Storage.Buckets.Insert insertBucket=storage.buckets().insert(projectName,newBucket);
+          insertBucket.setProjection("full");
+          insertBucket.setPredefinedDefaultObjectAcl("projectPrivate");
+          insertBucket.execute();
+        }
+ catch (        Exception e) {
+          throw new IgniteSpiException("Failed to create the bucket: " + bucketName,e);
+        }
+      }
+    }
+  finally {
+      initLatch.countDown();
+    }
+  }
+ else {
+    try {
+      U.await(initLatch);
+    }
+ catch (    IgniteInterruptedCheckedException e) {
+      throw new IgniteSpiException("Thread has been interrupted.",e);
+    }
+    if (storage == null)     throw new IgniteSpiException("IpFinder has not been initialized properly");
+  }
+}

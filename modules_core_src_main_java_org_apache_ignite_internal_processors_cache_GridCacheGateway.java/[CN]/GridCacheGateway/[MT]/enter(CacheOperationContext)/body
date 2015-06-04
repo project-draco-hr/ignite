@@ -1,0 +1,24 @@
+{
+  try {
+    GridCacheAdapter<K,V> cache=ctx.cache();
+    GridCachePreloader preldr=cache != null ? cache.preloader() : null;
+    if (preldr == null)     throw new IllegalStateException("Grid is in invalid state to perform this operation. " + "It either not started yet or has already being or have stopped [gridName=" + ctx.gridName() + ']');
+    preldr.startFuture().get();
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException("Failed to wait for cache preloader start [cacheName=" + ctx.name() + "]",e);
+  }
+  onEnter();
+  rwLock.readLock();
+  if (stopped) {
+    rwLock.readUnlock();
+    throw new IllegalStateException("Cache has been stopped: " + ctx.name());
+  }
+  try {
+    return setOperationContextPerCall(opCtx);
+  }
+ catch (  RuntimeException e) {
+    rwLock.readUnlock();
+    throw e;
+  }
+}

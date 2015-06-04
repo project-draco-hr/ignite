@@ -2,25 +2,22 @@
   backups=1;
   try {
     startGrids(GRID_CNT);
-    GridCacheAdapter<String,Integer> cache=((IgniteKernal)grid(0)).internalCache(null);
+    IgniteCache<String,Integer> cache=grid(0).cache(null);
     cache.getAndPut(RMVD_CNTR_KEY,0);
     for (int i=1; i <= GRID_CNT * RETRIES; i++)     cache.getAndPut(String.valueOf(i),i);
     for (int j=0; j < GRID_CNT; j++)     assertEquals(0,grid(j).cache(null).get(RMVD_CNTR_KEY));
     for (int i=1; i <= RETRIES; i++)     for (int j=0; j < GRID_CNT; j++)     assertEquals(i,grid(j).cache(null).get(String.valueOf(i)));
-    CacheQuery<Map.Entry<String,Integer>> qry=cache.queries().createSqlQuery(Integer.class,"_val >= 0");
-    qry.keepAll(true);
-    qry.includeBackups(false);
-    if (cache.configuration().getCacheMode() == REPLICATED)     qry.enableDedup(true);
-    List<Map.Entry<String,Integer>> entries=new ArrayList<>(qry.execute().get());
-    Collections.sort(entries,new Comparator<Map.Entry<String,Integer>>(){
-      @Override public int compare(      Map.Entry<String,Integer> o1,      Map.Entry<String,Integer> o2){
+    SqlQuery<String,Integer> qry=new SqlQuery<>(Integer.class,"_val >= 0");
+    List<Cache.Entry<String,Integer>> entries=new ArrayList<>(cache.query(qry).getAll());
+    Collections.sort(entries,new Comparator<Cache.Entry<String,Integer>>(){
+      @Override public int compare(      Cache.Entry<String,Integer> o1,      Cache.Entry<String,Integer> o2){
         return o1.getValue().compareTo(o2.getValue());
       }
     }
 );
     info("Queried entries: " + entries);
     int val=0;
-    for (    Map.Entry<String,Integer> e : entries) {
+    for (    Cache.Entry<String,Integer> e : entries) {
       assertEquals(val,e.getValue().intValue());
       val++;
     }

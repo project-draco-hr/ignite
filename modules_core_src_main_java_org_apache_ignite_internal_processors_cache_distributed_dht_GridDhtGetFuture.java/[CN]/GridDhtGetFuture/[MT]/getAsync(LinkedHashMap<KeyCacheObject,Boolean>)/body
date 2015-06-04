@@ -11,7 +11,9 @@
       try {
         GridCacheEntryInfo info=e.info();
         if (info == null)         continue;
-        IgniteInternalFuture<Boolean> f=(!e.deleted() && k.getValue() && !skipVals) ? e.addReader(reader,msgId,topVer) : null;
+        boolean addReader=(!e.deleted() && k.getValue() && !skipVals);
+        if (addReader)         e.unswap(false);
+        IgniteInternalFuture<Boolean> f=addReader ? e.addReader(reader,msgId,topVer) : null;
         if (f != null) {
           if (txFut == null)           txFut=new GridCompoundFuture<>(CU.boolReducer());
           txFut.add(f);
@@ -19,7 +21,10 @@
         infos.add(info);
         break;
       }
- catch (      GridCacheEntryRemovedException ignore) {
+ catch (      IgniteCheckedException err) {
+        return new GridFinishedFuture<>(err);
+      }
+catch (      GridCacheEntryRemovedException ignore) {
         if (log.isDebugEnabled())         log.debug("Got removed entry when getting a DHT value: " + e);
       }
  finally {
@@ -38,7 +43,7 @@
         fut=cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,expiryPlc,skipVals);
       }
  else {
-        fut=tx.getAllAsync(cctx,keys.keySet(),null,false,skipVals,true);
+        fut=tx.getAllAsync(cctx,keys.keySet(),null,false,skipVals,true,!readThrough);
       }
     }
   }
@@ -54,7 +59,7 @@
             return cache().getDhtAllAsync(keys.keySet(),readThrough,subjId,taskName,expiryPlc,skipVals);
           }
  else {
-            return tx.getAllAsync(cctx,keys.keySet(),null,false,skipVals,true);
+            return tx.getAllAsync(cctx,keys.keySet(),null,false,skipVals,true,!readThrough);
           }
         }
       }

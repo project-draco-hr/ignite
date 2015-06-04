@@ -1,0 +1,19 @@
+{
+  InetAddress addr=InetAddress.getLocalHost();
+  try (Socket sock=new Socket(addr,PORT);OutputStream oos=new BufferedOutputStream(sock.getOutputStream())){
+    System.out.println("Words streaming started.");
+    while (true) {
+      try (InputStream in=WordsSocketStreamerClient.class.getResourceAsStream("../alice-in-wonderland.txt");LineNumberReader rdr=new LineNumberReader(new InputStreamReader(in))){
+        for (String line=rdr.readLine(); line != null; line=rdr.readLine()) {
+          for (          String word : line.split(" ")) {
+            if (!word.isEmpty()) {
+              byte[] arr=word.getBytes("ASCII");
+              oos.write(arr);
+              oos.write(DELIM);
+            }
+          }
+        }
+      }
+     }
+  }
+ }

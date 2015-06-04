@@ -1,0 +1,39 @@
+{
+  Map<Class<? extends Annotation>,T2<List<GridResourceField>,List<GridResourceMethod>>> annMap=new HashMap<>();
+  List<Field> recursiveFieldsList=new ArrayList<>();
+  boolean allowImplicitInjection=!GridNoImplicitInjection.class.isAssignableFrom(cls);
+  for (Class cls0=cls; !cls0.equals(Object.class); cls0=cls0.getSuperclass()) {
+    for (    Field field : cls0.getDeclaredFields()) {
+      Annotation[] fieldAnns=field.getAnnotations();
+      for (      Annotation ann : fieldAnns) {
+        T2<List<GridResourceField>,List<GridResourceMethod>> t2=annMap.get(ann.annotationType());
+        if (t2 == null) {
+          t2=new T2<List<GridResourceField>,List<GridResourceMethod>>(new ArrayList<GridResourceField>(),new ArrayList<GridResourceMethod>());
+          annMap.put(ann.annotationType(),t2);
+        }
+        t2.get1().add(new GridResourceField(field,ann));
+      }
+      if (allowImplicitInjection && fieldAnns.length == 0 && GridResourceUtils.mayRequireResources(field)) {
+        field.setAccessible(true);
+        recursiveFieldsList.add(field);
+      }
+    }
+    for (    Method mtd : cls0.getDeclaredMethods()) {
+      for (      Annotation ann : mtd.getAnnotations()) {
+        T2<List<GridResourceField>,List<GridResourceMethod>> t2=annMap.get(ann.annotationType());
+        if (t2 == null) {
+          t2=new T2<List<GridResourceField>,List<GridResourceMethod>>(new ArrayList<GridResourceField>(),new ArrayList<GridResourceMethod>());
+          annMap.put(ann.annotationType(),t2);
+        }
+        t2.get2().add(new GridResourceMethod(mtd,ann));
+      }
+    }
+  }
+  recursiveFields=recursiveFieldsList.isEmpty() ? U.EMPTY_FIELDS : recursiveFieldsList.toArray(new Field[recursiveFieldsList.size()]);
+  this.annMap=IgniteUtils.limitedMap(annMap.size());
+  for (  Map.Entry<Class<? extends Annotation>,T2<List<GridResourceField>,List<GridResourceMethod>>> entry : annMap.entrySet()) {
+    GridResourceField[] fields=GridResourceField.toArray(entry.getValue().get1());
+    GridResourceMethod[] mtds=GridResourceMethod.toArray(entry.getValue().get2());
+    this.annMap.put(entry.getKey(),new T2<>(fields,mtds));
+  }
+}

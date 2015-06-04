@@ -1,4 +1,8 @@
 {
   A.notNull(key,"key",val,"val");
-  return (Boolean)updateAllInternal(UPDATE,Collections.singleton(key),Collections.singleton(val),null,expiryPerCall(),false,false,filter,ctx.writeThrough());
+  boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  long start=statsEnabled ? System.nanoTime() : 0L;
+  boolean res=(Boolean)updateAllInternal(UPDATE,Collections.singleton(key),Collections.singleton(val),null,expiryPerCall(),false,false,filter,ctx.writeThrough(),ctx.readThrough());
+  if (statsEnabled)   metrics0().addPutTimeNanos(System.nanoTime() - start);
+  return res;
 }

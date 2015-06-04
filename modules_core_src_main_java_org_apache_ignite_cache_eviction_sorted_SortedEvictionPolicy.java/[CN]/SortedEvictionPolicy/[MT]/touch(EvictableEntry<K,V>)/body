@@ -1,0 +1,27 @@
+{
+  Holder<K,V> holder=entry.meta();
+  if (holder == null) {
+    while (true) {
+      holder=new Holder<>(entry,orderCnt.incrementAndGet());
+      set.add(holder);
+      if (entry.putMetaIfAbsent(holder) != null) {
+        removeHolder(holder);
+        return false;
+      }
+ else       if (holder.order > 0) {
+        if (!entry.isCached()) {
+          removeHolder(holder);
+          return false;
+        }
+        memSize.add(entry.size());
+        return true;
+      }
+ else       if (!entry.removeMeta(holder))       return false;
+ else {
+        memSize.add(-entry.size());
+        return true;
+      }
+    }
+  }
+  return false;
+}

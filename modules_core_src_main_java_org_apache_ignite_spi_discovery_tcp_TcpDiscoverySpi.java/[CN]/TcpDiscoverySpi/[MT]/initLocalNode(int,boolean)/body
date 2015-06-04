@@ -1,0 +1,22 @@
+{
+  IgniteBiTuple<Collection<String>,Collection<String>> addrs;
+  try {
+    addrs=U.resolveLocalAddresses(locHost);
+  }
+ catch (  IOException|IgniteCheckedException e) {
+    throw new IgniteSpiException("Failed to resolve local host to set of external addresses: " + locHost,e);
+  }
+  locNode=new TcpDiscoveryNode(getLocalNodeId(),addrs.get1(),addrs.get2(),srvPort,metricsProvider,locNodeVer);
+  if (addExtAddrAttr) {
+    Collection<InetSocketAddress> extAddrs=addrRslvr == null ? null : U.resolveAddresses(addrRslvr,F.flat(Arrays.asList(addrs.get1(),addrs.get2())),locNode.discoveryPort());
+    locNodeAddrs=new LinkedHashSet<>();
+    locNodeAddrs.addAll(locNode.socketAddresses());
+    if (extAddrs != null) {
+      locNodeAttrs.put(createSpiAttributeName(ATTR_EXT_ADDRS),extAddrs);
+      locNodeAddrs.addAll(extAddrs);
+    }
+  }
+  locNode.setAttributes(locNodeAttrs);
+  locNode.local(true);
+  if (log.isDebugEnabled())   log.debug("Local node initialized: " + locNode);
+}
