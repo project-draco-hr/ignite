@@ -1,14 +1,15 @@
 {
-  Configuration hadoopCfg=new Configuration();
+  Configuration hadoopCfg=HadoopUtils.safeCreateConfiguration();
   for (  Map.Entry<String,String> e : ((HadoopDefaultJobInfo)jobInfo).properties().entrySet())   hadoopCfg.set(e.getKey(),e.getValue());
   String user=jobInfo.user();
-  if (F.isEmpty(user))   user=DEFAULT_USER_NAME;
+  user=IgfsUtils.fixUserName(user);
   String dir=jobInfo.property(COUNTER_WRITER_DIR_PROPERTY);
   if (dir == null)   dir=DEFAULT_COUNTER_WRITER_DIR;
   Path jobStatPath=new Path(new Path(dir.replace(USER_MACRO,user)),jobId.toString());
   HadoopPerformanceCounter perfCntr=HadoopPerformanceCounter.getCounter(cntrs,null);
   try {
-    FileSystem fs=jobStatPath.getFileSystem(hadoopCfg);
+    hadoopCfg.set(MRJobConfig.USER_NAME,user);
+    FileSystem fs=HadoopUtils.fileSystemForMrUser(jobStatPath.toUri(),hadoopCfg,true);
     fs.mkdirs(jobStatPath);
     try (PrintStream out=new PrintStream(fs.create(new Path(jobStatPath,PERFORMANCE_COUNTER_FILE_NAME)))){
       for (      T2<String,Long> evt : perfCntr.evts()) {
