@@ -1,0 +1,31 @@
+{
+  File folder=checkDownloadFolder();
+  if (latestVersion == null) {
+    List<String> localFiles=findIgnites(folder);
+    List<String> hdfsFiles=findIgnites(fs,props.igniteReleasesDir());
+    String localLatestVersion=findLatestVersion(localFiles);
+    String hdfsLatestVersion=findLatestVersion(hdfsFiles);
+    if (localLatestVersion != null && hdfsLatestVersion != null) {
+      if (VersionComparator.INSTANCE.compare(hdfsLatestVersion,localLatestVersion) >= 0) {
+        latestVersion=hdfsLatestVersion;
+        hdfs=true;
+      }
+    }
+ else     if (localLatestVersion != null)     latestVersion=localLatestVersion;
+ else     if (hdfsLatestVersion != null) {
+      latestVersion=hdfsLatestVersion;
+      hdfs=true;
+    }
+  }
+  String newVersion=updateIgnite(latestVersion);
+  if (latestVersion != null && newVersion.equals(latestVersion)) {
+    if (hdfs)     return new Path(formatPath(props.igniteReleasesDir(),latestVersion));
+ else {
+      return IgniteYarnUtils.copyLocalToHdfs(fs,formatPath(props.igniteLocalWorkDir(),latestVersion),formatPath(props.igniteReleasesDir(),latestVersion));
+    }
+  }
+ else {
+    latestVersion=newVersion;
+    return IgniteYarnUtils.copyLocalToHdfs(fs,formatPath(props.igniteLocalWorkDir(),latestVersion),formatPath(props.igniteReleasesDir(),latestVersion));
+  }
+}

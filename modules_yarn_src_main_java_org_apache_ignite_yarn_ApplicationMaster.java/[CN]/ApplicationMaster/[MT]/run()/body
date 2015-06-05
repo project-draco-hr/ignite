@@ -1,0 +1,22 @@
+{
+  AMRMClientAsync<AMRMClient.ContainerRequest> rmClient=AMRMClientAsync.createAMRMClientAsync(300,this);
+  rmClient.init(conf);
+  rmClient.start();
+  rmClient.registerApplicationMaster("",0,"");
+  System.out.println("[AM] registerApplicationMaster 1");
+  Priority priority=Records.newRecord(Priority.class);
+  priority.setPriority(0);
+  Resource capability=Records.newRecord(Resource.class);
+  capability.setMemory(1024);
+  capability.setVirtualCores(2);
+  for (int i=0; i < 1; ++i) {
+    AMRMClient.ContainerRequest containerAsk=new AMRMClient.ContainerRequest(capability,null,null,priority);
+    System.out.println("[AM] Making res-req " + i);
+    rmClient.addContainerRequest(containerAsk);
+  }
+  System.out.println("[AM] waiting for containers to finish");
+  TimeUnit.MINUTES.sleep(10);
+  System.out.println("[AM] unregisterApplicationMaster 0");
+  rmClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED,"","");
+  System.out.println("[AM] unregisterApplicationMaster 1");
+}
