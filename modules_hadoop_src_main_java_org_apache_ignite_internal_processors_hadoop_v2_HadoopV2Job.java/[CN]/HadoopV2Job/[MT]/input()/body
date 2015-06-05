@@ -7,7 +7,8 @@
  else       return HadoopV1Splitter.splitJob(jobConf);
     }
     Path jobDir=new Path(jobDirPath);
-    try (FileSystem fs=FileSystem.get(jobDir.toUri(),jobConf)){
+    try {
+      FileSystem fs=fileSystemForMrUser(jobDir.toUri(),jobConf,true);
       JobSplit.TaskSplitMetaInfo[] metaInfos=SplitMetaInfoReader.readSplitMetaInfo(hadoopJobID,fs,jobConf,jobDir);
       if (F.isEmpty(metaInfos))       throw new IgniteCheckedException("No input splits found.");
       Path splitsFile=JobSubmissionFiles.getJobSplitFile(jobDir);
