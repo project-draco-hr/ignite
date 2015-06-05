@@ -1,10 +1,11 @@
 {
   VisorCacheMetrics cm=new VisorCacheMetrics();
-  CacheMetrics m=c.metrics();
   GridCacheProcessor cacheProcessor=ignite.context().cache();
-  cm.name=c.name();
-  cm.mode=cacheProcessor.cacheMode(c.name());
-  cm.sys=cacheProcessor.systemCache(c.name());
+  IgniteCache<Object,Object> c=cacheProcessor.jcache(cacheName);
+  cm.name=cacheName;
+  cm.mode=cacheProcessor.cacheMode(cacheName);
+  cm.sys=cacheProcessor.systemCache(cacheName);
+  CacheMetrics m=c.metrics();
   cm.size=m.getSize();
   cm.keySize=m.getKeySize();
   cm.reads=m.getCacheGets();
@@ -26,7 +27,7 @@
   cm.removalsPerSec=perSecond(m.getAverageRemoveTime());
   cm.commitsPerSec=perSecond(m.getAverageTxCommitTime());
   cm.rollbacksPerSec=perSecond(m.getAverageTxRollbackTime());
-  cm.qryMetrics=VisorCacheQueryMetrics.from(c.context().queries().metrics());
+  cm.qryMetrics=VisorCacheQueryMetrics.from(c.queryMetrics());
   cm.dhtEvictQueueCurrSize=m.getDhtEvictQueueCurrentSize();
   cm.txThreadMapSize=m.getTxThreadMapSize();
   cm.txXidMapSize=m.getTxXidMapSize();
