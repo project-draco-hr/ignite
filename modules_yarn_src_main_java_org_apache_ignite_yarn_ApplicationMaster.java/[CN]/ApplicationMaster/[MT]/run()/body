@@ -6,17 +6,22 @@
   System.out.println("[AM] registerApplicationMaster 1");
   Priority priority=Records.newRecord(Priority.class);
   priority.setPriority(0);
-  Resource capability=Records.newRecord(Resource.class);
-  capability.setMemory(1024);
-  capability.setVirtualCores(2);
-  for (int i=0; i < 1; ++i) {
-    AMRMClient.ContainerRequest containerAsk=new AMRMClient.ContainerRequest(capability,null,null,priority);
-    System.out.println("[AM] Making res-req " + i);
-    rmClient.addContainerRequest(containerAsk);
+  while (!nmClient.isInState(Service.STATE.STOPPED)) {
+    Resource availableRes=rmClient.getAvailableResources();
+    if (containers.size() < props.instances() || availableRes.getMemory() >= props.cpusPerNode() || availableRes.getVirtualCores() >= props.cpus()) {
+      Resource capability=Records.newRecord(Resource.class);
+      capability.setMemory(1024);
+      capability.setVirtualCores(2);
+      for (int i=0; i < 1; ++i) {
+        AMRMClient.ContainerRequest containerAsk=new AMRMClient.ContainerRequest(capability,null,null,priority);
+        System.out.println("[AM] Making res-req " + i);
+        rmClient.addContainerRequest(containerAsk);
+      }
+    }
+    TimeUnit.SECONDS.sleep(5);
   }
   System.out.println("[AM] waiting for containers to finish");
-  TimeUnit.MINUTES.sleep(10);
   System.out.println("[AM] unregisterApplicationMaster 0");
-  rmClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED,"","");
+  rmClient.unregisterApplicationMaster(FinalApplicationStatus.KILLED,"","");
   System.out.println("[AM] unregisterApplicationMaster 1");
 }
