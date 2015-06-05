@@ -9,6 +9,7 @@
   assertParameter(sockRcvBuf >= 0,"sockRcvBuf >= 0");
   assertParameter(sockSndBuf >= 0,"sockSndBuf >= 0");
   assertParameter(msgQueueLimit >= 0,"msgQueueLimit >= 0");
+  assertParameter(shmemPort > 0 || shmemPort == -1,"shmemPort > 0 || shmemPort == -1");
   assertParameter(reconCnt > 0,"reconnectCnt > 0");
   assertParameter(selectorsCnt > 0,"selectorsCnt > 0");
   assertParameter(minBufferedMsgCnt >= 0,"minBufferedMsgCnt >= 0");
@@ -28,6 +29,12 @@
     throw new IgniteSpiException("Failed to initialize local address: " + locAddr,e);
   }
   try {
+    shmemSrv=resetShmemServer();
+  }
+ catch (  IgniteCheckedException e) {
+    U.warn(log,"Failed to start shared memory communication server.",e);
+  }
+  try {
     nioSrvr=resetNioServer();
   }
  catch (  IgniteCheckedException e) {
@@ -36,7 +43,7 @@
   try {
     IgniteBiTuple<Collection<String>,Collection<String>> addrs=U.resolveLocalAddresses(locHost);
     Collection<InetSocketAddress> extAddrs=addrRslvr == null ? null : U.resolveAddresses(addrRslvr,F.flat(Arrays.asList(addrs.get1(),addrs.get2())),boundTcpPort);
-    return F.asMap(createSpiAttributeName(ATTR_ADDRS),addrs.get1(),createSpiAttributeName(ATTR_HOST_NAMES),addrs.get2(),createSpiAttributeName(ATTR_PORT),boundTcpPort,createSpiAttributeName(ATTR_EXT_ADDRS),extAddrs);
+    return F.asMap(createSpiAttributeName(ATTR_ADDRS),addrs.get1(),createSpiAttributeName(ATTR_HOST_NAMES),addrs.get2(),createSpiAttributeName(ATTR_PORT),boundTcpPort,createSpiAttributeName(ATTR_SHMEM_PORT),boundTcpShmemPort >= 0 ? boundTcpShmemPort : null,createSpiAttributeName(ATTR_EXT_ADDRS),extAddrs);
   }
  catch (  IOException|IgniteCheckedException e) {
     throw new IgniteSpiException("Failed to resolve local host to addresses: " + locHost,e);
