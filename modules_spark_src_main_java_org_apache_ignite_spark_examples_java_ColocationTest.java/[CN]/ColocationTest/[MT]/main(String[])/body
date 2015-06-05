@@ -1,0 +1,13 @@
+{
+  SparkConf conf=new SparkConf();
+  conf.setAppName("Colocation test");
+  JavaSparkContext sc=new JavaSparkContext(conf);
+  JavaIgniteContext<Integer,Integer> ignite=new JavaIgniteContext<>(sc,new ExampleConfiguration());
+  JavaIgniteRDD<Integer,Integer> cache=ignite.fromCache("partitioned");
+  List<Integer> seq=F.range(0,KEYS_CNT + 1);
+  JavaPairRDD<Integer,Integer> rdd=sc.parallelizePairs(F.transformList(seq,TO_PAIR_F),48);
+  cache.savePairs(rdd);
+  int sum=(KEYS_CNT * KEYS_CNT - KEYS_CNT) / 2;
+  System.out.println("Local sum: " + sum);
+  System.out.println("Distributed sum: " + cache.map(TO_VALUE_F).fold(0,SUM_F));
+}
