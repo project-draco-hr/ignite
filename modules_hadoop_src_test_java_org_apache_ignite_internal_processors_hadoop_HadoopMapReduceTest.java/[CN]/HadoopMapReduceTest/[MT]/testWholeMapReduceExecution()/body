@@ -10,7 +10,7 @@
     boolean useNewReducer=(i & 4) == 0;
     JobConf jobConf=new JobConf();
     jobConf.set(JOB_COUNTER_WRITER_PROPERTY,IgniteHadoopFileSystemCounterWriter.class.getName());
-    jobConf.setUser("yyy");
+    jobConf.setUser(USER);
     jobConf.set(IgniteHadoopFileSystemCounterWriter.COUNTER_WRITER_DIR_PROPERTY,"/xxx/${USER}/zzz");
     jobConf.setInt(FileInputFormat.SPLIT_MAXSIZE,65000);
     jobConf.setInt("fs.local.block.size",65000);
@@ -27,6 +27,9 @@
     IgniteInternalFuture<?> fut=grid(0).hadoop().submit(jobId,createJobInfo(job.getConfiguration()));
     fut.get();
     checkJobStatistics(jobId);
-    assertEquals("Use new mapper: " + useNewMapper + ", new combiner: "+ useNewCombiner+ ", new reducer: "+ useNewReducer,"blue\t200000\n" + "green\t150000\n" + "red\t100000\n"+ "yellow\t70000\n",readAndSortFile(PATH_OUTPUT + "/" + (useNewReducer ? "part-r-" : "part-")+ "00000"));
+    final String outFile=PATH_OUTPUT + "/" + (useNewReducer ? "part-r-" : "part-")+ "00000";
+    checkOwner(new IgfsPath(PATH_OUTPUT + "/" + "_SUCCESS"));
+    checkOwner(new IgfsPath(outFile));
+    assertEquals("Use new mapper: " + useNewMapper + ", new combiner: "+ useNewCombiner+ ", new reducer: "+ useNewReducer,"blue\t200000\n" + "green\t150000\n" + "red\t100000\n"+ "yellow\t70000\n",readAndSortFile(outFile));
   }
 }
