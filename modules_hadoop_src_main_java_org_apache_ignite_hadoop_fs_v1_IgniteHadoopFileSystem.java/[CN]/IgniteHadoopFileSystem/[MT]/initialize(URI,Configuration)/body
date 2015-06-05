@@ -6,13 +6,11 @@
     A.notNull(cfg,"cfg");
     super.initialize(name,cfg);
     setConf(cfg);
-    String disableCacheName=String.format("fs.%s.impl.disable.cache",name.getScheme());
-    cacheEnabled=!cfg.getBoolean(disableCacheName,false);
     mgmt=cfg.getBoolean(IGFS_MANAGEMENT,false);
     if (!IGFS_SCHEME.equals(name.getScheme()))     throw new IOException("Illegal file system URI [expected=" + IGFS_SCHEME + "://[name]/[optional_path], actual="+ name+ ']');
     uri=name;
     uriAuthority=uri.getAuthority();
-    user=getFsHadoopUser(cfg);
+    user=getFsHadoopUser();
     seqReadsBeforePrefetch=parameter(cfg,PARAM_IGFS_SEQ_READS_BEFORE_PREFETCH,uriAuthority,0);
     if (seqReadsBeforePrefetch > 0)     seqReadsBeforePrefetchOverride=true;
     dfltReplication=(short)cfg.getInt("dfs.replication",3);
