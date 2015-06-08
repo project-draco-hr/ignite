@@ -2,8 +2,18 @@
   try {
     ClassLoader ldr=U.gridClassLoader();
     Enumeration<URL> urls=ldr.getResources(CLS_NAMES_FILE);
-    while (urls.hasMoreElements())     processResource(urls.nextElement());
-    processResource(ldr.getResource(JDK_CLS_NAMES_FILE));
+    boolean foundClsNames=false;
+    while (urls.hasMoreElements()) {
+      processResource(urls.nextElement());
+      foundClsNames=true;
+    }
+    if (!foundClsNames)     throw new IgniteException("Failed to load class names properties file packaged with ignite binaries " + "[file=" + CLS_NAMES_FILE + ", ldr="+ ldr+ ']');
+    URL jdkClsNames=ldr.getResource(JDK_CLS_NAMES_FILE);
+    if (jdkClsNames == null)     throw new IgniteException("Failed to load class names properties file packaged with ignite binaries " + "[file=" + JDK_CLS_NAMES_FILE + ", ldr="+ ldr+ ']');
+    processResource(jdkClsNames);
+    checkHasClassName(GridDhtPartitionFullMap.class.getName(),ldr,CLS_NAMES_FILE);
+    checkHasClassName(GridDhtPartitionMap.class.getName(),ldr,CLS_NAMES_FILE);
+    checkHasClassName(HashMap.class.getName(),ldr,JDK_CLS_NAMES_FILE);
   }
  catch (  IOException e) {
     throw new IllegalStateException("Failed to initialize marshaller context.",e);
