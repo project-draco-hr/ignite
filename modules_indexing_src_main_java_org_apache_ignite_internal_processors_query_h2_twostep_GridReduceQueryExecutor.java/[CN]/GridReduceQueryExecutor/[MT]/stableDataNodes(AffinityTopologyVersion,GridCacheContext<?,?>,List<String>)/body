@@ -11,13 +11,18 @@
       if (F.isEmpty(extraNodes))       throw new CacheException("No data nodes found for cache: " + extraSpace);
       if (cctx.isReplicated() && extraCctx.isReplicated()) {
         nodes.retainAll(extraNodes);
-        if (nodes.isEmpty() && !isPreloadingActive(topVer))         throw new CacheException("Caches '" + cctx.name() + "' and '"+ extraSpace+ "' have distinct set of data nodes.");
+        if (nodes.isEmpty()) {
+          if (isPreloadingActive(topVer))           return null;
+ else           throw new CacheException("Caches '" + cctx.name() + "' and '"+ extraSpace+ "' have distinct set of data nodes.");
+        }
       }
  else       if (!cctx.isReplicated() && extraCctx.isReplicated()) {
-        if (!extraNodes.containsAll(nodes) && !isPreloadingActive(topVer))         throw new CacheException("Caches '" + cctx.name() + "' and '"+ extraSpace+ "' have distinct set of data nodes.");
+        if (!extraNodes.containsAll(nodes))         if (isPreloadingActive(topVer))         return null;
+ else         throw new CacheException("Caches '" + cctx.name() + "' and '"+ extraSpace+ "' have distinct set of data nodes.");
       }
  else       if (!cctx.isReplicated() && !extraCctx.isReplicated()) {
-        if ((extraNodes.size() != nodes.size() || !nodes.containsAll(extraNodes)) && !isPreloadingActive(topVer))         throw new CacheException("Caches '" + cctx.name() + "' and '"+ extraSpace+ "' have distinct set of data nodes.");
+        if (extraNodes.size() != nodes.size() || !nodes.containsAll(extraNodes))         if (isPreloadingActive(topVer))         return null;
+ else         throw new CacheException("Caches '" + cctx.name() + "' and '"+ extraSpace+ "' have distinct set of data nodes.");
       }
  else       throw new IllegalStateException();
     }
