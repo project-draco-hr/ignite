@@ -1,21 +1,23 @@
 {
-  for (  Container container : conts) {
-    try {
-      ContainerLaunchContext ctx=Records.newRecord(ContainerLaunchContext.class);
-      Map<String,String> env=new HashMap<>(System.getenv());
-      env.put("IGNITE_TCP_DISCOVERY_ADDRESSES",getAddress(container.getNodeId().getHost()));
-      ctx.setEnvironment(env);
-      Map<String,LocalResource> resources=new HashMap<>();
-      resources.put("ignite",IgniteYarnUtils.setupFile(ignitePath,fs,LocalResourceType.ARCHIVE));
-      resources.put("ignite-config.xml",IgniteYarnUtils.setupFile(cfgPath,fs,LocalResourceType.FILE));
-      ctx.setLocalResources(resources);
-      ctx.setCommands(Collections.singletonList("./ignite/*/bin/ignite.sh " + "./ignite-config.xml" + " -J-Xmx" + container.getResource().getMemory() + "m"+ " -J-Xms"+ container.getResource().getMemory()+ "m"+ IgniteYarnUtils.YARN_LOG_OUT));
-      System.out.println("[AM] Launching container " + container.getId());
-      nmClient.startContainer(container,ctx);
-      containers.put(container.getNodeId().getHost(),new IgniteContainer(container.getNodeId().getHost(),container.getResource().getVirtualCores(),container.getResource().getMemory()));
+  for (  Container c : conts) {
+    if (checkContainer(c)) {
+      try {
+        ContainerLaunchContext ctx=Records.newRecord(ContainerLaunchContext.class);
+        Map<String,String> env=new HashMap<>(System.getenv());
+        ctx.setEnvironment(env);
+        Map<String,LocalResource> resources=new HashMap<>();
+        resources.put("ignite",IgniteYarnUtils.setupFile(ignitePath,fs,LocalResourceType.ARCHIVE));
+        resources.put("ignite-config.xml",IgniteYarnUtils.setupFile(cfgPath,fs,LocalResourceType.FILE));
+        ctx.setLocalResources(resources);
+        ctx.setCommands(Collections.singletonList("./ignite/*/bin/ignite.sh " + "./ignite-config.xml" + " -J-Xmx" + c.getResource().getMemory() + "m"+ " -J-Xms"+ c.getResource().getMemory()+ "m"+ IgniteYarnUtils.YARN_LOG_OUT));
+        log.log(Level.INFO,"Launching container: {0}.",c.getId());
+        nmClient.startContainer(c,ctx);
+        containers.put(c.getId(),new IgniteContainer(c.getId(),c.getNodeId(),c.getResource().getVirtualCores(),c.getResource().getMemory()));
+      }
+ catch (      Exception ex) {
+        System.err.println("[AM] Error launching container " + c.getId() + " "+ ex);
+      }
     }
- catch (    Exception ex) {
-      System.err.println("[AM] Error launching container " + container.getId() + " "+ ex);
-    }
+ else     rmClient.releaseAssignedContainer(c.getId());
   }
 }

@@ -11,7 +11,6 @@
   Path ignite=getIgnite(props,fs);
   Path appJar=IgniteYarnUtils.copyLocalToHdfs(fs,pathAppMasterJar,props.igniteWorkDir() + File.separator + IgniteYarnUtils.JAR_NAME);
   ContainerLaunchContext amContainer=Records.newRecord(ContainerLaunchContext.class);
-  System.out.println(Environment.JAVA_HOME.$() + "/bin/java -Xmx512m " + ApplicationMaster.class.getName()+ IgniteYarnUtils.SPACE+ ignite.toUri());
   amContainer.setCommands(Collections.singletonList(Environment.JAVA_HOME.$() + "/bin/java -Xmx512m " + ApplicationMaster.class.getName()+ IgniteYarnUtils.SPACE+ ignite.toUri()+ IgniteYarnUtils.YARN_LOG_OUT));
   LocalResource appMasterJar=IgniteYarnUtils.setupFile(appJar,fs,LocalResourceType.FILE);
   amContainer.setLocalResources(Collections.singletonMap(IgniteYarnUtils.JAR_NAME,appMasterJar));
@@ -27,15 +26,15 @@
   appContext.setResource(capability);
   appContext.setQueue("default");
   ApplicationId appId=appContext.getApplicationId();
-  System.out.println("Submitting application " + appId);
   yarnClient.submitApplication(appContext);
+  log.log(Level.INFO,"Submitted application. Application id: [{0}]",appId);
   ApplicationReport appReport=yarnClient.getApplicationReport(appId);
   YarnApplicationState appState=appReport.getYarnApplicationState();
   while (appState != YarnApplicationState.FINISHED && appState != YarnApplicationState.KILLED && appState != YarnApplicationState.FAILED) {
-    Thread.sleep(100);
+    TimeUnit.SECONDS.sleep(1L);
     appReport=yarnClient.getApplicationReport(appId);
     appState=appReport.getYarnApplicationState();
   }
   yarnClient.killApplication(appId);
-  System.out.println("Application " + appId + " finished with state "+ appState+ " at "+ appReport.getFinishTime());
+  log.log(Level.INFO,"Application [{0}] finished with state [{1}]",new Object[]{appId,appState});
 }
