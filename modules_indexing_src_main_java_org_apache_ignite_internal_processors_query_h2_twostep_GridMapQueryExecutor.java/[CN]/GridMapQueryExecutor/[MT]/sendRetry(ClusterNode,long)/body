@@ -2,5 +2,6 @@
   boolean loc=node.isLocal();
   GridQueryNextPageResponse msg=new GridQueryNextPageResponse(reqId,0,0,0,1,loc ? null : Collections.<Message>emptyList(),loc ? Collections.<Value[]>emptyList() : null);
   msg.retry(h2.readyTopologyVersion());
-  ctx.io().send(node,GridTopic.TOPIC_QUERY,msg,GridIoPolicy.PUBLIC_POOL);
+  if (loc)   h2.reduceQueryExecutor().onMessage(ctx.localNodeId(),msg);
+ else   ctx.io().send(node,GridTopic.TOPIC_QUERY,msg,GridIoPolicy.PUBLIC_POOL);
 }
