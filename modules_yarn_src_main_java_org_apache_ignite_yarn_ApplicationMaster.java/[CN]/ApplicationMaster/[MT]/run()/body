@@ -1,6 +1,4 @@
 {
-  rmClient.init(conf);
-  rmClient.start();
   rmClient.registerApplicationMaster("",0,"");
   log.log(Level.INFO,"Application master registered.");
   Priority priority=Records.newRecord(Priority.class);
@@ -8,7 +6,7 @@
   try {
     while (!nmClient.isInState(Service.STATE.STOPPED)) {
       int runningCnt=containers.size();
-      if (runningCnt < props.instances() && checkAvailableResource(rmClient.getAvailableResources())) {
+      if (runningCnt < props.instances() && checkAvailableResource()) {
         Resource capability=Records.newRecord(Resource.class);
         capability.setMemory((int)props.memoryPerNode());
         capability.setVirtualCores((int)props.cpusPerNode());
@@ -18,7 +16,7 @@
           log.log(Level.INFO,"Making request. Memory: {0}, cpu {1}.",new Object[]{props.memoryPerNode(),props.cpusPerNode()});
         }
       }
-      TimeUnit.SECONDS.sleep(5);
+      TimeUnit.MILLISECONDS.sleep(schedulerTimeout);
     }
   }
  catch (  Exception e) {

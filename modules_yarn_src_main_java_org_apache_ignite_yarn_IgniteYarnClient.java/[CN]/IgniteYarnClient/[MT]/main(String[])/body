@@ -27,14 +27,14 @@
   appContext.setQueue("default");
   ApplicationId appId=appContext.getApplicationId();
   yarnClient.submitApplication(appContext);
-  log.log(Level.INFO,"Submitted application. Application id: [{0}]",appId);
+  log.log(Level.INFO,"Submitted application. Application id: {0}",appId);
   ApplicationReport appReport=yarnClient.getApplicationReport(appId);
   YarnApplicationState appState=appReport.getYarnApplicationState();
-  while (appState != YarnApplicationState.FINISHED && appState != YarnApplicationState.KILLED && appState != YarnApplicationState.FAILED) {
+  while (appState == YarnApplicationState.NEW || appState == YarnApplicationState.NEW_SAVING || appState == YarnApplicationState.SUBMITTED || appState == YarnApplicationState.ACCEPTED) {
     TimeUnit.SECONDS.sleep(1L);
     appReport=yarnClient.getApplicationReport(appId);
+    if (appState != YarnApplicationState.ACCEPTED && appReport.getYarnApplicationState() == YarnApplicationState.ACCEPTED)     log.log(Level.INFO,"Application {0} is ACCEPTED.",appId);
     appState=appReport.getYarnApplicationState();
   }
-  yarnClient.killApplication(appId);
-  log.log(Level.INFO,"Application [{0}] finished with state [{1}]",new Object[]{appId,appState});
+  log.log(Level.INFO,"Application {0} is {1}.",new Object[]{appId,appState});
 }

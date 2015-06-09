@@ -1,6 +1,10 @@
 {
+  fs=FileSystem.get(conf);
+  nmClient=NMClient.createNMClient();
+  nmClient.init(conf);
+  nmClient.start();
   rmClient=AMRMClientAsync.createAMRMClientAsync(300,this);
-  if (props.igniteConfigUrl() == null || props.igniteConfigUrl().isEmpty()) {
+  if (props.igniteCfg() == null || props.igniteCfg().isEmpty()) {
     InputStream input=Thread.currentThread().getContextClassLoader().getResourceAsStream(IgniteYarnUtils.DEFAULT_IGNITE_CONFIG);
     cfgPath=new Path(props.igniteWorkDir() + File.separator + IgniteYarnUtils.DEFAULT_IGNITE_CONFIG);
     FSDataOutputStream outputStream=fs.create(cfgPath,true);
@@ -8,5 +12,5 @@
     IOUtils.closeQuietly(input);
     IOUtils.closeQuietly(outputStream);
   }
- else   cfgPath=new Path(props.igniteConfigUrl());
+ else   cfgPath=new Path(props.igniteCfg());
 }

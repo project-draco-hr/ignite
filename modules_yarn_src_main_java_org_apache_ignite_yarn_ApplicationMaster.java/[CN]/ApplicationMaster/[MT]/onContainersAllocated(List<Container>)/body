@@ -8,8 +8,9 @@
         Map<String,LocalResource> resources=new HashMap<>();
         resources.put("ignite",IgniteYarnUtils.setupFile(ignitePath,fs,LocalResourceType.ARCHIVE));
         resources.put("ignite-config.xml",IgniteYarnUtils.setupFile(cfgPath,fs,LocalResourceType.FILE));
+        if (props.userLibs() != null)         resources.put("libs",IgniteYarnUtils.setupFile(new Path(props.userLibs()),fs,LocalResourceType.FILE));
         ctx.setLocalResources(resources);
-        ctx.setCommands(Collections.singletonList("./ignite/*/bin/ignite.sh " + "./ignite-config.xml" + " -J-Xmx" + c.getResource().getMemory() + "m"+ " -J-Xms"+ c.getResource().getMemory()+ "m"+ IgniteYarnUtils.YARN_LOG_OUT));
+        ctx.setCommands(Collections.singletonList("cp -r ./libs/* ./ignite/*/libs/ || true && " + "./ignite/*/bin/ignite.sh " + "./ignite-config.xml"+ " -J-Xmx" + c.getResource().getMemory() + "m"+ " -J-Xms"+ c.getResource().getMemory()+ "m"+ IgniteYarnUtils.YARN_LOG_OUT));
         log.log(Level.INFO,"Launching container: {0}.",c.getId());
         nmClient.startContainer(c,ctx);
         containers.put(c.getId(),new IgniteContainer(c.getId(),c.getNodeId(),c.getResource().getVirtualCores(),c.getResource().getMemory()));
