@@ -1,0 +1,33 @@
+{
+  Ignite ignite0=startGrid(0);
+  client=true;
+  final Ignite ignite1=startGrid(1);
+  waitForTopologyUpdate(2,2);
+  final Ignite ignite2=startGrid(2);
+  waitForTopologyUpdate(3,3);
+  ignite0.close();
+  waitForTopologyUpdate(2,4);
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      ignite1.cache(null).get(1);
+      return null;
+    }
+  }
+,CacheServerNotFoundException.class,null);
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      ignite2.cache(null).get(1);
+      return null;
+    }
+  }
+,CacheServerNotFoundException.class,null);
+  ignite1.close();
+  waitForTopologyUpdate(1,5);
+  GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      ignite2.cache(null).get(1);
+      return null;
+    }
+  }
+,CacheServerNotFoundException.class,null);
+}

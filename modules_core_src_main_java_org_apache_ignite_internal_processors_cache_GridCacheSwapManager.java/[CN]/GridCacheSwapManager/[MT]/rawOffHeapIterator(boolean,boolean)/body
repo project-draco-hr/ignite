@@ -12,7 +12,8 @@
     @Override protected void onRemove() throws IgniteCheckedException {
       KeyCacheObject key=cctx.toCacheKeyObject(cur.getKey());
       int part=cctx.affinity().partition(key);
-      offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+      boolean rmv=offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+      if (rmv && cctx.config().isStatisticsEnabled())       cctx.cache().metrics0().onOffHeapRemove();
     }
     @Override protected void onClose() throws IgniteCheckedException {
       it.close();
@@ -32,7 +33,8 @@
     @Override protected void onRemove() throws IgniteCheckedException {
       KeyCacheObject key=cctx.toCacheKeyObject(cur.getKey());
       int part=cctx.affinity().partition(key);
-      offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+      boolean rmv=offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+      if (rmv && cctx.config().isStatisticsEnabled())       cctx.cache().metrics0().onOffHeapRemove();
     }
   }
 ;

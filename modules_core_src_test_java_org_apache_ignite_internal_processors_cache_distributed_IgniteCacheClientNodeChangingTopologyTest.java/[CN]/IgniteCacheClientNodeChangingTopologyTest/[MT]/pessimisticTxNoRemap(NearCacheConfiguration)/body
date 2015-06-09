@@ -1,0 +1,50 @@
+{
+  ccfg=new CacheConfiguration();
+  ccfg.setCacheMode(PARTITIONED);
+  ccfg.setBackups(1);
+  ccfg.setAtomicityMode(TRANSACTIONAL);
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  ccfg.setRebalanceMode(SYNC);
+  ccfg.setNearConfiguration(nearCfg);
+  IgniteEx ignite0=startGrid(0);
+  IgniteEx ignite1=startGrid(1);
+  IgniteEx ignite2=startGrid(2);
+  client=true;
+  final Ignite ignite3=startGrid(3);
+  assertTrue(ignite3.configuration().isClientMode());
+  TestCommunicationSpi spi=(TestCommunicationSpi)ignite3.configuration().getCommunicationSpi();
+  final Map<Integer,Integer> map=new HashMap<>();
+  for (int i=0; i < 100; i++)   map.put(i,i);
+  spi.blockMessages(GridNearLockRequest.class,ignite0.localNode().id());
+  spi.blockMessages(GridNearLockRequest.class,ignite1.localNode().id());
+  spi.blockMessages(GridNearLockRequest.class,ignite2.localNode().id());
+  spi.record(GridNearLockRequest.class);
+  final IgniteCache<Integer,Integer> cache=ignite3.cache(null);
+  IgniteInternalFuture<?> putFut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      Thread.currentThread().setName("put-thread");
+      try (Transaction tx=ignite3.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+        for (        Map.Entry<Integer,Integer> e : map.entrySet())         cache.put(e.getKey(),e.getValue());
+        tx.commit();
+      }
+       return null;
+    }
+  }
+);
+  IgniteEx ignite4=startGrid(4);
+  assertTrue(ignite4.configuration().isClientMode());
+  assertFalse(putFut.isDone());
+  log.info("Stop block.");
+  spi.stopBlock();
+  putFut.get();
+  spi.record(null);
+  checkData(map,null,cache,5);
+  List<Object> msgs=spi.recordedMessages();
+  checkClientLockMessages(msgs,map.size());
+  for (int i=0; i < 100; i++)   map.put(i,i + 1);
+  try (Transaction tx=ignite3.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+    cache.putAll(map);
+    tx.commit();
+  }
+   checkData(map,null,cache,5);
+}

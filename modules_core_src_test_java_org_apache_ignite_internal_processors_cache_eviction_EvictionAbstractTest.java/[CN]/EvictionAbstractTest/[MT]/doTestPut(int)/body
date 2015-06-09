@@ -1,0 +1,42 @@
+{
+  mode=LOCAL;
+  syncCommit=true;
+  try {
+    Ignite ignite=startGrid();
+    IgniteCache<Object,Object> cache=ignite.cache(null);
+    int cnt=500;
+    int min=Integer.MAX_VALUE;
+    int minIdx=0;
+    for (int i=0; i < cnt; i++) {
+      cache.put(i,i);
+      int cacheSize=cache.size();
+      if (i > max && cacheSize < min) {
+        min=cacheSize;
+        minIdx=i;
+      }
+    }
+    assertTrue("Min cache size is too small: " + min,min >= max);
+    check(max,PUT_ENTRY_SIZE);
+    info("Min cache size [min=" + min + ", idx="+ minIdx+ ']');
+    info("Current cache size " + cache.size());
+    info("Current cache key size " + cache.size());
+    min=Integer.MAX_VALUE;
+    minIdx=0;
+    for (int i=cnt; --i > cnt - max; ) {
+      cache.get(i);
+      int cacheSize=cache.size();
+      if (cacheSize < min) {
+        min=cacheSize;
+        minIdx=i;
+      }
+    }
+    info("----");
+    info("Min cache size [min=" + min + ", idx="+ minIdx+ ']');
+    info("Current cache size " + cache.size());
+    info("Current cache key size " + cache.size());
+    check(max,PUT_ENTRY_SIZE);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

@@ -27,11 +27,11 @@
     if (igfs != null) {
       HadoopIgfsEx hadoop=null;
       try {
-        hadoop=new HadoopIgfsInProc(igfs,log);
+        hadoop=new HadoopIgfsInProc(igfs,log,userName);
         curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
       }
  catch (      IOException|IgniteCheckedException e) {
-        if (e instanceof HadoopIgfsCommunicationException)         hadoop.close(true);
+        if (e instanceof HadoopIgfsCommunicationException)         if (hadoop != null)         hadoop.close(true);
         if (log.isDebugEnabled())         log.debug("Failed to connect to in-proc IGFS, fallback to IPC mode.",e);
         err=e;
       }
@@ -41,7 +41,7 @@
     if (curDelegate == null && !U.isWindows()) {
       HadoopIgfsEx hadoop=null;
       try {
-        hadoop=new HadoopIgfsOutProc(endpoint.port(),endpoint.grid(),endpoint.igfs(),log);
+        hadoop=new HadoopIgfsOutProc(endpoint.port(),endpoint.grid(),endpoint.igfs(),log,userName);
         curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
       }
  catch (      IOException|IgniteCheckedException e) {
@@ -56,7 +56,7 @@
     if (curDelegate == null) {
       HadoopIgfsEx hadoop=null;
       try {
-        hadoop=new HadoopIgfsOutProc(LOCALHOST,endpoint.port(),endpoint.grid(),endpoint.igfs(),log);
+        hadoop=new HadoopIgfsOutProc(LOCALHOST,endpoint.port(),endpoint.grid(),endpoint.igfs(),log,userName);
         curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
       }
  catch (      IOException|IgniteCheckedException e) {
@@ -69,7 +69,7 @@
   if (curDelegate == null && (skipLocTcp || !F.eq(LOCALHOST,endpoint.host()))) {
     HadoopIgfsEx hadoop=null;
     try {
-      hadoop=new HadoopIgfsOutProc(endpoint.host(),endpoint.port(),endpoint.grid(),endpoint.igfs(),log);
+      hadoop=new HadoopIgfsOutProc(endpoint.host(),endpoint.port(),endpoint.grid(),endpoint.igfs(),log,userName);
       curDelegate=new Delegate(hadoop,hadoop.handshake(logDir));
     }
  catch (    IOException|IgniteCheckedException e) {
