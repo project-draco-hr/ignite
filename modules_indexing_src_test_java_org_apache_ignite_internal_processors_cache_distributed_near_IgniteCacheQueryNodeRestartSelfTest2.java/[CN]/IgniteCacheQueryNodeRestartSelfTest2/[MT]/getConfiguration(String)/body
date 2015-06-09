@@ -1,0 +1,43 @@
+{
+  IgniteConfiguration c=super.getConfiguration(gridName);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  c.setDiscoverySpi(disco);
+  int i=0;
+  CacheConfiguration<?,?>[] ccs=new CacheConfiguration[4];
+  for (  String name : F.asList("pe","pu")) {
+    CacheConfiguration<?,?> cc=defaultCacheConfiguration();
+    cc.setName(name);
+    cc.setCacheMode(PARTITIONED);
+    cc.setBackups(2);
+    cc.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+    cc.setAtomicityMode(TRANSACTIONAL);
+    cc.setRebalanceMode(CacheRebalanceMode.SYNC);
+    cc.setAffinity(new RendezvousAffinityFunction(false,name.equals("pe") ? 50 : 60));
+    if (name.equals("pe")) {
+      cc.setIndexedTypes(Integer.class,Person.class);
+    }
+ else     if (name.equals("pu")) {
+      cc.setIndexedTypes(AffinityKey.class,Purchase.class);
+    }
+    ccs[i++]=cc;
+  }
+  for (  String name : F.asList("co","pr")) {
+    CacheConfiguration<?,?> cc=defaultCacheConfiguration();
+    cc.setName(name);
+    cc.setCacheMode(REPLICATED);
+    cc.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+    cc.setAtomicityMode(TRANSACTIONAL);
+    cc.setRebalanceMode(CacheRebalanceMode.SYNC);
+    cc.setAffinity(new RendezvousAffinityFunction(false,50));
+    if (name.equals("co")) {
+      cc.setIndexedTypes(Integer.class,Company.class);
+    }
+ else     if (name.equals("pr")) {
+      cc.setIndexedTypes(Integer.class,Product.class);
+    }
+    ccs[i++]=cc;
+  }
+  c.setCacheConfiguration(ccs);
+  return c;
+}
