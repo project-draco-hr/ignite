@@ -1,7 +1,7 @@
 {
   int duration=150 * 1000;
   int qryThreadNum=4;
-  int restartThreadsNum=1;
+  int restartThreadsNum=2;
   final int nodeLifeTime=2 * 1000;
   final int logFreq=50;
   startGridsMultiThreaded(GRID_CNT);
@@ -12,18 +12,24 @@
   assertEquals(pRes,grid(0).cache("pu").query(new SqlFieldsQuery(PARTITIONED_QRY)).getAll());
   final List<List<?>> rRes=grid(0).cache("co").query(new SqlFieldsQuery(REPLICATED_QRY)).getAll();
   final AtomicInteger qryCnt=new AtomicInteger();
-  final AtomicBoolean done=new AtomicBoolean();
+  final AtomicBoolean qrysDone=new AtomicBoolean();
   IgniteInternalFuture<?> fut1=multithreadedAsync(new CAX(){
     @Override public void applyx() throws IgniteCheckedException {
       GridRandom rnd=new GridRandom();
-      while (!done.get()) {
+      while (!qrysDone.get()) {
         int g;
         do {
           g=rnd.nextInt(locks.length());
         }
  while (!locks.compareAndSet(g,0,1));
-        IgniteCache<?,?> cache=grid(g).cache("pu");
-        assertEquals(pRes,cache.query(new SqlFieldsQuery(PARTITIONED_QRY)).getAll());
+        if (rnd.nextBoolean()) {
+          IgniteCache<?,?> cache=grid(g).cache("pu");
+          assertEquals(pRes,cache.query(new SqlFieldsQuery(PARTITIONED_QRY)).getAll());
+        }
+ else {
+          IgniteCache<?,?> cache=grid(g).cache("co");
+          assertEquals(rRes,cache.query(new SqlFieldsQuery(REPLICATED_QRY)).getAll());
+        }
         locks.set(g,0);
         int c=qryCnt.incrementAndGet();
         if (c % logFreq == 0)         info("Executed queries: " + c);
@@ -32,10 +38,11 @@
   }
 ,qryThreadNum);
   final AtomicInteger restartCnt=new AtomicInteger();
+  final AtomicBoolean restartsDone=new AtomicBoolean();
   IgniteInternalFuture<?> fut2=multithreadedAsync(new Callable<Object>(){
     @SuppressWarnings({"BusyWait"}) @Override public Object call() throws Exception {
       GridRandom rnd=new GridRandom();
-      while (!done.get()) {
+      while (!restartsDone.get()) {
         int g;
         do {
           g=rnd.nextInt(locks.length());
@@ -55,9 +62,10 @@
 ,restartThreadsNum);
   Thread.sleep(duration);
   info("Stopping..");
-  done.set(true);
+  restartsDone.set(true);
   fut2.get();
   info("Restarts stopped.");
+  qrysDone.set(true);
   fut1.get();
   info("Queries stopped.");
 }
