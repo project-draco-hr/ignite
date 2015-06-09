@@ -11,11 +11,10 @@
     map.put(key,String.valueOf(key));
   }
   Map<Integer,Collection<ClusterNode>> nodeMap=new HashMap<>();
-  GridCacheAdapter<Integer,String> cache=((IgniteKernal)grid(1)).internalCache();
   info("Node being checked: " + grid(1).localNode().id());
   for (  Integer key : keys) {
     Collection<ClusterNode> nodes=new ArrayList<>();
-    nodes.addAll(cache.affinity().mapKeyToPrimaryAndBackups(key));
+    nodes.addAll(grid(1).affinity(null).mapKeyToPrimaryAndBackups(key));
     nodes.remove(txNode);
     nodeMap.put(key,nodes);
   }
@@ -27,6 +26,7 @@
       IgniteCache<Integer,String> cache=originatingNodeGrid.cache(null);
       assertNotNull(cache);
       Transaction tx=originatingNodeGrid.transactions().txStart();
+      assertEquals(PESSIMISTIC,tx.concurrency());
       try {
         cache.putAll(map);
         info("Before commitAsync");

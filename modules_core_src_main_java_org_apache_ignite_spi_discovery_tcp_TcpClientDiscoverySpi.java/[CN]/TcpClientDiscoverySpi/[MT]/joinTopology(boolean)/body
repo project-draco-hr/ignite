@@ -13,6 +13,7 @@
           U.sleep(2000);
         }
       }
+      Collection<InetSocketAddress> addrs0=new ArrayList<>(addrs);
       Iterator<InetSocketAddress> it=addrs.iterator();
       while (it.hasNext() && !Thread.currentThread().isInterrupted()) {
         InetSocketAddress addr=it.next();
@@ -24,7 +25,7 @@
           UUID rmtNodeId=t.get2();
           stats.onClientSocketInitialized(U.currentTimeMillis() - ts);
           locNode.clientRouterNodeId(rmtNodeId);
-          TcpDiscoveryAbstractMessage msg=recon ? new TcpDiscoveryClientReconnectMessage(ignite.configuration().getNodeId(),rmtNodeId,lastMsgId) : new TcpDiscoveryJoinRequestMessage(locNode,null);
+          TcpDiscoveryAbstractMessage msg=recon ? new TcpDiscoveryClientReconnectMessage(getLocalNodeId(),rmtNodeId,lastMsgId) : new TcpDiscoveryJoinRequestMessage(locNode,null);
           msg.client(true);
           writeToSocket(sock,msg);
           int res=readReceipt(sock,ackTimeout);
@@ -78,7 +79,7 @@ it.remove();
 }
 }
 if (addrs.isEmpty()) {
-U.warn(log,"Failed to connect to any address from IP finder (will retry to join topology " + "in 2000ms): " + addrs);
+U.warn(log,"Failed to connect to any address from IP finder (will retry to join topology " + "in 2000ms): " + addrs0);
 U.sleep(2000);
 }
 }

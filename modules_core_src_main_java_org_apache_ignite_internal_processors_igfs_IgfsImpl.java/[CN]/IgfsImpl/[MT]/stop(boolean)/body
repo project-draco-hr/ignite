@@ -1,0 +1,11 @@
+{
+  busyLock.block();
+  boolean interrupted=Thread.interrupted();
+  if (secondaryFs != null) {
+    for (    IgfsFileWorkerBatch batch : workerMap.values())     batch.cancel();
+    if (secondaryFs instanceof AutoCloseable)     U.closeQuiet((AutoCloseable)secondaryFs);
+  }
+  igfsCtx.kernalContext().io().removeMessageListener(topic,delMsgLsnr);
+  igfsCtx.kernalContext().event().removeLocalEventListener(delDiscoLsnr);
+  if (interrupted)   Thread.currentThread().interrupt();
+}

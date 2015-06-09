@@ -2,10 +2,10 @@
   A.notNull(keys,"keys");
   for (  Object key : keys)   A.notNull(key,"key");
   if (!ctx.store().configured())   return new GridFinishedFuture<>();
-  GridCacheProjectionImpl<K,V> prj=ctx.projectionPerCall();
-  ExpiryPolicy plc=prj != null ? prj.expiry() : null;
+  CacheOperationContext opCtx=ctx.operationContextPerCall();
+  ExpiryPolicy plc=opCtx != null ? opCtx.expiry() : null;
   if (replaceExisting) {
-    if (ctx.store().isLocalStore()) {
+    if (ctx.store().isLocal()) {
       Collection<ClusterNode> nodes=ctx.grid().cluster().forDataNodes(name()).nodes();
       if (nodes.isEmpty())       return new GridFinishedFuture<>();
       return ctx.closures().callAsyncNoFailover(BROADCAST,new LoadKeysCallable<>(ctx.name(),keys,true,plc),nodes,true);

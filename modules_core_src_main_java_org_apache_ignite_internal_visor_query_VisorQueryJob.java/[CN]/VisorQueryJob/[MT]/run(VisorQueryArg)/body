@@ -1,0 +1,49 @@
+{
+  try {
+    UUID nid=ignite.localNode().id();
+    boolean scan=arg.queryTxt().toUpperCase().startsWith("SCAN");
+    String qryId=(scan ? SCAN_QRY_NAME : SQL_QRY_NAME) + "-" + UUID.randomUUID();
+    IgniteCache<Object,Object> c=cache(arg.cacheName());
+    if (scan) {
+      ScanQuery<Object,Object> qry=new ScanQuery<>(null);
+      qry.setPageSize(arg.pageSize());
+      qry.setLocal(arg.local());
+      long start=U.currentTimeMillis();
+      VisorQueryCursor<Cache.Entry<Object,Object>> cur=new VisorQueryCursor<>(c.query(qry));
+      List<Object[]> rows=fetchScanQueryRows(cur,arg.pageSize());
+      long duration=U.currentTimeMillis() - start;
+      boolean hasNext=cur.hasNext();
+      if (hasNext) {
+        ignite.cluster().<String,VisorQueryCursor>nodeLocalMap().put(qryId,cur);
+        scheduleResultSetHolderRemoval(qryId);
+      }
+ else       cur.close();
+      return new IgniteBiTuple<>(null,new VisorQueryResultEx(nid,qryId,SCAN_COL_NAMES,rows,hasNext,duration));
+    }
+ else {
+      SqlFieldsQuery qry=new SqlFieldsQuery(arg.queryTxt());
+      qry.setPageSize(arg.pageSize());
+      qry.setLocal(arg.local());
+      long start=U.currentTimeMillis();
+      VisorQueryCursor<List<?>> cur=new VisorQueryCursor<>(c.query(qry));
+      Collection<GridQueryFieldMetadata> meta=cur.fieldsMeta();
+      if (meta == null)       return new IgniteBiTuple<Exception,VisorQueryResultEx>(new SQLException("Fail to execute query. No metadata available."),null);
+ else {
+        List<VisorQueryField> names=new ArrayList<>(meta.size());
+        for (        GridQueryFieldMetadata col : meta)         names.add(new VisorQueryField(col.schemaName(),col.typeName(),col.fieldName(),col.fieldTypeName()));
+        List<Object[]> rows=fetchSqlQueryRows(cur,arg.pageSize());
+        long duration=U.currentTimeMillis() - start;
+        boolean hasNext=cur.hasNext();
+        if (hasNext) {
+          ignite.cluster().<String,VisorQueryCursor<List<?>>>nodeLocalMap().put(qryId,cur);
+          scheduleResultSetHolderRemoval(qryId);
+        }
+ else         cur.close();
+        return new IgniteBiTuple<>(null,new VisorQueryResultEx(nid,qryId,names,rows,hasNext,duration));
+      }
+    }
+  }
+ catch (  Exception e) {
+    return new IgniteBiTuple<>(e,null);
+  }
+}

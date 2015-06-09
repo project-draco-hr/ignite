@@ -1,0 +1,19 @@
+{
+  init();
+  Collection<InetSocketAddress> addrs=new ArrayList<>();
+  try {
+    Storage.Objects.List listObjects=storage.objects().list(bucketName);
+    com.google.api.services.storage.model.Objects objects;
+    do {
+      objects=listObjects.execute();
+      if (objects == null || objects.getItems() == null)       break;
+      for (      StorageObject object : objects.getItems())       addrs.add(addrFromString(object.getName()));
+      listObjects.setPageToken(objects.getNextPageToken());
+    }
+ while (null != objects.getNextPageToken());
+  }
+ catch (  Exception e) {
+    throw new IgniteSpiException("Failed to get content from the bucket: " + bucketName,e);
+  }
+  return addrs;
+}

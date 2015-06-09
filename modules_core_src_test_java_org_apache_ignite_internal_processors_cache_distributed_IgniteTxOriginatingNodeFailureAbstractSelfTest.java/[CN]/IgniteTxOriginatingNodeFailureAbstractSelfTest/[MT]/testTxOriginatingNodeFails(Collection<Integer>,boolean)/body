@@ -10,15 +10,14 @@
     map.put(key,String.valueOf(key));
   }
   Map<Integer,Collection<ClusterNode>> nodeMap=new HashMap<>();
-  GridCacheAdapter<Integer,String> cache=((IgniteKernal)grid(1)).internalCache();
   info("Node being checked: " + grid(1).localNode().id());
   for (  Integer key : keys) {
     Collection<ClusterNode> nodes=new ArrayList<>();
-    nodes.addAll(cache.affinity().mapKeyToPrimaryAndBackups(key));
+    nodes.addAll(grid(1).affinity(null).mapKeyToPrimaryAndBackups(key));
     nodes.remove(txNode);
     nodeMap.put(key,nodes);
   }
-  info("Starting tx [values=" + map + ", topVer="+ ((IgniteKernal)grid(1)).context().discovery().topologyVersion()+ ']');
+  info("Starting optimistic tx " + "[values=" + map + ", topVer="+ (grid(1)).context().discovery().topologyVersion()+ ']');
   if (partial)   ignoreMessages(grid(1).localNode().id(),ignoreMessageClass());
   final Ignite txIgniteNode=G.ignite(txNode.id());
   GridTestUtils.runAsync(new Callable<Object>(){
@@ -26,7 +25,8 @@
       IgniteCache<Integer,String> cache=txIgniteNode.cache(null);
       assertNotNull(cache);
       TransactionProxyImpl tx=(TransactionProxyImpl)txIgniteNode.transactions().txStart();
-      IgniteInternalTx txEx=GridTestUtils.getFieldValue(tx,"tx");
+      IgniteInternalTx txEx=tx.tx();
+      assertTrue(txEx.optimistic());
       cache.putAll(map);
       try {
         txEx.prepareAsync().get(3,TimeUnit.SECONDS);

@@ -65,6 +65,21 @@
       nm.setOutboundMessagesQueueSize(io.getOutboundMessagesQueueSize());
       return nm;
     }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public Map<Integer,CacheMetrics> cacheMetrics(){
+      Collection<GridCacheAdapter<?,?>> caches=ctx.cache().internalCaches();
+      if (F.isEmpty(caches))       return Collections.emptyMap();
+      Map<Integer,CacheMetrics> metrics=null;
+      for (      GridCacheAdapter<?,?> cache : caches) {
+        if (cache.context().started() && cache.configuration().isStatisticsEnabled()) {
+          if (metrics == null)           metrics=U.newHashMap(caches.size());
+          metrics.put(cache.context().cacheId(),cache.metrics());
+        }
+      }
+      return metrics == null ? Collections.<Integer,CacheMetrics>emptyMap() : metrics;
+    }
   }
 ;
 }

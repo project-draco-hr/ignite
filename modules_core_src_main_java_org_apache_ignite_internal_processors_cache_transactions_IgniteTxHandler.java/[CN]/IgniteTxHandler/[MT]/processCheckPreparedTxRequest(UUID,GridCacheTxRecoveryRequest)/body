@@ -1,0 +1,31 @@
+{
+  if (log.isDebugEnabled())   log.debug("Processing check prepared transaction requests [nodeId=" + nodeId + ", req="+ req+ ']');
+  IgniteInternalFuture<Boolean> fut=req.nearTxCheck() ? ctx.tm().txCommitted(req.nearXidVersion()) : ctx.tm().txsPreparedOrCommitted(req.nearXidVersion(),req.transactions());
+  if (fut == null || fut.isDone()) {
+    boolean prepared;
+    try {
+      prepared=fut == null ? true : fut.get();
+    }
+ catch (    IgniteCheckedException e) {
+      U.error(log,"Check prepared transaction future failed [req=" + req + ']',e);
+      prepared=false;
+    }
+    sendCheckPreparedResponse(nodeId,req,prepared);
+  }
+ else {
+    fut.listen(new CI1<IgniteInternalFuture<Boolean>>(){
+      @Override public void apply(      IgniteInternalFuture<Boolean> fut){
+        boolean prepared;
+        try {
+          prepared=fut.get();
+        }
+ catch (        IgniteCheckedException e) {
+          U.error(log,"Check prepared transaction future failed [req=" + req + ']',e);
+          prepared=false;
+        }
+        sendCheckPreparedResponse(nodeId,req,prepared);
+      }
+    }
+);
+  }
+}

@@ -1,8 +1,12 @@
 {
-  GridUpdateNotifier ntf=new GridUpdateNotifier(null,IgniteProperties.get("ignite.version"),TEST_GATEWAY,false);
+  String nodeVer=IgniteProperties.get("ignite.version");
+  GridUpdateNotifier ntf=new GridUpdateNotifier(null,nodeVer,TEST_GATEWAY,Collections.<PluginProvider>emptyList(),false);
   ntf.checkForNewVersion(new SelfExecutor(),log);
   String ver=ntf.latestVersion();
   info("Latest version: " + ver);
   assertNotNull("Ignite latest version has not been detected.",ver);
+  byte nodeMaintenance=IgniteProductVersion.fromString(nodeVer).maintenance();
+  byte lastMaintenance=IgniteProductVersion.fromString(ver).maintenance();
+  assertTrue("Wrong latest version.",(nodeMaintenance == 0 && lastMaintenance == 0) || (nodeMaintenance > 0 && lastMaintenance > 0));
   ntf.reportStatus(log);
 }

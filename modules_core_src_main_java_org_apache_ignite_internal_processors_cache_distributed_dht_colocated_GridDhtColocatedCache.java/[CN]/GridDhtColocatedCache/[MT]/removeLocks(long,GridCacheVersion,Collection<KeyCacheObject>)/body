@@ -14,6 +14,10 @@
           map=U.newHashMap(affNodes.size());
         }
         ClusterNode primary=ctx.affinity().primary(key,topVer);
+        if (primary == null) {
+          if (log.isDebugEnabled())           log.debug("Failed to remove locks (all partition nodes left the grid).");
+          continue;
+        }
         if (!primary.isLocal()) {
           GridNearUnlockRequest req=map.get(primary);
           if (req == null) {
@@ -36,7 +40,15 @@
       GridDistributedUnlockRequest req=mapping.getValue();
       if (!F.isEmpty(req.keys())) {
         req.completedVersions(committed,rolledback);
-        ctx.io().send(n,req,ctx.ioPolicy());
+        try {
+          ctx.io().send(n,req,ctx.ioPolicy());
+        }
+ catch (        ClusterTopologyCheckedException e) {
+          if (log.isDebugEnabled())           log.debug("Failed to send unlock request (node has left the grid) [keys=" + req.keys() + ", n="+ n+ ", e="+ e+ ']');
+        }
+catch (        IgniteCheckedException e) {
+          U.error(log,"Failed to send unlock request [keys=" + req.keys() + ", n="+ n+ ']',e);
+        }
       }
     }
   }

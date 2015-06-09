@@ -1,0 +1,28 @@
+{
+  final AtomicReference<Exception> err=new AtomicReference<>();
+  final AtomicInteger id=new AtomicInteger(1);
+  IgniteInternalFuture<?> fut=GridTestUtils.runMultiThreadedAsync(new CA(){
+    @Override public void apply(){
+      info("Run topology change.");
+      try {
+        for (int i=0; i < 5; i++) {
+          info("Topology change: " + i);
+          startGrid(id.getAndIncrement());
+        }
+      }
+ catch (      Exception e) {
+        err.set(e);
+        log.error("Unexpected exception in topology-change-thread: " + e,e);
+      }
+    }
+  }
+,3,"topology-change-thread");
+  int cntr=0;
+  while (!fut.isDone()) {
+    grid(0).compute().broadcast(new TestJob());
+    cntr++;
+  }
+  log.info("Job execution count: " + cntr);
+  Exception err0=err.get();
+  if (err0 != null)   throw err0;
+}

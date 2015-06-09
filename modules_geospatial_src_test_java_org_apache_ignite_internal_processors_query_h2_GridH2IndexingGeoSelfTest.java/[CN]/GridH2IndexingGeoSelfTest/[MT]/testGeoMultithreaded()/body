@@ -1,14 +1,14 @@
 {
-  final GridCache<Integer,EnemyCamp> cache1=((IgniteKernal)grid(0)).getCache(null);
-  final GridCache<Integer,EnemyCamp> cache2=((IgniteKernal)grid(1)).getCache(null);
-  final GridCache<Integer,EnemyCamp> cache3=((IgniteKernal)grid(2)).getCache(null);
+  final IgniteCache<Integer,EnemyCamp> cache1=grid(0).cache(null);
+  final IgniteCache<Integer,EnemyCamp> cache2=grid(1).cache(null);
+  final IgniteCache<Integer,EnemyCamp> cache3=grid(2).cache(null);
   final String[] points=new String[CNT];
   WKTReader r=new WKTReader();
   ThreadLocalRandom rnd=ThreadLocalRandom.current();
   for (int idx=0; idx < CNT; idx++) {
     int x=rnd.nextInt(1,100);
     int y=rnd.nextInt(1,100);
-    cache1.put(idx,new EnemyCamp(r.read("POINT(" + x + " "+ y+ ")"),Integer.toString(idx)));
+    cache1.getAndPut(idx,new EnemyCamp(r.read("POINT(" + x + " "+ y+ ")"),Integer.toString(idx)));
     points[idx]=Integer.toString(idx);
   }
   Thread.sleep(200);
@@ -20,11 +20,11 @@
       ThreadLocalRandom rnd=ThreadLocalRandom.current();
       while (!stop.get()) {
         int cacheIdx=rnd.nextInt(0,3);
-        GridCache<Integer,EnemyCamp> cache=cacheIdx == 0 ? cache1 : cacheIdx == 1 ? cache2 : cache3;
+        IgniteCache<Integer,EnemyCamp> cache=cacheIdx == 0 ? cache1 : cacheIdx == 1 ? cache2 : cache3;
         int idx=rnd.nextInt(CNT);
         int x=rnd.nextInt(1,100);
         int y=rnd.nextInt(1,100);
-        cache.put(idx,new EnemyCamp(r.read("POINT(" + x + " "+ y+ ")"),Integer.toString(idx)));
+        cache.getAndPut(idx,new EnemyCamp(r.read("POINT(" + x + " "+ y+ ")"),Integer.toString(idx)));
         U.sleep(50);
       }
       return null;
@@ -38,9 +38,9 @@
       while (!stop.get()) {
         try {
           int cacheIdx=rnd.nextInt(0,3);
-          GridCache<Integer,EnemyCamp> cache=cacheIdx == 0 ? cache1 : cacheIdx == 1 ? cache2 : cache3;
-          CacheQuery<Map.Entry<Integer,EnemyCamp>> qry=cache.queries().createSqlQuery(EnemyCamp.class,"coords && ?");
-          Collection<Map.Entry<Integer,EnemyCamp>> res=qry.execute(r.read("POLYGON((0 0, 0 100, 100 100, 100 0, 0 0))")).get();
+          IgniteCache<Integer,EnemyCamp> cache=cacheIdx == 0 ? cache1 : cacheIdx == 1 ? cache2 : cache3;
+          SqlQuery<Integer,EnemyCamp> qry=new SqlQuery<>(EnemyCamp.class,"coords && ?");
+          Collection<Cache.Entry<Integer,EnemyCamp>> res=cache.query(qry.setArgs(r.read("POLYGON((0 0, 0 100, 100 100, 100 0, 0 0))"))).getAll();
           checkPoints(res,points);
           U.sleep(5);
         }

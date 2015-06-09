@@ -1,4 +1,5 @@
 {
+  if (atomicityMode() == ATOMIC)   return;
   final long endTime=System.currentTimeMillis() + duration;
   final AtomicReference<Throwable> err=new AtomicReference<>();
   startGrids();
@@ -32,14 +33,16 @@
                 cache.putAll(batch);
                 tx.commit();
               }
- catch (              ClusterTopologyException ignored) {
+ catch (              ClusterTopologyException|CacheException ignored) {
               }
-              if (c % logFreq == 0)               info(">>> Tx iteration finished [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
+              if (c % logFreq == 0) {
+                info(">>> Tx iteration finished [cnt=" + c + ", keys="+ keys+ ", "+ "locNodeId="+ locNodeId+ ']');
+              }
             }
           }
  catch (          Exception e) {
             err.compareAndSet(null,e);
-            error("Failed to put value in cache.",e);
+            error("Unexpected exception in put-worker.",e);
           }
         }
       }
@@ -64,7 +67,7 @@
           }
  catch (          Exception e) {
             err.compareAndSet(null,e);
-            error("Failed to restart grid node.",e);
+            error("Unexpected exception in restart-worker.",e);
           }
         }
       }
