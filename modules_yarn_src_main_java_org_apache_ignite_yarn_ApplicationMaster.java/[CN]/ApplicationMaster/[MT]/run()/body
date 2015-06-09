@@ -19,9 +19,12 @@
       TimeUnit.MILLISECONDS.sleep(schedulerTimeout);
     }
   }
- catch (  Exception e) {
-    rmClient.unregisterApplicationMaster(FinalApplicationStatus.FAILED,"","");
-    System.exit(1);
+ catch (  InterruptedException e) {
+    rmClient.unregisterApplicationMaster(FinalApplicationStatus.KILLED,"","");
+    log.log(Level.WARNING,"Application master killed.");
   }
-  rmClient.unregisterApplicationMaster(FinalApplicationStatus.KILLED,"","");
+catch (  Exception e) {
+    rmClient.unregisterApplicationMaster(FinalApplicationStatus.FAILED,"","");
+    log.log(Level.SEVERE,"Application master failed.",e);
+  }
 }
