@@ -1,22 +1,29 @@
 {
-  Node<K,V> e;
-  if ((e=next) != null)   e=e.next;
-  for (; ; ) {
-    Node<K,V>[] t;
-    int i, n;
-    if (e != null)     return next=e;
-    if (baseIndex >= baseLimit || (t=tab) == null || (n=t.length) <= (i=index) || i < 0)     return next=null;
-    if ((e=tabAt(t,i)) != null && e.hash < 0) {
-      if (e instanceof ForwardingNode) {
-        tab=((ForwardingNode<K,V>)e).nextTable;
-        e=null;
-        pushState(t,i,n);
-        continue;
+  Node e=next;
+  Object ev=null;
+  outer:   do {
+    if (e != null)     e=e.next;
+    while (e == null) {
+      ConcurrentHashMap8<K,V> m;
+      Node[] t;
+      int b, i, n;
+      Object ek;
+      if ((t=tab) != null)       n=t.length;
+ else       if ((m=map) != null && (t=tab=m.table) != null)       n=baseLimit=baseSize=t.length;
+ else       break outer;
+      if ((b=baseIndex) >= baseLimit || (i=index) < 0 || i >= n)       break outer;
+      if ((e=tabAt(t,i)) != null && e.hash == MOVED) {
+        if ((ek=e.key) instanceof TreeBin)         e=((TreeBin)ek).first;
+ else {
+          tab=(Node[])ek;
+          continue;
+        }
       }
- else       if (e instanceof TreeBin)       e=((TreeBin<K,V>)e).first;
- else       e=null;
+      index=(i+=baseSize) < n ? i : (baseIndex=b + 1);
     }
-    if (stack != null)     recoverState(n);
- else     if ((index=i + baseSize) >= n)     index=++baseIndex;
+    nextKey=e.key;
   }
+ while ((ev=e.val) == null);
+  next=e;
+  return nextVal=ev;
 }
