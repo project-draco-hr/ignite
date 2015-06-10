@@ -1,0 +1,19 @@
+{
+  Session hibSes=ses.attach(null);
+  if (hibSes != null) {
+    try {
+      Transaction tx=hibSes.getTransaction();
+      if (commit) {
+        hibSes.flush();
+        if (tx.isActive())         tx.commit();
+      }
+ else       if (tx.isActive())       tx.rollback();
+    }
+ catch (    HibernateException e) {
+      throw new CacheWriterException("Failed to end store session [tx=" + ses.transaction() + ']',e);
+    }
+ finally {
+      hibSes.close();
+    }
+  }
+}

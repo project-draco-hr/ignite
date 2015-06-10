@@ -2,7 +2,7 @@
   CacheConfiguration ccfg=new CacheConfiguration(cfg);
   IgnitePredicate nodeFilter=ccfg.getNodeFilter();
   ClusterNode locNode=ctx.discovery().localNode();
-  boolean affNodeStart=!clientStartOnly && nodeFilter.apply(locNode);
+  boolean affNodeStart=!clientStartOnly && CU.affinityNode(locNode,nodeFilter);
   boolean clientNodeStart=locNode.id().equals(initiatingNodeId);
   if (sharedCtx.cacheContext(CU.cacheId(cfg.getName())) != null)   return;
   if (affNodeStart || clientNodeStart) {
@@ -10,7 +10,7 @@
       if (nearCfg != null)       ccfg.setNearConfiguration(nearCfg);
     }
     CacheObjectContext cacheObjCtx=ctx.cacheObjects().contextForCache(ccfg);
-    GridCacheContext cacheCtx=createCache(ccfg,null,cacheType,cacheObjCtx);
+    GridCacheContext cacheCtx=createCache(ccfg,null,cacheType,cacheObjCtx,true);
     cacheCtx.startTopologyVersion(topVer);
     cacheCtx.dynamicDeploymentId(deploymentId);
     sharedCtx.addCacheContext(cacheCtx);

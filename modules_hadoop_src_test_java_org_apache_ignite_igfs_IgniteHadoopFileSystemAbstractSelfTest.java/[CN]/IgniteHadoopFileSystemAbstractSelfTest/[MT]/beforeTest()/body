@@ -1,6 +1,14 @@
 {
   primaryFsUri=new URI(PRIMARY_URI);
   primaryFsCfg=configuration(PRIMARY_AUTHORITY,skipEmbed,skipLocShmem);
-  fs=FileSystem.get(primaryFsUri,primaryFsCfg);
+  UserGroupInformation clientUgi=UserGroupInformation.getBestUGI(null,getClientFsUser());
+  assertNotNull(clientUgi);
+  clientUgi.doAs(new PrivilegedExceptionAction<Object>(){
+    @Override public Object run() throws Exception {
+      fs=FileSystem.get(primaryFsUri,primaryFsCfg);
+      return null;
+    }
+  }
+);
   barrier=new CyclicBarrier(THREAD_CNT);
 }
