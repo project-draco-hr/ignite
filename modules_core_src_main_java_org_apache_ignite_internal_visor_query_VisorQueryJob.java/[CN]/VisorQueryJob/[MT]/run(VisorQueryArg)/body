@@ -27,7 +27,7 @@
       long start=U.currentTimeMillis();
       VisorQueryCursor<List<?>> cur=new VisorQueryCursor<>(c.query(qry));
       Collection<GridQueryFieldMetadata> meta=cur.fieldsMeta();
-      if (meta == null)       return new IgniteBiTuple<Exception,VisorQueryResultEx>(new SQLException("Fail to execute query. No metadata available."),null);
+      if (meta == null)       return new IgniteBiTuple<>(new VisorExceptionWrapper(new SQLException("Fail to execute query. No metadata available.")),null);
  else {
         List<VisorQueryField> names=new ArrayList<>(meta.size());
         for (        GridQueryFieldMetadata col : meta)         names.add(new VisorQueryField(col.schemaName(),col.typeName(),col.fieldName(),col.fieldTypeName()));
@@ -44,6 +44,6 @@
     }
   }
  catch (  Exception e) {
-    return new IgniteBiTuple<>(e,null);
+    return new IgniteBiTuple<>(VisorTaskUtils.wrap(e),null);
   }
 }
