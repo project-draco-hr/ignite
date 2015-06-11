@@ -10,7 +10,7 @@
     throw new CacheException("Failed to parse query: " + sqlQry,e);
   }
   GridCacheTwoStepQuery twoStepQry;
-  Collection<GridQueryFieldMetadata> meta;
+  List<GridQueryFieldMetadata> meta;
   try {
     twoStepQry=GridSqlQuerySplitter.split((JdbcPreparedStatement)stmt,qry.getArgs(),qry.isCollocated());
     meta=meta(stmt.getMetaData());
@@ -23,7 +23,7 @@
   }
   if (log.isDebugEnabled())   log.debug("Parsed query: `" + sqlQry + "` into two step query: "+ twoStepQry);
   twoStepQry.pageSize(qry.getPageSize());
-  QueryCursorImpl<List<?>> cursor=(QueryCursorImpl<List<?>>)queryTwoStep(cctx,twoStepQry);
+  QueryCursorImpl<List<?>> cursor=new QueryCursorImpl<>(queryTwoStep(cctx,twoStepQry,cctx.keepPortable()));
   cursor.fieldsMeta(meta);
   return cursor;
 }
