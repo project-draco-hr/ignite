@@ -6,9 +6,14 @@
         String space=cctx.name();
         String sql=qry.getSql();
         Object[] args=qry.getArgs();
-        GridQueryFieldsResult res=idx.queryFields(space,sql,F.asList(args),idx.backupFilter(null,null,null));
+        final GridQueryFieldsResult res=idx.queryFields(space,sql,F.asList(args),idx.backupFilter(null,null,null));
         sendQueryExecutedEvent(sql,args);
-        QueryCursorImpl<List<?>> cursor=new QueryCursorImpl<>(new GridQueryCacheObjectsIterator(res.iterator(),cctx,cctx.keepPortable()));
+        QueryCursorImpl<List<?>> cursor=new QueryCursorImpl<>(new Iterable<List<?>>(){
+          @Override public Iterator<List<?>> iterator(){
+            return new GridQueryCacheObjectsIterator(res.iterator(),cctx,cctx.keepPortable());
+          }
+        }
+);
         cursor.fieldsMeta(res.metaData());
         return cursor;
       }
