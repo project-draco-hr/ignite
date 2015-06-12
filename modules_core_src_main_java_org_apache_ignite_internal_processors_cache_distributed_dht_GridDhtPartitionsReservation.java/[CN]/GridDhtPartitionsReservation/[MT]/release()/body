@@ -3,11 +3,7 @@
     int r=reservations.get();
     if (r <= 0)     throw new IllegalStateException("Method 'reserve' must be called before 'release'.");
     if (reservations.compareAndSet(r,r - 1)) {
-      if (r == 1 && !topVer.equals(cctx.topology().topologyVersion())) {
-        for (        GridDhtLocalPartition part : parts) {
-          if (part.state() == RENTING)           part.tryEvictAsync(true);
-        }
-      }
+      if (r == 1 && !topVer.equals(cctx.topology().topologyVersion()))       tryEvict(parts.get());
       return;
     }
   }
