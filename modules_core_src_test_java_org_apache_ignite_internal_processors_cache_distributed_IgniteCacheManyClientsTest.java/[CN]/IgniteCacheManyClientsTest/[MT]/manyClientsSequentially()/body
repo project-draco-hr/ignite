@@ -1,0 +1,26 @@
+{
+  client=true;
+  List<Ignite> clients=new ArrayList<>();
+  final int CLIENTS=50;
+  int idx=SRVS;
+  ThreadLocalRandom rnd=ThreadLocalRandom.current();
+  for (int i=0; i < CLIENTS; i++) {
+    Ignite ignite=startGrid(idx++);
+    log.info("Started node: " + ignite.name());
+    assertTrue(ignite.configuration().isClientMode());
+    clients.add(ignite);
+    IgniteCache<Object,Object> cache=ignite.cache(null);
+    Integer key=rnd.nextInt(0,1000);
+    cache.put(key,i);
+    assertNotNull(cache.get(key));
+  }
+  log.info("All clients started.");
+  assertEquals(SRVS + CLIENTS,G.allGrids().size());
+  long topVer=-1L;
+  for (  Ignite ignite : G.allGrids()) {
+    assertEquals(SRVS + CLIENTS,ignite.cluster().nodes().size());
+    if (topVer == -1L)     topVer=ignite.cluster().topologyVersion();
+ else     assertEquals(topVer,ignite.cluster().topologyVersion());
+  }
+  for (  Ignite client : clients)   client.close();
+}
