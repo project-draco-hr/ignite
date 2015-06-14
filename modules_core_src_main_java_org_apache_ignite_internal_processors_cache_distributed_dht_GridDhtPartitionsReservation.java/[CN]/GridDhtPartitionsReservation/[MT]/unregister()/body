@@ -1,11 +1,12 @@
 {
   GridDhtLocalPartition[] arr=parts.get();
-  if (!F.isEmpty(arr) && unpublish != null && parts.compareAndSet(arr,EMPTY)) {
+  if (!F.isEmpty(arr) && parts.compareAndSet(arr,EMPTY)) {
     for (int i=arr.length - 1; i >= 0; i--) {
       GridDhtLocalPartition part=arr[i];
       part.removeReservation(this);
       tryEvict(part);
     }
-    unpublish.apply(this);
   }
+  CI1<GridDhtPartitionsReservation> u=unpublish.get();
+  if (u != null && unpublish.compareAndSet(u,null))   u.apply(this);
 }
