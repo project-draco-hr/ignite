@@ -1,7 +1,19 @@
 {
   CacheHibernateBlobStore<K,V> store=new CacheHibernateBlobStore<>();
-  store.setSessionFactory(sesFactory);
   store.setHibernateConfigurationPath(hibernateCfgPath);
   store.setHibernateProperties(hibernateProps);
+  if (sesFactory != null)   store.setSessionFactory(sesFactory);
+ else   if (sesFactoryBean != null) {
+    if (appContext == null)     throw new IgniteException("Spring application context resource is not injected.");
+    IgniteSpringHelper spring;
+    try {
+      spring=IgniteComponentType.SPRING.create(false);
+      SessionFactory sesFac=spring.loadBeanFromAppContext(appContext,sesFactoryBean);
+      store.setSessionFactory(sesFac);
+    }
+ catch (    IgniteCheckedException e) {
+      throw new IgniteException("Failed to load bean in application context [beanName=" + sesFactoryBean + ", igniteConfig="+ appContext+ ']');
+    }
+  }
   return store;
 }
