@@ -1,10 +1,16 @@
 {
+  long maxMem=this.maxMemSize;
+  if (maxMem > 0) {
+    long startMemSize=memSize.longValue();
+    if (startMemSize >= maxMem)     for (long i=maxMem; i < startMemSize && memSize.longValue() > maxMem; ) {
+      int size=shrink0();
+      if (size == -1)       break;
+      i+=size;
+    }
+  }
   int max=this.max;
-  int startSize=queue.sizex();
-  for (int i=0; i < startSize && queue.sizex() > max; i++) {
-    EvictableEntry<K,V> entry=queue.poll();
-    if (entry == null)     break;
-    Node<EvictableEntry<K,V>> meta=entry.removeMeta();
-    if (meta != null && !entry.evict())     touch(entry);
+  if (max > 0) {
+    int startSize=queue.sizex();
+    if (startSize >= max + (maxMem > 0 ? 1 : this.batchSize))     for (int i=max; i < startSize && queue.sizex() > max; i++)     if (shrink0() == -1)     break;
   }
 }

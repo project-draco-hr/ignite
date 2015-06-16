@@ -1,0 +1,17 @@
+{
+  cacheMode=CacheMode.PARTITIONED;
+  backups=0;
+  commSpiFactory=new TestRemoteCommunicationSpiFactory();
+  try {
+    Ignite ignite=startGrids(GRID_CNT);
+    IgniteCacheProxy<Integer,Integer> cache=fillCache(ignite);
+    IgniteBiTuple<Integer,UUID> tup=remotePartition(cache.context());
+    int part=tup.get1();
+    expNodeId=tup.get2();
+    CacheQuery<Map.Entry<Integer,Integer>> qry=cache.context().queries().createScanQuery(null,part,false);
+    doTestScanQuery(qry);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

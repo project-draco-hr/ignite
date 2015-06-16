@@ -1,0 +1,15 @@
+{
+  GridCacheContext cctx=((IgniteCacheProxy)ignite.cache(null)).context();
+  Collection<GridDhtLocalPartition> owningParts=F.view(cctx.topology().localPartitions(),new IgnitePredicate<GridDhtLocalPartition>(){
+    @Override public boolean apply(    GridDhtLocalPartition part){
+      return part.state() == GridDhtPartitionState.OWNING;
+    }
+  }
+);
+  return new HashSet<>(F.transform(owningParts,new IgniteClosure<GridDhtLocalPartition,Integer>(){
+    @Override public Integer apply(    GridDhtLocalPartition part){
+      return part.id();
+    }
+  }
+));
+}

@@ -1,0 +1,14 @@
+{
+  super(ctx);
+  ExtensionRegistryImpl registry=new ExtensionRegistryImpl();
+  for (  PluginProvider provider : providers) {
+    GridPluginContext pluginCtx=new GridPluginContext(ctx,cfg);
+    if (F.isEmpty(provider.name()))     throw new IgniteException("Plugin name can not be empty.");
+    if (plugins.containsKey(provider.name()))     throw new IgniteException("Duplicated plugin name: " + provider.name());
+    plugins.put(provider.name(),provider);
+    pluginCtxMap.put(provider,pluginCtx);
+    provider.initExtensions(pluginCtx,registry);
+    if (provider.plugin() == null)     throw new IgniteException("Plugin is null.");
+  }
+  extensions=registry.createExtensionMap();
+}

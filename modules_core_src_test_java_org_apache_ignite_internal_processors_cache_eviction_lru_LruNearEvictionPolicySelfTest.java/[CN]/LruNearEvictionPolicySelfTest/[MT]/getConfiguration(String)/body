@@ -1,0 +1,20 @@
+{
+  IgniteConfiguration c=super.getConfiguration(gridName);
+  CacheConfiguration cc=new CacheConfiguration();
+  cc.setAtomicityMode(atomicityMode);
+  cc.setCacheMode(PARTITIONED);
+  cc.setWriteSynchronizationMode(PRIMARY_SYNC);
+  cc.setRebalanceMode(SYNC);
+  cc.setStartSize(100);
+  cc.setBackups(0);
+  NearCacheConfiguration nearCfg=new NearCacheConfiguration();
+  LruEvictionPolicy plc=new LruEvictionPolicy();
+  plc.setMaxSize(EVICTION_MAX_SIZE);
+  nearCfg.setNearEvictionPolicy(plc);
+  cc.setNearConfiguration(nearCfg);
+  c.setCacheConfiguration(cc);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  c.setDiscoverySpi(disco);
+  return c;
+}

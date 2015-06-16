@@ -1,5 +1,13 @@
 {
   super.finishUnmarshal(ctx,ldr);
   finishUnmarshalCacheObjects(nearKeys,ctx.cacheContext(cacheId),ldr);
-  if (ownedBytes != null)   owned=ctx.marshaller().unmarshal(ownedBytes,ldr);
+  if (ownedKeys != null) {
+    owned=new GridLeanMap<>(ownedKeys.length);
+    for (int i=0; i < ownedKeys.length; i++) {
+      ownedKeys[i].finishUnmarshal(ctx.cacheContext(cacheId).cacheObjectContext(),ldr);
+      owned.put(ownedKeys[i],ownedValues[i]);
+    }
+    ownedKeys=null;
+    ownedValues=null;
+  }
 }
