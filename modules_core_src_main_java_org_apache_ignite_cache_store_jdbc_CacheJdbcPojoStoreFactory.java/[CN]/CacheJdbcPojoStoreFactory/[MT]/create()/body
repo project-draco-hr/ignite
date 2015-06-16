@@ -1,0 +1,18 @@
+{
+  CacheJdbcPojoStore<K,V> store=new CacheJdbcPojoStore<>();
+  store.setDialect(dialect);
+  if (dataSrc != null)   store.setDataSource(dataSrc);
+ else   if (dataSrcBean != null) {
+    if (appContext == null)     throw new IgniteException("Spring application context resource is not injected.");
+    IgniteSpringHelper spring;
+    try {
+      spring=IgniteComponentType.SPRING.create(false);
+      DataSource data=spring.loadBeanFromAppContext(appContext,dataSrcBean);
+      store.setDataSource(data);
+    }
+ catch (    Exception e) {
+      throw new IgniteException("Failed to load bean in application context [beanName=" + dataSrcBean + ", igniteConfig="+ appContext+ ']');
+    }
+  }
+  return store;
+}
