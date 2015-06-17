@@ -2,7 +2,16 @@
   this.log=log;
   this.client=client;
   marshMap=new HashMap<>();
-  marshMap.put(GridClientOptimizedMarshaller.ID,new GridClientOptimizedMarshaller());
+  List<PluginProvider> plugins=AccessController.doPrivileged(new PrivilegedAction<List<PluginProvider>>(){
+    @Override public List<PluginProvider> run(){
+      List<PluginProvider> providers=new ArrayList<>();
+      ServiceLoader<PluginProvider> ldr=ServiceLoader.load(PluginProvider.class);
+      for (      PluginProvider provider : ldr)       providers.add(provider);
+      return providers;
+    }
+  }
+);
+  marshMap.put(GridClientOptimizedMarshaller.ID,new GridClientOptimizedMarshaller(plugins));
   marshMap.put(GridClientJdkMarshaller.ID,new GridClientJdkMarshaller());
   init();
 }
