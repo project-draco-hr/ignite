@@ -1,13 +1,13 @@
 {
   String space=cctx.name();
-  Set<ClusterNode> nodes=new HashSet<>(ctx.discovery().cacheAffinityNodes(space,topVer));
+  Set<ClusterNode> nodes=new HashSet<>(dataNodes(space,topVer));
   if (F.isEmpty(nodes))   throw new CacheException("No data nodes found for cache: " + space);
   if (!F.isEmpty(extraSpaces)) {
     for (    String extraSpace : extraSpaces) {
       GridCacheContext<?,?> extraCctx=cacheContext(extraSpace);
       if (extraCctx.isLocal())       continue;
       if (cctx.isReplicated() && !extraCctx.isReplicated())       throw new CacheException("Queries running on replicated cache should not contain JOINs " + "with partitioned tables.");
-      Collection<ClusterNode> extraNodes=ctx.discovery().cacheAffinityNodes(extraSpace,topVer);
+      Collection<ClusterNode> extraNodes=dataNodes(extraSpace,topVer);
       if (F.isEmpty(extraNodes))       throw new CacheException("No data nodes found for cache: " + extraSpace);
       if (cctx.isReplicated() && extraCctx.isReplicated()) {
         nodes.retainAll(extraNodes);
