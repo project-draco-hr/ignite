@@ -1,2 +1,29 @@
 {
+  final String msg="HELLO!";
+  final Ignite g=grid(0);
+  final UUID locNodeId=g.cluster().localNode().id();
+  g.message().remoteListen(null,new MessagingListenActor<String>(){
+    @Override protected void receive(    UUID nodeId,    String rcvMsg) throws Throwable {
+      assertEquals(locNodeId,nodeId);
+      assertEquals(msg,rcvMsg);
+      stop(rcvMsg);
+    }
+  }
+);
+  final AtomicInteger cnt=new AtomicInteger();
+  g.message().localListen(null,new P2<UUID,String>(){
+    @Override public boolean apply(    UUID nodeId,    String msg){
+      if (!locNodeId.equals(nodeId))       cnt.incrementAndGet();
+      return true;
+    }
+  }
+);
+  g.message().send(null,msg);
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return cnt.get() == g.cluster().forRemotes().nodes().size();
+    }
+  }
+,5000);
+  assertEquals(cnt.get(),g.cluster().forRemotes().nodes().size());
 }
