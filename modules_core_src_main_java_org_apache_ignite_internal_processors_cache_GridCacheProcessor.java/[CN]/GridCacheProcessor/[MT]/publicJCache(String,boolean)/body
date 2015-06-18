@@ -4,6 +4,9 @@
   IgniteCacheProxy<?,?> cache=jCacheProxies.get(masked);
   DynamicCacheDescriptor desc=registeredCaches.get(masked);
   if (desc != null && !desc.cacheType().userCache())   throw new IllegalStateException("Failed to get cache because it is a system cache: " + cacheName);
-  if (cache == null)   cache=startJCache(cacheName,failIfNotStarted);
+  if (cache == null) {
+    dynamicStartCache(null,cacheName,null,false).get();
+    cache=jCacheProxies.get(masked);
+  }
   return (IgniteCacheProxy<K,V>)cache;
 }
