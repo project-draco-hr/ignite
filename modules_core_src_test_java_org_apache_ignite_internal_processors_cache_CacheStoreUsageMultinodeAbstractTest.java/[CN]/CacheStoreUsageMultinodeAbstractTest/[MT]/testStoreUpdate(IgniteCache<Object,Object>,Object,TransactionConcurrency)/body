@@ -1,0 +1,24 @@
+{
+  boolean storeOnPrimary=atomicityMode() == ATOMIC || locStore || writeBehind;
+  assertTrue(writeMap.isEmpty());
+  Ignite ignite=cache.unwrap(Ignite.class);
+  Affinity<Object> obj=ignite.affinity(cache.getName());
+  ClusterNode node=obj.mapKeyToNode(key);
+  assertNotNull(node);
+  String expNode=storeOnPrimary ? (String)node.attribute(ATTR_GRID_NAME) : ignite.name();
+  assertNotNull(expNode);
+  log.info("Put [node=" + ignite.name() + ", key="+ key+ ", primary="+ node.attribute(ATTR_GRID_NAME)+ ", tx="+ tc+ ", nearCache="+ (cache.getConfiguration(CacheConfiguration.class).getNearConfiguration() != null)+ ", storeOnPrimary="+ storeOnPrimary+ ']');
+  Transaction tx=tc != null ? ignite.transactions().txStart(tc,REPEATABLE_READ) : null;
+  cache.put(key,key);
+  if (tx != null)   tx.commit();
+  boolean wait=GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return writeMap.size() > 0;
+    }
+  }
+,1000);
+  assertTrue("Store is not updated",wait);
+  assertEquals("Write on wrong node: " + writeMap,1,writeMap.size());
+  assertEquals(expNode,writeMap.keySet().iterator().next());
+  writeMap.clear();
+}
