@@ -1,5 +1,33 @@
 {
   final IgniteEx slowClient=grid(nodeCount() - 1);
+  final ClusterNode slowClientNode=slowClient.localNode();
+  final CountDownLatch evtSegmentedLatch=new CountDownLatch(1);
+  slowClient.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      assertEquals("Unexpected event: " + evt,evt.type(),EventType.EVT_NODE_SEGMENTED);
+      DiscoveryEvent evt0=(DiscoveryEvent)evt;
+      assertEquals(slowClientNode,evt0.eventNode());
+      assertEquals(5L,evt0.topologyVersion());
+      evtSegmentedLatch.countDown();
+      return false;
+    }
+  }
+,EventType.EVT_NODE_SEGMENTED);
+  final CountDownLatch evtFailedLatch=new CountDownLatch(nodeCount() - 1);
+  for (int i=0; i < nodeCount() - 1; i++) {
+    grid(i).events().localListen(new IgnitePredicate<Event>(){
+      @Override public boolean apply(      Event evt){
+        assertEquals("Unexpected event: " + evt,evt.type(),EventType.EVT_NODE_FAILED);
+        DiscoveryEvent evt0=(DiscoveryEvent)evt;
+        assertEquals(slowClientNode,evt0.eventNode());
+        assertEquals(6L,evt0.topologyVersion());
+        assertEquals(4,evt0.topologyNodes().size());
+        evtFailedLatch.countDown();
+        return false;
+      }
+    }
+,EventType.EVT_NODE_FAILED);
+  }
   assertTrue(slowClient.cluster().localNode().isClient());
   IgniteCache<Object,Object> cache=slowClient.getOrCreateCache(PARTITIONED);
   IgniteEx client0=grid(nodeCount() - 2);
@@ -12,10 +40,13 @@
   GridNioServer nioSrvr=U.field(commSpi,"nioSrvr");
   GridTestUtils.setFieldValue(nioSrvr,"skipRead",true);
   for (int i=0; i < 100; i++)   cache0.put(0,new byte[10 * 1024]);
-  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+  boolean wait=GridTestUtils.waitForCondition(new GridAbsPredicate(){
     @Override public boolean apply(){
       return Ignition.state(slowClient.name()) == IgniteState.STOPPED_ON_SEGMENTATION;
     }
   }
 ,getTestTimeout());
+  assertTrue(wait);
+  assertTrue("Failed to wait for client failed event",evtFailedLatch.await(5000,MILLISECONDS));
+  assertTrue("Failed to wait for client segmented event",evtSegmentedLatch.await(5000,MILLISECONDS));
 }
