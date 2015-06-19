@@ -19,6 +19,10 @@
       if (log.isDebugEnabled())       log.debug("Discarding node failed message (join process is not finished): " + msg);
       return;
     }
+    if (msg.warning() != null) {
+      ClusterNode creatorNode=rmtNodes.get(msg.creatorNodeId());
+      U.warn(log,"Received EVT_NODE_FAILED event with warning [" + "nodeInitiatedEvt=" + (creatorNode != null ? creatorNode : msg.creatorNodeId()) + ", msg="+ msg.warning()+ ']');
+    }
     notifyDiscovery(EVT_NODE_FAILED,msg.topologyVersion(),node,top);
     spi.stats.onNodeFailed();
   }
