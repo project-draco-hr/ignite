@@ -1,0 +1,26 @@
+{
+  return new Callable<S>(){
+    @Override public S call() throws Exception {
+      int retries=GridCacheAdapter.MAX_RETRIES;
+      IgniteCheckedException err=null;
+      for (int i=0; i < retries; i++) {
+        try {
+          return c.call();
+        }
+ catch (        IgniteCheckedException e) {
+          if (X.hasCause(e,ClusterTopologyCheckedException.class) || X.hasCause(e,IgniteTxRollbackCheckedException.class) || X.hasCause(e,CachePartialUpdateCheckedException.class)) {
+            if (i < retries - 1) {
+              err=e;
+              U.sleep(1);
+              continue;
+            }
+            throw e;
+          }
+ else           throw e;
+        }
+      }
+      throw err;
+    }
+  }
+;
+}
