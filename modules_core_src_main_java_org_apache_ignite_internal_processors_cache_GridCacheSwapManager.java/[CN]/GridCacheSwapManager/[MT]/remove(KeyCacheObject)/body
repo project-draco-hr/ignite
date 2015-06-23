@@ -12,21 +12,13 @@
   }
   if (swapEnabled) {
     SwapKey swapKey=new SwapKey(key.value(cctx.cacheObjectContext(),false),part,key.valueBytes(cctx.cacheObjectContext()));
-    swapMgr.remove(spaceName,swapKey,new CI1<byte[]>(){
+    ClassLoader ldr=cctx.deploy().globalLoader();
+    if (qryMgr != null && !readSwapBeforeRemove(key,swapKey,ldr))     return;
+    swapMgr.remove(spaceName,swapKey,cctx.config().isStatisticsEnabled() ? new CI1<byte[]>(){
       @Override public void apply(      byte[] rmv){
-        if (rmv == null)         return;
-        try {
-          if (cctx.config().isStatisticsEnabled())           cctx.cache().metrics0().onSwapRemove();
-          if (qryMgr == null)           return;
-          GridCacheSwapEntry entry=swapEntry(unmarshalSwapEntry(rmv));
-          if (entry == null)           return;
-          qryMgr.onUnswap(key,entry.value());
-        }
- catch (        IgniteCheckedException e) {
-          throw new IgniteException(e);
-        }
+        if (rmv != null)         cctx.cache().metrics0().onSwapRemove();
       }
     }
-,cctx.deploy().globalLoader());
+ : null,ldr);
   }
 }
