@@ -1,0 +1,18 @@
+{
+  final Map<String,String> keyValueMap=new HashMap<>();
+  List<Integer> subnet=new ArrayList<>();
+  int i=0;
+  while (i <= CNT)   subnet.add(++i);
+  Collections.shuffle(subnet);
+  final List<KeyedMessage<String,String>> messages=new ArrayList<>();
+  for (int event=0; event < CNT; event++) {
+    long runtime=new Date().getTime();
+    String ip=KEY_PREFIX + subnet.get(event);
+    String msg=runtime + VALUE_URL + ip;
+    messages.add(new KeyedMessage<>(topic,ip,msg));
+    keyValueMap.put(ip,msg);
+  }
+  final Producer<String,String> producer=embeddedBroker.sendMessages(messages);
+  producer.close();
+  return keyValueMap;
+}

@@ -1,0 +1,28 @@
+{
+  A.notNull(getStreamer(),"streamer");
+  A.notNull(getIgnite(),"ignite");
+  A.notNull(topic,"topic");
+  A.notNull(keyDecoder,"key decoder");
+  A.notNull(valueDecoder,"value decoder");
+  A.notNull(consumerConfig,"kafka consumer config");
+  A.ensure(threads > 0,"threads > 0");
+  log=getIgnite().log();
+  consumer=kafka.consumer.Consumer.createJavaConsumerConnector(consumerConfig);
+  Map<String,Integer> topicCountMap=new HashMap<>();
+  topicCountMap.put(topic,threads);
+  Map<String,List<KafkaStream<K,V>>> consumerMap=consumer.createMessageStreams(topicCountMap,keyDecoder,valueDecoder);
+  List<KafkaStream<K,V>> streams=consumerMap.get(topic);
+  executor=Executors.newFixedThreadPool(threads);
+  for (  final KafkaStream<K,V> stream : streams) {
+    executor.submit(new Runnable(){
+      @Override public void run(){
+        ConsumerIterator<K,V> it=stream.iterator();
+        while (it.hasNext()) {
+          final MessageAndMetadata<K,V> messageAndMetadata=it.next();
+          getStreamer().addData(messageAndMetadata.key(),messageAndMetadata.message());
+        }
+      }
+    }
+);
+  }
+}

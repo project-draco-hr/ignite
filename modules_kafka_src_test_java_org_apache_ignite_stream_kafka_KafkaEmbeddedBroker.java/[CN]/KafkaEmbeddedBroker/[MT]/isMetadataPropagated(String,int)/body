@@ -1,0 +1,9 @@
+{
+  final scala.Option<PartitionStateInfo> partitionStateOption=kafkaServer.apis().metadataCache().getPartitionInfo(topic,partition);
+  if (partitionStateOption.isDefined()) {
+    final PartitionStateInfo partitionState=partitionStateOption.get();
+    final LeaderAndIsr leaderAndInSyncReplicas=partitionState.leaderIsrAndControllerEpoch().leaderAndIsr();
+    if (ZkUtils.getLeaderForPartition(getZkClient(),topic,partition) != null && Request.isValidBrokerId(leaderAndInSyncReplicas.leader()) && leaderAndInSyncReplicas.isr().size() >= 1)     return true;
+  }
+  return false;
+}
