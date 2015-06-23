@@ -1,5 +1,7 @@
 {
   Configuration hadoopCfg=HadoopUtils.safeCreateConfiguration();
+  final HadoopJobInfo jobInfo=job.info();
+  final HadoopJobId jobId=job.id();
   for (  Map.Entry<String,String> e : ((HadoopDefaultJobInfo)jobInfo).properties().entrySet())   hadoopCfg.set(e.getKey(),e.getValue());
   String user=jobInfo.user();
   user=IgfsUtils.fixUserName(user);
@@ -9,7 +11,7 @@
   HadoopPerformanceCounter perfCntr=HadoopPerformanceCounter.getCounter(cntrs,null);
   try {
     hadoopCfg.set(MRJobConfig.USER_NAME,user);
-    FileSystem fs=HadoopUtils.fileSystemForMrUser(jobStatPath.toUri(),hadoopCfg,true);
+    FileSystem fs=((HadoopV2Job)job).fileSystem(jobStatPath.toUri(),hadoopCfg);
     fs.mkdirs(jobStatPath);
     try (PrintStream out=new PrintStream(fs.create(new Path(jobStatPath,PERFORMANCE_COUNTER_FILE_NAME)))){
       for (      T2<String,Long> evt : perfCntr.evts()) {
