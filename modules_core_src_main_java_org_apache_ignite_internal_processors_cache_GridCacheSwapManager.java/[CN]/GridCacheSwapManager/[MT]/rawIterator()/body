@@ -1,15 +1,15 @@
 {
   if (!swapEnabled() && !offHeapEnabled())   return new GridEmptyCloseableIterator<>();
   checkIteratorQueue();
-  if (offHeapEnabled() && !swapEnabled())   return rawOffHeapIterator();
-  if (swapEnabled() && !offHeapEnabled())   return rawSwapIterator();
+  if (offHeapEnabled() && !swapEnabled())   return rawOffHeapIterator(null,true,true);
+  if (swapEnabled() && !offHeapEnabled())   return rawSwapIterator(true,true);
   return new GridCloseableIteratorAdapter<Map.Entry<byte[],byte[]>>(){
     private GridCloseableIterator<Map.Entry<byte[],byte[]>> it;
     private boolean offheapFlag=true;
     private boolean done;
     private Map.Entry<byte[],byte[]> cur;
 {
-      it=rawOffHeapIterator();
+      it=rawOffHeapIterator(null,true,true);
       advance();
     }
     private void advance() throws IgniteCheckedException {
@@ -17,7 +17,7 @@
       it.close();
       if (offheapFlag) {
         offheapFlag=false;
-        it=rawSwapIterator();
+        it=rawSwapIterator(true,true);
         if (!it.hasNext()) {
           it.close();
           done=true;
@@ -38,7 +38,8 @@
       if (offheapFlag) {
         KeyCacheObject key=cctx.toCacheKeyObject(cur.getKey());
         int part=cctx.affinity().partition(key);
-        offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+        boolean rmv=offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+        if (rmv && cctx.config().isStatisticsEnabled())         cctx.cache().metrics0().onOffHeapRemove();
       }
  else       it.removeX();
     }

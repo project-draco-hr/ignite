@@ -1,2 +1,19 @@
 {
+  if (!F.isEmpty(req.nearWrites())) {
+    GridNearTxRemote tx=ctx.tm().nearTx(req.version());
+    if (tx == null) {
+      tx=new GridNearTxRemote(ctx,ldr,nodeId,req.nearNodeId(),req.threadId(),req.version(),null,req.system(),req.policy(),req.concurrency(),req.isolation(),req.isInvalidate(),req.timeout(),req.nearWrites(),req.txSize(),req.subjectId(),req.taskNameHash());
+      tx.writeVersion(req.writeVersion());
+      if (!tx.empty()) {
+        tx=ctx.tm().onCreated(null,tx);
+        if (tx == null || !ctx.tm().onStarted(tx))         throw new IgniteTxRollbackCheckedException("Attempt to start a completed transaction: " + tx);
+      }
+    }
+ else     tx.addEntries(ldr,req.nearWrites());
+    tx.ownedVersions(req.owned());
+    tx.prepare();
+    if (req.last())     tx.state(PREPARED);
+    return tx;
+  }
+  return null;
 }

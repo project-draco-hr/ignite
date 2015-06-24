@@ -1,16 +1,17 @@
 {
-  String marshallerName=GridTestProperties.getProperty("marshaller.class");
-  Marshaller marshaller;
-  if (marshallerName == null)   marshaller=new OptimizedMarshaller();
+  String marshallerName=GridTestProperties.getProperty(GridTestProperties.MARSH_CLASS_NAME);
+  Marshaller marsh;
+  if (marshallerName == null)   marsh=new OptimizedMarshaller();
  else {
     try {
       Class<? extends Marshaller> cls=(Class<? extends Marshaller>)Class.forName(marshallerName);
-      marshaller=cls.newInstance();
+      marsh=cls.newInstance();
     }
  catch (    ClassNotFoundException|IllegalAccessException|InstantiationException e) {
       throw new IgniteCheckedException("Failed to create test marshaller [marshaller=" + marshallerName + ']',e);
     }
   }
-  marshaller.setContext(new MarshallerContextTestImpl());
-  return marshaller;
+  if (marsh instanceof OptimizedMarshaller)   ((OptimizedMarshaller)marsh).setRequireSerializable(false);
+  marsh.setContext(new MarshallerContextTestImpl());
+  return marsh;
 }

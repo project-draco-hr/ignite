@@ -1,0 +1,15 @@
+{
+  fail("https://issues.apache.org/jira/browse/IGNITE-827");
+  String cache="partitioned";
+  GridQueryProcessor qryProc=((IgniteKernal)ignite).context().query();
+  GridCacheTwoStepQuery q=new GridCacheTwoStepQuery(null,"select cast(sum(x) as long) from _cnts_ where ? = ?",1,1);
+  q.addMapQuery("_cnts_","select count(*) x from \"partitioned\".FactPurchase where ? = ?",2,2);
+  Iterator<List<?>> it=qryProc.queryTwoStep(cache,q).iterator();
+  try {
+    Object cnt=it.next().get(0);
+    assertEquals(10L,cnt);
+  }
+  finally {
+    if (it instanceof AutoCloseable)     ((AutoCloseable)it).close();
+  }
+}

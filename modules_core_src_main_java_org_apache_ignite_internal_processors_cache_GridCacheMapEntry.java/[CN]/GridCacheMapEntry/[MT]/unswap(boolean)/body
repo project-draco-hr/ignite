@@ -8,13 +8,14 @@ synchronized (this) {
         e=cctx.swap().readOffheapPointer(this);
         if (e != null) {
           if (e.offheapPointer() > 0) {
-            valPtr=e.offheapPointer();
+            offHeapPointer(e.offheapPointer());
+            flags|=IS_OFFHEAP_PTR_MASK;
             if (needVal) {
-              CacheObject val=cctx.fromOffheap(valPtr,false);
+              CacheObject val=cctx.fromOffheap(offHeapPointer(),false);
               e.value(val);
             }
           }
- else           valPtr=0;
+ else           offHeapPointer(0);
         }
       }
  else       e=detached() ? cctx.swap().read(this,true,true,true) : cctx.swap().readAndRemove(this);
@@ -26,7 +27,7 @@ synchronized (this) {
           CacheObject val=e.value();
           val=cctx.kernalContext().cacheObjects().prepareForCache(val,cctx);
           update(val,e.expireTime(),e.ttl(),e.version());
-          if (cctx.offheapTiered() && e.offheapPointer() > 0)           valPtr=e.offheapPointer();
+          if (cctx.offheapTiered() && e.offheapPointer() > 0)           offHeapPointer(e.offheapPointer());
           return val;
         }
  else         clearIndex(e.value());

@@ -7,16 +7,21 @@
   GridMergeIndex idx=r.tbls.get(msg.query()).getScanIndex(null);
   GridResultPage page;
   try {
-    page=new GridResultPage(ctx,node.id(),msg,false){
+    page=new GridResultPage(ctx,node.id(),msg){
       @Override public void fetchNextPage(){
-        if (r.rmtErr != null)         throw new CacheException("Next page fetch failed.",r.rmtErr);
+        Object errState=r.state.get();
+        if (errState != null) {
+          CacheException e=new CacheException("Failed to fetch data from node: " + node.id());
+          if (errState instanceof CacheException)           e.addSuppressed((Throwable)errState);
+          throw e;
+        }
         try {
           GridQueryNextPageRequest msg0=new GridQueryNextPageRequest(qryReqId,qry,pageSize);
           if (node.isLocal())           h2.mapQueryExecutor().onMessage(ctx.localNodeId(),msg0);
  else           ctx.io().send(node,GridTopic.TOPIC_QUERY,msg0,GridIoPolicy.PUBLIC_POOL);
         }
  catch (        IgniteCheckedException e) {
-          throw new CacheException(e);
+          throw new CacheException("Failed to fetch data from node: " + node.id(),e);
         }
       }
     }
@@ -28,5 +33,6 @@
     return;
   }
   idx.addPage(page);
-  if (msg.allRows() != -1)   r.latch.countDown();
+  if (msg.retry() != null)   retry(r,msg.retry(),node.id());
+ else   if (msg.allRows() != -1)   r.latch.countDown();
 }

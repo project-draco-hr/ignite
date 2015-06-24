@@ -1,0 +1,20 @@
+{
+  long topVer=-1;
+  for (int i=0; i < srvCnt; i++) {
+    Ignite g=G.ignite("server-" + i);
+    assertTrue(srvNodeIds.contains(g.cluster().localNode().id()));
+    assertFalse(g.cluster().localNode().isClient());
+    checkRemoteNodes(g,srvCnt + clientCnt - 1);
+    if (topVer < 0)     topVer=g.cluster().topologyVersion();
+ else     assertEquals(topVer,g.cluster().topologyVersion());
+  }
+  for (int i=0; i < clientCnt; i++) {
+    Ignite g=G.ignite("client-" + i);
+    ((TcpDiscoverySpi)g.configuration().getDiscoverySpi()).waitForClientMessagePrecessed();
+    assertTrue(clientNodeIds.contains(g.cluster().localNode().id()));
+    assertTrue(g.cluster().localNode().isClient());
+    checkRemoteNodes(g,srvCnt + clientCnt - 1);
+    if (topVer < 0)     topVer=g.cluster().topologyVersion();
+ else     assertEquals(topVer,g.cluster().topologyVersion());
+  }
+}

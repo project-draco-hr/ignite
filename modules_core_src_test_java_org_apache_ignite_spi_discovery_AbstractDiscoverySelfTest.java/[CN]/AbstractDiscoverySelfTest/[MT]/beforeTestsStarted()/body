@@ -6,7 +6,7 @@
       rsrcMgr.inject(spi);
       spi.setNodeAttributes(Collections.<String,Object>singletonMap(TEST_ATTRIBUTE_NAME,"true"),fromString("99.99.99"));
       spi.setListener(new DiscoverySpiListener(){
-        @SuppressWarnings({"NakedNotify"}) @Override public void onDiscovery(        int type,        long topVer,        ClusterNode node,        Collection<ClusterNode> topSnapshot,        Map<Long,Collection<ClusterNode>> topHist,        Serializable data){
+        @SuppressWarnings({"NakedNotify"}) @Override public void onDiscovery(        int type,        long topVer,        ClusterNode node,        Collection<ClusterNode> topSnapshot,        Map<Long,Collection<ClusterNode>> topHist,        @Nullable DiscoverySpiCustomMessage data){
           info("Discovery event [type=" + type + ", node="+ node+ ']');
 synchronized (mux) {
             mux.notifyAll();
@@ -22,10 +22,12 @@ synchronized (mux) {
         }
       }
 );
+      GridSpiTestContext ctx=initSpiContext();
+      GridTestUtils.setFieldValue(spi,IgniteSpiAdapter.class,"spiCtx",ctx);
       spi.spiStart(getTestGridName() + i);
       spis.add(spi);
       spiRsrcs.add(rsrcMgr);
-      spi.onContextInitialized(initSpiContext());
+      spi.onContextInitialized(ctx);
     }
   }
  catch (  Throwable e) {

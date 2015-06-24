@@ -1,0 +1,15 @@
+{
+  cacheMode=CacheMode.PARTITIONED;
+  backups=0;
+  commSpiFactory=new TestLocalCommunicationSpiFactory();
+  try {
+    Ignite ignite=startGrids(GRID_CNT);
+    IgniteCacheProxy<Integer,Integer> cache=fillCache(ignite);
+    int part=anyLocalPartition(cache.context());
+    CacheQuery<Map.Entry<Integer,Integer>> qry=cache.context().queries().createScanQuery(null,part,false);
+    doTestScanQuery(qry);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

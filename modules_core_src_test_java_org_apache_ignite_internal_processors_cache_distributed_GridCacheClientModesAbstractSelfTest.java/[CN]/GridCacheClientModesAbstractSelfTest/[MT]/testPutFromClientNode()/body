@@ -3,10 +3,21 @@
   for (int i=0; i < 5; i++)   nearOnly.put(i,i);
   nearOnly.putAll(F.asMap(5,5,6,6,7,7,8,8,9,9));
   for (int key=0; key < 10; key++) {
-    for (int i=1; i < gridCount(); i++) {
+    for (int i=0; i < gridCount(); i++) {
       if (grid(i).affinity(null).isPrimaryOrBackup(grid(i).localNode(),key))       assertEquals(key,grid(i).cache(null).localPeek(key,CachePeekMode.ONHEAP));
     }
     if (nearEnabled())     assertEquals(key,nearOnly.localPeek(key,CachePeekMode.ONHEAP));
     assertNull(nearOnly.localPeek(key,CachePeekMode.PRIMARY,CachePeekMode.BACKUP));
+  }
+  Integer key=1000;
+  nearOnly.put(key,new TestClass1(key));
+  if (nearEnabled())   assertNotNull(nearOnly.localPeek(key,CachePeekMode.ALL));
+ else   assertNull(nearOnly.localPeek(key,CachePeekMode.ALL));
+  for (int i=0; i < gridCount(); i++) {
+    if (grid(i).affinity(null).isPrimaryOrBackup(grid(i).localNode(),key)) {
+      TestClass1 val=(TestClass1)grid(i).cache(null).localPeek(key,CachePeekMode.ONHEAP);
+      assertNotNull(val);
+      assertEquals(key.intValue(),val.val);
+    }
   }
 }

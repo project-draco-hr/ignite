@@ -1,0 +1,16 @@
+{
+  AffinityTopologyVersion topVer0=new AffinityTopologyVersion(topVer,0);
+  IgniteInternalFuture<?> fut=ctx.cache().context().exchange().affinityReadyFuture(topVer0);
+  if (fut != null && !fut.isDone()) {
+    fut.listen(new CI1<IgniteInternalFuture<?>>(){
+      @Override public void apply(      IgniteInternalFuture<?> fut){
+        ctx.closure().runLocalSafe(c,true);
+      }
+    }
+);
+  }
+ else {
+    if (async)     ctx.closure().runLocalSafe(c,true);
+ else     c.run();
+  }
+}

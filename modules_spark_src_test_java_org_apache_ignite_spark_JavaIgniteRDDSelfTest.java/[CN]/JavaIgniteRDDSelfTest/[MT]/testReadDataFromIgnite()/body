@@ -1,0 +1,16 @@
+{
+  JavaSparkContext sc=new JavaSparkContext("local[*]","test");
+  try {
+    JavaIgniteContext<String,Integer> ic=new JavaIgniteContext<>(sc,new IgniteConfigProvider());
+    Ignite ignite=Ignition.ignite("grid-0");
+    IgniteCache<String,Integer> cache=ignite.cache(PARTITIONED_CACHE_NAME);
+    for (int i=0; i < KEYS_CNT; i++)     cache.put(String.valueOf(i),i);
+    JavaRDD<Integer> values=ic.fromCache(PARTITIONED_CACHE_NAME).map(STR_INT_PAIR_TO_INT_F);
+    int sum=values.fold(0,SUM_F);
+    int expSum=(KEYS_CNT * KEYS_CNT + KEYS_CNT) / 2 - KEYS_CNT;
+    assertEquals(expSum,sum);
+  }
+  finally {
+    sc.stop();
+  }
+}

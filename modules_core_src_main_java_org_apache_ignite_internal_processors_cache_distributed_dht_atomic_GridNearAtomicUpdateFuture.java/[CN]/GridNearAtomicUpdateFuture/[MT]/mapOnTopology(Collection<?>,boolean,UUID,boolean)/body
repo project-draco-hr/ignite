@@ -13,13 +13,17 @@
         return;
       }
       topVer=fut.topologyVersion();
-      if (futVer == null)       futVer=cctx.versions().next(topVer);
     }
  else {
       if (waitTopFut) {
         fut.listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
           @Override public void apply(          IgniteInternalFuture<AffinityTopologyVersion> t){
-            mapOnTopology(keys,remap,oldNodeId,waitTopFut);
+            cctx.kernalContext().closure().runLocalSafe(new Runnable(){
+              @Override public void run(){
+                mapOnTopology(keys,remap,oldNodeId,waitTopFut);
+              }
+            }
+);
           }
         }
 );
@@ -27,7 +31,6 @@
  else       onDone(new GridCacheTryPutFailedException());
       return;
     }
-    if (!remap && (cctx.config().getAtomicWriteOrderMode() == CLOCK || syncMode != FULL_ASYNC))     cctx.mvcc().addAtomicFuture(version(),this);
   }
   finally {
     cache.topology().readUnlock();

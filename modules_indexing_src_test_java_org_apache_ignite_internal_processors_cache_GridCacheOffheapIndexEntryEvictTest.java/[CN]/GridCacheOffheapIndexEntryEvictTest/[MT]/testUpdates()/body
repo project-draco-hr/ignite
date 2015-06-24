@@ -1,0 +1,17 @@
+{
+  final int ENTRIES=500;
+  IgniteCache<Integer,TestValue> cache=grid(0).cache(null);
+  for (int i=0; i < ENTRIES; i++) {
+    for (int j=0; j < 3; j++) {
+      cache.getAndPut(i,new TestValue(i));
+      assertNotNull(cache.get(i));
+      assertNotNull(cache.localPeek(i));
+    }
+    checkQuery(cache,"_key >= 0",i + 1);
+  }
+  for (int i=0; i < ENTRIES; i++) {
+    if (i % 2 == 0)     cache.getAndRemove(i);
+ else     cache.remove(i);
+    checkQuery(cache,"_key >= 0",ENTRIES - (i + 1));
+  }
+}
