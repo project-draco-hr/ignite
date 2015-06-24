@@ -12,11 +12,11 @@
   }
  else {
     byte[] entryBytes=offheap.remove(spaceName,part,key,keyBytes);
-    if (entryBytes != null) {
-      if (cctx.config().isStatisticsEnabled())       cctx.cache().metrics0().onOffHeapRemove();
-      entry=swapEntry(unmarshalSwapEntry(entryBytes));
+    if (cctx.config().isStatisticsEnabled()) {
+      cctx.cache().metrics0().onOffHeapRead(entryBytes != null);
+      if (entryBytes != null)       cctx.cache().metrics0().onOffHeapRemove();
     }
- else     entry=null;
+    entry=entryBytes == null ? null : swapEntry(unmarshalSwapEntry(entryBytes));
   }
   return entry;
 }
