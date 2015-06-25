@@ -1,9 +1,12 @@
 {
   try {
-    ch.configureBlocking(false);
-    NioOperationFuture<GridNioSession> req=new NioOperationFuture<>(ch,false,meta);
-    offerBalanced(req);
-    return req;
+    if (!closed) {
+      ch.configureBlocking(false);
+      NioOperationFuture<GridNioSession> req=new NioOperationFuture<>(ch,false,meta);
+      offerBalanced(req);
+      return req;
+    }
+ else     return new GridNioFinishedFuture<>(new IgniteCheckedException("Failed to create session, server is stopped."));
   }
  catch (  IOException e) {
     return new GridNioFinishedFuture<>(e);

@@ -2,9 +2,18 @@
   checkxEnabled();
   if (!busyLock.enterBusy())   throw new IllegalStateException("Failed to execute query (grid is stopping).");
   try {
-    return idx.queryTwoStep(ctx.cache().internalCache(space).context(),qry);
+    final GridCacheContext<Object,Object> cctx=ctx.cache().internalCache(space).context();
+    return executeQuery(cctx,new IgniteOutClosureX<Iterable<List<?>>>(){
+      @Override public Iterable<List<?>> applyx() throws IgniteCheckedException {
+        return idx.queryTwoStep(cctx,qry,cctx.keepPortable());
+      }
+    }
+);
   }
-  finally {
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+ finally {
     busyLock.leaveBusy();
   }
 }

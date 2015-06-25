@@ -1,0 +1,25 @@
+{
+  maxMissedClientHbs=100;
+  clientsPerSrv=1;
+  startServerNodes(1);
+  startClientNodes(1);
+  checkNodes(1,1);
+  srvLeftLatch=new CountDownLatch(2);
+  srvFailedLatch=new CountDownLatch(1);
+  attachListeners(1,0);
+  Ignite ignite=G.ignite("client-0");
+  TestTcpDiscoverySpi spi=((TestTcpDiscoverySpi)ignite.configuration().getDiscoverySpi());
+  spi.pauseAll();
+  try {
+    spi.brakeConnection();
+    Ignite g=startGrid("server-" + srvIdx.getAndIncrement());
+    g.close();
+    spi.resumeAll();
+    assertFalse(srvFailedLatch.await(2000,TimeUnit.MILLISECONDS));
+    assertEquals(1L,srvLeftLatch.getCount());
+    checkNodes(1,1);
+  }
+  finally {
+    spi.resumeAll();
+  }
+}
