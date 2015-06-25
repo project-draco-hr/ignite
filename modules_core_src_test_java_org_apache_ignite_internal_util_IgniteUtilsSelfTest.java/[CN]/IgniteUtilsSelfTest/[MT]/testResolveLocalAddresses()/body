@@ -1,0 +1,14 @@
+{
+  InetAddress inetAddress=InetAddress.getByName("0.0.0.0");
+  IgniteBiTuple<Collection<String>,Collection<String>> addrs=U.resolveLocalAddresses(inetAddress);
+  Collection<String> hostNames=addrs.get2();
+  assertFalse(hostNames.contains(null));
+  assertFalse(hostNames.contains(""));
+  assertFalse(hostNames.contains("127.0.0.1"));
+  assertFalse(F.exist(hostNames,new IgnitePredicate<String>(){
+    @Override public boolean apply(    String hostName){
+      return hostName.contains("localhost") || hostName.contains("0:0:0:0:0:0:0:1");
+    }
+  }
+));
+}
