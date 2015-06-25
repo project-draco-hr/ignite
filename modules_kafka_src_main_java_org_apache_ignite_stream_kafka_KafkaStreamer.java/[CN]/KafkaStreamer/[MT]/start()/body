@@ -3,23 +3,40 @@
   A.notNull(getIgnite(),"ignite");
   A.notNull(topic,"topic");
   A.notNull(keyDecoder,"key decoder");
-  A.notNull(valueDecoder,"value decoder");
-  A.notNull(consumerConfig,"kafka consumer config");
+  A.notNull(valDecoder,"value decoder");
+  A.notNull(consumerCfg,"kafka consumer config");
   A.ensure(threads > 0,"threads > 0");
   log=getIgnite().log();
-  consumer=kafka.consumer.Consumer.createJavaConsumerConnector(consumerConfig);
-  Map<String,Integer> topicCountMap=new HashMap<>();
-  topicCountMap.put(topic,threads);
-  Map<String,List<KafkaStream<K,V>>> consumerMap=consumer.createMessageStreams(topicCountMap,keyDecoder,valueDecoder);
+  consumer=kafka.consumer.Consumer.createJavaConsumerConnector(consumerCfg);
+  Map<String,Integer> topicCntMap=new HashMap<>();
+  topicCntMap.put(topic,threads);
+  Map<String,List<KafkaStream<K,V>>> consumerMap=consumer.createMessageStreams(topicCntMap,keyDecoder,valDecoder);
   List<KafkaStream<K,V>> streams=consumerMap.get(topic);
   executor=Executors.newFixedThreadPool(threads);
+  stopped=false;
   for (  final KafkaStream<K,V> stream : streams) {
     executor.submit(new Runnable(){
       @Override public void run(){
-        ConsumerIterator<K,V> it=stream.iterator();
-        while (it.hasNext()) {
-          final MessageAndMetadata<K,V> messageAndMetadata=it.next();
-          getStreamer().addData(messageAndMetadata.key(),messageAndMetadata.message());
+        while (!stopped) {
+          try {
+            for (ConsumerIterator<K,V> it=stream.iterator(); it.hasNext() && !stopped; ) {
+              MessageAndMetadata<K,V> msg=it.next();
+              try {
+                getStreamer().addData(msg.key(),msg.message());
+              }
+ catch (              Exception e) {
+                U.warn(log,"Message is ignored due to an error [msg=" + msg + ']',e);
+              }
+            }
+          }
+ catch (          Exception e) {
+            U.warn(log,"Message can't be consumed from stream. Retry after " + retryTimeout + " ms.",e);
+            try {
+              Thread.sleep(retryTimeout);
+            }
+ catch (            InterruptedException ie) {
+            }
+          }
         }
       }
     }
