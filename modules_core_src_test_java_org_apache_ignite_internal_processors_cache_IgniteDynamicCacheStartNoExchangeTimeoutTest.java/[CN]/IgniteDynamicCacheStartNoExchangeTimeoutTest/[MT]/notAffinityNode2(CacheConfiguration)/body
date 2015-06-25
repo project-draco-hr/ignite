@@ -1,0 +1,11 @@
+{
+  log.info("Test with cache: " + ccfg.getName());
+  IgniteEx ignite0=grid(0);
+  IgniteEx ignite1=grid(1);
+  assertEquals(2L,ignite1.localNode().order());
+  ccfg.setNodeFilter(new TestFilterExcludeNode(2));
+  assertNotNull(ignite0.getOrCreateCache(ccfg));
+  assertNotNull(ignite1.cache(ccfg.getName()));
+  awaitPartitionMapExchange();
+  checkCache(ccfg.getName());
+}
