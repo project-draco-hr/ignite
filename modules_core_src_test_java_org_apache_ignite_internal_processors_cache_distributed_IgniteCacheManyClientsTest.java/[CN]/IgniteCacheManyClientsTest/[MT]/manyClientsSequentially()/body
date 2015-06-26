@@ -1,0 +1,24 @@
+{
+  client=true;
+  List<Ignite> clients=new ArrayList<>();
+  final int CLIENTS=50;
+  int idx=SRVS;
+  ThreadLocalRandom rnd=ThreadLocalRandom.current();
+  for (int i=0; i < CLIENTS; i++) {
+    Ignite ignite=startGrid(idx++);
+    log.info("Started node: " + ignite.name());
+    assertTrue(ignite.configuration().isClientMode());
+    clients.add(ignite);
+    IgniteCache<Object,Object> cache=ignite.cache(null);
+    Integer key=rnd.nextInt(0,1000);
+    cache.put(key,i);
+    assertNotNull(cache.get(key));
+  }
+  log.info("All clients started.");
+  try {
+    checkNodes(SRVS + CLIENTS);
+  }
+  finally {
+    for (    Ignite client : clients)     client.close();
+  }
+}
