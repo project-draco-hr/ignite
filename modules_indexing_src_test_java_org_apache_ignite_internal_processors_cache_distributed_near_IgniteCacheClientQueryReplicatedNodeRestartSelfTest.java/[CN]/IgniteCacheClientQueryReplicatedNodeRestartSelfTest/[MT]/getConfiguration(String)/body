@@ -1,0 +1,36 @@
+{
+  X.println("grid name: " + gridName);
+  IgniteConfiguration c=super.getConfiguration(gridName);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  c.setDiscoverySpi(disco);
+  int i=0;
+  CacheConfiguration<?,?>[] ccs=new CacheConfiguration[4];
+  for (  String name : F.asList("co","pr","pe","pu")) {
+    CacheConfiguration<?,?> cc=defaultCacheConfiguration();
+    cc.setNodeFilter(DATA_NODES_FILTER);
+    cc.setName(name);
+    cc.setCacheMode(REPLICATED);
+    cc.setWriteSynchronizationMode(FULL_SYNC);
+    cc.setAtomicityMode(TRANSACTIONAL);
+    cc.setRebalanceMode(SYNC);
+    cc.setAffinity(new RendezvousAffinityFunction(false,50));
+switch (name) {
+case "co":
+      cc.setIndexedTypes(Integer.class,Company.class);
+    break;
+case "pr":
+  cc.setIndexedTypes(Integer.class,Product.class);
+break;
+case "pe":
+cc.setIndexedTypes(Integer.class,Person.class);
+break;
+case "pu":
+cc.setIndexedTypes(AffinityKey.class,Purchase.class);
+break;
+}
+ccs[i++]=cc;
+}
+c.setCacheConfiguration(ccs);
+return c;
+}

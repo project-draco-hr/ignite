@@ -12,11 +12,12 @@
   }
   if (log.isDebugEnabled())   log.debug("Sending local partitions [nodeId=" + node.id() + ", msg="+ m+ ']');
   try {
-    cctx.io().send(node,m,SYSTEM_POOL);
-    return true;
+    cctx.io().sendNoRetry(node,m,SYSTEM_POOL);
   }
  catch (  ClusterTopologyCheckedException ignore) {
     if (log.isDebugEnabled())     log.debug("Failed to send partition update to node because it left grid (will ignore) [node=" + node.id() + ", msg="+ m+ ']');
-    return false;
+  }
+catch (  IgniteCheckedException e) {
+    U.error(log,"Failed to send local partition map to node [node=" + node + ", exchId="+ id+ ']',e);
   }
 }
