@@ -1,5 +1,9 @@
 {
-  if (ctx.config().isDaemon())   return;
+  if (ctx.config().isDaemon()) {
+    sharedCtx=createSharedContext(ctx,CU.startStoreSessionListeners(ctx,null));
+    for (    GridCacheSharedManager mgr : sharedCtx.managers())     mgr.start(sharedCtx);
+    return;
+  }
   DeploymentMode depMode=ctx.config().getDeploymentMode();
   if (!F.isEmpty(ctx.config().getCacheConfiguration())) {
     if (depMode != CONTINUOUS && depMode != SHARED)     U.warn(log,"Deployment mode for cache is not CONTINUOUS or SHARED " + "(it is recommended that you change deployment mode and restart): " + depMode,"Deployment mode for cache is not CONTINUOUS or SHARED.");
