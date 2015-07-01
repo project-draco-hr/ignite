@@ -1,0 +1,12 @@
+{
+  IgniteEx ignite0=grid(0);
+  CacheConfiguration ccfg=new CacheConfiguration();
+  ccfg.setNodeFilter(new TestFilterIncludeNode(3));
+  assertNotNull(ignite0.getOrCreateCache(ccfg));
+  stopGrid(0);
+  IgniteEx client=grid(NODES - 1);
+  assertTrue(client.configuration().isClientMode());
+  assertNotNull(client.getOrCreateCache((String)null));
+  awaitPartitionMapExchange();
+  checkCache(null);
+}

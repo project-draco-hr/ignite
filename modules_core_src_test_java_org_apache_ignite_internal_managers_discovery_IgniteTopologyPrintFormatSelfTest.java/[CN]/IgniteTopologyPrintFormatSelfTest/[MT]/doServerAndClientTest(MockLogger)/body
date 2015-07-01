@@ -1,0 +1,19 @@
+{
+  try {
+    Ignite server=startGrid("server");
+    setLogger(log,server);
+    Ignite server1=startGrid("server1");
+    Ignite client1=startGrid("first client");
+    Ignite client2=startGrid("second client");
+    waitForDiscovery(server,server1,client1,client2);
+  }
+  finally {
+    stopAllGrids();
+  }
+  assertTrue(F.forAny(log.logs(),new IgnitePredicate<String>(){
+    @Override public boolean apply(    String s){
+      return s.contains("Topology snapshot [ver=4, server nodes=2, client nodes=2,") || (s.contains(">>> Number of server nodes: 2") && s.contains(">>> Number of client nodes: 2"));
+    }
+  }
+));
+}

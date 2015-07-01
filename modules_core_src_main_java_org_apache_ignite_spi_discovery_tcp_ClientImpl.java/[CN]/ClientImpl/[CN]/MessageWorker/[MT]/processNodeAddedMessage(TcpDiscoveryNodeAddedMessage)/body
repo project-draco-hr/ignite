@@ -19,11 +19,14 @@
  else     if (log.isDebugEnabled())     log.debug("Discarding node added message (this message has already been processed) " + "[msg=" + msg + ", locNode="+ locNode+ ']');
   }
  else {
-    boolean topChanged=rmtNodes.putIfAbsent(newNodeId,node) == null;
-    if (topChanged) {
-      if (log.isDebugEnabled())       log.debug("Added new node to topology: " + node);
-      Map<Integer,byte[]> data=msg.newNodeDiscoveryData();
-      if (data != null)       spi.onExchange(newNodeId,newNodeId,data,null);
+    if (nodeAdded()) {
+      boolean topChanged=rmtNodes.putIfAbsent(newNodeId,node) == null;
+      if (topChanged) {
+        if (log.isDebugEnabled())         log.debug("Added new node to topology: " + node);
+        Map<Integer,byte[]> data=msg.newNodeDiscoveryData();
+        if (data != null)         spi.onExchange(newNodeId,newNodeId,data,null);
+      }
     }
+ else     if (log.isDebugEnabled())     log.debug("Ignore topology message, local node not added to topology: " + msg);
   }
 }

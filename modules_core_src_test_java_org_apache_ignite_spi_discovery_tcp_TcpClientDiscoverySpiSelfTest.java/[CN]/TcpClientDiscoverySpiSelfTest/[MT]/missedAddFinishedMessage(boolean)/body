@@ -1,0 +1,31 @@
+{
+  int srvs=singleSrv ? 1 : 2;
+  startServerNodes(srvs);
+  afterWrite=new CIX2<TcpDiscoveryAbstractMessage,Socket>(){
+    private boolean first=true;
+    @Override public void applyx(    TcpDiscoveryAbstractMessage msg,    Socket sock) throws IgniteCheckedException {
+      if (first && (msg instanceof TcpDiscoveryJoinRequestMessage)) {
+        first=false;
+        log.info("Close socket after message write [msg=" + msg + "]");
+        try {
+          sock.close();
+        }
+ catch (        IOException e) {
+          throw new IgniteCheckedException(e);
+        }
+        log.info("Delay after message write [msg=" + msg + "]");
+        U.sleep(5000);
+      }
+    }
+  }
+;
+  Ignite srv=singleSrv ? G.ignite("server-0") : G.ignite("server-1");
+  TcpDiscoveryNode srvNode=(TcpDiscoveryNode)srv.cluster().localNode();
+  assertEquals(singleSrv ? 1 : 2,srvNode.order());
+  clientIpFinder=new TcpDiscoveryVmIpFinder();
+  clientIpFinder.setAddresses(Collections.singleton("localhost:" + srvNode.discoveryPort()));
+  startClientNodes(1);
+  TcpDiscoveryNode clientNode=(TcpDiscoveryNode)G.ignite("client-0").cluster().localNode();
+  assertEquals(srvNode.id(),clientNode.clientRouterNodeId());
+  checkNodes(srvs,1);
+}
