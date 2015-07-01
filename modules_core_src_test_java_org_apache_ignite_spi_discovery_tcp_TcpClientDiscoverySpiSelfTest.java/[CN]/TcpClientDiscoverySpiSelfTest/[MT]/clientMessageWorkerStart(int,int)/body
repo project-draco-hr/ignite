@@ -1,0 +1,31 @@
+{
+  startServerNodes(srvs);
+  Ignite srv=G.ignite("server-" + (connectTo - 1));
+  final TcpDiscoveryNode srvNode=(TcpDiscoveryNode)srv.cluster().localNode();
+  assertEquals((long)connectTo,srvNode.order());
+  TestTcpDiscoverySpi srvSpi=((TestTcpDiscoverySpi)srv.configuration().getDiscoverySpi());
+  final String client0="client-" + clientIdx.getAndIncrement();
+  srvSpi.delayJoinAckFor=client0;
+  IgniteInternalFuture<?> fut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      clientIpFinder=new TcpDiscoveryVmIpFinder();
+      clientIpFinder.setAddresses(Collections.singleton("localhost:" + srvNode.discoveryPort()));
+      Ignite client=startGrid(client0);
+      clientIpFinder=null;
+      clientNodeIds.add(client.cluster().localNode().id());
+      TestTcpDiscoverySpi clientSpi=((TestTcpDiscoverySpi)client.configuration().getDiscoverySpi());
+      assertFalse(clientSpi.invalidResponse());
+      TcpDiscoveryNode clientNode=(TcpDiscoveryNode)client.cluster().localNode();
+      assertEquals(srvNode.id(),clientNode.clientRouterNodeId());
+      return null;
+    }
+  }
+);
+  final String client1="client-" + clientIdx.getAndIncrement();
+  while (!fut.isDone()) {
+    startGrid(client1);
+    stopGrid(client1);
+  }
+  fut.get();
+  checkNodes(srvs,1);
+}
