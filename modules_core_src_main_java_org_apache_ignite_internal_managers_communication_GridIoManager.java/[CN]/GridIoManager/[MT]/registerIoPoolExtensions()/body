@@ -1,0 +1,12 @@
+{
+  final IoPool[] executorExtensions=ctx.plugins().extensions(IoPool.class);
+  if (executorExtensions != null) {
+    for (    IoPool ex : executorExtensions) {
+      final byte id=ex.id();
+      if (id < 0)       throw new IgniteCheckedException("Failed to register IO executor pool because its Id is negative " + "[id=" + id + ']');
+      if (isReservedGridIoPolicy(id))       throw new IgniteCheckedException("Failed to register IO executor pool because its Id in in the " + "reserved range (0-31) [id=" + id + ']');
+      if (ioPools[id] != null)       throw new IgniteCheckedException("Failed to register IO executor pool because its " + "Id as already used [id=" + id + ']');
+      ioPools[id]=ex;
+    }
+  }
+}
