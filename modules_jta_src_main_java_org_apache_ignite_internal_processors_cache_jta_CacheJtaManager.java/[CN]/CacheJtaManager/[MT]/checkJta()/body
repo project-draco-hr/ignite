@@ -1,46 +1,36 @@
 {
-  TransactionManager jtaTm=this.jtaTm;
   if (jtaTm == null) {
     try {
+      CacheTmLookup tmLookup=tmLookupRef.get();
+      if (tmLookup == null)       return;
       jtaTm=tmLookup.getTm();
-      if (jtaTm == null)       return;
-synchronized (threadLocals) {
-        if (this.jtaTm != null)         jtaTm=this.jtaTm;
- else {
-          xaRsrc=threadLocals.get(jtaTm);
-          if (xaRsrc == null) {
-            xaRsrc=new ThreadLocal<>();
-            threadLocals.put(jtaTm,xaRsrc);
-          }
-          this.jtaTm=jtaTm;
-        }
-      }
     }
  catch (    Exception e) {
       throw new IgniteCheckedException("Failed to get transaction manager: " + e,e);
     }
   }
-  WeakReference<GridCacheXAResource> rsrcRef=xaRsrc.get();
-  GridCacheXAResource rsrc=rsrcRef == null ? null : rsrcRef.get();
-  if (rsrc == null || rsrc.isFinished()) {
-    try {
-      Transaction jtaTx=jtaTm.getTransaction();
-      if (jtaTx != null) {
-        IgniteInternalTx tx=cctx.tm().userTx();
-        if (tx == null) {
-          TransactionConfiguration tCfg=cctx.kernalContext().config().getTransactionConfiguration();
-          tx=cctx.tm().newTx(false,false,null,tCfg.getDefaultTxConcurrency(),tCfg.getDefaultTxIsolation(),tCfg.getDefaultTxTimeout(),true,0);
+  if (jtaTm != null) {
+    GridCacheXAResource rsrc=xaRsrc.get();
+    if (rsrc == null || rsrc.isFinished()) {
+      try {
+        Transaction jtaTx=jtaTm.getTransaction();
+        if (jtaTx != null) {
+          IgniteInternalTx tx=cctx.tm().userTx();
+          if (tx == null) {
+            TransactionConfiguration tCfg=cctx.kernalContext().config().getTransactionConfiguration();
+            tx=cctx.tm().newTx(false,false,null,tCfg.getDefaultTxConcurrency(),tCfg.getDefaultTxIsolation(),tCfg.getDefaultTxTimeout(),true,0);
+          }
+          rsrc=new GridCacheXAResource(tx,cctx.kernalContext());
+          if (!jtaTx.enlistResource(rsrc))           throw new IgniteCheckedException("Failed to enlist XA resource to JTA user transaction.");
+          xaRsrc.set(rsrc);
         }
-        rsrc=new GridCacheXAResource(tx,cctx.kernalContext());
-        if (!jtaTx.enlistResource(rsrc))         throw new IgniteCheckedException("Failed to enlist XA resource to JTA user transaction.");
-        xaRsrc.set(new WeakReference<>(rsrc));
       }
-    }
- catch (    SystemException e) {
-      throw new IgniteCheckedException("Failed to obtain JTA transaction.",e);
-    }
-catch (    RollbackException e) {
-      throw new IgniteCheckedException("Failed to enlist XAResource to JTA transaction.",e);
+ catch (      SystemException e) {
+        throw new IgniteCheckedException("Failed to obtain JTA transaction.",e);
+      }
+catch (      RollbackException e) {
+        throw new IgniteCheckedException("Failed to enlist XAResource to JTA transaction.",e);
+      }
     }
   }
 }
