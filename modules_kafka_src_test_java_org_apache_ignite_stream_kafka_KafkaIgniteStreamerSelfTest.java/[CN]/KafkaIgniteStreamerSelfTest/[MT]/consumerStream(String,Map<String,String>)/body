@@ -1,0 +1,33 @@
+{
+  KafkaStreamer<String,String,String> kafkaStmr=null;
+  Ignite ignite=grid();
+  try (IgniteDataStreamer<String,String> stmr=ignite.dataStreamer(null)){
+    stmr.allowOverwrite(true);
+    stmr.autoFlushFrequency(10);
+    kafkaStmr=new KafkaStreamer<>();
+    IgniteCache<String,String> cache=ignite.cache(null);
+    kafkaStmr.setIgnite(ignite);
+    kafkaStmr.setStreamer(stmr);
+    kafkaStmr.setTopic(topic);
+    kafkaStmr.setThreads(4);
+    kafkaStmr.setConsumerConfig(createDefaultConsumerConfig(getZKAddress(),"groupX"));
+    StringDecoder strDecoder=new StringDecoder(new VerifiableProperties());
+    kafkaStmr.setKeyDecoder(strDecoder);
+    kafkaStmr.setValueDecoder(strDecoder);
+    kafkaStmr.start();
+    final CountDownLatch latch=new CountDownLatch(CNT);
+    IgniteBiPredicate<UUID,CacheEvent> locLsnr=new IgniteBiPredicate<UUID,CacheEvent>(){
+      @Override public boolean apply(      UUID uuid,      CacheEvent evt){
+        latch.countDown();
+        return true;
+      }
+    }
+;
+    ignite.events(ignite.cluster().forCacheNodes(null)).remoteListen(locLsnr,null,EVT_CACHE_OBJECT_PUT);
+    latch.await();
+    for (    Map.Entry<String,String> entry : keyValMap.entrySet())     assertEquals(entry.getValue(),cache.get(entry.getKey()));
+  }
+  finally {
+    if (kafkaStmr != null)     kafkaStmr.stop();
+  }
+}
