@@ -1,0 +1,22 @@
+{
+  final GridCacheQueryManager qryMgr=cctx.queries();
+  GridCacheSwapEntry entry;
+  if (qryMgr != null) {
+    entry=readOffheapBeforeRemove(key,keyBytes,part);
+    if (entry != null) {
+      if (offheap.removex(spaceName,part,key,keyBytes)) {
+        if (cctx.config().isStatisticsEnabled())         cctx.cache().metrics0().onOffHeapRemove();
+      }
+ else       entry=null;
+    }
+  }
+ else {
+    byte[] entryBytes=offheap.remove(spaceName,part,key,keyBytes);
+    if (cctx.config().isStatisticsEnabled()) {
+      cctx.cache().metrics0().onOffHeapRead(entryBytes != null);
+      if (entryBytes != null)       cctx.cache().metrics0().onOffHeapRemove();
+    }
+    entry=entryBytes == null ? null : swapEntry(unmarshalSwapEntry(entryBytes));
+  }
+  return entry;
+}
