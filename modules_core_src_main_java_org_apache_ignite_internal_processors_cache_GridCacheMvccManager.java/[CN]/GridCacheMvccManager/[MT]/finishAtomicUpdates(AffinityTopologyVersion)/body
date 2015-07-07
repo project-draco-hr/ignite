@@ -2,7 +2,8 @@
   GridCompoundFuture<Object,Object> res=new GridCompoundFuture<>();
   res.ignoreChildFailures(ClusterTopologyCheckedException.class,CachePartialUpdateCheckedException.class);
   for (  GridCacheAtomicFuture<?> fut : atomicFuts.values()) {
-    if (fut.waitForPartitionExchange() && fut.topologyVersion().compareTo(topVer) < 0)     res.add((IgniteInternalFuture<Object>)fut);
+    IgniteInternalFuture<Void> complete=fut.completeFuture(topVer);
+    if (complete != null)     res.add((IgniteInternalFuture)complete);
   }
   res.markInitialized();
   return res;
