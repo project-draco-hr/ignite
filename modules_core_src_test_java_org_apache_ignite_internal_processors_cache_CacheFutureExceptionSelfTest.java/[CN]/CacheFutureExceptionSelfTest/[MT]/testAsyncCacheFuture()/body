@@ -1,0 +1,40 @@
+{
+  final CountDownLatch readyLatch=new CountDownLatch(1);
+  GridJavaProcess node1=null;
+  Collection<String> jvmArgs=Arrays.asList("-ea","-DIGNITE_QUIET=false");
+  try {
+    node1=GridJavaProcess.exec(StartNode.class.getName(),null,log,new CI1<String>(){
+      @Override public void apply(      String s){
+        info("Server node1: " + s);
+        if (s.contains("Topology snapshot"))         readyLatch.countDown();
+      }
+    }
+,null,jvmArgs,null);
+    assertTrue(readyLatch.await(60,SECONDS));
+    Ignite client=startGrid(0);
+    IgniteCache<String,NotSerializableClass> cache=client.getOrCreateCache("CACHE");
+    cache.put("key",new NotSerializableClass());
+    System.setProperty("FAIL","true");
+    IgniteCache<String,NotSerializableClass> asyncCache=cache.withAsync();
+    asyncCache.get("key");
+    final CountDownLatch futLatch=new CountDownLatch(1);
+    asyncCache.future().listen(new IgniteInClosure<IgniteFuture<Object>>(){
+      @Override public void apply(      IgniteFuture<Object> fut){
+        assertTrue(fut.isDone());
+        try {
+          fut.get();
+          fail();
+        }
+ catch (        CacheException e) {
+          log.info("Expected error: " + e);
+          futLatch.countDown();
+        }
+      }
+    }
+);
+    assertTrue(futLatch.await(60,SECONDS));
+  }
+  finally {
+    if (node1 != null)     node1.killProcess();
+  }
+}
