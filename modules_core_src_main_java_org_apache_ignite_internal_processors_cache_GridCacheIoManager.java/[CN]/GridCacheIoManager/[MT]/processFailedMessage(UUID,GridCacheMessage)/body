@@ -64,13 +64,14 @@ break;
 case 50:
 {
 GridNearGetResponse res=(GridNearGetResponse)msg;
-GridPartitionedGetFuture fut=(GridPartitionedGetFuture)ctx.mvcc().future(res.version(),res.futureId());
+GridCacheFuture fut=ctx.mvcc().future(res.version(),res.futureId());
 if (fut == null) {
 if (log.isDebugEnabled()) log.debug("Failed to find future for get response [sender=" + nodeId + ", res="+ res+ ']');
 return;
 }
 res.error(res.classError());
-fut.onResult(nodeId,res);
+if (fut instanceof GridNearGetFuture) ((GridNearGetFuture)fut).onResult(nodeId,res);
+ else ((GridPartitionedGetFuture)fut).onResult(nodeId,res);
 }
 break;
 case 51:
