@@ -1,25 +1,8 @@
 {
-  Ignite srv=startGrid(0);
-  IgniteCache<String,NotSerializableClass> cache=srv.getOrCreateCache("CACHE");
-  cache.put("key",new NotSerializableClass());
-  Ignite client=startGrid(1);
-  IgniteCache<String,NotSerializableClass> asyncCache=client.<String,NotSerializableClass>cache("CACHE").withAsync();
-  System.setProperty("FAIL","true");
-  asyncCache.get("key");
-  final CountDownLatch futLatch=new CountDownLatch(1);
-  asyncCache.future().listen(new IgniteInClosure<IgniteFuture<Object>>(){
-    @Override public void apply(    IgniteFuture<Object> fut){
-      assertTrue(fut.isDone());
-      try {
-        fut.get();
-        fail();
-      }
- catch (      CacheException e) {
-        log.info("Expected error: " + e);
-        futLatch.countDown();
-      }
-    }
-  }
-);
-  assertTrue(futLatch.await(60,SECONDS));
+  startGrid(0);
+  startGrid(1);
+  testGet(false,false);
+  testGet(false,true);
+  testGet(true,false);
+  testGet(true,true);
 }
