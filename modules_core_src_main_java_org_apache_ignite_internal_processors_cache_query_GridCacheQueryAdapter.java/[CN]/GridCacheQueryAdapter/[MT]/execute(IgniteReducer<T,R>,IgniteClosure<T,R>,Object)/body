@@ -1,7 +1,13 @@
 {
-  Collection<ClusterNode> nodes=nodes();
+  Collection<ClusterNode> nodes;
+  try {
+    nodes=nodes();
+  }
+ catch (  IgniteCheckedException e) {
+    return queryErrorFuture(cctx,e,log);
+  }
   cctx.checkSecurity(SecurityPermission.CACHE_READ);
-  if (nodes.isEmpty())   return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),new ClusterGroupEmptyCheckedException());
+  if (nodes.isEmpty())   return queryErrorFuture(cctx,new ClusterGroupEmptyCheckedException(),log);
   if (log.isDebugEnabled())   log.debug("Executing query [query=" + this + ", nodes="+ nodes+ ']');
   if (cctx.deploymentEnabled()) {
     try {
@@ -9,7 +15,7 @@
       cctx.deploy().registerClasses(args);
     }
  catch (    IgniteCheckedException e) {
-      return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),e);
+      return queryErrorFuture(cctx,e,log);
     }
   }
   if (subjId == null)   subjId=cctx.localNodeId();

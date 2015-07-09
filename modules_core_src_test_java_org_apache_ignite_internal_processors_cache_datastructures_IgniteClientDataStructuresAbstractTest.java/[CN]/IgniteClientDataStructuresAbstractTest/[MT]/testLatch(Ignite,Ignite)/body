@@ -1,0 +1,26 @@
+{
+  assertNull(creator.countDownLatch("latch1",1,true,false));
+  assertNull(other.countDownLatch("latch1",1,true,false));
+  try (IgniteCountDownLatch latch=creator.countDownLatch("latch1",1,true,true)){
+    assertNotNull(latch);
+    assertEquals(1,latch.count());
+    IgniteInternalFuture<?> fut=GridTestUtils.runAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        U.sleep(1000);
+        IgniteCountDownLatch latch0=other.countDownLatch("latch1",1,true,false);
+        assertEquals(1,latch0.count());
+        log.info("Count down latch.");
+        latch0.countDown();
+        assertEquals(0,latch0.count());
+        return null;
+      }
+    }
+);
+    log.info("Await latch.");
+    assertTrue(latch.await(5000,TimeUnit.MILLISECONDS));
+    log.info("Finished wait.");
+    fut.get();
+  }
+   assertNull(creator.countDownLatch("latch1",1,true,false));
+  assertNull(other.countDownLatch("latch1",1,true,false));
+}

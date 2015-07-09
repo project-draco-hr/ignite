@@ -1,0 +1,26 @@
+{
+  assertNull(creator.queue("q1",0,null));
+  assertNull(other.queue("q1",0,null));
+  try (IgniteQueue<Integer> queue=creator.queue("q1",0,new CollectionConfiguration())){
+    assertNotNull(queue);
+    queue.add(1);
+    assertEquals(1,queue.poll().intValue());
+    IgniteInternalFuture<?> fut=GridTestUtils.runAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        U.sleep(1000);
+        IgniteQueue<Integer> queue0=other.queue("q1",0,null);
+        assertEquals(0,queue0.size());
+        log.info("Add in queue.");
+        queue0.add(2);
+        return null;
+      }
+    }
+);
+    log.info("Try take.");
+    assertEquals(2,queue.take().intValue());
+    log.info("Finished take.");
+    fut.get();
+  }
+   assertNull(creator.queue("q1",0,null));
+  assertNull(other.queue("q1",0,null));
+}
