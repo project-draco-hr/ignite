@@ -1,6 +1,10 @@
 {
   utilityPool.execute(new Runnable(){
     @Override public void run(){
+      if (spiState == DISCONNECTED) {
+        if (log.isDebugEnabled())         log.debug("Ignoring ping request, SPI is already disconnected: " + msg);
+        return;
+      }
       boolean res=pingNode(msg.nodeToPing());
       final ClientMessageWorker worker=clientMsgWorkers.get(msg.creatorNodeId());
       if (worker == null) {
