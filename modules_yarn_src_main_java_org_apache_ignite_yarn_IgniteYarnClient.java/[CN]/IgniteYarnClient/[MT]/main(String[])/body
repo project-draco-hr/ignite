@@ -8,7 +8,9 @@
   yarnClient.start();
   YarnClientApplication app=yarnClient.createApplication();
   FileSystem fs=FileSystem.get(conf);
-  Path ignite=getIgnite(props,fs);
+  Path ignite;
+  if (props.ignitePath() == null)   ignite=getIgnite(props,fs);
+ else   ignite=new Path(props.ignitePath());
   Path appJar=IgniteYarnUtils.copyLocalToHdfs(fs,pathAppMasterJar,props.igniteWorkDir() + File.separator + IgniteYarnUtils.JAR_NAME);
   ContainerLaunchContext amContainer=Records.newRecord(ContainerLaunchContext.class);
   amContainer.setCommands(Collections.singletonList(Environment.JAVA_HOME.$() + "/bin/java -Xmx512m " + ApplicationMaster.class.getName()+ IgniteYarnUtils.SPACE+ ignite.toUri()+ IgniteYarnUtils.YARN_LOG_OUT));
