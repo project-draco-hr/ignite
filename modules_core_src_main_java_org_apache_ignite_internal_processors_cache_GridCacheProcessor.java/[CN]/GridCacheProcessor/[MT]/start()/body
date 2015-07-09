@@ -1,13 +1,17 @@
 {
-  if (ctx.config().isDaemon())   return;
+  if (ctx.config().isDaemon()) {
+    sharedCtx=createSharedContext(ctx,CU.startStoreSessionListeners(ctx,null));
+    for (    GridCacheSharedManager mgr : sharedCtx.managers())     mgr.start(sharedCtx);
+    return;
+  }
   DeploymentMode depMode=ctx.config().getDeploymentMode();
   if (!F.isEmpty(ctx.config().getCacheConfiguration())) {
     if (depMode != CONTINUOUS && depMode != SHARED)     U.warn(log,"Deployment mode for cache is not CONTINUOUS or SHARED " + "(it is recommended that you change deployment mode and restart): " + depMode,"Deployment mode for cache is not CONTINUOUS or SHARED.");
   }
   maxRebalanceOrder=validatePreloadOrder(ctx.config().getCacheConfiguration());
-  ctx.discovery().setCustomEventListener(new GridPlainInClosure<Serializable>(){
-    @Override public void apply(    Serializable evt){
-      if (evt instanceof DynamicCacheChangeBatch)       onCacheChangeRequested((DynamicCacheChangeBatch)evt);
+  ctx.discovery().setCustomEventListener(DynamicCacheChangeBatch.class,new CustomEventListener<DynamicCacheChangeBatch>(){
+    @Override public void onCustomEvent(    ClusterNode snd,    DynamicCacheChangeBatch msg){
+      onCacheChangeRequested(msg);
     }
   }
 );
@@ -22,7 +26,7 @@
   if (IgniteComponentType.HADOOP.inClassPath())   internalCaches.add(CU.SYS_CACHE_HADOOP_MR);
   internalCaches.add(CU.ATOMICS_CACHE_NAME);
   CacheConfiguration[] cfgs=ctx.config().getCacheConfiguration();
-  sharedCtx=createSharedContext(ctx);
+  sharedCtx=createSharedContext(ctx,CU.startStoreSessionListeners(ctx,ctx.config().getCacheStoreSessionListenerFactories()));
   ctx.performance().add("Disable serializable transactions (set 'txSerializableEnabled' to false)",!ctx.config().getTransactionConfiguration().isTxSerializableEnabled());
   for (int i=0; i < cfgs.length; i++) {
     checkSerializable(cfgs[i]);
@@ -47,7 +51,8 @@
     desc.staticallyConfigured(true);
     if (!template) {
       registeredCaches.put(masked,desc);
-      ctx.discovery().setCacheFilter(cfg.getName(),cfg.getNodeFilter(),cfg.getNearConfiguration() != null,cfg.getCacheMode() == LOCAL);
+      ctx.discovery().setCacheFilter(cfg.getName(),cfg.getNodeFilter(),cfg.getNearConfiguration() != null && cfg.getCacheMode() == PARTITIONED,cfg.getCacheMode() == LOCAL);
+      ctx.discovery().addClientNode(cfg.getName(),ctx.localNodeId(),cfg.getNearConfiguration() != null);
       if (!cacheType.userCache())       stopSeq.addLast(cfg.getName());
  else       stopSeq.addFirst(cfg.getName());
     }

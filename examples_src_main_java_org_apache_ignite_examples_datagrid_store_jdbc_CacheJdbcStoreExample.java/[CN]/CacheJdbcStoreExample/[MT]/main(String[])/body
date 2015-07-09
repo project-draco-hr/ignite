@@ -6,6 +6,14 @@
     CacheConfiguration<Long,Person> cacheCfg=new CacheConfiguration<>(CACHE_NAME);
     cacheCfg.setAtomicityMode(TRANSACTIONAL);
     cacheCfg.setCacheStoreFactory(FactoryBuilder.factoryOf(CacheJdbcPersonStore.class));
+    cacheCfg.setCacheStoreSessionListenerFactories(new Factory<CacheStoreSessionListener>(){
+      @Override public CacheStoreSessionListener create(){
+        CacheJdbcStoreSessionListener lsnr=new CacheJdbcStoreSessionListener();
+        lsnr.setDataSource(CacheJdbcPersonStore.DATA_SRC);
+        return lsnr;
+      }
+    }
+);
     cacheCfg.setReadThrough(true);
     cacheCfg.setWriteThrough(true);
     try (IgniteCache<Long,Person> cache=ignite.getOrCreateCache(cacheCfg)){

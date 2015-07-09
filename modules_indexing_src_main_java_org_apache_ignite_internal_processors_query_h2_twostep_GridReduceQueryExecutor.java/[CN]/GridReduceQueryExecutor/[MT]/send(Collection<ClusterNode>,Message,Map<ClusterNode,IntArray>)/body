@@ -1,0 +1,19 @@
+{
+  boolean locNodeFound=false;
+  boolean ok=true;
+  for (  ClusterNode node : nodes) {
+    if (node.isLocal()) {
+      locNodeFound=true;
+      continue;
+    }
+    try {
+      ctx.io().send(node,GridTopic.TOPIC_QUERY,copy(msg,node,partsMap),GridIoPolicy.PUBLIC_POOL);
+    }
+ catch (    IgniteCheckedException e) {
+      ok=false;
+      U.warn(log,e.getMessage());
+    }
+  }
+  if (locNodeFound)   h2.mapQueryExecutor().onMessage(ctx.localNodeId(),copy(msg,ctx.cluster().get().localNode(),partsMap));
+  return ok;
+}

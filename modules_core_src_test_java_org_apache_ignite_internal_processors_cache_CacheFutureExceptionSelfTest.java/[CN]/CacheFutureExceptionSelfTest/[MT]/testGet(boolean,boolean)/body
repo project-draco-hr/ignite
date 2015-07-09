@@ -1,0 +1,32 @@
+{
+  fail=false;
+  Ignite srv=grid(0);
+  Ignite client=grid(1);
+  final String cacheName=nearCache ? ("NEAR-CACHE-" + cpyOnRead) : ("CACHE-" + cpyOnRead);
+  CacheConfiguration<Object,Object> ccfg=new CacheConfiguration<>();
+  ccfg.setCopyOnRead(cpyOnRead);
+  ccfg.setName(cacheName);
+  IgniteCache<Object,Object> cache=srv.createCache(ccfg);
+  cache.put("key",new NotSerializableClass());
+  IgniteCache<Object,Object> clientCache=nearCache ? client.createNearCache(cacheName,new NearCacheConfiguration<>()) : client.cache(cacheName);
+  IgniteCache<Object,Object> asyncCache=clientCache.withAsync();
+  fail=true;
+  asyncCache.get("key");
+  final CountDownLatch futLatch=new CountDownLatch(1);
+  asyncCache.future().listen(new IgniteInClosure<IgniteFuture<Object>>(){
+    @Override public void apply(    IgniteFuture<Object> fut){
+      assertTrue(fut.isDone());
+      try {
+        fut.get();
+        fail();
+      }
+ catch (      CacheException e) {
+        log.info("Expected error: " + e);
+        futLatch.countDown();
+      }
+    }
+  }
+);
+  assertTrue(futLatch.await(5,SECONDS));
+  srv.destroyCache(cache.getName());
+}

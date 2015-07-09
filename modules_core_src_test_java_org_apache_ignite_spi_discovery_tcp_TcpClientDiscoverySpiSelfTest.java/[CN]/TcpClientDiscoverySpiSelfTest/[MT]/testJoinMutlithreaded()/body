@@ -1,0 +1,14 @@
+{
+  startServerNodes(1);
+  final int CLIENTS=30;
+  clientsPerSrv=CLIENTS;
+  GridTestUtils.runMultiThreaded(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      Ignite g=startGrid("client-" + clientIdx.getAndIncrement());
+      clientNodeIds.add(g.cluster().localNode().id());
+      return null;
+    }
+  }
+,CLIENTS,"start-client");
+  checkNodes(1,CLIENTS);
+}

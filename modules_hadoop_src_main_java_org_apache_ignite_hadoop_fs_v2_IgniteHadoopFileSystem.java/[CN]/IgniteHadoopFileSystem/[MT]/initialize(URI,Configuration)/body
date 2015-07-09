@@ -14,7 +14,7 @@
     String logDirCfg=parameter(cfg,PARAM_IGFS_LOG_DIR,uriAuthority,DFLT_IGFS_LOG_DIR);
     File logDirFile=U.resolveIgnitePath(logDirCfg);
     String logDir=logDirFile != null ? logDirFile.getAbsolutePath() : null;
-    rmtClient=new HadoopIgfsWrapper(uriAuthority,logDir,cfg,LOG);
+    rmtClient=new HadoopIgfsWrapper(uriAuthority,logDir,cfg,LOG,user);
     IgfsHandshakeResponse handshake=rmtClient.handshake(logDir);
     grpBlockSize=handshake.blockSize();
     IgfsPaths paths=handshake.secondaryPaths();
@@ -40,10 +40,9 @@
       Map<String,String> props=paths.properties();
       String secUri=props.get(SECONDARY_FS_URI);
       String secConfPath=props.get(SECONDARY_FS_CONFIG_PATH);
-      String secUserName=props.get(SECONDARY_FS_USER_NAME);
       try {
-        SecondaryFileSystemProvider secProvider=new SecondaryFileSystemProvider(secUri,secConfPath,secUserName);
-        secondaryFs=secProvider.createAbstractFileSystem();
+        SecondaryFileSystemProvider secProvider=new SecondaryFileSystemProvider(secUri,secConfPath);
+        secondaryFs=secProvider.createAbstractFileSystem(user);
         secondaryUri=secProvider.uri();
       }
  catch (      IOException e) {

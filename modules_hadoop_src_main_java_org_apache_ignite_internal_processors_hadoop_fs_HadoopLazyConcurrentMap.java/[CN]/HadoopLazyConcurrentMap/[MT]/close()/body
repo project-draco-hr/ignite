@@ -1,0 +1,30 @@
+{
+  closeLock.writeLock().lock();
+  try {
+    if (closed)     return;
+    closed=true;
+    Exception err=null;
+    Set<K> keySet=map.keySet();
+    for (    K key : keySet) {
+      V v=null;
+      try {
+        v=map.get(key).getValue();
+      }
+ catch (      IgniteCheckedException ignore) {
+      }
+      if (v != null) {
+        try {
+          v.close();
+        }
+ catch (        Exception err0) {
+          if (err == null)           err=err0;
+        }
+      }
+    }
+    map.clear();
+    if (err != null)     throw new IgniteCheckedException(err);
+  }
+  finally {
+    closeLock.writeLock().unlock();
+  }
+}

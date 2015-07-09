@@ -1,0 +1,14 @@
+{
+  if (gridCount() > 1) {
+    IgniteCache<Object,Object> cache=grid(0).cache(null);
+    Integer key=nearKey(cache);
+    primaryCache(key,null).put(key,1);
+    assertEquals(1,cache.get(key));
+    primaryCache(key,null).put(key,2);
+    if (cache.getConfiguration(CacheConfiguration.class).getNearConfiguration() != null)     assertEquals(2,cache.localPeek(key));
+    assertEquals(2,cache.get(key));
+    int cnt=0;
+    for (    Cache.Entry e : cache)     cnt++;
+    assertEquals(1,cnt);
+  }
+}

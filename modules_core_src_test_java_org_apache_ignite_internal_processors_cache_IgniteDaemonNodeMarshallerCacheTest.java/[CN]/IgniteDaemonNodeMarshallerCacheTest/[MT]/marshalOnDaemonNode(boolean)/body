@@ -1,0 +1,30 @@
+{
+  int nodeIdx=0;
+  if (!startFirst) {
+    Ignite ignite1=startGrid(nodeIdx++);
+    assertFalse("true".equals(ignite1.cluster().localNode().attribute(ATTR_DAEMON)));
+  }
+  daemon=true;
+  Ignite daemonNode=startGrid(nodeIdx++);
+  assertEquals("true",daemonNode.cluster().localNode().attribute(ATTR_DAEMON));
+  daemon=false;
+  if (startFirst) {
+    Ignite ignite1=startGrid(nodeIdx++);
+    assertFalse("true".equals(ignite1.cluster().localNode().attribute(ATTR_DAEMON)));
+  }
+  awaitPartitionMapExchange();
+  TestClass1 res1=daemonNode.compute(daemonNode.cluster().forRemotes()).call(new TestCallable1());
+  assertNotNull(res1);
+  assertEquals(111,res1.val);
+  Ignite ignite2=startGrid(nodeIdx);
+  CacheConfiguration<Object,Object> ccfg=new CacheConfiguration<>();
+  ccfg.setRebalanceMode(SYNC);
+  ccfg.setCacheMode(REPLICATED);
+  IgniteCache<Object,Object> cache=ignite2.getOrCreateCache(ccfg);
+  awaitPartitionMapExchange();
+  cache.put(1,new TestClass1(1));
+  cache.put(2,new TestClass2(2));
+  TestClass2 res2=daemonNode.compute(daemonNode.cluster().forRemotes()).call(new TestCallable2());
+  assertNotNull(res2);
+  assertEquals(222,res2.val);
+}

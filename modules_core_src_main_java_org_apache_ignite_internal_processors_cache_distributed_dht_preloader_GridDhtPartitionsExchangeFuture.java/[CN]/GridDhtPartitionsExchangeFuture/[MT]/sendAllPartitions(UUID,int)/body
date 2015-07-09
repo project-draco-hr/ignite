@@ -1,0 +1,23 @@
+{
+  ClusterNode n=cctx.node(nodeId);
+  try {
+    if (n != null)     sendAllPartitions(F.asList(n),exchId);
+  }
+ catch (  IgniteCheckedException e) {
+    if (e instanceof ClusterTopologyCheckedException || !cctx.discovery().alive(n)) {
+      log.debug("Failed to send full partition map to node, node left grid " + "[rmtNode=" + nodeId + ", exchangeId="+ exchId+ ']');
+      return;
+    }
+    if (retryCnt > 0) {
+      long timeout=cctx.gridConfig().getNetworkSendRetryDelay();
+      LT.error(log,e,"Failed to send full partition map to node (will retry after timeout) " + "[node=" + nodeId + ", exchangeId="+ exchId+ ", timeout="+ timeout+ ']');
+      cctx.time().addTimeoutObject(new GridTimeoutObjectAdapter(timeout){
+        @Override public void onTimeout(){
+          sendAllPartitions(nodeId,retryCnt - 1);
+        }
+      }
+);
+    }
+ else     U.error(log,"Failed to send full partition map [node=" + n + ", exchangeId="+ exchId+ ']',e);
+  }
+}

@@ -18,19 +18,17 @@
   }
   if (beginningOfTheEnd == null)   return false;
   size.add(s);
-  restartFromTail:   for (; ; ) {
-    for (Node<E> t=tail, p=t, q; ; ) {
-      if ((q=p.next) != null && (q=(p=q).next) != null)       p=(t != (t=tail)) ? t : q;
- else       if (p.prev == p)       continue restartFromTail;
+  restartFromTail:   for (; ; )   for (Node<E> t=tail, p=t, q; ; ) {
+    if ((q=p.next) != null && (q=(p=q).next) != null)     p=(t != (t=tail)) ? t : q;
+ else     if (p.prev == p)     continue restartFromTail;
  else {
-        beginningOfTheEnd.lazySetPrev(p);
-        if (p.casNext(null,beginningOfTheEnd)) {
-          if (!casTail(t,last)) {
-            t=tail;
-            if (last.next == null)             casTail(t,last);
-          }
-          return true;
+      beginningOfTheEnd.lazySetPrev(p);
+      if (p.casNext(null,beginningOfTheEnd)) {
+        if (!casTail(t,last)) {
+          t=tail;
+          if (last.next == null)           casTail(t,last);
         }
+        return true;
       }
     }
   }
