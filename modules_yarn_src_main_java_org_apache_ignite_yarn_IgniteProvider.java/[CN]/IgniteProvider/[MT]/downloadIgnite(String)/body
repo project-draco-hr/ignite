@@ -1,12 +1,13 @@
 {
   try {
-    URL url=new URL(DIRECT_DOWNLOAD_LINK + version + ".zip");
+    URL url=new URL(igniteUrl);
     HttpURLConnection conn=(HttpURLConnection)url.openConnection();
     int code=conn.getResponseCode();
     if (code == 200) {
-      checkDownloadFolder();
       String fileName=fileName(url.toString());
-      FileOutputStream outFile=new FileOutputStream(props.igniteLocalWorkDir() + File.separator + fileName);
+      String filePath=props.igniteLocalWorkDir() + File.separator + fileName;
+      if (new File(filePath).exists())       return fileName;
+      FileOutputStream outFile=new FileOutputStream(filePath);
       outFile.getChannel().transferFrom(Channels.newChannel(conn.getInputStream()),0,Long.MAX_VALUE);
       outFile.close();
       return fileName;

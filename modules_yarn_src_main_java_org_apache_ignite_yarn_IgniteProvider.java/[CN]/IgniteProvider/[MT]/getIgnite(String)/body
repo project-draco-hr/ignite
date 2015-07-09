@@ -1,23 +1,7 @@
 {
-  File folder=checkDownloadFolder();
-  List<String> hdfsFiles=findIgnites(fs,props.igniteReleasesDir());
-  if (hdfsFiles != null && !hdfsFiles.isEmpty()) {
-    for (    String fileName : hdfsFiles) {
-      if (fileName.equals("gridgain-community-fabric-" + version + ".zip"))       return new Path(formatPath(props.igniteReleasesDir(),version));
-    }
-  }
-  List<String> localFiles=findIgnites(folder);
-  if (localFiles != null) {
-    for (    String fileName : localFiles) {
-      if (fileName.equals("gridgain-community-fabric-" + version + ".zip")) {
-        Path dst=new Path(formatPath(props.igniteReleasesDir(),version));
-        fs.copyFromLocalFile(new Path(formatPath(props.igniteLocalWorkDir(),latestVersion)),dst);
-        return dst;
-      }
-    }
-  }
-  downloadIgnite(version);
-  Path dst=new Path(formatPath(props.igniteReleasesDir(),version));
-  fs.copyFromLocalFile(new Path(formatPath(props.igniteLocalWorkDir(),latestVersion)),dst);
+  checkDownloadFolder();
+  String fileName=downloadIgnite(version);
+  Path dst=new Path(props.igniteReleasesDir() + File.separator + fileName);
+  if (!fs.exists(dst))   fs.copyFromLocalFile(new Path(props.igniteLocalWorkDir() + File.separator + fileName),dst);
   return dst;
 }
