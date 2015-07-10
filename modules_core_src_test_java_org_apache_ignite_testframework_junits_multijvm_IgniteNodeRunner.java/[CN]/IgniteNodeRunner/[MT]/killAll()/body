@@ -1,0 +1,19 @@
+{
+  MonitoredHost monitoredHost=MonitoredHost.getMonitoredHost(new HostIdentifier("localhost"));
+  Set<Integer> jvms=monitoredHost.activeVms();
+  List<Integer> res=new ArrayList<>();
+  for (  Integer jvmId : jvms) {
+    try {
+      MonitoredVm vm=monitoredHost.getMonitoredVm(new VmIdentifier("//" + jvmId + "?mode=r"),0);
+      if (IgniteNodeRunner.class.getName().equals(MonitoredVmUtil.mainClass(vm,true))) {
+        Process killProc=U.isWindows() ? Runtime.getRuntime().exec(new String[]{"taskkill","/pid",jvmId.toString(),"/f","/t"}) : Runtime.getRuntime().exec(new String[]{"kill","-9",jvmId.toString()});
+        killProc.waitFor();
+        res.add(jvmId);
+      }
+    }
+ catch (    Exception e) {
+      X.printerrln("Could not kill IgniteNodeRunner java processes. Jvm pid = " + jvmId,e);
+    }
+  }
+  return res;
+}
