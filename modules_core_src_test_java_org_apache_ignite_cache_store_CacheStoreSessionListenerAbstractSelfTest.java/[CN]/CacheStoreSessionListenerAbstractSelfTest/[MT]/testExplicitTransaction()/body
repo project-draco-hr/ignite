@@ -1,15 +1,17 @@
 {
   CacheConfiguration<Integer,Integer> cfg=cacheConfiguration(null,CacheAtomicityMode.TRANSACTIONAL);
-  try (IgniteCache<Integer,Integer> cache=ignite(0).createCache(cfg)){
-    try (Transaction tx=ignite(0).transactions().txStart()){
-      cache.put(1,1);
-      cache.put(2,2);
-      cache.remove(3);
-      cache.remove(4);
-      tx.commit();
-    }
-   }
-   assertEquals(2,writeCnt.get());
+  IgniteCache<Integer,Integer> cache=ignite(0).createCache(cfg);
+  try (Transaction tx=ignite(0).transactions().txStart()){
+    cache.put(1,1);
+    cache.put(2,2);
+    cache.remove(3);
+    cache.remove(4);
+    tx.commit();
+  }
+  finally {
+    cache.destroy();
+  }
+  assertEquals(2,writeCnt.get());
   assertEquals(2,deleteCnt.get());
   assertEquals(3,reuseCnt.get());
 }

@@ -1,0 +1,38 @@
+{
+  IgniteCache<Integer,Integer> dhtCache0=grid(0).getOrCreateCache(getDhtConfig());
+  final Integer key=primaryKey(dhtCache0);
+  assertNull(dhtCache0.get(key));
+  dhtCache0.put(key,key);
+  assertEquals(key,dhtCache0.get(key));
+  IgniteCache<Integer,Integer> dhtCache1=grid(1).cache(CACHE_NAME_DHT);
+  IgniteCache<Integer,Integer> dhtCache2=grid(2).cache(CACHE_NAME_DHT);
+  dhtCache0.close();
+  try {
+    dhtCache0.get(key);
+    fail();
+  }
+ catch (  IllegalStateException ignored) {
+  }
+  assertEquals(key,dhtCache1.get(key));
+  assertEquals(key,dhtCache2.get(key));
+  IgniteCache<Integer,Integer> dhtCache0New=grid(0).cache(CACHE_NAME_DHT);
+  assertNotSame(dhtCache0,dhtCache0New);
+  assertEquals(key,dhtCache0New.get(key));
+  dhtCache2.put(key,key + 1);
+  assertEquals((Object)(key + 1),dhtCache0New.get(key));
+  stopAllGrids(true);
+  startGrid(0);
+  dhtCache0=grid(0).getOrCreateCache(getDhtConfig());
+  assertNull(dhtCache0.get(key));
+  dhtCache0.put(key,key);
+  assertEquals(key,dhtCache0.get(key));
+  dhtCache0.close();
+  try {
+    dhtCache0.get(key);
+    fail();
+  }
+ catch (  IllegalStateException ignored) {
+  }
+  dhtCache0=grid(0).cache(CACHE_NAME_DHT);
+  assertEquals(key,dhtCache0.get(key));
+}
