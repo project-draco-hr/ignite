@@ -6,22 +6,22 @@
     ccfg.setName(DYNAMIC_CACHE_NAME);
     ccfg.setCacheMode(CacheMode.PARTITIONED);
     ccfg.setNodeFilter(NODE_FILTER);
-    try (IgniteCache cache=ig.createCache(ccfg,new NearCacheConfiguration())){
-      assertNotNull(cache);
-      GridCacheAdapter<Object,Object> cacheAdapter=((IgniteKernal)ig).internalCache(DYNAMIC_CACHE_NAME);
-      assertNotNull(cacheAdapter);
-      assertFalse(cacheAdapter.context().affinityNode());
-      assertTrue(cacheAdapter.context().isNear());
-      try {
-        IgniteEx grid=startGrid(nodeCount() + 1);
-        GridDiscoveryManager disco=grid.context().discovery();
-        assertTrue(disco.cacheNearNode(disco.node(ig.cluster().localNode().id()),DYNAMIC_CACHE_NAME));
-      }
-  finally {
-        stopGrid(nodeCount() + 1);
-      }
+    IgniteCache cache=ig.createCache(ccfg,new NearCacheConfiguration());
+    assertNotNull(cache);
+    GridCacheAdapter<Object,Object> cacheAdapter=((IgniteKernal)ig).internalCache(DYNAMIC_CACHE_NAME);
+    assertNotNull(cacheAdapter);
+    assertFalse(cacheAdapter.context().affinityNode());
+    assertTrue(cacheAdapter.context().isNear());
+    try {
+      IgniteEx grid=startGrid(nodeCount() + 1);
+      GridDiscoveryManager disco=grid.context().discovery();
+      assertTrue(disco.cacheNearNode(disco.node(ig.cluster().localNode().id()),DYNAMIC_CACHE_NAME));
     }
-   }
+  finally {
+      cache.destroy();
+      stopGrid(nodeCount() + 1);
+    }
+  }
   finally {
     stopGrid(nodeCount());
   }

@@ -2,14 +2,18 @@
   write.set(true);
   CacheConfiguration<Integer,Integer> cfg1=cacheConfiguration("cache1",CacheAtomicityMode.TRANSACTIONAL);
   CacheConfiguration<Integer,Integer> cfg2=cacheConfiguration("cache2",CacheAtomicityMode.TRANSACTIONAL);
-  try (IgniteCache<Integer,Integer> cache1=ignite(0).createCache(cfg1);IgniteCache<Integer,Integer> cache2=ignite(0).createCache(cfg2)){
-    try (Transaction tx=ignite(0).transactions().txStart()){
-      cache1.put(1,1);
-      cache2.put(2,2);
-      tx.commit();
-    }
-   }
-   try (Connection conn=DriverManager.getConnection(URL)){
+  IgniteCache<Integer,Integer> cache1=ignite(0).createCache(cfg1);
+  IgniteCache<Integer,Integer> cache2=ignite(0).createCache(cfg2);
+  try (Transaction tx=ignite(0).transactions().txStart()){
+    cache1.put(1,1);
+    cache2.put(2,2);
+    tx.commit();
+  }
+  finally {
+    cache1.destroy();
+    cache2.destroy();
+  }
+  try (Connection conn=DriverManager.getConnection(URL)){
     checkTable(conn,1,false);
     checkTable(conn,2,false);
   }

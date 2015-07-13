@@ -1,5 +1,5 @@
 {
-  Transaction tx=txEnabled() ? transactions().txStart() : null;
+  Transaction tx=txShouldBeUsed() ? transactions().txStart() : null;
   IgniteCache<String,Integer> cache=jcache();
   IgniteCache<String,Integer> cacheAsync=cache.withAsync();
   try {
@@ -20,11 +20,13 @@
   cache.localEvict(Collections.singleton("key2"));
   cacheAsync.getAndPutIfAbsent("key2",3);
   assertEquals((Integer)1,cacheAsync.<Integer>future().get());
-  putToStore("key3",3);
-  cacheAsync.getAndPutIfAbsent("key3",4);
-  assertEquals((Integer)3,cacheAsync.<Integer>future().get());
+  if (!isMultiJvm()) {
+    putToStore("key3",3);
+    cacheAsync.getAndPutIfAbsent("key3",4);
+    assertEquals((Integer)3,cacheAsync.<Integer>future().get());
+  }
   cache.localEvict(Collections.singleton("key2"));
-  tx=txEnabled() ? transactions().txStart() : null;
+  tx=txShouldBeUsed() ? transactions().txStart() : null;
   try {
     cacheAsync.getAndPutIfAbsent("key2",3);
     assertEquals(1,cacheAsync.future().get());
