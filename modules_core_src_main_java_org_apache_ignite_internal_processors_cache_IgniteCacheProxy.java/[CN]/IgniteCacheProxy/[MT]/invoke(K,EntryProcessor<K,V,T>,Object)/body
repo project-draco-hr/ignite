@@ -7,8 +7,13 @@
         IgniteInternalFuture<EntryProcessorResult<T>> fut=delegate.invokeAsync(key,entryProcessor,args);
         IgniteInternalFuture<T> fut0=fut.chain(new CX1<IgniteInternalFuture<EntryProcessorResult<T>>,T>(){
           @Override public T applyx(          IgniteInternalFuture<EntryProcessorResult<T>> fut) throws IgniteCheckedException {
-            EntryProcessorResult<T> res=fut.get();
-            return res != null ? res.get() : null;
+            try {
+              EntryProcessorResult<T> res=fut.get();
+              return res != null ? res.get() : null;
+            }
+ catch (            RuntimeException e) {
+              throw new GridClosureException(e);
+            }
           }
         }
 );
