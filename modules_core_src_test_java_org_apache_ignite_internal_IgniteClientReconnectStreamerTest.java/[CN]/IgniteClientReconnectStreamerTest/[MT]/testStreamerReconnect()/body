@@ -1,0 +1,42 @@
+{
+  final Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  final IgniteCache<Object,Object> srvCache=srv.cache(CACHE_NAME);
+  IgniteDataStreamer<Integer,Integer> streamer=client.dataStreamer(CACHE_NAME);
+  for (int i=0; i < 50; i++)   streamer.addData(i,i);
+  streamer.flush();
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return srvCache.localSize() == 50;
+    }
+  }
+,2000L);
+  assertEquals(50,srvCache.localSize());
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      try {
+        client.dataStreamer(CACHE_NAME);
+        fail();
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        assertNotNull(e.reconnectFuture());
+      }
+    }
+  }
+);
+  checkStreamerClosed(streamer);
+  streamer=client.dataStreamer(CACHE_NAME);
+  for (int i=50; i < 100; i++)   streamer.addData(i,i);
+  streamer.flush();
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return srvCache.localSize() == 100;
+    }
+  }
+,2000L);
+  assertEquals(100,srvCache.localSize());
+  streamer.close();
+  streamer.future().get(2,TimeUnit.SECONDS);
+  srvCache.removeAll();
+}

@@ -1,2 +1,19 @@
 {
-}
+  try (IgniteInternalTx tx=CU.txStartInternal(ctx,latchView,PESSIMISTIC,REPEATABLE_READ)){
+    GridCacheCountDownLatchValue latchVal=latchView.get(key);
+    if (latchVal == null) {
+      if (log.isDebugEnabled())       log.debug("Failed to find count down latch with given name: " + name);
+      return 0;
+    }
+    int retVal;
+    if (val > 0) {
+      retVal=latchVal.get() - val;
+      if (retVal < 0)       retVal=0;
+    }
+ else     retVal=0;
+    latchVal.set(retVal);
+    latchView.put(key,latchVal);
+    tx.commit();
+    return retVal;
+  }
+ }

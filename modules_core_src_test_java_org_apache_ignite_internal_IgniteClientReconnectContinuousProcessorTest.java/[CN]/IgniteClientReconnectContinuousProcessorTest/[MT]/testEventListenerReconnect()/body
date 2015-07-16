@@ -1,0 +1,32 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  TestTcpDiscoverySpi srvSpi=spi(srv);
+  EventListener lsnr=new EventListener();
+  UUID opId=client.events().remoteListen(lsnr,null,EventType.EVT_JOB_STARTED);
+  lsnr.latch=new CountDownLatch(1);
+  log.info("Created remote listener: " + opId);
+  final CountDownLatch reconnectLatch=new CountDownLatch(1);
+  client.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      if (evt.type() == EVT_CLIENT_NODE_RECONNECTED) {
+        info("Reconnected: " + evt);
+        reconnectLatch.countDown();
+      }
+      return true;
+    }
+  }
+,EVT_CLIENT_NODE_RECONNECTED);
+  srvSpi.failNode(client.cluster().localNode().id(),null);
+  waitReconnectEvent(reconnectLatch);
+  client.compute().run(new DummyJob());
+  assertTrue(lsnr.latch.await(5000,MILLISECONDS));
+  lsnr.latch=new CountDownLatch(1);
+  srv.compute().run(new DummyJob());
+  assertTrue(lsnr.latch.await(5000,MILLISECONDS));
+  lsnr.latch=new CountDownLatch(1);
+  log.info("Stop listen, should not get events anymore.");
+  client.events().stopRemoteListen(opId);
+  assertFalse(lsnr.latch.await(3000,MILLISECONDS));
+}

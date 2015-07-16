@@ -1,0 +1,45 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  final IgniteAtomicStamped clientAtomicStamped=client.atomicStamped("atomicStampedInProgress",0,0,true);
+  assertEquals(true,clientAtomicStamped.compareAndSet(0,1,0,1));
+  assertEquals(1,clientAtomicStamped.value());
+  assertEquals(1,clientAtomicStamped.stamp());
+  IgniteAtomicStamped srvAtomicStamped=srv.atomicStamped("atomicStampedInProgress",0,0,false);
+  assertEquals(true,srvAtomicStamped.compareAndSet(1,2,1,2));
+  assertEquals(2,srvAtomicStamped.value());
+  assertEquals(2,srvAtomicStamped.stamp());
+  BlockTpcCommunicationSpi servCommSpi=commSpi(srv);
+  servCommSpi.blockMessage(GridNearLockResponse.class);
+  final IgniteInternalFuture<Object> fut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      try {
+        clientAtomicStamped.compareAndSet(2,3,2,3);
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        checkAndWait(e);
+        return true;
+      }
+      return false;
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      return fut.get(200);
+    }
+  }
+,IgniteFutureTimeoutCheckedException.class,null);
+  assertNotDone(fut);
+  servCommSpi.unblockMessage();
+  reconnectClientNode(client,srv,null);
+  assertTrue((Boolean)fut.get(2,TimeUnit.SECONDS));
+  assertEquals(true,clientAtomicStamped.compareAndSet(2,3,2,3));
+  assertEquals(3,clientAtomicStamped.value());
+  assertEquals(3,clientAtomicStamped.stamp());
+  assertEquals(true,srvAtomicStamped.compareAndSet(3,4,3,4));
+  assertEquals(4,srvAtomicStamped.value());
+  assertEquals(4,srvAtomicStamped.stamp());
+  srvAtomicStamped.close();
+}

@@ -1,0 +1,93 @@
+{
+  clientMode=true;
+  IgniteEx client=startGrid(SRV_CNT);
+  final TestTcpDiscoverySpi clientSpi=spi(client);
+  Ignite srv=clientRouter(client);
+  TestTcpDiscoverySpi srvSpi=spi(srv);
+  final IgniteCache<Object,Object> cache=client.getOrCreateCache(new CacheConfiguration<>());
+  final IgniteCache<Object,Object> staticCache=client.cache(STATIC_CACHE);
+  staticCache.put(1,1);
+  assertEquals(1,staticCache.get(1));
+  CacheConfiguration<Object,Object> ccfg=new CacheConfiguration<>();
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  ccfg.setName("nearCache");
+  final IgniteCache<Object,Object> nearCache=client.getOrCreateCache(ccfg,new NearCacheConfiguration<>());
+  nearCache.put(1,1);
+  assertEquals(1,nearCache.localPeek(1));
+  cache.put(1,1);
+  final CountDownLatch disconnectLatch=new CountDownLatch(1);
+  final CountDownLatch reconnectLatch=new CountDownLatch(1);
+  log.info("Block reconnect.");
+  clientSpi.writeLatch=new CountDownLatch(1);
+  final AtomicReference<IgniteInternalFuture> blockPutRef=new AtomicReference<>();
+  client.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      if (evt.type() == EVT_CLIENT_NODE_DISCONNECTED) {
+        info("Disconnected: " + evt);
+        assertEquals(1,reconnectLatch.getCount());
+        blockPutRef.set(GridTestUtils.runAsync(new Callable(){
+          @Override public Object call() throws Exception {
+            log.info("Start put.");
+            try {
+              cache.put(2,2);
+              fail();
+            }
+ catch (            CacheException e) {
+              log.info("Expected exception: " + e);
+              IgniteClientDisconnectedException e0=(IgniteClientDisconnectedException)e.getCause();
+              e0.reconnectFuture().get();
+            }
+            cache.put(2,2);
+            log.info("Finish put.");
+            return null;
+          }
+        }
+));
+        disconnectLatch.countDown();
+      }
+ else       if (evt.type() == EVT_CLIENT_NODE_RECONNECTED) {
+        info("Reconnected: " + evt);
+        assertEquals(0,disconnectLatch.getCount());
+        reconnectLatch.countDown();
+      }
+      return true;
+    }
+  }
+,EVT_CLIENT_NODE_DISCONNECTED,EVT_CLIENT_NODE_RECONNECTED);
+  log.info("Fail client.");
+  srvSpi.failNode(client.cluster().localNode().id(),null);
+  waitReconnectEvent(disconnectLatch);
+  IgniteInternalFuture putFut=blockPutRef.get();
+  assertNotDone(putFut);
+  U.sleep(5000);
+  assertNotDone(putFut);
+  log.info("Allow reconnect.");
+  clientSpi.writeLatch.countDown();
+  assertTrue(reconnectLatch.await(5000,MILLISECONDS));
+  checkCacheDiscoveryData(srv,client,null,true,true,false);
+  checkCacheDiscoveryData(srv,client,"nearCache",true,true,true);
+  checkCacheDiscoveryData(srv,client,STATIC_CACHE,true,true,false);
+  assertEquals(1,cache.get(1));
+  putFut.get();
+  assertEquals(2,cache.get(2));
+  cache.put(3,3);
+  assertEquals(3,cache.get(3));
+  assertNull(nearCache.localPeek(1));
+  staticCache.put(10,10);
+  assertEquals(10,staticCache.get(10));
+  nearCache.put(20,20);
+  srv.cache(nearCache.getName()).put(20,21);
+  assertEquals(21,nearCache.localPeek(20));
+  this.clientMode=false;
+  IgniteEx srv2=startGrid(SRV_CNT + 1);
+  Integer key=primaryKey(srv2.cache(null));
+  cache.put(key,4);
+  assertEquals(4,cache.get(key));
+  checkCacheDiscoveryData(srv2,client,null,true,true,false);
+  checkCacheDiscoveryData(srv2,client,"nearCache",true,true,true);
+  checkCacheDiscoveryData(srv2,client,STATIC_CACHE,true,true,false);
+  staticCache.put(20,20);
+  assertEquals(20,staticCache.get(20));
+  srv.cache(nearCache.getName()).put(20,22);
+  assertEquals(22,nearCache.localPeek(20));
+}

@@ -1,2 +1,77 @@
 {
+  boolean success=false;
+  Exception err=null;
+  long timeout=join ? spi.joinTimeout : spi.netTimeout;
+  long startTime=U.currentTimeMillis();
+  if (log.isDebugEnabled())   log.debug("Started reconnect process [join=" + join + ", timeout="+ timeout+ ']');
+  try {
+    while (true) {
+      T2<Socket,Boolean> joinRes=joinTopology(true,timeout);
+      if (joinRes == null) {
+        if (join) {
+          joinError(new IgniteSpiException("Join process timed out, connection failed and " + "failed to reconnect (consider increasing 'joinTimeout' configuration property) " + "[networkTimeout=" + spi.joinTimeout + ", sock="+ sock+ ']'));
+        }
+ else         U.error(log,"Failed to reconnect to cluster (consider increasing 'networkTimeout' " + "configuration property) [networkTimeout=" + spi.netTimeout + ", sock="+ sock+ ']');
+        return;
+      }
+      sock=joinRes.get1();
+      clientAck=joinRes.get2();
+      if (isInterrupted())       throw new InterruptedException();
+      int oldTimeout=0;
+      try {
+        oldTimeout=sock.getSoTimeout();
+        sock.setSoTimeout((int)spi.netTimeout);
+        InputStream in=new BufferedInputStream(sock.getInputStream());
+        sock.setKeepAlive(true);
+        sock.setTcpNoDelay(true);
+        List<TcpDiscoveryAbstractMessage> msgs=null;
+        while (!isInterrupted()) {
+          TcpDiscoveryAbstractMessage msg=spi.marsh.unmarshal(in,U.gridClassLoader());
+          if (msg instanceof TcpDiscoveryClientReconnectMessage) {
+            TcpDiscoveryClientReconnectMessage res=(TcpDiscoveryClientReconnectMessage)msg;
+            if (res.creatorNodeId().equals(getLocalNodeId())) {
+              if (log.isDebugEnabled())               log.debug("Received reconnect response [success=" + res.success() + ", msg="+ msg+ ']');
+              if (res.success()) {
+                msgWorker.addMessage(res);
+                if (msgs != null) {
+                  for (                  TcpDiscoveryAbstractMessage msg0 : msgs)                   msgWorker.addMessage(msg0);
+                }
+                success=true;
+                return;
+              }
+ else               return;
+            }
+          }
+ else           if (spi.ensured(msg)) {
+            if (msgs == null)             msgs=new ArrayList<>();
+            msgs.add(msg);
+          }
+        }
+      }
+ catch (      IOException|IgniteCheckedException e) {
+        U.closeQuiet(sock);
+        if (log.isDebugEnabled())         log.error("Reconnect error [join=" + join + ", timeout="+ timeout+ ']',e);
+        if (timeout > 0 && (U.currentTimeMillis() - startTime) > timeout) {
+          String msg=join ? "Failed to connect to cluster (consider increasing 'joinTimeout' " + "configuration  property) [joinTimeout=" + spi.joinTimeout + ", err="+ e+ ']' : "Failed to reconnect to cluster (consider increasing 'networkTimeout' " + "configuration  property) [networkTimeout=" + spi.netTimeout + ", err="+ e+ ']';
+          U.warn(log,msg);
+          throw e;
+        }
+ else         U.warn(log,"Failed to reconnect to cluster (will retry): " + e);
+      }
+ finally {
+        if (success)         sock.setSoTimeout(oldTimeout);
+      }
+    }
+  }
+ catch (  IOException|IgniteCheckedException e) {
+    err=e;
+    U.error(log,"Failed to reconnect",e);
+  }
+ finally {
+    if (!success) {
+      U.closeQuiet(sock);
+      if (join)       joinError(new IgniteSpiException("Failed to connect to cluster, connection failed and failed " + "to reconnect.",err));
+ else       msgWorker.addMessage(SPI_RECONNECT_FAILED);
+    }
+  }
 }

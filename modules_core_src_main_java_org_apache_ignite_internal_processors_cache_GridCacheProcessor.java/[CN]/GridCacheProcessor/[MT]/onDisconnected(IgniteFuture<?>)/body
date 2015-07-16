@@ -1,0 +1,18 @@
+{
+  cachesOnDisconnect=new HashMap<>(registeredCaches);
+  IgniteClientDisconnectedCheckedException err=new IgniteClientDisconnectedCheckedException(ctx.cluster().clientReconnectFuture(),"Failed to execute dynamic cache change request, client node disconnected.");
+  for (  IgniteInternalFuture fut : pendingFuts.values())   ((GridFutureAdapter)fut).onDone(err);
+  for (  IgniteInternalFuture fut : pendingTemplateFuts.values())   ((GridFutureAdapter)fut).onDone(err);
+  for (  GridCacheAdapter cache : caches.values()) {
+    GridCacheContext cctx=cache.context();
+    cctx.gate().onDisconnected(reconnectFut);
+    List<GridCacheManager> mgrs=cache.context().managers();
+    for (ListIterator<GridCacheManager> it=mgrs.listIterator(mgrs.size()); it.hasPrevious(); ) {
+      GridCacheManager mgr=it.previous();
+      mgr.onDisconnected(reconnectFut);
+    }
+  }
+  sharedCtx.onDisconnected(reconnectFut);
+  registeredCaches.clear();
+  registeredTemplates.clear();
+}

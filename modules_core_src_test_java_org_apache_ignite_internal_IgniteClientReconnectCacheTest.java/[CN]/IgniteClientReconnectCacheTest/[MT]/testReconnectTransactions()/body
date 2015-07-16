@@ -1,0 +1,45 @@
+{
+  clientMode=true;
+  IgniteEx client=startGrid(SRV_CNT);
+  Ignite srv=clientRouter(client);
+  CacheConfiguration<Object,Object> ccfg=new CacheConfiguration<>();
+  ccfg.setAtomicityMode(TRANSACTIONAL);
+  ccfg.setCacheMode(PARTITIONED);
+  ccfg.setBackups(1);
+  IgniteCache<Object,Object> cache=client.getOrCreateCache(ccfg);
+  final IgniteTransactions txs=client.transactions();
+  final Transaction tx=txs.txStart(OPTIMISTIC,REPEATABLE_READ);
+  cache.put(1,1);
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      try {
+        tx.commit();
+        fail();
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        log.info("Expected error: " + e);
+        assertNotNull(e.reconnectFuture());
+      }
+      try {
+        txs.txStart();
+        fail();
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        log.info("Expected error: " + e);
+        assertNotNull(e.reconnectFuture());
+      }
+    }
+  }
+);
+  assertNull(txs.tx());
+  try (Transaction tx0=txs.txStart(OPTIMISTIC,REPEATABLE_READ)){
+    cache.put(1,1);
+    assertEquals(1,cache.get(1));
+    tx0.commit();
+  }
+   try (Transaction tx0=txs.txStart(PESSIMISTIC,REPEATABLE_READ)){
+    cache.put(2,2);
+    assertEquals(2,cache.get(2));
+    tx0.commit();
+  }
+ }

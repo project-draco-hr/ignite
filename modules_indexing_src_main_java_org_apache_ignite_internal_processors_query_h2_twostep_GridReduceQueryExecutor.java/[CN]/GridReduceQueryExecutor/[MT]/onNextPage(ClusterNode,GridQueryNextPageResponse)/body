@@ -11,8 +11,10 @@
       @Override public void fetchNextPage(){
         Object errState=r.state.get();
         if (errState != null) {
+          CacheException err0=errState instanceof CacheException ? (CacheException)errState : null;
+          if (err0 != null && err0.getCause() instanceof IgniteClientDisconnectedException)           throw err0;
           CacheException e=new CacheException("Failed to fetch data from node: " + node.id());
-          if (errState instanceof CacheException)           e.addSuppressed((Throwable)errState);
+          if (err0 != null)           e.addSuppressed(err0);
           throw e;
         }
         try {

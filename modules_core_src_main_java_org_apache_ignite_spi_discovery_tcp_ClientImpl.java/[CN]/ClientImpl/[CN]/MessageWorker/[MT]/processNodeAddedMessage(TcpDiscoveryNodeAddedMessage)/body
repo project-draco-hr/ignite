@@ -3,15 +3,17 @@
   TcpDiscoveryNode node=msg.node();
   UUID newNodeId=node.id();
   if (getLocalNodeId().equals(newNodeId)) {
-    if (joinLatch.getCount() > 0) {
+    if (joining()) {
       Collection<TcpDiscoveryNode> top=msg.topology();
       if (top != null) {
         spi.gridStartTime=msg.gridStartTime();
+        if (disconnected())         rmtNodes.clear();
         for (        TcpDiscoveryNode n : top) {
           if (n.order() > 0)           n.visible(true);
           rmtNodes.put(n.id(),n);
         }
         topHist.clear();
+        nodeAdded=true;
         if (msg.topologyHistory() != null)         topHist.putAll(msg.topologyHistory());
       }
  else       if (log.isDebugEnabled())       log.debug("Discarding node added message with empty topology: " + msg);

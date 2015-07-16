@@ -1,12 +1,13 @@
 {
   while (!isLocalNodeCoordinator())   Thread.sleep(1000);
   if (log.isDebugEnabled())   log.debug("Heartbeats sender has been started.");
+  UUID nodeId=getConfiguredNodeId();
   while (!isInterrupted()) {
     if (spiStateCopy() != CONNECTED) {
       if (log.isDebugEnabled())       log.debug("Stopping heartbeats sender (SPI is not connected to topology).");
       return;
     }
-    TcpDiscoveryHeartbeatMessage msg=new TcpDiscoveryHeartbeatMessage(getLocalNodeId());
+    TcpDiscoveryHeartbeatMessage msg=new TcpDiscoveryHeartbeatMessage(nodeId);
     msg.verify(getLocalNodeId());
     msgWorker.addMessage(msg);
     Thread.sleep(spi.hbFreq);
