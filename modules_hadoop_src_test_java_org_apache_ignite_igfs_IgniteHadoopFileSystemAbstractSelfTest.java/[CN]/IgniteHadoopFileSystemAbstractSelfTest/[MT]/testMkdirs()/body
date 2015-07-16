@@ -1,11 +1,13 @@
 {
   Path fsHome=new Path(PRIMARY_URI);
-  Path dir=new Path(fsHome,"/tmp/staging");
-  Path nestedDir=new Path(dir,"nested");
-  FsPermission dirPerm=FsPermission.createImmutable((short)0700);
-  FsPermission nestedDirPerm=FsPermission.createImmutable((short)111);
+  final Path dir=new Path(fsHome,"/tmp/staging");
+  final Path nestedDir=new Path(dir,"nested");
+  final FsPermission dirPerm=FsPermission.createImmutable((short)0700);
+  final FsPermission nestedDirPerm=FsPermission.createImmutable((short)111);
   assertTrue(fs.mkdirs(dir,dirPerm));
   assertTrue(fs.mkdirs(nestedDir,nestedDirPerm));
   assertEquals(dirPerm,fs.getFileStatus(dir).getPermission());
   assertEquals(nestedDirPerm,fs.getFileStatus(nestedDir).getPermission());
+  assertEquals(getClientFsUser(),fs.getFileStatus(dir).getOwner());
+  assertEquals(getClientFsUser(),fs.getFileStatus(nestedDir).getOwner());
 }

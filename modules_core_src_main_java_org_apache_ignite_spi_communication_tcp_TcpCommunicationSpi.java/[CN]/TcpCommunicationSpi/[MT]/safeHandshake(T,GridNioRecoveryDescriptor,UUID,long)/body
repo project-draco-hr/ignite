@@ -1,6 +1,6 @@
 {
   HandshakeTimeoutObject<T> obj=new HandshakeTimeoutObject<>(client,U.currentTimeMillis() + timeout);
-  sockTimeoutWorker.addTimeoutObject(obj);
+  addTimeoutObject(obj);
   long rcvCnt=0;
   try {
     if (client instanceof GridCommunicationClient)     ((GridCommunicationClient)client).doHandshake(new HandshakeClosure(rmtNodeId));
@@ -19,7 +19,7 @@
  else         if (log.isDebugEnabled())         log.debug("Received remote node ID: " + rmtNodeId0);
         ch.write(ByteBuffer.wrap(U.IGNITE_HEADER));
         if (recovery != null) {
-          HandshakeMessage msg=new HandshakeMessage(getLocalNodeId(),recovery.incrementConnectCount(),recovery.receivedCount());
+          HandshakeMessage msg=new HandshakeMessage(getLocalNode().id(),recovery.incrementConnectCount(),recovery.receivedCount());
           if (log.isDebugEnabled())           log.debug("Write handshake message [rmtNode=" + rmtNodeId + ", msg="+ msg+ ']');
           buf=ByteBuffer.allocate(33);
           buf.order(ByteOrder.nativeOrder());
@@ -28,7 +28,7 @@
           buf.flip();
           ch.write(buf);
         }
- else         ch.write(ByteBuffer.wrap(nodeIdMsg.nodeIdBytesWithType));
+ else         ch.write(ByteBuffer.wrap(nodeIdMessage().nodeIdBytesWithType));
         if (recovery != null) {
           if (log.isDebugEnabled())           log.debug("Waiting for handshake [rmtNode=" + rmtNodeId + ']');
           buf=ByteBuffer.allocate(9);
@@ -58,7 +58,7 @@
   }
   finally {
     boolean cancelled=obj.cancel();
-    if (cancelled)     sockTimeoutWorker.removeTimeoutObject(obj);
+    if (cancelled)     removeTimeoutObject(obj);
     if (!cancelled)     throw new HandshakeTimeoutException("Failed to perform handshake due to timeout (consider increasing " + "'connectionTimeout' configuration property).");
   }
   return rcvCnt;

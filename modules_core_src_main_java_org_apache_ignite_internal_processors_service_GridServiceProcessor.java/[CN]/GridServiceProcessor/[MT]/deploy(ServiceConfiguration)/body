@@ -10,6 +10,10 @@
     }
     return old;
   }
+  if (ctx.clientDisconnected()) {
+    fut.onDone(new IgniteClientDisconnectedCheckedException(ctx.cluster().clientReconnectFuture(),"Failed to deploy service, client node disconnected."));
+    depFuts.remove(cfg.getName(),fut);
+  }
   while (true) {
     try {
       GridServiceDeploymentKey key=new GridServiceDeploymentKey(cfg.getName());
@@ -22,7 +26,9 @@
             fut.onDone(new IgniteCheckedException("Failed to deploy service (service already exists with " + "different configuration) [deployed=" + dep.configuration() + ", new="+ cfg+ ']'));
           }
  else {
-            for (            Cache.Entry<Object,Object> e : cache.entrySetx()) {
+            Iterator<Cache.Entry<Object,Object>> it=serviceEntries(ServiceAssignmentsPredicate.INSTANCE);
+            while (it.hasNext()) {
+              Cache.Entry<Object,Object> e=it.next();
               if (e.getKey() instanceof GridServiceAssignmentsKey) {
                 GridServiceAssignments assigns=(GridServiceAssignments)e.getValue();
                 if (assigns.name().equals(cfg.getName())) {

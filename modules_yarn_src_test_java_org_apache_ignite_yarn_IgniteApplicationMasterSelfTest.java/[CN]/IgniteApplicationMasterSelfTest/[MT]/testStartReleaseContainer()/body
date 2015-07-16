@@ -1,0 +1,19 @@
+{
+  rmMock.availableRes(new MockResource(1024,2));
+  NMMock nmClient=new NMMock();
+  appMaster.setRmClient(rmMock);
+  appMaster.setNmClient(nmClient);
+  appMaster.setFs(new MockFileSystem());
+  props.cpusPerNode(8);
+  props.memoryPerNode(5000);
+  props.instances(3);
+  appMaster.onContainersAllocated(Collections.singletonList(createContainer("simple",5,2000)));
+  assertEquals(1,rmMock.releasedResources().size());
+  appMaster.onContainersAllocated(Collections.singletonList(createContainer("simple",5,7000)));
+  assertEquals(2,rmMock.releasedResources().size());
+  appMaster.onContainersAllocated(Collections.singletonList(createContainer("simple",9,2000)));
+  assertEquals(3,rmMock.releasedResources().size());
+  appMaster.onContainersAllocated(Collections.singletonList(createContainer("simple",8,5000)));
+  assertEquals(3,rmMock.releasedResources().size());
+  assertEquals(1,nmClient.startedContainer().size());
+}

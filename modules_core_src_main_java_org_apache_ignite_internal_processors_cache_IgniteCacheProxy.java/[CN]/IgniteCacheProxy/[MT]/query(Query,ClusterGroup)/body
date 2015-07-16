@@ -1,10 +1,10 @@
 {
   final CacheQuery<Map.Entry<K,V>> qry;
   final CacheQueryFuture<Map.Entry<K,V>> fut;
-  boolean isKeepPortable=opCtx != null ? opCtx.isKeepPortable() : false;
+  boolean isKeepPortable=opCtx != null && opCtx.isKeepPortable();
   if (filter instanceof ScanQuery) {
     IgniteBiPredicate<K,V> p=((ScanQuery)filter).getFilter();
-    qry=ctx.queries().createScanQuery(p != null ? p : ACCEPT_ALL,isKeepPortable);
+    qry=ctx.queries().createScanQuery(p != null ? p : ACCEPT_ALL,((ScanQuery)filter).getPartition(),isKeepPortable);
     if (grp != null)     qry.projection(grp);
     fut=qry.execute();
   }

@@ -1,0 +1,30 @@
+{
+  rmClient.registerApplicationMaster("",0,"");
+  log.log(Level.INFO,"Application master registered.");
+  Priority priority=Records.newRecord(Priority.class);
+  priority.setPriority(0);
+  try {
+    while (!nmClient.isInState(Service.STATE.STOPPED)) {
+      int runningCnt=containers.size();
+      if (runningCnt < props.instances() && checkAvailableResource()) {
+        Resource capability=Records.newRecord(Resource.class);
+        capability.setMemory((int)props.memoryPerNode());
+        capability.setVirtualCores((int)props.cpusPerNode());
+        for (int i=0; i < props.instances() - runningCnt; ++i) {
+          AMRMClient.ContainerRequest containerAsk=new AMRMClient.ContainerRequest(capability,null,null,priority);
+          rmClient.addContainerRequest(containerAsk);
+          log.log(Level.INFO,"Making request. Memory: {0}, cpu {1}.",new Object[]{props.memoryPerNode(),props.cpusPerNode()});
+        }
+      }
+      TimeUnit.MILLISECONDS.sleep(schedulerTimeout);
+    }
+  }
+ catch (  InterruptedException e) {
+    rmClient.unregisterApplicationMaster(FinalApplicationStatus.KILLED,"","");
+    log.log(Level.WARNING,"Application master killed.");
+  }
+catch (  Exception e) {
+    rmClient.unregisterApplicationMaster(FinalApplicationStatus.FAILED,"","");
+    log.log(Level.SEVERE,"Application master failed.",e);
+  }
+}

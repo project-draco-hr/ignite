@@ -1,11 +1,11 @@
 {
   if (ctx.isDaemon())   return;
   cache=ctx.cache().utilityCache();
-  ctx.event().addLocalEventListener(topLsnr,EVTS_DISCOVERY);
+  if (!ctx.clientNode())   ctx.event().addLocalEventListener(topLsnr,EVTS_DISCOVERY);
   try {
     if (ctx.deploy().enabled())     ctx.cache().context().deploy().ignoreOwnership(true);
-    cfgQryId=cache.context().continuousQueries().executeInternalQuery(new DeploymentListener(),null,true,true);
-    assignQryId=cache.context().continuousQueries().executeInternalQuery(new AssignmentListener(),null,true,true);
+    cfgQryId=cache.context().continuousQueries().executeInternalQuery(new DeploymentListener(),null,cache.context().affinityNode(),true);
+    assignQryId=cache.context().continuousQueries().executeInternalQuery(new AssignmentListener(),null,cache.context().affinityNode(),true);
   }
   finally {
     if (ctx.deploy().enabled())     ctx.cache().context().deploy().ignoreOwnership(false);

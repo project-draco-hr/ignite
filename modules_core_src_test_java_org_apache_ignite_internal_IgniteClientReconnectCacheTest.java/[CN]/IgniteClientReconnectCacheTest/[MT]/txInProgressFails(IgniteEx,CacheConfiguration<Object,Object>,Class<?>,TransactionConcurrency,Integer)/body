@@ -1,0 +1,19 @@
+{
+  log.info("Test tx failure [msg=" + msgToBlock + ", txMode="+ txConcurrency+ ", key="+ key+ ']');
+  checkOperationInProgressFails(client,ccfg,msgToBlock,new CI1<IgniteCache<Object,Object>>(){
+    @Override public void apply(    IgniteCache<Object,Object> cache){
+      try (Transaction tx=client.transactions().txStart(txConcurrency,REPEATABLE_READ)){
+        log.info("Put1: " + key);
+        cache.put(key,key);
+        Integer key2=key + 1;
+        log.info("Put2: " + key2);
+        cache.put(key2,key2);
+        log.info("Commit [key1=" + key + ", key2="+ key2+ ']');
+        tx.commit();
+      }
+     }
+  }
+);
+  IgniteCache<Object,Object> cache=client.cache(ccfg.getName());
+  assertEquals(key,cache.get(key));
+}

@@ -1,6 +1,6 @@
 {
   for (int i=0; i < gridCount(); i++)   info(">>>>> Grid" + i + ": "+ grid(i).localNode().id());
-  int size=10;
+  final int size=10;
   IgniteCache<Object,Object> chache0=grid(0).cache(null);
   for (int i=0; i < size; i++) {
     info("Putting value [i=" + i + ']');
@@ -8,12 +8,17 @@
     info("Finished putting value [i=" + i + ']');
   }
   for (int i=0; i < gridCount(); i++) {
-    assertEquals(0,context(i).tm().idMapSize());
-    IgniteCache<Object,Object> cache=grid(i).cache(null);
-    ClusterNode node=grid(i).localNode();
-    for (int k=0; k < size; k++) {
-      if (affinity(cache).isPrimaryOrBackup(node,k))       assertEquals("Check failed for node: " + node.id(),k,cache.localPeek(k,CachePeekMode.ONHEAP,CachePeekMode.OFFHEAP));
+    executeOnLocalOrRemoteJvm(i,new TestIgniteIdxRunnable(){
+      @Override public void run(      int idx) throws Exception {
+        assertEquals(0,context(idx).tm().idMapSize());
+        IgniteCache<Object,Object> cache=grid(idx).cache(null);
+        ClusterNode node=grid(idx).localNode();
+        for (int k=0; k < size; k++) {
+          if (affinity(cache).isPrimaryOrBackup(node,k))           assertEquals("Check failed for node: " + node.id(),k,cache.localPeek(k,CachePeekMode.ONHEAP,CachePeekMode.OFFHEAP));
+        }
+      }
     }
+);
   }
   for (int i=0; i < size; i++) {
     info("Putting value 2 [i=" + i + ']');

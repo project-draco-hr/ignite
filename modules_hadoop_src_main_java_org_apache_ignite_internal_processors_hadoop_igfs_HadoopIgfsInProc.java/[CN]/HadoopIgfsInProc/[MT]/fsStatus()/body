@@ -1,8 +1,19 @@
 {
   try {
-    return igfs.globalSpace();
+    return IgfsUserContext.doAs(user,new Callable<IgfsStatus>(){
+      @Override public IgfsStatus call() throws IgniteCheckedException {
+        return igfs.globalSpace();
+      }
+    }
+);
   }
  catch (  IllegalStateException e) {
     throw new HadoopIgfsCommunicationException("Failed to get file system status because Grid is " + "stopping.");
+  }
+catch (  IgniteCheckedException|RuntimeException|Error e) {
+    throw e;
+  }
+catch (  Exception e) {
+    throw new AssertionError("Must never go there.");
   }
 }

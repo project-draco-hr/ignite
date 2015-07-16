@@ -1,0 +1,19 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  IgniteAtomicSequence clientAtomicSeq=client.atomicSequence("atomicSeq",0,true);
+  assertEquals(1L,clientAtomicSeq.incrementAndGet());
+  final IgniteAtomicSequence srvAtomicSeq=srv.atomicSequence("atomicSeq",0,false);
+  assertEquals(1001L,srvAtomicSeq.incrementAndGet());
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      assertEquals(1002L,srvAtomicSeq.incrementAndGet());
+    }
+  }
+);
+  assertEquals(2L,clientAtomicSeq.incrementAndGet());
+  assertEquals(1003L,srvAtomicSeq.incrementAndGet());
+  assertEquals(3L,clientAtomicSeq.incrementAndGet());
+  clientAtomicSeq.close();
+}

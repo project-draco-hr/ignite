@@ -1,0 +1,34 @@
+{
+  if (spi.getSpiContext().isStopping())   return;
+  TcpDiscoveryNode node=msg.node();
+  UUID newNodeId=node.id();
+  if (getLocalNodeId().equals(newNodeId)) {
+    if (joining()) {
+      Collection<TcpDiscoveryNode> top=msg.topology();
+      if (top != null) {
+        spi.gridStartTime=msg.gridStartTime();
+        if (disconnected())         rmtNodes.clear();
+        for (        TcpDiscoveryNode n : top) {
+          if (n.order() > 0)           n.visible(true);
+          rmtNodes.put(n.id(),n);
+        }
+        topHist.clear();
+        nodeAdded=true;
+        if (msg.topologyHistory() != null)         topHist.putAll(msg.topologyHistory());
+      }
+ else       if (log.isDebugEnabled())       log.debug("Discarding node added message with empty topology: " + msg);
+    }
+ else     if (log.isDebugEnabled())     log.debug("Discarding node added message (this message has already been processed) " + "[msg=" + msg + ", locNode="+ locNode+ ']');
+  }
+ else {
+    if (nodeAdded()) {
+      boolean topChanged=rmtNodes.putIfAbsent(newNodeId,node) == null;
+      if (topChanged) {
+        if (log.isDebugEnabled())         log.debug("Added new node to topology: " + node);
+        Map<Integer,byte[]> data=msg.newNodeDiscoveryData();
+        if (data != null)         spi.onExchange(newNodeId,newNodeId,data,null);
+      }
+    }
+ else     if (log.isDebugEnabled())     log.debug("Ignore topology message, local node not added to topology: " + msg);
+  }
+}

@@ -1,0 +1,39 @@
+{
+  SocketStreamer<Tuple,Integer,String> sockStmr=null;
+  Ignite ignite=grid(0);
+  IgniteCache<Integer,String> cache=ignite.cache(null);
+  cache.clear();
+  try (IgniteDataStreamer<Integer,String> stmr=ignite.dataStreamer(null)){
+    stmr.allowOverwrite(true);
+    stmr.autoFlushFrequency(10);
+    sockStmr=new SocketStreamer<>();
+    sockStmr.setIgnite(ignite);
+    sockStmr.setStreamer(stmr);
+    sockStmr.setPort(port);
+    sockStmr.setDelimiter(delim);
+    sockStmr.setTupleExtractor(new StreamTupleExtractor<Tuple,Integer,String>(){
+      @Override public Map.Entry<Integer,String> extract(      Tuple msg){
+        return new IgniteBiTuple<>(msg.key,msg.val);
+      }
+    }
+);
+    if (converter != null)     sockStmr.setConverter(converter);
+    final CountDownLatch latch=new CountDownLatch(CNT);
+    IgniteBiPredicate<UUID,CacheEvent> locLsnr=new IgniteBiPredicate<UUID,CacheEvent>(){
+      @Override public boolean apply(      UUID uuid,      CacheEvent evt){
+        latch.countDown();
+        return true;
+      }
+    }
+;
+    ignite.events(ignite.cluster().forCacheNodes(null)).remoteListen(locLsnr,null,EVT_CACHE_OBJECT_PUT);
+    sockStmr.start();
+    r.run();
+    latch.await();
+    for (int i=0; i < CNT; i++)     assertEquals(Integer.toString(i),cache.get(i));
+    assertEquals(CNT,cache.size(CachePeekMode.PRIMARY));
+  }
+  finally {
+    if (sockStmr != null)     sockStmr.stop();
+  }
+}

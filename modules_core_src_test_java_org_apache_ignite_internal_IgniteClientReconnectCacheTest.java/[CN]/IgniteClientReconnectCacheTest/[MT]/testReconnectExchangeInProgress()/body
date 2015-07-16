@@ -1,0 +1,37 @@
+{
+  clientMode=true;
+  IgniteEx client=startGrid(SRV_CNT);
+  Ignite srv=clientRouter(client);
+  TestTcpDiscoverySpi srvSpi=spi(srv);
+  TestCommunicationSpi coordCommSpi=(TestCommunicationSpi)grid(0).configuration().getCommunicationSpi();
+  coordCommSpi.blockMessages(GridDhtPartitionsFullMessage.class,client.localNode().id());
+  clientMode=false;
+  startGrid(SRV_CNT + 1);
+  final CountDownLatch reconnectLatch=new CountDownLatch(1);
+  client.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      if (evt.type() == EVT_CLIENT_NODE_RECONNECTED) {
+        info("Reconnected: " + evt);
+        reconnectLatch.countDown();
+      }
+      return true;
+    }
+  }
+,EVT_CLIENT_NODE_RECONNECTED);
+  srvSpi.failNode(client.cluster().localNode().id(),null);
+  assertTrue(reconnectLatch.await(5000,MILLISECONDS));
+  try {
+    coordCommSpi.stopBlock(true);
+    fail();
+  }
+ catch (  IgniteException e) {
+    log.info("Expected error: " + e);
+  }
+  CacheConfiguration<Object,Object> ccfg=new CacheConfiguration<>();
+  ccfg.setName("newCache");
+  ccfg.setCacheMode(REPLICATED);
+  log.info("Start new cache.");
+  IgniteCache<Object,Object> cache=client.getOrCreateCache(ccfg);
+  cache.put(1,1);
+  assertEquals(1,cache.get(1));
+}

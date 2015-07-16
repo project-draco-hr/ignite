@@ -2,5 +2,7 @@
   assert offheapEnabled;
   checkIteratorQueue();
   int part=cctx.affinity().partition(key);
-  return offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+  boolean rmv=offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()));
+  if (rmv && cctx.config().isStatisticsEnabled())   cctx.cache().metrics0().onOffHeapRemove();
+  return rmv;
 }

@@ -1,6 +1,8 @@
 {
   if (jtaTm == null) {
     try {
+      CacheTmLookup tmLookup=tmLookupRef.get();
+      if (tmLookup == null)       return;
       jtaTm=tmLookup.getTm();
     }
  catch (    Exception e) {
@@ -16,9 +18,9 @@
           IgniteInternalTx tx=cctx.tm().userTx();
           if (tx == null) {
             TransactionConfiguration tCfg=cctx.kernalContext().config().getTransactionConfiguration();
-            tx=cctx.tm().newTx(false,false,null,tCfg.getDefaultTxConcurrency(),tCfg.getDefaultTxIsolation(),tCfg.getDefaultTxTimeout(),true,0,null,false);
+            tx=cctx.tm().newTx(false,false,null,tCfg.getDefaultTxConcurrency(),tCfg.getDefaultTxIsolation(),tCfg.getDefaultTxTimeout(),true,0);
           }
-          rsrc=new GridCacheXAResource(tx,cctx);
+          rsrc=new GridCacheXAResource(tx,cctx.kernalContext());
           if (!jtaTx.enlistResource(rsrc))           throw new IgniteCheckedException("Failed to enlist XA resource to JTA user transaction.");
           xaRsrc.set(rsrc);
         }

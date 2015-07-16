@@ -14,12 +14,14 @@
     cntrs.setStopped(stopped);
   }
   if (isFirstTest()) {
-    info(">>> Starting test class: " + getClass().getSimpleName() + " <<<");
+    info(">>> Starting test class: " + GridTestUtils.fullSimpleName(getClass()) + " <<<");
     if (startGrid) {
       IgniteConfiguration cfg=optimize(getConfiguration());
       G.start(cfg);
     }
     try {
+      List<Integer> jvmIds=IgniteNodeRunner.killAll();
+      if (!jvmIds.isEmpty())       log.info("Next processes of IgniteNodeRunner were killed: " + jvmIds);
       beforeTestsStarted();
     }
  catch (    Exception|Error t) {

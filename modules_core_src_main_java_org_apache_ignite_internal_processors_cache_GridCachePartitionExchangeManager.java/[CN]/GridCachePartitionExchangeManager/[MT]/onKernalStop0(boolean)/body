@@ -1,6 +1,14 @@
 {
-  for (  GridDhtPartitionsExchangeFuture f : exchFuts.values())   f.onDone(new IgniteInterruptedCheckedException("Grid is stopping: " + cctx.gridName()));
-  for (  AffinityReadyFuture f : readyFuts.values())   f.onDone(new IgniteInterruptedCheckedException("Grid is stopping: " + cctx.gridName()));
+  cctx.gridEvents().removeLocalEventListener(discoLsnr);
+  cctx.io().removeHandler(0,GridDhtPartitionsSingleMessage.class);
+  cctx.io().removeHandler(0,GridDhtPartitionsFullMessage.class);
+  cctx.io().removeHandler(0,GridDhtPartitionsSingleRequest.class);
+  IgniteCheckedException err=cctx.kernalContext().clientDisconnected() ? new IgniteClientDisconnectedCheckedException(cctx.kernalContext().cluster().clientReconnectFuture(),"Client node disconnected: " + cctx.gridName()) : new IgniteInterruptedCheckedException("Node is stopping: " + cctx.gridName());
+  ExchangeFutureSet exchFuts0=exchFuts;
+  if (exchFuts0 != null) {
+    for (    GridDhtPartitionsExchangeFuture f : exchFuts.values())     f.onDone(err);
+  }
+  for (  AffinityReadyFuture f : readyFuts.values())   f.onDone(err);
   U.cancel(exchWorker);
   if (log.isDebugEnabled())   log.debug("Before joining on exchange worker: " + exchWorker);
   U.join(exchWorker,log);

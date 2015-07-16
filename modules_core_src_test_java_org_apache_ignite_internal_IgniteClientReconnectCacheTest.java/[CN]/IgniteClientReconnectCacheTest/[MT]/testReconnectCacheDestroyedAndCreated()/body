@@ -1,0 +1,29 @@
+{
+  clientMode=true;
+  final Ignite client=startGrid(SRV_CNT);
+  assertTrue(client.cluster().localNode().isClient());
+  final Ignite srv=clientRouter(client);
+  final IgniteCache<Object,Object> clientCache=client.getOrCreateCache(new CacheConfiguration<>());
+  assertEquals(ATOMIC,clientCache.getConfiguration(CacheConfiguration.class).getAtomicityMode());
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      srv.destroyCache(null);
+      CacheConfiguration ccfg=new CacheConfiguration();
+      ccfg.setAtomicityMode(TRANSACTIONAL);
+      srv.getOrCreateCache(ccfg);
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      return clientCache.get(1);
+    }
+  }
+,IllegalStateException.class,null);
+  checkCacheDiscoveryData(srv,client,null,true,false,false);
+  IgniteCache<Object,Object> clientCache0=client.cache(null);
+  checkCacheDiscoveryData(srv,client,null,true,true,false);
+  assertEquals(TRANSACTIONAL,clientCache0.getConfiguration(CacheConfiguration.class).getAtomicityMode());
+  clientCache0.put(1,1);
+  assertEquals(1,clientCache0.get(1));
+}

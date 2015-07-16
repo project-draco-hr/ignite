@@ -9,7 +9,7 @@
         preloadFinished&=cacheCtx.preloader().syncFuture().isDone();
         if (!preloadFinished)         break;
       }
-      if (futQ.isEmpty() && preloadFinished) {
+      if (!cctx.kernalContext().clientNode() && futQ.isEmpty() && preloadFinished) {
         refreshPartitions(timeout);
         timeout=cctx.gridConfig().getNetworkTimeout();
       }
@@ -17,7 +17,7 @@
       exchFut=poll(futQ,timeout,this);
       if (exchFut == null)       continue;
       busy=true;
-      Map<Integer,GridDhtPreloaderAssignments<K,V>> assignsMap=new HashMap<>();
+      Map<Integer,GridDhtPreloaderAssignments> assignsMap=null;
       boolean dummyReassign=exchFut.dummyReassign();
       boolean forcePreload=exchFut.forcePreload();
       try {
@@ -32,7 +32,7 @@
           for (          GridCacheContext cacheCtx : cctx.cacheContexts()) {
             if (cacheCtx.isLocal())             continue;
             changed|=cacheCtx.topology().afterExchange(exchFut);
-            if (cacheCtx.events().isRecordable(EVT_CACHE_REBALANCE_STARTED)) {
+            if (!exchFut.skipPreload() && cacheCtx.events().isRecordable(EVT_CACHE_REBALANCE_STARTED)) {
               if (!cacheCtx.isReplicated() || !startEvtFired) {
                 DiscoveryEvent discoEvt=exchFut.discoveryEvent();
                 cacheCtx.events().addPreloadEvent(-1,EVT_CACHE_REBALANCE_STARTED,discoEvt.eventNode(),discoEvt.type(),discoEvt.timestamp());
@@ -40,7 +40,7 @@
             }
           }
           startEvtFired=true;
-          if (changed && futQ.isEmpty())           refreshPartitions();
+          if (!cctx.kernalContext().clientNode() && changed && futQ.isEmpty())           refreshPartitions();
         }
  else {
           if (log.isDebugEnabled())           log.debug("Got dummy exchange (will reassign)");
@@ -49,18 +49,21 @@
             continue;
           }
         }
-        for (        GridCacheContext cacheCtx : cctx.cacheContexts()) {
-          long delay=cacheCtx.config().getRebalanceDelay();
-          GridDhtPreloaderAssignments<K,V> assigns=null;
-          if (delay == 0 || forcePreload)           assigns=cacheCtx.preloader().assign(exchFut);
-          assignsMap.put(cacheCtx.cacheId(),assigns);
+        if (!exchFut.skipPreload()) {
+          assignsMap=new HashMap<>();
+          for (          GridCacheContext cacheCtx : cctx.cacheContexts()) {
+            long delay=cacheCtx.config().getRebalanceDelay();
+            GridDhtPreloaderAssignments assigns=null;
+            if (delay == 0 || forcePreload)             assigns=cacheCtx.preloader().assign(exchFut);
+            assignsMap.put(cacheCtx.cacheId(),assigns);
+          }
         }
       }
   finally {
         busy=false;
       }
       if (assignsMap != null) {
-        for (        Map.Entry<Integer,GridDhtPreloaderAssignments<K,V>> e : assignsMap.entrySet()) {
+        for (        Map.Entry<Integer,GridDhtPreloaderAssignments> e : assignsMap.entrySet()) {
           int cacheId=e.getKey();
           GridCacheContext<K,V> cacheCtx=cctx.cacheContext(cacheId);
           cacheCtx.preloader().addAssignments(e.getValue(),forcePreload);
@@ -69,6 +72,9 @@
     }
  catch (    IgniteInterruptedCheckedException e) {
       throw e;
+    }
+catch (    IgniteClientDisconnectedCheckedException e) {
+      return;
     }
 catch (    IgniteCheckedException e) {
       U.error(log,"Failed to wait for completion of partition map exchange " + "(preloading will not start): " + exchFut,e);

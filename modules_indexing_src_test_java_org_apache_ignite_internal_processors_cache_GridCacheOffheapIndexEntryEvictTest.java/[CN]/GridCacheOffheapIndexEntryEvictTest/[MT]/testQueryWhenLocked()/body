@@ -1,0 +1,18 @@
+{
+  IgniteCache<Integer,TestValue> cache=grid(0).cache(null);
+  List<Lock> locks=new ArrayList<>();
+  final int ENTRIES=1000;
+  try {
+    for (int i=0; i < ENTRIES; i++) {
+      cache.put(i,new TestValue(i));
+      Lock lock=cache.lock(i);
+      lock.lock();
+      locks.add(lock);
+      for (int j=0; j < 3; j++)       assertNotNull(cache.get(i));
+    }
+    checkQuery(cache,"_key >= 100",ENTRIES - 100);
+  }
+  finally {
+    for (    Lock lock : locks)     lock.unlock();
+  }
+}

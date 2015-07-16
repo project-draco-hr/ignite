@@ -1,23 +1,24 @@
 {
   IgniteCache<String,Integer> cache=jcache();
-  Transaction tx=txEnabled() ? ignite(0).transactions().txStart(concurrency,READ_COMMITTED) : null;
+  final String key=primaryKeysForCache(cache,1).get(0);
+  Transaction tx=txShouldBeUsed() ? ignite(0).transactions().txStart(concurrency,READ_COMMITTED) : null;
   try {
-    if (startVal)     cache.put("key",2);
- else     assertEquals(null,cache.get("key"));
-    Integer expectedRes=startVal ? 2 : null;
-    assertEquals(String.valueOf(expectedRes),cache.invoke("key",INCR_PROCESSOR));
-    expectedRes=startVal ? 3 : 1;
-    assertEquals(String.valueOf(expectedRes),cache.invoke("key",INCR_PROCESSOR));
-    expectedRes++;
-    assertEquals(String.valueOf(expectedRes),cache.invoke("key",INCR_PROCESSOR));
+    if (startVal)     cache.put(key,2);
+ else     assertEquals(null,cache.get(key));
+    Integer expRes=startVal ? 2 : null;
+    assertEquals(String.valueOf(expRes),cache.invoke(key,INCR_PROCESSOR));
+    expRes=startVal ? 3 : 1;
+    assertEquals(String.valueOf(expRes),cache.invoke(key,INCR_PROCESSOR));
+    expRes++;
+    assertEquals(String.valueOf(expRes),cache.invoke(key,INCR_PROCESSOR));
     if (tx != null)     tx.commit();
   }
   finally {
     if (tx != null)     tx.close();
   }
   Integer exp=(startVal ? 2 : 0) + 3;
-  assertEquals(exp,cache.get("key"));
+  assertEquals(exp,cache.get(key));
   for (int i=0; i < gridCount(); i++) {
-    if (ignite(i).affinity(null).isPrimaryOrBackup(grid(i).localNode(),"key"))     assertEquals(exp,peek(jcache(i),"key"));
+    if (ignite(i).affinity(null).isPrimaryOrBackup(grid(i).localNode(),key))     assertEquals(exp,peek(jcache(i),key));
   }
 }

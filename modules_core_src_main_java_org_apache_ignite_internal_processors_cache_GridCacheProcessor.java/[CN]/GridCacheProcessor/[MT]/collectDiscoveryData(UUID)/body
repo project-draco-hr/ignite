@@ -1,6 +1,8 @@
 {
   Collection<DynamicCacheChangeRequest> reqs=new ArrayList<>(registeredCaches.size() + registeredTemplates.size());
-  for (  DynamicCacheDescriptor desc : registeredCaches.values()) {
+  boolean reconnect=ctx.localNodeId().equals(nodeId) && cachesOnDisconnect != null;
+  Map<String,DynamicCacheDescriptor> descs=reconnect ? cachesOnDisconnect : registeredCaches;
+  for (  DynamicCacheDescriptor desc : descs.values()) {
     if (!desc.cancelled()) {
       DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(desc.cacheConfiguration().getName(),null);
       req.startCacheConfiguration(desc.cacheConfiguration());
@@ -17,6 +19,17 @@
     reqs.add(req);
   }
   DynamicCacheChangeBatch req=new DynamicCacheChangeBatch(reqs);
-  req.clientNodes(ctx.discovery().clientNodesMap());
+  Map<String,Map<UUID,Boolean>> clientNodesMap=ctx.discovery().clientNodesMap();
+  if (reconnect) {
+    clientNodesMap=U.newHashMap(caches.size());
+    for (    GridCacheAdapter<?,?> cache : caches.values()) {
+      Boolean nearEnabled=cache.isNear();
+      Map<UUID,Boolean> map=U.newHashMap(1);
+      map.put(nodeId,nearEnabled);
+      clientNodesMap.put(cache.name(),map);
+    }
+  }
+  req.clientNodes(clientNodesMap);
+  req.clientReconnect(reconnect);
   return req;
 }

@@ -1,0 +1,77 @@
+{
+  clientMode=true;
+  final Ignite client=startGrid(serverCount());
+  doTestIgniteOperationOnDisconnect(client,Arrays.asList(new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.atomicLong("testAtomic",41,true);
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.atomicLong("testAtomic",41,true);
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      assertNotNull(o);
+      IgniteAtomicLong atomicLong=(IgniteAtomicLong)o;
+      assertEquals(42,atomicLong.incrementAndGet());
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.set("testSet",new CollectionConfiguration());
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.set("testSet",new CollectionConfiguration());
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      assertNotNull(o);
+      IgniteSet set=(IgniteSet)o;
+      String val="testVal";
+      set.add(val);
+      assertEquals(1,set.size());
+      assertTrue(set.contains(val));
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.queue("TestQueue",10,new CollectionConfiguration());
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.queue("TestQueue",10,new CollectionConfiguration());
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      assertNotNull(o);
+      IgniteQueue queue=(IgniteQueue)o;
+      String val="Test";
+      queue.add(val);
+      assertEquals(val,queue.poll());
+      return true;
+    }
+  }
+)));
+  clientMode=false;
+}

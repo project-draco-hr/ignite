@@ -1,3 +1,18 @@
 {
-  if (!busyLock.enterBusy())   throw new IllegalStateException("Set has been removed from cache: " + delegate);
+  boolean rmvd;
+  if (rmvCheck) {
+    try {
+      rmvd=!delegate().checkHeader();
+    }
+ catch (    IgniteCheckedException e) {
+      throw U.convertException(e);
+    }
+    rmvCheck=false;
+    if (rmvd) {
+      delegate.removed(true);
+      cctx.dataStructures().onRemoved(this);
+      throw removedError();
+    }
+  }
+  if (!busyLock.enterBusy())   throw removedError();
 }

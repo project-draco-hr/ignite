@@ -1,0 +1,25 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  IgniteCountDownLatch clientLatch=client.countDownLatch("latch1",3,false,true);
+  assertEquals(3,clientLatch.count());
+  final IgniteCountDownLatch srvLatch=srv.countDownLatch("latch1",3,false,false);
+  assertEquals(3,srvLatch.count());
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      srvLatch.countDown();
+    }
+  }
+);
+  assertEquals(2,srvLatch.count());
+  assertEquals(2,clientLatch.count());
+  srvLatch.countDown();
+  assertEquals(1,srvLatch.count());
+  assertEquals(1,clientLatch.count());
+  clientLatch.countDown();
+  assertEquals(0,srvLatch.count());
+  assertEquals(0,clientLatch.count());
+  assertTrue(srvLatch.await(1000));
+  assertTrue(clientLatch.await(1000));
+}

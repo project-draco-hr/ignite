@@ -4,11 +4,11 @@
   if (fut != null)   return fut.get();
   GridFutureAdapter<HadoopTaskContext> old=ctxs.putIfAbsent(locTaskId,fut=new GridFutureAdapter<>());
   if (old != null)   return old.get();
-  Class<?> cls=taskCtxClsPool.poll();
+  Class<? extends HadoopTaskContext> cls=taskCtxClsPool.poll();
   try {
     if (cls == null) {
-      HadoopClassLoader ldr=new HadoopClassLoader(rsrcMgr.classPath(),"hadoop-" + info.jobId() + "-"+ info.type()+ "-"+ info.taskNumber());
-      cls=ldr.loadClass(HadoopV2TaskContext.class.getName());
+      HadoopClassLoader ldr=new HadoopClassLoader(rsrcMgr.classPath(),HadoopClassLoader.nameForTask(info,false));
+      cls=(Class<? extends HadoopTaskContext>)ldr.loadClass(HadoopV2TaskContext.class.getName());
       fullCtxClsQueue.add(cls);
     }
     Constructor<?> ctr=cls.getConstructor(HadoopTaskInfo.class,HadoopJob.class,HadoopJobId.class,UUID.class,DataInput.class);

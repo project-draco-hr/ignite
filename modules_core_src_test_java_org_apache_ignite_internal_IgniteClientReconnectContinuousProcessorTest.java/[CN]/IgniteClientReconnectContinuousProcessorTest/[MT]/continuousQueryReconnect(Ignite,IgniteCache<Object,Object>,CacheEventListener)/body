@@ -1,0 +1,25 @@
+{
+  Ignite srv=clientRouter(client);
+  TestTcpDiscoverySpi srvSpi=spi(srv);
+  final CountDownLatch reconnectLatch=new CountDownLatch(1);
+  IgnitePredicate<Event> p=new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      if (evt.type() == EVT_CLIENT_NODE_RECONNECTED) {
+        info("Reconnected: " + evt);
+        reconnectLatch.countDown();
+      }
+      return true;
+    }
+  }
+;
+  client.events().localListen(p,EVT_CLIENT_NODE_RECONNECTED);
+  srvSpi.failNode(client.cluster().localNode().id(),null);
+  waitReconnectEvent(reconnectLatch);
+  client.events().stopLocalListen(p);
+  lsnr.latch=new CountDownLatch(1);
+  clientCache.put(1,1);
+  assertTrue(lsnr.latch.await(5000,MILLISECONDS));
+  lsnr.latch=new CountDownLatch(1);
+  srv.cache(null).put(2,2);
+  assertTrue(lsnr.latch.await(5000,MILLISECONDS));
+}

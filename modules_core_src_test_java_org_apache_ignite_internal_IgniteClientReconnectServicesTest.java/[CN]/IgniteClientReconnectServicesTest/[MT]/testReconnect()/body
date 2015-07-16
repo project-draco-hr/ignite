@@ -1,0 +1,17 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  IgniteServices services=client.services();
+  services.deployClusterSingleton("testReconnect",new TestServiceImpl());
+  TestService srvc=services.serviceProxy("testReconnect",TestService.class,false);
+  assertNotNull(srvc);
+  long topVer=grid(0).cluster().topologyVersion();
+  assertEquals((Object)topVer,srvc.test());
+  Ignite srv=clientRouter(client);
+  reconnectClientNode(client,srv,null);
+  CountDownLatch latch=new CountDownLatch(1);
+  DummyService.exeLatch("testReconnect2",latch);
+  services.deployClusterSingleton("testReconnect2",new DummyService());
+  assertTrue(latch.await(5000,TimeUnit.MILLISECONDS));
+  assertEquals((Object)(topVer + 2),srvc.test());
+}

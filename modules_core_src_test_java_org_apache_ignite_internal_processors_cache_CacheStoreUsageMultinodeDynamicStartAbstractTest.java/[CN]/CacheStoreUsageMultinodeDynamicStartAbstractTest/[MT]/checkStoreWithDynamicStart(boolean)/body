@@ -1,0 +1,18 @@
+{
+  cacheStore=true;
+  CacheConfiguration ccfg=cacheConfiguration();
+  assertNotNull(ccfg.getCacheStoreFactory());
+  Ignite srv=ignite(0);
+  Ignite client=ignite(3);
+  Ignite node=clientStart ? client : srv;
+  IgniteCache cache=nearCache ? node.createCache(ccfg,new NearCacheConfiguration()) : node.createCache(ccfg);
+  assertNotNull(cache);
+  try {
+    if (nearCache)     client.createNearCache(null,new NearCacheConfiguration<>());
+    checkStoreUpdate(true);
+  }
+  finally {
+    cache=srv.cache(null);
+    if (cache != null)     cache.destroy();
+  }
+}

@@ -1,0 +1,47 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  final IgniteCache<Object,Object> srvCache=srv.cache(CACHE_NAME);
+  final IgniteDataStreamer<Integer,Integer> streamer=client.dataStreamer(CACHE_NAME);
+  BlockTpcCommunicationSpi commSpi=commSpi(srv);
+  commSpi.blockMessage(DataStreamerResponse.class);
+  final IgniteInternalFuture<Object> fut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      try {
+        for (int i=0; i < 50; i++)         streamer.addData(i,i);
+        streamer.flush();
+      }
+ catch (      CacheException e) {
+        checkAndWait(e);
+        return true;
+      }
+ finally {
+        streamer.close();
+      }
+      return false;
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      return fut.get(200);
+    }
+  }
+,IgniteFutureTimeoutCheckedException.class,null);
+  assertNotDone(fut);
+  commSpi.unblockMessage();
+  reconnectClientNode(client,srv,null);
+  assertTrue((Boolean)fut.get(2,TimeUnit.SECONDS));
+  checkStreamerClosed(streamer);
+  IgniteDataStreamer<Integer,Integer> streamer2=client.dataStreamer(CACHE_NAME);
+  for (int i=0; i < 50; i++)   streamer2.addData(i,i);
+  streamer2.close();
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return srvCache.localSize() == 50;
+    }
+  }
+,2000L);
+  assertEquals(50,srvCache.localSize());
+}

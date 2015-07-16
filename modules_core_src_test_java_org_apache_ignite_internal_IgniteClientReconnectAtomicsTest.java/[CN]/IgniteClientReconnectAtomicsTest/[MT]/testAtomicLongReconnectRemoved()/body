@@ -1,0 +1,26 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  final IgniteAtomicLong clientAtomicLong=client.atomicLong("atomicLongRmv",0,true);
+  assertEquals(0L,clientAtomicLong.getAndAdd(1));
+  final IgniteAtomicLong srvAtomicLong=srv.atomicLong("atomicLongRmv",0,false);
+  assertEquals(1L,srvAtomicLong.getAndAdd(1));
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      srvAtomicLong.close();
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      clientAtomicLong.getAndAdd(1);
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  IgniteAtomicLong newClientAtomicLong=client.atomicLong("atomicLongRmv",0,true);
+  assertEquals(0L,newClientAtomicLong.getAndAdd(1));
+  IgniteAtomicLong newSrvAtomicLong=srv.atomicLong("atomicLongRmv",0,false);
+  assertEquals(1L,newSrvAtomicLong.getAndAdd(1));
+}

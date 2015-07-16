@@ -2,11 +2,12 @@
   if (err == null) {
     startFut.onDone();
     final long start=U.currentTimeMillis();
-    if (cctx.config().getRebalanceDelay() >= 0) {
-      U.log(log,"Starting rebalancing in " + cctx.config().getRebalanceMode() + " mode: "+ cctx.name());
+    final CacheConfiguration cfg=cctx.config();
+    if (cfg.getRebalanceDelay() >= 0 && !cctx.kernalContext().clientNode()) {
+      U.log(log,"Starting rebalancing in " + cfg.getRebalanceMode() + " mode: "+ cctx.name());
       demandPool.syncFuture().listen(new CI1<Object>(){
         @Override public void apply(        Object t){
-          U.log(log,"Completed rebalancing in " + cctx.config().getRebalanceMode() + " mode "+ "[cache="+ cctx.name()+ ", time="+ (U.currentTimeMillis() - start)+ " ms]");
+          U.log(log,"Completed rebalancing in " + cfg.getRebalanceMode() + " mode "+ "[cache="+ cctx.name()+ ", time="+ (U.currentTimeMillis() - start)+ " ms]");
         }
       }
 );

@@ -1,0 +1,23 @@
+{
+  reconnectDisabled=true;
+  startServerNodes(1);
+  startClientNodes(1);
+  Ignite srv=G.ignite("server-0");
+  TestTcpDiscoverySpi srvSpi=((TestTcpDiscoverySpi)srv.configuration().getDiscoverySpi());
+  Ignite client=G.ignite("client-0");
+  final CountDownLatch segmentedLatch=new CountDownLatch(1);
+  client.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      if (evt.type() == EVT_NODE_SEGMENTED)       segmentedLatch.countDown();
+      return false;
+    }
+  }
+,EVT_NODE_SEGMENTED);
+  srvFailedLatch=new CountDownLatch(1);
+  attachListeners(1,0);
+  log.info("Fail client node.");
+  srvSpi.failNode(client.cluster().localNode().id(),null);
+  assertTrue(srvFailedLatch.await(5000,MILLISECONDS));
+  assertTrue(segmentedLatch.await(5000,MILLISECONDS));
+  checkNodes(1,0);
+}

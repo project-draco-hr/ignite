@@ -1,0 +1,24 @@
+{
+  Random rnd=new Random();
+  int buffSize=0;
+  byte[] delim=new byte[]{0};
+  List<String> strs=new ArrayList<>(50);
+  for (int i=0; i < 50; i++) {
+    int len=rnd.nextInt(128) + 1;
+    buffSize+=len + delim.length;
+    StringBuilder sb=new StringBuilder(len);
+    for (int j=0; j < len; j++)     sb.append((char)(rnd.nextInt(26) + 'a'));
+    strs.add(sb.toString());
+  }
+  ByteBuffer buff=ByteBuffer.allocate(buffSize);
+  for (  String str : strs) {
+    buff.put(str.getBytes(ASCII));
+    buff.put(delim);
+  }
+  buff.flip();
+  byte[] msg;
+  GridNioDelimitedBuffer delimBuff=new GridNioDelimitedBuffer(delim);
+  List<String> res=new ArrayList<>(strs.size());
+  while ((msg=delimBuff.read(buff)) != null)   res.add(new String(msg,ASCII));
+  assertEquals(strs,res);
+}

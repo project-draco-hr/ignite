@@ -1,0 +1,21 @@
+{
+  List<DataStreamerEntry> entries0=null;
+  GridFutureAdapter<Object> curFut0;
+synchronized (this) {
+    curFut0=curFut;
+    curFut0.listen(lsnr);
+    for (    DataStreamerEntry entry : newEntries)     entries.add(entry);
+    if (entries.size() >= bufSize) {
+      entries0=entries;
+      entries=newEntries();
+      curFut=new GridFutureAdapter<>();
+      curFut.listen(signalC);
+    }
+  }
+  if (entries0 != null) {
+    submit(entries0,topVer,curFut0);
+    if (cancelled)     curFut0.onDone(new IgniteCheckedException("Data streamer has been cancelled: " + DataStreamerImpl.this));
+ else     if (ctx.clientDisconnected())     curFut0.onDone(new IgniteClientDisconnectedCheckedException(ctx.cluster().clientReconnectFuture(),"Client node disconnected."));
+  }
+  return curFut0;
+}

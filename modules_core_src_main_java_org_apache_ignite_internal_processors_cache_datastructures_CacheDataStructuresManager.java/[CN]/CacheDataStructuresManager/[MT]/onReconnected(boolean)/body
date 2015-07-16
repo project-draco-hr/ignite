@@ -1,0 +1,17 @@
+{
+  for (  Map.Entry<IgniteUuid,GridCacheSetProxy> e : setsMap.entrySet()) {
+    GridCacheSetProxy set=e.getValue();
+    if (clusterRestarted) {
+      set.blockOnRemove();
+      setsMap.remove(e.getKey(),set);
+    }
+ else     set.needCheckNotRemoved();
+  }
+  for (  Map.Entry<IgniteUuid,GridCacheQueueProxy> e : queuesMap.entrySet()) {
+    GridCacheQueueProxy queue=e.getValue();
+    if (clusterRestarted) {
+      queue.delegate().onRemoved(false);
+      queuesMap.remove(e.getKey(),queue);
+    }
+  }
+}

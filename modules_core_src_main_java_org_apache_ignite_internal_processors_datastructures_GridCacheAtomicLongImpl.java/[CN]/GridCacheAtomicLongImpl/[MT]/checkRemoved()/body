@@ -1,3 +1,16 @@
 {
-  if (rmvd)   throw new IllegalStateException("Atomic long was removed from cache: " + name);
+  if (rmvd)   throw removedError();
+  if (rmvCheck) {
+    try {
+      rmvd=atomicView.get(key) == null;
+    }
+ catch (    IgniteCheckedException e) {
+      throw U.convertException(e);
+    }
+    rmvCheck=false;
+    if (rmvd) {
+      ctx.kernalContext().dataStructures().onRemoved(key,this);
+      throw removedError();
+    }
+  }
 }

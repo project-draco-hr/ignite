@@ -1,0 +1,25 @@
+{
+  try {
+    startGrid();
+    EvictionPolicyProxy p=proxy(policy());
+    int max=10;
+    Random rand=new Random();
+    int keys=31;
+    MockEntry[] entries=new MockEntry[keys];
+    for (int i=0; i < entries.length; i++)     entries[i]=new MockEntry(Integer.toString(i));
+    int runs=5000000;
+    for (int i=0; i < runs; i++) {
+      boolean rmv=rand.nextBoolean();
+      int j=rand.nextInt(entries.length);
+      MockEntry e=entry(entries,j);
+      if (rmv)       entries[j]=new MockEntry(Integer.toString(j));
+      p.onEntryAccessed(rmv,e);
+    }
+    info(p);
+    assertTrue(p.getCurrentSize() <= (plcMaxMemSize > 0 ? max : max + plcBatchSize));
+    assertTrue(p.getCurrentMemorySize() <= (plcMaxMemSize > 0 ? max : max + plcBatchSize) * MockEntry.KEY_SIZE);
+  }
+  finally {
+    stopAllGrids();
+  }
+}
