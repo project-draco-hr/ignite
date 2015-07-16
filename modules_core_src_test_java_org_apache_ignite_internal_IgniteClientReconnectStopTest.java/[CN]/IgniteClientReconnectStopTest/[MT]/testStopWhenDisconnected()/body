@@ -1,0 +1,46 @@
+{
+  clientMode=true;
+  Ignite client=startGrid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  TestTcpDiscoverySpi srvSpi=spi(srv);
+  final CountDownLatch disconnectLatch=new CountDownLatch(1);
+  final CountDownLatch reconnectLatch=new CountDownLatch(1);
+  final TestTcpDiscoverySpi clientSpi=spi(client);
+  log.info("Block reconnect.");
+  clientSpi.writeLatch=new CountDownLatch(1);
+  client.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      if (evt.type() == EVT_CLIENT_NODE_DISCONNECTED) {
+        info("Disconnected: " + evt);
+        disconnectLatch.countDown();
+      }
+ else       if (evt.type() == EVT_CLIENT_NODE_RECONNECTED) {
+        info("Reconnected: " + evt);
+        reconnectLatch.countDown();
+      }
+      return true;
+    }
+  }
+,EVT_CLIENT_NODE_DISCONNECTED,EVT_CLIENT_NODE_RECONNECTED);
+  srvSpi.failNode(client.cluster().localNode().id(),null);
+  waitReconnectEvent(disconnectLatch);
+  IgniteFuture<?> reconnectFut=null;
+  try {
+    client.getOrCreateCache(new CacheConfiguration<>());
+    fail();
+  }
+ catch (  IgniteClientDisconnectedException e) {
+    log.info("Expected operation exception: " + e);
+    reconnectFut=e.reconnectFuture();
+  }
+  assertNotNull(reconnectFut);
+  client.close();
+  try {
+    reconnectFut.get();
+    fail();
+  }
+ catch (  IgniteException e) {
+    log.info("Expected reconnect exception: " + e);
+  }
+}

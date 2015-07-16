@@ -1,0 +1,27 @@
+{
+  clientMode=true;
+  final Ignite client=startGrid(SRV_CNT);
+  assertTrue(client.cluster().localNode().isClient());
+  final Ignite srv=clientRouter(client);
+  final IgniteCache<Object,Object> clientCache=client.getOrCreateCache(new CacheConfiguration<>());
+  final IgniteCache<Object,Object> srvCache=srv.cache(null);
+  assertNotNull(srvCache);
+  clientCache.put(1,new TestClass1());
+  srvCache.put(2,new TestClass2());
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      assertNotNull(srvCache.get(1));
+      assertNotNull(srvCache.get(2));
+      srvCache.put(3,new TestClass3());
+    }
+  }
+);
+  srvCache.put(4,new TestClass4());
+  assertNotNull(clientCache.get(1));
+  assertNotNull(clientCache.get(2));
+  assertNotNull(clientCache.get(3));
+  assertNotNull(clientCache.get(4));
+  clientCache.put(5,new TestClass5());
+  assertNotNull(srvCache.get(5));
+  assertNotNull(clientCache.get(5));
+}

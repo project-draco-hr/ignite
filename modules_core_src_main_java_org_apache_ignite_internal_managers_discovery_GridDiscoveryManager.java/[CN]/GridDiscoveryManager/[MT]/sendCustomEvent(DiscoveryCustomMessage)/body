@@ -1,3 +1,12 @@
 {
-  getSpi().sendCustomEvent(new CustomMessageWrapper(msg));
+  try {
+    getSpi().sendCustomEvent(new CustomMessageWrapper(msg));
+  }
+ catch (  IgniteClientDisconnectedException e) {
+    IgniteFuture<?> reconnectFut=ctx.cluster().clientReconnectFuture();
+    throw new IgniteClientDisconnectedCheckedException(reconnectFut,e.getMessage());
+  }
+catch (  IgniteException e) {
+    throw new IgniteCheckedException(e);
+  }
 }

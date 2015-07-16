@@ -1,0 +1,37 @@
+{
+  final Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  IgniteCache<Integer,Integer> cache=client.getOrCreateCache("test-cache");
+  for (int i=0; i < 100; i++)   cache.put(i,i);
+  BlockTpcCommunicationSpi commSpi=commSpi(srv);
+  commSpi.blockMessage(GridJobExecuteResponse.class);
+  final IgniteInternalFuture<Object> fut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      try {
+        client.compute().affinityCall("test-cache",40,new IgniteCallable<Object>(){
+          @Override public Integer call() throws Exception {
+            return 42;
+          }
+        }
+);
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        checkAndWait(e);
+        return true;
+      }
+      return false;
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      return fut.get(200);
+    }
+  }
+,IgniteFutureTimeoutCheckedException.class,null);
+  assertNotDone(fut);
+  commSpi.unblockMessage();
+  reconnectClientNode(client,srv,null);
+  assertTrue((Boolean)fut.get(2,TimeUnit.SECONDS));
+}

@@ -1,0 +1,28 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  final Ignite srv=clientRouter(client);
+  final String setName="set-rm-" + colCfg.getAtomicityMode();
+  final IgniteSet<String> clientSet=client.set(setName,colCfg);
+  final IgniteSet<String> srvSet=srv.set(setName,null);
+  assertTrue(clientSet.add("1"));
+  assertFalse(srvSet.add("1"));
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      srvSet.close();
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      clientSet.add("fail");
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  IgniteSet<String> newClientSet=client.set(setName,colCfg);
+  IgniteSet<String> newSrvSet=srv.set(setName,null);
+  assertTrue(newClientSet.add("1"));
+  assertFalse(newSrvSet.add("1"));
+  newSrvSet.close();
+}

@@ -1,0 +1,38 @@
+{
+  Ignite cln=grid(serverCount());
+  assertTrue(cln.cluster().localNode().isClient());
+  final Ignite srv=clientRouter(cln);
+  final IgniteCache<Integer,Person> clnCache=cln.getOrCreateCache(QUERY_CACHE);
+  clnCache.put(1,new Person(1,"name1","surname1"));
+  clnCache.put(2,new Person(2,"name2","surname2"));
+  clnCache.put(3,new Person(3,"name3","surname3"));
+  blockMessage(GridQueryNextPageResponse.class);
+  final SqlQuery<Integer,Person> qry=new SqlQuery<>(Person.class,"_key <> 0");
+  qry.setPageSize(1);
+  final QueryCursor<Cache.Entry<Integer,Person>> cur1=clnCache.query(qry);
+  final IgniteInternalFuture<Object> fut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      try {
+        cur1.getAll();
+      }
+ catch (      CacheException e) {
+        checkAndWait(e);
+        return true;
+      }
+      return false;
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      return fut.get(200);
+    }
+  }
+,IgniteFutureTimeoutCheckedException.class,null);
+  assertNotDone(fut);
+  unblockMessage();
+  reconnectClientNode(cln,srv,null);
+  assertTrue((Boolean)fut.get(2,SECONDS));
+  QueryCursor<Cache.Entry<Integer,Person>> cur2=clnCache.query(qry);
+  assertEquals(3,cur2.getAll().size());
+}

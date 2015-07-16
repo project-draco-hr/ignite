@@ -1,0 +1,168 @@
+{
+  clientMode=true;
+  final Ignite client=startGrid(serverCount());
+  final IgniteCache<Object,Object> dfltCache=client.cache(null);
+  final CountDownLatch recvLatch=new CountDownLatch(1);
+  assertNotNull(dfltCache);
+  doTestIgniteOperationOnDisconnect(client,Arrays.asList(new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.compute();
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.compute();
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      IgniteCompute comp=(IgniteCompute)o;
+      Collection<UUID> uuids=comp.broadcast(new IgniteCallable<UUID>(){
+        @IgniteInstanceResource private Ignite ignite;
+        @Override public UUID call() throws Exception {
+          return ignite.cluster().localNode().id();
+        }
+      }
+);
+      assertFalse(uuids.isEmpty());
+      for (      UUID uuid : uuids)       assertNotNull(uuid);
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.cluster().pingNode(new UUID(0,0));
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.cluster().pingNode(new UUID(0,0));
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      Boolean pingNode=(Boolean)o;
+      assertFalse(pingNode);
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.events().remoteListen(null,new IgnitePredicate<Event>(){
+          @Override public boolean apply(          Event event){
+            return true;
+          }
+        }
+);
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.events().remoteListen(null,new IgnitePredicate<Event>(){
+        @Override public boolean apply(        Event event){
+          return true;
+        }
+      }
+);
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      UUID remoteId=(UUID)o;
+      assertNotNull(remoteId);
+      client.events().stopRemoteListen(remoteId);
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.message().remoteListen(null,new IgniteBiPredicate<UUID,Object>(){
+          @Override public boolean apply(          UUID uuid,          Object o){
+            if (o.equals("Test message."))             recvLatch.countDown();
+            return true;
+          }
+        }
+);
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.message().remoteListen(null,new IgniteBiPredicate<UUID,Object>(){
+        @Override public boolean apply(        UUID uuid,        Object o){
+          if (o.equals("Test message."))           recvLatch.countDown();
+          return true;
+        }
+      }
+);
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      assertNotNull(o);
+      IgniteMessaging msg=client.message();
+      msg.send(null,"Test message.");
+      try {
+        assertTrue(recvLatch.await(2,SECONDS));
+      }
+ catch (      InterruptedException e) {
+        fail("Message wasn't received.");
+      }
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.executorService().submit(new Callable<Integer>(){
+          @Override public Integer call() throws Exception {
+            return 42;
+          }
+        }
+);
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.executorService().submit(new Callable<Integer>(){
+        @Override public Integer call() throws Exception {
+          return 42;
+        }
+      }
+);
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      assertNotNull(o);
+      Future<Integer> fut=(Future<Integer>)o;
+      try {
+        assertEquals(42,(int)fut.get());
+      }
+ catch (      Exception e) {
+        fail("Failed submit task.");
+      }
+      return true;
+    }
+  }
+)));
+  clientMode=false;
+}

@@ -1,0 +1,218 @@
+{
+  clientMode=true;
+  final Ignite client=startGrid(serverCount());
+  final IgniteCache<Object,Object> dfltCache=client.cache(null);
+  assertNotNull(dfltCache);
+  doTestIgniteOperationOnDisconnect(client,Arrays.asList(new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        dfltCache.getAndPut(9999,9999);
+      }
+ catch (      CacheException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return dfltCache.getAndPut(9999,9999);
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      assertNull(o);
+      assertEquals(9999,dfltCache.get(9999));
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        dfltCache.put(10000,10000);
+      }
+ catch (      CacheException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      dfltCache.put(10000,10000);
+      return true;
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      assertTrue((Boolean)o);
+      assertEquals(10000,dfltCache.get(10000));
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        dfltCache.get(10001);
+      }
+ catch (      CacheException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return dfltCache.get(10001);
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      assertNull(o);
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        dfltCache.invoke(10000,new CacheEntryProcessor<Object,Object,Object>(){
+          @Override public Object process(          MutableEntry<Object,Object> entry,          Object... arguments) throws EntryProcessorException {
+            assertTrue(entry.exists());
+            return (int)entry.getValue() * 2;
+          }
+        }
+);
+      }
+ catch (      CacheException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return dfltCache.invoke(10000,new CacheEntryProcessor<Object,Object,Object>(){
+        @Override public Object process(        MutableEntry<Object,Object> entry,        Object... arguments) throws EntryProcessorException {
+          assertTrue(entry.exists());
+          return (int)entry.getValue() * 2;
+        }
+      }
+);
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      assertNotNull(o);
+      assertEquals(20000,(int)o);
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      IgniteCache<Object,Object> async=dfltCache.withAsync();
+      boolean failed=false;
+      try {
+        async.put(10002,10002);
+        async.future().get();
+      }
+ catch (      CacheException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      async.put(10002,10002);
+      return async.future().get();
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      assertNull(o);
+      assertEquals(10002,dfltCache.get(10002));
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.transactions();
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.transactions();
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      IgniteTransactions txs=(IgniteTransactions)o;
+      assertNotNull(txs);
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.cache(null);
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.cache(null);
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      IgniteCache<Object,Object> cache0=(IgniteCache<Object,Object>)o;
+      assertNotNull(cache0);
+      cache0.put(1,1);
+      assertEquals(1,cache0.get(1));
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.dataStreamer(null);
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.dataStreamer(null);
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      IgniteDataStreamer<Object,Object> streamer=(IgniteDataStreamer<Object,Object>)o;
+      streamer.addData(2,2);
+      streamer.close();
+      assertEquals(2,client.cache(null).get(2));
+      return true;
+    }
+  }
+),new T2<Callable,C1<Object,Boolean>>(new Callable(){
+    @Override public Object call() throws Exception {
+      boolean failed=false;
+      try {
+        client.createCache("test_cache");
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        failed=true;
+        checkAndWait(e);
+      }
+      assertTrue(failed);
+      return client.createCache("test_cache");
+    }
+  }
+,new C1<Object,Boolean>(){
+    @Override public Boolean apply(    Object o){
+      IgniteCache<Object,Object> cache=(IgniteCache<Object,Object>)o;
+      assertNotNull(cache);
+      cache.put(1,1);
+      assertEquals(1,cache.get(1));
+      return true;
+    }
+  }
+)));
+  clientMode=false;
+}

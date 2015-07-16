@@ -1,0 +1,60 @@
+{
+  assertNotNull(client.cache(null));
+  final TestTcpDiscoverySpi clientSpi=spi(client);
+  Ignite srv=clientRouter(client);
+  TestTcpDiscoverySpi srvSpi=spi(srv);
+  final CountDownLatch disconnectLatch=new CountDownLatch(1);
+  final CountDownLatch reconnectLatch=new CountDownLatch(1);
+  log.info("Block reconnect.");
+  clientSpi.writeLatch=new CountDownLatch(1);
+  final List<IgniteInternalFuture> futs=new ArrayList<>();
+  client.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      if (evt.type() == EVT_CLIENT_NODE_DISCONNECTED) {
+        info("Disconnected: " + evt);
+        assertEquals(1,reconnectLatch.getCount());
+        for (        T2<Callable,C1<Object,Boolean>> op : ops)         futs.add(GridTestUtils.runAsync(op.get1()));
+        disconnectLatch.countDown();
+      }
+ else       if (evt.type() == EVT_CLIENT_NODE_RECONNECTED) {
+        info("Reconnected: " + evt);
+        reconnectLatch.countDown();
+      }
+      return true;
+    }
+  }
+,EVT_CLIENT_NODE_DISCONNECTED,EVT_CLIENT_NODE_RECONNECTED);
+  try {
+    log.info("Fail client.");
+    srvSpi.failNode(client.cluster().localNode().id(),null);
+    waitReconnectEvent(disconnectLatch);
+    assertEquals(ops.size(),futs.size());
+    for (    IgniteInternalFuture<?> fut : futs)     assertNotDone(fut);
+    U.sleep(2000);
+    for (    IgniteInternalFuture<?> fut : futs)     assertNotDone(fut);
+    log.info("Allow reconnect.");
+    clientSpi.writeLatch.countDown();
+    waitReconnectEvent(reconnectLatch);
+    for (int i=0; i < futs.size(); i++) {
+      final int i0=i;
+      try {
+        final Object futRes=futs.get(i0).get(2,SECONDS);
+        assertTrue(GridTestUtils.runAsync(new Callable<Boolean>(){
+          @Override public Boolean call() throws Exception {
+            return ops.get(i0).get2().apply(futRes);
+          }
+        }
+).get(2,SECONDS));
+      }
+ catch (      IgniteFutureTimeoutCheckedException e) {
+        e.printStackTrace();
+        fail("Operation timeout. Iteration: " + i + ".");
+      }
+    }
+  }
+  finally {
+    clientSpi.writeLatch.countDown();
+    for (    IgniteInternalFuture fut : futs)     fut.cancel();
+    stopAllGrids();
+  }
+}

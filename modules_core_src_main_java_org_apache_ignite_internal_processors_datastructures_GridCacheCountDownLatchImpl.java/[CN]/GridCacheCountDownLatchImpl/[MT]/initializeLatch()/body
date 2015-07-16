@@ -1,2 +1,28 @@
 {
+  if (initGuard.compareAndSet(false,true)) {
+    try {
+      internalLatch=CU.outTx(retryTopologySafe(new Callable<CountDownLatch>(){
+        @Override public CountDownLatch call() throws Exception {
+          try (IgniteInternalTx tx=CU.txStartInternal(ctx,latchView,PESSIMISTIC,REPEATABLE_READ)){
+            GridCacheCountDownLatchValue val=latchView.get(key);
+            if (val == null) {
+              if (log.isDebugEnabled())               log.debug("Failed to find count down latch with given name: " + name);
+              return new CountDownLatch(0);
+            }
+            tx.commit();
+            return new CountDownLatch(val.get());
+          }
+         }
+      }
+),ctx);
+      if (log.isDebugEnabled())       log.debug("Initialized internal latch: " + internalLatch);
+    }
+  finally {
+      initLatch.countDown();
+    }
+  }
+ else {
+    U.await(initLatch);
+    if (internalLatch == null)     throw new IgniteCheckedException("Internal latch has not been properly initialized.");
+  }
 }

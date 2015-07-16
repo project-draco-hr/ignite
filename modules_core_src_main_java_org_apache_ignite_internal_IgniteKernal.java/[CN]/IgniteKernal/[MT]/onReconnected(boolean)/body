@@ -1,0 +1,31 @@
+{
+  Throwable err=null;
+  try {
+    ctx.disconnected(false);
+    for (    GridComponent comp : ctx.components())     comp.onReconnected(clusterRestarted);
+    ctx.cache().context().exchange().reconnectExchangeFuture().listen(new CI1<IgniteInternalFuture<?>>(){
+      @Override public void apply(      IgniteInternalFuture<?> fut){
+        try {
+          fut.get();
+          ctx.gateway().onReconnected();
+        }
+ catch (        IgniteCheckedException e) {
+          U.error(log,"Failed to reconnect, will stop node",e);
+          close();
+        }
+      }
+    }
+);
+  }
+ catch (  IgniteCheckedException e) {
+    err=e;
+  }
+catch (  Throwable e) {
+    err=e;
+    if (e instanceof Error)     throw e;
+  }
+  if (err != null) {
+    U.error(log,"Failed to reconnect, will stop node",err);
+    close();
+  }
+}

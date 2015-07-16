@@ -1,0 +1,41 @@
+{
+  Ignite srv=clientRouter(client);
+  TestTcpDiscoverySpi srvSpi=spi(srv);
+  final IgniteCache<Object,Object> cache=client.getOrCreateCache(ccfg);
+  for (int i=0; i < SRV_CNT; i++) {
+    TestCommunicationSpi srvCommSpi=(TestCommunicationSpi)grid(i).configuration().getCommunicationSpi();
+    srvCommSpi.blockMessages(msgToBlock,client.localNode().id());
+  }
+  IgniteInternalFuture<?> fut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      IgniteClientDisconnectedException e0=null;
+      try {
+        c.apply(cache);
+        fail();
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        log.info("Expected exception: " + e);
+        e0=e;
+      }
+catch (      CacheException e) {
+        log.info("Expected exception: " + e);
+        assertTrue("Unexpected cause: " + e.getCause(),e.getCause() instanceof IgniteClientDisconnectedException);
+        e0=(IgniteClientDisconnectedException)e.getCause();
+      }
+      assertNotNull(e0);
+      assertNotNull(e0.reconnectFuture());
+      e0.reconnectFuture().get();
+      c.apply(cache);
+      return null;
+    }
+  }
+);
+  Thread.sleep(1000);
+  assertNotDone(fut);
+  log.info("Fail client: " + client.localNode().id());
+  srvSpi.failNode(client.localNode().id(),null);
+  fut.get();
+  for (int i=0; i < SRV_CNT; i++)   ((TestCommunicationSpi)grid(i).configuration().getCommunicationSpi()).stopBlock(false);
+  cache.put(1,1);
+  assertEquals(1,cache.get(1));
+}

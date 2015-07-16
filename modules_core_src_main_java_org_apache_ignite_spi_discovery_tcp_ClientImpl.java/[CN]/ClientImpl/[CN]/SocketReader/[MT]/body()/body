@@ -31,8 +31,12 @@ synchronized (mux) {
         msg.senderNodeId(rmtNodeId);
         if (log.isDebugEnabled())         log.debug("Message has been received: " + msg);
         spi.stats.onMessageReceived(msg);
-        if (spi.ensured(msg) && joinLatch.getCount() == 0L)         lastMsgId=msg.id();
-        msgWorker.addMessage(msg);
+        boolean ack=msg instanceof TcpDiscoveryClientAckResponse;
+        if (!ack) {
+          if (spi.ensured(msg) && joinLatch.getCount() == 0L)           lastMsgId=msg.id();
+          msgWorker.addMessage(msg);
+        }
+ else         sockWriter.ackReceived((TcpDiscoveryClientAckResponse)msg);
       }
     }
  catch (    IOException e) {

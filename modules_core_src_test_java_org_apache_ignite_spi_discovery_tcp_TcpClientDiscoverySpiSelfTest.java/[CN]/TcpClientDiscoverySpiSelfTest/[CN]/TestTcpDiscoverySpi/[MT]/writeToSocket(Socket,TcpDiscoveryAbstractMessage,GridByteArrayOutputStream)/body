@@ -1,6 +1,10 @@
 {
   waitFor(writeLock);
   boolean fail=false;
+  if (skipNodeAdded && (msg instanceof TcpDiscoveryNodeAddedMessage || msg instanceof TcpDiscoveryNodeAddFinishedMessage)) {
+    log.info("Skip message: " + msg);
+    return;
+  }
   if (msg instanceof TcpDiscoveryNodeAddedMessage)   fail=failNodeAdded.getAndDecrement() > 0;
  else   if (msg instanceof TcpDiscoveryNodeAddFinishedMessage)   fail=failNodeAddFinished.getAndDecrement() > 0;
  else   if (msg instanceof TcpDiscoveryClientReconnectMessage)   fail=failClientReconnect.getAndDecrement() > 0;
