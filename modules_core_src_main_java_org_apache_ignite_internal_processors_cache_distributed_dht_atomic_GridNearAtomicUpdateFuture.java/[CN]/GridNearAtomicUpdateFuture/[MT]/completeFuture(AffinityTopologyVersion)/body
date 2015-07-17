@@ -1,12 +1,15 @@
 {
   if (waitForPartitionExchange() && topologyVersion().compareTo(topVer) < 0) {
+    GridFutureAdapter<Void> fut=null;
 synchronized (this) {
       if (this.topVer == AffinityTopologyVersion.ZERO)       return null;
       if (this.topVer.compareTo(topVer) < 0) {
         if (topCompleteFut == null)         topCompleteFut=new GridFutureAdapter<>();
-        return topCompleteFut;
+        fut=topCompleteFut;
       }
     }
+    if (fut != null && isDone())     fut.onDone();
+    return fut;
   }
   return null;
 }
