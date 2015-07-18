@@ -1,0 +1,22 @@
+{
+  final String uri;
+  if (cfgFile == null)   throw new IgniteCheckedException("Configuration XML file for Log4j must be specified.");
+  if (!cfgFile.exists() || cfgFile.isDirectory())   throw new IgniteCheckedException("Log4j configuration path was not found or is a directory: " + cfgFile);
+  try {
+    uri=cfgFile.toURI().toURL().toString();
+  }
+ catch (  MalformedURLException e) {
+    throw new IgniteCheckedException(e.toString());
+  }
+  path=cfgFile.getAbsolutePath();
+  addConsoleAppenderIfNeeded(null,new C1<Boolean,Logger>(){
+    @Override public Logger apply(    Boolean init){
+      if (init) {
+        Configurator.initialize("Log4J2Logger",uri);
+      }
+      return LogManager.getRootLogger();
+    }
+  }
+);
+  quiet=quiet0;
+}
