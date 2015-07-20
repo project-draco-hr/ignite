@@ -1,0 +1,19 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  cfg.setPeerClassLoadingEnabled(false);
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(ipFinder);
+  if (!client) {
+    CacheConfiguration[] ccfgs=new CacheConfiguration[CACHES];
+    for (int i=0; i < CACHES; i++) {
+      CacheConfiguration ccfg=new CacheConfiguration();
+      ccfg.setCacheMode(PARTITIONED);
+      ccfg.setAtomicityMode(TRANSACTIONAL);
+      ccfg.setBackups(1);
+      ccfg.setName("cache-" + i);
+      ccfgs[i]=ccfg;
+    }
+    cfg.setCacheConfiguration(ccfgs);
+  }
+  cfg.setClientMode(client);
+  return cfg;
+}
