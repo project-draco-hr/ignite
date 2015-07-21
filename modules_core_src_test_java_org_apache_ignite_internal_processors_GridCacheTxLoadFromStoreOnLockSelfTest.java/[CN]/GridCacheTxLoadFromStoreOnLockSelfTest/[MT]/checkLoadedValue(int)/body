@@ -7,20 +7,20 @@
   cacheCfg.setReadThrough(true);
   cacheCfg.setBackups(backups);
   cacheCfg.setLoadPreviousValue(true);
-  try (IgniteCache<Integer,Integer> cache=ignite(0).createCache(cacheCfg)){
-    for (int i=0; i < 10; i++)     assertEquals((Integer)i,cache.get(i));
-    cache.removeAll();
-    assertEquals(0,cache.size());
-    for (    TransactionConcurrency conc : TransactionConcurrency.values()) {
-      for (      TransactionIsolation iso : TransactionIsolation.values()) {
-        info("Checking transaction [conc=" + conc + ", iso="+ iso+ ']');
-        try (Transaction tx=ignite(0).transactions().txStart(conc,iso)){
-          for (int i=0; i < 10; i++)           assertEquals("Invalid value for transaction [conc=" + conc + ", iso="+ iso+ ']',(Integer)i,cache.get(i));
-          tx.commit();
-        }
-         cache.removeAll();
-        assertEquals(0,cache.size());
+  IgniteCache<Integer,Integer> cache=ignite(0).createCache(cacheCfg);
+  for (int i=0; i < 10; i++)   assertEquals((Integer)i,cache.get(i));
+  cache.removeAll();
+  assertEquals(0,cache.size());
+  for (  TransactionConcurrency conc : TransactionConcurrency.values()) {
+    for (    TransactionIsolation iso : TransactionIsolation.values()) {
+      info("Checking transaction [conc=" + conc + ", iso="+ iso+ ']');
+      try (Transaction tx=ignite(0).transactions().txStart(conc,iso)){
+        for (int i=0; i < 10; i++)         assertEquals("Invalid value for transaction [conc=" + conc + ", iso="+ iso+ ']',(Integer)i,cache.get(i));
+        tx.commit();
       }
+       cache.removeAll();
+      assertEquals(0,cache.size());
     }
   }
- }
+  cache.destroy();
+}

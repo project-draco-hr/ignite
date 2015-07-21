@@ -1,0 +1,20 @@
+{
+  try {
+    URL url=new URL(igniteUrl);
+    HttpURLConnection conn=(HttpURLConnection)url.openConnection();
+    int code=conn.getResponseCode();
+    if (code == 200) {
+      String fileName=fileName(url.toString());
+      String filePath=props.igniteLocalWorkDir() + File.separator + fileName;
+      if (new File(filePath).exists())       return fileName;
+      FileOutputStream outFile=new FileOutputStream(filePath);
+      outFile.getChannel().transferFrom(Channels.newChannel(conn.getInputStream()),0,Long.MAX_VALUE);
+      outFile.close();
+      return fileName;
+    }
+ else     throw new RuntimeException("Got unexpected response code. Response code: " + code);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException("Failed update ignite.",e);
+  }
+}

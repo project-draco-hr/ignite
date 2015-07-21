@@ -16,6 +16,19 @@
         DynamicCacheDescriptor desc=registeredCaches.get(masked);
         if (desc != null && desc.cancelled() && desc.deploymentId().equals(req.deploymentId()))         registeredCaches.remove(masked,desc);
       }
+ else       if (req.close() && req.initiatingNodeId().equals(ctx.localNodeId())) {
+        IgniteCacheProxy<?,?> proxy=jCacheProxies.remove(masked);
+        if (proxy != null) {
+          if (proxy.context().affinityNode()) {
+            GridCacheAdapter<?,?> cache=caches.get(masked);
+            if (cache != null)             jCacheProxies.put(masked,new IgniteCacheProxy(cache.context(),cache,null,false));
+          }
+ else {
+            proxy.context().gate().onStopped();
+            prepareCacheStop(req);
+          }
+        }
+      }
       completeStartFuture(req);
     }
   }

@@ -1,0 +1,70 @@
+{
+  startServerNodes(1);
+  startClientNodes(1);
+  Ignite srv=G.ignite("server-0");
+  TestTcpDiscoverySpi srvSpi=((TestTcpDiscoverySpi)srv.configuration().getDiscoverySpi());
+  Ignite client=G.ignite("client-0");
+  final ClusterNode clientNode=client.cluster().localNode();
+  final UUID clientId=clientNode.id();
+  final TestTcpDiscoverySpi clientSpi=((TestTcpDiscoverySpi)client.configuration().getDiscoverySpi());
+  assertEquals(2L,clientNode.order());
+  final CountDownLatch failLatch=new CountDownLatch(1);
+  final CountDownLatch joinLatch=new CountDownLatch(1);
+  srv.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      info("Server event: " + evt);
+      DiscoveryEvent evt0=(DiscoveryEvent)evt;
+      if (evt0.eventNode().id().equals(clientId) && (evt.type() == EVT_NODE_FAILED)) {
+        if (evt.type() == EVT_NODE_FAILED)         failLatch.countDown();
+      }
+ else       if (evt.type() == EVT_NODE_JOINED) {
+        TcpDiscoveryNode node=(TcpDiscoveryNode)evt0.eventNode();
+        if ("client-0".equals(node.attribute(IgniteNodeAttributes.ATTR_GRID_NAME))) {
+          assertEquals(changeTop ? 5L : 4L,node.order());
+          joinLatch.countDown();
+        }
+      }
+      return true;
+    }
+  }
+,EVT_NODE_FAILED,EVT_NODE_JOINED);
+  final CountDownLatch reconnectLatch=new CountDownLatch(1);
+  final CountDownLatch disconnectLatch=new CountDownLatch(1);
+  client.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      info("Client event: " + evt);
+      if (evt.type() == EVT_CLIENT_NODE_DISCONNECTED) {
+        assertEquals(1,reconnectLatch.getCount());
+        disconnectLatch.countDown();
+        if (changeTop)         clientSpi.pauseAll(false);
+      }
+ else       if (evt.type() == EVT_CLIENT_NODE_RECONNECTED) {
+        assertEquals(0,disconnectLatch.getCount());
+        reconnectLatch.countDown();
+      }
+      return true;
+    }
+  }
+,EVT_CLIENT_NODE_DISCONNECTED,EVT_CLIENT_NODE_RECONNECTED);
+  srvSpi.failNode(client.cluster().localNode().id(),null);
+  if (changeTop) {
+    Ignite g=startGrid("server-" + srvIdx.getAndIncrement());
+    srvNodeIds.add(g.cluster().localNode().id());
+    clientSpi.resumeAll();
+  }
+  assertTrue(disconnectLatch.await(5000,MILLISECONDS));
+  assertTrue(reconnectLatch.await(5000,MILLISECONDS));
+  assertTrue(failLatch.await(5000,MILLISECONDS));
+  assertTrue(joinLatch.await(5000,MILLISECONDS));
+  long topVer=changeTop ? 5L : 4L;
+  assertEquals(topVer,client.cluster().localNode().order());
+  assertEquals(topVer,client.cluster().topologyVersion());
+  Collection<ClusterNode> clientTop=client.cluster().topology(topVer);
+  assertEquals(changeTop ? 3 : 2,clientTop.size());
+  clientNodeIds.remove(clientId);
+  clientNodeIds.add(client.cluster().localNode().id());
+  checkNodes(changeTop ? 2 : 1,1);
+  Ignite g=startGrid("server-" + srvIdx.getAndIncrement());
+  srvNodeIds.add(g.cluster().localNode().id());
+  checkNodes(changeTop ? 3 : 2,1);
+}

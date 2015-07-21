@@ -1,0 +1,27 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  IgniteServices clnServices=client.services();
+  final IgniteServices srvServices=srv.services();
+  srvServices.deployClusterSingleton("testServiceRemove",new TestServiceImpl());
+  final TestService srvc=clnServices.serviceProxy("testServiceRemove",TestService.class,false);
+  assertNotNull(srvc);
+  assertNotNull(srvc.test());
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      srvServices.cancel("testServiceRemove");
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      return srvc.test();
+    }
+  }
+,IgniteException.class,null);
+  clnServices.deployClusterSingleton("testServiceRemove",new TestServiceImpl());
+  TestService newSrvc=clnServices.serviceProxy("testServiceRemove",TestService.class,false);
+  assertNotNull(newSrvc);
+  assertNotNull(newSrvc.test());
+}

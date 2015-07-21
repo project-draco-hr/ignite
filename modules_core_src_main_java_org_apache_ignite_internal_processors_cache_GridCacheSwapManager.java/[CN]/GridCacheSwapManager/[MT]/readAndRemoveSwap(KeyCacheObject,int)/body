@@ -3,23 +3,23 @@
   final GridTuple<GridCacheSwapEntry> t=F.t1();
   final GridTuple<IgniteCheckedException> err=F.t1();
   SwapKey swapKey=new SwapKey(key.value(cctx.cacheObjectContext(),false),part,key.valueBytes(cctx.cacheObjectContext()));
+  ClassLoader ldr=cctx.deploy().globalLoader();
+  final GridCacheQueryManager qryMgr=cctx.queries();
+  if (qryMgr != null && !readSwapBeforeRemove(key,swapKey,ldr))   return null;
   swapMgr.remove(spaceName,swapKey,new CI1<byte[]>(){
     @Override public void apply(    byte[] rmv){
-      if (cctx.config().isStatisticsEnabled())       cctx.cache().metrics0().onSwapRead(rmv != null);
+      if (qryMgr == null && cctx.config().isStatisticsEnabled())       cctx.cache().metrics0().onSwapRead(rmv != null);
       if (rmv != null) {
         try {
           GridCacheSwapEntry entry=swapEntry(unmarshalSwapEntry(rmv));
           if (entry == null)           return;
           t.set(entry);
           CacheObject v=entry.value();
-          byte[] valBytes=entry.valueBytes();
           if (cctx.events().isRecordable(EVT_CACHE_OBJECT_UNSWAPPED)) {
             cctx.events().addEvent(part,key,cctx.nodeId(),(IgniteUuid)null,null,EVT_CACHE_OBJECT_UNSWAPPED,null,false,v,true,null,null,null);
           }
           if (cctx.config().isStatisticsEnabled())           cctx.cache().metrics0().onSwapRemove();
           onUnswapped(part,key,entry);
-          GridCacheQueryManager qryMgr=cctx.queries();
-          if (qryMgr != null)           qryMgr.onUnswap(key,v);
         }
  catch (        IgniteCheckedException e) {
           err.set(e);
@@ -27,7 +27,7 @@
       }
     }
   }
-,cctx.deploy().globalLoader());
+,ldr);
   if (err.get() != null)   throw err.get();
   return t.get();
 }

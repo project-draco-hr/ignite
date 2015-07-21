@@ -8,18 +8,27 @@
     GridFutureAdapter<Boolean> oldFut=pingFuts.putIfAbsent(nodeId,fut);
     if (oldFut != null)     fut=oldFut;
  else {
-      if (spi.getSpiContext().isStopping()) {
+      State state=this.state;
+      if (spi.getSpiContext().isStopping() || state == STOPPED || state == SEGMENTED) {
         if (pingFuts.remove(nodeId,fut))         fut.onDone(false);
         return false;
       }
-      final GridFutureAdapter<Boolean> finalFut=fut;
-      timer.schedule(new TimerTask(){
-        @Override public void run(){
-          if (pingFuts.remove(nodeId,finalFut))           finalFut.onDone(false);
-        }
+ else       if (state == DISCONNECTED) {
+        if (pingFuts.remove(nodeId,fut))         fut.onDone(new IgniteClientDisconnectedCheckedException(null,"Failed to ping node, client node disconnected."));
       }
+ else {
+        final GridFutureAdapter<Boolean> finalFut=fut;
+        timer.schedule(new TimerTask(){
+          @Override public void run(){
+            if (pingFuts.remove(nodeId,finalFut)) {
+              if (ClientImpl.this.state == DISCONNECTED)               finalFut.onDone(new IgniteClientDisconnectedCheckedException(null,"Failed to ping node, client node disconnected."));
+ else               finalFut.onDone(false);
+            }
+          }
+        }
 ,spi.netTimeout);
-      sockWriter.sendMessage(new TcpDiscoveryClientPingRequest(getLocalNodeId(),nodeId));
+        sockWriter.sendMessage(new TcpDiscoveryClientPingRequest(getLocalNodeId(),nodeId));
+      }
     }
   }
   try {

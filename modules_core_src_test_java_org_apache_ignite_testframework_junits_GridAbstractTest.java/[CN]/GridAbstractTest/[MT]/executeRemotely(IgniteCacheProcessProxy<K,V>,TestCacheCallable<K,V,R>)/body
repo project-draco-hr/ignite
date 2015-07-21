@@ -1,0 +1,13 @@
+{
+  IgniteProcessProxy proxy=(IgniteProcessProxy)cache.unwrap(Ignite.class);
+  final UUID id=proxy.getId();
+  final String cacheName=cache.getName();
+  return proxy.remoteCompute().call(new IgniteCallable<R>(){
+    @Override public R call() throws Exception {
+      Ignite ignite=Ignition.ignite(id);
+      IgniteCache<K,V> cache=ignite.cache(cacheName);
+      return job.call(ignite,cache);
+    }
+  }
+);
+}

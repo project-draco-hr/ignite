@@ -1,20 +1,3 @@
 {
-  if (!closed.compareAndSet(false,true))   return;
-  busyLock.block();
-  if (log.isDebugEnabled())   log.debug("Closing data streamer [ldr=" + this + ", cancel="+ cancel+ ']');
-  IgniteCheckedException e=null;
-  try {
-    if (cancel) {
-      cancelled=true;
-      for (      Buffer buf : bufMappings.values())       buf.cancelAll();
-    }
- else     doFlush();
-    ctx.event().removeLocalEventListener(discoLsnr);
-    ctx.io().removeMessageListener(topic);
-  }
- catch (  IgniteCheckedException e0) {
-    e=e0;
-  }
-  fut.onDone(null,e);
-  if (e != null)   throw e;
+  closeEx(cancel,null);
 }

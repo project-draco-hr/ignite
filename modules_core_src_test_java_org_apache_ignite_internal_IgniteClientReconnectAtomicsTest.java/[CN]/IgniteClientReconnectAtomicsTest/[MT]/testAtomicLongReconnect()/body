@@ -1,0 +1,18 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  IgniteAtomicLong clientAtomicLong=client.atomicLong("atomicLong",0,true);
+  assertEquals(0L,clientAtomicLong.getAndAdd(1));
+  final IgniteAtomicLong srvAtomicLong=srv.atomicLong("atomicLong",0,false);
+  assertEquals(1L,srvAtomicLong.getAndAdd(1));
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      assertEquals(2L,srvAtomicLong.getAndAdd(1));
+    }
+  }
+);
+  assertEquals(3L,clientAtomicLong.getAndAdd(1));
+  assertEquals(4L,srvAtomicLong.getAndAdd(1));
+  assertEquals(5L,clientAtomicLong.getAndAdd(1));
+}

@@ -1,0 +1,35 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  final IgniteAtomicStamped clientAtomicStamped=client.atomicStamped("atomicStampedRemoved",0,0,true);
+  assertEquals(true,clientAtomicStamped.compareAndSet(0,1,0,1));
+  assertEquals(1,clientAtomicStamped.value());
+  assertEquals(1,clientAtomicStamped.stamp());
+  final IgniteAtomicStamped srvAtomicStamped=srv.atomicStamped("atomicStampedRemoved",0,0,false);
+  assertEquals(true,srvAtomicStamped.compareAndSet(1,2,1,2));
+  assertEquals(2,srvAtomicStamped.value());
+  assertEquals(2,srvAtomicStamped.stamp());
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      srvAtomicStamped.close();
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      clientAtomicStamped.compareAndSet(2,3,2,3);
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  IgniteAtomicStamped newClientAtomicStamped=client.atomicStamped("atomicStampedRemoved",0,0,true);
+  assertEquals(true,newClientAtomicStamped.compareAndSet(0,1,0,1));
+  assertEquals(1,newClientAtomicStamped.value());
+  assertEquals(1,newClientAtomicStamped.stamp());
+  IgniteAtomicStamped newSrvAtomicStamped=srv.atomicStamped("atomicStampedRemoved",0,0,false);
+  assertEquals(true,newSrvAtomicStamped.compareAndSet(1,2,1,2));
+  assertEquals(2,newSrvAtomicStamped.value());
+  assertEquals(2,newSrvAtomicStamped.stamp());
+  newClientAtomicStamped.close();
+}

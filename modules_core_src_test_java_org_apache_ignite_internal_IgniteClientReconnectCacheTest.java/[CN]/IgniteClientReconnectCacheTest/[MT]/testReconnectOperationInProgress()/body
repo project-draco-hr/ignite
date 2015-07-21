@@ -1,0 +1,46 @@
+{
+  clientMode=true;
+  IgniteEx client=startGrid(SRV_CNT);
+  client.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      if (evt.type() == EVT_CLIENT_NODE_DISCONNECTED)       info("Client disconnected: " + evt);
+ else       if (evt.type() == EVT_CLIENT_NODE_RECONNECTED)       info("Client reconnected: " + evt);
+      return true;
+    }
+  }
+,EVT_CLIENT_NODE_DISCONNECTED,EVT_CLIENT_NODE_RECONNECTED);
+  IgniteInClosure<IgniteCache<Object,Object>> putOp=new CI1<IgniteCache<Object,Object>>(){
+    @Override public void apply(    IgniteCache<Object,Object> cache){
+      cache.put(1,1);
+    }
+  }
+;
+  IgniteInClosure<IgniteCache<Object,Object>> getOp=new CI1<IgniteCache<Object,Object>>(){
+    @Override public void apply(    IgniteCache<Object,Object> cache){
+      cache.get(1);
+    }
+  }
+;
+  int cnt=0;
+  for (  CacheAtomicityMode atomicityMode : CacheAtomicityMode.values()) {
+    CacheAtomicWriteOrderMode[] writeOrders=atomicityMode == ATOMIC ? CacheAtomicWriteOrderMode.values() : new CacheAtomicWriteOrderMode[]{CacheAtomicWriteOrderMode.CLOCK};
+    for (    CacheAtomicWriteOrderMode writeOrder : writeOrders) {
+      for (      CacheWriteSynchronizationMode syncMode : CacheWriteSynchronizationMode.values()) {
+        CacheConfiguration<Object,Object> ccfg=new CacheConfiguration<>();
+        ccfg.setAtomicityMode(atomicityMode);
+        ccfg.setAtomicWriteOrderMode(writeOrder);
+        ccfg.setName("cache-" + cnt++);
+        ccfg.setWriteSynchronizationMode(syncMode);
+        if (syncMode != FULL_ASYNC) {
+          Class<?> cls=(ccfg.getAtomicityMode() == ATOMIC) ? GridNearAtomicUpdateResponse.class : GridNearTxPrepareResponse.class;
+          log.info("Test cache put [atomicity=" + atomicityMode + ", writeOrder="+ writeOrder+ ", syncMode="+ syncMode+ ']');
+          checkOperationInProgressFails(client,ccfg,cls,putOp);
+          client.destroyCache(ccfg.getName());
+        }
+        log.info("Test cache get [atomicity=" + atomicityMode + ", syncMode="+ syncMode+ ']');
+        checkOperationInProgressFails(client,ccfg,GridNearGetResponse.class,getOp);
+        client.destroyCache(ccfg.getName());
+      }
+    }
+  }
+}

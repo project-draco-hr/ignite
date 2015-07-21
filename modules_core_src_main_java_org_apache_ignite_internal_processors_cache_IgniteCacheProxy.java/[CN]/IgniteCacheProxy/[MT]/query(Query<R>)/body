@@ -1,6 +1,7 @@
 {
   A.notNull(qry,"qry");
-  CacheOperationContext prev=onEnter(opCtx);
+  GridCacheGateway<K,V> gate=this.gate;
+  CacheOperationContext prev=onEnter(gate,opCtx);
   try {
     ctx.checkSecurity(SecurityPermission.CACHE_READ);
     validate(qry);
@@ -9,7 +10,7 @@
       final SqlQuery p=(SqlQuery)qry;
       if (isReplicatedDataNode() || ctx.isLocal() || qry.isLocal())       return (QueryCursor<R>)new QueryCursorImpl<>(new Iterable<Cache.Entry<K,V>>(){
         @Override public Iterator<Cache.Entry<K,V>> iterator(){
-          return ctx.kernalContext().query().<K,V>queryLocal(ctx,p);
+          return ctx.kernalContext().query().queryLocal(ctx,p);
         }
       }
 );
@@ -27,6 +28,6 @@
     throw new CacheException(e);
   }
  finally {
-    onLeave(prev);
+    onLeave(gate,prev);
   }
 }

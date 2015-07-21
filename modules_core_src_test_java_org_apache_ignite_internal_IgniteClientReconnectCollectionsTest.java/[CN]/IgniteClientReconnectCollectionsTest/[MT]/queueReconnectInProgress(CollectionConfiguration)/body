@@ -1,0 +1,38 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  final String setName="queue-rmv" + colCfg.getAtomicityMode();
+  final IgniteQueue<String> clientQueue=client.queue(setName,10,colCfg);
+  final IgniteQueue<String> srvQueue=srv.queue(setName,10,null);
+  assertTrue(clientQueue.offer("1"));
+  assertTrue(srvQueue.contains("1"));
+  BlockTpcCommunicationSpi commSpi=commSpi(srv);
+  if (colCfg.getAtomicityMode() == ATOMIC)   commSpi.blockMessage(GridNearAtomicUpdateResponse.class);
+ else   commSpi.blockMessage(GridNearTxPrepareResponse.class);
+  final IgniteInternalFuture<Object> fut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      try {
+        clientQueue.add("2");
+      }
+ catch (      IgniteClientDisconnectedException e) {
+        checkAndWait(e);
+        return true;
+      }
+      return false;
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      return fut.get(200);
+    }
+  }
+,IgniteFutureTimeoutCheckedException.class,null);
+  assertNotDone(fut);
+  commSpi.unblockMessage();
+  reconnectClientNode(client,srv,null);
+  assertTrue("Future was not failed. Atomic mode: " + colCfg.getAtomicityMode() + ".",(Boolean)fut.get());
+  assertTrue(clientQueue.add("3"));
+  assertEquals("1",clientQueue.poll());
+}

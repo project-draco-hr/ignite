@@ -6,10 +6,9 @@
   if (resourceProvider.resourceUrl() != null && !resourceProvider.resourceUrl().isEmpty())   usersLibs.addAll(resourceProvider.resourceUrl());
   for (  String url : usersLibs)   builder.addUris(Protos.CommandInfo.URI.newBuilder().setValue(url));
   String cfgName=resourceProvider.configName();
-  if (clusterProps.igniteConfigUrl() != null) {
-    String[] split=clusterProps.igniteConfigUrl().split("/");
-    cfgName=split[split.length - 1];
-  }
-  builder.setValue("find . -maxdepth 1 -name \"*.jar\" -exec cp {} ./gridgain-community-*/libs/ \\; && " + "./gridgain-community-*/bin/ignite.sh " + cfgName + " -J-Xmx"+ String.valueOf((int)igniteTask.mem() + "m")+ " -J-Xms"+ String.valueOf((int)igniteTask.mem())+ "m");
+  if (clusterProps.igniteConfigUrl() != null)   cfgName=fileName(clusterProps.igniteConfigUrl());
+  String licenceFile=null;
+  if (clusterProps.licenceUrl() != null)   licenceFile=fileName(clusterProps.licenceUrl());
+  builder.setValue((licenceFile != null ? "find . -maxdepth 1 -name \"" + licenceFile + "\" -exec cp {} ./*/ \\; && " : "") + "find . -maxdepth 1 -name \"*.jar\" -exec cp {} ./*/libs/ \\; && " + "./*/bin/ignite.sh "+ cfgName+ " -J-Xmx"+ String.valueOf((int)igniteTask.mem() + "m")+ " -J-Xms"+ String.valueOf((int)igniteTask.mem())+ "m");
   return Protos.TaskInfo.newBuilder().setName("Ignite node " + taskId.getValue()).setTaskId(taskId).setSlaveId(offer.getSlaveId()).setCommand(builder).addResources(Protos.Resource.newBuilder().setName(CPU).setType(Protos.Value.Type.SCALAR).setScalar(Protos.Value.Scalar.newBuilder().setValue(igniteTask.cpuCores()))).addResources(Protos.Resource.newBuilder().setName(MEM).setType(Protos.Value.Type.SCALAR).setScalar(Protos.Value.Scalar.newBuilder().setValue(igniteTask.mem()))).addResources(Protos.Resource.newBuilder().setName(DISK).setType(Protos.Value.Type.SCALAR).setScalar(Protos.Value.Scalar.newBuilder().setValue(igniteTask.disk()))).build();
 }

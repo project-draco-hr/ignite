@@ -1,0 +1,28 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  IgniteAtomicReference<String> clientAtomicRef=client.atomicReference("atomicRef","1st value",true);
+  assertEquals("1st value",clientAtomicRef.get());
+  assertTrue(clientAtomicRef.compareAndSet("1st value","2st value"));
+  assertEquals("2st value",clientAtomicRef.get());
+  final IgniteAtomicReference<String> srvAtomicRef=srv.atomicReference("atomicRef","1st value",false);
+  assertEquals("2st value",srvAtomicRef.get());
+  assertTrue(srvAtomicRef.compareAndSet("2st value","3st value"));
+  assertEquals("3st value",srvAtomicRef.get());
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      assertEquals("3st value",srvAtomicRef.get());
+      assertTrue(srvAtomicRef.compareAndSet("3st value","4st value"));
+      assertEquals("4st value",srvAtomicRef.get());
+    }
+  }
+);
+  assertEquals("4st value",clientAtomicRef.get());
+  assertTrue(clientAtomicRef.compareAndSet("4st value","5st value"));
+  assertEquals("5st value",clientAtomicRef.get());
+  assertEquals("5st value",srvAtomicRef.get());
+  assertTrue(srvAtomicRef.compareAndSet("5st value","6st value"));
+  assertEquals("6st value",srvAtomicRef.get());
+  srvAtomicRef.close();
+}

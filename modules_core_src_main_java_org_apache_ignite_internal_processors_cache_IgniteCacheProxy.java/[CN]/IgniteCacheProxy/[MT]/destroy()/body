@@ -1,0 +1,17 @@
+{
+  GridCacheGateway<K,V> gate=this.gate;
+  if (!onEnterIfNoStop(gate))   return;
+  IgniteInternalFuture<?> fut;
+  try {
+    fut=ctx.kernalContext().cache().dynamicDestroyCache(ctx.name());
+  }
+  finally {
+    onLeave(gate);
+  }
+  try {
+    fut.get();
+  }
+ catch (  IgniteCheckedException e) {
+    throw cacheException(e);
+  }
+}

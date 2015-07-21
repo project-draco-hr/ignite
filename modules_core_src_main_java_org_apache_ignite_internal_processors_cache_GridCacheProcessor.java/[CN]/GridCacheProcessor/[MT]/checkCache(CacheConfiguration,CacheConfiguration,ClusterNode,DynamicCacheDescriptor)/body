@@ -33,7 +33,15 @@
       CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"nearEvictionPolicy","Near eviction policy",locAttr.nearEvictionPolicyClassName(),rmtAttr.nearEvictionPolicyClassName(),false);
       CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"affinityIncludeNeighbors","Affinity include neighbors",locAttr.affinityIncludeNeighbors(),rmtAttr.affinityIncludeNeighbors(),true);
       CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"affinityKeyBackups","Affinity key backups",locAttr.affinityKeyBackups(),rmtAttr.affinityKeyBackups(),true);
-      CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"cacheAffinity.hashIdResolver","Partitioned cache affinity hash ID resolver class",locAttr.affinityHashIdResolverClassName(),rmtAttr.affinityHashIdResolverClassName(),true);
+      String locHashIdResolver=locAttr.affinityHashIdResolverClassName();
+      String rmtHashIdResolver=rmtAttr.affinityHashIdResolverClassName();
+      String defHashIdResolver=AffinityNodeAddressHashResolver.class.getName();
+      if (!((locHashIdResolver == null && rmtHashIdResolver == null) || (locHashIdResolver == null && rmtHashIdResolver.equals(defHashIdResolver)) || (rmtHashIdResolver == null && locHashIdResolver.equals(defHashIdResolver)))) {
+        CU.checkAttributeMismatch(log,rmtAttr.cacheName(),rmt,"cacheAffinity.hashIdResolver","Partitioned cache affinity hash ID resolver class",locHashIdResolver,rmtHashIdResolver,true);
+      }
+      if (locHashIdResolver == null && (rmtHashIdResolver != null && rmtHashIdResolver.equals(defHashIdResolver))) {
+        U.warn(log,"Set " + RendezvousAffinityFunction.class + " with "+ defHashIdResolver+ " to CacheConfiguration to start node [cacheName="+ rmtAttr.cacheName()+ "]");
+      }
     }
   }
 }

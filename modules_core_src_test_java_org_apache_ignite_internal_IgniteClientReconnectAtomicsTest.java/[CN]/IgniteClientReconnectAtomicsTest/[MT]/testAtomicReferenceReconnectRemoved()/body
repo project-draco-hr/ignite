@@ -1,0 +1,35 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  final IgniteAtomicReference<String> clientAtomicRef=client.atomicReference("atomicRefRemoved","1st value",true);
+  assertEquals("1st value",clientAtomicRef.get());
+  assertTrue(clientAtomicRef.compareAndSet("1st value","2st value"));
+  assertEquals("2st value",clientAtomicRef.get());
+  final IgniteAtomicReference<String> srvAtomicRef=srv.atomicReference("atomicRefRemoved","1st value",false);
+  assertEquals("2st value",srvAtomicRef.get());
+  assertTrue(srvAtomicRef.compareAndSet("2st value","3st value"));
+  assertEquals("3st value",srvAtomicRef.get());
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      srvAtomicRef.close();
+    }
+  }
+);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      clientAtomicRef.compareAndSet("3st value","4st value");
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  IgniteAtomicReference<String> newClientAtomicRef=client.atomicReference("atomicRefRemoved","1st value",true);
+  IgniteAtomicReference<String> newSrvAtomicRef=srv.atomicReference("atomicRefRemoved","1st value",false);
+  assertEquals("1st value",newClientAtomicRef.get());
+  assertTrue(newClientAtomicRef.compareAndSet("1st value","2st value"));
+  assertEquals("2st value",newClientAtomicRef.get());
+  assertEquals("2st value",newSrvAtomicRef.get());
+  assertTrue(newSrvAtomicRef.compareAndSet("2st value","3st value"));
+  assertEquals("3st value",newSrvAtomicRef.get());
+  newClientAtomicRef.close();
+}

@@ -1,0 +1,84 @@
+{
+  Ignite srv=clientRouter(client);
+  final TestTcpDiscoverySpi clientSpi=spi(client);
+  final TestTcpDiscoverySpi srvSpi=spi(srv);
+  final CountDownLatch disconnectLatch=new CountDownLatch(1);
+  final CountDownLatch reconnectLatch=new CountDownLatch(1);
+  log.info("Block reconnect.");
+  clientSpi.writeLatch=new CountDownLatch(1);
+  client.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      if (evt.type() == EVT_CLIENT_NODE_DISCONNECTED) {
+        info("Disconnected: " + evt);
+        disconnectLatch.countDown();
+      }
+ else       if (evt.type() == EVT_CLIENT_NODE_RECONNECTED) {
+        info("Reconnected: " + evt);
+        reconnectLatch.countDown();
+      }
+      return true;
+    }
+  }
+,EVT_CLIENT_NODE_DISCONNECTED,EVT_CLIENT_NODE_RECONNECTED);
+  final IgniteTransactions txs=client.transactions();
+  final CountDownLatch afterPut1=new CountDownLatch(1);
+  final CountDownLatch afterPut2=new CountDownLatch(1);
+  final CountDownLatch putFailed=new CountDownLatch(1);
+  IgniteInternalFuture<Boolean> fut=GridTestUtils.runAsync(new Callable<Boolean>(){
+    @Override public Boolean call() throws Exception {
+      try {
+        log.info("Start tx1: " + txConcurrency);
+        try (Transaction tx=txs.txStart(txConcurrency,REPEATABLE_READ)){
+          cache.put(1,1);
+          afterPut1.countDown();
+          afterPut2.await();
+          cache.put(2,2);
+          fail();
+        }
+ catch (        CacheException e) {
+          log.info("Expected exception: " + e);
+          putFailed.countDown();
+          IgniteClientDisconnectedException e0=(IgniteClientDisconnectedException)e.getCause();
+          e0.reconnectFuture().get();
+        }
+        log.info("Start tx2: " + txConcurrency);
+        try (Transaction tx=txs.txStart(txConcurrency,REPEATABLE_READ)){
+          cache.put(1,1);
+          cache.put(2,2);
+          tx.commit();
+        }
+         assertEquals(1,cache.get(1));
+        assertEquals(2,cache.get(2));
+        try (Transaction tx=txs.txStart(txConcurrency,REPEATABLE_READ)){
+          cache.put(3,3);
+          cache.put(4,4);
+          tx.commit();
+        }
+         assertEquals(1,cache.get(1));
+        assertEquals(2,cache.get(2));
+        assertEquals(3,cache.get(3));
+        assertEquals(4,cache.get(4));
+        cache.removeAll();
+        return true;
+      }
+ catch (      AssertionFailedError e) {
+        throw e;
+      }
+catch (      Throwable e) {
+        log.error("Unexpected error",e);
+        fail("Unexpected error: " + e);
+        return false;
+      }
+    }
+  }
+);
+  assertTrue(afterPut1.await(5000,MILLISECONDS));
+  assertNotDone(fut);
+  srvSpi.failNode(client.localNode().id(),null);
+  waitReconnectEvent(disconnectLatch);
+  afterPut2.countDown();
+  assertTrue(putFailed.await(5000,MILLISECONDS));
+  clientSpi.writeLatch.countDown();
+  waitReconnectEvent(reconnectLatch);
+  assertTrue(fut.get());
+}

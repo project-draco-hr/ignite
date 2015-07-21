@@ -1,0 +1,14 @@
+{
+  startGrids(4);
+  Integer key=primaryKey(grid(0).cache(CACHE_NAME));
+  IgniteInternalFuture<Object> fut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      U.sleep(500);
+      stopGrid(0);
+      return null;
+    }
+  }
+);
+  while (!fut.isDone())   grid(1).compute().affinityCall(CACHE_NAME,key,new CheckCallable(key));
+  stopAllGrids();
+}

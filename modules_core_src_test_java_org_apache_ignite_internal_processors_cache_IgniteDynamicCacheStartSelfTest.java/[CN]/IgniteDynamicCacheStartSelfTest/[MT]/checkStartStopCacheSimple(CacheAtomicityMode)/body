@@ -15,17 +15,12 @@
   for (int g=0; g < nodeCount(); g++)   assertEquals("1",grid(g).cache(DYNAMIC_CACHE_NAME).get("1"));
   final IgniteCache[] caches=new IgniteCache[nodeCount()];
   for (int g=0; g < nodeCount(); g++)   caches[g]=grid(g).cache(DYNAMIC_CACHE_NAME);
-  kernal.context().cache().dynamicStopCache(DYNAMIC_CACHE_NAME).get();
+  kernal.context().cache().dynamicDestroyCache(DYNAMIC_CACHE_NAME).get();
   for (int g=0; g < nodeCount(); g++) {
     final IgniteKernal kernal0=(IgniteKernal)grid(g);
     final int idx=g;
     for (    IgniteInternalFuture f : kernal0.context().cache().context().exchange().exchangeFutures())     f.get();
-    GridTestUtils.assertThrows(log,new Callable<Object>(){
-      @Override public Object call() throws Exception {
-        return kernal0.cache(DYNAMIC_CACHE_NAME);
-      }
-    }
-,IllegalArgumentException.class,null);
+    assertNull(kernal0.cache(DYNAMIC_CACHE_NAME));
     GridTestUtils.assertThrows(log,new Callable<Object>(){
       @Override public Object call() throws Exception {
         return caches[idx].get("1");

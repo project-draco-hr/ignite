@@ -5,17 +5,20 @@
   }
  else {
     if (spi.getSpiContext().isStopping())     return;
-    TcpDiscoveryNode node=rmtNodes.remove(msg.creatorNodeId());
-    if (node == null) {
-      if (log.isDebugEnabled())       log.debug("Discarding node left message since node is not found [msg=" + msg + ']');
-      return;
+    if (nodeAdded()) {
+      TcpDiscoveryNode node=rmtNodes.remove(msg.creatorNodeId());
+      if (node == null) {
+        if (log.isDebugEnabled())         log.debug("Discarding node left message since node is not found [msg=" + msg + ']');
+        return;
+      }
+      Collection<ClusterNode> top=updateTopologyHistory(msg.topologyVersion(),msg);
+      if (!pending && joinLatch.getCount() > 0) {
+        if (log.isDebugEnabled())         log.debug("Discarding node left message (join process is not finished): " + msg);
+        return;
+      }
+      notifyDiscovery(EVT_NODE_LEFT,msg.topologyVersion(),node,top);
+      spi.stats.onNodeLeft();
     }
-    Collection<ClusterNode> top=updateTopologyHistory(msg.topologyVersion(),msg);
-    if (!pending && joinLatch.getCount() > 0) {
-      if (log.isDebugEnabled())       log.debug("Discarding node left message (join process is not finished): " + msg);
-      return;
-    }
-    notifyDiscovery(EVT_NODE_LEFT,msg.topologyVersion(),node,top);
-    spi.stats.onNodeLeft();
+ else     if (log.isDebugEnabled())     log.debug("Ignore topology message, local node not added to topology: " + msg);
   }
 }

@@ -1,4 +1,9 @@
 {
-  CacheConfiguration cfg=((IgniteKernal)cache.unwrap(Ignite.class)).<K,V>internalCache(cache.getName()).context().config();
+  CacheConfiguration cfg=GridAbstractTest.executeOnLocalOrRemoteJvm(cache,new TestCacheCallable<K,V,CacheConfiguration>(){
+    @Override public CacheConfiguration call(    Ignite ignite,    IgniteCache<K,V> cache) throws Exception {
+      return ((IgniteKernal)ignite).<K,V>internalCache(cache.getName()).context().config();
+    }
+  }
+);
   return isNearEnabled(cfg);
 }

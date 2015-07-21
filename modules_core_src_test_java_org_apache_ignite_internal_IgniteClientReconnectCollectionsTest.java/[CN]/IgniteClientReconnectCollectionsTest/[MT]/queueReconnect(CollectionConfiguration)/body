@@ -1,0 +1,18 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  final String setName="queue-" + colCfg.getAtomicityMode();
+  IgniteQueue<String> clientQueue=client.queue(setName,10,colCfg);
+  final IgniteQueue<String> srvQueue=srv.queue(setName,10,null);
+  assertTrue(clientQueue.offer("1"));
+  assertTrue(srvQueue.contains("1"));
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      assertTrue(srvQueue.add("2"));
+    }
+  }
+);
+  assertTrue(clientQueue.contains("2"));
+  assertEquals("1",clientQueue.poll());
+}

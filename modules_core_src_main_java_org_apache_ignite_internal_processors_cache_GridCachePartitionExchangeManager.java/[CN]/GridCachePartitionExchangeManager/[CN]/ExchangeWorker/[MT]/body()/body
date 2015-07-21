@@ -9,7 +9,7 @@
         preloadFinished&=cacheCtx.preloader().syncFuture().isDone();
         if (!preloadFinished)         break;
       }
-      if (futQ.isEmpty() && preloadFinished) {
+      if (!cctx.kernalContext().clientNode() && futQ.isEmpty() && preloadFinished) {
         refreshPartitions(timeout);
         timeout=cctx.gridConfig().getNetworkTimeout();
       }
@@ -40,7 +40,7 @@
             }
           }
           startEvtFired=true;
-          if (changed && futQ.isEmpty())           refreshPartitions();
+          if (!cctx.kernalContext().clientNode() && changed && futQ.isEmpty())           refreshPartitions();
         }
  else {
           if (log.isDebugEnabled())           log.debug("Got dummy exchange (will reassign)");
@@ -72,6 +72,9 @@
     }
  catch (    IgniteInterruptedCheckedException e) {
       throw e;
+    }
+catch (    IgniteClientDisconnectedCheckedException e) {
+      return;
     }
 catch (    IgniteCheckedException e) {
       U.error(log,"Failed to wait for completion of partition map exchange " + "(preloading will not start): " + exchFut,e);
