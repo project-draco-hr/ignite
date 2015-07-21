@@ -8,16 +8,17 @@
   }
   buff.append("\nFROM ").append(from.getSQL());
   if (where != null)   buff.append("\nWHERE ").append(StringUtils.unEnclose(where.getSQL()));
-  if (!groups.isEmpty()) {
+  if (grpCols != null) {
     buff.append("\nGROUP BY ");
     buff.resetCount();
-    for (    GridSqlElement expression : groups) {
+    for (    int grpCol : grpCols) {
+      GridSqlElement expression=allExprs.get(grpCol);
       buff.appendExceptFirst(", ");
       if (expression instanceof GridSqlAlias)       buff.append(StringUtils.unEnclose((expression.child().getSQL())));
  else       buff.append(StringUtils.unEnclose(expression.getSQL()));
     }
   }
-  if (having != null)   buff.append("\nHAVING ").append(StringUtils.unEnclose(having.getSQL()));
+  if (havingCol >= 0)   buff.append("\nHAVING ").append(StringUtils.unEnclose(allExprs.get(havingCol).getSQL()));
   getSortLimitSQL(buff);
   return buff.toString();
 }
