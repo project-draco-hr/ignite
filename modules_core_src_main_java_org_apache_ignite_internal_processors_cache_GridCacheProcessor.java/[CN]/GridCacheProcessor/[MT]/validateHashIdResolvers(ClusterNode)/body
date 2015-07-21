@@ -1,2 +1,22 @@
 {
+  if (!node.isClient()) {
+    for (    DynamicCacheDescriptor desc : registeredCaches.values()) {
+      CacheConfiguration cfg=desc.cacheConfiguration();
+      if (cfg.getAffinity() instanceof RendezvousAffinityFunction) {
+        RendezvousAffinityFunction aff=(RendezvousAffinityFunction)cfg.getAffinity();
+        Object nodeHashObj=aff.resolveNodeHash(node);
+        for (        ClusterNode topNode : ctx.discovery().allNodes()) {
+          Object topNodeHashObj=aff.resolveNodeHash(topNode);
+          if (nodeHashObj.hashCode() == topNodeHashObj.hashCode()) {
+            String hashIdRslvrName="";
+            if (aff.getHashIdResolver() != null)             hashIdRslvrName=", hashIdResolverClass=" + aff.getHashIdResolver().getClass().getName();
+            String errMsg="Failed to add node to topology because it has the same hash code for " + "partitioned affinity as one of existing nodes [cacheName=" + U.maskName(cfg.getName()) + hashIdRslvrName+ ", existingNodeId="+ topNode.id()+ ']';
+            String sndMsg="Failed to add node to topology because it has the same hash code for " + "partitioned affinity as one of existing nodes [cacheName=" + U.maskName(cfg.getName()) + hashIdRslvrName+ ", existingNodeId="+ topNode.id()+ ']';
+            return new IgniteNodeValidationResult(topNode.id(),errMsg,sndMsg);
+          }
+        }
+      }
+    }
+  }
+  return null;
 }
