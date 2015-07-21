@@ -1,0 +1,50 @@
+{
+  if (log.isDebugEnabled())   log.debug("Entered handshake. Handshake status: " + handshakeStatus + '.');
+  sslEngine.beginHandshake();
+  handshakeStatus=sslEngine.getHandshakeStatus();
+  boolean loop=true;
+  while (loop) {
+switch (handshakeStatus) {
+case NOT_HANDSHAKING:
+case FINISHED:
+{
+        handshakeFinished=true;
+        if (fut != null) {
+          appBuf.flip();
+          fut.onDone(appBuf);
+        }
+        loop=false;
+        break;
+      }
+case NEED_TASK:
+{
+      handshakeStatus=runTasks();
+      break;
+    }
+case NEED_UNWRAP:
+{
+    Status status=unwrapHandshake();
+    handshakeStatus=sslEngine.getHandshakeStatus();
+    if (status == BUFFER_UNDERFLOW && sslEngine.isInboundDone())     loop=false;
+    break;
+  }
+case NEED_WRAP:
+{
+  if (outNetBuf.hasRemaining())   U.warn(log,"Output net buffer has unsent bytes during handshake (will clear). ");
+  outNetBuf.clear();
+  SSLEngineResult res=sslEngine.wrap(handshakeBuf,outNetBuf);
+  outNetBuf.flip();
+  handshakeStatus=res.getHandshakeStatus();
+  if (log.isDebugEnabled())   log.debug("Wrapped handshake data [status=" + res.getStatus() + ", handshakeStatus="+ handshakeStatus+ ']');
+  writeNetBuffer();
+  break;
+}
+default :
+{
+throw new IllegalStateException("Invalid handshake status in handshake method [handshakeStatus=" + handshakeStatus + ']');
+}
+}
+}
+if (log.isDebugEnabled()) log.debug("Leaved handshake. Handshake status:" + handshakeStatus + '.');
+return handshakeFinished;
+}

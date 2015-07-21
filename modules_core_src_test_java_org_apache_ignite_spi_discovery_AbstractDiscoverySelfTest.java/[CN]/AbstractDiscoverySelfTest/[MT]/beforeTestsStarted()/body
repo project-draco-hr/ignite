@@ -24,6 +24,11 @@ synchronized (mux) {
 );
       GridSpiTestContext ctx=initSpiContext();
       GridTestUtils.setFieldValue(spi,IgniteSpiAdapter.class,"spiCtx",ctx);
+      if (useSsl) {
+        IgniteMock ignite=GridTestUtils.getFieldValue(spi,IgniteSpiAdapter.class,"ignite");
+        IgniteConfiguration cfg=ignite.configuration().setSslContextFactory(GridTestUtils.sslFactory());
+        ignite.setStaticCfg(cfg);
+      }
       spi.spiStart(getTestGridName() + i);
       spis.add(spi);
       spiRsrcs.add(rsrcMgr);
