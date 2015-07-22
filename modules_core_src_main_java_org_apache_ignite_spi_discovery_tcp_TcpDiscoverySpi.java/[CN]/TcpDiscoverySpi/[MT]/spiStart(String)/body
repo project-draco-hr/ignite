@@ -25,6 +25,16 @@
   assertParameter(maxMissedClientHbs > 0,"maxMissedClientHeartbeats > 0");
   assertParameter(threadPri > 0,"threadPri > 0");
   assertParameter(statsPrintFreq >= 0,"statsPrintFreq >= 0");
+  if (isSslEnabled()) {
+    try {
+      SSLContext sslCtx=ignite().configuration().getSslContextFactory().create();
+      sslSocketFactory=sslCtx.getSocketFactory();
+      sslSrvSocketFactory=sslCtx.getServerSocketFactory();
+    }
+ catch (    IgniteException e) {
+      throw new IgniteSpiException("Failed to create SSL context. SSL factory: " + ignite.configuration().getSslContextFactory(),e);
+    }
+  }
   try {
     locHost=U.resolveLocalHost(locAddr);
   }

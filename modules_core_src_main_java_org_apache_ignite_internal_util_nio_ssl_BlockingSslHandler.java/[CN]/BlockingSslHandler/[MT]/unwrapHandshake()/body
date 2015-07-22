@@ -1,0 +1,15 @@
+{
+  readFromNet();
+  inNetBuf.flip();
+  SSLEngineResult res=unwrap0();
+  handshakeStatus=res.getHandshakeStatus();
+  checkStatus(res);
+  if (handshakeStatus == FINISHED && res.getStatus() == OK && inNetBuf.hasRemaining()) {
+    res=unwrap0();
+    handshakeStatus=res.getHandshakeStatus();
+    inNetBuf.compact();
+    renegotiateIfNeeded(res);
+  }
+ else   inNetBuf.compact();
+  return res.getStatus();
+}
