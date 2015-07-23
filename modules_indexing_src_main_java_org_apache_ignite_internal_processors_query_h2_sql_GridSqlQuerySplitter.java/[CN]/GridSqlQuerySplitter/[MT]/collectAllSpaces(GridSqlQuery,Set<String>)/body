@@ -4,6 +4,11 @@
     collectAllSpaces(union.left(),spaces);
     collectAllSpaces(union.right(),spaces);
   }
- else   collectAllSpacesInFrom(((GridSqlSelect)qry).from(),spaces);
-  return spaces;
+ else {
+    GridSqlSelect select=(GridSqlSelect)qry;
+    collectAllSpacesInFrom(select.from(),spaces);
+    for (    GridSqlElement el : select.select(false))     collectAllSpacesInSubqueries(el,spaces);
+    collectAllSpacesInSubqueries(select.where(),spaces);
+  }
+  return qry;
 }
