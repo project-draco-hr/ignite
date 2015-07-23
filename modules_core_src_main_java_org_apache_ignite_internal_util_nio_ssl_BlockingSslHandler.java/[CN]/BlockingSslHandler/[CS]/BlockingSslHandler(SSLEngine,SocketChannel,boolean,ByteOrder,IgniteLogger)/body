@@ -1,15 +1,16 @@
 {
   this.ch=ch;
-  this.fut=fut;
   this.log=log;
   this.sslEngine=sslEngine;
+  this.order=order;
   int netBufSize=sslEngine.getSession().getPacketBufferSize() + 50;
-  outNetBuf=ByteBuffer.allocate(netBufSize);
-  inNetBuf=ByteBuffer.allocate(netBufSize);
+  outNetBuf=directBuf ? ByteBuffer.allocateDirect(netBufSize) : ByteBuffer.allocate(netBufSize);
+  outNetBuf.order(order);
   outNetBuf.position(0);
   outNetBuf.limit(0);
+  inNetBuf=directBuf ? ByteBuffer.allocateDirect(netBufSize) : ByteBuffer.allocate(netBufSize);
+  inNetBuf.order(order);
   appBuf=allocateAppBuff();
   handshakeStatus=sslEngine.getHandshakeStatus();
-  sslEngine.setUseClientMode(true);
   if (log.isDebugEnabled())   log.debug("Started SSL session [netBufSize=" + netBufSize + ", appBufSize="+ appBuf.capacity()+ ']');
 }
