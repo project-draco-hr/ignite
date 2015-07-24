@@ -1,12 +1,24 @@
 {
-  org.apache.logging.log4j.core.Logger loggerImpl=(org.apache.logging.log4j.core.Logger)impl;
-  Collection<Appender> appenders=loggerImpl.getAppenders().values();
-  for (  Appender a : appenders) {
-    if (a instanceof FileAppender) {
-      return ((FileAppender)a).getFileName();
-    }
-    if (a instanceof RollingFileAppender) {
-      return ((RollingFileAppender)a).getFileName();
+  for (Logger log=impl; log != null; log=log.getParent()) {
+    for (    Appender a : log.getAppenders().values()) {
+      if (a instanceof FileAppender)       return ((FileAppender)a).getFileName();
+      if (a instanceof RollingFileAppender)       return ((RollingFileAppender)a).getFileName();
+      if (a instanceof RoutingAppender) {
+        try {
+          RoutingAppender routing=(RoutingAppender)a;
+          Field appsFiled=routing.getClass().getDeclaredField("appenders");
+          appsFiled.setAccessible(true);
+          Map<String,AppenderControl> appenders=(Map<String,AppenderControl>)appsFiled.get(routing);
+          for (          AppenderControl control : appenders.values()) {
+            Appender innerApp=control.getAppender();
+            if (innerApp instanceof FileAppender)             return ((FileAppender)innerApp).getFileName();
+            if (innerApp instanceof RollingFileAppender)             return ((RollingFileAppender)innerApp).getFileName();
+          }
+        }
+ catch (        IllegalAccessException|NoSuchFieldException e) {
+          error("Faild to get file name. Looks like the implementation of log4j 2 was changed.",e);
+        }
+      }
     }
   }
   return null;

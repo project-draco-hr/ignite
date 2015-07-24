@@ -1,0 +1,14 @@
+{
+  String id8;
+  File logFile;
+  try (Ignite ignite=G.start(getConfiguration("grid" + id,LOG_PATH_MAIN))){
+    id8=U.id8(ignite.cluster().localNode().id());
+    String logPath="work/log/ignite-" + id8 + ".log";
+    logFile=U.resolveIgnitePath(logPath);
+    assertNotNull("Failed to resolve path: " + logPath,logFile);
+    assertTrue("Log file does not exist: " + logFile,logFile.exists());
+    assertEquals(logFile.getAbsolutePath(),ignite.log().fileName());
+  }
+   String logContent=U.readFileToString(logFile.getAbsolutePath(),"UTF-8");
+  assertTrue("Log file does not contain it's node ID: " + logFile,logContent.contains(">>> Local node [ID=" + id8.toUpperCase()));
+}
