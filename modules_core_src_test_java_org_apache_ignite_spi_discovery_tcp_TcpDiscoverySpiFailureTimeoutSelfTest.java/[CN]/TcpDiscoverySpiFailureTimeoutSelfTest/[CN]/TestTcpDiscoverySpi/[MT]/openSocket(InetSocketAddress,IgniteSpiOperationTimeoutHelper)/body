@@ -1,0 +1,27 @@
+{
+  if (openSocketTimeout) {
+    err=new IgniteSpiOperationTimeoutException("Timeout: openSocketTimeout");
+    throw err;
+  }
+ else   if (openSocketTimeoutWait) {
+    long timeout=timeoutHelper.nextTimeoutChunk(0);
+    try {
+      Thread.sleep(timeout + 1000);
+    }
+ catch (    InterruptedException e) {
+    }
+    try {
+      timeoutHelper.nextTimeoutChunk(0);
+    }
+ catch (    IgniteSpiOperationTimeoutException e) {
+      throw (err=new IgniteSpiOperationTimeoutException("Timeout: openSocketTimeoutWait"));
+    }
+  }
+  Socket sock=super.openSocket(sockAddr,timeoutHelper);
+  try {
+    Thread.sleep(1500);
+  }
+ catch (  InterruptedException e) {
+  }
+  return sock;
+}

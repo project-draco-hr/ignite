@@ -1,4 +1,5 @@
 {
+  initFailureDetectionTimeout();
   if (!forceSrvMode && (Boolean.TRUE.equals(ignite.configuration().isClientMode()))) {
     if (ackTimeout == 0)     ackTimeout=DFLT_ACK_TIMEOUT_CLIENT;
     if (sockTimeout == 0)     sockTimeout=DFLT_SOCK_TIMEOUT_CLIENT;
@@ -10,17 +11,19 @@
     if (sockTimeout == 0)     sockTimeout=DFLT_SOCK_TIMEOUT;
     impl=new ServerImpl(this);
   }
+  if (!failureDetectionTimeoutEnabled()) {
+    assertParameter(sockTimeout > 0,"sockTimeout > 0");
+    assertParameter(ackTimeout > 0,"ackTimeout > 0");
+    assertParameter(maxAckTimeout > ackTimeout,"maxAckTimeout > ackTimeout");
+    assertParameter(reconCnt > 0,"reconnectCnt > 0");
+  }
+  assertParameter(netTimeout > 0,"networkTimeout > 0");
   assertParameter(ipFinder != null,"ipFinder != null");
   assertParameter(hbFreq > 0,"heartbeatFreq > 0");
-  assertParameter(netTimeout > 0,"networkTimeout > 0");
-  assertParameter(sockTimeout > 0,"sockTimeout > 0");
-  assertParameter(ackTimeout > 0,"ackTimeout > 0");
   assertParameter(ipFinderCleanFreq > 0,"ipFinderCleanFreq > 0");
   assertParameter(locPort > 1023,"localPort > 1023");
   assertParameter(locPortRange >= 0,"localPortRange >= 0");
   assertParameter(locPort + locPortRange <= 0xffff,"locPort + locPortRange <= 0xffff");
-  assertParameter(maxAckTimeout > ackTimeout,"maxAckTimeout > ackTimeout");
-  assertParameter(reconCnt > 0,"reconnectCnt > 0");
   assertParameter(maxMissedHbs > 0,"maxMissedHeartbeats > 0");
   assertParameter(maxMissedClientHbs > 0,"maxMissedClientHeartbeats > 0");
   assertParameter(threadPri > 0,"threadPri > 0");
@@ -46,11 +49,15 @@
     log.debug(configInfo("localPort",locPort));
     log.debug(configInfo("localPortRange",locPortRange));
     log.debug(configInfo("threadPri",threadPri));
-    log.debug(configInfo("networkTimeout",netTimeout));
-    log.debug(configInfo("sockTimeout",sockTimeout));
-    log.debug(configInfo("ackTimeout",ackTimeout));
-    log.debug(configInfo("maxAckTimeout",maxAckTimeout));
-    log.debug(configInfo("reconnectCount",reconCnt));
+    if (!failureDetectionTimeoutEnabled()) {
+      log.debug("Failure detection timeout is ignored because at least one of the parameters from this list" + " has been set explicitly: 'sockTimeout', 'ackTimeout', 'maxAckTimeout', 'reconnectCount'.");
+      log.debug(configInfo("networkTimeout",netTimeout));
+      log.debug(configInfo("sockTimeout",sockTimeout));
+      log.debug(configInfo("ackTimeout",ackTimeout));
+      log.debug(configInfo("maxAckTimeout",maxAckTimeout));
+      log.debug(configInfo("reconnectCount",reconCnt));
+    }
+ else     log.debug(configInfo("failureDetectionTimeout",failureDetectionTimeout()));
     log.debug(configInfo("ipFinder",ipFinder));
     log.debug(configInfo("ipFinderCleanFreq",ipFinderCleanFreq));
     log.debug(configInfo("heartbeatFreq",hbFreq));

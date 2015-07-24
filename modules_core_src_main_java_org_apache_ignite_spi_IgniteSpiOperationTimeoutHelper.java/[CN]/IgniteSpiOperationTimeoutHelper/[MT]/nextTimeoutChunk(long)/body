@@ -1,0 +1,14 @@
+{
+  if (!failureDetectionTimeoutEnabled)   return dfltTimeout;
+  if (lastOperStartTs == 0) {
+    timeout=failureDetectionTimeout;
+    lastOperStartTs=U.currentTimeMillis();
+  }
+ else {
+    long curTs=U.currentTimeMillis();
+    timeout=timeout - (curTs - lastOperStartTs);
+    lastOperStartTs=curTs;
+    if (timeout <= 0)     throw new IgniteSpiOperationTimeoutException("Network operation timed out. Increase " + "'failureDetectionTimeout' configuration property [failureDetectionTimeout=" + failureDetectionTimeout + ']');
+  }
+  return timeout;
+}
