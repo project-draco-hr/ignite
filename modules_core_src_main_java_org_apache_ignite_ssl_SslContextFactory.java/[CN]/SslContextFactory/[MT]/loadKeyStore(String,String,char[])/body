@@ -1,0 +1,27 @@
+{
+  InputStream input=null;
+  try {
+    KeyStore keyStore=KeyStore.getInstance(keyStoreType);
+    input=openFileInputStream(storeFilePath);
+    keyStore.load(input,keyStorePwd);
+    return keyStore;
+  }
+ catch (  GeneralSecurityException e) {
+    throw new SSLException("Failed to initialize key store (security exception occurred) [type=" + keyStoreType + ", keyStorePath="+ storeFilePath+ ']',e);
+  }
+catch (  FileNotFoundException e) {
+    throw new SSLException("Failed to initialize key store (key store file was not found): [path=" + storeFilePath + ", msg="+ e.getMessage()+ ']');
+  }
+catch (  IOException e) {
+    throw new SSLException("Failed to initialize key store (I/O error occurred): " + storeFilePath,e);
+  }
+ finally {
+    if (input != null) {
+      try {
+        input.close();
+      }
+ catch (      IOException ignored) {
+      }
+    }
+  }
+}

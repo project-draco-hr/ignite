@@ -1,0 +1,19 @@
+{
+  assert handshakeFinished;
+  outNetBuf.clear();
+  while (src.hasRemaining()) {
+    int outNetRemaining=outNetBuf.capacity() - outNetBuf.position();
+    if (outNetRemaining < src.remaining() * 2) {
+      outNetBuf=expandBuffer(outNetBuf,Math.max(outNetBuf.position() + src.remaining() * 2,outNetBuf.capacity() * 2));
+      if (log.isDebugEnabled())       log.debug("Expanded output net buffer: " + outNetBuf.capacity());
+    }
+    SSLEngineResult res=sslEngine.wrap(src,outNetBuf);
+    if (log.isDebugEnabled())     log.debug("Encrypted data [status=" + res.getStatus() + ", handshakeStaus="+ res.getHandshakeStatus()+ ']');
+    if (res.getStatus() == OK) {
+      if (res.getHandshakeStatus() == NEED_TASK)       runTasks();
+    }
+ else     throw new SSLException("Failed to encrypt data (SSL engine error) [status=" + res.getStatus() + ", handshakeStatus="+ res.getHandshakeStatus()+ ']');
+  }
+  outNetBuf.flip();
+  return outNetBuf;
+}

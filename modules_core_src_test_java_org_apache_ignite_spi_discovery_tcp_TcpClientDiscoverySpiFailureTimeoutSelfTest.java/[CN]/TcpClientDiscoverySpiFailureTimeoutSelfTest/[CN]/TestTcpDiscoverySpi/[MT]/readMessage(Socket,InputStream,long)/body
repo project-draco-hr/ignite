@@ -1,0 +1,23 @@
+{
+  if (readDelay < failureDetectionTimeout()) {
+    try {
+      return super.readMessage(sock,in,timeout);
+    }
+ catch (    Exception e) {
+      err=e;
+      throw e;
+    }
+  }
+ else {
+    T msg=super.readMessage(sock,in,timeout);
+    if (msg instanceof TcpDiscoveryPingRequest) {
+      try {
+        Thread.sleep(2000);
+      }
+ catch (      InterruptedException e) {
+      }
+      throw new SocketTimeoutException("Forced timeout");
+    }
+    return msg;
+  }
+}
