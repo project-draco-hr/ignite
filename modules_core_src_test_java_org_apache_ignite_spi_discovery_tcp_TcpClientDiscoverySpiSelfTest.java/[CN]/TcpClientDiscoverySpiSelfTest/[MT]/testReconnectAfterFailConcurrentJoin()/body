@@ -1,2 +1,45 @@
 {
+  startServerNodes(1);
+  startClientNodes(1);
+  Ignite srv=G.ignite("server-0");
+  TestTcpDiscoverySpi srvSpi=((TestTcpDiscoverySpi)srv.configuration().getDiscoverySpi());
+  Ignite client=G.ignite("client-0");
+  final ClusterNode clientNode=client.cluster().localNode();
+  assertEquals(2L,clientNode.order());
+  final CountDownLatch reconnectLatch=new CountDownLatch(1);
+  final CountDownLatch disconnectLatch=new CountDownLatch(1);
+  client.events().localListen(new IgnitePredicate<Event>(){
+    @Override public boolean apply(    Event evt){
+      info("Client event: " + evt);
+      if (evt.type() == EVT_CLIENT_NODE_DISCONNECTED) {
+        assertEquals(1,reconnectLatch.getCount());
+        disconnectLatch.countDown();
+      }
+ else       if (evt.type() == EVT_CLIENT_NODE_RECONNECTED) {
+        assertEquals(0,disconnectLatch.getCount());
+        reconnectLatch.countDown();
+      }
+      return true;
+    }
+  }
+,EVT_CLIENT_NODE_DISCONNECTED,EVT_CLIENT_NODE_RECONNECTED);
+  final int CLIENTS=20;
+  clientsPerSrv=CLIENTS + 1;
+  final CountDownLatch latch=new CountDownLatch(1);
+  IgniteInternalFuture<?> fut=GridTestUtils.runMultiThreadedAsync(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      latch.await();
+      Ignite g=startGrid("client-" + clientIdx.getAndIncrement());
+      clientNodeIds.add(g.cluster().localNode().id());
+      return null;
+    }
+  }
+,CLIENTS,"start-client");
+  srvSpi.failNode(client.cluster().localNode().id(),null);
+  latch.countDown();
+  assertTrue(disconnectLatch.await(awaitTime(),MILLISECONDS));
+  assertTrue(reconnectLatch.await(awaitTime(),MILLISECONDS));
+  clientNodeIds.add(client.cluster().localNode().id());
+  fut.get();
+  checkNodes(1,CLIENTS + 1);
 }
