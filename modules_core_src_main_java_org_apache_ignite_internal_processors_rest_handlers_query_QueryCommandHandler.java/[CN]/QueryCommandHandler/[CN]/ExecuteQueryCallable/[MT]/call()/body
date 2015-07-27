@@ -1,0 +1,25 @@
+{
+  long qryId=qryIdGen.getAndIncrement();
+  try {
+    Query qry;
+    if (req.typeName() != null) {
+      qry=new SqlQuery(req.typeName(),req.sqlQuery());
+      ((SqlQuery)qry).setArgs(req.arguments());
+    }
+ else {
+      qry=new SqlFieldsQuery(req.sqlQuery());
+      ((SqlFieldsQuery)qry).setArgs(req.arguments());
+    }
+    IgniteCache<Object,Object> cache=ctx.grid().cache(req.cacheName());
+    if (cache == null)     return new GridRestResponse(GridRestResponse.STATUS_FAILED,"No cache with name [cacheName=" + req.cacheName() + "]");
+    QueryCursor qryCur=cache.query(qry);
+    Iterator cur=qryCur.iterator();
+    qryCurs.put(qryId,new IgniteBiTuple<>(qryCur,cur));
+    CacheQueryResult res=createQueryResult(qryCurs,cur,req,qryId);
+    return new GridRestResponse(res);
+  }
+ catch (  Exception e) {
+    qryCurs.remove(qryId);
+    return new GridRestResponse(GridRestResponse.STATUS_FAILED,e.getMessage());
+  }
+}

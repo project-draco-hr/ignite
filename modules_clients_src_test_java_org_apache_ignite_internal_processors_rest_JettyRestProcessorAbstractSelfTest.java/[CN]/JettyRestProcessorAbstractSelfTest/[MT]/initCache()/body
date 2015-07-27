@@ -1,0 +1,17 @@
+{
+  CacheConfiguration<Integer,Person> personCacheCfg=new CacheConfiguration<>("person");
+  personCacheCfg.setIndexedTypes(Integer.class,Person.class);
+  IgniteCache<Integer,Person> personCache=grid(0).getOrCreateCache(personCacheCfg);
+  personCache.clear();
+  Person p1=new Person("John","Doe",2000);
+  Person p2=new Person("Jane","Doe",1000);
+  Person p3=new Person("John","Smith",1000);
+  Person p4=new Person("Jane","Smith",2000);
+  personCache.put(p1.getId(),p1);
+  personCache.put(p2.getId(),p2);
+  personCache.put(p3.getId(),p3);
+  personCache.put(p4.getId(),p4);
+  SqlQuery<Integer,Person> qry=new SqlQuery<>(Person.class,"salary > ? and salary <= ?");
+  qry.setArgs(1000,2000);
+  assertEquals(2,personCache.query(qry).getAll().size());
+}

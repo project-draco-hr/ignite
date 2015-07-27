@@ -1,0 +1,29 @@
+{
+  grid(0).cache(null).put("1","1");
+  grid(0).cache(null).put("2","2");
+  grid(0).cache(null).put("3","3");
+  Map<String,String> params=new HashMap<>();
+  params.put("cmd",GridRestCommand.EXECUTE_SQL_QUERY.key());
+  params.put("type","String");
+  params.put("psz","1");
+  params.put("qry",URLEncoder.encode("select * from String"));
+  String ret=content(params);
+  assertNotNull(ret);
+  assertTrue(!ret.isEmpty());
+  JSONObject json=JSONObject.fromObject(ret);
+  Integer qryId=(Integer)((Map)json.get("response")).get("queryId");
+  assertNotNull(qryId);
+  ret=content(F.asMap("cmd",GridRestCommand.FETCH_SQL_QUERY.key(),"psz","1","qryId",String.valueOf(qryId)));
+  json=JSONObject.fromObject(ret);
+  Integer qryId0=(Integer)((Map)json.get("response")).get("queryId");
+  Boolean last=(Boolean)((Map)json.get("response")).get("last");
+  assertEquals(qryId0,qryId);
+  assertFalse(last);
+  ret=content(F.asMap("cmd",GridRestCommand.FETCH_SQL_QUERY.key(),"psz","1","qryId",String.valueOf(qryId)));
+  json=JSONObject.fromObject(ret);
+  qryId0=(Integer)((Map)json.get("response")).get("queryId");
+  last=(Boolean)((Map)json.get("response")).get("last");
+  assertEquals(qryId0,qryId);
+  assertTrue(last);
+  assertFalse(queryCursorFound());
+}
