@@ -1,0 +1,12 @@
+{
+  SortedMap<Integer,Integer> vals=new TreeMap<>();
+  ClusterNode node=args.collocated() ? aff.mapKeyToNode(nextRandom(args.range())) : null;
+  for (int i=0; i < args.batch(); ) {
+    int key=nextRandom(args.range());
+    if (args.collocated() && !aff.isPrimary(node,key))     continue;
+    ++i;
+    vals.put(key,key);
+  }
+  cache.putAll(vals);
+  return true;
+}
