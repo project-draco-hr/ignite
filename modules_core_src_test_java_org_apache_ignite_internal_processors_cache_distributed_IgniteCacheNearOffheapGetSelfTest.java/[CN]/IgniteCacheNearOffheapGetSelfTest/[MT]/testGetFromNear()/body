@@ -1,0 +1,19 @@
+{
+  IgniteCache<Object,Object> nearOnly=ignite(gridCount() - 1).cache(null);
+  IgniteEx ignite=startGrid(gridCount());
+  try {
+    final int keyCnt=30;
+    for (int i=0; i < keyCnt; i++)     ignite(0).cache(null).put(i,i);
+    for (int i=0; i < keyCnt; i++)     assertEquals(i,nearOnly.get(i));
+    Collection<Integer> invalidatedKeys=new ArrayList<>();
+    Affinity<Object> cacheAff=ignite.affinity(null);
+    for (int i=0; i < keyCnt; i++) {
+      if (cacheAff.mapKeyToNode(i).equals(ignite.localNode()))       invalidatedKeys.add(i);
+    }
+    stopGrid(gridCount());
+    for (    Integer key : invalidatedKeys)     assertEquals(key,nearOnly.get(key));
+  }
+  finally {
+    if (Ignition.state(getTestGridName(gridCount())) == IgniteState.STARTED)     stopGrid(gridCount());
+  }
+}
