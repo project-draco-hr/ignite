@@ -9,7 +9,11 @@
     for (    DataStreamerEntry e : col) {
       e.getKey().finishUnmarshal(cctx.cacheObjectContext(),cctx.deploy().globalLoader());
       CacheObject val=e.getValue();
-      if (val != null)       val.finishUnmarshal(cctx.cacheObjectContext(),cctx.deploy().globalLoader());
+      if (val != null) {
+        checkSecurityPermission(SecurityPermission.CACHE_PUT);
+        val.finishUnmarshal(cctx.cacheObjectContext(),cctx.deploy().globalLoader());
+      }
+ else       checkSecurityPermission(SecurityPermission.CACHE_REMOVE);
     }
     if (unwrapEntries()) {
       Collection<Map.Entry> col0=F.viewReadOnly(col,new C1<DataStreamerEntry,Map.Entry>(){
