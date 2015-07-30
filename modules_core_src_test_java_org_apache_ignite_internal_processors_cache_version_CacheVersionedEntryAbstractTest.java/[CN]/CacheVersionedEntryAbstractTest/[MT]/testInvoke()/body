@@ -1,0 +1,14 @@
+{
+  Cache<Integer,String> cache=grid(0).cache(null);
+  final AtomicBoolean invoked=new AtomicBoolean(false);
+  cache.invoke(100,new EntryProcessor<Integer,String,Object>(){
+    @Override public Object process(    MutableEntry<Integer,String> entry,    Object... arguments) throws EntryProcessorException {
+      invoked.set(true);
+      VersionedEntry<Integer,String> verEntry=entry.unwrap(VersionedEntry.class);
+      checkVersionedEntry(verEntry);
+      return entry;
+    }
+  }
+);
+  assertTrue(invoked.get());
+}
