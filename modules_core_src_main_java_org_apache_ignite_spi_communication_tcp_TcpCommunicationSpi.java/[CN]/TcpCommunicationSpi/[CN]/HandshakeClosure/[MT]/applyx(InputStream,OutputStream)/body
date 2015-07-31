@@ -18,7 +18,9 @@ catch (  IOException e) {
     throw new IgniteCheckedException("Failed to perform handshake.",e);
   }
   try {
-    UUID id=getLocalNode().id();
+    ClusterNode localNode=getLocalNode();
+    if (localNode == null)     throw new IgniteSpiException("Local node has not been started or fully initialized " + "[isStopping=" + getSpiContext().isStopping() + ']');
+    UUID id=localNode.id();
     NodeIdMessage msg=new NodeIdMessage(id);
     out.write(U.IGNITE_HEADER);
     out.write(NODE_ID_MSG_TYPE);
