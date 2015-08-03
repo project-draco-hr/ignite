@@ -1,7 +1,8 @@
 {
   IgniteNamedInstance grid=name != null ? grids.get(name) : dfltGrid;
-  if (grid != null && grid.state() == STARTED) {
-    grid.stop(cancel);
+  if (grid != null) {
+    IgniteState state=grid.state();
+    if (state == STARTED)     grid.stop(cancel);
     boolean fireEvt;
     if (name != null)     fireEvt=grids.remove(name,grid);
  else {
@@ -10,8 +11,14 @@ synchronized (dfltGridMux) {
         if (fireEvt)         dfltGrid=null;
       }
     }
-    if (fireEvt)     notifyStateChange(grid.getName(),grid.state());
-    return true;
+    if (state == STARTED) {
+      if (fireEvt)       notifyStateChange(grid.getName(),grid.state());
+      return true;
+    }
+ else {
+      U.warn(null,"Ignoring stopping grid instance (has not been in STARTED state): [grid=" + name + ", state="+ state+ ']');
+      return false;
+    }
   }
   U.warn(null,"Ignoring stopping grid instance that was already stopped or never started: " + name);
   return false;
