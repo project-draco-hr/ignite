@@ -1,3 +1,7 @@
 {
-  for (  GridNioFuture<?> msg : futs)   ((GridNioFutureImpl)msg).onDone(new IOException("Failed to send message, node has left: " + node.id()));
+  for (  GridNioFuture<?> msg : futs) {
+    IOException e=new IOException("Failed to send message, node has left: " + node.id());
+    ((GridNioFutureImpl)msg).onDone(e);
+    if (msg.ackClosure() != null)     msg.ackClosure().apply(new IgniteException(e));
+  }
 }
