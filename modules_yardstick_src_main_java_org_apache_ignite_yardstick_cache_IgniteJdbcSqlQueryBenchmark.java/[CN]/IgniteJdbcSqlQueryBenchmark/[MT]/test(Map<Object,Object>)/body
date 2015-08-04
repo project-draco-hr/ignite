@@ -1,0 +1,19 @@
+{
+  PreparedStatement stm=(PreparedStatement)ctx.get(0);
+  if (stm == null) {
+    stm=createStatement();
+    stms.add(stm);
+    ctx.put(0,stm);
+  }
+  double salary=ThreadLocalRandom.current().nextDouble() * args.range() * 1000;
+  double maxSalary=salary + 1000;
+  stm.clearParameters();
+  stm.setDouble(1,salary);
+  stm.setDouble(2,maxSalary);
+  ResultSet rs=stm.executeQuery();
+  while (rs.next()) {
+    double sal=rs.getDouble("salary");
+    if (sal < salary || sal > maxSalary)     throw new Exception("Invalid person retrieved [min=" + salary + ", max="+ maxSalary+ ']');
+  }
+  return true;
+}
