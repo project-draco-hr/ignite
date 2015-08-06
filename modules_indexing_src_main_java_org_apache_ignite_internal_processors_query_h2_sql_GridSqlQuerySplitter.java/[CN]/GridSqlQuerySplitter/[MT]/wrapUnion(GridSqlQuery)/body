@@ -5,17 +5,19 @@
   qry.explain(false);
   GridSqlSelect left=leftest(qry);
   int c=0;
-  for (  GridSqlElement expr : left.select(true)) {
+  for (  GridSqlElement expr : left.columns(true)) {
+    GridSqlType type=expr.resultType();
     String colName;
     if (expr instanceof GridSqlAlias)     colName=((GridSqlAlias)expr).alias();
  else     if (expr instanceof GridSqlColumn)     colName=((GridSqlColumn)expr).columnName();
  else {
       colName=columnName(c);
       expr=alias(colName,expr);
-      left.setSelectExpression(c,expr);
+      left.setColumn(c,expr);
     }
     GridSqlColumn col=column(colName);
-    wrapQry.addSelectExpression(col,true);
+    col.resultType(type);
+    wrapQry.addColumn(col,true);
     c++;
   }
   if (!qry.sort().isEmpty()) {

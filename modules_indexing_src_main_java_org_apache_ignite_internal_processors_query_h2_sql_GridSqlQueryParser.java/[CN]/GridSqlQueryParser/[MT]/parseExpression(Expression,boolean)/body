@@ -1,0 +1,17 @@
+{
+  if (expression == null)   return null;
+  GridSqlElement res=(GridSqlElement)h2ObjToGridObj.get(expression);
+  if (res == null) {
+    res=parseExpression0(expression,calcTypes);
+    if (calcTypes) {
+      GridSqlType type=GridSqlType.UNKNOWN;
+      if (expression.getType() != Value.UNKNOWN) {
+        Column c=new Column(null,expression.getType(),expression.getPrecision(),expression.getScale(),expression.getDisplaySize());
+        type=new GridSqlType(c.getType(),c.getScale(),c.getPrecision(),c.getDisplaySize(),c.getCreateSQL());
+      }
+      res.resultType(type);
+    }
+    h2ObjToGridObj.put(expression,res);
+  }
+  return res;
+}

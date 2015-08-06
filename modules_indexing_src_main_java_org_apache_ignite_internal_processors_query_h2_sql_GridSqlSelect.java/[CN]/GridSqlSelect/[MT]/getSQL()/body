@@ -1,7 +1,7 @@
 {
   StatementBuilder buff=new StatementBuilder(explain() ? "EXPLAIN SELECT" : "SELECT");
   if (distinct)   buff.append(" DISTINCT");
-  for (  GridSqlElement expression : select) {
+  for (  GridSqlElement expression : columns(true)) {
     buff.appendExceptFirst(",");
     buff.append('\n');
     buff.append(expression.getSQL());
@@ -13,12 +13,12 @@
     buff.resetCount();
     for (    int grpCol : grpCols) {
       buff.appendExceptFirst(", ");
-      addAlias(buff,allExprs.get(grpCol));
+      addAlias(buff,cols.get(grpCol));
     }
   }
   if (havingCol >= 0) {
     buff.append("\nHAVING ");
-    addAlias(buff,allExprs.get(havingCol));
+    addAlias(buff,cols.get(havingCol));
   }
   getSortLimitSQL(buff);
   return buff.toString();
