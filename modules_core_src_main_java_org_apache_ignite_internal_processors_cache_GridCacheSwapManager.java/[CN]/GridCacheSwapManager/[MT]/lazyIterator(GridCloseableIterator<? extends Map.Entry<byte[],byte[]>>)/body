@@ -5,35 +5,7 @@
     private Map.Entry<K,V> cur;
     @Override protected Map.Entry<K,V> onNext(){
       final Map.Entry<byte[],byte[]> cur0=it.next();
-      cur=new GridVersionedMapEntry<K,V>(){
-        @Override public K getKey(){
-          try {
-            KeyCacheObject key=cctx.toCacheKeyObject(cur0.getKey());
-            return key.value(cctx.cacheObjectContext(),false);
-          }
- catch (          IgniteCheckedException e) {
-            throw new IgniteException(e);
-          }
-        }
-        @Override public V getValue(){
-          try {
-            GridCacheSwapEntry e=unmarshalSwapEntry(cur0.getValue());
-            swapEntry(e);
-            return e.value().value(cctx.cacheObjectContext(),false);
-          }
- catch (          IgniteCheckedException ex) {
-            throw new IgniteException(ex);
-          }
-        }
-        @Override public GridCacheVersion version(){
-          GridCacheSwapEntry e=unmarshalSwapEntry(cur0.getValue());
-          return e.version();
-        }
-        @Override public V setValue(        V val){
-          throw new UnsupportedOperationException();
-        }
-      }
-;
+      cur=new GridVersionedMapEntry<K,V>(cur0);
       return cur;
     }
     @Override protected boolean onHasNext(){
