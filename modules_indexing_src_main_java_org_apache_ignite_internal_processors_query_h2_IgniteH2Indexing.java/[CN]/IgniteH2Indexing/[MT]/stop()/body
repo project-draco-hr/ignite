@@ -6,9 +6,14 @@
       if (desc.luceneIdx != null)       U.closeQuiet(desc.luceneIdx);
     }
   }
-  executeStatement("INFORMATION_SCHEMA","SHUTDOWN");
   for (  Connection c : conns)   U.close(c,log);
   conns.clear();
   schemas.clear();
+  try (Connection c=DriverManager.getConnection(dbUrl);Statement s=c.createStatement()){
+    s.execute("SHUTDOWN");
+  }
+ catch (  SQLException e) {
+    U.error(log,"Failed to shutdown database.",e);
+  }
   if (log.isDebugEnabled())   log.debug("Cache query index stopped.");
 }
