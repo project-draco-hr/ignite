@@ -7,9 +7,15 @@
   ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
   qry.setLocalListener(lsnr);
   QueryCursor<?> cur=clientNode.cache(null).query(qry);
-  Ignite joined=startGrid(4);
-  IgniteCache<Object,Object> joinedCache=joined.cache(null);
-  joinedCache.put(primaryKey(joinedCache),1);
+  Ignite joined1=startGrid(4);
+  IgniteCache<Object,Object> joinedCache1=joined1.cache(null);
+  joinedCache1.put(primaryKey(joinedCache1),1);
   assertTrue("Failed to wait for event.",lsnr.latch.await(5,SECONDS));
   cur.close();
+  lsnr.latch=new CountDownLatch(1);
+  Ignite joined2=startGrid(5);
+  IgniteCache<Object,Object> joinedCache2=joined2.cache(null);
+  joinedCache2.put(primaryKey(joinedCache2),2);
+  U.sleep(1000);
+  assertEquals("Unexpected event received.",1,lsnr.latch.getCount());
 }
