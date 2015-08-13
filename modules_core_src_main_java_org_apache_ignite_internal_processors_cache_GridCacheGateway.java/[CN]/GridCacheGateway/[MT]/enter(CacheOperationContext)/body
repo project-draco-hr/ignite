@@ -2,7 +2,7 @@
   try {
     GridCacheAdapter<K,V> cache=ctx.cache();
     GridCachePreloader preldr=cache != null ? cache.preloader() : null;
-    if (preldr == null)     throw new IllegalStateException("Grid is in invalid state to perform this operation. " + "It either not started yet or has already being or have stopped [gridName=" + ctx.gridName() + ']');
+    if (preldr == null)     throw new IllegalStateException("Cache has been closed or destroyed: " + ctx.name());
     preldr.startFuture().get();
   }
  catch (  IgniteCheckedException e) {
@@ -14,7 +14,7 @@
   try {
     return setOperationContextPerCall(opCtx);
   }
- catch (  RuntimeException e) {
+ catch (  Throwable e) {
     rwLock.readUnlock();
     throw e;
   }
