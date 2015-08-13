@@ -13,6 +13,21 @@
       }
     }
     for (    Map.Entry<UUID,Map<UUID,LocalRoutineInfo>> entry : data.clientInfos.entrySet()) {
+      UUID clientNodeId=entry.getKey();
+      Map<UUID,LocalRoutineInfo> clientRoutineMap=entry.getValue();
+      for (      Map.Entry<UUID,LocalRoutineInfo> e : clientRoutineMap.entrySet()) {
+        UUID routineId=e.getKey();
+        LocalRoutineInfo info=e.getValue();
+        try {
+          if (info.prjPred != null)           ctx.resource().injectGeneric(info.prjPred);
+          if (info.prjPred == null || info.prjPred.apply(ctx.discovery().localNode())) {
+            if (registerHandler(clientNodeId,routineId,info.hnd,info.bufSize,info.interval,info.autoUnsubscribe,false))             info.hnd.onListenerRegistered(routineId,ctx);
+          }
+        }
+ catch (        IgniteCheckedException err) {
+          U.error(log,"Failed to register continuous handler.",err);
+        }
+      }
       Map<UUID,LocalRoutineInfo> map=clientInfos.get(entry.getKey());
       if (map == null) {
         map=new HashMap<>();
