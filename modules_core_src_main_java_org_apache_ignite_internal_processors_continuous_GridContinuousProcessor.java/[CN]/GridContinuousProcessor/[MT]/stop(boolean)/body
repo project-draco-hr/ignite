@@ -1,7 +1,9 @@
 {
   if (ctx.config().isDaemon())   return;
   ctx.io().removeMessageListener(TOPIC_CONTINUOUS);
-  U.interrupt(threads);
-  U.joinThreads(threads,log);
+  for (  IgniteThread thread : bufCheckThreads.values()) {
+    U.interrupt(thread);
+    U.join(thread);
+  }
   if (log.isDebugEnabled())   log.debug("Continuous processor stopped.");
 }
