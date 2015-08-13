@@ -1,0 +1,15 @@
+{
+  startGrids(2);
+  client=true;
+  Ignite clientNode=startGrid(3);
+  client=false;
+  CacheEventListener lsnr=new CacheEventListener();
+  ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+  qry.setLocalListener(lsnr);
+  QueryCursor<?> cur=clientNode.cache(null).query(qry);
+  Ignite joined=startGrid(4);
+  IgniteCache<Object,Object> joinedCache=joined.cache(null);
+  joinedCache.put(primaryKey(joinedCache),1);
+  assertTrue("Failed to wait for event.",lsnr.latch.await(5,SECONDS));
+  cur.close();
+}
