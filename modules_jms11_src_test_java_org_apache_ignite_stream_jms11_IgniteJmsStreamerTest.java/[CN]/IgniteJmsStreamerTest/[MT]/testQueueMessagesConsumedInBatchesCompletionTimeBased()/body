@@ -1,0 +1,25 @@
+{
+  Destination destination=new ActiveMQQueue(QUEUE_NAME);
+  produceStringMessages(destination,false);
+  try (IgniteDataStreamer<String,String> dataStreamer=grid().dataStreamer(null)){
+    JmsStreamer<TextMessage,String,String> jmsStreamer=newJmsStreamer(TextMessage.class,dataStreamer);
+    jmsStreamer.setDestination(destination);
+    jmsStreamer.setBatched(true);
+    jmsStreamer.setBatchClosureMillis(2000);
+    jmsStreamer.setBatchClosureSize(0);
+    CountDownLatch latch=subscribeToPutEvents(CACHE_ENTRY_COUNT);
+    DestinationStatistics qStats=broker.getBroker().getDestinationMap().get(destination).getDestinationStatistics();
+    jmsStreamer.start();
+    assertEquals(CACHE_ENTRY_COUNT,qStats.getMessages().getCount());
+    assertEquals(0,qStats.getDequeues().getCount());
+    Thread.sleep(100);
+    assertEquals(CACHE_ENTRY_COUNT,qStats.getMessages().getCount());
+    assertEquals(0,qStats.getDequeues().getCount());
+    Thread.sleep(2100);
+    assertEquals(0,qStats.getMessages().getCount());
+    assertEquals(CACHE_ENTRY_COUNT,qStats.getDequeues().getCount());
+    latch.await(5,TimeUnit.SECONDS);
+    assertAllCacheEntriesLoaded();
+    jmsStreamer.stop();
+  }
+ }

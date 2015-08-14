@@ -1,0 +1,11 @@
+{
+  Session session=connection.createSession(transacted,Session.AUTO_ACKNOWLEDGE);
+  Topic topic=(Topic)destination;
+  if (destination == null)   topic=session.createTopic(destinationName);
+  MessageConsumer consumer=durableSubscription ? session.createDurableSubscriber(topic,durableSubscriptionName) : session.createConsumer(topic);
+  IgniteJmsMessageListener messageListener=new IgniteJmsMessageListener(session,true);
+  consumer.setMessageListener(messageListener);
+  consumers.add(consumer);
+  sessions.add(session);
+  listeners.add(messageListener);
+}

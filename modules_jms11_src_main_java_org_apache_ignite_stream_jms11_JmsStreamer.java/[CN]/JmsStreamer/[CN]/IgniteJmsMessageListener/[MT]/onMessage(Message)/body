@@ -1,0 +1,31 @@
+{
+  if (stopped) {
+    return;
+  }
+  executor.execute(new Runnable(){
+    @Override @SuppressWarnings("unchecked") public void run(){
+      processMessage((T)message);
+      if (batched) {
+        if (batchClosureSize <= 0)         return;
+ else         if (counter.incrementAndGet() >= batchClosureSize) {
+          try {
+            session.commit();
+            counter.set(0);
+          }
+ catch (          Exception e) {
+            log.warning("Could not commit JMS session upon completion of batch.",e);
+          }
+        }
+      }
+ else       if (transacted) {
+        try {
+          session.commit();
+        }
+ catch (        JMSException e) {
+          log.warning("Could not commit JMS session (non-batched).",e);
+        }
+      }
+    }
+  }
+);
+}

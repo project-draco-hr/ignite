@@ -1,0 +1,21 @@
+{
+  if (stopped)   throw new IgniteException("Attempted to stop an already stopped JMS Streamer");
+  try {
+    stopped=true;
+    if (scheduler != null && !scheduler.isShutdown()) {
+      scheduler.shutdown();
+      scheduler=null;
+    }
+    connection.stop();
+    connection.close();
+    for (    Session s : sessions) {
+      s.close();
+    }
+    sessions.clear();
+    consumers.clear();
+    listeners.clear();
+  }
+ catch (  Throwable t) {
+    throw new IgniteException("Exception while stopping JmsStreamer",t);
+  }
+}

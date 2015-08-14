@@ -1,0 +1,14 @@
+{
+  Destination destination=new ActiveMQQueue(QUEUE_NAME);
+  produceStringMessages(destination,false);
+  try (IgniteDataStreamer<String,String> dataStreamer=grid().dataStreamer(null)){
+    JmsStreamer<TextMessage,String,String> jmsStreamer=newJmsStreamer(TextMessage.class,dataStreamer);
+    jmsStreamer.setTransacted(true);
+    jmsStreamer.setDestination(destination);
+    CountDownLatch latch=subscribeToPutEvents(CACHE_ENTRY_COUNT);
+    jmsStreamer.start();
+    latch.await(10,TimeUnit.SECONDS);
+    assertAllCacheEntriesLoaded();
+    jmsStreamer.stop();
+  }
+ }

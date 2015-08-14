@@ -1,0 +1,28 @@
+{
+  Session session=connectionFactory.createConnection().createSession(false,Session.AUTO_ACKNOWLEDGE);
+  MessageProducer mp=session.createProducer(destination);
+  HashSet<String> set=new HashSet<>();
+  for (  String key : TEST_DATA.keySet())   set.add(key + "," + TEST_DATA.get(key));
+  int messagesSent;
+  if (singleMessage) {
+    StringBuilder sb=new StringBuilder();
+    for (    String s : set)     sb.append(s).append("|");
+    sb.deleteCharAt(sb.length() - 1);
+    mp.send(session.createTextMessage(sb.toString()));
+    messagesSent=1;
+  }
+ else {
+    for (    String s : set) {
+      mp.send(session.createTextMessage(s));
+    }
+    messagesSent=set.size();
+  }
+  if (destination instanceof Queue) {
+    try {
+      assertEquals(messagesSent,broker.getBroker().getDestinationMap().get(destination).getDestinationStatistics().getMessages().getCount());
+    }
+ catch (    Exception e) {
+      fail(e.toString());
+    }
+  }
+}

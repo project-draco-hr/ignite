@@ -1,0 +1,26 @@
+{
+  Session session=connectionFactory.createConnection().createSession(false,Session.AUTO_ACKNOWLEDGE);
+  MessageProducer mp=session.createProducer(destination);
+  HashSet<TestTransformers.TestObject> set=new HashSet<>();
+  for (  String key : TEST_DATA.keySet()) {
+    TestTransformers.TestObject to=new TestTransformers.TestObject(key,TEST_DATA.get(key));
+    set.add(to);
+  }
+  int messagesSent;
+  if (singleMessage) {
+    mp.send(session.createObjectMessage(set));
+    messagesSent=1;
+  }
+ else {
+    for (    TestTransformers.TestObject to : set)     mp.send(session.createObjectMessage(to));
+    messagesSent=set.size();
+  }
+  if (destination instanceof Queue) {
+    try {
+      assertEquals(messagesSent,broker.getBroker().getDestinationMap().get(destination).getDestinationStatistics().getMessages().getCount());
+    }
+ catch (    Exception e) {
+      fail(e.toString());
+    }
+  }
+}

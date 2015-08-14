@@ -1,0 +1,19 @@
+{
+  Destination destination=new ActiveMQTopic(TOPIC_NAME);
+  try (IgniteDataStreamer<String,String> dataStreamer=grid().dataStreamer(null)){
+    JmsStreamer<TextMessage,String,String> jmsStreamer=newJmsStreamer(TextMessage.class,dataStreamer);
+    jmsStreamer.setDestination(destination);
+    jmsStreamer.setDurableSubscription(true);
+    jmsStreamer.setClientId(Long.toString(System.currentTimeMillis()));
+    jmsStreamer.setDurableSubscriptionName("ignite-test-durable");
+    jmsStreamer.start();
+    jmsStreamer.stop();
+    assertEquals(0,broker.getCurrentConnections());
+    produceStringMessages(destination,false);
+    CountDownLatch latch=subscribeToPutEvents(CACHE_ENTRY_COUNT);
+    jmsStreamer.start();
+    latch.await(10,TimeUnit.SECONDS);
+    assertAllCacheEntriesLoaded();
+    jmsStreamer.stop();
+  }
+ }

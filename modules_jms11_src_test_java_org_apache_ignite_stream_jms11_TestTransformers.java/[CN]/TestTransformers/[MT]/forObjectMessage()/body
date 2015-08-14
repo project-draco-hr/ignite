@@ -1,0 +1,24 @@
+{
+  return new MessageTransformer<ObjectMessage,String,String>(){
+    @Override @SuppressWarnings("unchecked") public Map<String,String> apply(    ObjectMessage message){
+      Object object;
+      try {
+        object=message.getObject();
+      }
+ catch (      JMSException e) {
+        e.printStackTrace();
+        return Collections.emptyMap();
+      }
+      final Map<String,String> answer=new HashMap<>();
+      if (object instanceof Collection) {
+        for (        TestObject to : (Collection<TestObject>)object)         answer.put(to.getKey(),to.getValue());
+      }
+ else       if (object instanceof TestObject) {
+        TestObject to=(TestObject)object;
+        answer.put(to.getKey(),to.getValue());
+      }
+      return answer;
+    }
+  }
+;
+}
