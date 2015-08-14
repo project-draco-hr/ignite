@@ -1,0 +1,33 @@
+{
+  startGrids(2);
+  final AtomicBoolean stop=new AtomicBoolean();
+  final AtomicInteger cntr=new AtomicInteger();
+  IgniteInternalFuture<?> fut=GridTestUtils.runMultiThreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      int idx=cntr.getAndIncrement();
+      IgniteCache<Object,Object> cache=ignite(idx).cache(null);
+      long cntr=0;
+      while (!stop.get()) {
+        cache.size();
+        if (cntr++ % 1000 == 0)         log.info("Iteration: " + cntr);
+      }
+      return null;
+    }
+  }
+,2,"size-thread");
+  try {
+    for (int i=0; i < 10; i++) {
+      log.info("Start node: " + i);
+      Ignite node=startGrid(3);
+      IgniteCache<Object,Object> cache=node.cache(null);
+      for (int j=0; j < 100; j++)       assertTrue(cache.size() >= 0);
+      log.info("Stop node: " + i);
+      stopGrid(3);
+    }
+  }
+  finally {
+    stop.set(true);
+  }
+  log.info("Stop test.");
+  fut.get();
+}
