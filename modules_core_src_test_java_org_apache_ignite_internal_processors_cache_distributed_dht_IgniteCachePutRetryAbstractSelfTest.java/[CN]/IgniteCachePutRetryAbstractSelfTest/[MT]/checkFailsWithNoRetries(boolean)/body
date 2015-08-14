@@ -12,18 +12,24 @@
   }
 );
   int keysCnt=keysCount();
-  boolean exceptionThrown=false;
+  boolean eThrown=false;
+  IgniteCache<Object,Object> cache=ignite(0).cache(null).withNoRetries();
+  if (async)   cache=cache.withAsync();
   for (int i=0; i < keysCnt; i++) {
     try {
-      ignite(0).cache(null).withNoRetries().put(i,i);
+      if (async) {
+        cache.put(i,i);
+        cache.future().get();
+      }
+ else       cache.put(i,i);
     }
  catch (    Exception e) {
-      assertTrue("Invalid exception: " + e,X.hasCause(e,ClusterTopologyCheckedException.class) || X.hasCause(e,CachePartialUpdateException.class));
-      exceptionThrown=true;
+      assertTrue("Invalid exception: " + e,X.hasCause(e,ClusterTopologyCheckedException.class,CachePartialUpdateException.class));
+      eThrown=true;
       break;
     }
   }
-  assertTrue(exceptionThrown);
+  assertTrue(eThrown);
   finished.set(true);
   fut.get();
 }

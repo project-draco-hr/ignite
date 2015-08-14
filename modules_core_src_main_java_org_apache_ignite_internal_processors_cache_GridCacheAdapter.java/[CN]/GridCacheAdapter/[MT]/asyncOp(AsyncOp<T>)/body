@@ -7,6 +7,19 @@
   }
   if (log.isDebugEnabled())   log.debug("Performing async op: " + op);
   IgniteTxLocalAdapter tx=ctx.tm().threadLocalTx(ctx);
-  if (tx == null || tx.implicit())   tx=ctx.tm().newTx(true,op.single(),ctx.systemTx() ? ctx : null,OPTIMISTIC,READ_COMMITTED,ctx.kernalContext().config().getTransactionConfiguration().getDefaultTxTimeout(),!ctx.skipStore(),0);
-  return asyncOp(tx,op);
+  if (tx == null || tx.implicit()) {
+    boolean skipStore=ctx.skipStore();
+    CacheOperationContext opCtx=ctx.operationContextPerCall();
+    int retries=opCtx != null && opCtx.noRetries() ? 1 : MAX_RETRIES;
+    if (retries == 1) {
+      tx=ctx.tm().newTx(true,op.single(),ctx.systemTx() ? ctx : null,OPTIMISTIC,READ_COMMITTED,ctx.kernalContext().config().getTransactionConfiguration().getDefaultTxTimeout(),!skipStore,0);
+      return asyncOp(tx,op);
+    }
+ else {
+      AsyncOpRetryFuture<T> fut=new AsyncOpRetryFuture<>(op,skipStore,retries);
+      fut.execute();
+      return fut;
+    }
+  }
+ else   return asyncOp(tx,op);
 }
