@@ -1,0 +1,35 @@
+{
+  try {
+    final Ignite pingingNode=startGrid("testPingInterruptedOnNodeFailedPingingNode");
+    final Ignite leftNode=startGrid("testPingInterruptedOnNodeFailedFailingNode");
+    startGrid("testPingInterruptedOnNodeFailedSimpleNode");
+    ((TestTcpDiscoverySpi)leftNode.configuration().getDiscoverySpi()).ignorePingResponse=true;
+    final CountDownLatch pingLatch=new CountDownLatch(1);
+    final AtomicBoolean pingRes=new AtomicBoolean(true);
+    long startTs=System.currentTimeMillis();
+    IgniteInternalFuture<?> pingFut=multithreadedAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        pingLatch.countDown();
+        pingRes.set(pingingNode.configuration().getDiscoverySpi().pingNode(leftNode.cluster().localNode().id()));
+        return null;
+      }
+    }
+,1);
+    IgniteInternalFuture<?> stoppingFut=multithreadedAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        pingLatch.await();
+        Thread.sleep(3000);
+        stopGrid("testPingInterruptedOnNodeFailedFailingNode");
+        return null;
+      }
+    }
+,1);
+    stoppingFut.get();
+    pingFut.get();
+    assertFalse(pingRes.get());
+    assertTrue(System.currentTimeMillis() - startTs < pingingNode.configuration().getFailureDetectionTimeout() / 2);
+  }
+  finally {
+    stopAllGrids();
+  }
+}
