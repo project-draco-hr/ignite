@@ -1,0 +1,27 @@
+{
+  IgniteCache<Integer,Integer> c=ignite(0).getOrCreateCache(cacheConfig("ints",true,Integer.class,Integer.class));
+  try {
+    List<Integer> res=new ArrayList<>();
+    Random rnd=new GridRandom();
+    for (int i=0; i < 10; i++) {
+      int val=rnd.nextInt(100);
+      c.put(i,val);
+      res.add(val);
+    }
+    Collections.sort(res);
+    String qry="select _val from Integer order by _val ";
+    assertEqualsCollections(res,column(0,c.query(new SqlFieldsQuery(qry)).getAll()));
+    assertEqualsCollections(res.subList(0,0),column(0,c.query(new SqlFieldsQuery(qry + "limit ?").setArgs(0)).getAll()));
+    assertEqualsCollections(res.subList(0,3),column(0,c.query(new SqlFieldsQuery(qry + "limit ?").setArgs(3)).getAll()));
+    assertEqualsCollections(res.subList(0,9),column(0,c.query(new SqlFieldsQuery(qry + "limit ? offset ?").setArgs(9,0)).getAll()));
+    assertEqualsCollections(res.subList(3,7),column(0,c.query(new SqlFieldsQuery(qry + "limit ? offset ?").setArgs(4,3)).getAll()));
+    assertEqualsCollections(res.subList(7,9),column(0,c.query(new SqlFieldsQuery(qry + "limit ? offset ?").setArgs(2,7)).getAll()));
+    assertEqualsCollections(res.subList(8,10),column(0,c.query(new SqlFieldsQuery(qry + "limit ? offset ?").setArgs(2,8)).getAll()));
+    assertEqualsCollections(res.subList(9,10),column(0,c.query(new SqlFieldsQuery(qry + "limit ? offset ?").setArgs(1,9)).getAll()));
+    assertEqualsCollections(res.subList(10,10),column(0,c.query(new SqlFieldsQuery(qry + "limit ? offset ?").setArgs(1,10)).getAll()));
+    assertEqualsCollections(res.subList(9,10),column(0,c.query(new SqlFieldsQuery(qry + "limit ? offset abs(-(4 + ?))").setArgs(1,5)).getAll()));
+  }
+  finally {
+    c.destroy();
+  }
+}
