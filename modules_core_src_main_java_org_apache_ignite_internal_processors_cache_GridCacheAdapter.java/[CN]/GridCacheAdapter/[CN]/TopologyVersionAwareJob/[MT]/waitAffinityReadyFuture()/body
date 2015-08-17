@@ -7,7 +7,12 @@
       jobCtx.holdcc();
       fut.listen(new CI1<IgniteInternalFuture<?>>(){
         @Override public void apply(        IgniteInternalFuture<?> t){
-          jobCtx.callcc();
+          ((IgniteKernal)ignite).context().closure().runLocalSafe(new Runnable(){
+            @Override public void run(){
+              jobCtx.callcc();
+            }
+          }
+,false);
         }
       }
 );
