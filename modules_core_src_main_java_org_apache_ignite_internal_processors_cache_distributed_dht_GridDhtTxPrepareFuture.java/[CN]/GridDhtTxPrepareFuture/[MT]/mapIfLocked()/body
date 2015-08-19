@@ -1,6 +1,21 @@
 {
   if (checkLocks()) {
-    prepare0();
+    if (!mapped.compareAndSet(false,true))     return false;
+    if (forceKeysFut == null || (forceKeysFut.isDone() && forceKeysFut.error() == null))     prepare0();
+ else {
+      forceKeysFut.listen(new CI1<IgniteInternalFuture<?>>(){
+        @Override public void apply(        IgniteInternalFuture<?> f){
+          try {
+            f.get();
+            prepare0();
+          }
+ catch (          IgniteCheckedException e) {
+            onError(e);
+          }
+        }
+      }
+);
+    }
     return true;
   }
   return false;
