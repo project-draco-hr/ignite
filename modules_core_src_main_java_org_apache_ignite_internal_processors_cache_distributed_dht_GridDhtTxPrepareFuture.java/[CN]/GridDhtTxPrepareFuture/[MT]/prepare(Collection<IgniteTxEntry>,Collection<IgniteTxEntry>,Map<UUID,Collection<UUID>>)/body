@@ -1,0 +1,16 @@
+{
+  if (tx.empty()) {
+    tx.setRollbackOnly();
+    onDone((GridNearTxPrepareResponse)null);
+  }
+  this.reads=reads;
+  this.writes=writes;
+  this.txNodes=txNodes;
+  if (!F.isEmpty(writes)) {
+    Map<Integer,Collection<KeyCacheObject>> forceKeys=null;
+    for (    IgniteTxEntry entry : writes)     forceKeys=checkNeedRebalanceKeys(entry,forceKeys);
+    forceKeysFut=forceRebalanceKeys(forceKeys);
+  }
+  readyLocks();
+  mapIfLocked();
+}
