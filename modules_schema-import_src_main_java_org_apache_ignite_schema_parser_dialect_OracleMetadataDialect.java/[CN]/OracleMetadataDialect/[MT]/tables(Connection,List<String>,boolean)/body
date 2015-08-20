@@ -1,0 +1,40 @@
+{
+  Collection<DbTable> tbls=new ArrayList<>();
+  PreparedStatement pkStmt=conn.prepareStatement(SQL_PRIMARY_KEYS);
+  PreparedStatement idxStmt=conn.prepareStatement(SQL_INDEXES);
+  if (schemas.size() == 0)   schemas.add(null);
+  Set<String> sysSchemas=systemSchemas();
+  try (Statement colsStmt=conn.createStatement()){
+    for (    String schema : schemas) {
+      if (systemSchemas().contains(schema) || (schema != null && schema.startsWith("FLOWS_")))       continue;
+      Collection<DbColumn> cols=new ArrayList<>();
+      Set<String> pkCols=Collections.emptySet();
+      Map<String,Map<String,Boolean>> idxs=Collections.emptyMap();
+      String sql=String.format(SQL_COLUMNS,tblsOnly ? "INNER JOIN all_tables b on a.table_name = b.table_name and a.owner = b.owner" : "",schema != null ? String.format(" WHERE a.owner = '%s' ",schema) : "");
+      try (ResultSet colsRs=colsStmt.executeQuery(sql)){
+        String prevSchema="";
+        String prevTbl="";
+        boolean first=true;
+        while (colsRs.next()) {
+          String owner=colsRs.getString(OWNER_IDX);
+          String tbl=colsRs.getString(TBL_NAME_IDX);
+          if (sysSchemas.contains(owner) || (schema != null && schema.startsWith("FLOWS_")))           continue;
+          boolean changed=!owner.equals(prevSchema) || !tbl.equals(prevTbl);
+          if (changed) {
+            if (first)             first=false;
+ else             tbls.add(table(prevSchema,prevTbl,cols,idxs));
+            prevSchema=owner;
+            prevTbl=tbl;
+            cols=new ArrayList<>();
+            pkCols=primaryKeys(pkStmt,owner,tbl);
+            idxs=indexes(idxStmt,owner,tbl);
+          }
+          String colName=colsRs.getString(COL_NAME_IDX);
+          cols.add(new DbColumn(colName,decodeType(colsRs),pkCols.contains(colName),!"N".equals(colsRs.getString(NULLABLE_IDX))));
+        }
+        if (!cols.isEmpty())         tbls.add(table(prevSchema,prevTbl,cols,idxs));
+      }
+     }
+  }
+   return tbls;
+}

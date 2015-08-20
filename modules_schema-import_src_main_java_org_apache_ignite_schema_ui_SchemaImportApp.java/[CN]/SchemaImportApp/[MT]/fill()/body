@@ -1,13 +1,9 @@
 {
+  final List<String> selSchemas=new ArrayList<>();
+  for (  SchemaDescriptor schema : schemas)   if (schema.selected().getValue())   selSchemas.add(schema.schema());
+  if (selSchemas.size() == 0)   if (!MessageBox.confirmDialog(owner,"No schemas selected.\nExtract tables for all available schemas?"))   return;
   lockUI(connLayerPnl,connPnl,nextBtn);
-  final String jdbcDrvJarPath=jdbcDrvJarTf.getText().trim();
-  final String jdbcDrvCls=jdbcDrvClsTf.getText();
   final String jdbcUrl=jdbcUrlTf.getText();
-  String user=userTf.getText().trim();
-  String pwd=pwdTf.getText().trim();
-  final Properties jdbcInfo=new Properties();
-  if (!user.isEmpty())   jdbcInfo.put("user",user);
-  if (!pwd.isEmpty())   jdbcInfo.put("password",pwd);
   final boolean tblsOnly=parseCb.getSelectionModel().getSelectedIndex() == 0;
   Runnable task=new Task<Void>(){
     /** 
@@ -15,8 +11,8 @@
  */
     @Override protected Void call() throws Exception {
       long started=System.currentTimeMillis();
-      try (Connection conn=connect(jdbcDrvJarPath,jdbcDrvCls,jdbcUrl,jdbcInfo)){
-        pojos=DatabaseMetadataParser.parse(conn,tblsOnly);
+      try (Connection conn=connect()){
+        pojos=DatabaseMetadataParser.parse(conn,selSchemas,tblsOnly);
       }
        perceptualDelay(started);
       return null;
