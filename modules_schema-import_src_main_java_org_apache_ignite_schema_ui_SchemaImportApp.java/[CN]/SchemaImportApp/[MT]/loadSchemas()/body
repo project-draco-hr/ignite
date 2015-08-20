@@ -1,0 +1,51 @@
+{
+  lockUI(connLayerPnl,connPnl,nextBtn);
+  final String jdbcUrl=jdbcUrlTf.getText();
+  Runnable task=new Task<Void>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected Void call() throws Exception {
+      long started=System.currentTimeMillis();
+      try (Connection conn=connect()){
+        schemas=DatabaseMetadataParser.schemas(conn);
+      }
+       perceptualDelay(started);
+      return null;
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void succeeded(){
+      try {
+        super.succeeded();
+        schemaLst.setItems(schemas);
+        if (schemas.isEmpty()) {
+          MessageBox.warningDialog(owner,"No schemas found in database. Recheck JDBC URL.\n" + "JDBC URL: " + jdbcUrl);
+          return;
+        }
+        nextBtn.setDisable(false);
+      }
+  finally {
+        unlockUI(connLayerPnl,connPnl,nextBtn);
+      }
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void cancelled(){
+      super.cancelled();
+      unlockUI(connLayerPnl,connPnl,nextBtn);
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override protected void failed(){
+      super.succeeded();
+      unlockUI(connLayerPnl,connPnl,nextBtn);
+      MessageBox.errorDialog(owner,"Failed to get schemas list from database.",getException());
+    }
+  }
+;
+  exec.submit(task);
+}
