@@ -1,0 +1,25 @@
+{
+  init();
+  log.info("Registering addresses with ZooKeeper IP Finder: " + addrs);
+  Set<InetSocketAddress> registrationsToIgnore=Sets.newHashSet();
+  if (!allowDuplicateRegistrations) {
+    try {
+      for (      ServiceInstance<IgniteInstanceDetails> sd : discovery.queryForInstances(serviceName))       registrationsToIgnore.add(new InetSocketAddress(sd.getAddress(),sd.getPort()));
+    }
+ catch (    Exception e) {
+      log.warning("Error while finding currently registered services to avoid duplicate registrations",e);
+      throw new IgniteSpiException(e);
+    }
+  }
+  for (  InetSocketAddress addr : addrs) {
+    if (registrationsToIgnore.contains(addr))     continue;
+    try {
+      ServiceInstance<IgniteInstanceDetails> si=ServiceInstance.<IgniteInstanceDetails>builder().name(serviceName).uriSpec(URI_SPEC).address(addr.getAddress().getHostAddress()).port(addr.getPort()).build();
+      ourInstances.put(addr,si);
+      discovery.registerService(si);
+    }
+ catch (    Exception e) {
+      log.warning(String.format("Error while registering an address from ZooKeeper IP Finder " + "[message=%s,addresses=%s]",e.getMessage(),addr),e);
+    }
+  }
+}

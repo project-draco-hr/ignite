@@ -1,0 +1,17 @@
+{
+  if (curator.getState() != CuratorFrameworkState.STARTED)   return;
+  log.info("Unregistering addresses with ZooKeeper IP Finder: " + addrs);
+  for (  InetSocketAddress addr : addrs) {
+    ServiceInstance<IgniteInstanceDetails> si=ourInstances.get(addr);
+    if (si == null) {
+      log.warning("Asked to unregister address from ZooKeeper IP Finder, but no match was found in local " + "instance map for: " + addrs);
+      continue;
+    }
+    try {
+      discovery.unregisterService(si);
+    }
+ catch (    Exception e) {
+      log.warning("Error while unregistering an address from ZooKeeper IP Finder: " + addr,e);
+    }
+  }
+}
