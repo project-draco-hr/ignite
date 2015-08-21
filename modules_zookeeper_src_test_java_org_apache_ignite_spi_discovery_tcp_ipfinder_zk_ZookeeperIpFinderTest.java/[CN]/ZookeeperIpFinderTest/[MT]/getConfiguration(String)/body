@@ -1,0 +1,14 @@
+{
+  IgniteConfiguration configuration=super.getConfiguration(gridName);
+  TcpDiscoverySpi tcpDisco=(TcpDiscoverySpi)configuration.getDiscoverySpi();
+  TcpDiscoveryZookeeperIpFinder zkIpFinder=new TcpDiscoveryZookeeperIpFinder();
+  zkIpFinder.setAllowDuplicateRegistrations(isAllowDuplicateRegistrations());
+  if (gridName.equals(getTestGridName(0))) {
+    zkIpFinder.setZkConnectionString(zkCluster.getConnectString());
+  }
+ else   if (gridName.equals(getTestGridName(1))) {
+    zkIpFinder.setCurator(CuratorFrameworkFactory.newClient(zkCluster.getConnectString(),new ExponentialBackoffRetry(100,5)));
+  }
+  tcpDisco.setIpFinder(zkIpFinder);
+  return configuration;
+}

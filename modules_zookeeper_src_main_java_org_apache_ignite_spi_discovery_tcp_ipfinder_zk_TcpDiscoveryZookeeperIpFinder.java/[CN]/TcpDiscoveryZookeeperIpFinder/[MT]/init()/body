@@ -1,0 +1,12 @@
+{
+  if (!initGuard.compareAndSet(false,true))   return;
+  String sysPropZkConnString=System.getProperty(PROP_ZK_CONNECTION_STRING);
+  if (sysPropZkConnString != null && sysPropZkConnString.trim().length() > 0)   zkConnectionString=sysPropZkConnString;
+  log.info("Initializing ZooKeeper IP Finder.");
+  if (curator == null) {
+    A.notNullOrEmpty(zkConnectionString,String.format("ZooKeeper URL (or system property %s) cannot be null " + "or empty if a CuratorFramework object is not provided explicitly",PROP_ZK_CONNECTION_STRING));
+    curator=CuratorFrameworkFactory.newClient(zkConnectionString,retryPolicy);
+  }
+  if (curator.getState() != CuratorFrameworkState.STARTED)   curator.start();
+  discovery=ServiceDiscoveryBuilder.builder(IgniteInstanceDetails.class).client(curator).basePath(basePath).serializer(new JsonInstanceSerializer<>(IgniteInstanceDetails.class)).build();
+}

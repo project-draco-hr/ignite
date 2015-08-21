@@ -1,0 +1,16 @@
+{
+  init();
+  if (log.isDebugEnabled())   log.debug("Getting registered addresses from ZooKeeper IP Finder.");
+  Collection<ServiceInstance<IgniteInstanceDetails>> serviceInstances;
+  try {
+    serviceInstances=discovery.queryForInstances(serviceName);
+  }
+ catch (  Exception e) {
+    log.warning("Error while getting registered addresses from ZooKeeper IP Finder.",e);
+    return Collections.emptyList();
+  }
+  Set<InetSocketAddress> answer=new HashSet<>();
+  for (  ServiceInstance<IgniteInstanceDetails> si : serviceInstances)   answer.add(new InetSocketAddress(si.getAddress(),si.getPort()));
+  log.info("ZooKeeper IP Finder resolved addresses: " + answer);
+  return answer;
+}
