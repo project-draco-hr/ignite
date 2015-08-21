@@ -1,0 +1,53 @@
+{
+  AffinityTopologyVersion topVer=canRemap ? ctx.affinity().affinityTopologyVersion() : ctx.shared().exchange().readyAffinityVersion();
+  final IgniteCacheExpiryPolicy expiry=skipVals ? null : expiryPolicy(expiryPlc);
+  if (!reload && !forcePrimary) {
+    Map<K,V> locVals=U.newHashMap(keys.size());
+    boolean success=true;
+    for (    KeyCacheObject key : keys) {
+      GridCacheEntryEx entry=null;
+      while (true) {
+        try {
+          entry=ctx.isSwapOrOffheapEnabled() ? entryEx(key) : peekEx(key);
+          if (entry != null) {
+            boolean isNew=entry.isNewLocked();
+            CacheObject v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiry);
+            if (v == null) {
+              GridCacheVersion obsoleteVer=context().versions().next();
+              if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(key);
+              success=false;
+            }
+ else             ctx.addResult(locVals,key,v,skipVals,false,deserializePortable,true);
+          }
+ else           success=false;
+          break;
+        }
+ catch (        GridCacheEntryRemovedException ignored) {
+        }
+catch (        GridCacheFilterFailedException ignored) {
+          break;
+        }
+catch (        GridDhtInvalidPartitionException ignored) {
+          success=false;
+          break;
+        }
+catch (        IgniteCheckedException e) {
+          return new GridFinishedFuture<>(e);
+        }
+ finally {
+          if (entry != null)           ctx.evicts().touch(entry,topVer);
+        }
+      }
+      if (!success)       break;
+ else       if (!skipVals && ctx.config().isStatisticsEnabled())       metrics0().onRead(true);
+    }
+    if (success) {
+      sendTtlUpdateRequest(expiry);
+      return new GridFinishedFuture<>(locVals);
+    }
+  }
+  if (expiry != null)   expiry.reset();
+  GridPartitionedGetFuture<K,V> fut=new GridPartitionedGetFuture<>(ctx,keys,topVer,!skipStore,reload,forcePrimary,subjId,taskName,deserializePortable,expiry,skipVals,canRemap);
+  fut.init();
+  return fut;
+}
