@@ -7,7 +7,7 @@
       CacheObject v=null;
       boolean isNear=entry != null;
       if (isNear)       v=entry.innerGet(tx,false,false,true,true,true,!skipVals,false,subjId,null,taskName,expiryPlc);
-      ClusterNode primary=null;
+      ClusterNode affNode=null;
       if (v == null && allowLocRead && cctx.affinityNode()) {
         GridDhtCacheAdapter<K,V> dht=cache().dht();
         GridCacheEntryEx dhtEntry=null;
@@ -22,12 +22,12 @@
             if (cctx.cache().configuration().isStatisticsEnabled() && !skipVals)             near.metrics0().onRead(true);
           }
  else {
-            primary=cctx.affinity().primary(key,topVer);
-            if (primary == null) {
+            affNode=affinityNode(key,topVer);
+            if (affNode == null) {
               onDone(new ClusterTopologyServerNotFoundException("Failed to map keys for cache " + "(all partition nodes left the grid)."));
               return savedVers;
             }
-            if (!primary.isLocal() && cctx.cache().configuration().isStatisticsEnabled() && !skipVals)             near.metrics0().onRead(false);
+            if (!affNode.isLocal() && cctx.cache().configuration().isStatisticsEnabled() && !skipVals)             near.metrics0().onRead(false);
           }
         }
  catch (        GridDhtInvalidPartitionException|GridCacheEntryRemovedException ignored) {
@@ -47,9 +47,9 @@
         add(new GridFinishedFuture<>(Collections.singletonMap(key0,val0)));
       }
  else {
-        if (primary == null) {
-          primary=cctx.affinity().primary(key,topVer);
-          if (primary == null) {
+        if (affNode == null) {
+          affNode=affinityNode(key,topVer);
+          if (affNode == null) {
             onDone(new ClusterTopologyServerNotFoundException("Failed to map keys for cache " + "(all partition nodes left the grid)."));
             return savedVers;
           }
@@ -58,17 +58,17 @@
         entry=nearEntry;
         if (savedVers == null)         savedVers=U.newHashMap(3);
         savedVers.put(key,nearEntry == null ? null : nearEntry.dhtVersion());
-        LinkedHashMap<KeyCacheObject,Boolean> keys=mapped.get(primary);
+        LinkedHashMap<KeyCacheObject,Boolean> keys=mapped.get(affNode);
         if (keys != null && keys.containsKey(key)) {
           if (remapCnt.incrementAndGet() > MAX_REMAP_CNT) {
-            onDone(new ClusterTopologyCheckedException("Failed to remap key to a new node after " + MAX_REMAP_CNT + " attempts (key got remapped to the same node) "+ "[key="+ key+ ", node="+ U.toShortString(primary)+ ", mappings="+ mapped+ ']'));
+            onDone(new ClusterTopologyCheckedException("Failed to remap key to a new node after " + MAX_REMAP_CNT + " attempts (key got remapped to the same node) "+ "[key="+ key+ ", node="+ U.toShortString(affNode)+ ", mappings="+ mapped+ ']'));
             return savedVers;
           }
         }
         boolean addRdr=tx == null || tx.optimistic();
         if (!addRdr && tx.readCommitted() && !tx.writeSet().contains(cctx.txKey(key)))         addRdr=true;
-        LinkedHashMap<KeyCacheObject,Boolean> old=mappings.get(primary);
-        if (old == null)         mappings.put(primary,old=new LinkedHashMap<>(3,1f));
+        LinkedHashMap<KeyCacheObject,Boolean> old=mappings.get(affNode);
+        if (old == null)         mappings.put(affNode,old=new LinkedHashMap<>(3,1f));
         old.put(key,addRdr);
       }
       break;

@@ -1,0 +1,22 @@
+{
+  while (true) {
+    try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+      T res=clo.call();
+      tx.commit();
+      return res;
+    }
+ catch (    CacheException e) {
+      if (e.getCause() instanceof ClusterTopologyException) {
+        ClusterTopologyException topEx=(ClusterTopologyException)e.getCause();
+        topEx.retryReadyFuture().get();
+      }
+ else       throw e;
+    }
+catch (    ClusterTopologyException e) {
+      IgniteFuture<?> fut=e.retryReadyFuture();
+      fut.get();
+    }
+catch (    TransactionRollbackException ignore) {
+    }
+  }
+}

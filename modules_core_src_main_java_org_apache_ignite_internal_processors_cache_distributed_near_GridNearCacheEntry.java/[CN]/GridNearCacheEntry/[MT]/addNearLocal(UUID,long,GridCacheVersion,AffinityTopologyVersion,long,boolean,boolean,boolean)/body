@@ -1,0 +1,29 @@
+{
+  GridCacheMvccCandidate prev;
+  GridCacheMvccCandidate owner;
+  GridCacheMvccCandidate cand;
+  CacheObject val;
+  UUID locId=cctx.nodeId();
+synchronized (this) {
+    checkObsolete();
+    GridCacheMvcc mvcc=mvccExtras();
+    if (mvcc == null) {
+      mvcc=new GridCacheMvcc(cctx);
+      mvccExtras(mvcc);
+    }
+    GridCacheMvccCandidate c=mvcc.localCandidate(locId,threadId);
+    if (c != null)     return reenter ? c.reenter() : null;
+    prev=mvcc.anyOwner();
+    boolean emptyBefore=mvcc.isEmpty();
+    if (timeout < 0 && !emptyBefore)     return null;
+    cand=mvcc.addNearLocal(this,locId,dhtNodeId,threadId,ver,timeout,tx,implicitSingle);
+    cand.topologyVersion(topVer);
+    owner=mvcc.anyOwner();
+    boolean emptyAfter=mvcc.isEmpty();
+    checkCallbacks(emptyBefore,emptyAfter);
+    val=this.val;
+    if (emptyAfter)     mvccExtras(null);
+  }
+  checkOwnerChanged(prev,owner,val);
+  return cand;
+}

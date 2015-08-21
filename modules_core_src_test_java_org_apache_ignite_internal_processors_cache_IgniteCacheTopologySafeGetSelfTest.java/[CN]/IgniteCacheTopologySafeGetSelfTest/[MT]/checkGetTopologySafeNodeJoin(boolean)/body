@@ -1,0 +1,35 @@
+{
+  startGrids(GRID_CNT);
+  awaitPartitionMapExchange();
+  try {
+    ClusterNode targetNode=ignite(1).cluster().localNode();
+    info(">>> Target node: " + targetNode.id());
+    int key=-1;
+    for (int i=0; i < 100; i++) {
+      Collection<ClusterNode> nodes=ignite(0).affinity("tx").mapKeyToPrimaryAndBackups(i);
+      ClusterNode primaryNode=F.first(nodes);
+      if (!nodes.contains(ignite(0).cluster().localNode()) && primaryNode.id().equals(targetNode.id())) {
+        ignite(1).cache("tx").put(i,i);
+        ignite(1).cache("atomic").put(i,i);
+        ignite(1).cache("tx_near").put(i,i);
+        ignite(1).cache("atomic_near").put(i,i);
+        key=i;
+        break;
+      }
+    }
+    assertTrue(key != -1);
+    IgniteInternalFuture<?> txFut=startBlockingTxAsync();
+    IgniteInternalFuture<?> nodeFut=startNodeAsync();
+    if (failPrimary)     stopGrid(1);
+    assertEquals(key,((IgniteKernal)ignite(0)).internalCache("tx").getTopologySafe(key));
+    assertEquals(key,((IgniteKernal)ignite(0)).internalCache("atomic").getTopologySafe(key));
+    assertEquals(key,((IgniteKernal)ignite(0)).internalCache("tx_near").getTopologySafe(key));
+    assertEquals(key,((IgniteKernal)ignite(0)).internalCache("atomic_near").getTopologySafe(key));
+    releaseTx();
+    txFut.get();
+    nodeFut.get();
+  }
+  finally {
+    stopAllGrids();
+  }
+}
