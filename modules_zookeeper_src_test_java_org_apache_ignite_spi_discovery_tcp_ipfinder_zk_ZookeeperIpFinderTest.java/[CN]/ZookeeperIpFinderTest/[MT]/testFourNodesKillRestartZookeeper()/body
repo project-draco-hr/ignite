@@ -1,0 +1,17 @@
+{
+  setAllowDuplicateRegistrations(false);
+  System.setProperty(TcpDiscoveryZookeeperIpFinder.PROP_ZK_CONNECTION_STRING,zkCluster.getConnectString());
+  startGrids(4);
+  waitForRemoteNodes(grid(0),3);
+  assertEquals(4,zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size());
+  Collection<InstanceSpec> instances=zkCluster.getInstances();
+  zkCluster.stop();
+  Thread.sleep(1000);
+  zkCluster=new TestingCluster(instances);
+  zkCluster.start();
+  zkCurator.blockUntilConnected();
+  assertEquals(4,zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size());
+  stopAllGrids();
+  Thread.sleep(2000);
+  assertEquals(0,zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size());
+}

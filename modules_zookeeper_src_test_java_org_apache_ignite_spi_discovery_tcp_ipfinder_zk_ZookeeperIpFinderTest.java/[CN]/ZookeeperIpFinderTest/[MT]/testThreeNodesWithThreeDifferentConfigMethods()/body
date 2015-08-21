@@ -1,0 +1,13 @@
+{
+  startGrid(0);
+  CountDownLatch latch=expectJoinEvents(grid(0),2);
+  startGrid(1);
+  System.setProperty(TcpDiscoveryZookeeperIpFinder.PROP_ZK_CONNECTION_STRING,zkCluster.getConnectString());
+  startGrid(2);
+  waitForRemoteNodes(grid(0),2);
+  assertEquals(3,grid(0).cluster().metrics().getTotalNodes());
+  assertEquals(3,grid(1).cluster().metrics().getTotalNodes());
+  assertEquals(3,grid(2).cluster().metrics().getTotalNodes());
+  latch.await(1,TimeUnit.SECONDS);
+  stopAllGrids();
+}
