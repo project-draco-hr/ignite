@@ -2,10 +2,10 @@
   final Ignite ignite1=ignite(1);
   assertTrue(ignite1.configuration().isClientMode());
   ignite1.createNearCache(null,new NearCacheConfiguration<>());
+  final Integer key=1;
   IgniteInternalFuture<?> fut1=GridTestUtils.runMultiThreadedAsync(new Callable<Object>(){
     @Override public Object call() throws Exception {
-      IgniteCache cache=ignite1.cache(null);
-      int key=1;
+      IgniteCache<Integer,Integer> cache=ignite1.cache(null);
       for (int i=0; i < 100; i++)       cache.put(key,1);
       return null;
     }
@@ -13,8 +13,7 @@
 ,5,"put1-thread");
   IgniteInternalFuture<?> fut2=GridTestUtils.runMultiThreadedAsync(new Callable<Object>(){
     @Override public Object call() throws Exception {
-      IgniteCache cache=ignite1.cache(null);
-      int key=1;
+      IgniteCache<Integer,Integer> cache=ignite1.cache(null);
       IgniteTransactions txs=ignite1.transactions();
       for (int i=0; i < 100; i++) {
         try (Transaction tx=txs.txStart(PESSIMISTIC,REPEATABLE_READ)){
