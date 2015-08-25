@@ -1,9 +1,4 @@
 {
-  if (ctx.config().isDaemon()) {
-    sharedCtx=createSharedContext(ctx,CU.startStoreSessionListeners(ctx,null));
-    for (    GridCacheSharedManager mgr : sharedCtx.managers())     mgr.start(sharedCtx);
-    return;
-  }
   DeploymentMode depMode=ctx.config().getDeploymentMode();
   if (!F.isEmpty(ctx.config().getCacheConfiguration())) {
     if (depMode != CONTINUOUS && depMode != SHARED)     U.warn(log,"Deployment mode for cache is not CONTINUOUS or SHARED " + "(it is recommended that you change deployment mode and restart): " + depMode,"Deployment mode for cache is not CONTINUOUS or SHARED.");
@@ -20,6 +15,7 @@
   sharedCtx=createSharedContext(ctx,CU.startStoreSessionListeners(ctx,ctx.config().getCacheStoreSessionListenerFactories()));
   ctx.performance().add("Disable serializable transactions (set 'txSerializableEnabled' to false)",!ctx.config().getTransactionConfiguration().isTxSerializableEnabled());
   for (int i=0; i < cfgs.length; i++) {
+    if (ctx.config().isDaemon() && !CU.isMarshallerCache(cfgs[i].getName()))     continue;
     checkSerializable(cfgs[i]);
     CacheConfiguration<?,?> cfg=new CacheConfiguration(cfgs[i]);
     CacheObjectContext cacheObjCtx=ctx.cacheObjects().contextForCache(cfg);
