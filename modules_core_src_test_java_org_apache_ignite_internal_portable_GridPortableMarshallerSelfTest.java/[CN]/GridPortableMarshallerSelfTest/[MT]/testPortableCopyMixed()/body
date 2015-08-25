@@ -1,0 +1,31 @@
+{
+  PortableMarshaller marsh=new PortableMarshaller();
+  marsh.setTypeConfigurations(Arrays.asList(new PortableTypeConfiguration(SimpleObject.class.getName())));
+  SimpleObject obj=simpleObject();
+  PortableObject po=marshal(obj,marsh);
+  Map<String,Object> map=new HashMap<>(3,1.0f);
+  SimpleObject newObj=new SimpleObject();
+  newObj.i=12345;
+  newObj.fArr=new float[]{5,8,0};
+  newObj.str="newStr";
+  map.put("i",1234);
+  map.put("str","str555");
+  map.put("inner",newObj);
+  map.put("s",(short)2323);
+  map.put("bArr",new byte[]{6,7,9});
+  map.put("b",(byte)111);
+  PortableObject copy=copy(po,map);
+  assertEquals(1234,copy.<Integer>field("i").intValue());
+  assertEquals("str555",copy.<String>field("str"));
+  assertEquals(newObj,copy.<PortableObject>field("inner").deserialize());
+  assertEquals((short)2323,copy.<Short>field("s").shortValue());
+  assertArrayEquals(new byte[]{6,7,9},copy.<byte[]>field("bArr"));
+  assertEquals((byte)111,copy.<Byte>field("b").byteValue());
+  SimpleObject obj0=copy.deserialize();
+  assertEquals(1234,obj0.i);
+  assertEquals("str555",obj0.str);
+  assertEquals(newObj,obj0.inner);
+  assertEquals((short)2323,obj0.s);
+  assertArrayEquals(new byte[]{6,7,9},obj0.bArr);
+  assertEquals((byte)111,obj0.b);
+}

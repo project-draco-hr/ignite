@@ -1,0 +1,17 @@
+{
+  IgniteCache<Integer,TestPortable> cache=grid(0).cache(null);
+  String fieldOneVal="123";
+  int fieldTwoVal=123;
+  int key=0;
+  cache.put(key,new TestPortable(fieldOneVal,fieldTwoVal));
+  IgniteCache<Integer,PortableObject> prj=grid(0).cache(null).withKeepPortable();
+  PortableObject cacheVal=prj.get(key);
+  assertEquals(fieldOneVal,cacheVal.field("fieldOne"));
+  assertEquals(new Integer(fieldTwoVal),cacheVal.field("fieldTwo"));
+  List<?> row=F.first(prj.query(new SqlFieldsQuery("select _val from " + "TestPortable where _key = ?").setArgs(key)).getAll());
+  assertEquals(1,row.size());
+  PortableObject qryVal=(PortableObject)row.get(0);
+  assertEquals(fieldOneVal,qryVal.field("fieldOne"));
+  assertEquals(new Integer(fieldTwoVal),qryVal.field("fieldTwo"));
+  assertSame(cacheVal,qryVal);
+}

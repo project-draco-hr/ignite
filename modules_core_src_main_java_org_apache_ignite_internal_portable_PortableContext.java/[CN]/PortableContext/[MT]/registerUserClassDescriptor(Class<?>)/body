@@ -1,0 +1,17 @@
+{
+  PortableClassDescriptor desc;
+  boolean registered;
+  String typeName=typeName(cls.getName());
+  PortableIdMapper idMapper=idMapper(typeName);
+  int typeId=idMapper.typeId(typeName);
+  try {
+    registered=marshCtx.registerClass(typeId,cls);
+  }
+ catch (  IgniteCheckedException e) {
+    throw new PortableException("Failed to register class.",e);
+  }
+  desc=new PortableClassDescriptor(this,cls,true,typeId,typeName,idMapper,null,marsh.isUseTimestamp(),marsh.isMetaDataEnabled(),marsh.isKeepDeserialized(),registered);
+  userTypes.put(typeId,desc);
+  descByCls.put(cls,desc);
+  return desc;
+}

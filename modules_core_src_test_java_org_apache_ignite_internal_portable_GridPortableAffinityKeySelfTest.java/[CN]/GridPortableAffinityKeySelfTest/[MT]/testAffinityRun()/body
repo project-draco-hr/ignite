@@ -1,0 +1,14 @@
+{
+  Affinity<Object> aff=grid(0).affinity(null);
+  for (int i=0; i < 1000; i++) {
+    nodeId.set(null);
+    grid(0).compute().affinityRun(null,new TestObject(i),new IgniteRunnable(){
+      @IgniteInstanceResource private Ignite ignite;
+      @Override public void run(){
+        nodeId.set(ignite.configuration().getNodeId());
+      }
+    }
+);
+    assertEquals(aff.mapKeyToNode(i).id(),nodeId.get());
+  }
+}

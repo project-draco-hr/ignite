@@ -1,0 +1,57 @@
+{
+  log.info("Transform: " + key);
+  IgniteCache<Integer,PortableObject> c=keepPortableCache();
+  try {
+    c.invoke(key,new EntryProcessor<Integer,PortableObject,Void>(){
+      @Override public Void process(      MutableEntry<Integer,PortableObject> e,      Object... args){
+        PortableObject val=e.getValue();
+        assertNull("Unexpected value: " + val,val);
+        return null;
+      }
+    }
+);
+    jcache(0).put(key,new TestObject(1));
+    c.invoke(key,new EntryProcessor<Integer,PortableObject,Void>(){
+      @Override public Void process(      MutableEntry<Integer,PortableObject> e,      Object... args){
+        PortableObject val=e.getValue();
+        assertNotNull("Unexpected value: " + val,val);
+        assertEquals(new Integer(1),val.field("val"));
+        Ignite ignite=e.unwrap(Ignite.class);
+        IgnitePortables portables=ignite.portables();
+        PortableBuilder builder=portables.builder(val);
+        builder.setField("val",2);
+        e.setValue(builder.build());
+        return null;
+      }
+    }
+);
+    PortableObject obj=c.get(key);
+    assertEquals(new Integer(2),obj.field("val"));
+    c.invoke(key,new EntryProcessor<Integer,PortableObject,Void>(){
+      @Override public Void process(      MutableEntry<Integer,PortableObject> e,      Object... args){
+        PortableObject val=e.getValue();
+        assertNotNull("Unexpected value: " + val,val);
+        assertEquals(new Integer(2),val.field("val"));
+        e.setValue(val);
+        return null;
+      }
+    }
+);
+    obj=c.get(key);
+    assertEquals(new Integer(2),obj.field("val"));
+    c.invoke(key,new EntryProcessor<Integer,PortableObject,Void>(){
+      @Override public Void process(      MutableEntry<Integer,PortableObject> e,      Object... args){
+        PortableObject val=e.getValue();
+        assertNotNull("Unexpected value: " + val,val);
+        assertEquals(new Integer(2),val.field("val"));
+        e.remove();
+        return null;
+      }
+    }
+);
+    assertNull(c.get(key));
+  }
+  finally {
+    c.remove(key);
+  }
+}

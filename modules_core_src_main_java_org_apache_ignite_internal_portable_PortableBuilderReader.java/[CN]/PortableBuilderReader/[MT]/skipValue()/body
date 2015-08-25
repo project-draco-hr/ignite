@@ -1,0 +1,97 @@
+{
+  byte type=arr[pos++];
+  int len;
+switch (type) {
+case GridPortableMarshaller.NULL:
+    return;
+case GridPortableMarshaller.OBJ:
+  pos+=readInt(GridPortableMarshaller.TOTAL_LEN_POS - 1) - 1;
+return;
+case GridPortableMarshaller.BOOLEAN:
+case GridPortableMarshaller.BYTE:
+len=1;
+break;
+case GridPortableMarshaller.CHAR:
+case GridPortableMarshaller.SHORT:
+len=2;
+break;
+case GridPortableMarshaller.HANDLE:
+case GridPortableMarshaller.FLOAT:
+case GridPortableMarshaller.INT:
+len=4;
+break;
+case GridPortableMarshaller.ENUM:
+len=8;
+break;
+case GridPortableMarshaller.LONG:
+case GridPortableMarshaller.DOUBLE:
+len=8;
+break;
+case GridPortableMarshaller.BYTE_ARR:
+case GridPortableMarshaller.BOOLEAN_ARR:
+len=4 + readLength();
+break;
+case GridPortableMarshaller.STRING:
+len=4 + readStringLength();
+break;
+case GridPortableMarshaller.DECIMAL:
+len=4 + 4 + readInt(4);
+break;
+case GridPortableMarshaller.UUID:
+len=8 + 8;
+break;
+case GridPortableMarshaller.DATE:
+len=8 + 4;
+break;
+case GridPortableMarshaller.CHAR_ARR:
+case GridPortableMarshaller.SHORT_ARR:
+len=4 + readLength() * 2;
+break;
+case GridPortableMarshaller.INT_ARR:
+case GridPortableMarshaller.FLOAT_ARR:
+len=4 + readLength() * 4;
+break;
+case GridPortableMarshaller.LONG_ARR:
+case GridPortableMarshaller.DOUBLE_ARR:
+len=4 + readLength() * 8;
+break;
+case GridPortableMarshaller.DECIMAL_ARR:
+case GridPortableMarshaller.DATE_ARR:
+case GridPortableMarshaller.OBJ_ARR:
+case GridPortableMarshaller.ENUM_ARR:
+case GridPortableMarshaller.UUID_ARR:
+case GridPortableMarshaller.STRING_ARR:
+{
+int size=readInt();
+for (int i=0; i < size; i++) skipValue();
+return;
+}
+case GridPortableMarshaller.COL:
+{
+int size=readInt();
+pos++;
+for (int i=0; i < size; i++) skipValue();
+return;
+}
+case GridPortableMarshaller.MAP:
+{
+int size=readInt();
+pos++;
+for (int i=0; i < size; i++) {
+skipValue();
+skipValue();
+}
+return;
+}
+case GridPortableMarshaller.MAP_ENTRY:
+skipValue();
+skipValue();
+return;
+case GridPortableMarshaller.PORTABLE_OBJ:
+len=readInt() + 4;
+break;
+default :
+throw new PortableException("Invalid flag value: " + type);
+}
+pos+=len;
+}

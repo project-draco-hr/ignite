@@ -1,0 +1,16 @@
+{
+  marsh=new PortableMarshaller();
+  PortableTypeConfiguration typeCfg=new PortableTypeConfiguration(TestObject1.class.getName());
+  typeCfg.setMetaDataEnabled(false);
+  marsh.setTypeConfigurations(Arrays.asList(new PortableTypeConfiguration(TestObject2.class.getName()),typeCfg));
+  try {
+    startGrid();
+    portables().toPortable(new TestObject1());
+    portables().toPortable(new TestObject2());
+    assertEquals(0,portables().metadata(TestObject1.class).fields().size());
+    assertEquals(1,portables().metadata(TestObject2.class).fields().size());
+  }
+  finally {
+    stopGrid();
+  }
+}

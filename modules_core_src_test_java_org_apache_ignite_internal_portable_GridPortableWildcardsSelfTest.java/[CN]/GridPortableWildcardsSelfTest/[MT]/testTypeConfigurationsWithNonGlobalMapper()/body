@@ -1,0 +1,23 @@
+{
+  PortableContext ctx=portableContext();
+  PortableMarshaller marsh=portableMarshaller();
+  marsh.setIdMapper(new PortableIdMapper(){
+    @SuppressWarnings("IfMayBeConditional") @Override public int typeId(    String clsName){
+      if (clsName.endsWith("1"))       return 100;
+ else       if (clsName.endsWith("2"))       return 200;
+ else       if (clsName.endsWith("InnerClass"))       return 300;
+ else       return -500;
+    }
+    @Override public int fieldId(    int typeId,    String fieldName){
+      return 0;
+    }
+  }
+);
+  marsh.setTypeConfigurations(Arrays.asList(new PortableTypeConfiguration("org.apache.ignite.internal.portable.test.*"),new PortableTypeConfiguration("unknown.*")));
+  ctx.configure(marsh);
+  Map<String,PortableIdMapper> typeMappers=U.field(ctx,"typeMappers");
+  assertEquals(3,typeMappers.size());
+  assertEquals(100,typeMappers.get("GridPortableTestClass1").typeId("GridPortableTestClass1"));
+  assertEquals(200,typeMappers.get("GridPortableTestClass2").typeId("GridPortableTestClass2"));
+  assertEquals(300,typeMappers.get("InnerClass").typeId("InnerClass"));
+}

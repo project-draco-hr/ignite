@@ -1,0 +1,30 @@
+{
+  PortableMarshaller marsh1=new PortableMarshaller();
+  PortableTypeConfiguration customMappingType=new PortableTypeConfiguration(TestPortableObject.class.getName());
+  customMappingType.setIdMapper(new PortableIdMapper(){
+    @Override public int typeId(    String clsName){
+      String typeName;
+      try {
+        Method mtd=PortableContext.class.getDeclaredMethod("typeName",String.class);
+        mtd.setAccessible(true);
+        typeName=(String)mtd.invoke(null,clsName);
+      }
+ catch (      NoSuchMethodException|InvocationTargetException|IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+      return typeName.toLowerCase().hashCode();
+    }
+    @Override public int fieldId(    int typeId,    String fieldName){
+      return fieldName.toLowerCase().hashCode();
+    }
+  }
+);
+  marsh1.setTypeConfigurations(Arrays.asList(new PortableTypeConfiguration(SimpleObject.class.getName()),customMappingType));
+  TestPortableObject obj=portableObject();
+  PortableObjectImpl po=marshal(obj,marsh1);
+  PortableMarshaller marsh2=new PortableMarshaller();
+  marsh2.setTypeConfigurations(Arrays.asList(new PortableTypeConfiguration(SimpleObject.class.getName()),new PortableTypeConfiguration(TestPortableObject.class.getName())));
+  PortableContext ctx=initPortableContext(marsh2);
+  po.context(ctx);
+  assertEquals(obj,po.deserialize());
+}

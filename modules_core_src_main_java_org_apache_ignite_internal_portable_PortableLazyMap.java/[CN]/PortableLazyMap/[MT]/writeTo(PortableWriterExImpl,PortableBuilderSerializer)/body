@@ -1,0 +1,22 @@
+{
+  if (delegate == null) {
+    int size=reader.readIntAbsolute(off + 1);
+    int hdrSize=1 + 4 + 1;
+    writer.write(reader.array(),off,hdrSize);
+    reader.position(off + hdrSize);
+    for (int i=0; i < size; i++) {
+      ctx.writeValue(writer,reader.parseValue());
+      ctx.writeValue(writer,reader.parseValue());
+    }
+  }
+ else {
+    writer.writeByte(GridPortableMarshaller.MAP);
+    writer.writeInt(delegate.size());
+    byte colType=reader.array()[off + 1 + 4];
+    writer.writeByte(colType);
+    for (    Entry<Object,Object> entry : delegate.entrySet()) {
+      ctx.writeValue(writer,entry.getKey());
+      ctx.writeValue(writer,entry.getValue());
+    }
+  }
+}

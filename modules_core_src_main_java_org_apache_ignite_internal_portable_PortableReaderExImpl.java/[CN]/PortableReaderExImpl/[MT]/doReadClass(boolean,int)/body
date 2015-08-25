@@ -1,0 +1,18 @@
+{
+  Class cls;
+  if (typeId == OBJECT_TYPE_ID)   return Object.class;
+  if (typeId != UNREGISTERED_TYPE_ID)   cls=ctx.descriptorForTypeId(true,typeId,ldr).describedClass();
+ else {
+    byte flag=doReadByte(raw);
+    if (flag != STRING)     throw new PortableException("No class definition for typeId: " + typeId);
+    String clsName=doReadString(raw);
+    try {
+      cls=U.forName(clsName,ldr);
+    }
+ catch (    ClassNotFoundException e) {
+      throw new PortableInvalidClassException("Failed to load the class: " + clsName,e);
+    }
+    ctx.descriptorForClass(cls);
+  }
+  return cls;
+}

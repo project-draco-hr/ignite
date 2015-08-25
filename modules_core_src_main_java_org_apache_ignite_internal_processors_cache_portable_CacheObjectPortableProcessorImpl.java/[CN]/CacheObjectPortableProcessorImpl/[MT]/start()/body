@@ -1,0 +1,35 @@
+{
+  if (marsh instanceof PortableMarshaller) {
+    PortableMetaDataHandler metaHnd=new PortableMetaDataHandler(){
+      @Override public void addMeta(      int typeId,      PortableMetadata newMeta) throws PortableException {
+        if (metaDataCache == null) {
+          PortableMetadata oldMeta=metaBuf.get(typeId);
+          if (oldMeta == null || checkMeta(typeId,oldMeta,newMeta,null)) {
+synchronized (this) {
+              Map<String,String> fields=new HashMap<>();
+              if (checkMeta(typeId,oldMeta,newMeta,fields)) {
+                newMeta=new PortableMetaDataImpl(newMeta.typeName(),fields,newMeta.affinityKeyFieldName());
+                metaBuf.put(typeId,newMeta);
+              }
+ else               return;
+            }
+            if (metaDataCache == null)             return;
+ else             metaBuf.remove(typeId);
+          }
+ else           return;
+        }
+        CacheObjectPortableProcessorImpl.this.addMeta(typeId,newMeta);
+      }
+      @Override public PortableMetadata metadata(      int typeId) throws PortableException {
+        if (metaDataCache == null)         U.awaitQuiet(startLatch);
+        return CacheObjectPortableProcessorImpl.this.metadata(typeId);
+      }
+    }
+;
+    PortableMarshaller pMarh0=(PortableMarshaller)marsh;
+    portableCtx=new PortableContext(metaHnd,ctx.gridName());
+    IgniteUtils.invoke(PortableMarshaller.class,pMarh0,"setPortableContext",portableCtx);
+    portableMarsh=new GridPortableMarshaller(portableCtx);
+    portables=new IgnitePortablesImpl(ctx,this);
+  }
+}
