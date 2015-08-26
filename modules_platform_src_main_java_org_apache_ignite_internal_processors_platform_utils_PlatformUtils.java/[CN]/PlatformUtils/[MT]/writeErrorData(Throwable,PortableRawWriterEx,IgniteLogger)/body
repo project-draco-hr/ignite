@@ -1,0 +1,26 @@
+{
+  if (err instanceof PlatformExtendedException) {
+    PlatformExtendedException err0=(PlatformExtendedException)err;
+    writer.writeBoolean(true);
+    int pos=writer.out().position();
+    try {
+      writer.writeBoolean(true);
+      err0.writeData(writer);
+    }
+ catch (    Exception e) {
+      if (log != null)       U.warn(log,"Failed to write interop exception data: " + e.getMessage(),e);
+      writer.out().position(pos);
+      writer.writeBoolean(false);
+      writer.writeString(e.getClass().getName());
+      String innerMsg;
+      try {
+        innerMsg=e.getMessage();
+      }
+ catch (      Exception innerErr) {
+        innerMsg="Exception message is not available.";
+      }
+      writer.writeString(innerMsg);
+    }
+  }
+ else   writer.writeBoolean(false);
+}
