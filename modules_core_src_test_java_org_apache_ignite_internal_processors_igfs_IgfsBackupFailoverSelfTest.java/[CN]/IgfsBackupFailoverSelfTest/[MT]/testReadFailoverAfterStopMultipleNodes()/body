@@ -1,0 +1,26 @@
+{
+  final IgfsImpl igfs0=nodeDatas[0].igfsImpl;
+  clear(igfs0);
+  IgfsAbstractSelfTest.create(igfs0,paths(DIR,SUBDIR),null);
+  for (int f=0; f < files; f++) {
+    final byte[] data=createChunk(fileSize,f);
+    createFile(igfs0,filePath(f),true,-1,data);
+  }
+  for (int f=0; f < files; f++) {
+    IgfsPath path=filePath(f);
+    byte[] data=createChunk(fileSize,f);
+    checkExist(igfs0,path);
+    checkFileContent(igfs0,path,data);
+    for (int n=1; n < numIgfsNodes; n++) {
+      checkExist(nodeDatas[n].igfsImpl,path);
+      checkFileContent(nodeDatas[n].igfsImpl,path,data);
+    }
+  }
+  for (int n=1; n < numIgfsNodes; n++)   stopGrid(n);
+  for (int f=0; f < files; f++) {
+    IgfsPath path=filePath(f);
+    byte[] data=createChunk(fileSize,f);
+    checkExist(igfs0,path);
+    checkFileContent(igfs0,path,data);
+  }
+}
