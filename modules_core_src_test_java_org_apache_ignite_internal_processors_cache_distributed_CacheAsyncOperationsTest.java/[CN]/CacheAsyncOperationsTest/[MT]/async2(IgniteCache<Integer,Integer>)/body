@@ -1,0 +1,42 @@
+{
+  cache.put(1,1);
+  latch=new CountDownLatch(1);
+  IgniteCache<Integer,Integer> asyncCache=cache.withAsync();
+  asyncCache.put(0,0);
+  IgniteFuture<?> fut1=asyncCache.future();
+  asyncCache.put(0,0);
+  IgniteFuture<?> fut2=asyncCache.future();
+  asyncCache.getAndPut(1,2);
+  IgniteFuture<?> fut3=asyncCache.future();
+  asyncCache.put(0,0);
+  IgniteFuture<?> fut4=asyncCache.future();
+  assertFalse(fut1.isDone());
+  assertFalse(fut2.isDone());
+  assertFalse(fut3.isDone());
+  assertFalse(fut4.isDone());
+  latch.countDown();
+  try {
+    fut1.get();
+    fail();
+  }
+ catch (  CacheException e) {
+    log.info("Expected error: " + e);
+  }
+  try {
+    fut2.get();
+    fail();
+  }
+ catch (  CacheException e) {
+    log.info("Expected error: " + e);
+  }
+  assertEquals(1,fut3.get());
+  try {
+    fut4.get();
+    fail();
+  }
+ catch (  CacheException e) {
+    log.info("Expected error: " + e);
+  }
+  assertNull(cache.get(0));
+  assertEquals((Integer)2,cache.get(1));
+}
