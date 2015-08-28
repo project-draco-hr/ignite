@@ -1,0 +1,20 @@
+{
+  if (results == null) {
+    writer.writeInt(-1);
+    return;
+  }
+  writer.writeInt(results.size());
+  for (  Map.Entry<Object,EntryProcessorResult> entry : results.entrySet()) {
+    writer.writeObjectDetached(entry.getKey());
+    EntryProcessorResult procRes=entry.getValue();
+    try {
+      Object res=procRes.get();
+      writer.writeBoolean(false);
+      writer.writeObjectDetached(res);
+    }
+ catch (    Exception ex) {
+      writer.writeBoolean(true);
+      writeError(writer,ex);
+    }
+  }
+}
