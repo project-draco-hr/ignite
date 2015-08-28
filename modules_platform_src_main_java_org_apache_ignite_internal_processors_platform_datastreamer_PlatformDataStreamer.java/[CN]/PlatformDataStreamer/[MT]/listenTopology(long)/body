@@ -1,0 +1,16 @@
+{
+  lsnr=new GridLocalEventListener(){
+    @Override public void onEvent(    Event evt){
+      DiscoveryEvent discoEvt=(DiscoveryEvent)evt;
+      long topVer=discoEvt.topologyVersion();
+      int topSize=platformCtx.kernalContext().discovery().cacheNodes(cacheName,new AffinityTopologyVersion(topVer)).size();
+      platformCtx.gateway().dataStreamerTopologyUpdate(ptr,topVer,topSize);
+    }
+  }
+;
+  platformCtx.kernalContext().event().addLocalEventListener(lsnr,EVT_NODE_JOINED,EVT_NODE_FAILED,EVT_NODE_LEFT);
+  GridDiscoveryManager discoMgr=platformCtx.kernalContext().discovery();
+  long topVer=discoMgr.topologyVersion();
+  int topSize=discoMgr.cacheNodes(cacheName,new AffinityTopologyVersion(topVer)).size();
+  platformCtx.gateway().dataStreamerTopologyUpdate(ptr,topVer,topSize);
+}
