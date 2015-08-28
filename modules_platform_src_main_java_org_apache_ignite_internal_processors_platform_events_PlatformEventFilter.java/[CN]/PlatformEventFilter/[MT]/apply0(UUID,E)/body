@@ -1,0 +1,22 @@
+{
+  if (!ctx.isEventTypeSupported(evt.type()))   return false;
+  if (types != null) {
+    boolean match=false;
+    for (    int type : types) {
+      if (type == evt.type()) {
+        match=true;
+        break;
+      }
+    }
+    if (!match)     return false;
+  }
+  try (PlatformMemory mem=ctx.memory().allocate()){
+    PlatformOutputStream out=mem.output();
+    PortableRawWriterEx writer=ctx.writer(out);
+    ctx.writeEvent(writer,(EventAdapter)evt);
+    writer.writeUuid(uuid);
+    out.synchronize();
+    int res=ctx.gateway().eventFilterApply(hnd,mem.pointer());
+    return res != 0;
+  }
+ }
