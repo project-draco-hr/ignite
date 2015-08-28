@@ -1,0 +1,21 @@
+{
+  if (err == null) {
+    writer.writeBoolean(true);
+    writer.writeObject(resObj);
+  }
+ else {
+    writer.writeBoolean(false);
+    PlatformNativeException nativeErr=null;
+    if (err instanceof IgniteCheckedException)     nativeErr=((IgniteCheckedException)err).getCause(PlatformNativeException.class);
+ else     if (err instanceof IgniteException)     nativeErr=((IgniteException)err).getCause(PlatformNativeException.class);
+    if (nativeErr == null) {
+      writer.writeBoolean(false);
+      writer.writeString(err.getClass().getName());
+      writer.writeString(err.getMessage());
+    }
+ else {
+      writer.writeBoolean(true);
+      writer.writeObject(nativeErr.cause());
+    }
+  }
+}

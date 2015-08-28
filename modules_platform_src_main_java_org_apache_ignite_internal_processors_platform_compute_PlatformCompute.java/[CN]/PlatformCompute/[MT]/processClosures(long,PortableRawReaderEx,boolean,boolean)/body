@@ -1,0 +1,32 @@
+{
+  PlatformAbstractTask task;
+  int size=reader.readInt();
+  if (size == 1) {
+    if (broadcast) {
+      PlatformBroadcastingSingleClosureTask task0=new PlatformBroadcastingSingleClosureTask(platformCtx,taskPtr);
+      task0.job(nextClosureJob(task0,reader));
+      task=task0;
+    }
+ else     if (affinity) {
+      PlatformBalancingSingleClosureAffinityTask task0=new PlatformBalancingSingleClosureAffinityTask(platformCtx,taskPtr);
+      task0.job(nextClosureJob(task0,reader));
+      task0.affinity(reader.readString(),reader.readObjectDetached(),platformCtx.kernalContext());
+      task=task0;
+    }
+ else {
+      PlatformBalancingSingleClosureTask task0=new PlatformBalancingSingleClosureTask(platformCtx,taskPtr);
+      task0.job(nextClosureJob(task0,reader));
+      task=task0;
+    }
+  }
+ else {
+    if (broadcast)     task=new PlatformBroadcastingMultiClosureTask(platformCtx,taskPtr);
+ else     task=new PlatformBalancingMultiClosureTask(platformCtx,taskPtr);
+    Collection<PlatformJob> jobs=new ArrayList<>(size);
+    for (int i=0; i < size; i++)     jobs.add(nextClosureJob(task,reader));
+    if (broadcast)     ((PlatformBroadcastingMultiClosureTask)task).jobs(jobs);
+ else     ((PlatformBalancingMultiClosureTask)task).jobs(jobs);
+  }
+  platformCtx.kernalContext().task().setThreadContext(TC_SUBGRID,compute.clusterGroup().nodes());
+  executeNative0(task);
+}
