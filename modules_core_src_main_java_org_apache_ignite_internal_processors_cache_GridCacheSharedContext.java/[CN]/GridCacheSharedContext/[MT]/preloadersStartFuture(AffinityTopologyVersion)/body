@@ -2,10 +2,12 @@
   if (preloadersStartFut == null) {
     GridCompoundFuture<Object,Object> compound=null;
     for (    GridCacheContext<?,?> cacheCtx : cacheContexts()) {
-      IgniteInternalFuture<Object> startFut=cacheCtx.preloader().startFuture();
-      if (!startFut.isDone()) {
-        if (compound == null)         compound=new GridCompoundFuture<>();
-        compound.add(startFut);
+      if (cacheCtx.startTopologyVersion() != null && cacheCtx.startTopologyVersion().compareTo(topVer) <= 0) {
+        IgniteInternalFuture<Object> startFut=cacheCtx.preloader().startFuture();
+        if (!startFut.isDone()) {
+          if (compound == null)           compound=new GridCompoundFuture<>();
+          compound.add(startFut);
+        }
       }
     }
     if (compound != null) {
