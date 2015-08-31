@@ -1,0 +1,51 @@
+{
+switch (type) {
+case OP_METRICS_FILTERED:
+{
+      Collection<UUID> ids=PlatformUtils.readCollection(reader);
+      platformCtx.writeClusterMetrics(writer,prj.forNodeIds(ids).metrics());
+      break;
+    }
+case OP_NODES:
+{
+    long oldTopVer=reader.readLong();
+    long curTopVer=platformCtx.kernalContext().discovery().topologyVersion();
+    if (curTopVer > oldTopVer) {
+      writer.writeBoolean(true);
+      writer.writeLong(curTopVer);
+      Collection<ClusterNode> nodes=prj.nodes();
+      platformCtx.writeNodes(writer,nodes);
+    }
+ else     writer.writeBoolean(false);
+    break;
+  }
+case OP_NODE_METRICS:
+{
+  UUID nodeId=reader.readUuid();
+  long lastUpdateTime=reader.readLong();
+  ClusterNode node=platformCtx.kernalContext().discovery().node(nodeId);
+  ClusterMetrics metrics=null;
+  if (node != null) {
+    ClusterMetrics metrics0=node.metrics();
+    long triggerTime=lastUpdateTime + platformCtx.kernalContext().config().getMetricsUpdateFrequency();
+    metrics=metrics0.getLastUpdateTime() > triggerTime ? metrics0 : null;
+  }
+  platformCtx.writeClusterMetrics(writer,metrics);
+  break;
+}
+case OP_METADATA:
+{
+int typeId=reader.readInt();
+platformCtx.writeMetadata(writer,typeId);
+break;
+}
+case OP_TOPOLOGY:
+{
+long topVer=reader.readLong();
+platformCtx.writeNodes(writer,topology(topVer));
+break;
+}
+default :
+super.processInStreamOutStream(type,reader,writer);
+}
+}
