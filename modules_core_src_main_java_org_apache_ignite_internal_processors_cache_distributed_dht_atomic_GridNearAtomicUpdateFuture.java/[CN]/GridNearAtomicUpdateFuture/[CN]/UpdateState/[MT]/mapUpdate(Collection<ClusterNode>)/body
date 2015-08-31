@@ -1,0 +1,61 @@
+{
+  Iterator<?> it=null;
+  if (vals != null)   it=vals.iterator();
+  Iterator<GridCacheDrInfo> conflictPutValsIt=null;
+  if (conflictPutVals != null)   conflictPutValsIt=conflictPutVals.iterator();
+  Iterator<GridCacheVersion> conflictRmvValsIt=null;
+  if (conflictRmvVals != null)   conflictRmvValsIt=conflictRmvVals.iterator();
+  Map<UUID,GridNearAtomicUpdateRequest> pendingMappings=U.newHashMap(topNodes.size());
+  for (  Object key : keys) {
+    if (key == null)     throw new NullPointerException("Null key.");
+    Object val;
+    GridCacheVersion conflictVer;
+    long conflictTtl;
+    long conflictExpireTime;
+    if (vals != null) {
+      val=it.next();
+      conflictVer=null;
+      conflictTtl=CU.TTL_NOT_CHANGED;
+      conflictExpireTime=CU.EXPIRE_TIME_CALCULATE;
+      if (val == null)       throw new NullPointerException("Null value.");
+    }
+ else     if (conflictPutVals != null) {
+      GridCacheDrInfo conflictPutVal=conflictPutValsIt.next();
+      val=conflictPutVal.value();
+      conflictVer=conflictPutVal.version();
+      conflictTtl=conflictPutVal.ttl();
+      conflictExpireTime=conflictPutVal.expireTime();
+    }
+ else     if (conflictRmvVals != null) {
+      val=null;
+      conflictVer=conflictRmvValsIt.next();
+      conflictTtl=CU.TTL_NOT_CHANGED;
+      conflictExpireTime=CU.EXPIRE_TIME_CALCULATE;
+    }
+ else {
+      val=null;
+      conflictVer=null;
+      conflictTtl=CU.TTL_NOT_CHANGED;
+      conflictExpireTime=CU.EXPIRE_TIME_CALCULATE;
+    }
+    if (val == null && op != GridCacheOperation.DELETE)     continue;
+    KeyCacheObject cacheKey=cctx.toCacheKeyObject(key);
+    if (remapKeys != null && !remapKeys.contains(cacheKey))     continue;
+    if (op != TRANSFORM)     val=cctx.toCacheObject(val);
+    Collection<ClusterNode> affNodes=mapKey(cacheKey,topVer,fastMap);
+    if (affNodes.isEmpty())     throw new ClusterTopologyServerNotFoundException("Failed to map keys for cache " + "(all partition nodes left the grid).");
+    int i=0;
+    for (    ClusterNode affNode : affNodes) {
+      if (affNode == null)       throw new ClusterTopologyServerNotFoundException("Failed to map keys for cache " + "(all partition nodes left the grid).");
+      UUID nodeId=affNode.id();
+      GridNearAtomicUpdateRequest mapped=pendingMappings.get(nodeId);
+      if (mapped == null) {
+        mapped=new GridNearAtomicUpdateRequest(cctx.cacheId(),nodeId,futVer,fastMap,updVer,topVer,topLocked,syncMode,op,retval,expiryPlc,invokeArgs,filter,subjId,taskNameHash,skipStore,cctx.kernalContext().clientNode());
+        pendingMappings.put(nodeId,mapped);
+      }
+      mapped.addUpdateEntry(cacheKey,val,conflictTtl,conflictExpireTime,conflictVer,i == 0);
+      i++;
+    }
+  }
+  return pendingMappings;
+}

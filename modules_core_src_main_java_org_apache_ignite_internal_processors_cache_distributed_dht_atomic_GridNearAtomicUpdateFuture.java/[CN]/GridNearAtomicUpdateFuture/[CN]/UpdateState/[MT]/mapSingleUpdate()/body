@@ -1,0 +1,41 @@
+{
+  Object key=F.first(keys);
+  Object val;
+  GridCacheVersion conflictVer;
+  long conflictTtl;
+  long conflictExpireTime;
+  if (vals != null) {
+    val=F.first(vals);
+    conflictVer=null;
+    conflictTtl=CU.TTL_NOT_CHANGED;
+    conflictExpireTime=CU.EXPIRE_TIME_CALCULATE;
+  }
+ else   if (conflictPutVals != null) {
+    GridCacheDrInfo conflictPutVal=F.first(conflictPutVals);
+    val=conflictPutVal.value();
+    conflictVer=conflictPutVal.version();
+    conflictTtl=conflictPutVal.ttl();
+    conflictExpireTime=conflictPutVal.expireTime();
+  }
+ else   if (conflictRmvVals != null) {
+    val=null;
+    conflictVer=F.first(conflictRmvVals);
+    conflictTtl=CU.TTL_NOT_CHANGED;
+    conflictExpireTime=CU.EXPIRE_TIME_CALCULATE;
+  }
+ else {
+    val=null;
+    conflictVer=null;
+    conflictTtl=CU.TTL_NOT_CHANGED;
+    conflictExpireTime=CU.EXPIRE_TIME_CALCULATE;
+  }
+  if (key == null)   throw new NullPointerException("Null key.");
+  if (val == null && op != GridCacheOperation.DELETE)   throw new NullPointerException("Null value.");
+  KeyCacheObject cacheKey=cctx.toCacheKeyObject(key);
+  if (op != TRANSFORM)   val=cctx.toCacheObject(val);
+  ClusterNode primary=cctx.affinity().primary(cacheKey,topVer);
+  if (primary == null)   throw new ClusterTopologyServerNotFoundException("Failed to map keys for cache (all partition nodes " + "left the grid).");
+  GridNearAtomicUpdateRequest req=new GridNearAtomicUpdateRequest(cctx.cacheId(),primary.id(),futVer,fastMap,updVer,topVer,topLocked,syncMode,op,retval,expiryPlc,invokeArgs,filter,subjId,taskNameHash,skipStore,cctx.kernalContext().clientNode());
+  req.addUpdateEntry(cacheKey,val,conflictTtl,conflictExpireTime,conflictVer,true);
+  return req;
+}

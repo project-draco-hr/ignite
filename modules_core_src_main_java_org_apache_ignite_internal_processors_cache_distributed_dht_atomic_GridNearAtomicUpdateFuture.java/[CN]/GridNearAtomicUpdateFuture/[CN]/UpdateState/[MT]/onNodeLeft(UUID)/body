@@ -1,0 +1,13 @@
+{
+  GridNearAtomicUpdateResponse res=null;
+synchronized (this) {
+    GridNearAtomicUpdateRequest req;
+    if (singleReq != null)     req=singleReq.nodeId().equals(nodeId) ? singleReq : null;
+ else     req=mappings != null ? mappings.get(nodeId) : null;
+    if (req != null) {
+      res=new GridNearAtomicUpdateResponse(cctx.cacheId(),nodeId,req.futureVersion());
+      res.addFailedKeys(req.keys(),new ClusterTopologyCheckedException("Primary node left grid before " + "response is received: " + nodeId));
+    }
+  }
+  if (res != null)   onResult(nodeId,res,true);
+}
