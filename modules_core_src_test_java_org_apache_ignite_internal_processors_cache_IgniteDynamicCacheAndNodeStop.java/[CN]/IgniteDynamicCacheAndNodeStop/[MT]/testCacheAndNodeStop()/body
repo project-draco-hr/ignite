@@ -1,0 +1,28 @@
+{
+  final Ignite ignite=startGrid(0);
+  for (int i=0; i < 3; i++) {
+    log.info("Iteration: " + i);
+    startGrid(1);
+    final CacheConfiguration ccfg=new CacheConfiguration();
+    ignite.createCache(ccfg);
+    final CyclicBarrier barrier=new CyclicBarrier(2);
+    IgniteInternalFuture<?> fut1=GridTestUtils.runAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        barrier.await();
+        ignite.destroyCache(null);
+        return null;
+      }
+    }
+);
+    IgniteInternalFuture<?> fut2=GridTestUtils.runAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        barrier.await();
+        stopGrid(1);
+        return null;
+      }
+    }
+);
+    fut1.get();
+    fut2.get();
+  }
+}

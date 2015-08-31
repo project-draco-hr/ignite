@@ -1,9 +1,11 @@
 {
   for (  String cacheName : stopSeq) {
-    GridCacheAdapter<?,?> cache=caches.remove(maskNull(cacheName));
+    GridCacheAdapter<?,?> cache=stoppedCaches.remove(maskNull(cacheName));
     if (cache != null)     stopCache(cache,cancel);
   }
-  for (  GridCacheAdapter<?,?> cache : caches.values())   stopCache(cache,cancel);
+  for (  GridCacheAdapter<?,?> cache : stoppedCaches.values()) {
+    if (cache == stoppedCaches.remove(maskNull(cache.name())))     stopCache(cache,cancel);
+  }
   List<? extends GridCacheSharedManager<?,?>> mgrs=sharedCtx.managers();
   for (ListIterator<? extends GridCacheSharedManager<?,?>> it=mgrs.listIterator(mgrs.size()); it.hasPrevious(); ) {
     GridCacheSharedManager<?,?> mgr=it.previous();
