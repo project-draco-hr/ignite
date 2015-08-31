@@ -1,0 +1,71 @@
+{
+switch (type) {
+case OP_GET:
+{
+      writer.writeObjectDetached(cache.get(reader.readObjectDetached()));
+      break;
+    }
+case OP_GET_AND_PUT:
+{
+    writer.writeObjectDetached(cache.getAndPut(reader.readObjectDetached(),reader.readObjectDetached()));
+    break;
+  }
+case OP_GET_AND_REPLACE:
+{
+  writer.writeObjectDetached(cache.getAndReplace(reader.readObjectDetached(),reader.readObjectDetached()));
+  break;
+}
+case OP_GET_AND_REMOVE:
+{
+writer.writeObjectDetached(cache.getAndRemove(reader.readObjectDetached()));
+break;
+}
+case OP_GET_AND_PUT_IF_ABSENT:
+{
+writer.writeObjectDetached(cache.getAndPutIfAbsent(reader.readObjectDetached(),reader.readObjectDetached()));
+break;
+}
+case OP_PEEK:
+{
+Object key=reader.readObjectDetached();
+CachePeekMode[] modes=PlatformUtils.decodeCachePeekModes(reader.readInt());
+writer.writeObjectDetached(cache.localPeek(key,modes));
+break;
+}
+case OP_GET_ALL:
+{
+Set keys=PlatformUtils.readSet(reader);
+Map entries=cache.getAll(keys);
+PlatformUtils.writeNullableMap(writer,entries);
+break;
+}
+case OP_INVOKE:
+{
+Object key=reader.readObjectDetached();
+CacheEntryProcessor proc=platformCtx.createCacheEntryProcessor(reader.readObjectDetached(),0);
+try {
+writer.writeObjectDetached(cache.invoke(key,proc));
+}
+ catch (EntryProcessorException ex) {
+if (ex.getCause() instanceof PlatformNativeException) writer.writeObjectDetached(((PlatformNativeException)ex.getCause()).cause());
+ else throw ex;
+}
+break;
+}
+case OP_INVOKE_ALL:
+{
+Set<Object> keys=PlatformUtils.readSet(reader);
+CacheEntryProcessor proc=platformCtx.createCacheEntryProcessor(reader.readObjectDetached(),0);
+writeInvokeAllResult(writer,cache.invokeAll(keys,proc));
+break;
+}
+case OP_LOCK:
+writer.writeLong(registerLock(cache.lock(reader.readObjectDetached())));
+break;
+case OP_LOCK_ALL:
+writer.writeLong(registerLock(cache.lockAll(PlatformUtils.readCollection(reader))));
+break;
+default :
+super.processInStreamOutStream(type,reader,writer);
+}
+}

@@ -1,0 +1,32 @@
+{
+switch (type) {
+case OP_PARTITION:
+    return aff.partition(reader.readObjectDetached());
+case OP_IS_PRIMARY:
+{
+    UUID nodeId=reader.readUuid();
+    Object key=reader.readObjectDetached();
+    ClusterNode node=discovery.node(nodeId);
+    if (node == null)     return FALSE;
+    return aff.isPrimary(node,key) ? TRUE : FALSE;
+  }
+case OP_IS_BACKUP:
+{
+  UUID nodeId=reader.readUuid();
+  Object key=reader.readObjectDetached();
+  ClusterNode node=discovery.node(nodeId);
+  if (node == null)   return FALSE;
+  return aff.isBackup(node,key) ? TRUE : FALSE;
+}
+case OP_IS_PRIMARY_OR_BACKUP:
+{
+UUID nodeId=reader.readUuid();
+Object key=reader.readObjectDetached();
+ClusterNode node=discovery.node(nodeId);
+if (node == null) return FALSE;
+return aff.isPrimaryOrBackup(node,key) ? TRUE : FALSE;
+}
+default :
+return super.processInStreamOutLong(type,reader);
+}
+}
