@@ -1,0 +1,18 @@
+{
+  boolean interrupt=false;
+  for (  AtomicInteger state : states) {
+    while (true) {
+      int oldVal=state.get();
+      if (state.compareAndSet(oldVal,oldVal | WRITER_MASK))       break;
+    }
+    while (state.get() != WRITER_MASK) {
+      try {
+        Thread.sleep(10);
+      }
+ catch (      InterruptedException e) {
+        interrupt=true;
+      }
+    }
+  }
+  if (interrupt)   Thread.currentThread().interrupt();
+}
