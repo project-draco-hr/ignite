@@ -1,11 +1,18 @@
 {
   cacheStartedLatch.countDown();
   for (  String cacheName : stopSeq) {
-    GridCacheAdapter<?,?> cache=caches.get(maskNull(cacheName));
-    if (cache != null)     onKernalStop(cache,cancel);
+    GridCacheAdapter<?,?> cache=caches.remove(maskNull(cacheName));
+    if (cache != null) {
+      stoppedCaches.put(maskNull(cacheName),cache);
+      onKernalStop(cache,cancel);
+    }
   }
   for (  Map.Entry<String,GridCacheAdapter<?,?>> entry : caches.entrySet()) {
-    if (!stopSeq.contains(entry.getKey()))     onKernalStop(entry.getValue(),cancel);
+    GridCacheAdapter<?,?> cache=entry.getValue();
+    if (cache == caches.remove(entry.getKey())) {
+      stoppedCaches.put(entry.getKey(),cache);
+      onKernalStop(entry.getValue(),cancel);
+    }
   }
   List<? extends GridCacheSharedManager<?,?>> sharedMgrs=sharedCtx.managers();
   for (ListIterator<? extends GridCacheSharedManager<?,?>> it=sharedMgrs.listIterator(sharedMgrs.size()); it.hasPrevious(); ) {
