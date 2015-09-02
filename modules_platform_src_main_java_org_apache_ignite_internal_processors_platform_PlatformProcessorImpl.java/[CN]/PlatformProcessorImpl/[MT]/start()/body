@@ -1,0 +1,19 @@
+{
+  try (PlatformMemory mem=platformCtx.memory().allocate()){
+    PlatformOutputStream out=mem.output();
+    PortableRawWriterEx writer=platformCtx.writer(out);
+    writer.writeString(ctx.gridName());
+    out.synchronize();
+    platformCtx.gateway().onStart(mem.pointer());
+  }
+   storeLock.writeLock().lock();
+  try {
+    for (    StoreInfo store : pendingStores)     registerStore0(store.store,store.convertPortable);
+    pendingStores.clear();
+    started=true;
+  }
+  finally {
+    storeLock.writeLock().unlock();
+  }
+  ctx.addNodeAttribute(PlatformUtils.ATTR_PLATFORM,interopCfg.platform());
+}
