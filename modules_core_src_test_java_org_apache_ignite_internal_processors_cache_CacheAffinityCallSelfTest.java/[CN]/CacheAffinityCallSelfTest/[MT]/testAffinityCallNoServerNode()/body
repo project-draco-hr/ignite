@@ -1,7 +1,8 @@
 {
-  startGrids(SERVERS_COUNT + 1);
+  startGridsMultiThreaded(SERVERS_COUNT + 1);
   final Integer key=1;
   final Ignite client=grid(SERVERS_COUNT);
+  assertTrue(client.configuration().isClientMode());
   final IgniteInternalFuture<Object> fut=GridTestUtils.runAsync(new Callable<Object>(){
     @Override public Object call() throws Exception {
       for (int i=0; i < SERVERS_COUNT; ++i)       stopGrid(i);
@@ -13,13 +14,10 @@
     while (!fut.isDone())     client.compute().affinityCall(CACHE_NAME,key,new CheckCallable(key));
   }
  catch (  ComputeTaskCancelledException e) {
-    assertTrue(e.getMessage().contains("stopping"));
+    assertTrue("Unexpected error: " + e,e.getMessage().contains("stopping"));
   }
 catch (  ClusterGroupEmptyException e) {
-    assertTrue(e.getMessage().contains("Topology projection is empty"));
-  }
-catch (  IgniteException e) {
-    assertTrue(e.getMessage().contains("Client node disconnected") || e.getMessage().contains("Failed to reconnect to cluster") || e.getMessage().contains("Failed to execute task, client node disconnected."));
+    assertTrue("Unexpected error: " + e,e.getMessage().contains("Topology projection is empty"));
   }
   stopAllGrids();
 }

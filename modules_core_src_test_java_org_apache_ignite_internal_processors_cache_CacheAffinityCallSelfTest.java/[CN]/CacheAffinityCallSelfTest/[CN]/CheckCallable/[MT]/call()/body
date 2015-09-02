@@ -1,2 +1,15 @@
 {
+  if (topVers.length > 0) {
+    boolean pass=false;
+    GridCacheAffinityManager aff=((IgniteKernal)ignite).context().cache().internalCache(CACHE_NAME).context().affinity();
+    ClusterNode loc=ignite.cluster().localNode();
+    for (    long topVer : topVers) {
+      if (loc.equals(aff.primary(key,new AffinityTopologyVersion(topVer,0)))) {
+        pass=true;
+        break;
+      }
+    }
+    assertTrue(pass);
+  }
+  return null;
 }
