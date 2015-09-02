@@ -1,0 +1,24 @@
+{
+  PlatformConfiguration interopCfg=igniteCfg.getPlatformConfiguration();
+  if (interopCfg != null && !(interopCfg instanceof PlatformCppConfiguration))   throw new IgniteException("Illegal interop configuration (must be of type " + PlatformCppConfiguration.class.getName() + "): "+ interopCfg.getClass().getName());
+  PlatformCppConfiguration cppCfg=interopCfg != null ? (PlatformCppConfiguration)interopCfg : null;
+  if (cppCfg == null)   cppCfg=new PlatformCppConfiguration();
+  PlatformMemoryManagerImpl memMgr=new PlatformMemoryManagerImpl(gate,1024);
+  PlatformCppConfigurationEx cppCfg0=new PlatformCppConfigurationEx(cppCfg,gate,memMgr);
+  igniteCfg.setPlatformConfiguration(cppCfg0);
+  Marshaller marsh=igniteCfg.getMarshaller();
+  if (marsh == null) {
+    igniteCfg.setMarshaller(new PortableMarshaller());
+    cppCfg0.warnings(Collections.singleton("Marshaller is automatically set to " + PortableMarshaller.class.getName() + " (other nodes must have the same marshaller type)."));
+  }
+ else   if (!(marsh instanceof PortableMarshaller))   throw new IgniteException("Unsupported marshaller (only " + PortableMarshaller.class.getName() + " can be used when running Ignite for C++): "+ marsh.getClass().getName());
+  String ggHome=igniteCfg.getIgniteHome();
+  if (ggHome == null)   ggHome=U.getIgniteHome();
+ else   U.setIgniteHome(ggHome);
+  try {
+    U.setWorkDirectory(igniteCfg.getWorkDirectory(),ggHome);
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+}
