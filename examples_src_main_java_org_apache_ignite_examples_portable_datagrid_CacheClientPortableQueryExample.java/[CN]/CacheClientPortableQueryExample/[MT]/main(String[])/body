@@ -1,0 +1,31 @@
+{
+  try (Ignite ignite=Ignition.start("examples/config/portable/example-ignite-portable.xml")){
+    System.out.println();
+    System.out.println(">>> Portable objects cache query example started.");
+    CacheConfiguration<Integer,Organization> orgCacheCfg=new CacheConfiguration<>();
+    orgCacheCfg.setCacheMode(CacheMode.PARTITIONED);
+    orgCacheCfg.setName(ORGANIZATION_CACHE_NAME);
+    orgCacheCfg.setTypeMetadata(Arrays.asList(createOrganizationTypeMetadata()));
+    CacheConfiguration<EmployeeKey,Employee> employeeCacheCfg=new CacheConfiguration<>();
+    employeeCacheCfg.setCacheMode(CacheMode.PARTITIONED);
+    employeeCacheCfg.setName(EMPLOYEE_CACHE_NAME);
+    employeeCacheCfg.setTypeMetadata(Arrays.asList(createEmployeeTypeMetadata()));
+    try (IgniteCache<Integer,Organization> orgCache=ignite.createCache(orgCacheCfg);IgniteCache<EmployeeKey,Employee> employeeCache=ignite.createCache(employeeCacheCfg)){
+      if (ignite.cluster().forDataNodes(orgCache.getName()).nodes().isEmpty()) {
+        System.out.println();
+        System.out.println(">>> This example requires remote cache nodes to be started.");
+        System.out.println(">>> Please start at least 1 remote cache node.");
+        System.out.println(">>> Refer to example's javadoc for details on configuration.");
+        System.out.println();
+        return;
+      }
+      populateCache(orgCache,employeeCache);
+      IgniteCache<PortableObject,PortableObject> portableCache=employeeCache.withKeepPortable();
+      sqlQuery(portableCache);
+      sqlJoinQuery(portableCache);
+      sqlFieldsQuery(portableCache);
+      textQuery(portableCache);
+      System.out.println();
+    }
+   }
+ }
