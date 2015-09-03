@@ -1,23 +1,16 @@
 {
-  int handle=writer.handle(obj);
-  if (handle >= 0) {
-    writer.doWriteByte(GridPortableMarshaller.HANDLE);
-    writer.doWriteInt(handle);
-    return false;
-  }
- else {
-    int pos=writer.position();
-    writer.doWriteByte(GridPortableMarshaller.OBJ);
-    writer.doWriteBoolean(userType);
-    writer.doWriteInt(registered ? typeId : GridPortableMarshaller.UNREGISTERED_TYPE_ID);
-    writer.doWriteInt(obj instanceof CacheObjectImpl ? 0 : obj.hashCode());
-    int reserved=writer.reserve(8);
-    if (!registered)     writer.doWriteString(cls.getName());
-    int current=writer.position();
-    int len=current - pos;
-    writer.position(reserved + 4);
-    writer.doWriteInt(len);
-    writer.position(current);
-    return true;
-  }
+  if (writer.tryWriteAsHandle(obj))   return false;
+  int pos=writer.position();
+  writer.doWriteByte(GridPortableMarshaller.OBJ);
+  writer.doWriteBoolean(userType);
+  writer.doWriteInt(registered ? typeId : GridPortableMarshaller.UNREGISTERED_TYPE_ID);
+  writer.doWriteInt(obj instanceof CacheObjectImpl ? 0 : obj.hashCode());
+  int reserved=writer.reserve(8);
+  if (!registered)   writer.doWriteString(cls.getName());
+  int current=writer.position();
+  int len=current - pos;
+  writer.position(reserved + 4);
+  writer.doWriteInt(len);
+  writer.position(current);
+  return true;
 }
