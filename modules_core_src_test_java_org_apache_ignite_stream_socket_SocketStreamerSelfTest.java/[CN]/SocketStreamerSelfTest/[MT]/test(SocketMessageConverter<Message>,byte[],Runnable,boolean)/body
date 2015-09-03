@@ -1,5 +1,5 @@
 {
-  SocketStreamer<Tuple,Integer,String> sockStmr=null;
+  SocketStreamer<Message,Integer,String> sockStmr=null;
   Ignite ignite=grid(0);
   IgniteCache<Integer,String> cache=ignite.cache(null);
   cache.clear();
@@ -11,12 +11,26 @@
     sockStmr.setStreamer(stmr);
     sockStmr.setPort(port);
     sockStmr.setDelimiter(delim);
-    sockStmr.setTupleExtractor(new StreamTupleExtractor<Tuple,Integer,String>(){
-      @Override public Map.Entry<Integer,String> extract(      Tuple msg){
-        return new IgniteBiTuple<>(msg.key,msg.val);
+    if (oneMessagePerTuple) {
+      sockStmr.setTupleExtractor(new StreamTupleExtractor<Message,Integer,String>(){
+        @Override public Map.Entry<Integer,String> extract(        Message msg){
+          return new IgniteBiTuple<>(msg.key,msg.val);
+        }
       }
-    }
 );
+    }
+ else {
+      sockStmr.setMultipleTupleExtractor(new StreamMultipleTupleExtractor<Message,Integer,String>(){
+        @Override public Map<Integer,String> extract(        Message msg){
+          Map<Integer,String> answer=new HashMap<>();
+          for (          int value : msg.values) {
+            answer.put(value,Integer.toString(value));
+          }
+          return answer;
+        }
+      }
+);
+    }
     if (converter != null)     sockStmr.setConverter(converter);
     final CountDownLatch latch=new CountDownLatch(CNT);
     IgniteBiPredicate<UUID,CacheEvent> locLsnr=new IgniteBiPredicate<UUID,CacheEvent>(){
