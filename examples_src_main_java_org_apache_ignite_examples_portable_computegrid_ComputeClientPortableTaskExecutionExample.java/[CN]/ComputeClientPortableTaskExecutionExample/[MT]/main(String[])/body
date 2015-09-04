@@ -1,0 +1,23 @@
+{
+  try (Ignite ignite=Ignition.start("examples/config/portable/example-ignite-portable.xml")){
+    System.out.println();
+    System.out.println(">>> Portable objects task execution example started.");
+    if (ignite.cluster().forRemotes().nodes().isEmpty()) {
+      System.out.println();
+      System.out.println(">>> This example requires remote nodes to be started.");
+      System.out.println(">>> Please start at least 1 remote node.");
+      System.out.println(">>> Refer to example's javadoc for details on configuration.");
+      System.out.println();
+      return;
+    }
+    Collection<Employee> employees=employees();
+    System.out.println();
+    System.out.println(">>> Calculating average salary for employees:");
+    for (    Employee employee : employees)     System.out.println(">>>     " + employee);
+    Collection<PortableObject> portables=ignite.portables().toPortable(employees);
+    Long avgSalary=ignite.compute(ignite.cluster().forRemotes()).execute(new ComputeClientTask(),portables);
+    System.out.println();
+    System.out.println(">>> Average salary for all employees: " + avgSalary);
+    System.out.println();
+  }
+ }
