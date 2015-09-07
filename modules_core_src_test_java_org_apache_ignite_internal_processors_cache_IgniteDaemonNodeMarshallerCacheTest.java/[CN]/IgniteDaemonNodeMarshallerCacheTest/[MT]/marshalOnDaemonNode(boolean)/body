@@ -13,6 +13,8 @@
     assertFalse("true".equals(ignite1.cluster().localNode().attribute(ATTR_DAEMON)));
   }
   awaitPartitionMapExchange();
+  IgniteInternalFuture<?> fut=((IgniteKernal)daemonNode).context().cache().context().exchange().affinityReadyFuture(new AffinityTopologyVersion(2,0));
+  if (fut != null)   fut.get();
   TestClass1 res1=daemonNode.compute(daemonNode.cluster().forRemotes()).call(new TestCallable1());
   assertNotNull(res1);
   assertEquals(111,res1.val);
