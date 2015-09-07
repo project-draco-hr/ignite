@@ -8,10 +8,10 @@
       Map<Long,GridFutureAdapter<QueryResult<K,V>>> futs=qryIters.remove(nodeId);
       if (futs != null) {
         for (        Map.Entry<Long,GridFutureAdapter<QueryResult<K,V>>> entry : futs.entrySet()) {
-          final Object recipient=recipient(nodeId,entry.getKey());
+          final Object rcpt=recipient(nodeId,entry.getKey());
           entry.getValue().listen(new CIX1<IgniteInternalFuture<QueryResult<K,V>>>(){
             @Override public void applyx(            IgniteInternalFuture<QueryResult<K,V>> f) throws IgniteCheckedException {
-              f.get().closeIfNotShared(recipient);
+              f.get().closeIfNotShared(rcpt);
             }
           }
 );
@@ -20,10 +20,10 @@
       Map<Long,GridFutureAdapter<FieldsResult>> fieldsFuts=fieldsQryRes.remove(nodeId);
       if (fieldsFuts != null) {
         for (        Map.Entry<Long,GridFutureAdapter<FieldsResult>> entry : fieldsFuts.entrySet()) {
-          final Object recipient=recipient(nodeId,entry.getKey());
+          final Object rcpt=recipient(nodeId,entry.getKey());
           entry.getValue().listen(new CIX1<IgniteInternalFuture<FieldsResult>>(){
             @Override public void applyx(            IgniteInternalFuture<FieldsResult> f) throws IgniteCheckedException {
-              f.get().closeIfNotShared(recipient);
+              f.get().closeIfNotShared(rcpt);
             }
           }
 );
@@ -34,4 +34,6 @@
 ;
   cctx.events().addListener(lsnr,EVT_NODE_LEFT,EVT_NODE_FAILED);
   enabled=GridQueryProcessor.isEnabled(cctx.config());
+  qryTopVer=cctx.startTopologyVersion();
+  if (qryTopVer == null)   qryTopVer=new AffinityTopologyVersion(cctx.localNode().order(),0);
 }
