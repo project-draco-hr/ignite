@@ -6,7 +6,19 @@
   grid(0).compute().broadcast(new AddAllJob(queueName,RETRIES));
   assertEquals(GRID_CNT * RETRIES,queue0.size());
   if (stopRandomGrid)   stopGrid(1 + new Random().nextInt(GRID_CNT));
-  if (forceRepartition)   for (int i=0; i < GRID_CNT; i++)   jcache(i).rebalance();
+  if (forceRepartition) {
+    for (int i=0; i < GRID_CNT; i++) {
+      IgniteKernal ignite=(IgniteKernal)grid(i);
+      boolean found=false;
+      for (      GridCacheContext ctx : ignite.context().cache().context().cacheContexts()) {
+        if (ctx.name() != null && ctx.name().startsWith("datastructures")) {
+          ctx.cache().rebalance().get();
+          found=true;
+        }
+      }
+      assertTrue(found);
+    }
+  }
   Ignite newIgnite=startGrid(GRID_CNT + 1);
   Collection<Integer> locQueueContent=compute(newIgnite.cluster().forLocal()).call(new IgniteCallable<Collection<Integer>>(){
     @IgniteInstanceResource private Ignite grid;
