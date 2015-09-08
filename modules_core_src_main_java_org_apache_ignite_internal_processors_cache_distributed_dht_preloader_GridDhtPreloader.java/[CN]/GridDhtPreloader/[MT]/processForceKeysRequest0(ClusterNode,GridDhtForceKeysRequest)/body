@@ -9,13 +9,22 @@
       if (locPart == null && !top.owners(p).contains(loc))       res.addMissed(k);
       GridCacheEntryEx entry;
       if (cctx.isSwapOrOffheapEnabled()) {
-        entry=cctx.dht().entryEx(k,true);
-        entry.unswap();
+        while (true) {
+          try {
+            entry=cctx.dht().entryEx(k);
+            entry.unswap();
+            break;
+          }
+ catch (          GridCacheEntryRemovedException ignore) {
+            if (log.isDebugEnabled())             log.debug("Got removed entry: " + k);
+          }
+        }
       }
  else       entry=cctx.dht().peekEx(k);
       if (entry != null) {
         GridCacheEntryInfo info=entry.info();
         if (info != null && !info.isNew())         res.addInfo(info);
+        if (cctx.isSwapOrOffheapEnabled())         cctx.evicts().touch(entry,msg.topologyVersion());
       }
  else       if (log.isDebugEnabled())       log.debug("Key is not present in DHT cache: " + k);
     }
