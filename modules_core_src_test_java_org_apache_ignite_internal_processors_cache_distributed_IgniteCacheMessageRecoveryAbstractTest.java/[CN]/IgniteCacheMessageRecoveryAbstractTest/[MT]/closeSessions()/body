@@ -3,10 +3,12 @@
   log.info("Close sessions for: " + ignite.name());
   TcpCommunicationSpi commSpi=(TcpCommunicationSpi)ignite.configuration().getCommunicationSpi();
   Map<UUID,GridCommunicationClient> clients=U.field(commSpi,"clients");
-  assertTrue(clients.size() > 0);
+  boolean closed=false;
   for (  GridCommunicationClient client : clients.values()) {
     GridTcpNioCommunicationClient client0=(GridTcpNioCommunicationClient)client;
     GridNioSession ses=client0.session();
     ses.close();
+    closed=true;
   }
+  return closed;
 }
