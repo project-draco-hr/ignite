@@ -4,10 +4,10 @@
     nodes=nodes();
   }
  catch (  IgniteCheckedException e) {
-    return queryErrorFuture(cctx,e,log);
+    return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),e);
   }
   cctx.checkSecurity(SecurityPermission.CACHE_READ);
-  if (nodes.isEmpty())   return queryErrorFuture(cctx,new ClusterGroupEmptyCheckedException(),log);
+  if (nodes.isEmpty())   return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),new ClusterGroupEmptyCheckedException());
   if (log.isDebugEnabled())   log.debug("Executing query [query=" + this + ", nodes="+ nodes+ ']');
   if (cctx.deploymentEnabled()) {
     try {
@@ -15,7 +15,7 @@
       cctx.deploy().registerClasses(args);
     }
  catch (    IgniteCheckedException e) {
-      return queryErrorFuture(cctx,e,log);
+      return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),e);
     }
   }
   if (subjId == null)   subjId=cctx.localNodeId();
