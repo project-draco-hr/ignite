@@ -1,10 +1,9 @@
 {
-  fail("https://issues.apache.org/jira/browse/IGNITE-583");
   final String queueName=UUID.randomUUID().toString();
   info("Queue name: " + queueName);
   try (IgniteQueue<Integer> queue=grid(0).queue(queueName,QUEUE_CAPACITY,config(false))){
     assertTrue(queue.isEmpty());
-    grid(0).compute().call(new AddAllJob(queueName,RETRIES));
+    grid(0).compute().broadcast(new AddAllJob(queueName,RETRIES));
     assertEquals(GRID_CNT * RETRIES,queue.size());
     Collection<ClusterNode> nodes=grid(0).cluster().nodes();
     for (    ClusterNode node : nodes) {
@@ -15,7 +14,7 @@
  */
         @Override public Collection<Integer> call() throws Exception {
           Collection<Integer> values=new ArrayList<>();
-          grid.log().info("Running job [node=" + grid.cluster().localNode().id() + ", job="+ this+ "]");
+          grid.log().info("Running job [node=" + grid.cluster().localNode().id() + "]");
           IgniteQueue<Integer> locQueue=grid.queue(queueName,0,null);
           grid.log().info("Queue size " + locQueue.size());
           for (          Integer element : locQueue)           values.add(element);

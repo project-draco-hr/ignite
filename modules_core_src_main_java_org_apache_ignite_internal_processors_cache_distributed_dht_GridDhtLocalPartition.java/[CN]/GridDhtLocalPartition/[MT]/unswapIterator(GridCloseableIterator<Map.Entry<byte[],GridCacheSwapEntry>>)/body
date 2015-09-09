@@ -10,14 +10,19 @@
     @Override public GridDhtCacheEntry next(){
       Map.Entry<byte[],GridCacheSwapEntry> entry=it.next();
       byte[] keyBytes=entry.getKey();
-      try {
-        KeyCacheObject key=cctx.toCacheKeyObject(keyBytes);
-        lastEntry=(GridDhtCacheEntry)cctx.cache().entryEx(key,false);
-        lastEntry.unswap(true);
-        return lastEntry;
-      }
- catch (      IgniteCheckedException e) {
-        throw new CacheException(e);
+      while (true) {
+        try {
+          KeyCacheObject key=cctx.toCacheKeyObject(keyBytes);
+          lastEntry=(GridDhtCacheEntry)cctx.cache().entryEx(key,false);
+          lastEntry.unswap(true);
+          return lastEntry;
+        }
+ catch (        GridCacheEntryRemovedException e) {
+          if (log.isDebugEnabled())           log.debug("Got removed entry: " + lastEntry);
+        }
+catch (        IgniteCheckedException e) {
+          throw new CacheException(e);
+        }
       }
     }
     @Override public void remove(){
