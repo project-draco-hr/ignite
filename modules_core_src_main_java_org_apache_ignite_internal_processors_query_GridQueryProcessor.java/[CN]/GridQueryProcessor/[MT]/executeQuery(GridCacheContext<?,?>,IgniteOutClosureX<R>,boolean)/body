@@ -1,0 +1,25 @@
+{
+  final long startTime=U.currentTimeMillis();
+  Throwable err=null;
+  R res=null;
+  try {
+    res=clo.apply();
+    if (res instanceof CacheQueryFuture) {
+      CacheQueryFuture fut=(CacheQueryFuture)res;
+      err=fut.error();
+    }
+    return res;
+  }
+ catch (  GridClosureException e) {
+    err=e.unwrap();
+    throw (IgniteCheckedException)err;
+  }
+catch (  Exception e) {
+    err=e;
+    throw new IgniteCheckedException(e);
+  }
+ finally {
+    cctx.queries().onExecuted(err != null);
+    if (complete && err == null)     onCompleted(cctx,res,null,startTime,U.currentTimeMillis() - startTime,log);
+  }
+}

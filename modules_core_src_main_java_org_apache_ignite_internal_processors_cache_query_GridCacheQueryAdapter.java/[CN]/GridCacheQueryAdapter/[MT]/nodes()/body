@@ -1,15 +1,16 @@
 {
   CacheMode cacheMode=cctx.config().getCacheMode();
+  Integer part=partition();
 switch (cacheMode) {
 case LOCAL:
     if (prj != null)     U.warn(log,"Ignoring query projection because it's executed over LOCAL cache " + "(only local node will be queried): " + this);
-  if (type == SCAN && cctx.config().getCacheMode() == LOCAL && partition() != null && partition() >= cctx.affinity().partitions())   throw new IgniteCheckedException("Invalid partition number: " + partition());
+  if (type == SCAN && cctx.config().getCacheMode() == LOCAL && part != null && part >= cctx.affinity().partitions())   throw new IgniteCheckedException("Invalid partition number: " + part);
 return Collections.singletonList(cctx.localNode());
 case REPLICATED:
-if (prj != null || partition() != null) return nodes(cctx,prj,partition());
-return cctx.affinityNode() ? Collections.singletonList(cctx.localNode()) : Collections.singletonList(F.rand(nodes(cctx,null,partition())));
+if (prj != null || part != null) return nodes(cctx,prj,part);
+return cctx.affinityNode() ? Collections.singletonList(cctx.localNode()) : Collections.singletonList(F.rand(nodes(cctx,null,null)));
 case PARTITIONED:
-return nodes(cctx,prj,partition());
+return nodes(cctx,prj,part);
 default :
 throw new IllegalStateException("Unknown cache distribution mode: " + cacheMode);
 }

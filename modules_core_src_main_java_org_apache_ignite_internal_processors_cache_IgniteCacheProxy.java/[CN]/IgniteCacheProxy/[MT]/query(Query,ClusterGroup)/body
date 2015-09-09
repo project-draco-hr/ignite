@@ -6,18 +6,33 @@
     IgniteBiPredicate<K,V> p=((ScanQuery)filter).getFilter();
     qry=ctx.queries().createScanQuery(p != null ? p : ACCEPT_ALL,((ScanQuery)filter).getPartition(),isKeepPortable);
     if (grp != null)     qry.projection(grp);
-    fut=qry.execute();
+    fut=ctx.kernalContext().query().executeQuery(ctx,new IgniteOutClosureX<CacheQueryFuture<Map.Entry<K,V>>>(){
+      @Override public CacheQueryFuture<Map.Entry<K,V>> applyx() throws IgniteCheckedException {
+        return qry.execute();
+      }
+    }
+,false);
   }
  else   if (filter instanceof TextQuery) {
     TextQuery p=(TextQuery)filter;
     qry=ctx.queries().createFullTextQuery(p.getType(),p.getText(),isKeepPortable);
     if (grp != null)     qry.projection(grp);
-    fut=qry.execute();
+    fut=ctx.kernalContext().query().executeQuery(ctx,new IgniteOutClosureX<CacheQueryFuture<Map.Entry<K,V>>>(){
+      @Override public CacheQueryFuture<Map.Entry<K,V>> applyx() throws IgniteCheckedException {
+        return qry.execute();
+      }
+    }
+,false);
   }
  else   if (filter instanceof SpiQuery) {
     qry=ctx.queries().createSpiQuery(isKeepPortable);
     if (grp != null)     qry.projection(grp);
-    fut=qry.execute(((SpiQuery)filter).getArgs());
+    fut=ctx.kernalContext().query().executeQuery(ctx,new IgniteOutClosureX<CacheQueryFuture<Map.Entry<K,V>>>(){
+      @Override public CacheQueryFuture<Map.Entry<K,V>> applyx() throws IgniteCheckedException {
+        return qry.execute(((SpiQuery)filter).getArgs());
+      }
+    }
+,false);
   }
  else {
     if (filter instanceof SqlFieldsQuery)     throw new CacheException("Use methods 'queryFields' and 'localQueryFields' for " + SqlFieldsQuery.class.getSimpleName() + ".");
