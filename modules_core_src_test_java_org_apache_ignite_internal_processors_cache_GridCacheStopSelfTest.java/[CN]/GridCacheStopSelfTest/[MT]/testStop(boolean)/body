@@ -13,18 +13,26 @@
       final int key=j;
       putFuts.add(GridTestUtils.runAsync(new Callable<Void>(){
         @Override public Void call() throws Exception {
-          if (startTx) {
-            try (Transaction tx=grid(0).transactions().txStart()){
-              cache.put(key,key);
+          try {
+            if (startTx) {
+              try (Transaction tx=grid(0).transactions().txStart()){
+                cache.put(key,key);
+                readyLatch.countDown();
+                stopLatch.await();
+                tx.commit();
+              }
+             }
+ else {
               readyLatch.countDown();
               stopLatch.await();
-              tx.commit();
+              cache.put(key,key);
             }
-           }
- else {
-            readyLatch.countDown();
-            stopLatch.await();
-            cache.put(key,key);
+          }
+ catch (          CacheException|IgniteException e) {
+            log.info("Ignore error: " + e);
+          }
+catch (          IllegalStateException e) {
+            assertTrue(e.getMessage().startsWith(EXPECTED_MSG));
           }
           return null;
         }
@@ -34,15 +42,7 @@
     readyLatch.await();
     stopLatch.countDown();
     stopGrid(0);
-    for (    IgniteInternalFuture<?> fut : putFuts) {
-      try {
-        fut.get();
-      }
- catch (      IgniteCheckedException e) {
-        if (!e.getMessage().startsWith(EXPECTED_MSG))         e.printStackTrace();
-        assertTrue("Unexpected error message: " + e.getMessage(),e.getMessage().startsWith(EXPECTED_MSG));
-      }
-    }
+    for (    IgniteInternalFuture<?> fut : putFuts)     fut.get();
     try {
       cache.put(1,1);
     }
