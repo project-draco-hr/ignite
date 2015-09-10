@@ -1,27 +1,35 @@
 {
+  assert offheapEnabled;
   long max=cctx.config().getOffHeapMaxMemory();
   long init=max > 0 ? max / 1024 : 8L * 1024L * 1024L;
   int parts=cctx.config().getAffinity().partitions();
-  GridOffHeapEvictListener lsnr=!swapEnabled && !offheapEnabled ? null : new GridOffHeapEvictListener(){
-    private volatile boolean firstEvictWarn;
-    @Override public void onEvict(    int part,    int hash,    byte[] kb,    byte[] vb){
-      try {
-        if (!firstEvictWarn)         warnFirstEvict();
-        writeToSwap(part,cctx.toCacheKeyObject(kb),vb);
-        if (cctx.config().isStatisticsEnabled())         cctx.cache().metrics0().onOffHeapEvict();
+  GridOffHeapEvictListener lsnr;
+  if (swapEnabled) {
+    offheapToSwapEvicts=true;
+    lsnr=new GridOffHeapEvictListener(){
+      @Override public void onEvict(      int part,      int hash,      byte[] kb,      byte[] vb){
+        assert offheapToSwapEvicts;
+        onOffheapEvict();
+        Collection<IgniteBiTuple<byte[],byte[]>> evicts=offheapEvicts.get();
+        if (evicts == null)         offheapEvicts.set(evicts=new ArrayList<>());
+        evicts.add(new IgniteBiTuple<>(kb,vb));
       }
- catch (      IgniteCheckedException e) {
-        U.error(log,"Failed to unmarshal off-heap entry [part=" + part + ", hash="+ hash+ ']',e);
+      @Override public boolean removedEvicted(){
+        return false;
       }
     }
-    private void warnFirstEvict(){
-synchronized (this) {
-        if (firstEvictWarn)         return;
-        firstEvictWarn=true;
-      }
-      U.warn(log,"Off-heap evictions started. You may wish to increase 'offHeapMaxMemory' in " + "cache configuration [cache=" + cctx.name() + ", offHeapMaxMemory="+ cctx.config().getOffHeapMaxMemory()+ ']',"Off-heap evictions started: " + cctx.name());
-    }
-  }
 ;
+  }
+ else {
+    lsnr=new GridOffHeapEvictListener(){
+      @Override public void onEvict(      int part,      int hash,      byte[] kb,      byte[] vb){
+        onOffheapEvict();
+      }
+      @Override public boolean removedEvicted(){
+        return true;
+      }
+    }
+;
+  }
   offheap.create(spaceName,parts,init,max,lsnr);
 }
