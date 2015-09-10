@@ -1,28 +1,15 @@
 {
-  AffinityFunction aff=jcache(0).getConfiguration(CacheConfiguration.class).getAffinity();
-  AffinityKeyMapper mapper=jcache(0).getConfiguration(CacheConfiguration.class).getAffinityMapper();
-  assertNotNull(aff);
-  assertNotNull(mapper);
-  int part=aff.partition(mapper.affinityKey(queueName));
-  Collection<ClusterNode> nodes=grid(0).cluster().nodes();
-  Collection<ClusterNode> aff0=ignite(0).affinity(null).mapKeyToPrimaryAndBackups(queueName);
-  Collection<ClusterNode> aff1=nodes(aff,part,nodes);
-  assertEquals(new ArrayList<>(aff0),new ArrayList<>(aff1));
-  Collection<ClusterNode> aff2;
-  Collection<ClusterNode> tmpNodes;
-  int retries=10000;
-  do {
-    tmpNodes=new ArrayList<>(cnt);
-    for (int i=0; i < cnt; i++)     tmpNodes.add(new GridTestNode(UUID.randomUUID()));
-    aff2=nodes(aff,part,F.concat(true,tmpNodes,nodes));
-    if (retries-- < 0)     throw new IgniteCheckedException("Failed to find node IDs to change current affinity mapping.");
+  IgniteQueue queue=ignite(0).queue(queueName,0,null);
+  CacheConfiguration cCfg=getQueueCache(queue);
+  Collection<ClusterNode> aff1=ignite(0).affinity(cCfg.getName()).mapKeyToPrimaryAndBackups(queueName);
+  for (int i=0, id=GRID_CNT; i < cnt; i++) {
+    startGrid(id++);
+    awaitPartitionMapExchange();
+    Collection<ClusterNode> aff2=ignite(0).affinity(cCfg.getName()).mapKeyToPrimaryAndBackups(queueName);
+    if (!aff1.iterator().next().equals(aff2.iterator().next())) {
+      info("Moved queue to new primary node [oldAff=" + aff1 + ", newAff="+ aff2+ ']');
+      return;
+    }
   }
- while (F.containsAny(aff1,aff2));
-  int i=GRID_CNT;
-  for (  UUID id : F.nodeIds(tmpNodes)) {
-    nodeId=id;
-    startGrid(i++);
-  }
-  aff2=ignite(0).affinity(null).mapKeyToPrimaryAndBackups(queueName);
-  assertFalse("Unexpected affinity [aff1=" + aff1 + ", aff2="+ aff2+ ']',F.containsAny(aff1,aff2));
+  throw new IgniteCheckedException("Unable to move the queue to a new primary node");
 }
