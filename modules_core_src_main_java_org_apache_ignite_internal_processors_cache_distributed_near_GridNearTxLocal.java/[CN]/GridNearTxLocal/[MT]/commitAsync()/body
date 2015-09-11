@@ -4,17 +4,17 @@
   GridNearTxFinishFuture fut=commitFut.get();
   if (fut == null && !commitFut.compareAndSet(null,fut=new GridNearTxFinishFuture<>(cctx,this,true)))   return commitFut.get();
   cctx.mvcc().addFuture(fut);
-  IgniteInternalFuture<?> prepareFut=prepFut.get();
+  final IgniteInternalFuture<?> prepareFut=prepFut.get();
   prepareFut.listen(new CI1<IgniteInternalFuture<?>>(){
     @Override public void apply(    IgniteInternalFuture<?> f){
       GridNearTxFinishFuture fut0=commitFut.get();
       try {
-        f.get();
-        if (finish(true))         fut0.finish();
- else         fut0.onError(new IgniteCheckedException("Failed to commit transaction: " + CU.txString(GridNearTxLocal.this)));
+        prepareFut.get();
+        fut0.finish();
       }
  catch (      Error|RuntimeException e) {
         commitErr.compareAndSet(null,e);
+        fut0.onError(e);
         throw e;
       }
 catch (      IgniteCheckedException e) {

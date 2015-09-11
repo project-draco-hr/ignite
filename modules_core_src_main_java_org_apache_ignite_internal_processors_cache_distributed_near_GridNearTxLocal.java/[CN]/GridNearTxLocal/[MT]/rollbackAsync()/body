@@ -12,13 +12,7 @@
  catch (    IgniteCheckedException e) {
       if (log.isDebugEnabled())       log.debug("Got optimistic tx failure [tx=" + this + ", err="+ e+ ']');
     }
-    try {
-      if (finish(false) || state() == UNKNOWN)       fut.finish();
- else       fut.onError(new IgniteCheckedException("Failed to gracefully rollback transaction: " + CU.txString(this)));
-    }
- catch (    IgniteCheckedException e) {
-      fut.onError(e);
-    }
+    fut.finish();
   }
  else {
     prepFut.listen(new CI1<IgniteInternalFuture<?>>(){
@@ -30,14 +24,7 @@
           if (log.isDebugEnabled())           log.debug("Got optimistic tx failure [tx=" + this + ", err="+ e+ ']');
         }
         GridNearTxFinishFuture fut0=rollbackFut.get();
-        try {
-          if (finish(false) || state() == UNKNOWN)           fut0.finish();
- else           fut0.onError(new IgniteCheckedException("Failed to gracefully rollback transaction: " + CU.txString(GridNearTxLocal.this)));
-        }
- catch (        IgniteCheckedException e) {
-          U.error(log,"Failed to gracefully rollback transaction: " + CU.txString(GridNearTxLocal.this),e);
-          fut0.onError(e);
-        }
+        fut0.finish();
       }
     }
 );
