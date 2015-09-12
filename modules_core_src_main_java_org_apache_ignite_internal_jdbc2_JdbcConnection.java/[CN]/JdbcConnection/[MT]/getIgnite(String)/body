@@ -1,0 +1,22 @@
+{
+  while (true) {
+    IgniteNodeFuture fut=NODES.get(cfg);
+    if (fut == null) {
+      fut=new IgniteNodeFuture();
+      IgniteNodeFuture old=NODES.putIfAbsent(cfg,fut);
+      if (old != null)       fut=old;
+ else {
+        try {
+          Ignite ignite=Ignition.start(loadConfiguration(cfgUrl));
+          fut.onDone(ignite);
+        }
+ catch (        IgniteException e) {
+          fut.onDone(e);
+        }
+        return fut.get();
+      }
+    }
+    if (fut.acquire())     return fut.get();
+ else     NODES.remove(cfg,fut);
+  }
+}

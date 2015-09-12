@@ -1,0 +1,31 @@
+{
+  if (conn.isClosed())   throw new SQLException("Connection is closed.");
+  try {
+    Ignite ignite=conn.ignite();
+    UUID nodeId=conn.nodeId();
+    Collection<GridCacheSqlMetadata> metas;
+    UpdateMetadataTask task=new UpdateMetadataTask(conn.cacheName(),nodeId == null ? ignite : null);
+    metas=nodeId == null ? task.call() : ignite.compute(ignite.cluster().forNodeId(nodeId)).call(task);
+    meta=U.newHashMap(metas.size());
+    indexes=new ArrayList<>();
+    for (    GridCacheSqlMetadata m : metas) {
+      String name=m.cacheName();
+      if (name == null)       name="PUBLIC";
+      Collection<String> types=m.types();
+      Map<String,Map<String,String>> typesMap=U.newHashMap(types.size());
+      for (      String type : types) {
+        typesMap.put(type.toUpperCase(),m.fields(type));
+        for (        GridCacheSqlIndexMetadata idx : m.indexes(type)) {
+          int cnt=0;
+          for (          String field : idx.fields()) {
+            indexes.add(F.<Object>asList(name,type.toUpperCase(),!idx.unique(),idx.name().toUpperCase(),++cnt,field,idx.descending(field)));
+          }
+        }
+      }
+      meta.put(name,typesMap);
+    }
+  }
+ catch (  Exception e) {
+    throw new SQLException("Failed to get meta data from Ignite.",e);
+  }
+}
