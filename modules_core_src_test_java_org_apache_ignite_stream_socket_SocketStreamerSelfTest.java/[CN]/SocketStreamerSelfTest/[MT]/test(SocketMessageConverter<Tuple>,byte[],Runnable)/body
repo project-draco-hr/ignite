@@ -19,8 +19,10 @@
 );
     if (converter != null)     sockStmr.setConverter(converter);
     final CountDownLatch latch=new CountDownLatch(CNT);
+    final GridConcurrentHashSet<CacheEvent> evts=new GridConcurrentHashSet<>();
     IgniteBiPredicate<UUID,CacheEvent> locLsnr=new IgniteBiPredicate<UUID,CacheEvent>(){
       @Override public boolean apply(      UUID uuid,      CacheEvent evt){
+        evts.add(evt);
         latch.countDown();
         return true;
       }
@@ -30,7 +32,12 @@
     sockStmr.start();
     r.run();
     latch.await();
-    for (int i=0; i < CNT; i++)     assertEquals(Integer.toString(i),cache.get(i));
+    for (int i=0; i < CNT; i++) {
+      Object val=cache.get(i);
+      String exp=Integer.toString(i);
+      if (!exp.equals(val))       log.error("Unexpected cache value [key=" + i + ", exp="+ exp+ ", val="+ val+ ", evts="+ evts+ ']');
+      assertEquals(exp,val);
+    }
     assertEquals(CNT,cache.size(CachePeekMode.PRIMARY));
   }
   finally {
