@@ -1,0 +1,34 @@
+{
+  if (!stopped)   throw new IgniteException("Attempted to start an already started MQTT Streamer");
+  topics=topics == null ? new ArrayList<String>() : topics;
+  qualitiesOfService=qualitiesOfService == null ? new ArrayList<Integer>() : qualitiesOfService;
+  try {
+    A.notNull(getStreamer(),"streamer");
+    A.notNull(getIgnite(),"ignite");
+    A.ensure(getSingleTupleExtractor() == null && getMultipleTupleExtractor() == null,"tuple extractor missing");
+    A.ensure(getSingleTupleExtractor() == null || getMultipleTupleExtractor() == null,"cannot provide " + "both single and multiple tuple extractor");
+    A.notNullOrEmpty(brokerUrl,"broker URL");
+    A.notNullOrEmpty(clientId,"client ID");
+    if (topic != null && topic.length() > 0 && !topics.isEmpty())     throw new IllegalArgumentException("Cannot specify both a single topic and a list at the same time");
+    if (qualityOfService != null && !qualitiesOfService.isEmpty()) {
+      throw new IllegalArgumentException("Cannot specify both a single QoS and a list at the same time");
+    }
+    if (disconnectForcibly && disconnectQuiesceTimeout != null) {
+      A.notNull(disconnectForciblyTimeout,"disconnect timeout cannot be null when disconnecting forcibly " + "with quiesce");
+    }
+    if (topics != null && !topics.isEmpty()) {
+      for (      String t : topics) {
+        A.notNullOrEmpty(t,"topic in list of topics");
+      }
+      A.ensure(qualitiesOfService.isEmpty() || qualitiesOfService.size() == topics.size(),"qualities of " + "service must be either empty or have the same size as topics list");
+    }
+    log=getIgnite().log();
+    if (persistence == null)     client=new MqttClient(brokerUrl,clientId);
+ else     client=new MqttClient(brokerUrl,clientId,persistence);
+    connectAndSubscribe();
+    stopped=false;
+  }
+ catch (  Throwable t) {
+    throw new IgniteException("Exception while initializing MqttStreamer",t);
+  }
+}

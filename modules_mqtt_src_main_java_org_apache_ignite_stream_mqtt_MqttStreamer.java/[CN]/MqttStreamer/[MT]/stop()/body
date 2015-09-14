@@ -1,0 +1,27 @@
+{
+  if (stopped)   throw new IgniteException("Attempted to stop an already stopped MQTT Streamer");
+  try {
+    if (disconnectForcibly) {
+      if (disconnectQuiesceTimeout == null && disconnectForciblyTimeout == null) {
+        client.disconnectForcibly();
+      }
+ else       if (disconnectForciblyTimeout != null && disconnectQuiesceTimeout == null) {
+        client.disconnectForcibly(disconnectForciblyTimeout);
+      }
+ else {
+        client.disconnectForcibly(disconnectQuiesceTimeout,disconnectForciblyTimeout);
+      }
+    }
+ else {
+      if (disconnectQuiesceTimeout == null) {
+        client.disconnect();
+      }
+ else {
+        client.disconnect(disconnectQuiesceTimeout);
+      }
+    }
+  }
+ catch (  Throwable t) {
+    throw new IgniteException("Exception while stopping MqttStreamer",t);
+  }
+}
