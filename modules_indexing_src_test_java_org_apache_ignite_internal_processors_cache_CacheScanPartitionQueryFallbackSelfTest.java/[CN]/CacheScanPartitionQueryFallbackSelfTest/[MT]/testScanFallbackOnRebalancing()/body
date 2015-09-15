@@ -5,7 +5,7 @@
   commSpiFactory=new TestFallbackOnRebalancingCommunicationSpiFactory();
   try {
     Ignite ignite=startGrids(GRID_CNT);
-    final IgniteCacheProxy<Integer,Integer> cache=fillCache(ignite);
+    fillCache(ignite);
     final AtomicBoolean done=new AtomicBoolean(false);
     final AtomicInteger idx=new AtomicInteger(GRID_CNT);
     IgniteInternalFuture fut1=multithreadedAsync(new Callable<Object>(){
@@ -30,13 +30,8 @@
         while (!done.get()) {
           IgniteBiTuple<Integer,UUID> tup=remotePartition(cache.context());
           int part=tup.get1();
-          try {
-            CacheQuery<Map.Entry<Integer,Integer>> qry=cache.context().queries().createScanQuery(null,part,false);
-            doTestScanQuery(qry);
-          }
- catch (          ClusterGroupEmptyCheckedException e) {
-            log.warning("Invalid partition: " + part,e);
-          }
+          CacheQuery<Map.Entry<Integer,Integer>> qry=cache.context().queries().createScanQuery(null,part,false);
+          doTestScanQuery(qry,part);
         }
         return null;
       }
