@@ -1,0 +1,16 @@
+{
+  IgniteCache c=keepPortableCache();
+  TestReferenceObject obj1=new TestReferenceObject();
+  obj1.obj=new TestReferenceObject(obj1);
+  c.put(1,obj1);
+  PortableObject po=(PortableObject)c.get(1);
+  String str=po.toString();
+  log.info("toString: " + str);
+  assertNotNull(str);
+  assertTrue("Unexpected toString: " + str,str.startsWith("TestReferenceObject") && str.contains("obj=TestReferenceObject ["));
+  TestReferenceObject obj1_r=po.deserialize();
+  assertNotNull(obj1_r);
+  TestReferenceObject obj2_r=obj1_r.obj;
+  assertNotNull(obj2_r);
+  assertSame(obj1_r,obj2_r.obj);
+}

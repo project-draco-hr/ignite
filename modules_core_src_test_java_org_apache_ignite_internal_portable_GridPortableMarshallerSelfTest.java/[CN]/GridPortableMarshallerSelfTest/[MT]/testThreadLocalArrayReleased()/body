@@ -1,0 +1,18 @@
+{
+  assertEquals(false,THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+  try (PortableWriterExImpl writer=new PortableWriterExImpl(initPortableContext(new PortableMarshaller()),0)){
+    assertEquals(true,THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+    writer.writeString("Thread local test");
+    writer.array();
+    assertEquals(true,THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+  }
+   assertEquals(false,THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+  PortableMarshaller marsh=new PortableMarshaller();
+  initPortableContext(marsh);
+  marsh.marshal(new SimpleObject());
+  assertEquals(false,THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+  PortableBuilder builder=new PortableBuilderImpl(initPortableContext(new PortableMarshaller()),"org.gridgain.foo.bar.TestClass");
+  builder.setField("a","1");
+  PortableObject portableObj=builder.build();
+  assertEquals(false,THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+}

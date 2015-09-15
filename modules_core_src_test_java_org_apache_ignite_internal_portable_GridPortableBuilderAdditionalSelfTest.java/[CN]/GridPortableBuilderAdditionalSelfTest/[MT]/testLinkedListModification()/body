@@ -1,0 +1,16 @@
+{
+  TestObjectContainer obj=new TestObjectContainer();
+  obj.foo=Lists.newLinkedList(Arrays.asList("a","b","c"));
+  PortableBuilderImpl mutObj=wrap(obj);
+  List<String> list=mutObj.getField("foo");
+  list.add("!");
+  list.add(0,"_");
+  String s=list.remove(1);
+  assertEquals("a",s);
+  assertEquals(Arrays.asList("c","!"),list.subList(2,4));
+  assertEquals(1,list.indexOf("b"));
+  assertEquals(1,list.lastIndexOf("b"));
+  TestObjectContainer res=mutObj.build().deserialize();
+  assertTrue(res.foo instanceof LinkedList);
+  assertEquals(Arrays.asList("_","b","c","!"),res.foo);
+}

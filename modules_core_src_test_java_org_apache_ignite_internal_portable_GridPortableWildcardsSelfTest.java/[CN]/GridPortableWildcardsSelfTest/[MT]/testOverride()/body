@@ -1,0 +1,25 @@
+{
+  PortableContext ctx=portableContext();
+  PortableMarshaller marsh=portableMarshaller();
+  marsh.setClassNames(Arrays.asList("org.apache.ignite.internal.portable.test.*"));
+  PortableTypeConfiguration typeCfg=new PortableTypeConfiguration();
+  typeCfg.setClassName("org.apache.ignite.internal.portable.test.GridPortableTestClass2");
+  typeCfg.setIdMapper(new PortableIdMapper(){
+    @Override public int typeId(    String clsName){
+      return 100;
+    }
+    @Override public int fieldId(    int typeId,    String fieldName){
+      return 0;
+    }
+  }
+);
+  marsh.setTypeConfigurations(Arrays.asList(typeCfg));
+  ctx.configure(marsh);
+  Map<Integer,Class> typeIds=U.field(ctx,"userTypes");
+  assertEquals(3,typeIds.size());
+  assertTrue(typeIds.containsKey("gridportabletestclass1".hashCode()));
+  assertTrue(typeIds.containsKey("innerclass".hashCode()));
+  assertFalse(typeIds.containsKey("gridportabletestclass2".hashCode()));
+  Map<String,PortableIdMapper> typeMappers=U.field(ctx,"typeMappers");
+  assertEquals(100,typeMappers.get("GridPortableTestClass2").typeId("GridPortableTestClass2"));
+}
