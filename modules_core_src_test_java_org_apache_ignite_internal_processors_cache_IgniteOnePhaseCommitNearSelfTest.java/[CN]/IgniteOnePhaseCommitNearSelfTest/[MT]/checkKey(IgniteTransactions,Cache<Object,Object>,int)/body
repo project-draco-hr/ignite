@@ -1,0 +1,16 @@
+{
+  cache.put(key,key);
+  finalCheck(key,true);
+  TransactionIsolation[] isolations={READ_COMMITTED,REPEATABLE_READ,SERIALIZABLE};
+  TransactionConcurrency[] concurrencies={OPTIMISTIC,PESSIMISTIC};
+  for (  TransactionIsolation isolation : isolations) {
+    for (    TransactionConcurrency concurrency : concurrencies) {
+      info("Checking transaction [isolation=" + isolation + ", concurrency="+ concurrency+ ']');
+      try (Transaction tx=transactions.txStart(concurrency,isolation)){
+        cache.put(key,isolation + "-" + concurrency);
+        tx.commit();
+      }
+       finalCheck(key,true);
+    }
+  }
+}
