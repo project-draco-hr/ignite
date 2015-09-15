@@ -1,0 +1,20 @@
+{
+  assert offheapEnabled;
+  checkIteratorQueue();
+  boolean rmv=offheap.removex(spaceName,part,key,key.valueBytes(cctx.cacheObjectContext()),new IgniteBiPredicate<Long,Integer>(){
+    @Override public boolean apply(    Long ptr,    Integer len){
+      GridCacheVersion ver0=GridCacheOffheapSwapEntry.version(ptr);
+      return ver.equals(ver0);
+    }
+  }
+);
+  if (rmv) {
+    Collection<GridCacheSwapListener> lsnrs=offheapLsnrs.get(part);
+    if (lsnrs != null) {
+      GridCacheSwapEntry e=swapEntry(GridCacheSwapEntryImpl.unmarshal(entry));
+      for (      GridCacheSwapListener lsnr : lsnrs)       lsnr.onEntryUnswapped(part,key,e);
+    }
+    cctx.swap().writeToSwap(part,key,entry);
+  }
+  return rmv;
+}

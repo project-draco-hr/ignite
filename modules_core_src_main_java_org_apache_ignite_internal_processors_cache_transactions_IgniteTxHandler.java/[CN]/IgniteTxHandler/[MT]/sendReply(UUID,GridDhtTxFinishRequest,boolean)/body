@@ -1,0 +1,22 @@
+{
+  if (req.replyRequired()) {
+    GridDhtTxFinishResponse res=new GridDhtTxFinishResponse(req.version(),req.futureId(),req.miniId());
+    if (req.checkCommitted()) {
+      res.checkCommitted(true);
+      if (!committed) {
+        ClusterTopologyCheckedException cause=new ClusterTopologyCheckedException("Primary node left grid.");
+        res.checkCommittedError(new IgniteTxRollbackCheckedException("Failed to commit transaction " + "(transaction has been rolled back on backup node): " + req.version(),cause));
+      }
+    }
+    try {
+      ctx.io().send(nodeId,res,req.system() ? UTILITY_CACHE_POOL : SYSTEM_POOL);
+    }
+ catch (    Throwable e) {
+      if (ctx.discovery().node(nodeId) == null) {
+        if (log.isDebugEnabled())         log.debug("Node left while sending finish response [nodeId=" + nodeId + ", res="+ res+ ']');
+      }
+ else       U.error(log,"Failed to send finish response to node [nodeId=" + nodeId + ", res="+ res+ ']',e);
+      if (e instanceof Error)       throw (Error)e;
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  GridNearCacheEntry nearEntry=null;
+  GridCacheAdapter origCache=orig.internalCache(null);
+  if (origCache.isNear())   nearEntry=(GridNearCacheEntry)origCache.peekEx(key);
+  GridCacheAdapter backupCache=backup.internalCache(null);
+  if (backupCache.isNear())   backupCache=backupCache.context().near().dht();
+  GridDhtCacheEntry dhtEntry=(GridDhtCacheEntry)backupCache.peekEx(key);
+  if (commit) {
+    assertNotNull(dhtEntry);
+    assertTrue("dhtEntry=" + dhtEntry,dhtEntry.remoteMvccSnapshot().isEmpty());
+    assertTrue("dhtEntry=" + dhtEntry,dhtEntry.localCandidates().isEmpty());
+    assertEquals(key,backupCache.localPeek(key,null,null));
+    if (nearEntry != null) {
+      assertTrue("near=" + nearEntry,nearEntry.remoteMvccSnapshot().isEmpty());
+      assertTrue("near=" + nearEntry,nearEntry.localCandidates().isEmpty());
+      assertNull("near=" + nearEntry,origCache.localPeek(key,null,null));
+    }
+  }
+ else {
+    assertTrue("near=" + nearEntry + ", hc="+ System.identityHashCode(nearEntry),nearEntry == null);
+    assertTrue("Invalid backup cache entry: " + dhtEntry,dhtEntry == null || dhtEntry.rawGetOrUnmarshal(false) == null);
+  }
+}

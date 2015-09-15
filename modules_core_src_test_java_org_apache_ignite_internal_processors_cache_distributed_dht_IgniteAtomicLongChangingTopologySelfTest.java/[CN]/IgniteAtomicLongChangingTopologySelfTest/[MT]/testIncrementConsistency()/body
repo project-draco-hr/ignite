@@ -1,0 +1,25 @@
+{
+  startGrids(GRID_CNT);
+  final AtomicBoolean run=new AtomicBoolean(true);
+  IgniteInternalFuture<Long> fut=GridTestUtils.runMultiThreadedAsync(new Callable<Void>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public Void call() throws Exception {
+      IgniteAtomicLong cntr=ignite(0).atomicLong(ATOMIC_LONG_NAME,0,true);
+      while (run.get())       queue.add(cntr.getAndIncrement());
+      return null;
+    }
+  }
+,4,"increment-runner");
+  for (int i=0; i < RESTART_CNT; i++) {
+    int restartIdx=ThreadLocalRandom.current().nextInt(GRID_CNT - 1) + 1;
+    stopGrid(restartIdx);
+    U.sleep(500);
+    startGrid(restartIdx);
+  }
+  run.set(false);
+  fut.get();
+  info("Increments: " + queue.size());
+  checkQueue();
+}

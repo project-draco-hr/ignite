@@ -1,2 +1,31 @@
 {
+  backupCnt=0;
+  startGrid(0);
+  startGrid(1);
+  final PartitionNotFullyLoadedListener lsnr=new PartitionNotFullyLoadedListener();
+  grid(1).events().localListen(lsnr,EventType.EVT_CACHE_REBALANCE_PART_DATA_LOST);
+  TestTcpCommunicationSpi.skipMsgType(ignite(0),GridDhtPartitionsFullMessage.class);
+  IgniteInternalFuture<Object> fut=GridTestUtils.runAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      startGrid(2);
+      return null;
+    }
+  }
+);
+  boolean timeout=false;
+  try {
+    fut.get(1,TimeUnit.SECONDS);
+  }
+ catch (  IgniteFutureTimeoutCheckedException e) {
+    timeout=true;
+  }
+  assert timeout;
+  stopGrid(0,true);
+  awaitPartitionMapExchange();
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return !lsnr.lostParts.isEmpty();
+    }
+  }
+,getTestTimeout());
 }

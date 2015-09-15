@@ -1,20 +1,16 @@
 {
-  IgniteInternalFuture<Object> fut=new GridFinishedFuture<>();
-  return new GridEmbeddedFuture<>(fut,new C2<Object,Exception,IgniteInternalFuture<GridNearTxPrepareResponse>>(){
-    @Override public IgniteInternalFuture<GridNearTxPrepareResponse> apply(    Object o,    Exception ex){
-      if (ex != null)       throw new GridClosureException(ex);
-      IgniteInternalFuture<GridNearTxPrepareResponse> fut=locTx.prepareAsyncLocal(req.reads(),req.writes(),req.transactionNodes(),req.last(),req.lastBackups());
-      if (locTx.isRollbackOnly())       locTx.rollbackAsync();
-      return fut;
-    }
-  }
-,new C2<GridNearTxPrepareResponse,Exception,GridNearTxPrepareResponse>(){
-    @Nullable @Override public GridNearTxPrepareResponse apply(    GridNearTxPrepareResponse res,    Exception e){
-      if (e != null) {
-        locTx.setRollbackOnly();
-        if (!(e instanceof IgniteTxOptimisticCheckedException))         U.error(log,"Failed to prepare transaction: " + locTx,e);
+  IgniteInternalFuture<GridNearTxPrepareResponse> fut=locTx.prepareAsyncLocal(req.reads(),req.writes(),req.transactionNodes(),req.last(),req.lastBackups());
+  if (locTx.isRollbackOnly())   locTx.rollbackAsync();
+  return fut.chain(new C1<IgniteInternalFuture<GridNearTxPrepareResponse>,GridNearTxPrepareResponse>(){
+    @Override public GridNearTxPrepareResponse apply(    IgniteInternalFuture<GridNearTxPrepareResponse> f){
+      try {
+        return f.get();
       }
-      return res;
+ catch (      Exception e) {
+        locTx.setRollbackOnly();
+        if (!X.hasCause(e,IgniteTxOptimisticCheckedException.class) && !X.hasCause(e,IgniteFutureCancelledException.class))         U.error(log,"Failed to prepare DHT transaction: " + locTx,e);
+        return new GridNearTxPrepareResponse(req.version(),req.futureId(),req.miniId(),req.version(),req.version(),null,e,null);
+      }
     }
   }
 );

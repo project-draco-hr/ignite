@@ -1,4 +1,10 @@
 {
   idxSpi.forceFail(false);
-  for (int key=0; key < lastKey; key++)   grid(0).cache(null).remove(key);
+  Transaction tx=jcache().unwrap(Ignite.class).transactions().tx();
+  if (tx != null) {
+    tx.close();
+    fail("Cache transaction remained after test completion: " + tx);
+  }
+  for (int key=0; key <= lastKey; key++)   grid(0).cache(null).remove(key);
+  assertEquals(0,jcache(0).size(CachePeekMode.ALL));
 }

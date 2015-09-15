@@ -1,3 +1,9 @@
 {
-  if (super.onDone(tx,err.get()))   cctx.mvcc().removeFuture(this);
+  Throwable err0=err.get();
+  if (err0 == null || tx.needCheckBackup())   tx.state(PREPARED);
+  if (super.onDone(tx,err0)) {
+    cctx.mvcc().removeFuture(this);
+    return true;
+  }
+  return false;
 }

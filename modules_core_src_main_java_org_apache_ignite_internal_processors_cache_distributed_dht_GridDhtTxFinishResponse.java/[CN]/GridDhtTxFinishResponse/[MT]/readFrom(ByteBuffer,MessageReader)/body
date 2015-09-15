@@ -4,8 +4,16 @@
   if (!super.readFrom(buf,reader))   return false;
 switch (reader.state()) {
 case 5:
-    miniId=reader.readIgniteUuid("miniId");
+    checkCommitted=reader.readBoolean("checkCommitted");
   if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 6:
+checkCommittedErrBytes=reader.readByteArray("checkCommittedErrBytes");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 7:
+miniId=reader.readIgniteUuid("miniId");
+if (!reader.isLastRead()) return false;
 reader.incrementState();
 }
 return reader.afterMessageRead(GridDhtTxFinishResponse.class);
