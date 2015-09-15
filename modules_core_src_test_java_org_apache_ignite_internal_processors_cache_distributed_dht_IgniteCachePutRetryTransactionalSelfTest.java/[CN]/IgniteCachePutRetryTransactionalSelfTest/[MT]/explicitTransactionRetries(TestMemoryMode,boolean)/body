@@ -1,0 +1,49 @@
+{
+  ignite(0).createCache(cacheConfiguration(memMode,store));
+  final AtomicInteger idx=new AtomicInteger();
+  int threads=8;
+  final AtomicReferenceArray<Exception> err=new AtomicReferenceArray<>(threads);
+  IgniteInternalFuture<Long> fut=runMultiThreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      int th=idx.getAndIncrement();
+      int base=th * FACTOR;
+      Ignite ignite=ignite(0);
+      final IgniteCache<Object,Object> cache=ignite.cache(null);
+      try {
+        for (int i=0; i < FACTOR; i++) {
+          doInTransaction(ignite,new ProcessCallable(cache,base,i));
+          if (i > 0 && i % 500 == 0)           info("Done: " + i);
+        }
+      }
+ catch (      Exception e) {
+        err.set(th,e);
+      }
+      return null;
+    }
+  }
+,threads,"tx-runner");
+  while (!fut.isDone()) {
+    int stopIdx=ThreadLocalRandom.current().nextInt(2,4);
+    stopGrid(stopIdx);
+    U.sleep(500);
+    startGrid(stopIdx);
+  }
+  for (int i=0; i < threads; i++) {
+    Exception error=err.get(i);
+    if (error != null)     throw error;
+  }
+  for (int g=0; g < GRID_CNT; g++) {
+    IgniteCache<Object,Object> cache=ignite(g).cache(null);
+    for (int th=0; th < threads; th++) {
+      int base=th * FACTOR;
+      String key="key-" + base;
+      Set<String> set=(Set<String>)cache.get(key);
+      assertNotNull("Missing set for key: " + key,set);
+      assertEquals(FACTOR,set.size());
+      for (int i=0; i < FACTOR; i++) {
+        assertEquals("value-" + i,cache.get("key-" + base + "-"+ i));
+        assertTrue(set.contains("value-" + i));
+      }
+    }
+  }
+}

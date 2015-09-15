@@ -59,7 +59,7 @@
       }
     }
   }
-,qryThreadNum);
+,qryThreadNum,"query-thread");
   final AtomicInteger restartCnt=new AtomicInteger();
   final AtomicBoolean restartsDone=new AtomicBoolean();
   IgniteInternalFuture<?> fut2=multithreadedAsync(new Callable<Object>(){
@@ -71,8 +71,10 @@
           g=rnd.nextInt(locks.length());
         }
  while (!locks.compareAndSet(g,0,-1));
+        log.info("Stop node: " + g);
         stopGrid(g);
         Thread.sleep(rnd.nextInt(nodeLifeTime));
+        log.info("Start node: " + g);
         startGrid(g);
         Thread.sleep(rnd.nextInt(nodeLifeTime));
         locks.set(g,0);
@@ -82,7 +84,7 @@
       return true;
     }
   }
-,restartThreadsNum);
+,restartThreadsNum,"restart-thread");
   Thread.sleep(duration);
   info("Stopping..");
   restartsDone.set(true);
