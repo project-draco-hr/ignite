@@ -1,0 +1,30 @@
+{
+  if (!offheapToSwapEvicts)   return;
+  Collection<IgniteBiTuple<byte[],byte[]>> evicts=offheapEvicts.get();
+  if (evicts != null) {
+    GridCacheVersion obsoleteVer=cctx.versions().next();
+    for (    IgniteBiTuple<byte[],byte[]> t : evicts) {
+      try {
+        byte[] kb=t.get1();
+        byte[] vb=t.get2();
+        GridCacheVersion evictVer=GridCacheSwapEntryImpl.version(vb);
+        KeyCacheObject key=cctx.toCacheKeyObject(kb);
+        while (true) {
+          GridCacheEntryEx entry=cctx.cache().entryEx(key);
+          try {
+            if (entry.offheapSwapEvict(vb,evictVer,obsoleteVer))             cctx.cache().removeEntry(entry);
+            break;
+          }
+ catch (          GridCacheEntryRemovedException ignore) {
+          }
+        }
+      }
+ catch (      GridDhtInvalidPartitionException e) {
+      }
+catch (      IgniteCheckedException e) {
+        U.error(log,"Failed to unmarshal off-heap entry",e);
+      }
+    }
+    offheapEvicts.set(null);
+  }
+}
