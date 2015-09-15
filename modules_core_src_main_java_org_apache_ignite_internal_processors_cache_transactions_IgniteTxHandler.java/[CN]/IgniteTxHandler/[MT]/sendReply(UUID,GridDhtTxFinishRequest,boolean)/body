@@ -3,7 +3,10 @@
     GridDhtTxFinishResponse res=new GridDhtTxFinishResponse(req.version(),req.futureId(),req.miniId());
     if (req.checkCommitted()) {
       res.checkCommitted(true);
-      if (!committed)       res.checkCommittedError(new IgniteTxRollbackCheckedException("Failed to commit transaction " + "(transaction has been rolled back on backup node): " + req.version()));
+      if (!committed) {
+        ClusterTopologyCheckedException cause=new ClusterTopologyCheckedException("Primary node left grid.");
+        res.checkCommittedError(new IgniteTxRollbackCheckedException("Failed to commit transaction " + "(transaction has been rolled back on backup node): " + req.version(),cause));
+      }
     }
     try {
       ctx.io().send(nodeId,res,req.system() ? UTILITY_CACHE_POOL : SYSTEM_POOL);
