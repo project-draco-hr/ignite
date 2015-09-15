@@ -3,7 +3,8 @@
   Exception errTcp=null;
   Delegate curDelegate=delegateRef.get();
   if (curDelegate != null)   return curDelegate;
-  if (!parameter(conf,PARAM_IGFS_ENDPOINT_NO_EMBED,authority,false)) {
+  boolean skipInProc=parameter(conf,PARAM_IGFS_ENDPOINT_NO_EMBED,authority,false);
+  if (!skipInProc) {
     IgfsEx igfs=null;
     if (endpoint.grid() == null) {
       try {
@@ -78,7 +79,7 @@
     return curDelegate;
   }
  else {
-    SB errMsg=new SB("Failed to connect to IGFS [endpoint=" + authority + ", attempts=[");
+    SB errMsg=new SB("Failed to connect to IGFS [endpoint=igfs://" + authority + ", attempts=[");
     if (errShmem != null)     errMsg.a("[type=SHMEM, port=" + endpoint.port() + ", err="+ errShmem+ "], ");
     errMsg.a("[type=TCP, host=" + endpoint.host() + ", port="+ endpoint.port()+ ", err="+ errTcp+ "]] ");
     errMsg.a("(ensure that IGFS is running and have IPC endpoint enabled; ensure that " + "ignite-shmem-1.0.0.jar is in Hadoop classpath if you use shared memory endpoint).");
