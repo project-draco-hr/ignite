@@ -1,0 +1,32 @@
+{
+  PortableTypeConfiguration cfg1=new PortableTypeConfiguration(DateClass1.class.getName());
+  PortableTypeConfiguration cfg2=new PortableTypeConfiguration(DateClass2.class.getName());
+  cfg2.setUseTimestamp(false);
+  PortableMarshaller marsh=new PortableMarshaller();
+  marsh.setTypeConfigurations(Arrays.asList(cfg1,cfg2));
+  Date date=new Date();
+  Timestamp ts=new Timestamp(System.currentTimeMillis());
+  DateClass1 obj1=new DateClass1();
+  obj1.date=date;
+  obj1.ts=ts;
+  DateClass2 obj2=new DateClass2();
+  obj2.date=date;
+  obj2.ts=ts;
+  PortableObject po1=marshal(obj1,marsh);
+  assertEquals(date,po1.field("date"));
+  assertEquals(Timestamp.class,po1.field("date").getClass());
+  assertEquals(ts,po1.field("ts"));
+  PortableObject po2=marshal(obj2,marsh);
+  assertEquals(date,po2.field("date"));
+  assertEquals(Date.class,po2.field("date").getClass());
+  assertEquals(new Date(ts.getTime()),po2.field("ts"));
+  assertEquals(Date.class,po2.field("ts").getClass());
+  obj1=po1.deserialize();
+  assertEquals(date,obj1.date);
+  assertEquals(Date.class,obj1.date.getClass());
+  assertEquals(ts,obj1.ts);
+  obj2=po2.deserialize();
+  assertEquals(date,obj2.date);
+  assertEquals(Date.class,obj2.date.getClass());
+  assertEquals(ts,obj2.ts);
+}

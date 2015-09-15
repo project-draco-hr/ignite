@@ -1,0 +1,17 @@
+{
+  IgniteCache<Integer,TestObject> c=jcache(0);
+  IgniteCache<Integer,TestObject> cacheAsync=c.withAsync();
+  for (int i=0; i < ENTRY_CNT; i++)   c.put(i,new TestObject(i));
+  for (int i=0; i < ENTRY_CNT; i++) {
+    cacheAsync.get(i);
+    TestObject obj=cacheAsync.<TestObject>future().get();
+    assertEquals(i,obj.val);
+  }
+  IgniteCache<Integer,PortableObject> kpc=keepPortableCache();
+  IgniteCache<Integer,PortableObject> cachePortableAsync=kpc.withAsync();
+  for (int i=0; i < ENTRY_CNT; i++) {
+    cachePortableAsync.get(i);
+    PortableObject po=cachePortableAsync.<PortableObject>future().get();
+    assertEquals(i,(int)po.field("val"));
+  }
+}

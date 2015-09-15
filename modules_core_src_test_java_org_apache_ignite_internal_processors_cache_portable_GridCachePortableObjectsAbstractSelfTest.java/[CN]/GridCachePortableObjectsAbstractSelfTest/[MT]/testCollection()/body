@@ -1,0 +1,27 @@
+{
+  IgniteCache<Integer,Collection<TestObject>> c=jcache(0);
+  for (int i=0; i < ENTRY_CNT; i++) {
+    Collection<TestObject> col=new ArrayList<>(3);
+    for (int j=0; j < 3; j++)     col.add(new TestObject(i * 10 + j));
+    c.put(i,col);
+  }
+  for (int i=0; i < ENTRY_CNT; i++) {
+    Collection<TestObject> col=c.get(i);
+    assertEquals(3,col.size());
+    Iterator<TestObject> it=col.iterator();
+    for (int j=0; j < 3; j++) {
+      assertTrue(it.hasNext());
+      assertEquals(i * 10 + j,it.next().val);
+    }
+  }
+  IgniteCache<Integer,Collection<PortableObject>> kpc=keepPortableCache();
+  for (int i=0; i < ENTRY_CNT; i++) {
+    Collection<PortableObject> col=kpc.get(i);
+    assertEquals(3,col.size());
+    Iterator<PortableObject> it=col.iterator();
+    for (int j=0; j < 3; j++) {
+      assertTrue(it.hasNext());
+      assertEquals(i * 10 + j,(int)it.next().field("val"));
+    }
+  }
+}
