@@ -26,14 +26,9 @@
         IgniteCache<Integer,Integer> cache=grid(nodeId).cache(null);
         while (!done.get()) {
           int part=ThreadLocalRandom.current().nextInt(ignite(nodeId).affinity(null).partitions());
-          try {
-            QueryCursor<Cache.Entry<Integer,Integer>> cur=cache.query(new ScanQuery<Integer,Integer>(part));
-            U.debug(log,"Running query [node=" + nodeId + ", part="+ part+ ']');
-            doTestScanQueryCursor(cur,part);
-          }
- catch (          ClusterGroupEmptyCheckedException e) {
-            log.warning("Invalid partition: " + part,e);
-          }
+          QueryCursor<Cache.Entry<Integer,Integer>> cur=cache.query(new ScanQuery<Integer,Integer>(part));
+          U.debug(log,"Running query [node=" + nodeId + ", part="+ part+ ']');
+          doTestScanQueryCursor(cur,part);
         }
         return null;
       }
