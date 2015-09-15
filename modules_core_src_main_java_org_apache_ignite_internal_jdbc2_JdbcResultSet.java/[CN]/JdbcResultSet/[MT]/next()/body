@@ -1,0 +1,31 @@
+{
+  ensureNotClosed();
+  if (it == null || (stmt.getMaxRows() > 0 && pos >= stmt.getMaxRows())) {
+    curr=null;
+    return false;
+  }
+ else   if (it.hasNext()) {
+    curr=new ArrayList<>(it.next());
+    pos++;
+    if (finished && !it.hasNext())     it=null;
+    return true;
+  }
+ else   if (!finished) {
+    JdbcConnection conn=(JdbcConnection)stmt.getConnection();
+    Ignite ignite=conn.ignite();
+    UUID nodeId=conn.nodeId();
+    boolean loc=nodeId == null;
+    JdbcQueryTask qryTask=new JdbcQueryTask(loc ? ignite : null,conn.cacheName(),null,loc,null,fetchSize,uuid,conn.isLocalQuery(),conn.isCollocatedQuery());
+    try {
+      JdbcQueryTask.QueryResult res=loc ? qryTask.call() : ignite.compute(ignite.cluster().forNodeId(nodeId)).call(qryTask);
+      finished=res.isFinished();
+      it=res.getRows().iterator();
+      return next();
+    }
+ catch (    Exception e) {
+      throw new SQLException("Failed to query Ignite.",e);
+    }
+  }
+  it=null;
+  return false;
+}

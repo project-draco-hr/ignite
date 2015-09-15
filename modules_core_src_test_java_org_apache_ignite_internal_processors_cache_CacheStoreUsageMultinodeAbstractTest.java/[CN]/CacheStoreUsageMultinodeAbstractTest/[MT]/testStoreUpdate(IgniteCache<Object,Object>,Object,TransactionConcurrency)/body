@@ -9,8 +9,13 @@
   assertNotNull(expNode);
   log.info("Put [node=" + ignite.name() + ", key="+ key+ ", primary="+ node.attribute(ATTR_GRID_NAME)+ ", tx="+ tc+ ", nearCache="+ (cache.getConfiguration(CacheConfiguration.class).getNearConfiguration() != null)+ ", storeOnPrimary="+ storeOnPrimary+ ']');
   Transaction tx=tc != null ? ignite.transactions().txStart(tc,REPEATABLE_READ) : null;
-  cache.put(key,key);
-  if (tx != null)   tx.commit();
+  try {
+    cache.put(key,key);
+    if (tx != null)     tx.commit();
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
   boolean wait=GridTestUtils.waitForCondition(new GridAbsPredicate(){
     @Override public boolean apply(){
       return writeMap.size() > 0;

@@ -1,0 +1,14 @@
+{
+  daemon=true;
+  IgniteEx daemon=startGrid(GRID_CNT);
+  UUID daemonId=daemon.localNode().id();
+  final String url=CFG_URL_PREFIX + "nodeId=" + daemonId+ '@'+ CFG_URL;
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      try (Connection conn=DriverManager.getConnection(url)){
+        return conn;
+      }
+     }
+  }
+,SQLException.class,"Failed to establish connection with node (is it a server node?): " + daemonId);
+}

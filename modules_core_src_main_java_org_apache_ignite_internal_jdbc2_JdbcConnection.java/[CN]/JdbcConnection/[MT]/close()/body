@@ -1,0 +1,14 @@
+{
+  if (closed)   return;
+  closed=true;
+  IgniteNodeFuture fut=NODES.get(cfg);
+  if (fut != null && fut.release()) {
+    NODES.remove(cfg);
+    if (ignite != null)     ignite.close();
+  }
+  for (Iterator<JdbcStatement> it=statements.iterator(); it.hasNext(); ) {
+    JdbcStatement stmt=it.next();
+    stmt.closeInternal();
+    it.remove();
+  }
+}
