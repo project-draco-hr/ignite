@@ -5,7 +5,9 @@
   final IgniteBiPredicate<K,V> keyValFilter=qry.scanFilter();
   injectResources(keyValFilter);
   final GridDhtCacheAdapter dht=cctx.isLocal() ? null : (cctx.isNear() ? cctx.near().dht() : cctx.dht());
+  final GridCacheAdapter cache=dht != null ? dht : cctx.cache();
   final ExpiryPolicy plc=cctx.expiry();
+  final AffinityTopologyVersion topVer=cctx.affinity().affinityTopologyVersion();
   final boolean backups=qry.includeBackups() || cctx.isReplicated();
   final GridCloseableIteratorAdapter<IgniteBiTuple<K,V>> heapIt=new GridCloseableIteratorAdapter<IgniteBiTuple<K,V>>(){
     private IgniteBiTuple<K,V> next;
@@ -17,7 +19,6 @@
       if (part == null || dht == null)       iter=backups ? prj.keySetx().iterator() : prj.primaryKeySet().iterator();
  else       if (part < 0 || part >= cctx.affinity().partitions())       iter=F.emptyIterator();
  else {
-        AffinityTopologyVersion topVer=cctx.affinity().affinityTopologyVersion();
         locPart=dht.topology().localPartition(part,topVer,false);
         if (locPart == null || locPart.state() != OWNING || !locPart.reserve() || locPart.state() != OWNING)         throw new GridDhtUnreservedPartitionException(part,cctx.affinity().affinityTopologyVersion(),"Partition can not be reserved");
         iter=new Iterator<K>(){
@@ -53,9 +54,14 @@
         K key=iter.next();
         V val;
         try {
-          val=prj.localPeek(key,CachePeekModes.ONHEAP_ONLY,expiryPlc);
+          GridCacheEntryEx entry=cache.peekEx(key);
+          CacheObject cacheVal=entry != null ? entry.peek(true,false,false,topVer,expiryPlc) : null;
+          val=cacheVal != null ? (V)cacheVal.value(cctx.cacheObjectContext(),false) : null;
         }
- catch (        IgniteCheckedException e) {
+ catch (        GridCacheEntryRemovedException e) {
+          val=null;
+        }
+catch (        IgniteCheckedException e) {
           if (log.isDebugEnabled())           log.debug("Failed to peek value: " + e);
           val=null;
         }
