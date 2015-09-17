@@ -13,7 +13,12 @@
   Exception err=null;
   try {
     ctx.discovery().sendCustomEvent(new DynamicCacheChangeBatch(Collections.singleton(req)));
-    if (ctx.clientDisconnected())     err=new IgniteClientDisconnectedCheckedException(ctx.cluster().clientReconnectFuture(),"Failed to execute dynamic cache change request, client node disconnected.");
+    if (ctx.isStopping()) {
+      err=new IgniteCheckedException("Failed to execute dynamic cache change request, " + "node is stopping.");
+    }
+ else     if (ctx.clientDisconnected()) {
+      err=new IgniteClientDisconnectedCheckedException(ctx.cluster().clientReconnectFuture(),"Failed to execute dynamic cache change request, client node disconnected.");
+    }
   }
  catch (  IgniteCheckedException e) {
     err=e;

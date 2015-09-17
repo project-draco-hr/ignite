@@ -1,7 +1,7 @@
 {
+  AffinityTopologyVersion topVer=exchFut.topologyVersion();
+  if (log.isDebugEnabled())   log.debug("Exchange done [topVer=" + topVer + ", fut="+ exchFut+ ", err="+ err+ ']');
   if (err == null) {
-    AffinityTopologyVersion topVer=exchFut.topologyVersion();
-    if (log.isDebugEnabled())     log.debug("Exchange done [topVer=" + topVer + ", fut="+ exchFut+ ']');
     while (true) {
       AffinityTopologyVersion readyVer=readyTopVer.get();
       if (readyVer.compareTo(topVer) >= 0)       break;
@@ -14,7 +14,14 @@
       }
     }
   }
- else   if (log.isDebugEnabled())   log.debug("Exchange done with error [fut=" + exchFut + ", err="+ err+ ']');
+ else {
+    for (    Map.Entry<AffinityTopologyVersion,AffinityReadyFuture> entry : readyFuts.entrySet()) {
+      if (entry.getKey().compareTo(topVer) <= 0) {
+        if (log.isDebugEnabled())         log.debug("Completing created topology ready future with error " + "[ver=" + topVer + ", fut="+ entry.getValue()+ ']');
+        entry.getValue().onDone(err);
+      }
+    }
+  }
   ExchangeFutureSet exchFuts0=exchFuts;
   if (exchFuts0 != null) {
     int skipped=0;
