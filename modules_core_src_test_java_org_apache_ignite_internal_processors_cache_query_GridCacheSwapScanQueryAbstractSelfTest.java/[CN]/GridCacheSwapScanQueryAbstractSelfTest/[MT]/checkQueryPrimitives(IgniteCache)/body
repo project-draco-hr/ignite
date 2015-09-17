@@ -1,0 +1,27 @@
+{
+  final int ENTRY_CNT=500;
+  for (int i=0; i < ENTRY_CNT; i++)   cache.getAndPut(String.valueOf(i),(long)i);
+  try {
+    ScanQuery<String,Long> qry=new ScanQuery<>(new IgniteBiPredicate<String,Long>(){
+      @Override public boolean apply(      String key,      Long val){
+        assertEquals(key,String.valueOf(val));
+        return val % 2 == 0;
+      }
+    }
+);
+    Collection<Cache.Entry<String,Long>> res=cache.query(qry).getAll();
+    assertEquals(ENTRY_CNT / 2,res.size());
+    for (    Cache.Entry<String,Long> e : res) {
+      String key=e.getKey();
+      Long val=e.getValue();
+      assertEquals(key,String.valueOf(val));
+      assertEquals(0,val % 2);
+    }
+    qry=new ScanQuery<>();
+    res=cache.query(qry).getAll();
+    assertEquals(ENTRY_CNT,res.size());
+  }
+  finally {
+    for (int i=0; i < ENTRY_CNT; i++)     assertTrue(cache.remove(String.valueOf(i)));
+  }
+}
