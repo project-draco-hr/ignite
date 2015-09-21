@@ -1,18 +1,23 @@
 {
-  test(null,DELIM,new Runnable(){
+  test(null,null,new Runnable(){
     @Override public void run(){
       try (Socket sock=new Socket(InetAddress.getLocalHost(),port);OutputStream os=new BufferedOutputStream(sock.getOutputStream())){
         Marshaller marsh=new JdkMarshaller();
+        int[] values=new int[CNT];
         for (int i=0; i < CNT; i++) {
-          byte[] msg=marsh.marshal(new Message(i));
-          os.write(msg);
-          os.write(DELIM);
+          values[i]=i;
         }
+        byte[] msg=marsh.marshal(new Message(values));
+        os.write(msg.length >>> 24);
+        os.write(msg.length >>> 16);
+        os.write(msg.length >>> 8);
+        os.write(msg.length);
+        os.write(msg);
       }
  catch (      IOException|IgniteCheckedException e) {
         throw new IgniteException(e);
       }
     }
   }
-,true);
+,false);
 }
