@@ -1,0 +1,47 @@
+{
+  final int ENTRY_CNT=500;
+  Map<Integer,Map<Key,Person>> entries=new HashMap<>();
+  Affinity<Object> aff=ignite(0).affinity(cache.getName());
+  for (int i=0; i < ENTRY_CNT; i++) {
+    Key key=new Key(i);
+    Person val=new Person("p-" + i,i);
+    int part=aff.partition(key);
+    cache.getAndPut(key,val);
+    Map<Key,Person> partEntries=entries.get(part);
+    if (partEntries == null)     entries.put(part,partEntries=new HashMap<>());
+    partEntries.put(key,val);
+  }
+  try {
+    int partitions=scanPartitions ? aff.partitions() : 1;
+    for (int i=0; i < partitions; i++) {
+      ScanQuery<Key,Person> qry=new ScanQuery<>(new IgniteBiPredicate<Key,Person>(){
+        @Override public boolean apply(        Key key,        Person p){
+          assertEquals(key.id,(Integer)p.salary);
+          return key.id % 2 == 0;
+        }
+      }
+);
+      if (scanPartitions)       qry.setPartition(i);
+      List<Cache.Entry<Key,Person>> res=cache.query(qry).getAll();
+      if (!scanPartitions)       assertEquals(ENTRY_CNT / 2,res.size());
+      for (      Cache.Entry<Key,Person> e : res) {
+        Key k=e.getKey();
+        Person p=e.getValue();
+        assertEquals(k.id,(Integer)p.salary);
+        assertEquals(0,k.id % 2);
+        if (scanPartitions) {
+          Map<Key,Person> partEntries=entries.get(i);
+          assertEquals(p,partEntries.get(k));
+        }
+      }
+      qry=new ScanQuery<>();
+      if (scanPartitions)       qry.setPartition(i);
+      res=cache.query(qry).getAll();
+      if (!scanPartitions)       assertEquals(ENTRY_CNT,res.size());
+    }
+    testMultithreaded(cache,ENTRY_CNT / 2);
+  }
+  finally {
+    for (int i=0; i < ENTRY_CNT; i++)     assertTrue(cache.remove(new Key(i)));
+  }
+}
