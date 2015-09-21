@@ -1,0 +1,18 @@
+{
+  streamer.setSingleTupleExtractor(singleTupleExtractor());
+  streamer.setRetryWaitStrategy(WaitStrategies.noWait());
+  streamer.setRetryStopStrategy(StopStrategies.stopAfterAttempt(1));
+  streamer.setTopic(SINGLE_TOPIC_NAME);
+  CountDownLatch latch=subscribeToPutEvents(50);
+  streamer.start();
+  sendMessages(Arrays.asList(SINGLE_TOPIC_NAME),0,50,false);
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+  assertCacheEntriesLoaded(50);
+  broker.stop();
+  broker.start(true);
+  broker.waitUntilStarted();
+  client.connect();
+  sendMessages(Arrays.asList(SINGLE_TOPIC_NAME),50,50,false);
+  Thread.sleep(3000);
+  assertNull(grid().cache(null).get(50));
+}
