@@ -1,0 +1,13 @@
+{
+  streamer.setSingleTupleExtractor(singleTupleExtractor());
+  streamer.setTopics(MULTIPLE_TOPIC_NAMES);
+  streamer.setQualitiesOfService(Arrays.asList(1,1,1,1));
+  CountDownLatch latch=subscribeToPutEvents(50);
+  streamer.start();
+  sendMessages(MULTIPLE_TOPIC_NAMES,0,50,false);
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+  assertCacheEntriesLoaded(50);
+  assertTrue(broker.getBroker().getDestinationMap().size() >= 4);
+  assertTrue(broker.getBroker().getDestinationMap().containsKey(new ActiveMQTopic("def")));
+  assertTrue(broker.getBroker().getDestinationMap().containsKey(new ActiveMQTopic("ghi")));
+}

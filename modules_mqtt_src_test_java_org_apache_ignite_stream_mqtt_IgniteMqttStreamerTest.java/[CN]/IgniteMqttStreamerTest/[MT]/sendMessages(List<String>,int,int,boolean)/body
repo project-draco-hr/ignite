@@ -1,0 +1,28 @@
+{
+  if (singleMessage) {
+    final List<StringBuilder> sbs=new ArrayList<>(topics.size());
+    F.forEach(topics,new IgniteInClosure<String>(){
+      @Override public void apply(      String s){
+        sbs.add(new StringBuilder());
+      }
+    }
+);
+    F.forEach(F.range(fromIdx,fromIdx + count),new IgniteInClosure<Integer>(){
+      @Override public void apply(      Integer integer){
+        sbs.get(integer % topics.size()).append(integer.toString() + "," + TEST_DATA.get(integer)+ "\n");
+      }
+    }
+);
+    for (int i=0; i < topics.size(); i++) {
+      MqttMessage msg=new MqttMessage(sbs.get(i).toString().getBytes());
+      client.publish(topics.get(i % topics.size()),msg);
+    }
+  }
+ else {
+    for (int i=fromIdx; i < fromIdx + count; i++) {
+      byte[] payload=(i + "," + TEST_DATA.get(i)).getBytes();
+      MqttMessage msg=new MqttMessage(payload);
+      client.publish(topics.get(i % topics.size()),msg);
+    }
+  }
+}

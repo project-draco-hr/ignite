@@ -1,0 +1,25 @@
+{
+  grid().<Integer,String>getOrCreateCache(defaultCacheConfiguration());
+  try (ServerSocket ss=new ServerSocket(0)){
+    port=ss.getLocalPort();
+  }
+   broker=new BrokerService();
+  broker.setDeleteAllMessagesOnStartup(true);
+  broker.setPersistent(false);
+  broker.setPersistenceAdapter(null);
+  broker.setPersistenceFactory(null);
+  PolicyMap policyMap=new PolicyMap();
+  PolicyEntry policy=new PolicyEntry();
+  policy.setQueuePrefetch(1);
+  broker.setDestinationPolicy(policyMap);
+  broker.getDestinationPolicy().setDefaultEntry(policy);
+  broker.setSchedulerSupport(false);
+  broker.addConnector("mqtt://localhost:" + port);
+  broker.setStartAsync(false);
+  broker.start(true);
+  brokerUrl="tcp://localhost:" + port;
+  client=new MqttClient(brokerUrl,UUID.randomUUID().toString(),new MemoryPersistence());
+  client.connect();
+  dataStreamer=grid().dataStreamer(null);
+  streamer=createMqttStreamer(dataStreamer);
+}
