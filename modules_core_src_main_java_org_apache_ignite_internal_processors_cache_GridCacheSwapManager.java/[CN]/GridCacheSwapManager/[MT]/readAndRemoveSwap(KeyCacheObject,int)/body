@@ -5,10 +5,10 @@
   SwapKey swapKey=new SwapKey(key.value(cctx.cacheObjectContext(),false),part,key.valueBytes(cctx.cacheObjectContext()));
   ClassLoader ldr=cctx.deploy().globalLoader();
   final GridCacheQueryManager qryMgr=cctx.queries();
-  if (qryMgr != null && !readSwapBeforeRemove(key,swapKey,ldr))   return null;
+  if (qryMgr.enabled() && !readSwapBeforeRemove(key,swapKey,ldr))   return null;
   swapMgr.remove(spaceName,swapKey,new CI1<byte[]>(){
     @Override public void apply(    byte[] rmv){
-      if (qryMgr == null && cctx.config().isStatisticsEnabled())       cctx.cache().metrics0().onSwapRead(rmv != null);
+      if (!qryMgr.enabled() && cctx.config().isStatisticsEnabled())       cctx.cache().metrics0().onSwapRead(rmv != null);
       if (rmv != null) {
         try {
           GridCacheSwapEntry entry=swapEntry(unmarshalSwapEntry(rmv));
