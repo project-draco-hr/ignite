@@ -1,0 +1,31 @@
+{
+  if (valOnly) {
+    long off=BYTE_ARR_OFF + VERSION_OFFSET;
+    boolean verEx=UNSAFE.getByte(arr,off++) != 0;
+    off+=verEx ? VERSION_EX_SIZE : VERSION_SIZE;
+    int arrLen=UNSAFE.getInt(arr,off);
+    off+=4;
+    byte type=UNSAFE.getByte(arr,off++);
+    byte[] valBytes=new byte[arrLen];
+    UNSAFE.copyMemory(arr,off,valBytes,BYTE_ARR_OFF,arrLen);
+    return new GridCacheSwapEntryImpl(ByteBuffer.wrap(valBytes),type,null,0L,0L,null,null);
+  }
+  long off=BYTE_ARR_OFF;
+  long ttl=UNSAFE.getLong(arr,off);
+  off+=8;
+  long expireTime=UNSAFE.getLong(arr,off);
+  off+=8;
+  boolean verEx=UNSAFE.getBoolean(arr,off++);
+  GridCacheVersion ver=U.readVersion(arr,off,verEx);
+  off+=verEx ? VERSION_EX_SIZE : VERSION_SIZE;
+  int arrLen=UNSAFE.getInt(arr,off);
+  off+=4;
+  byte type=UNSAFE.getByte(arr,off++);
+  byte[] valBytes=new byte[arrLen];
+  UNSAFE.copyMemory(arr,off,valBytes,BYTE_ARR_OFF,arrLen);
+  off+=arrLen;
+  IgniteUuid valClsLdrId=U.readGridUuid(arr,off);
+  off+=valClsLdrId == null ? 1 : (1 + GUID_SIZE);
+  IgniteUuid keyClsLdrId=U.readGridUuid(arr,off);
+  return new GridCacheSwapEntryImpl(ByteBuffer.wrap(valBytes),type,ver,ttl,expireTime,keyClsLdrId,valClsLdrId);
+}
