@@ -1,0 +1,13 @@
+{
+  if (cacheMode() == LOCAL)   return;
+  AtomicBoolean serialized=new AtomicBoolean();
+  NonSerializableListener lsnr=new NonSerializableListener(serialized);
+  jcache(0).registerCacheEntryListener(new MutableCacheEntryListenerConfiguration<>(FactoryBuilder.factoryOf(lsnr),null,true,false));
+  try {
+    startGrid(gridCount());
+  }
+  finally {
+    stopGrid(gridCount());
+  }
+  assertFalse(serialized.get());
+}
