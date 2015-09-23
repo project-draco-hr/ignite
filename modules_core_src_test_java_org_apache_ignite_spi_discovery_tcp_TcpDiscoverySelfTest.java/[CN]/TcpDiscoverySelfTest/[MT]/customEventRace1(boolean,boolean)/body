@@ -1,0 +1,54 @@
+{
+  TestCustomEventRaceSpi spi0=new TestCustomEventRaceSpi();
+  nodeSpi=spi0;
+  final Ignite ignite0=startGrid(0);
+  nodeSpi=new TestCustomEventRaceSpi();
+  final Ignite ignite1=startGrid(1);
+  CountDownLatch latch1=new CountDownLatch(1);
+  CountDownLatch latch2=new CountDownLatch(1);
+  spi0.nodeAdded1=latch1;
+  spi0.nodeAdded2=latch2;
+  spi0.debug=true;
+  IgniteInternalFuture<?> fut1=GridTestUtils.runAsync(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      log.info("Start 2");
+      nodeSpi=new TestCustomEventRaceSpi();
+      Ignite ignite2=startGrid(2);
+      return null;
+    }
+  }
+);
+  latch1.await();
+  final String CACHE_NAME="cache";
+  IgniteInternalFuture<?> fut2=GridTestUtils.runAsync(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      CacheConfiguration ccfg=new CacheConfiguration();
+      ccfg.setName(CACHE_NAME);
+      Ignite ignite=cacheStartFrom1 ? ignite1 : ignite0;
+      ignite.createCache(ccfg);
+      return null;
+    }
+  }
+);
+  if (stopCrd) {
+    spi0.stop=true;
+    latch2.countDown();
+    ignite0.close();
+  }
+ else {
+    U.sleep(500);
+    latch2.countDown();
+  }
+  fut1.get();
+  fut2.get();
+  IgniteCache<Object,Object> cache=grid(2).cache(CACHE_NAME);
+  assertNotNull(cache);
+  cache.put(1,1);
+  assertEquals(1,cache.get(1));
+  nodeSpi=new TestCustomEventRaceSpi();
+  Ignite ignite=startGrid(3);
+  cache=ignite.cache(CACHE_NAME);
+  cache.put(2,2);
+  assertEquals(1,cache.get(1));
+  assertEquals(2,cache.get(2));
+}
