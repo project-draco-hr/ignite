@@ -1,20 +1,28 @@
 {
-  clientFlagGlobal=false;
-  startGrids(GRID_CNT);
-  final CyclicBarrier barrier=new CyclicBarrier(GRID_CNT + 4);
-  final AtomicInteger startIdx=new AtomicInteger(GRID_CNT);
-  IgniteInternalFuture<?> fut=GridTestUtils.runMultiThreadedAsync(new Callable<Object>(){
-    @Override public Object call() throws Exception {
-      barrier.await();
-      Ignite ignite=startGrid(startIdx.getAndIncrement());
-      assertFalse(ignite.configuration().isClientMode());
-      log.info("Started node: " + ignite.name());
-      return null;
+  for (int k=0; k < 3; k++) {
+    log.info("Iteration: " + k);
+    clientFlagGlobal=false;
+    final int START_NODES=5;
+    final int JOIN_NODES=10;
+    startGrids(START_NODES);
+    final CyclicBarrier barrier=new CyclicBarrier(JOIN_NODES + 1);
+    final AtomicInteger startIdx=new AtomicInteger(START_NODES);
+    IgniteInternalFuture<?> fut=GridTestUtils.runMultiThreadedAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        int idx=startIdx.getAndIncrement();
+        Thread.currentThread().setName("start-thread-" + idx);
+        barrier.await();
+        Ignite ignite=startGrid(idx);
+        assertFalse(ignite.configuration().isClientMode());
+        log.info("Started node: " + ignite.name());
+        return null;
+      }
     }
+,JOIN_NODES,"start-thread");
+    barrier.await();
+    U.sleep(ThreadLocalRandom.current().nextInt(10,100));
+    for (int i=0; i < START_NODES; i++)     stopGrid(i);
+    fut.get();
+    stopAllGrids();
   }
-,GRID_CNT + 3,"start-thread");
-  barrier.await();
-  U.sleep(ThreadLocalRandom.current().nextInt(10,100));
-  for (int i=0; i < GRID_CNT; i++)   stopGrid(i);
-  fut.get();
 }
