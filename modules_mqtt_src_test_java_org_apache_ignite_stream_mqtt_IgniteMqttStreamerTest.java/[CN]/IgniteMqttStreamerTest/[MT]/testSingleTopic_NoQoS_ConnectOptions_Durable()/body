@@ -1,0 +1,18 @@
+{
+  streamer.setSingleTupleExtractor(singleTupleExtractor());
+  streamer.setTopic(SINGLE_TOPIC_NAME);
+  MqttConnectOptions connOptions=new MqttConnectOptions();
+  connOptions.setCleanSession(false);
+  streamer.setConnectOptions(connOptions);
+  CountDownLatch latch=subscribeToPutEvents(50);
+  streamer.start();
+  sendMessages(Arrays.asList(SINGLE_TOPIC_NAME),0,50,false);
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+  assertCacheEntriesLoaded(50);
+  streamer.stop();
+  sendMessages(Arrays.asList(SINGLE_TOPIC_NAME),50,50,false);
+  latch=subscribeToPutEvents(50);
+  streamer.start();
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+  assertCacheEntriesLoaded(100);
+}

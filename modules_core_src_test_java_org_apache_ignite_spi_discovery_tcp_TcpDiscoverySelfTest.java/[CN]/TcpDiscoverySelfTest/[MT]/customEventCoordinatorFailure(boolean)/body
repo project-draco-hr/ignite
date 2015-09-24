@@ -1,0 +1,39 @@
+{
+  TestCustomEventCoordinatorFailureSpi spi0=new TestCustomEventCoordinatorFailureSpi();
+  nodeSpi=spi0;
+  Ignite ignite0=startGrid(0);
+  nodeSpi=new TestCustomEventCoordinatorFailureSpi();
+  Ignite ignite1=startGrid(1);
+  nodeSpi=new TestCustomEventCoordinatorFailureSpi();
+  Ignite ignite2=twoNodes ? null : startGrid(2);
+  final Ignite createCacheNode=ignite2 != null ? ignite2 : ignite1;
+  CountDownLatch latch=new CountDownLatch(1);
+  spi0.latch=latch;
+  final String CACHE_NAME="test-cache";
+  IgniteInternalFuture<?> fut=GridTestUtils.runAsync(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      log.info("Create test cache");
+      CacheConfiguration ccfg=new CacheConfiguration();
+      ccfg.setName(CACHE_NAME);
+      createCacheNode.createCache(ccfg);
+      return null;
+    }
+  }
+,"create-cache-thread");
+  ((TcpCommunicationSpi)ignite0.configuration().getCommunicationSpi()).simulateNodeFailure();
+  latch.await();
+  ignite0.close();
+  fut.get();
+  IgniteCache<Object,Object> cache=grid(1).cache(CACHE_NAME);
+  assertNotNull(cache);
+  cache.put(1,1);
+  assertEquals(1,cache.get(1));
+  log.info("Try start one more node.");
+  nodeSpi=new TestCustomEventCoordinatorFailureSpi();
+  Ignite ignite=startGrid(twoNodes ? 2 : 3);
+  cache=ignite.cache(CACHE_NAME);
+  assertNotNull(cache);
+  cache.put(2,2);
+  assertEquals(1,cache.get(1));
+  assertEquals(2,cache.get(2));
+}
