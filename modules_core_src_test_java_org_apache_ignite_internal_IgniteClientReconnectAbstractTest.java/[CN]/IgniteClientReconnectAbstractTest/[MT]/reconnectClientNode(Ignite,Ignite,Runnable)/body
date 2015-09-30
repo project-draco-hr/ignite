@@ -1,30 +1,3 @@
 {
-  final TestTcpDiscoverySpi clientSpi=spi(client);
-  final TestTcpDiscoverySpi srvSpi=spi(srv);
-  final CountDownLatch disconnectLatch=new CountDownLatch(1);
-  final CountDownLatch reconnectLatch=new CountDownLatch(1);
-  log.info("Block reconnect.");
-  clientSpi.writeLatch=new CountDownLatch(1);
-  IgnitePredicate<Event> p=new IgnitePredicate<Event>(){
-    @Override public boolean apply(    Event evt){
-      if (evt.type() == EVT_CLIENT_NODE_DISCONNECTED) {
-        info("Disconnected: " + evt);
-        disconnectLatch.countDown();
-      }
- else       if (evt.type() == EVT_CLIENT_NODE_RECONNECTED) {
-        info("Reconnected: " + evt);
-        reconnectLatch.countDown();
-      }
-      return true;
-    }
-  }
-;
-  client.events().localListen(p,EVT_CLIENT_NODE_DISCONNECTED,EVT_CLIENT_NODE_RECONNECTED);
-  srvSpi.failNode(client.cluster().localNode().id(),null);
-  waitReconnectEvent(disconnectLatch);
-  if (disconnectedC != null)   disconnectedC.run();
-  log.info("Allow reconnect.");
-  clientSpi.writeLatch.countDown();
-  waitReconnectEvent(reconnectLatch);
-  client.events().stopLocalListen(p);
+  reconnectClientNodes(Collections.singletonList(client),srv,disconnectedC);
 }
