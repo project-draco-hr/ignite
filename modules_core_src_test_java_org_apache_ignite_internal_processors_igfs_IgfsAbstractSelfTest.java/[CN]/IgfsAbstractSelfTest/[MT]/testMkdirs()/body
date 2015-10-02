@@ -1,5 +1,29 @@
 {
   Map<String,String> props=properties(null,null,"0555");
+  igfs.mkdirs(new IgfsPath("/x"),null);
+  checkExist(igfs,igfsSecondary,new IgfsPath("/x"));
+  igfs.mkdirs(new IgfsPath("/k/l"),null);
+  checkExist(igfs,igfsSecondary,new IgfsPath("/k/l"));
+  igfs.mkdirs(new IgfsPath("/x/y"),null);
+  checkExist(igfs,igfsSecondary,new IgfsPath("/x/y"));
+  igfs.mkdirs(new IgfsPath("/a/b/c/d"),null);
+  checkExist(igfs,igfsSecondary,new IgfsPath("/a/b/c/d"));
+  igfs.mkdirs(new IgfsPath("/a/b/c/d/e"),null);
+  checkExist(igfs,igfsSecondary,new IgfsPath("/a/b/c/d/e"));
+  create(igfs,null,new IgfsPath[]{new IgfsPath("/d/f")});
+  checkExist(igfs,igfsSecondary,new IgfsPath("/d/f"));
+  try {
+    igfs.mkdirs(new IgfsPath("/d/f"),null);
+    fail("IgfsParentNotDirectoryException expected.");
+  }
+ catch (  IgfsParentNotDirectoryException ignore) {
+  }
+  try {
+    igfs.mkdirs(new IgfsPath("/d/f/something/else"),null);
+    fail("IgfsParentNotDirectoryException expected.");
+  }
+ catch (  IgfsParentNotDirectoryException ignore) {
+  }
   create(igfs,paths(DIR,SUBDIR),null);
   igfs.mkdirs(SUBSUBDIR,props);
   checkExist(igfs,igfsSecondary,SUBSUBDIR);
