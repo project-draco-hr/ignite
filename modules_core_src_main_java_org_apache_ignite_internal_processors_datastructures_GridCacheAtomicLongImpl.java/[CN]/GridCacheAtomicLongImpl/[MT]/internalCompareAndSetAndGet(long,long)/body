@@ -1,11 +1,11 @@
 {
-  return new Callable<Boolean>(){
-    @Override public Boolean call() throws Exception {
+  return new Callable<Long>(){
+    @Override public Long call() throws Exception {
       try (IgniteInternalTx tx=CU.txStartInternal(ctx,atomicView,PESSIMISTIC,REPEATABLE_READ)){
         GridCacheAtomicLongValue val=atomicView.get(key);
         if (val == null)         throw new IgniteCheckedException("Failed to find atomic long with given name: " + name);
-        boolean retVal=val.get() == expVal;
-        if (retVal) {
+        long retVal=val.get();
+        if (retVal == expVal) {
           val.set(newVal);
           atomicView.getAndPut(key,val);
           tx.commit();
