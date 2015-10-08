@@ -15,11 +15,13 @@
       tx.commit();
       return dataStructure;
     }
- catch (    ClusterTopologyCheckedException e) {
-      IgniteInternalFuture<?> fut=e.retryReadyFuture();
-      fut.get();
+ catch (    IgniteTxRollbackCheckedException ignore) {
     }
-catch (    IgniteTxRollbackCheckedException ignore) {
+catch (    IgniteCheckedException e) {
+      ClusterTopologyCheckedException topErr=e.getCause(ClusterTopologyCheckedException.class);
+      if (topErr == null)       throw e;
+      IgniteInternalFuture<?> fut=topErr.retryReadyFuture();
+      if (fut != null)       fut.get();
     }
   }
 }
