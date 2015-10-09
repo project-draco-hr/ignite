@@ -4,14 +4,7 @@
     IgniteCache<String,Integer> c=jcache(i);
     assertEquals((Integer)1,c.get("key"));
     boolean nearEnabled=nearEnabled(c);
-    if (nearEnabled) {
-      executeOnLocalOrRemoteJvm(i,new TestIgniteIdxRunnable(){
-        @Override public void run(        int idx) throws Exception {
-          assertTrue(((IgniteKernal)ignite(idx)).internalCache().context().isNear());
-        }
-      }
-);
-    }
+    if (nearEnabled)     executeOnLocalOrRemoteJvm(i,new IsNearTask());
     Integer nearPeekVal=nearEnabled ? 1 : null;
     Affinity<Object> aff=ignite(i).affinity(null);
     info("Affinity nodes [nodes=" + F.nodeIds(aff.mapKeyToPrimaryAndBackups("key")) + ", locNode="+ ignite(i).cluster().localNode().id()+ ']');

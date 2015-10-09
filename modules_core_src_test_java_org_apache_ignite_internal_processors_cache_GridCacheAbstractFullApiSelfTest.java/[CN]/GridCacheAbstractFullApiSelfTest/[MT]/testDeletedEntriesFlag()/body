@@ -4,22 +4,6 @@
     IgniteCache<String,Integer> cache=jcache();
     for (int i=0; i < cnt; i++)     cache.put(String.valueOf(i),i);
     for (int i=0; i < cnt; i++)     cache.remove(String.valueOf(i));
-    for (int g=0; g < gridCount(); g++) {
-      executeOnLocalOrRemoteJvm(g,new TestIgniteIdxRunnable(){
-        @Override public void run(        int idx) throws Exception {
-          for (int i=0; i < cnt; i++) {
-            String key=String.valueOf(i);
-            GridCacheContext<String,Integer> cctx=context(idx);
-            GridCacheEntryEx entry=cctx.isNear() ? cctx.near().dht().peekEx(key) : cctx.cache().peekEx(key);
-            if (grid(idx).affinity(null).mapKeyToPrimaryAndBackups(key).contains(grid(idx).localNode())) {
-              assertNotNull(entry);
-              assertTrue(entry.deleted());
-            }
- else             assertNull(entry);
-          }
-        }
-      }
-);
-    }
+    for (int g=0; g < gridCount(); g++)     executeOnLocalOrRemoteJvm(g,new CheckEntriesDeletedTask(cnt));
   }
 }
