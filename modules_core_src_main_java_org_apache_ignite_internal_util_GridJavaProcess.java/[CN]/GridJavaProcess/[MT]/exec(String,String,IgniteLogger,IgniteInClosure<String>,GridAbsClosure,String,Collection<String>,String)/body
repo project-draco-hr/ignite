@@ -1,0 +1,30 @@
+{
+  if (!(U.isLinux() || U.isMacOs() || U.isWindows()))   throw new Exception("Your OS is not supported.");
+  GridJavaProcess gjProc=new GridJavaProcess();
+  gjProc.log=log;
+  gjProc.procKilledC=procKilledC;
+  List<String> procParams=params == null || params.isEmpty() ? Collections.<String>emptyList() : Arrays.asList(params.split(" "));
+  List<String> procCommands=new ArrayList<>();
+  String javaBin=(javaHome == null ? System.getProperty("java.home") : javaHome) + File.separator + "bin"+ File.separator+ "java";
+  procCommands.add(javaBin);
+  procCommands.addAll(jvmArgs == null ? U.jvmArgs() : jvmArgs);
+  if (jvmArgs == null || (!jvmArgs.contains("-cp") && !jvmArgs.contains("-classpath"))) {
+    String classpath=System.getProperty("java.class.path");
+    String sfcp=System.getProperty("surefire.test.class.path");
+    if (sfcp != null)     classpath+=System.getProperty("path.separator") + sfcp;
+    if (cp != null)     classpath+=System.getProperty("path.separator") + cp;
+    procCommands.add("-cp");
+    procCommands.add(classpath);
+  }
+  procCommands.add(clsName);
+  procCommands.addAll(procParams);
+  ProcessBuilder builder=new ProcessBuilder(procCommands);
+  builder.redirectErrorStream(true);
+  Process proc=builder.start();
+  gjProc.osGrabber=gjProc.new ProcessStreamGrabber(proc.getInputStream(),printC);
+  gjProc.esGrabber=gjProc.new ProcessStreamGrabber(proc.getErrorStream(),printC);
+  gjProc.osGrabber.start();
+  gjProc.esGrabber.start();
+  gjProc.proc=proc;
+  return gjProc;
+}
