@@ -4,4 +4,14 @@
   assertTrue(!ret.isEmpty());
   info("Topology command result: " + ret);
   jsonEquals(ret,pattern("\\[\\{.+\\}\\]",true));
+  JSONObject json=JSONObject.fromObject(ret);
+  Collection<Map> nodes=(Collection)json.get("response");
+  assertEquals(GRID_CNT,nodes.size());
+  for (  Map node : nodes) {
+    assertEquals(JSONNull.getInstance(),node.get("attributes"));
+    assertEquals(JSONNull.getInstance(),node.get("metrics"));
+    assertEquals("PARTITIONED",node.get("defaultCacheMode"));
+    Map caches=(Map)node.get("caches");
+    assertEquals(F.asMap("person","PARTITIONED"),caches);
+  }
 }
