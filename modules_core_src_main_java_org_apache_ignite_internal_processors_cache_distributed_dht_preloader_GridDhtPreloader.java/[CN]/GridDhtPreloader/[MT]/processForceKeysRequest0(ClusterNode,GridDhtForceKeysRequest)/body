@@ -6,8 +6,11 @@
     for (    KeyCacheObject k : msg.keys()) {
       int p=cctx.affinity().partition(k);
       GridDhtLocalPartition locPart=top.localPartition(p,AffinityTopologyVersion.NONE,false);
-      if (locPart == null && !top.owners(p).contains(loc))       res.addMissed(k);
-      GridCacheEntryEx entry;
+      if (locPart == null && !top.owners(p).contains(loc)) {
+        res.addMissed(k);
+        continue;
+      }
+      GridCacheEntryEx entry=null;
       if (cctx.isSwapOrOffheapEnabled()) {
         while (true) {
           try {
@@ -17,6 +20,11 @@
           }
  catch (          GridCacheEntryRemovedException ignore) {
             if (log.isDebugEnabled())             log.debug("Got removed entry: " + k);
+          }
+catch (          GridDhtInvalidPartitionException ignore) {
+            if (log.isDebugEnabled())             log.debug("Local node is no longer an owner: " + p);
+            res.addMissed(k);
+            break;
           }
         }
       }

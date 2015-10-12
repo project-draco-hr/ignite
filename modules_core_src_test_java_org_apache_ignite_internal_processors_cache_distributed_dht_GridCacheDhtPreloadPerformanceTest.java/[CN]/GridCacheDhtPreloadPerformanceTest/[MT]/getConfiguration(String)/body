@@ -1,0 +1,30 @@
+{
+  IgniteConfiguration c=super.getConfiguration(gridName);
+  CacheConfiguration cc=defaultCacheConfiguration();
+  cc.setCacheMode(CacheMode.PARTITIONED);
+  cc.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  cc.setRebalanceMode(CacheRebalanceMode.SYNC);
+  cc.setAffinity(new RendezvousAffinityFunction(false,1300));
+  cc.setBackups(2);
+  CacheConfiguration cc1=defaultCacheConfiguration();
+  cc1.setName("cc1");
+  cc1.setCacheMode(CacheMode.PARTITIONED);
+  cc1.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  cc1.setRebalanceMode(CacheRebalanceMode.SYNC);
+  cc1.setAffinity(new RendezvousAffinityFunction(false,1300));
+  cc1.setBackups(2);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  c.setDiscoverySpi(disco);
+  c.setIgfsThreadPoolSize(1);
+  c.setSystemThreadPoolSize(2);
+  c.setPublicThreadPoolSize(2);
+  c.setManagementThreadPoolSize(1);
+  c.setUtilityCachePoolSize(2);
+  c.setPeerClassLoadingThreadPoolSize(1);
+  c.setCacheConfiguration(cc,cc1);
+  TcpCommunicationSpi comm=new TcpCommunicationSpi();
+  comm.setSharedMemoryPort(-1);
+  c.setCommunicationSpi(comm);
+  return c;
+}
