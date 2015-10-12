@@ -1,0 +1,42 @@
+{
+  try {
+    Collection<IgniteInternalFuture<?>> futs=new ArrayList<>(GRID_CNT);
+    int scale=3;
+    final CyclicBarrier barrier=new CyclicBarrier(GRID_CNT * scale);
+    final AtomicReferenceArray<Exception> err=new AtomicReferenceArray<>(GRID_CNT * scale);
+    for (int i=0; i < GRID_CNT * scale; i++) {
+      if (i < GRID_CNT)       startGrid(i);
+      final int idx=i;
+      IgniteInternalFuture<Void> fut=GridTestUtils.runAsync(new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          Ignite ignite=ignite(idx % GRID_CNT);
+          try {
+            for (int k=0; k < 50; k++) {
+              barrier.await();
+              String cacheName="cache-" + k;
+              IgniteCache<Integer,Integer> cache=getCache(ignite,cacheName);
+              for (int i=0; i < 100; i++)               cache.getAndPut(i,i);
+              barrier.await();
+              ignite.destroyCache(cacheName);
+            }
+          }
+ catch (          Exception e) {
+            err.set(idx,e);
+          }
+          return null;
+        }
+      }
+);
+      futs.add(fut);
+    }
+    for (    IgniteInternalFuture<?> fut : futs)     fut.get(getTestTimeout());
+    info("Errors: " + err);
+    for (int i=0; i < err.length(); i++) {
+      Exception ex=err.get(i);
+      if (ex != null)       throw ex;
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

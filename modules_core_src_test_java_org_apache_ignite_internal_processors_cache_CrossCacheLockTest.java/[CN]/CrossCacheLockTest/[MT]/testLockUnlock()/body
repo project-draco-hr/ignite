@@ -1,0 +1,34 @@
+{
+  for (int i=0; i < GRID_CNT; i++) {
+    Ignite ignite=ignite(i);
+    log.info("Check node: " + ignite.name());
+    IgniteCache<Integer,Integer> cache1=ignite.cache(CACHE1);
+    IgniteCache<Integer,Integer> cache2=ignite.cache(CACHE2);
+    for (int k=0; k < 1000; k++) {
+      Lock lock1=null;
+      Lock lock2=null;
+      try {
+        lock1=cache1.lock(k);
+        assertTrue(lock1.tryLock());
+        assertTrue(cache1.isLocalLocked(k,true));
+        assertFalse(cache2.isLocalLocked(k,true));
+        lock2=cache2.lock(k);
+        assertTrue(lock2.tryLock());
+        assertTrue(cache1.isLocalLocked(k,true));
+        assertTrue(cache2.isLocalLocked(k,true));
+        lock2.unlock();
+        lock2=null;
+        assertTrue(cache1.isLocalLocked(k,true));
+        assertFalse(cache2.isLocalLocked(k,true));
+        lock1.unlock();
+        lock1=null;
+        assertFalse(cache1.isLocalLocked(k,true));
+        assertFalse(cache2.isLocalLocked(k,true));
+      }
+  finally {
+        if (lock1 != null)         lock1.unlock();
+        if (lock2 != null)         lock2.unlock();
+      }
+    }
+  }
+}

@@ -5,8 +5,8 @@
   }
   maxRebalanceOrder=validatePreloadOrder(ctx.config().getCacheConfiguration());
   ctx.discovery().setCustomEventListener(DynamicCacheChangeBatch.class,new CustomEventListener<DynamicCacheChangeBatch>(){
-    @Override public void onCustomEvent(    ClusterNode snd,    DynamicCacheChangeBatch msg){
-      onCacheChangeRequested(msg);
+    @Override public void onCustomEvent(    ClusterNode snd,    DynamicCacheChangeBatch msg,    AffinityTopologyVersion topVer){
+      onCacheChangeRequested(msg,topVer);
     }
   }
 );
@@ -38,7 +38,7 @@
     desc.staticallyConfigured(true);
     if (!template) {
       registeredCaches.put(masked,desc);
-      ctx.discovery().setCacheFilter(cfg.getName(),cfg.getNodeFilter(),cfg.getNearConfiguration() != null && cfg.getCacheMode() == PARTITIONED,cfg.getCacheMode() == LOCAL);
+      ctx.discovery().setCacheFilter(cfg.getName(),cfg.getNodeFilter(),cfg.getNearConfiguration() != null && cfg.getCacheMode() == PARTITIONED,cfg.getCacheMode());
       ctx.discovery().addClientNode(cfg.getName(),ctx.localNodeId(),cfg.getNearConfiguration() != null);
       if (!cacheType.userCache())       stopSeq.addLast(cfg.getName());
  else       stopSeq.addFirst(cfg.getName());

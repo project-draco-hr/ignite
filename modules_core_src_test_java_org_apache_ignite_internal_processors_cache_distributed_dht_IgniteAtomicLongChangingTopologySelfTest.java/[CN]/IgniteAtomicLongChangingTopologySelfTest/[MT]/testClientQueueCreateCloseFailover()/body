@@ -1,0 +1,15 @@
+{
+  testFailoverWithClient(new IgniteInClosure<Ignite>(){
+    @Override public void apply(    Ignite ignite){
+      for (int i=0; i < 100; i++) {
+        CollectionConfiguration colCfg=new CollectionConfiguration();
+        colCfg.setBackups(1);
+        colCfg.setCacheMode(PARTITIONED);
+        colCfg.setAtomicityMode(i % 2 == 0 ? TRANSACTIONAL : ATOMIC);
+        IgniteQueue q=ignite.queue("q-" + i,0,colCfg);
+        q.close();
+      }
+    }
+  }
+);
+}

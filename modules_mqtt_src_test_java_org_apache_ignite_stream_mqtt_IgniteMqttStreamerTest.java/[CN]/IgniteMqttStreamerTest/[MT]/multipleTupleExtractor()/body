@@ -1,0 +1,16 @@
+{
+  return new StreamMultipleTupleExtractor<MqttMessage,Integer,String>(){
+    @Override public Map<Integer,String> extract(    MqttMessage msg){
+      final Map<String,String> map=Splitter.on("\n").omitEmptyStrings().withKeyValueSeparator(",").split(new String(msg.getPayload()));
+      final Map<Integer,String> answer=new HashMap<>();
+      F.forEach(map.keySet(),new IgniteInClosure<String>(){
+        @Override public void apply(        String s){
+          answer.put(Integer.parseInt(s),map.get(s));
+        }
+      }
+);
+      return answer;
+    }
+  }
+;
+}
