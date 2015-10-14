@@ -3,40 +3,53 @@
   final AtomicInteger createCtr=new AtomicInteger();
   final AtomicReference<Exception> err=new AtomicReference<>();
   igfs.create(FILE,false).close();
-  int threadCnt=5;
+  int threadCnt=50;
   IgniteInternalFuture<?> fut=multithreadedAsync(new Runnable(){
     @Override public void run(){
-      while (!stop.get()) {
+      while (!stop.get() && err.get() == null) {
         IgfsOutputStream os=null;
         try {
           os=igfs.create(FILE,true);
           os.write(chunk);
-          U.sleep(50);
           os.close();
           createCtr.incrementAndGet();
         }
- catch (        IgniteInterruptedCheckedException|IgniteException ignore) {
-          try {
-            U.sleep(10);
-          }
- catch (          IgniteInterruptedCheckedException ignored) {
+ catch (        IgniteException e) {
+          Throwable[] chain=X.getThrowables(e);
+          Throwable cause=chain[chain.length - 1];
+          if (!e.getMessage().startsWith("Failed to overwrite file (file is opened for writing)") && (cause == null || !cause.getMessage().startsWith("Failed to overwrite file (file is opened for writing)"))) {
+            System.out.println("Failed due to IgniteException exception. Cause:");
+            cause.printStackTrace(System.out);
+            err.compareAndSet(null,e);
           }
         }
 catch (        IOException e) {
-          if (!e.getMessage().startsWith("File was concurrently deleted"))           err.compareAndSet(null,e);
+          err.compareAndSet(null,e);
+          Throwable[] chain=X.getThrowables(e);
+          Throwable cause=chain[chain.length - 1];
+          System.out.println("Failed due to IOException exception. Cause:");
+          cause.printStackTrace(System.out);
         }
  finally {
-          U.closeQuiet(os);
+          if (os != null)           try {
+            os.close();
+          }
+ catch (          IOException ioe) {
+            throw new IgniteException(ioe);
+          }
         }
       }
     }
   }
 ,threadCnt);
   long startTime=U.currentTimeMillis();
-  while (createCtr.get() < 50 && U.currentTimeMillis() - startTime < 60 * 1000)   U.sleep(100);
+  while (err.get() == null && createCtr.get() < 500 && U.currentTimeMillis() - startTime < 60 * 1000)   U.sleep(100);
   stop.set(true);
   fut.get();
   awaitFileClose(igfs.asSecondary(),FILE);
-  if (err.get() != null)   throw err.get();
+  if (err.get() != null) {
+    X.println("Test failed: rethrowing first error: " + err.get());
+    throw err.get();
+  }
   checkFileContent(igfs,FILE,chunk);
 }

@@ -1,2 +1,50 @@
 {
+  Field workerMapFld=IgfsImpl.class.getDeclaredField("workerMap");
+  workerMapFld.setAccessible(true);
+  Map<IgfsPath,IgfsFileWorkerBatch> workerMap=(Map<IgfsPath,IgfsFileWorkerBatch>)workerMapFld.get(igfs);
+  for (  Map.Entry<IgfsPath,IgfsFileWorkerBatch> entry : workerMap.entrySet()) {
+    entry.getValue().cancel();
+    try {
+      entry.getValue().await();
+    }
+ catch (    IgniteCheckedException e) {
+      if (!entry.getValue().cancelled())       throw e;
+    }
+  }
+  igfs.format();
+  int prevDifferentSize=Integer.MAX_VALUE;
+  int size;
+  int constCnt=0, totalCnt=0;
+  final int constThreshold=20;
+  final long sleepPeriod=500L;
+  final long totalThreshold=CACHE_EMPTY_TIMEOUT / sleepPeriod;
+  while (true) {
+    size=sumCacheSize(igfs);
+    if (size <= 2)     return;
+    X.println("Sum size: " + size);
+    if (size > prevDifferentSize) {
+      X.println("Summary cache size has grown unexpectedly: size=" + size + ", prevSize="+ prevDifferentSize);
+      break;
+    }
+    if (totalCnt > totalThreshold) {
+      X.println("Timeout exceeded.");
+      break;
+    }
+    if (size == prevDifferentSize) {
+      constCnt++;
+      if (constCnt == constThreshold) {
+        X.println("Summary cache size stays unchanged for too long: size=" + size);
+        break;
+      }
+    }
+ else {
+      constCnt=0;
+      prevDifferentSize=size;
+    }
+    Thread.sleep(sleepPeriod);
+    totalCnt++;
+  }
+  dumpCache("MetaCache",getMetaCache(igfs));
+  dumpCache("DataCache",getDataCache(igfs));
+  fail("Caches are not empty.");
 }

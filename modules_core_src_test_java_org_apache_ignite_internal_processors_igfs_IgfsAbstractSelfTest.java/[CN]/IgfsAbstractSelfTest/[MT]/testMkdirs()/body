@@ -12,17 +12,24 @@
   checkExist(igfs,igfsSecondary,new IgfsPath("/a/b/c/d/e"));
   create(igfs,null,new IgfsPath[]{new IgfsPath("/d/f")});
   checkExist(igfs,igfsSecondary,new IgfsPath("/d/f"));
+  assertTrue(igfs.info(new IgfsPath("/d/f")).isFile());
   try {
     igfs.mkdirs(new IgfsPath("/d/f"),null);
     fail("IgfsParentNotDirectoryException expected.");
   }
  catch (  IgfsParentNotDirectoryException ignore) {
   }
+catch (  IgfsException ignore) {
+    if (!getClass().getSimpleName().startsWith("Hadoop"))     throw ignore;
+  }
   try {
     igfs.mkdirs(new IgfsPath("/d/f/something/else"),null);
     fail("IgfsParentNotDirectoryException expected.");
   }
  catch (  IgfsParentNotDirectoryException ignore) {
+  }
+catch (  IgfsException ignore) {
+    if (!getClass().getSimpleName().startsWith("Hadoop"))     throw ignore;
   }
   create(igfs,paths(DIR,SUBDIR),null);
   igfs.mkdirs(SUBSUBDIR,props);
