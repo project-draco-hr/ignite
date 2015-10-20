@@ -3,31 +3,29 @@
   topics=topics == null ? new ArrayList<String>() : topics;
   qualitiesOfService=qualitiesOfService == null ? new ArrayList<Integer>() : qualitiesOfService;
   try {
+    Map<String,Object> logValues=new HashMap<>();
     A.notNull(getStreamer(),"streamer");
     A.notNull(getIgnite(),"ignite");
     A.ensure(!(getSingleTupleExtractor() == null && getMultipleTupleExtractor() == null),"tuple extractor missing");
     A.ensure(getSingleTupleExtractor() == null || getMultipleTupleExtractor() == null,"cannot provide " + "both single and multiple tuple extractor");
     A.notNullOrEmpty(brokerUrl,"broker URL");
-    if (clientId == null || clientId.length() == 0) {
-      clientId=MqttClient.generateClientId();
-    }
+    if (clientId == null || clientId.length() == 0)     clientId=MqttClient.generateClientId();
     if (topic != null && topic.length() > 0 && !topics.isEmpty() && topics.size() != 1 && !topics.get(0).equals(topic))     throw new IllegalArgumentException("Cannot specify both a single topic and a list at the same time");
-    if (qualityOfService != null && !qualitiesOfService.isEmpty() && qualitiesOfService.size() != 1 && !qualitiesOfService.get(0).equals(qualityOfService)) {
-      throw new IllegalArgumentException("Cannot specify both a single QoS and a list at the same time");
-    }
-    if (disconnectForcibly && disconnectQuiesceTimeout != null) {
-      A.notNull(disconnectForciblyTimeout,"disconnect timeout cannot be null when disconnecting forcibly " + "with quiesce");
-    }
+    if (qualityOfService != null && !qualitiesOfService.isEmpty() && qualitiesOfService.size() != 1 && !qualitiesOfService.get(0).equals(qualityOfService))     throw new IllegalArgumentException("Cannot specify both a single QoS and a list at the same time");
+    if (disconnectForcibly && disconnectQuiesceTimeout != null)     A.notNull(disconnectForciblyTimeout,"disconnect timeout cannot be null when disconnecting forcibly " + "with quiesce");
     if (!topics.isEmpty()) {
       for (      String t : topics)       A.notNullOrEmpty(t,"topic in list of topics");
       A.ensure(qualitiesOfService.isEmpty() || qualitiesOfService.size() == topics.size(),"qualities of " + "service must be either empty or have the same size as topics list");
-      cachedLogPrefix="[" + Joiner.on(",").join(topics) + "]";
+      logValues.put("topics",topics);
     }
  else {
       topics.add(topic);
       if (qualityOfService != null)       qualitiesOfService.add(qualityOfService);
-      cachedLogPrefix="[" + topic + "]";
+      logValues.put("topic",topic);
     }
+    logValues.put("brokerUrl",brokerUrl);
+    logValues.put("clientId",clientId);
+    cachedLogValues="[" + Joiner.on(", ").withKeyValueSeparator("=").join(logValues) + "]";
     log=getIgnite().log();
     if (persistence == null)     client=new MqttClient(brokerUrl,clientId);
  else     client=new MqttClient(brokerUrl,clientId,persistence);
@@ -40,6 +38,7 @@
     }
 ).retryIfException().retryIfRuntimeException().withWaitStrategy(retryWaitStrategy).withStopStrategy(retryStopStrategy).build();
     connectionRetrier=new MqttConnectionRetrier(retrier);
+    log.info("Starting MQTT Streamer " + cachedLogValues);
     connectionRetrier.connect();
   }
  catch (  Throwable t) {
