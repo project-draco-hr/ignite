@@ -1,3 +1,16 @@
 {
-  return fut.next();
+  if (firstItemReturned)   return fut.next();
+  while (true) {
+    try {
+      fut.awaitFirstPage();
+      firstItemReturned=true;
+      return fut.next();
+    }
+ catch (    IgniteClientDisconnectedCheckedException e) {
+      throw CU.convertToCacheException(e);
+    }
+catch (    IgniteCheckedException e) {
+      retryIfPossible(e);
+    }
+  }
 }

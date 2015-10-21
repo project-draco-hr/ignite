@@ -6,16 +6,22 @@
       for (int i=0; i < NUM_SETS; i++) {
         String key="set-" + i;
         String val="value-" + k;
-        cache.invoke(key,new Processor(val));
+        procs.put(key,new Processor(val));
       }
-      cache.invokeAll(procs);
+      Map<String,EntryProcessorResult<Integer>> resMap=cache.invokeAll(procs);
+      for (      String key : procs.keySet()) {
+        EntryProcessorResult<Integer> res=resMap.get(key);
+        assertNotNull(res);
+        assertEquals(k + 1,(Object)res.get());
+      }
     }
  else {
+      IgniteCache<String,Set<String>> cache=ignite(0).cache(null);
       for (int i=0; i < NUM_SETS; i++) {
         String key="set-" + i;
         String val="value-" + k;
-        IgniteCache<String,Set<String>> cache=ignite(0).cache(null);
-        cache.invoke(key,new Processor(val));
+        Integer valsCnt=cache.invoke(key,new Processor(val));
+        assertEquals(k + 1,(Object)valsCnt);
       }
     }
   }

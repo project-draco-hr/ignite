@@ -1,0 +1,17 @@
+{
+  startGridsMultiThreaded(3);
+  try {
+    CacheConfiguration ccfg=new CacheConfiguration("affTemplate-*");
+    ccfg.setAffinity(new RendezvousAffinityFunction());
+    ignite(0).addCacheConfiguration(ccfg);
+    ignite(0).getOrCreateCache("affTemplate-1");
+    IgniteCache<Object,Object> cache=ignite(0).getOrCreateCache("affTemplate-2");
+    ignite(0).destroyCache("affTemplate-1");
+    startGrid(3);
+    cache.put(1,1);
+    assertEquals(1,cache.get(1));
+  }
+  finally {
+    stopAllGrids();
+  }
+}

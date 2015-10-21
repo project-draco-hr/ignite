@@ -1,0 +1,16 @@
+{
+  if (msg instanceof TcpDiscoveryNodeAddedMessage) {
+    if (nodeAdded1 != null) {
+      nodeAdded1.countDown();
+      if (debug)       log.info("--- Wait node added: " + msg);
+      U.await(nodeAdded2);
+      nodeAdded1=null;
+      nodeAdded2=null;
+    }
+    if (stop)     return;
+    if (debug)     log.info("--- Send node added: " + msg);
+  }
+  if (debug && msg instanceof TcpDiscoveryNodeAddFinishedMessage)   log.info("--- Send node finished: " + msg);
+  if (debug && msg instanceof TcpDiscoveryCustomEventMessage)   log.info("--- Send custom event: " + msg);
+  super.writeToSocket(sock,msg,bout,timeout);
+}

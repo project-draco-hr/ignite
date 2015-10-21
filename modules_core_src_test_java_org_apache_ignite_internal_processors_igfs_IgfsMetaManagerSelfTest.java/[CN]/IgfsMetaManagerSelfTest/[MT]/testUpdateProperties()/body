@@ -1,12 +1,16 @@
 {
   assertEmpty(mgr.directoryListing(ROOT_ID));
-  IgfsFileInfo dir=new IgfsFileInfo(true,null);
-  IgfsFileInfo file=new IgfsFileInfo(new IgfsFileInfo(400,null,false,null),1);
-  assertNull(mgr.putIfAbsent(ROOT_ID,"dir",dir));
-  assertNull(mgr.putIfAbsent(ROOT_ID,"file",file));
-  assertEquals(F.asMap("dir",new IgfsListingEntry(dir),"file",new IgfsListingEntry(file)),mgr.directoryListing(ROOT_ID));
-  assertEquals(dir,mgr.info(dir.id()));
-  assertEquals(file,mgr.info(file.id()));
+  assertTrue(mgr.mkdirs(new IgfsPath("/dir"),IgfsImpl.DFLT_DIR_META));
+  assertNotNull(mgr.create(new IgfsPath("/file"),false,false,null,400,null,false,null));
+  IgfsListingEntry dirEntry=mgr.directoryListing(ROOT_ID).get("dir");
+  assertNotNull(dirEntry);
+  assertTrue(dirEntry.isDirectory());
+  IgfsFileInfo dir=mgr.info(dirEntry.fileId());
+  IgfsListingEntry fileEntry=mgr.directoryListing(ROOT_ID).get("file");
+  assertNotNull(fileEntry);
+  assertTrue(!fileEntry.isDirectory());
+  IgfsFileInfo file=mgr.info(fileEntry.fileId());
+  assertEquals(2,mgr.directoryListing(ROOT_ID).size());
   for (  IgniteBiTuple<IgniteUuid,String> tup : Arrays.asList(F.t(dir.id(),"dir"),F.t(file.id(),"file"))) {
     IgniteUuid fileId=tup.get1();
     String fileName=tup.get2();
@@ -14,21 +18,22 @@
     String key1=UUID.randomUUID().toString();
     String key2=UUID.randomUUID().toString();
     IgfsFileInfo info=mgr.info(fileId);
-    assertNull("Expects empty properties are not stored: " + info,getFieldValue(info,"props"));
-    assertEquals("Expects empty properties are not stored: " + info,Collections.<String,String>emptyMap(),info.properties());
+    assertNull("Unexpected stored properties: " + info,info.properties().get(key1));
+    assertNull("Unexpected stored properties: " + info,info.properties().get(key2));
     info=mgr.updateProperties(ROOT_ID,fileId,fileName,F.asMap(key1,"1"));
-    assertEquals("Unexpected stored properties: " + info,F.asMap(key1,"1"),info.properties());
+    assertEquals("Unexpected stored properties: " + info,"1",info.properties().get(key1));
     info=mgr.updateProperties(ROOT_ID,fileId,fileName,F.asMap(key2,"2"));
-    assertEquals("Unexpected stored properties: " + info,F.asMap(key1,"1",key2,"2"),info.properties());
+    assertEquals("Unexpected stored properties: " + info,"1",info.properties().get(key1));
+    assertEquals("Unexpected stored properties: " + info,"2",info.properties().get(key2));
     info=mgr.updateProperties(ROOT_ID,fileId,fileName,F.<String,String>asMap(key1,null));
-    assertEquals("Unexpected stored properties: " + info,F.asMap(key2,"2"),info.properties());
+    assertEquals("Unexpected stored properties: " + info,"2",info.properties().get(key2));
     info=mgr.updateProperties(ROOT_ID,fileId,fileName,F.<String,String>asMap(key2,null));
-    assertNull("Expects empty properties are not stored: " + info,getFieldValue(info,"props"));
-    assertEquals("Expects empty properties are not stored: " + info,Collections.<String,String>emptyMap(),info.properties());
+    assertNull("Unexpected stored properties: " + info,info.properties().get(key1));
+    assertNull("Unexpected stored properties: " + info,info.properties().get(key2));
     assertNull(mgr.updateProperties(ROOT_ID,fileId,"not_exists",F.<String,String>asMap(key2,null)));
   }
-  mgr.removeIfEmpty(ROOT_ID,"dir",dir.id(),new IgfsPath("/dir"),true);
-  mgr.removeIfEmpty(ROOT_ID,"file",file.id(),new IgfsPath("/file"),true);
+  mgr.softDelete(new IgfsPath("/dir"),true);
+  mgr.softDelete(new IgfsPath("/file"),false);
   assertNull(mgr.updateProperties(ROOT_ID,dir.id(),"dir",F.asMap("p","7")));
   assertNull(mgr.updateProperties(ROOT_ID,file.id(),"file",F.asMap("q","8")));
 }

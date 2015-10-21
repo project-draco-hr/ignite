@@ -1,0 +1,13 @@
+{
+  Deque<ClusterNode> fallbacks=new LinkedList<>();
+  Collection<ClusterNode> owners=new HashSet<>();
+  for (  ClusterNode node : cctx.topology().owners(part,topVer)) {
+    if (node.isLocal())     fallbacks.addFirst(node);
+ else     fallbacks.add(node);
+    owners.add(node);
+  }
+  for (  ClusterNode node : cctx.topology().moving(part)) {
+    if (!owners.contains(node))     fallbacks.add(node);
+  }
+  return fallbacks;
+}

@@ -7,19 +7,7 @@
     chache0.put(i,i);
     info("Finished putting value [i=" + i + ']');
   }
-  for (int i=0; i < gridCount(); i++) {
-    executeOnLocalOrRemoteJvm(i,new TestIgniteIdxRunnable(){
-      @Override public void run(      int idx) throws Exception {
-        assertEquals(0,context(idx).tm().idMapSize());
-        IgniteCache<Object,Object> cache=grid(idx).cache(null);
-        ClusterNode node=grid(idx).localNode();
-        for (int k=0; k < size; k++) {
-          if (affinity(cache).isPrimaryOrBackup(node,k))           assertEquals("Check failed for node: " + node.id(),k,cache.localPeek(k,CachePeekMode.ONHEAP,CachePeekMode.OFFHEAP));
-        }
-      }
-    }
-);
-  }
+  for (int i=0; i < gridCount(); i++)   executeOnLocalOrRemoteJvm(i,new CheckAffinityTask(size));
   for (int i=0; i < size; i++) {
     info("Putting value 2 [i=" + i + ']');
     assertEquals(i,chache0.getAndPutIfAbsent(i,i * i));

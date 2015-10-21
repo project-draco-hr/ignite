@@ -5,7 +5,7 @@
   int part=cctx.affinity().partition(key);
   if (offheapEnabled) {
     byte[] keyBytes=key.valueBytes(cctx.cacheObjectContext());
-    if ((qryMgr == null || readOffheapBeforeRemove(key,keyBytes,part) != null) && offheap.removex(spaceName,part,key,keyBytes)) {
+    if ((!qryMgr.enabled() || readOffheapBeforeRemove(key,keyBytes,part) != null) && offheap.removex(spaceName,part,key,keyBytes)) {
       if (cctx.config().isStatisticsEnabled())       cctx.cache().metrics0().onOffHeapRemove();
       return;
     }
@@ -13,7 +13,7 @@
   if (swapEnabled) {
     SwapKey swapKey=new SwapKey(key.value(cctx.cacheObjectContext(),false),part,key.valueBytes(cctx.cacheObjectContext()));
     ClassLoader ldr=cctx.deploy().globalLoader();
-    if (qryMgr != null && !readSwapBeforeRemove(key,swapKey,ldr))     return;
+    if (qryMgr.enabled() && !readSwapBeforeRemove(key,swapKey,ldr))     return;
     swapMgr.remove(spaceName,swapKey,cctx.config().isStatisticsEnabled() ? new CI1<byte[]>(){
       @Override public void apply(      byte[] rmv){
         if (rmv != null)         cctx.cache().metrics0().onSwapRemove();

@@ -3,41 +3,46 @@
   final AtomicInteger chunksCtr=new AtomicInteger();
   final AtomicReference<Exception> err=new AtomicReference<>();
   igfs.create(FILE,false).close();
-  int threadCnt=5;
+  int threadCnt=50;
   IgniteInternalFuture<?> fut=multithreadedAsync(new Runnable(){
     @Override public void run(){
-      while (!stop.get()) {
+      while (!stop.get() && err.get() == null) {
         IgfsOutputStream os=null;
         try {
           os=igfs.append(FILE,false);
           os.write(chunk);
-          U.sleep(50);
           os.close();
           chunksCtr.incrementAndGet();
         }
- catch (        IgniteInterruptedCheckedException|IgniteException ignore) {
-          try {
-            U.sleep(10);
-          }
- catch (          IgniteInterruptedCheckedException ignored) {
-          }
+ catch (        IgniteException e) {
+          Throwable[] chain=X.getThrowables(e);
+          Throwable cause=chain[chain.length - 1];
+          if (!e.getMessage().startsWith("Failed to open file (file is opened for writing)") && (cause == null || !cause.getMessage().startsWith("Failed to open file (file is opened for writing)")))           err.compareAndSet(null,e);
         }
 catch (        IOException e) {
           err.compareAndSet(null,e);
         }
  finally {
-          U.closeQuiet(os);
+          if (os != null)           try {
+            os.close();
+          }
+ catch (          IOException ioe) {
+            throw new IgniteException(ioe);
+          }
         }
       }
     }
   }
 ,threadCnt);
   long startTime=U.currentTimeMillis();
-  while (chunksCtr.get() < 50 && U.currentTimeMillis() - startTime < 60 * 1000)   U.sleep(100);
+  while (err.get() == null && chunksCtr.get() < 50 && U.currentTimeMillis() - startTime < 60 * 1000)   U.sleep(100);
   stop.set(true);
   fut.get();
   awaitFileClose(igfs.asSecondary(),FILE);
-  if (err.get() != null)   throw err.get();
+  if (err.get() != null) {
+    X.println("Test failed: rethrowing first error: " + err.get());
+    throw err.get();
+  }
   byte[][] data=new byte[chunksCtr.get()][];
   Arrays.fill(data,chunk);
   checkFileContent(igfs,FILE,data);

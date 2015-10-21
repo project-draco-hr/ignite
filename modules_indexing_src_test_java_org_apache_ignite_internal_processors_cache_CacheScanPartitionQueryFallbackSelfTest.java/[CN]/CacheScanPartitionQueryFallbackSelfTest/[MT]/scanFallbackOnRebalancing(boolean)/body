@@ -1,0 +1,53 @@
+{
+  cacheMode=CacheMode.PARTITIONED;
+  clientMode=false;
+  backups=2;
+  commSpiFactory=new TestFallbackOnRebalancingCommunicationSpiFactory();
+  syncRebalance=true;
+  try {
+    Ignite ignite=startGrids(GRID_CNT);
+    fillCache(ignite);
+    final AtomicBoolean done=new AtomicBoolean(false);
+    final AtomicInteger idx=new AtomicInteger(GRID_CNT);
+    IgniteInternalFuture fut1=multithreadedAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        int id=idx.getAndIncrement();
+        while (!done.get()) {
+          startGrid(id);
+          Thread.sleep(3000);
+          info("Will stop grid: " + getTestGridName(id));
+          stopGrid(id);
+          if (done.get())           return null;
+          Thread.sleep(3000);
+        }
+        return null;
+      }
+    }
+,2);
+    final AtomicInteger nodeIdx=new AtomicInteger();
+    IgniteInternalFuture fut2=multithreadedAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        int nodeId=nodeIdx.getAndIncrement();
+        IgniteCache<Integer,Integer> cache=grid(nodeId).cache(null);
+        int cntr=0;
+        while (!done.get()) {
+          int part=ThreadLocalRandom.current().nextInt(ignite(nodeId).affinity(null).partitions());
+          if (cntr++ % 100 == 0)           info("Running query [node=" + nodeId + ", part="+ part+ ']');
+          try (QueryCursor<Cache.Entry<Integer,Integer>> cur0=cache.query(new ScanQuery<Integer,Integer>(part).setPageSize(5))){
+            if (cur)             doTestScanQueryCursor(cur0,part);
+ else             doTestScanQuery(cur0,part);
+          }
+         }
+        return null;
+      }
+    }
+,GRID_CNT);
+    Thread.sleep(60 * 1000);
+    done.set(true);
+    fut2.get();
+    fut1.get();
+  }
+  finally {
+    stopAllGrids();
+  }
+}

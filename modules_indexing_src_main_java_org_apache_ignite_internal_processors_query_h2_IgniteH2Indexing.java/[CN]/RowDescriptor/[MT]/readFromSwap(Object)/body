@@ -1,2 +1,8 @@
 {
+  IgniteInternalCache<Object,?> cache=ctx.cache().cache(schema.spaceName);
+  GridCacheContext cctx=cache.context();
+  if (cctx.isNear())   cctx=cctx.near().dht().context();
+  CacheObject v=cctx.swap().readValue(cctx.toCacheKeyObject(key),true,true);
+  if (v == null)   return null;
+  return v.value(cctx.cacheObjectContext(),false);
 }

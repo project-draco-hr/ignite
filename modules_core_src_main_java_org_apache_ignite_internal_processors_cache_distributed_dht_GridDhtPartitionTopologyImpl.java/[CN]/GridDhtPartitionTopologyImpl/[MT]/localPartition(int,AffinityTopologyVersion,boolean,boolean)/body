@@ -1,15 +1,15 @@
 {
+  boolean belongs=create && cctx.affinity().localNode(p,topVer);
   while (true) {
-    boolean belongs=cctx.affinity().localNode(p,topVer);
     GridDhtLocalPartition loc=locParts.get(p);
     if (loc != null && loc.state() == EVICTED) {
       locParts.remove(p,loc);
       if (!create)       return null;
-      if (!belongs)       throw new GridDhtInvalidPartitionException(p,"Adding entry to evicted partition [part=" + p + ", topVer="+ topVer+ ", this.topVer="+ this.topVer+ ']');
+      if (!belongs)       throw new GridDhtInvalidPartitionException(p,"Adding entry to evicted partition " + "(often may be caused by inconsistent 'key.hashCode()' implementation) " + "[part=" + p + ", topVer="+ topVer+ ", this.topVer="+ this.topVer+ ']');
       continue;
     }
     if (loc == null && create) {
-      if (!belongs)       throw new GridDhtInvalidPartitionException(p,"Creating partition which does not belong [part=" + p + ", topVer="+ topVer+ ", this.topVer="+ this.topVer+ ']');
+      if (!belongs)       throw new GridDhtInvalidPartitionException(p,"Creating partition which does not belong to " + "local node (often may be caused by inconsistent 'key.hashCode()' implementation) " + "[part=" + p + ", topVer="+ topVer+ ", this.topVer="+ this.topVer+ ']');
       lock.writeLock().lock();
       try {
         GridDhtLocalPartition old=locParts.putIfAbsent(p,loc=new GridDhtLocalPartition(cctx,p));

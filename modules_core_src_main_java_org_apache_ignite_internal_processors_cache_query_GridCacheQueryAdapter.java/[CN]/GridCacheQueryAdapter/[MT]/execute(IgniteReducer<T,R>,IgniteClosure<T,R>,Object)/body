@@ -7,7 +7,7 @@
     return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),e);
   }
   cctx.checkSecurity(SecurityPermission.CACHE_READ);
-  if (nodes.isEmpty())   return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),new ClusterGroupEmptyCheckedException());
+  if (nodes.isEmpty() && (type != SCAN || part == null))   return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),new ClusterGroupEmptyCheckedException());
   if (log.isDebugEnabled())   log.debug("Executing query [query=" + this + ", nodes="+ nodes+ ']');
   if (cctx.deploymentEnabled()) {
     try {
@@ -24,6 +24,6 @@
   final GridCacheQueryManager qryMgr=cctx.queries();
   boolean loc=nodes.size() == 1 && F.first(nodes).id().equals(cctx.localNodeId());
   if (type == SQL_FIELDS || type == SPI)   return (CacheQueryFuture<R>)(loc ? qryMgr.queryFieldsLocal(bean) : qryMgr.queryFieldsDistributed(bean,nodes));
- else   if (type == SCAN && part != null && nodes.size() > 1)   return new CacheQueryFallbackFuture<>(nodes,part,bean,qryMgr,cctx);
+ else   if (type == SCAN && part != null && !cctx.isLocal())   return new CacheQueryFallbackFuture<>(part,bean,qryMgr,cctx);
  else   return (CacheQueryFuture<R>)(loc ? qryMgr.queryLocal(bean) : qryMgr.queryDistributed(bean,nodes));
 }

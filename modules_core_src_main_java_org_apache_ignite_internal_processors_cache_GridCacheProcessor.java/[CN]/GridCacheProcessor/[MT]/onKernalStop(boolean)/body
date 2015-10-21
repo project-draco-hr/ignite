@@ -1,5 +1,7 @@
 {
   cacheStartedLatch.countDown();
+  GridCachePartitionExchangeManager<Object,Object> exch=context().exchange();
+  exch.onKernalStop(cancel);
   for (  String cacheName : stopSeq) {
     GridCacheAdapter<?,?> cache=caches.remove(maskNull(cacheName));
     if (cache != null) {
@@ -14,9 +16,10 @@
       onKernalStop(entry.getValue(),cancel);
     }
   }
+  cancelFutures();
   List<? extends GridCacheSharedManager<?,?>> sharedMgrs=sharedCtx.managers();
   for (ListIterator<? extends GridCacheSharedManager<?,?>> it=sharedMgrs.listIterator(sharedMgrs.size()); it.hasPrevious(); ) {
     GridCacheSharedManager<?,?> mgr=it.previous();
-    mgr.onKernalStop(cancel);
+    if (mgr != exch)     mgr.onKernalStop(cancel);
   }
 }

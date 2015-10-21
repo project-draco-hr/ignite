@@ -1,12 +1,7 @@
 {
   if (Ignite.class.equals(clazz))   return (T)igniteProxy;
   try {
-    return (T)compute.call(new IgniteCallable<Object>(){
-      @Override public Object call() throws Exception {
-        return cache().unwrap(clazz);
-      }
-    }
-);
+    return compute.call(new UnwrapTask<>(cacheName,isAsync,clazz));
   }
  catch (  Exception e) {
     throw new IllegalArgumentException("Looks like class " + clazz + " is unmarshallable. Exception type:"+ e.getClass(),e);
