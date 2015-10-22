@@ -1,27 +1,2 @@
 {
-  UUID clientId=req.clientId();
-  SecurityContext secCtx=clientId == null ? null : sesMap.get(clientId);
-  if (secCtx != null)   return secCtx;
-  AuthenticationContext authCtx=new AuthenticationContext();
-  authCtx.subjectType(REMOTE_CLIENT);
-  authCtx.subjectId(req.clientId());
-  SecurityCredentials cred;
-  if (req.credentials() instanceof SecurityCredentials)   cred=(SecurityCredentials)req.credentials();
- else   if (req.credentials() instanceof String) {
-    String credStr=(String)req.credentials();
-    int idx=credStr.indexOf(':');
-    cred=idx >= 0 && idx < credStr.length() ? new SecurityCredentials(credStr.substring(0,idx),credStr.substring(idx + 1)) : new SecurityCredentials(credStr,null);
-  }
- else {
-    cred=new SecurityCredentials();
-    cred.setUserObject(req.credentials());
-  }
-  authCtx.address(req.address());
-  authCtx.credentials(cred);
-  SecurityContext subjCtx=ctx.security().authenticate(authCtx);
-  if (subjCtx == null) {
-    if (req.credentials() == null)     throw new IgniteCheckedException("Failed to authenticate remote client (secure session SPI not set?): " + req);
- else     throw new IgniteCheckedException("Failed to authenticate remote client (invalid credentials?): " + req);
-  }
-  return subjCtx;
 }

@@ -38,6 +38,7 @@ case CACHE_ADD:
 case CACHE_CAS:
 case CACHE_METRICS:
 case CACHE_SIZE:
+case CACHE_METADATA:
 case CACHE_REPLACE:
 case CACHE_APPEND:
 case CACHE_PREPEND:
@@ -107,19 +108,33 @@ break;
 case EXECUTE_SQL_QUERY:
 case EXECUTE_SQL_FIELDS_QUERY:
 {
-RestSqlQueryRequest restReq0=new RestSqlQueryRequest();
+RestQueryRequest restReq0=new RestQueryRequest();
 restReq0.sqlQuery((String)params.get("qry"));
 restReq0.arguments(values("arg",params).toArray());
 restReq0.typeName((String)params.get("type"));
 String pageSize=(String)params.get("pageSize");
 if (pageSize != null) restReq0.pageSize(Integer.parseInt(pageSize));
 restReq0.cacheName((String)params.get("cacheName"));
+if (cmd == EXECUTE_SQL_QUERY) restReq0.queryType(RestQueryRequest.QueryType.SQL);
+ else restReq0.queryType(RestQueryRequest.QueryType.SQL_FIELDS);
+restReq=restReq0;
+break;
+}
+case EXECUTE_SCAN_QUERY:
+{
+RestQueryRequest restReq0=new RestQueryRequest();
+restReq0.sqlQuery((String)params.get("qry"));
+String pageSize=(String)params.get("pageSize");
+if (pageSize != null) restReq0.pageSize(Integer.parseInt(pageSize));
+restReq0.cacheName((String)params.get("cacheName"));
+restReq0.className((String)params.get("className"));
+restReq0.queryType(RestQueryRequest.QueryType.SCAN);
 restReq=restReq0;
 break;
 }
 case FETCH_SQL_QUERY:
 {
-RestSqlQueryRequest restReq0=new RestSqlQueryRequest();
+RestQueryRequest restReq0=new RestQueryRequest();
 String qryId=(String)params.get("qryId");
 if (qryId != null) restReq0.queryId(Long.parseLong(qryId));
 String pageSize=(String)params.get("pageSize");
@@ -130,7 +145,7 @@ break;
 }
 case CLOSE_SQL_QUERY:
 {
-RestSqlQueryRequest restReq0=new RestSqlQueryRequest();
+RestQueryRequest restReq0=new RestQueryRequest();
 String qryId=(String)params.get("qryId");
 if (qryId != null) restReq0.queryId(Long.parseLong(qryId));
 restReq0.cacheName((String)params.get("cacheName"));

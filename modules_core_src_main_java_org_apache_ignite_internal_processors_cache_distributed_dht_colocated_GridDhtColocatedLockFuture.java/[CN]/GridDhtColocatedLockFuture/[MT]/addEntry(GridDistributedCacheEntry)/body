@@ -1,14 +1,15 @@
 {
-  GridCacheMvccCandidate cand=cctx.mvcc().explicitLock(threadId,entry.key());
+  IgniteTxKey txKey=entry.txKey();
+  GridCacheMvccCandidate cand=cctx.mvcc().explicitLock(threadId,txKey);
   if (inTx()) {
-    IgniteTxEntry txEntry=tx.entry(entry.txKey());
+    IgniteTxEntry txEntry=tx.entry(txKey);
     txEntry.cached(entry);
     if (cand != null) {
       if (!tx.implicit())       throw new IgniteCheckedException("Cannot access key within transaction if lock is " + "externally held [key=" + entry.key() + ", entry="+ entry+ ']');
  else       return null;
     }
  else {
-      cand=new GridCacheMvccCandidate(entry,cctx.localNodeId(),null,null,threadId,lockVer,timeout,true,tx.entry(entry.txKey()).locked(),inTx(),inTx() && tx.implicitSingle(),false,false);
+      cand=new GridCacheMvccCandidate(entry,cctx.localNodeId(),null,null,threadId,lockVer,timeout,true,tx.entry(txKey).locked(),inTx(),inTx() && tx.implicitSingle(),false,false);
       cand.topologyVersion(topVer.get());
     }
   }

@@ -1,0 +1,29 @@
+{
+  log.info("Start cache validation.");
+  long startTime=U.currentTimeMillis();
+  Map<String,Set> badCacheEntries=new HashMap<>();
+  for (  Map.Entry<String,AtomicLong> e : nextValMap.entrySet()) {
+    String key=e.getKey();
+    Set set=(Set)cache.get(key);
+    if (set == null || e.getValue() == null || !Objects.equals(e.getValue().get(),(long)set.size()))     badCacheEntries.put(key,set);
+  }
+  if (!badCacheEntries.isEmpty()) {
+    for (    Map.Entry<String,Set> e : badCacheEntries.entrySet()) {
+      String key=e.getKey();
+      U.error(log,"Got unexpected set size [key='" + key + "', expSize="+ nextValMap.get(key)+ ", cacheVal="+ e.getValue()+ "]");
+    }
+    log.info("Next values map contant:");
+    for (    Map.Entry<String,AtomicLong> e : nextValMap.entrySet())     log.info("Map Entry [key=" + e.getKey() + ", val="+ e.getValue()+ "]");
+    log.info("Cache content:");
+    for (int k2=0; k2 < RANGE; k2++) {
+      String key2="key-" + k2;
+      Object val=cache.get(key2);
+      if (val != null)       log.info("Cache Entry [key=" + key2 + ", val="+ val+ "]");
+    }
+    fail("Cache and local map are in inconsistent state [badKeys=" + badCacheEntries.keySet() + ']');
+  }
+  log.info("Clearing all data.");
+  cache.removeAll();
+  nextValMap.clear();
+  log.info("Cache validation successfully finished in " + (U.currentTimeMillis() - startTime) / 1000 + " sec.");
+}
