@@ -1,0 +1,28 @@
+{
+  Ignite client1=client1();
+  Ignite client2=client2();
+  try {
+    CacheConfiguration<Integer,Integer> cfg=new CacheConfiguration<>("cache");
+    cfg.setCacheMode(cacheMode);
+    cfg.setMemoryMode(memMode);
+    IgniteCache<Integer,Integer> cache1=near ? client1.createCache(cfg,new NearCacheConfiguration<Integer,Integer>()) : client1.createCache(cfg);
+    IgniteCache<Integer,Integer> cache2=near ? client2.createNearCache("cache",new NearCacheConfiguration<Integer,Integer>()) : client2.<Integer,Integer>cache("cache");
+    for (int i=0; i < 10; i++)     cache1.put(i,i);
+    for (int i=0; i < 10; i++)     cache2.get(i);
+    assertEquals(10,cache1.size(CachePeekMode.PRIMARY));
+    assertEquals(10,cache2.size(CachePeekMode.PRIMARY));
+    assertEquals(near ? 10 : 0,cache1.localSize(CachePeekMode.NEAR));
+    assertEquals(near ? 10 : 0,cache2.localSize(CachePeekMode.NEAR));
+    if (F.isEmpty(keys))     cache1.clear();
+ else     if (keys.size() == 1)     cache1.clear(F.first(keys));
+ else     cache1.clearAll(keys);
+    int expSize=F.isEmpty(keys) ? 0 : 10 - keys.size();
+    assertEquals(expSize,cache1.size(CachePeekMode.PRIMARY));
+    assertEquals(expSize,cache2.size(CachePeekMode.PRIMARY));
+    assertEquals(near ? expSize : 0,cache1.localSize(CachePeekMode.NEAR));
+    assertEquals(near ? expSize : 0,cache2.localSize(CachePeekMode.NEAR));
+  }
+  finally {
+    client1.destroyCache("cache");
+  }
+}

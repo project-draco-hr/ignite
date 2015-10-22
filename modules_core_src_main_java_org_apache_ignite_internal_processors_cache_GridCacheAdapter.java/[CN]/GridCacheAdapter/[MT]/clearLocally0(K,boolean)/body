@@ -1,0 +1,16 @@
+{
+  ctx.checkSecurity(SecurityPermission.CACHE_REMOVE);
+  if (keyCheck)   validateCacheKey(key);
+  GridCacheVersion obsoleteVer=ctx.versions().next();
+  try {
+    KeyCacheObject cacheKey=ctx.toCacheKeyObject(key);
+    GridCacheEntryEx entry=ctx.isSwapOrOffheapEnabled() ? entryEx(cacheKey) : peekEx(cacheKey);
+    if (entry != null)     return entry.clear(obsoleteVer,readers,null);
+  }
+ catch (  GridDhtInvalidPartitionException ignored) {
+  }
+catch (  IgniteCheckedException ex) {
+    U.error(log,"Failed to clearLocally entry for key: " + key,ex);
+  }
+  return false;
+}

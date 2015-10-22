@@ -1,7 +1,14 @@
 {
-  Map<ComputeJob,ClusterNode> jobs=new HashMap();
+  Map<ComputeJob,ClusterNode> jobs=new HashMap<>();
   for (  ClusterNode node : subgrid) {
-    jobs.put(keys == null ? new GlobalClearAllJob(cacheName,topVer) : new GlobalClearKeySetJob<K>(cacheName,topVer,keys),node);
+    ComputeJob job;
+    if (near && node.version().compareTo(NEAR_JOB_SINCE) >= 0) {
+      job=keys == null ? new GlobalClearAllNearJob(cacheName,topVer) : new GlobalClearKeySetNearJob<>(cacheName,topVer,keys);
+    }
+ else {
+      job=keys == null ? new GlobalClearAllJob(cacheName,topVer) : new GlobalClearKeySetJob<>(cacheName,topVer,keys);
+    }
+    jobs.put(job,node);
   }
   return jobs;
 }
