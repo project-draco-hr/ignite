@@ -1,0 +1,34 @@
+{
+  TypeDescriptors descs=new TypeDescriptors();
+  if (clsNames != null) {
+    PortableIdMapper idMapper=new IdMapperWrapper(globalIdMapper);
+    for (    String clsName : clsNames) {
+      if (clsName.endsWith(".*")) {
+        String pkgName=clsName.substring(0,clsName.length() - 2);
+        for (        String clsName0 : classesInPackage(pkgName))         descs.add(clsName0,idMapper,null,null,globalMetaDataEnabled,globalKeepDeserialized,true);
+      }
+ else       descs.add(clsName,idMapper,null,null,globalMetaDataEnabled,globalKeepDeserialized,true);
+    }
+  }
+  if (typeCfgs != null) {
+    for (    PortableTypeConfiguration typeCfg : typeCfgs) {
+      String clsName=typeCfg.getClassName();
+      if (clsName == null)       throw new PortableException("Class name is required for portable type configuration.");
+      PortableIdMapper idMapper=globalIdMapper;
+      if (typeCfg.getIdMapper() != null)       idMapper=typeCfg.getIdMapper();
+      idMapper=new IdMapperWrapper(idMapper);
+      PortableSerializer serializer=globalSerializer;
+      if (typeCfg.getSerializer() != null)       serializer=typeCfg.getSerializer();
+      boolean metaDataEnabled=typeCfg.isMetaDataEnabled() != null ? typeCfg.isMetaDataEnabled() : globalMetaDataEnabled;
+      boolean keepDeserialized=typeCfg.isKeepDeserialized() != null ? typeCfg.isKeepDeserialized() : globalKeepDeserialized;
+      if (clsName.endsWith(".*")) {
+        String pkgName=clsName.substring(0,clsName.length() - 2);
+        for (        String clsName0 : classesInPackage(pkgName))         descs.add(clsName0,idMapper,serializer,typeCfg.getAffinityKeyFieldName(),metaDataEnabled,keepDeserialized,true);
+      }
+ else       descs.add(clsName,idMapper,serializer,typeCfg.getAffinityKeyFieldName(),metaDataEnabled,keepDeserialized,false);
+    }
+  }
+  for (  TypeDescriptor desc : descs.descriptors()) {
+    registerUserType(desc.clsName,desc.idMapper,desc.serializer,desc.affKeyFieldName,desc.metadataEnabled,desc.keepDeserialized);
+  }
+}
