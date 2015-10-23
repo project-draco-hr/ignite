@@ -1,8 +1,8 @@
 {
-  Callable<Boolean> callable=retrier.wrap(new Callable<Boolean>(){
-    @Override public Boolean call() throws Exception {
-      if (connected)       return true;
-      if (stopped)       return false;
+  Callable<Void> callable=retrier.wrap(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      if (client.isConnected())       return null;
+      if (stopped)       return null;
       if (connectOptions == null)       client.connect();
  else       client.connect(connectOptions);
       if (qualitiesOfService.isEmpty())       client.subscribe(topics.toArray(new String[0]));
@@ -12,12 +12,11 @@
         client.subscribe(topics.toArray(new String[0]),qoses);
       }
       log.info("MQTT Streamer (re-)connected and subscribed " + cachedLogValues);
-      connected=true;
-      return true;
+      return null;
     }
   }
 );
-  Future<Boolean> result=exec.submit(callable);
+  Future<Void> result=exec.submit(callable);
   if (blockUntilConnected) {
     try {
       result.get();

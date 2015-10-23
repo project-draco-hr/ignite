@@ -31,9 +31,9 @@
  else     client=new MqttClient(brokerUrl,clientId,persistence);
     client.setCallback(this);
     stopped=false;
-    Retryer<Boolean> retrier=RetryerBuilder.<Boolean>newBuilder().retryIfResult(new Predicate<Boolean>(){
-      @Override public boolean apply(      Boolean connected){
-        return !connected;
+    Retryer<Void> retrier=RetryerBuilder.<Void>newBuilder().retryIfResult(new Predicate<Void>(){
+      @Override public boolean apply(      Void v){
+        return !client.isConnected() && !stopped;
       }
     }
 ).retryIfException().retryIfRuntimeException().withWaitStrategy(retryWaitStrategy).withStopStrategy(retryStopStrategy).build();

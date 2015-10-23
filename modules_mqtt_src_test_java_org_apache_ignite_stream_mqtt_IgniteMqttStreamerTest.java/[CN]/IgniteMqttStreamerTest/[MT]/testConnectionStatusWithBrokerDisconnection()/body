@@ -1,0 +1,15 @@
+{
+  streamer.setSingleTupleExtractor(singleTupleExtractor());
+  streamer.setTopic(SINGLE_TOPIC_NAME);
+  streamer.setBlockUntilConnected(true);
+  streamer.setRetryWaitStrategy(WaitStrategies.noWait());
+  streamer.start();
+  for (int i=0; i < 5; i++) {
+    assertTrue(streamer.isConnected());
+    broker.stop();
+    assertFalse(streamer.isConnected());
+    broker.start(true);
+    broker.waitUntilStarted();
+    Thread.sleep(500);
+  }
+}
