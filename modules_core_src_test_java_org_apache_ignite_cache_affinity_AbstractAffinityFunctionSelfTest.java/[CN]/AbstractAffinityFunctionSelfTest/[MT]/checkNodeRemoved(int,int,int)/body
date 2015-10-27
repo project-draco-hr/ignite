@@ -1,0 +1,34 @@
+{
+  AffinityFunction aff=affinityFunction();
+  int nodesCnt=50;
+  List<ClusterNode> nodes=new ArrayList<>(nodesCnt);
+  List<List<ClusterNode>> prev=null;
+  for (int i=0; i < nodesCnt; i++) {
+    info("======================================");
+    info("Assigning partitions: " + i);
+    info("======================================");
+    ClusterNode node=new GridTestNode(UUID.randomUUID());
+    if (neighborsPerHost > 0)     node.attribute(MAC_PREF + ((i / neighborsPeriod) % (nodesCnt / neighborsPerHost)));
+    nodes.add(node);
+    DiscoveryEvent discoEvt=new DiscoveryEvent(node,"",EventType.EVT_NODE_JOINED,node);
+    GridAffinityFunctionContextImpl ctx=new GridAffinityFunctionContextImpl(nodes,prev,discoEvt,new AffinityTopologyVersion(i),backups);
+    List<List<ClusterNode>> assignment=aff.assignPartitions(ctx);
+    info("Assigned.");
+    verifyAssignment(assignment,backups,aff.partitions(),nodes.size());
+    prev=assignment;
+  }
+  info("======================================");
+  info("Will remove nodes.");
+  info("======================================");
+  for (int i=0; i < nodesCnt - 1; i++) {
+    info("======================================");
+    info("Assigning partitions: " + i);
+    info("======================================");
+    ClusterNode rmv=nodes.remove(nodes.size() - 1);
+    DiscoveryEvent discoEvt=new DiscoveryEvent(rmv,"",EventType.EVT_NODE_LEFT,rmv);
+    List<List<ClusterNode>> assignment=aff.assignPartitions(new GridAffinityFunctionContextImpl(nodes,prev,discoEvt,new AffinityTopologyVersion(i),backups));
+    info("Assigned.");
+    verifyAssignment(assignment,backups,aff.partitions(),nodes.size());
+    prev=assignment;
+  }
+}
