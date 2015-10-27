@@ -2,8 +2,6 @@
   super.prepareMarshal(ctx);
   GridCacheContext cctx=ctx.cacheContext(cacheId);
   prepareMarshalCacheObjects(keys,cctx);
-  if (op == TRANSFORM)   entryProcessorsBytes=marshalCollection(entryProcessors,ctx);
- else   prepareMarshalCacheObjects(vals,cctx);
   if (filter != null) {
     boolean hasFilter=false;
     for (    CacheEntryPredicate p : filter) {
@@ -14,6 +12,11 @@
     }
     if (!hasFilter)     filter=null;
   }
-  invokeArgsBytes=marshalInvokeArguments(invokeArgs,ctx);
-  if (expiryPlc != null)   expiryPlcBytes=CU.marshal(ctx,new IgniteExternalizableExpiryPolicy(expiryPlc));
+  if (expiryPlc != null)   expiryPlcBytes=CU.marshal(cctx,new IgniteExternalizableExpiryPolicy(expiryPlc));
+  if (op == TRANSFORM) {
+    if (!addDepInfo && ctx.deploymentEnabled())     addDepInfo=true;
+    entryProcessorsBytes=marshalCollection(entryProcessors,cctx);
+    invokeArgsBytes=marshalInvokeArguments(invokeArgs,cctx);
+  }
+ else   prepareMarshalCacheObjects(vals,cctx);
 }
