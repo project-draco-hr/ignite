@@ -1,10 +1,5 @@
 {
   if (cc.getCacheMode() == REPLICATED) {
-    if (cc.getAffinity() instanceof FairAffinityFunction)     throw new IgniteCheckedException("REPLICATED cache can not be started with FairAffinityFunction" + " [cacheName=" + U.maskName(cc.getName()) + ']');
-    if (cc.getAffinity() instanceof RendezvousAffinityFunction) {
-      RendezvousAffinityFunction aff=(RendezvousAffinityFunction)cc.getAffinity();
-      if (aff.isExcludeNeighbors())       throw new IgniteCheckedException("For REPLICATED cache flag 'excludeNeighbors' in " + "RendezvousAffinityFunction cannot be set [cacheName=" + U.maskName(cc.getName()) + ']');
-    }
     if (cc.getNearConfiguration() != null && ctx.discovery().cacheAffinityNode(ctx.discovery().localNode(),cc.getName())) {
       U.warn(log,"Near cache cannot be used with REPLICATED cache, " + "will be ignored [cacheName=" + U.maskName(cc.getName()) + ']');
       cc.setNearConfiguration(null);
@@ -20,7 +15,6 @@
   }
   DeploymentMode depMode=c.getDeploymentMode();
   if (c.isPeerClassLoadingEnabled() && (depMode == PRIVATE || depMode == ISOLATED) && !CU.isSystemCache(cc.getName()))   throw new IgniteCheckedException("Cannot start cache in PRIVATE or ISOLATED deployment mode: " + ctx.config().getDeploymentMode());
-  if (!c.getTransactionConfiguration().isTxSerializableEnabled() && c.getTransactionConfiguration().getDefaultTxIsolation() == SERIALIZABLE)   U.warn(log,"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "(most likely misconfiguration - either update 'isTxSerializableEnabled' or " + "'defaultTxIsolationLevel' properties) for cache: "+ U.maskName(cc.getName()),"Serializable transactions are disabled while default transaction isolation is SERIALIZABLE " + "for cache: " + U.maskName(cc.getName()));
   if (cc.isWriteBehindEnabled()) {
     if (cfgStore == null)     throw new IgniteCheckedException("Cannot enable write-behind (writer or store is not provided) " + "for cache: " + U.maskName(cc.getName()));
     assertParameter(cc.getWriteBehindBatchSize() > 0,"writeBehindBatchSize > 0");

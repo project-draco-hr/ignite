@@ -1,0 +1,16 @@
+{
+  ctx.checkSecurity(SecurityPermission.CACHE_READ);
+  if (F.isEmpty(keys))   return new GridFinishedFuture<>(Collections.<K,V>emptyMap());
+  if (keyCheck)   validateCacheKeys(keys);
+  CacheOperationContext opCtx=ctx.operationContextPerCall();
+  subjId=ctx.subjectIdPerCall(null,opCtx);
+  final UUID subjId0=subjId;
+  final ExpiryPolicy expiryPlc=skipVals ? null : opCtx != null ? opCtx.expiry() : null;
+  final boolean skipStore=opCtx != null && opCtx.skipStore();
+  return asyncOp(new CO<IgniteInternalFuture<Map<K,V>>>(){
+    @Override public IgniteInternalFuture<Map<K,V>> apply(){
+      return getAllAsync0(ctx.cacheKeysView(keys),forcePrimary,subjId0,taskName,deserializePortable,expiryPlc,skipVals,skipStore,canRemap);
+    }
+  }
+);
+}

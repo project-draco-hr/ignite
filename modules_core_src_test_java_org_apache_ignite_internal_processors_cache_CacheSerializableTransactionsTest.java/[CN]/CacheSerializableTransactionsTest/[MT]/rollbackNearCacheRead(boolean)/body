@@ -1,0 +1,44 @@
+{
+  Ignite ignite0=ignite(0);
+  IgniteCache<Integer,Integer> cache0=ignite0.createCache(cacheConfiguration(PARTITIONED,FULL_SYNC,1,false,false));
+  final String cacheName=cache0.getName();
+  try {
+    Ignite ignite=ignite(SRVS);
+    IgniteCache<Integer,Integer> cache=ignite.createNearCache(cacheName,new NearCacheConfiguration<Integer,Integer>());
+    IgniteTransactions txs=ignite.transactions();
+    Integer key1=primaryKey(ignite(0).cache(cacheName));
+    Integer key2=primaryKey(ignite(1).cache(cacheName));
+    Integer key3=primaryKey(ignite(2).cache(cacheName));
+    cache0.put(key1,-1);
+    cache0.put(key2,-1);
+    cache0.put(key3,-1);
+    try {
+      try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+        cache.get(key1);
+        cache.get(key2);
+        cache.get(key3);
+        updateKey(near ? cache : cache0,key2,-2);
+        tx.commit();
+      }
+       fail();
+    }
+ catch (    TransactionOptimisticException e) {
+      log.info("Expected exception: " + e);
+    }
+    checkValue(key1,-1,cacheName);
+    checkValue(key2,-2,cacheName);
+    checkValue(key3,-1,cacheName);
+    try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+      cache.put(key1,key1);
+      cache.put(key2,key2);
+      cache.put(key3,key3);
+      tx.commit();
+    }
+     checkValue(key1,key1,cacheName);
+    checkValue(key2,key2,cacheName);
+    checkValue(key3,key3,cacheName);
+  }
+  finally {
+    ignite0.destroyCache(cacheName);
+  }
+}

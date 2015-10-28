@@ -1,13 +1,16 @@
 {
   grid().<Integer,String>getOrCreateCache(defaultCacheConfiguration());
   broker=new BrokerService();
-  broker.deleteAllMessages();
+  broker.setDeleteAllMessagesOnStartup(true);
   broker.setPersistent(false);
+  broker.setPersistenceAdapter(null);
+  broker.setPersistenceFactory(null);
   PolicyMap policyMap=new PolicyMap();
   PolicyEntry policy=new PolicyEntry();
   policy.setQueuePrefetch(1);
   broker.setDestinationPolicy(policyMap);
   broker.getDestinationPolicy().setDefaultEntry(policy);
+  broker.setSchedulerSupport(false);
   broker.start(true);
   connectionFactory=new ActiveMQConnectionFactory(BrokerRegistry.getInstance().findFirst().getVmConnectorURI());
 }

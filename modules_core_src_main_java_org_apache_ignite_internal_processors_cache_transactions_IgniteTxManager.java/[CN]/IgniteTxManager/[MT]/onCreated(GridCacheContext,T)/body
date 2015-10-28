@@ -1,2 +1,31 @@
 {
+  ConcurrentMap<GridCacheVersion,IgniteInternalTx> txIdMap=transactionMap(tx);
+  resetContext();
+  if (isCompleted(tx)) {
+    if (log.isDebugEnabled())     log.debug("Attempt to create a completed transaction (will ignore): " + tx);
+    return null;
+  }
+  IgniteInternalTx t;
+  if ((t=txIdMap.putIfAbsent(tx.xidVersion(),tx)) == null) {
+    if (tx.local() && !tx.dht()) {
+      if (cacheCtx == null || !cacheCtx.systemTx())       threadMap.put(tx.threadId(),tx);
+ else       sysThreadMap.put(new TxThreadKey(tx.threadId(),cacheCtx.cacheId()),tx);
+    }
+    if (tx instanceof GridCacheMappedVersion) {
+      GridCacheMappedVersion mapped=(GridCacheMappedVersion)tx;
+      GridCacheVersion from=mapped.mappedVersion();
+      if (from != null)       mappedVers.put(from,tx.xidVersion());
+      if (log.isDebugEnabled())       log.debug("Added transaction version mapping [from=" + from + ", to="+ tx.xidVersion()+ ", tx="+ tx+ ']');
+    }
+  }
+ else {
+    if (log.isDebugEnabled())     log.debug("Attempt to create an existing transaction (will ignore) [newTx=" + tx + ", existingTx="+ t+ ']');
+    return null;
+  }
+  if (tx.timeout() > 0) {
+    cctx.time().addTimeoutObject(tx);
+    if (log.isDebugEnabled())     log.debug("Registered transaction with timeout processor: " + tx);
+  }
+  if (log.isDebugEnabled())   log.debug("Transaction created: " + tx);
+  return tx;
 }

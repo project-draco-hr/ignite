@@ -3,7 +3,11 @@
     info("Removing values form cache [0," + cnt + ')');
     CU.inTx(ignite,cache,concurrency,isolation,new CIX1<IgniteCache<String,Integer>>(){
       @Override public void applyx(      IgniteCache<String,Integer> cache){
-        for (int i=0; i < cnt; i++)         cache.remove("key" + i);
+        for (int i=0; i < cnt; i++) {
+          String key="key" + i;
+          if (isolation == TransactionIsolation.SERIALIZABLE)           cache.removeAll(Collections.singleton(key));
+ else           cache.remove(key);
+        }
       }
     }
 );

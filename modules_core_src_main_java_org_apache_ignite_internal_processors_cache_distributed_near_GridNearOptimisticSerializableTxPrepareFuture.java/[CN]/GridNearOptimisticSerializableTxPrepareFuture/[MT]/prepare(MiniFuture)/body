@@ -1,0 +1,48 @@
+{
+  GridDistributedTxMapping m=fut.mapping();
+  final ClusterNode n=m.node();
+  GridNearTxPrepareRequest req=new GridNearTxPrepareRequest(futId,tx.topologyVersion(),tx,m.reads(),m.writes(),m.near(),txMapping.transactionNodes(),m.last(),m.lastBackups(),tx.onePhaseCommit(),tx.needReturnValue() && tx.implicit(),tx.implicitSingle(),m.explicitLock(),tx.subjectId(),tx.taskNameHash(),m.clientFirst(),tx.activeCachesDeploymentEnabled());
+  for (  IgniteTxEntry txEntry : m.writes()) {
+    if (txEntry.op() == TRANSFORM)     req.addDhtVersion(txEntry.txKey(),null);
+  }
+  if (m.near()) {
+    try {
+      tx.optimisticLockEntries(F.concat(false,m.writes(),m.reads()));
+      tx.userPrepare();
+    }
+ catch (    IgniteCheckedException e) {
+      fut.onResult(e);
+      return e;
+    }
+  }
+  req.miniId(fut.futureId());
+  if (n.isLocal()) {
+    IgniteInternalFuture<GridNearTxPrepareResponse> prepFut=cctx.tm().txHandler().prepareTx(n.id(),tx,req);
+    prepFut.listen(new CI1<IgniteInternalFuture<GridNearTxPrepareResponse>>(){
+      @Override public void apply(      IgniteInternalFuture<GridNearTxPrepareResponse> prepFut){
+        try {
+          fut.onResult(prepFut.get());
+        }
+ catch (        IgniteCheckedException e) {
+          fut.onResult(e);
+        }
+      }
+    }
+);
+  }
+ else {
+    try {
+      cctx.io().send(n,req,tx.ioPolicy());
+    }
+ catch (    ClusterTopologyCheckedException e) {
+      e.retryReadyFuture(cctx.nextAffinityReadyFuture(tx.topologyVersion()));
+      fut.onNodeLeft(e);
+      return e;
+    }
+catch (    IgniteCheckedException e) {
+      fut.onResult(e);
+      return e;
+    }
+  }
+  return null;
+}

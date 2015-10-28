@@ -1,0 +1,178 @@
+{
+  Ignite ignite0=ignite(0);
+  final String CACHE1="cache1";
+  final String CACHE2="cache2";
+  try {
+    CacheConfiguration<Integer,Integer> ccfg1=cacheConfiguration(PARTITIONED,FULL_SYNC,1,false,false);
+    ccfg1.setName(CACHE1);
+    ignite0.createCache(ccfg1);
+    CacheConfiguration<Integer,Integer> ccfg2=cacheConfiguration(PARTITIONED,FULL_SYNC,1,false,false);
+    ccfg2.setName(CACHE2);
+    ignite0.createCache(ccfg2);
+    Integer newVal=0;
+    List<Integer> keys=testKeys(ignite0.<Integer,Integer>cache(CACHE1));
+    for (    Ignite ignite : G.allGrids()) {
+      log.info("Test node: " + ignite.name());
+      IgniteCache<Integer,Integer> cache1=ignite.cache(CACHE1);
+      IgniteCache<Integer,Integer> cache2=ignite.cache(CACHE2);
+      IgniteTransactions txs=ignite.transactions();
+      for (      Integer key : keys) {
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          cache1.put(key,newVal);
+          cache2.put(key,newVal);
+          tx.commit();
+        }
+         checkValue(key,newVal,CACHE1);
+        checkValue(key,newVal,CACHE2);
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          Object val1=cache1.get(key);
+          Object val2=cache2.get(key);
+          assertEquals(newVal,val1);
+          assertEquals(newVal,val2);
+          tx.commit();
+        }
+         try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          cache1.put(key,newVal + 1);
+          cache2.put(key,newVal + 1);
+          tx.rollback();
+        }
+         checkValue(key,newVal,CACHE1);
+        checkValue(key,newVal,CACHE2);
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          Object val1=cache1.get(key);
+          Object val2=cache2.get(key);
+          assertEquals(newVal,val1);
+          assertEquals(newVal,val2);
+          cache1.put(key,newVal + 1);
+          cache2.put(key,newVal + 1);
+          tx.commit();
+        }
+         newVal++;
+        checkValue(key,newVal,CACHE1);
+        checkValue(key,newVal,CACHE2);
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          cache1.put(key,newVal);
+          cache2.put(-key,newVal);
+          tx.commit();
+        }
+         checkValue(key,newVal,CACHE1);
+        checkValue(-key,null,CACHE1);
+        checkValue(key,newVal,CACHE2);
+        checkValue(-key,newVal,CACHE2);
+      }
+      newVal++;
+      Integer key1=primaryKey(ignite(0).cache(CACHE1));
+      Integer key2=primaryKey(ignite(1).cache(CACHE1));
+      try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+        cache1.put(key1,newVal);
+        cache1.put(key2,newVal);
+        cache2.put(key1,newVal);
+        cache2.put(key2,newVal);
+        tx.commit();
+      }
+       checkValue(key1,newVal,CACHE1);
+      checkValue(key2,newVal,CACHE1);
+      checkValue(key1,newVal,CACHE2);
+      checkValue(key2,newVal,CACHE2);
+      CountDownLatch latch=new CountDownLatch(1);
+      IgniteInternalFuture<?> fut=lockKey(latch,cache1,key1);
+      try {
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          cache1.put(key1,newVal + 1);
+          cache2.put(key1,newVal + 1);
+          tx.commit();
+        }
+         fail();
+      }
+ catch (      TransactionOptimisticException e) {
+        log.info("Expected exception: " + e);
+      }
+      latch.countDown();
+      fut.get();
+      checkValue(key1,1,CACHE1);
+      checkValue(key1,newVal,CACHE2);
+      try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+        cache1.put(key1,newVal + 1);
+        cache2.put(key1,newVal + 1);
+        tx.commit();
+      }
+       newVal++;
+      cache1.put(key2,newVal);
+      cache2.put(key2,newVal);
+      checkValue(key1,newVal,CACHE1);
+      checkValue(key1,newVal,CACHE2);
+      latch=new CountDownLatch(1);
+      fut=lockKey(latch,cache1,key1);
+      try {
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          cache1.put(key1,newVal + 1);
+          cache2.put(key2,newVal + 1);
+          tx.commit();
+        }
+         fail();
+      }
+ catch (      TransactionOptimisticException e) {
+        log.info("Expected exception: " + e);
+      }
+      latch.countDown();
+      fut.get();
+      checkValue(key1,1,CACHE1);
+      checkValue(key2,newVal,CACHE2);
+      try {
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          Object val1=cache1.get(key1);
+          Object val2=cache2.get(key2);
+          assertEquals(1,val1);
+          assertEquals(newVal,val2);
+          updateKey(cache2,key2,1);
+          cache1.put(key1,newVal + 1);
+          cache2.put(key2,newVal + 1);
+          tx.commit();
+        }
+         fail();
+      }
+ catch (      TransactionOptimisticException e) {
+        log.info("Expected exception: " + e);
+      }
+      checkValue(key1,1,CACHE1);
+      checkValue(key2,1,CACHE2);
+      try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+        Object val1=cache1.get(key1);
+        Object val2=cache2.get(key2);
+        assertEquals(1,val1);
+        assertEquals(1,val2);
+        cache1.put(key1,newVal + 1);
+        cache2.put(key2,newVal + 1);
+        tx.commit();
+      }
+       newVal++;
+      checkValue(key1,newVal,CACHE1);
+      checkValue(key2,newVal,CACHE2);
+      try {
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          Object val1=cache1.get(key1);
+          Object val2=cache2.get(key2);
+          assertEquals(newVal,val1);
+          assertEquals(newVal,val2);
+          updateKey(cache2,key2,newVal);
+          tx.commit();
+        }
+         fail();
+      }
+ catch (      TransactionOptimisticException e) {
+        log.info("Expected exception: " + e);
+      }
+      try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+        Object val1=cache1.get(key1);
+        Object val2=cache2.get(key2);
+        assertEquals(newVal,val1);
+        assertEquals(newVal,val2);
+        tx.commit();
+      }
+     }
+  }
+  finally {
+    ignite0.destroyCache(CACHE1);
+    ignite0.destroyCache(CACHE2);
+  }
+}

@@ -2,7 +2,9 @@
   checkObsolete();
   if (curVer == null || curVer.equals(ver)) {
     if (val != this.val) {
-      if (newVer == null)       newVer=nextVersion();
+      GridCacheMvcc mvcc=mvccExtras();
+      if (mvcc != null && !mvcc.isEmpty())       return null;
+      if (newVer == null)       newVer=cctx.versions().next();
       CacheObject old=rawGetOrUnmarshalUnlocked(false);
       long ttl=ttlExtras();
       long expTime=CU.toExpireTime(ttl);
@@ -12,8 +14,8 @@
         if (deletedUnlocked())         deletedUnlocked(false);
       }
       update(val,expTime,ttl,newVer);
+      return newVer;
     }
-    return true;
   }
-  return false;
+  return null;
 }

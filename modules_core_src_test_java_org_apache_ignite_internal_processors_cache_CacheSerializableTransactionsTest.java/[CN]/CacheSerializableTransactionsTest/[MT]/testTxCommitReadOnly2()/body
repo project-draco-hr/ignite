@@ -1,0 +1,43 @@
+{
+  Ignite ignite0=ignite(0);
+  final IgniteTransactions txs=ignite0.transactions();
+  for (  CacheConfiguration<Integer,Integer> ccfg : cacheConfigurations()) {
+    logCacheInfo(ccfg);
+    try {
+      IgniteCache<Integer,Integer> cache=ignite0.createCache(ccfg);
+      List<Integer> keys=testKeys(cache);
+      for (      final Integer key : keys) {
+        log.info("Test key: " + key);
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          Integer val=cache.get(key);
+          assertNull(val);
+          txAsync(cache,OPTIMISTIC,SERIALIZABLE,new IgniteClosure<IgniteCache<Integer,Integer>,Void>(){
+            @Override public Void apply(            IgniteCache<Integer,Integer> cache){
+              cache.get(key);
+              return null;
+            }
+          }
+);
+          tx.commit();
+        }
+         checkValue(key,null,cache.getName());
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          Integer val=cache.get(key);
+          assertNull(val);
+          txAsync(cache,PESSIMISTIC,REPEATABLE_READ,new IgniteClosure<IgniteCache<Integer,Integer>,Void>(){
+            @Override public Void apply(            IgniteCache<Integer,Integer> cache){
+              cache.get(key);
+              return null;
+            }
+          }
+);
+          tx.commit();
+        }
+         checkValue(key,null,cache.getName());
+      }
+    }
+  finally {
+      destroyCache(ignite0,ccfg.getName());
+    }
+  }
+}

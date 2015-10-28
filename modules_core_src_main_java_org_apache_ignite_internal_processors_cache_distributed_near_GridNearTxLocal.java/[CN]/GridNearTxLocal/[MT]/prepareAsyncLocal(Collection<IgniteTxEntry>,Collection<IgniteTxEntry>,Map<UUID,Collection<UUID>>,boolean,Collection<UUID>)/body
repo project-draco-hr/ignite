@@ -7,7 +7,7 @@
   init();
   GridDhtTxPrepareFuture fut=new GridDhtTxPrepareFuture(cctx,this,IgniteUuid.randomUuid(),Collections.<IgniteTxKey,GridCacheVersion>emptyMap(),last,needReturnValue() && implicit(),lastBackups);
   try {
-    optimisticLockEntries=writes;
+    optimisticLockEntries=(serializable() && optimistic()) ? F.concat(false,writes,reads) : writes;
     userPrepare();
     cctx.mvcc().addFuture(fut);
     if (isSystemInvalidate())     fut.complete();

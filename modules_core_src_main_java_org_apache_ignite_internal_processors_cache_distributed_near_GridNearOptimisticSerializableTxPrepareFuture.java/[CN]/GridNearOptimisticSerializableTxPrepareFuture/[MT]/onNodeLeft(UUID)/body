@@ -1,0 +1,15 @@
+{
+  boolean found=false;
+  for (  IgniteInternalFuture<?> fut : futures()) {
+    if (isMini(fut)) {
+      MiniFuture f=(MiniFuture)fut;
+      if (f.node().id().equals(nodeId)) {
+        ClusterTopologyCheckedException e=new ClusterTopologyCheckedException("Remote node left grid: " + nodeId);
+        e.retryReadyFuture(cctx.nextAffinityReadyFuture(tx.topologyVersion()));
+        f.onNodeLeft(e);
+        found=true;
+      }
+    }
+  }
+  return found;
+}
