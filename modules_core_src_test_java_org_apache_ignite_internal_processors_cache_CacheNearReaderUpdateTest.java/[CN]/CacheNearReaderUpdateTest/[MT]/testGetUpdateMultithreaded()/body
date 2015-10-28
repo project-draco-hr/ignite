@@ -1,0 +1,26 @@
+{
+  List<CacheConfiguration<Integer,Integer>> cfgs=new ArrayList<>();
+  cfgs.add(cacheConfiguration(PARTITIONED,FULL_SYNC,0,false,false));
+  cfgs.add(cacheConfiguration(PARTITIONED,FULL_SYNC,1,false,false));
+  cfgs.add(cacheConfiguration(PARTITIONED,FULL_SYNC,1,false,true));
+  cfgs.add(cacheConfiguration(PARTITIONED,FULL_SYNC,1,true,false));
+{
+    CacheConfiguration<Integer,Integer> ccfg=cacheConfiguration(PARTITIONED,FULL_SYNC,1,false,false);
+    GridTestUtils.setMemoryMode(null,ccfg,GridTestUtils.TestMemoryMode.OFFHEAP_TIERED,0,0);
+    cfgs.add(ccfg);
+  }
+  final List<Ignite> putNodes=new ArrayList<>();
+  for (int i=0; i < SRVS + CLIENTS - 1; i++)   putNodes.add(ignite(i));
+  final List<Ignite> getNodes=new ArrayList<>();
+  getNodes.add(ignite(SRVS + CLIENTS - 1));
+  getNodes.add(ignite(0));
+  for (  CacheConfiguration<Integer,Integer> ccfg : cfgs) {
+    logCacheInfo(ccfg);
+    getUpdateMultithreaded(ccfg,putNodes,getNodes,null,null);
+    if (ccfg.getAtomicityMode() == TRANSACTIONAL) {
+      getUpdateMultithreaded(ccfg,putNodes,getNodes,PESSIMISTIC,REPEATABLE_READ);
+      getUpdateMultithreaded(ccfg,putNodes,getNodes,OPTIMISTIC,REPEATABLE_READ);
+      getUpdateMultithreaded(ccfg,putNodes,getNodes,OPTIMISTIC,SERIALIZABLE);
+    }
+  }
+}

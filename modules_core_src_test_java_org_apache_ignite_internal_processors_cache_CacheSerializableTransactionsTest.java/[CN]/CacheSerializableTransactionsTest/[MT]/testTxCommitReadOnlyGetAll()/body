@@ -1,0 +1,27 @@
+{
+  Ignite ignite0=ignite(0);
+  final IgniteTransactions txs=ignite0.transactions();
+  for (  CacheConfiguration<Integer,Integer> ccfg : cacheConfigurations()) {
+    logCacheInfo(ccfg);
+    try {
+      IgniteCache<Integer,Integer> cache=ignite0.createCache(ccfg);
+      Set<Integer> keys=new HashSet<>();
+      for (int i=0; i < 100; i++)       keys.add(i);
+      try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+        Map<Integer,Integer> map=cache.getAll(keys);
+        assertTrue(map.isEmpty());
+        tx.commit();
+      }
+       for (      Integer key : keys)       checkValue(key,null,cache.getName());
+      try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+        Map<Integer,Integer> map=cache.getAll(keys);
+        assertTrue(map.isEmpty());
+        tx.rollback();
+      }
+       for (      Integer key : keys)       checkValue(key,null,cache.getName());
+    }
+  finally {
+      destroyCache(ignite0,ccfg.getName());
+    }
+  }
+}

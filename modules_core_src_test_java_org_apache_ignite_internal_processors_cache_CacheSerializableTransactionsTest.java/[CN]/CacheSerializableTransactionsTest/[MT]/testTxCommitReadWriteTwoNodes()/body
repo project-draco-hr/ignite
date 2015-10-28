@@ -1,0 +1,20 @@
+{
+  Ignite ignite0=ignite(0);
+  final IgniteTransactions txs=ignite0.transactions();
+  for (  CacheConfiguration<Integer,Integer> ccfg : cacheConfigurations()) {
+    logCacheInfo(ccfg);
+    try {
+      IgniteCache<Integer,Integer> cache=ignite0.createCache(ccfg);
+      Integer key0=primaryKey(ignite(0).cache(null));
+      Integer key1=primaryKey(ignite(1).cache(null));
+      try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+        cache.put(key0,key0);
+        cache.get(key1);
+        tx.commit();
+      }
+     }
+  finally {
+      destroyCache(ignite0,ccfg.getName());
+    }
+  }
+}

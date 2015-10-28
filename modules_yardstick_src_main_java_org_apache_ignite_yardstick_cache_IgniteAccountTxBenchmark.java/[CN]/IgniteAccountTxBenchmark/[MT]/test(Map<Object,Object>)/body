@@ -1,0 +1,21 @@
+{
+  Set<Integer> accountIds=new TreeSet<>();
+  while (accountIds.size() < ACCOUNT_NUMBER)   accountIds.add(nextRandom(args.range()));
+  try (Transaction tx=txs.txStart(PESSIMISTIC,REPEATABLE_READ)){
+    Map<Integer,Account> accounts=(Map)cache.getAll(accountIds);
+    if (accounts.size() != ACCOUNT_NUMBER)     throw new Exception("Failed to find accounts: " + accountIds);
+    Integer fromId=accountIds.iterator().next();
+    int fromBalance=accounts.get(fromId).balance();
+    for (    Integer id : accountIds) {
+      if (id.equals(fromId))       continue;
+      Account account=accounts.get(id);
+      if (fromBalance > 0) {
+        fromBalance--;
+        cache.put(id,new Account(account.balance() + 1));
+      }
+    }
+    cache.put(fromId,new Account(fromBalance));
+    tx.commit();
+  }
+   return true;
+}

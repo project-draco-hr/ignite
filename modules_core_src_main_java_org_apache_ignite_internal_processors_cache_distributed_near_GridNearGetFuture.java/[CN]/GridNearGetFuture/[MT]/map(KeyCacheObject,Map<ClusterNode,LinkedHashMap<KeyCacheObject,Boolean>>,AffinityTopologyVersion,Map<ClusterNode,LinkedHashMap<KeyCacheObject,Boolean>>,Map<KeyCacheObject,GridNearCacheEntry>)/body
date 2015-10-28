@@ -1,0 +1,124 @@
+{
+  final GridNearCacheAdapter near=cache();
+  boolean allowLocRead=!forcePrimary || cctx.affinity().primary(cctx.localNode(),key,topVer);
+  while (true) {
+    GridNearCacheEntry entry=allowLocRead ? (GridNearCacheEntry)near.peekEx(key) : null;
+    try {
+      CacheObject v=null;
+      GridCacheVersion ver=null;
+      boolean isNear=entry != null;
+      if (isNear) {
+        if (needVer) {
+          T2<CacheObject,GridCacheVersion> res=entry.innerGetVersioned(null,true,true,true,!skipVals,subjId,null,taskName,expiryPlc);
+          if (res != null) {
+            v=res.get1();
+            ver=res.get2();
+          }
+        }
+ else {
+          v=entry.innerGet(tx,false,false,true,true,true,!skipVals,false,subjId,null,taskName,expiryPlc);
+        }
+      }
+      ClusterNode affNode=null;
+      if (v == null && allowLocRead && cctx.affinityNode()) {
+        GridDhtCacheAdapter<K,V> dht=cache().dht();
+        GridCacheEntryEx dhtEntry=null;
+        try {
+          dhtEntry=dht.context().isSwapOrOffheapEnabled() ? dht.entryEx(key) : dht.peekEx(key);
+          if (dhtEntry != null) {
+            boolean isNew=dhtEntry.isNewLocked() || !dhtEntry.valid(topVer);
+            if (needVer) {
+              T2<CacheObject,GridCacheVersion> res=dhtEntry.innerGetVersioned(null,true,true,false,!isNear && !skipVals,subjId,null,taskName,expiryPlc);
+              if (res != null) {
+                v=res.get1();
+                ver=res.get2();
+              }
+            }
+ else {
+              v=dhtEntry.innerGet(tx,true,false,true,true,false,!isNear && !skipVals,false,subjId,null,taskName,expiryPlc);
+            }
+            if (v == null && isNew && dhtEntry.markObsoleteIfEmpty(ver))             dht.removeIfObsolete(key);
+          }
+          if (v != null) {
+            if (cctx.cache().configuration().isStatisticsEnabled() && !skipVals)             near.metrics0().onRead(true);
+          }
+ else {
+            affNode=affinityNode(key,topVer);
+            if (affNode == null) {
+              onDone(new ClusterTopologyServerNotFoundException("Failed to map keys for cache " + "(all partition nodes left the grid)."));
+              return saved;
+            }
+            if (!affNode.isLocal() && cctx.cache().configuration().isStatisticsEnabled() && !skipVals)             near.metrics0().onRead(false);
+          }
+        }
+ catch (        GridDhtInvalidPartitionException|GridCacheEntryRemovedException ignored) {
+        }
+ finally {
+          if (dhtEntry != null && (tx == null || (!tx.implicit() && tx.isolation() == READ_COMMITTED))) {
+            dht.context().evicts().touch(dhtEntry,topVer);
+            entry=null;
+          }
+        }
+      }
+      if (v != null) {
+        if (needVer) {
+          V val0=(V)new T2<>(skipVals ? true : v,ver);
+          add(new GridFinishedFuture<>(Collections.singletonMap((K)key,val0)));
+        }
+ else {
+          if (keepCacheObjects) {
+            K key0=(K)key;
+            V val0=(V)(skipVals ? true : v);
+            add(new GridFinishedFuture<>(Collections.singletonMap(key0,val0)));
+          }
+ else {
+            K key0=key.value(cctx.cacheObjectContext(),true);
+            V val0=v.value(cctx.cacheObjectContext(),true);
+            val0=(V)cctx.unwrapPortableIfNeeded(val0,!deserializePortable);
+            key0=(K)cctx.unwrapPortableIfNeeded(key0,!deserializePortable);
+            add(new GridFinishedFuture<>(Collections.singletonMap(key0,val0)));
+          }
+        }
+      }
+ else {
+        if (affNode == null) {
+          affNode=affinityNode(key,topVer);
+          if (affNode == null) {
+            onDone(new ClusterTopologyServerNotFoundException("Failed to map keys for cache " + "(all partition nodes left the grid)."));
+            return saved;
+          }
+        }
+        LinkedHashMap<KeyCacheObject,Boolean> keys=mapped.get(affNode);
+        if (keys != null && keys.containsKey(key)) {
+          if (remapCnt.incrementAndGet() > MAX_REMAP_CNT) {
+            onDone(new ClusterTopologyCheckedException("Failed to remap key to a new node after " + MAX_REMAP_CNT + " attempts (key got remapped to the same node) "+ "[key="+ key+ ", node="+ U.toShortString(affNode)+ ", mappings="+ mapped+ ']'));
+            return saved;
+          }
+        }
+        if (!cctx.affinity().localNode(key,topVer)) {
+          GridNearCacheEntry nearEntry=entry != null ? entry : near.entryExx(key,topVer);
+          nearEntry.reserveEviction();
+          entry=null;
+          if (saved == null)           saved=U.newHashMap(3);
+          saved.put(key,nearEntry);
+        }
+        boolean addRdr=tx == null || tx.optimistic();
+        if (!addRdr && tx.readCommitted() && !tx.writeSet().contains(cctx.txKey(key)))         addRdr=true;
+        LinkedHashMap<KeyCacheObject,Boolean> old=mappings.get(affNode);
+        if (old == null)         mappings.put(affNode,old=new LinkedHashMap<>(3,1f));
+        old.put(key,addRdr);
+      }
+      break;
+    }
+ catch (    IgniteCheckedException e) {
+      onDone(e);
+      break;
+    }
+catch (    GridCacheEntryRemovedException ignored) {
+    }
+ finally {
+      if (entry != null && tx == null)       cctx.evicts().touch(entry,topVer);
+    }
+  }
+  return saved;
+}

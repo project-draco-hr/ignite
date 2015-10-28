@@ -1,0 +1,36 @@
+{
+  final Ignite ignite=ignite(0);
+  final String cacheName=ignite.createCache(cacheConfiguration(PARTITIONED,FULL_SYNC,1,false,false)).getName();
+  try {
+    final Map<Integer,Integer> keys=new HashMap<>();
+    for (int i=0; i < 500; i++)     keys.put(i,i);
+    final int THREADS=5;
+    for (int i=0; i < 10; i++) {
+      final CyclicBarrier barrier=new CyclicBarrier(THREADS);
+      final AtomicInteger commitCntr=new AtomicInteger(0);
+      GridTestUtils.runMultiThreadedAsync(new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          IgniteCache<Integer,Integer> cache=ignite.cache(cacheName);
+          IgniteTransactions txs=cache.unwrap(Ignite.class).transactions();
+          try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+            cache.putAll(keys);
+            barrier.await();
+            tx.commit();
+            commitCntr.incrementAndGet();
+          }
+ catch (          TransactionOptimisticException e) {
+            log.info("Optimistic error: " + e);
+          }
+          return null;
+        }
+      }
+,THREADS,"update-thread").get();
+      int commits=commitCntr.get();
+      log.info("Iteration [iter=" + i + ", commits="+ commits+ ']');
+      assertTrue(commits > 0);
+    }
+  }
+  finally {
+    ignite.destroyCache(cacheName);
+  }
+}

@@ -1,0 +1,61 @@
+{
+  Ignite ignite0=ignite(0);
+  final IgniteTransactions txs=ignite0.transactions();
+  for (  CacheConfiguration<Integer,Integer> ccfg : cacheConfigurations()) {
+    logCacheInfo(ccfg);
+    try {
+      IgniteCache<Integer,Integer> cache=ignite0.createCache(ccfg);
+      List<Integer> keys=testKeys(cache);
+      for (      Integer key : keys) {
+        log.info("Test key: " + key);
+        if (!noVal)         cache.put(key,-1);
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          if (rmv)           cache.remove(key);
+ else           cache.put(key,2);
+          if (getAfterUpdate) {
+            Object val=cache.get(key);
+            if (rmv)             assertNull(val);
+ else             assertEquals(2,val);
+          }
+          if (!rmv)           updateKey(cache,key,1);
+          tx.commit();
+        }
+         checkValue(key,rmv ? null : 2,cache.getName());
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          cache.put(key,3);
+          tx.commit();
+        }
+         checkValue(key,3,cache.getName());
+      }
+      Map<Integer,Integer> map=new HashMap<>();
+      for (int i=0; i < 100; i++)       map.put(i,i);
+      try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+        if (rmv)         cache.removeAll(map.keySet());
+ else         cache.putAll(map);
+        if (getAfterUpdate) {
+          Map<Integer,Integer> res=cache.getAll(map.keySet());
+          if (rmv) {
+            for (            Integer key : map.keySet())             assertNull(res.get(key));
+          }
+ else {
+            for (            Integer key : map.keySet())             assertEquals(map.get(key),res.get(key));
+          }
+        }
+        txAsync(cache,PESSIMISTIC,REPEATABLE_READ,new IgniteClosure<IgniteCache<Integer,Integer>,Void>(){
+          @Override public Void apply(          IgniteCache<Integer,Integer> cache){
+            Map<Integer,Integer> map=new HashMap<>();
+            for (int i=0; i < 100; i++)             map.put(i,-1);
+            cache.putAll(map);
+            return null;
+          }
+        }
+);
+        tx.commit();
+      }
+       for (int i=0; i < 100; i++)       checkValue(i,rmv ? null : i,cache.getName());
+    }
+  finally {
+      destroyCache(ignite0,ccfg.getName());
+    }
+  }
+}

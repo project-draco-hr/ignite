@@ -1,0 +1,45 @@
+{
+  Ignite ignite0=ignite(0);
+  final IgniteTransactions txs=ignite0.transactions();
+  for (  CacheConfiguration<Integer,Integer> ccfg : cacheConfigurations()) {
+    logCacheInfo(ccfg);
+    try {
+      IgniteCache<Integer,Integer> cache=ignite0.createCache(ccfg);
+      List<Integer> keys=testKeys(cache);
+      for (      Integer key : keys) {
+        log.info("Test key: " + key);
+        if (!noVal)         cache.put(key,-1);
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          boolean res=cache.containsKey(key);
+          assertEquals(!noVal,res);
+          updateKey(cache,key,1);
+          tx.commit();
+        }
+         checkValue(key,1,cache.getName());
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          boolean res=cache.containsKey(key);
+          assertTrue(res);
+          updateKey(cache,key,2);
+          tx.commit();
+        }
+         checkValue(key,2,cache.getName());
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          boolean res=cache.containsKey(key);
+          assertTrue(res);
+          tx.commit();
+        }
+         cache.remove(key);
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          boolean res=cache.containsKey(key);
+          assertFalse(res);
+          updateKey(cache,key,3);
+          tx.commit();
+        }
+         checkValue(key,3,cache.getName());
+      }
+    }
+  finally {
+      destroyCache(ignite0,ccfg.getName());
+    }
+  }
+}

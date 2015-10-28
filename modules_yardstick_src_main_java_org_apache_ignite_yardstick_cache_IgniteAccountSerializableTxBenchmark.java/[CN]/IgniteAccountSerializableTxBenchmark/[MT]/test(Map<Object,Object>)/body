@@ -1,0 +1,27 @@
+{
+  Set<Integer> accountIds=new HashSet<>();
+  while (accountIds.size() < ACCOUNT_NUMBER)   accountIds.add(nextRandom(args.range()));
+  while (true) {
+    try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+      Map<Integer,Account> accounts=(Map)cache.getAll(accountIds);
+      if (accounts.size() != ACCOUNT_NUMBER)       throw new Exception("Failed to find accounts: " + accountIds);
+      Integer fromId=accountIds.iterator().next();
+      int fromBalance=accounts.get(fromId).balance();
+      for (      Integer id : accountIds) {
+        if (id.equals(fromId))         continue;
+        Account account=accounts.get(id);
+        if (fromBalance > 0) {
+          fromBalance--;
+          cache.put(id,new Account(account.balance() + 1));
+        }
+      }
+      cache.put(fromId,new Account(fromBalance));
+      tx.commit();
+    }
+ catch (    TransactionOptimisticException e) {
+      continue;
+    }
+    break;
+  }
+  return true;
+}

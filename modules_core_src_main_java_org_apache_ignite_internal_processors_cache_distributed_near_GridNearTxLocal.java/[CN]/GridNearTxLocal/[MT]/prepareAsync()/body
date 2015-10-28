@@ -1,7 +1,10 @@
 {
   GridNearTxPrepareFutureAdapter fut=(GridNearTxPrepareFutureAdapter)prepFut.get();
   if (fut == null) {
-    fut=optimistic() ? new GridNearOptimisticTxPrepareFuture(cctx,this) : new GridNearPessimisticTxPrepareFuture(cctx,this);
+    if (optimistic()) {
+      fut=serializable() ? new GridNearOptimisticSerializableTxPrepareFuture(cctx,this) : new GridNearOptimisticTxPrepareFuture(cctx,this);
+    }
+ else     fut=new GridNearPessimisticTxPrepareFuture(cctx,this);
     if (!prepFut.compareAndSet(null,fut))     return prepFut.get();
   }
  else   return fut;

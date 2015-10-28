@@ -1,0 +1,37 @@
+{
+  Ignite ignite0=ignite(0);
+  for (  CacheConfiguration<Integer,Integer> ccfg : cacheConfigurations()) {
+    logCacheInfo(ccfg);
+    try {
+      IgniteCache<Integer,Integer> cache0=ignite0.createCache(ccfg);
+      ThreadLocalRandom rnd=ThreadLocalRandom.current();
+      for (      Ignite ignite : G.allGrids()) {
+        log.info("Test node: " + ignite.name());
+        IgniteCache<Integer,Integer> cache=ignite.cache(ccfg.getName());
+        IgniteTransactions txs=ignite.transactions();
+        final int KEYS=100;
+        for (int i=0; i < 1000; i++) {
+          Integer key1=rnd.nextInt(KEYS);
+          Integer key2;
+          if (rnd.nextBoolean()) {
+            key2=rnd.nextInt(KEYS);
+            while (key2.equals(key1))             key2=rnd.nextInt(KEYS);
+          }
+ else           key2=key1 + 1;
+          try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+            randomOperation(rnd,cache,key1);
+            randomOperation(rnd,cache,key2);
+            tx.commit();
+          }
+         }
+        for (int key=0; key < KEYS; key++) {
+          Integer val=cache0.get(key);
+          for (int node=1; node < SRVS + CLIENTS; node++)           assertEquals(val,ignite(node).cache(cache.getName()).get(key));
+        }
+      }
+    }
+  finally {
+      destroyCache(ignite0,ccfg.getName());
+    }
+  }
+}
