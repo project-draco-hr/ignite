@@ -1,0 +1,41 @@
+{
+  AffinityFunction aff=affinityFunction();
+  Random rnd=new Random();
+  int maxNodes=50;
+  List<ClusterNode> nodes=new ArrayList<>(maxNodes);
+  List<List<ClusterNode>> prev=null;
+  int state=0;
+  int i=0;
+  while (true) {
+    boolean add;
+    if (nodes.size() < 2) {
+      if (state == 1)       return;
+      add=true;
+    }
+ else     if (nodes.size() == maxNodes) {
+      if (state == 0)       state=1;
+      add=false;
+    }
+ else {
+      if (state == 0)       add=rnd.nextInt(3) != 0;
+ else       add=rnd.nextInt(3) == 0;
+    }
+    DiscoveryEvent discoEvt;
+    if (add) {
+      ClusterNode addedNode=new GridTestNode(UUID.randomUUID());
+      nodes.add(addedNode);
+      discoEvt=new DiscoveryEvent(addedNode,"",EventType.EVT_NODE_JOINED,addedNode);
+    }
+ else {
+      ClusterNode rmvNode=nodes.remove(rnd.nextInt(nodes.size()));
+      discoEvt=new DiscoveryEvent(rmvNode,"",EventType.EVT_NODE_LEFT,rmvNode);
+    }
+    info("======================================");
+    info("Assigning partitions [iter=" + i + ", discoEvt="+ discoEvt+ ", nodesSize="+ nodes.size()+ ']');
+    info("======================================");
+    List<List<ClusterNode>> assignment=aff.assignPartitions(new GridAffinityFunctionContextImpl(nodes,prev,discoEvt,new AffinityTopologyVersion(i),backups));
+    verifyAssignment(assignment,backups,aff.partitions(),nodes.size());
+    prev=assignment;
+    i++;
+  }
+}

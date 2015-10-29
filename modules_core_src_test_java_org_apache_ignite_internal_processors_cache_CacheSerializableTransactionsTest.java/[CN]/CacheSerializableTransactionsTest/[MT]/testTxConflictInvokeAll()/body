@@ -1,0 +1,60 @@
+{
+  Ignite ignite0=ignite(0);
+  for (  CacheConfiguration<Integer,Integer> ccfg : cacheConfigurations()) {
+    logCacheInfo(ccfg);
+    try {
+      IgniteCache<Integer,Integer> cache0=ignite0.createCache(ccfg);
+      final Integer key1=primaryKey(ignite(0).cache(cache0.getName()));
+      final Integer key2=primaryKey(ignite(1).cache(cache0.getName()));
+      Map<Integer,Integer> vals=new HashMap<>();
+      int newVal=0;
+      for (      Ignite ignite : G.allGrids()) {
+        log.info("Test node: " + ignite.name());
+        IgniteTransactions txs=ignite.transactions();
+        IgniteCache<Integer,Integer> cache=ignite.cache(cache0.getName());
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          Map<Integer,EntryProcessorResult<Integer>> res=cache.invokeAll(F.asSet(key1,key2),new SetValueProcessor(newVal));
+          if (!vals.isEmpty()) {
+            EntryProcessorResult<Integer> res1=res.get(key1);
+            assertNotNull(res1);
+            assertEquals(vals.get(key1),res1.get());
+            EntryProcessorResult<Integer> res2=res.get(key2);
+            assertNotNull(res2);
+            assertEquals(vals.get(key2),res2.get());
+          }
+ else           assertTrue(res.isEmpty());
+          tx.commit();
+        }
+         checkValue(key1,newVal,cache.getName());
+        checkValue(key2,newVal,cache.getName());
+        vals.put(key1,newVal);
+        vals.put(key2,newVal);
+        try {
+          try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+            Map<Integer,EntryProcessorResult<Integer>> res=cache.invokeAll(F.asSet(key1,key2),new SetValueProcessor(newVal + 1));
+            EntryProcessorResult<Integer> res1=res.get(key1);
+            assertNotNull(res1);
+            assertEquals(vals.get(key1),res1.get());
+            EntryProcessorResult<Integer> res2=res.get(key2);
+            assertNotNull(res2);
+            assertEquals(vals.get(key2),res2.get());
+            updateKey(cache0,key1,-1);
+            tx.commit();
+          }
+           fail();
+        }
+ catch (        TransactionOptimisticException e) {
+          log.info("Expected exception: " + e);
+        }
+        checkValue(key1,-1,cache.getName());
+        checkValue(key2,newVal,cache.getName());
+        vals.put(key1,-1);
+        vals.put(key2,newVal);
+        newVal++;
+      }
+    }
+  finally {
+      destroyCache(ignite0,ccfg.getName());
+    }
+  }
+}

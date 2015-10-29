@@ -3,20 +3,32 @@
   boolean remote=false;
   boolean allowLocRead=!forcePrimary || cctx.affinity().primary(cctx.localNode(),key,topVer);
   while (true) {
-    GridCacheEntryEx entry=null;
+    GridCacheEntryEx entry;
     try {
-      if (!reload && allowLocRead) {
+      if (allowLocRead) {
         try {
           entry=colocated.context().isSwapOrOffheapEnabled() ? colocated.entryEx(key) : colocated.peekEx(key);
           if (entry != null) {
             boolean isNew=entry.isNewLocked();
-            CacheObject v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiryPlc);
+            CacheObject v=null;
+            GridCacheVersion ver=null;
+            if (needVer) {
+              T2<CacheObject,GridCacheVersion> res=entry.innerGetVersioned(null,true,true,false,!skipVals,subjId,null,taskName,expiryPlc);
+              if (res != null) {
+                v=res.get1();
+                ver=res.get2();
+              }
+            }
+ else {
+              v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiryPlc);
+            }
             colocated.context().evicts().touch(entry,topVer);
             if (v == null) {
               if (isNew && entry.markObsoleteIfEmpty(ver))               colocated.removeIfObsolete(key);
             }
  else {
-              cctx.addResult(locVals,key,v,skipVals,false,deserializePortable,true);
+              if (needVer)               versionedResult(locVals,key,v,ver);
+ else               cctx.addResult(locVals,key,v,skipVals,keepCacheObjects,deserializePortable,true);
               return false;
             }
           }
@@ -47,11 +59,6 @@
       break;
     }
 catch (    GridCacheEntryRemovedException ignored) {
-    }
-catch (    GridCacheFilterFailedException e) {
-      if (log.isDebugEnabled())       log.debug("Filter validation failed for entry: " + e);
-      colocated.context().evicts().touch(entry,topVer);
-      break;
     }
   }
   return remote;

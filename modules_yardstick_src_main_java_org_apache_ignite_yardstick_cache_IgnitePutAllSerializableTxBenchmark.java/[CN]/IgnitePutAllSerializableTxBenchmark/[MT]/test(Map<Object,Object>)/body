@@ -1,0 +1,19 @@
+{
+  ThreadRange r=threadRange();
+  Map<Integer,Integer> vals=new HashMap<>();
+  for (int i=0; i < args.batch(); i++) {
+    int key=r.nextRandom();
+    vals.put(key,key);
+  }
+  while (true) {
+    try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+      cache.putAll(vals);
+      tx.commit();
+    }
+ catch (    TransactionOptimisticException e) {
+      continue;
+    }
+    break;
+  }
+  return true;
+}

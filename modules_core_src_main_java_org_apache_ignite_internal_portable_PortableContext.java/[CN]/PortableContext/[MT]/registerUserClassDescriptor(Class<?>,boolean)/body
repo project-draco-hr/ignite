@@ -1,7 +1,7 @@
 {
   boolean registered;
   String typeName=typeName(cls.getName());
-  PortableIdMapper idMapper=idMapper(typeName);
+  PortableIdMapper idMapper=userTypeIdMapper(typeName);
   int typeId=idMapper.typeId(typeName);
   try {
     registered=marshCtx.registerClass(typeId,cls);
@@ -10,7 +10,8 @@
     throw new PortableException("Failed to register class.",e);
   }
   PortableClassDescriptor desc=new PortableClassDescriptor(this,cls,true,typeId,typeName,idMapper,null,metaDataEnabled,keepDeserialized,registered,false);
-  userTypes.put(typeId,desc);
+  if (IgniteUtils.detectClassLoader(cls).equals(dfltLdr))   userTypes.put(typeId,desc);
   descByCls.put(cls,desc);
+  mappers.putIfAbsent(typeId,idMapper);
   return desc;
 }

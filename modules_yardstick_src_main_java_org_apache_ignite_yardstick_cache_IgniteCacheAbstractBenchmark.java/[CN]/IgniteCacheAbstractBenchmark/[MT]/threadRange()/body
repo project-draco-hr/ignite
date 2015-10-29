@@ -1,0 +1,16 @@
+{
+  ThreadRange r=threadRange.get();
+  if (r == null) {
+    if (args.keysPerThread()) {
+      int idx=threadIdx.getAndIncrement();
+      int keysPerThread=(int)(args.range() / (float)cfg.threads());
+      int min=keysPerThread * idx;
+      int max=min + keysPerThread;
+      r=new ThreadRange(min,max);
+    }
+ else     r=new ThreadRange(0,args.range());
+    BenchmarkUtils.println(cfg,"Initialized thread range [min=" + r.min + ", max="+ r.max+ ']');
+    threadRange.set(r);
+  }
+  return r;
+}

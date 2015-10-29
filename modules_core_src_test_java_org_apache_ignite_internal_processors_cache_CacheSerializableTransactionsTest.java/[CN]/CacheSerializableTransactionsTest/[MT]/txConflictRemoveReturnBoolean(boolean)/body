@@ -1,0 +1,102 @@
+{
+  Ignite ignite0=ignite(0);
+  final IgniteTransactions txs=ignite0.transactions();
+  for (  CacheConfiguration<Integer,Integer> ccfg : cacheConfigurations()) {
+    logCacheInfo(ccfg);
+    try {
+      IgniteCache<Integer,Integer> cache=ignite0.createCache(ccfg);
+      List<Integer> keys=testKeys(cache);
+      for (      final Integer key : keys) {
+        log.info("Test key: " + key);
+        if (!noVal)         cache.put(key,-1);
+        if (noVal) {
+          try {
+            try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+              boolean res=cache.remove(key);
+              assertFalse(res);
+              updateKey(cache,key,-1);
+              tx.commit();
+            }
+             fail();
+          }
+ catch (          TransactionOptimisticException e) {
+            log.info("Expected exception: " + e);
+          }
+          checkValue(key,-1,cache.getName());
+        }
+ else {
+          try {
+            try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+              boolean res=cache.remove(key);
+              assertTrue(res);
+              txAsync(cache,PESSIMISTIC,REPEATABLE_READ,new IgniteClosure<IgniteCache<Integer,Integer>,Void>(){
+                @Override public Void apply(                IgniteCache<Integer,Integer> cache){
+                  cache.remove(key);
+                  return null;
+                }
+              }
+);
+              tx.commit();
+            }
+             fail();
+          }
+ catch (          TransactionOptimisticException e) {
+            log.info("Expected exception: " + e);
+          }
+          checkValue(key,null,cache.getName());
+          cache.put(key,-1);
+        }
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          boolean res=cache.remove(key);
+          assertTrue(res);
+          updateKey(cache,key,2);
+          tx.commit();
+        }
+         checkValue(key,null,cache.getName());
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          cache.removeAll(Collections.singleton(key));
+          txAsync(cache,PESSIMISTIC,REPEATABLE_READ,new IgniteClosure<IgniteCache<Integer,Integer>,Void>(){
+            @Override public Void apply(            IgniteCache<Integer,Integer> cache){
+              cache.remove(key);
+              return null;
+            }
+          }
+);
+          tx.commit();
+        }
+         checkValue(key,null,cache.getName());
+        cache.put(key,2);
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          boolean res=cache.remove(key);
+          assertTrue(res);
+          tx.commit();
+        }
+         checkValue(key,null,cache.getName());
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          boolean res=cache.remove(key);
+          assertFalse(res);
+          tx.commit();
+        }
+         checkValue(key,null,cache.getName());
+        try {
+          cache.put(key,1);
+          try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+            Object val=cache.get(key);
+            assertEquals(1,val);
+            boolean res=cache.remove(key);
+            assertTrue(res);
+            updateKey(cache,key,2);
+            tx.commit();
+          }
+           fail();
+        }
+ catch (        TransactionOptimisticException e) {
+          log.info("Expected exception: " + e);
+        }
+      }
+    }
+  finally {
+      destroyCache(ignite0,ccfg.getName());
+    }
+  }
+}

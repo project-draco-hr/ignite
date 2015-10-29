@@ -1,0 +1,67 @@
+{
+  if (keys == null || keys.isEmpty())   return new GridFinishedFuture<>(Collections.<K,V>emptyMap());
+  if (expiryPlc == null)   expiryPlc=expiryPolicy(null);
+  if (!forcePrimary) {
+    Map<K,V> locVals=null;
+    boolean success=true;
+    for (    KeyCacheObject key : keys) {
+      GridCacheEntryEx entry=null;
+      while (true) {
+        try {
+          entry=ctx.isSwapOrOffheapEnabled() ? entryEx(key) : peekEx(key);
+          if (entry != null) {
+            boolean isNew=entry.isNewLocked();
+            CacheObject v=null;
+            GridCacheVersion ver=null;
+            if (needVer) {
+              T2<CacheObject,GridCacheVersion> res=entry.innerGetVersioned(null,true,true,false,!skipVals,subjId,null,taskName,expiryPlc);
+              if (res != null) {
+                v=res.get1();
+                ver=res.get2();
+              }
+            }
+ else {
+              v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiryPlc);
+            }
+            if (v == null) {
+              GridCacheVersion obsoleteVer=context().versions().next();
+              if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(key);
+              success=false;
+            }
+ else {
+              if (locVals == null)               locVals=U.newHashMap(keys.size());
+              if (needVer)               locVals.put((K)key,(V)new T2<>((Object)(skipVals ? true : v),ver));
+ else {
+                ctx.addResult(locVals,key,v,skipVals,keepCacheObj,deserializePortable,true);
+              }
+            }
+          }
+ else           success=false;
+          break;
+        }
+ catch (        GridCacheEntryRemovedException ignored) {
+        }
+catch (        GridDhtInvalidPartitionException ignored) {
+          success=false;
+          break;
+        }
+catch (        IgniteCheckedException e) {
+          return new GridFinishedFuture<>(e);
+        }
+ finally {
+          if (entry != null)           context().evicts().touch(entry,topVer);
+        }
+      }
+      if (!success)       break;
+ else       if (!skipVals && ctx.config().isStatisticsEnabled())       ctx.cache().metrics0().onRead(true);
+    }
+    if (success) {
+      sendTtlUpdateRequest(expiryPlc);
+      return new GridFinishedFuture<>(locVals);
+    }
+  }
+  if (expiryPlc != null)   expiryPlc.reset();
+  GridPartitionedGetFuture<K,V> fut=new GridPartitionedGetFuture<>(ctx,keys,topVer,readThrough,forcePrimary,subjId,taskName,deserializePortable,expiryPlc,skipVals,canRemap,needVer,keepCacheObj);
+  fut.init();
+  return fut;
+}

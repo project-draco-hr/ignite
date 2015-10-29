@@ -1,0 +1,30 @@
+{
+  GridCacheMvccCandidate prev;
+  GridCacheMvccCandidate cand;
+  GridCacheMvccCandidate owner;
+  CacheObject val;
+  boolean hasVal;
+synchronized (this) {
+    checkObsolete();
+    if (serReadVer != null) {
+      if (!checkSerializableReadVersion(serReadVer))       return null;
+    }
+    GridCacheMvcc mvcc=mvccExtras();
+    if (mvcc == null) {
+      mvcc=new GridCacheMvcc(cctx);
+      mvccExtras(mvcc);
+    }
+    prev=mvcc.localOwner();
+    cand=mvcc.addLocal(this,null,null,threadId,ver,timeout,serOrder,reenter,tx,implicitSingle,false);
+    owner=mvcc.localOwner();
+    val=this.val;
+    hasVal=hasValueUnlocked();
+    if (mvcc.isEmpty())     mvccExtras(null);
+  }
+  if (cand != null) {
+    if (!cand.reentry())     cctx.mvcc().addNext(cctx,cand);
+    if (cctx.events().isRecordable(EVT_CACHE_OBJECT_LOCKED))     cctx.events().addEvent(partition(),key,cand.nodeId(),cand,EVT_CACHE_OBJECT_LOCKED,val,hasVal,val,hasVal,null,null,null);
+  }
+  checkOwnerChanged(prev,owner);
+  return cand;
+}
