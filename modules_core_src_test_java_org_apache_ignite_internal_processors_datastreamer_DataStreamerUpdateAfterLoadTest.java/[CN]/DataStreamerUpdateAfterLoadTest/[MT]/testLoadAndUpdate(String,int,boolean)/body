@@ -1,0 +1,18 @@
+{
+  for (int loadNode=0; loadNode < NODES; loadNode++) {
+    Ignite loadIgnite=ignite(loadNode);
+    for (int updateNode=0; updateNode < NODES; updateNode++) {
+      try (IgniteDataStreamer<Integer,Integer> streamer=loadIgnite.dataStreamer(cacheName)){
+        streamer.allowOverwrite(allowOverwrite);
+        streamer.addData(key,key);
+      }
+       Ignite updateIgnite=ignite(updateNode);
+      IgniteCache<Integer,Integer> cache=updateIgnite.cache(cacheName);
+      if (allowOverwrite)       atomicClockModeDelay(cache);
+      updateIgnite.cache(cacheName).put(key,key + 1);
+      checkValue(key,key + 1,cacheName);
+      key++;
+    }
+  }
+  return key;
+}

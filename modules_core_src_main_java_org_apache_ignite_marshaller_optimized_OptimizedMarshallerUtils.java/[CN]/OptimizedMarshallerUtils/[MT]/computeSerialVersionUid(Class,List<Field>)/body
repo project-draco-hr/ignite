@@ -1,5 +1,22 @@
 {
-  if (USE_DFLT_SUID && Serializable.class.isAssignableFrom(cls) && !Enum.class.isAssignableFrom(cls))   return (short)ObjectStreamClass.lookup(cls).getSerialVersionUID();
+  if (Serializable.class.isAssignableFrom(cls) && !Enum.class.isAssignableFrom(cls)) {
+    try {
+      Field field=cls.getDeclaredField("serialVersionUID");
+      if (field.getType() == long.class) {
+        int mod=field.getModifiers();
+        if (Modifier.isStatic(mod) && Modifier.isFinal(mod)) {
+          field.setAccessible(true);
+          return (short)field.getLong(null);
+        }
+      }
+    }
+ catch (    NoSuchFieldException e) {
+    }
+catch (    IllegalAccessException e) {
+      throw new IOException(e);
+    }
+    if (OptimizedMarshaller.USE_DFLT_SUID)     return (short)ObjectStreamClass.lookup(cls).getSerialVersionUID();
+  }
   MessageDigest md;
   try {
     md=MessageDigest.getInstance("SHA");

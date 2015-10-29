@@ -1,0 +1,30 @@
+{
+  Ignite ignite0=ignite(0);
+  IgniteCache<Integer,Integer> cache0=ignite0.createCache(cacheConfiguration(PARTITIONED,FULL_SYNC,1,false,false));
+  final String cacheName=cache0.getName();
+  try {
+    Ignite client1=ignite(SRVS);
+    Ignite client2=ignite(SRVS + 1);
+    IgniteCache<Integer,Integer> cache1=client1.createNearCache(cacheName,new NearCacheConfiguration<Integer,Integer>());
+    IgniteCache<Integer,Integer> cache2=client2.createNearCache(cacheName,new NearCacheConfiguration<Integer,Integer>());
+    Integer key=primaryKey(ignite(0).cache(cacheName));
+    try (Transaction tx=client1.transactions().txStart(OPTIMISTIC,SERIALIZABLE)){
+      assertNull(cache1.get(key));
+      cache1.put(key,1);
+      tx.commit();
+    }
+     try (Transaction tx=client2.transactions().txStart(OPTIMISTIC,SERIALIZABLE)){
+      assertEquals(1,(Object)cache2.get(key));
+      cache2.put(key,2);
+      tx.commit();
+    }
+     try (Transaction tx=client1.transactions().txStart(OPTIMISTIC,SERIALIZABLE)){
+      assertEquals(2,(Object)cache1.get(key));
+      cache1.put(key,3);
+      tx.commit();
+    }
+   }
+  finally {
+    ignite0.destroyCache(cacheName);
+  }
+}

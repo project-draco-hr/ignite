@@ -1,0 +1,19 @@
+{
+  try {
+    cliendMode=false;
+    startGrid(0);
+    cliendMode=true;
+    startGrid(1);
+    ClassLoader ldr=getExternalClassLoader();
+    Class procCls=ldr.loadClass(TEST_ENT_PROCESSOR);
+    Class valCls=ldr.loadClass(TEST_VALUE);
+    assertTrue(grid(1).configuration().isClientMode());
+    IgniteCache cache=grid(1).cache(null);
+    cache.put("key",valCls.newInstance());
+    Boolean res=(Boolean)cache.invoke("key",(CacheEntryProcessor)procCls.newInstance());
+    assertTrue(res);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

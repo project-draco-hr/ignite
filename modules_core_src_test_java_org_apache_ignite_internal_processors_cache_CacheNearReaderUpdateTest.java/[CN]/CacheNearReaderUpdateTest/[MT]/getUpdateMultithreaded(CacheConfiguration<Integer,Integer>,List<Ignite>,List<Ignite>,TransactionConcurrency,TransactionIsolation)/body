@@ -1,0 +1,72 @@
+{
+  log.info("Execute updates [concurrency=" + concurrency + ", isolation="+ isolation+ ']');
+  final Ignite ignite0=ignite(0);
+  final String cacheName=ignite0.createCache(ccfg).getName();
+  try {
+    for (int i=0; i < 5; i++) {
+      final Integer key=i;
+      final AtomicInteger putThreadIdx=new AtomicInteger();
+      final AtomicInteger getThreadIdx=new AtomicInteger();
+      final int PUT_THREADS=20;
+      final int GET_THREAD=20;
+      final CyclicBarrier barrier=new CyclicBarrier(PUT_THREADS + GET_THREAD);
+      final IgniteInternalFuture<?> updateFut=GridTestUtils.runMultiThreadedAsync(new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          int idx=putThreadIdx.getAndIncrement() % putNodes.size();
+          Ignite ignite=putNodes.get(idx);
+          IgniteCache<Integer,Integer> cache=ignite.cache(cacheName);
+          IgniteTransactions txs=ignite.transactions();
+          Thread.currentThread().setName("update-thread-" + ignite.name());
+          barrier.await();
+          for (int i=0; i < 100; i++) {
+            ThreadLocalRandom rnd=ThreadLocalRandom.current();
+            if (concurrency != null) {
+              try (Transaction tx=txs.txStart(concurrency,isolation)){
+                cache.put(key,rnd.nextInt());
+                tx.commit();
+              }
+ catch (              TransactionOptimisticException ignore) {
+                assertEquals(concurrency,OPTIMISTIC);
+                assertEquals(isolation,SERIALIZABLE);
+              }
+            }
+ else             cache.put(key,rnd.nextInt());
+          }
+          return null;
+        }
+      }
+,PUT_THREADS,"update-thread");
+      IgniteInternalFuture<?> getFut=GridTestUtils.runMultiThreadedAsync(new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          int idx=getThreadIdx.getAndIncrement() % getNodes.size();
+          Ignite ignite=getNodes.get(idx);
+          IgniteCache<Integer,Integer> cache;
+          if (ignite.configuration().isClientMode())           cache=ignite.createNearCache(cacheName,new NearCacheConfiguration<Integer,Integer>());
+ else           cache=ignite.cache(cacheName);
+          Thread.currentThread().setName("get-thread-" + ignite.name());
+          barrier.await();
+          while (!updateFut.isDone())           cache.get(key);
+          return null;
+        }
+      }
+,GET_THREAD,"get-thread");
+      updateFut.get();
+      getFut.get();
+      Integer val=(Integer)ignite0.cache(cacheName).get(key);
+      log.info("Iteration [iter=" + i + ", val="+ val+ ']');
+      for (      Ignite getNode : getNodes) {
+        IgniteCache<Integer,Integer> cache=getNode.cache(cacheName);
+        if (getNode.configuration().isClientMode() || cache.getConfiguration(CacheConfiguration.class).getNearConfiguration() != null)         assertNotNull(getNode.cache(cacheName).localPeek(key));
+      }
+      checkValue(key,val,cacheName);
+      for (int n=0; n < SRVS + CLIENTS; n++) {
+        val=n;
+        ignite(n).cache(cacheName).put(key,val);
+        checkValue(key,val,cacheName);
+      }
+    }
+  }
+  finally {
+    destroyCache(ignite0,cacheName);
+  }
+}

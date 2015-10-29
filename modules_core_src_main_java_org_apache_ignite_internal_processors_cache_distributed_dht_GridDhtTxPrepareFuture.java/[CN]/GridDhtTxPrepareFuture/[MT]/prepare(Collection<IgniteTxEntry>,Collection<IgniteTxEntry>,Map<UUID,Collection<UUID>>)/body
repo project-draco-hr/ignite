@@ -6,9 +6,13 @@
   this.reads=reads;
   this.writes=writes;
   this.txNodes=txNodes;
-  if (!F.isEmpty(writes)) {
+  boolean ser=tx.serializable() && tx.optimistic();
+  if (!F.isEmpty(writes) || (ser && !F.isEmpty(reads))) {
     Map<Integer,Collection<KeyCacheObject>> forceKeys=null;
     for (    IgniteTxEntry entry : writes)     forceKeys=checkNeedRebalanceKeys(entry,forceKeys);
+    if (ser) {
+      for (      IgniteTxEntry entry : reads)       forceKeys=checkNeedRebalanceKeys(entry,forceKeys);
+    }
     forceKeysFut=forceRebalanceKeys(forceKeys);
   }
   readyLocks();

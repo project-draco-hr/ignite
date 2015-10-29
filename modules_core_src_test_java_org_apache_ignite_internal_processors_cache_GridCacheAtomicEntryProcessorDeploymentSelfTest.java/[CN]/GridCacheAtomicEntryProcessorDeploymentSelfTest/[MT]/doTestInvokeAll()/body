@@ -1,0 +1,25 @@
+{
+  try {
+    cliendMode=false;
+    startGrid(0);
+    cliendMode=true;
+    startGrid(1);
+    ClassLoader ldr=getExternalClassLoader();
+    Class procCls=ldr.loadClass(TEST_ENT_PROCESSOR);
+    Class valCls=ldr.loadClass(TEST_VALUE);
+    assertTrue(grid(1).configuration().isClientMode());
+    IgniteCache cache=grid(1).cache(null);
+    HashSet keys=new HashSet();
+    for (int i=0; i < 3; i++) {
+      String key="key" + i;
+      cache.put(key,valCls.newInstance());
+      keys.add(key);
+    }
+    Map<String,EntryProcessorResult> res=(Map<String,EntryProcessorResult>)cache.invokeAll(keys,(CacheEntryProcessor)procCls.newInstance());
+    assertEquals(3,res.size());
+    for (    EntryProcessorResult result : res.values())     assertTrue((Boolean)result.get());
+  }
+  finally {
+    stopAllGrids();
+  }
+}

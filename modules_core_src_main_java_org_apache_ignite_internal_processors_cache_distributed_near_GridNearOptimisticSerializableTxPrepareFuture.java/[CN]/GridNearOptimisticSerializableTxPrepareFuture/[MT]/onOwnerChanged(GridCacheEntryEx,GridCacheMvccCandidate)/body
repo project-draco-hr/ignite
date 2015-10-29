@@ -1,0 +1,31 @@
+{
+  if (log.isDebugEnabled())   log.debug("Transaction future received owner changed callback: " + entry);
+  if ((entry.context().isNear() || entry.context().isLocal()) && owner != null) {
+    IgniteTxEntry txEntry=tx.entry(entry.txKey());
+    if (txEntry != null) {
+      if (entry.context().isLocal()) {
+        GridCacheVersion serReadVer=txEntry.serializableReadVersion();
+        if (serReadVer != null) {
+          GridCacheContext ctx=entry.context();
+          while (true) {
+            try {
+              if (!entry.checkSerializableReadVersion(serReadVer)) {
+                Object key=entry.key().value(ctx.cacheObjectContext(),false);
+                IgniteTxOptimisticCheckedException err0=new IgniteTxOptimisticCheckedException("Failed to prepare transaction, " + "read/write conflict [key=" + key + ", cache="+ ctx.name()+ ']');
+                err.compareAndSet(null,err0);
+              }
+              break;
+            }
+ catch (            GridCacheEntryRemovedException e) {
+              entry=ctx.cache().entryEx(entry.key());
+              txEntry.cached(entry);
+            }
+          }
+        }
+      }
+      keyLockFut.onKeyLocked(entry.txKey());
+      return true;
+    }
+  }
+  return false;
+}

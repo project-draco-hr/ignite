@@ -1,0 +1,38 @@
+{
+  Ignite ignite0=ignite(0);
+  IgniteTransactions txs=ignite0.transactions();
+  for (  CacheConfiguration<Integer,Integer> ccfg : cacheConfigurations()) {
+    logCacheInfo(ccfg);
+    try {
+      IgniteCache<Integer,Integer> cache=ignite0.createCache(ccfg);
+      List<Integer> keys=testKeys(cache);
+      for (      Integer key : keys) {
+        log.info("Test key: " + key);
+        CountDownLatch latch=new CountDownLatch(1);
+        IgniteInternalFuture<?> fut=lockKey(latch,cache,key);
+        try {
+          try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+            cache.put(key,2);
+            log.info("Commit");
+            tx.commit();
+          }
+           fail();
+        }
+ catch (        TransactionOptimisticException e) {
+          log.info("Expected exception: " + e);
+        }
+        latch.countDown();
+        fut.get();
+        checkValue(key,1,cache.getName());
+        try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+          cache.put(key,2);
+          tx.commit();
+        }
+         checkValue(key,2,cache.getName());
+      }
+    }
+  finally {
+      destroyCache(ignite0,ccfg.getName());
+    }
+  }
+}

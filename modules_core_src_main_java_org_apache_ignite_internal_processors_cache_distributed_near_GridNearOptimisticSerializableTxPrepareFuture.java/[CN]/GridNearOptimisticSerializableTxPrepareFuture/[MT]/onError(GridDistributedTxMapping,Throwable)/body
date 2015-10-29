@@ -1,0 +1,14 @@
+{
+  if (X.hasCause(e,ClusterTopologyCheckedException.class) || X.hasCause(e,ClusterTopologyException.class)) {
+    if (tx.onePhaseCommit()) {
+      tx.markForBackupCheck();
+      onComplete();
+      return;
+    }
+  }
+  if (e instanceof IgniteTxOptimisticCheckedException) {
+    if (m != null)     tx.removeMapping(m.node().id());
+  }
+  err.compareAndSet(null,e);
+  keyLockFut.onDone(e);
+}

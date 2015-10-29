@@ -4,23 +4,30 @@
     ClusterNode primary=topSnapshot.get(0);
     return Collections.nCopies(parts,Collections.singletonList(primary));
   }
-  List<List<ClusterNode>> assignment=createCopy(ctx);
-  int tiers=Math.min(ctx.backups() + 1,topSnapshot.size());
+  Map<UUID,Collection<ClusterNode>> neighborhoodMap=exclNeighbors ? GridCacheUtils.neighbors(ctx.currentTopologySnapshot()) : null;
+  List<List<ClusterNode>> assignment=createCopy(ctx,neighborhoodMap);
+  int backups=ctx.backups();
+  int tiers=backups == Integer.MAX_VALUE ? topSnapshot.size() : Math.min(backups + 1,topSnapshot.size());
   Map<Integer,Queue<Integer>> pendingParts=new HashMap<>();
-  FullAssignmentMap fullMap=new FullAssignmentMap(tiers,assignment,topSnapshot);
+  FullAssignmentMap fullMap=new FullAssignmentMap(tiers,assignment,topSnapshot,neighborhoodMap);
   for (int tier=0; tier < tiers; tier++) {
     Queue<Integer> pending=pendingParts.get(tier);
     for (int part=0; part < parts; part++) {
       if (fullMap.assignments.get(part).size() < tier + 1) {
-        if (pending == null) {
-          pending=new LinkedList<>();
-          pendingParts.put(tier,pending);
-        }
+        if (pending == null)         pendingParts.put(tier,pending=new LinkedList<>());
         if (!pending.contains(part))         pending.add(part);
       }
     }
-    assignPending(tier,pendingParts,fullMap,topSnapshot);
-    balance(tier,pendingParts,fullMap,topSnapshot);
+    assignPending(tier,pendingParts,fullMap,topSnapshot,false);
+    boolean balanced=balance(tier,pendingParts,fullMap,topSnapshot,false);
+    if (!balanced && exclNeighbors) {
+      assignPending(tier,pendingParts,fullMap,topSnapshot,true);
+      balance(tier,pendingParts,fullMap,topSnapshot,true);
+      if (!exclNeighborsWarn) {
+        LT.warn(log,null,"Affinity function excludeNeighbors property is ignored " + "because topology has no enough nodes to assign backups.");
+        exclNeighborsWarn=true;
+      }
+    }
   }
   return fullMap.assignments;
 }

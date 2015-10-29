@@ -1,0 +1,13 @@
+{
+  Queue<Integer> pending=pendingMap.get(tier);
+  if (F.isEmpty(pending))   return;
+  int idealPartCnt=parts / topSnapshot.size();
+  Map<UUID,PartitionSet> tierMapping=fullMap.tierMapping(tier);
+  PrioritizedPartitionMap underloadedNodes=filterNodes(tierMapping,idealPartCnt,false);
+  assignPendingToUnderloaded(tier,pendingMap,fullMap,underloadedNodes,topSnapshot,false,allowNeighbors);
+  if (!pending.isEmpty() && !underloadedNodes.isEmpty()) {
+    assignPendingToUnderloaded(tier,pendingMap,fullMap,underloadedNodes,topSnapshot,true,allowNeighbors);
+  }
+  if (!pending.isEmpty())   assignPendingToNodes(tier,pendingMap,fullMap,topSnapshot,allowNeighbors);
+  if (pending.isEmpty())   pendingMap.remove(tier);
+}

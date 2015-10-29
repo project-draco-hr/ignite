@@ -1,0 +1,13 @@
+{
+  DiscoveryEvent discoEvt=ctx.discoveryEvent();
+  UUID leftNodeId=(discoEvt == null || discoEvt.type() == EventType.EVT_NODE_JOINED) ? null : discoEvt.eventNode().id();
+  List<List<ClusterNode>> cp=new ArrayList<>(parts);
+  for (int part=0; part < parts; part++) {
+    List<ClusterNode> partNodes=ctx.previousAssignment(part);
+    List<ClusterNode> partNodesCp;
+    if (partNodes == null)     partNodesCp=new ArrayList<>();
+ else     partNodesCp=copyAssigments(neighborhoodMap,partNodes,leftNodeId);
+    cp.add(partNodesCp);
+  }
+  return cp;
+}
