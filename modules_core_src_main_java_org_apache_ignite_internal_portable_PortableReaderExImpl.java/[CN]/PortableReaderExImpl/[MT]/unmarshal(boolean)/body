@@ -1,3 +1,108 @@
 {
-  return unmarshal(raw,false);
+  int start=in.position();
+  byte flag=in.readByte();
+switch (flag) {
+case NULL:
+    return null;
+case HANDLE:
+  int handle=start - in.readInt();
+PortableObject handledPo=rCtx.getPortableByHandle(handle);
+if (handledPo != null) return handledPo;
+in.position(handle);
+return unmarshal();
+case OBJ:
+PortableUtils.checkProtocolVersion(in.readByte());
+PortableObjectEx po;
+if (detach) {
+in.position(start + GridPortableMarshaller.TOTAL_LEN_POS);
+int len=in.readInt();
+in.position(start);
+po=new PortableObjectImpl(ctx,in.readByteArray(len),0);
+}
+ else po=in.offheapPointer() > 0 ? new PortableObjectOffheapImpl(ctx,in.offheapPointer(),start,in.remaining() + in.position()) : new PortableObjectImpl(ctx,in.array(),start);
+rCtx.setPortableHandler(start,po);
+in.position(start + po.length());
+return po;
+case BYTE:
+return in.readByte();
+case SHORT:
+return in.readShort();
+case INT:
+return in.readInt();
+case LONG:
+return in.readLong();
+case FLOAT:
+return in.readFloat();
+case DOUBLE:
+return in.readDouble();
+case CHAR:
+return in.readChar();
+case BOOLEAN:
+return in.readBoolean();
+case DECIMAL:
+return doReadDecimal();
+case STRING:
+return doReadString();
+case UUID:
+return doReadUuid();
+case DATE:
+return doReadDate();
+case TIMESTAMP:
+return doReadTimestamp();
+case BYTE_ARR:
+return doReadByteArray();
+case SHORT_ARR:
+return doReadShortArray();
+case INT_ARR:
+return doReadIntArray();
+case LONG_ARR:
+return doReadLongArray();
+case FLOAT_ARR:
+return doReadFloatArray();
+case DOUBLE_ARR:
+return doReadDoubleArray();
+case CHAR_ARR:
+return doReadCharArray();
+case BOOLEAN_ARR:
+return doReadBooleanArray();
+case DECIMAL_ARR:
+return doReadDecimalArray();
+case STRING_ARR:
+return doReadStringArray();
+case UUID_ARR:
+return doReadUuidArray();
+case DATE_ARR:
+return doReadDateArray();
+case TIMESTAMP_ARR:
+return doReadTimestampArray();
+case OBJ_ARR:
+return doReadObjectArray(false);
+case COL:
+return doReadCollection(false,null);
+case MAP:
+return doReadMap(false,null);
+case MAP_ENTRY:
+return doReadMapEntry(false);
+case PORTABLE_OBJ:
+return doReadPortableObject();
+case ENUM:
+return doReadEnum(doReadClass());
+case ENUM_ARR:
+return doReadEnumArray(doReadClass());
+case CLASS:
+return in.readInt();
+case OPTM_MARSH:
+int len=in.readInt();
+ByteArrayInputStream input=new ByteArrayInputStream(in.array(),in.position(),len);
+Object obj;
+try {
+obj=ctx.optimizedMarsh().unmarshal(input,null);
+}
+ catch (IgniteCheckedException e) {
+throw new PortableException("Failed to unmarshal object with optmMarsh marshaller",e);
+}
+return obj;
+default :
+throw new PortableException("Invalid flag value: " + flag);
+}
 }

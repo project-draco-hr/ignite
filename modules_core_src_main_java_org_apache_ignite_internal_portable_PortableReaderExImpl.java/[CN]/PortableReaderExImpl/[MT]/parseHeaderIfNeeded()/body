@@ -1,0 +1,27 @@
+{
+  if (hdrParsed)   return;
+  int retPos=in.position();
+  in.position(start);
+  byte hdr=in.readByte();
+  if (hdr != GridPortableMarshaller.OBJ)   throw new PortableException("Invalid header [pos=" + retPos + "expected="+ GridPortableMarshaller.OBJ+ ", actual="+ hdr+ ']');
+  PortableUtils.checkProtocolVersion(in.readByte());
+  in.position(in.position() + 2);
+  typeId=in.readIntPositioned(start + GridPortableMarshaller.TYPE_ID_POS);
+  IgniteBiTuple<Integer,Integer> footer=PortableUtils.footerAbsolute(in,start);
+  footerStart=footer.get1();
+  footerEnd=footer.get2();
+  schemaId=in.readIntPositioned(start + GridPortableMarshaller.SCHEMA_ID_POS);
+  rawOff=PortableUtils.rawOffsetAbsolute(in,start);
+  if (typeId == UNREGISTERED_TYPE_ID) {
+    in.position(start + GridPortableMarshaller.DFLT_HDR_LEN);
+    int off=in.position();
+    Class cls=doReadClass(typeId);
+    PortableClassDescriptor desc=ctx.descriptorForClass(cls);
+    typeId=desc.typeId();
+    int clsNameLen=in.position() - off;
+    hdrLen=DFLT_HDR_LEN + clsNameLen;
+  }
+ else   hdrLen=DFLT_HDR_LEN;
+  in.position(retPos);
+  hdrParsed=true;
+}

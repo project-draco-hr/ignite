@@ -1,16 +1,16 @@
 {
   if (readCache == null) {
     Map<Integer,Object> readCache=new HashMap<>();
-    int pos=start + hdrLen;
-    int end=start + reader.readIntAbsolute(start + RAW_DATA_OFF_POS);
-    while (pos < end) {
-      int fieldId=reader.readIntAbsolute(pos);
-      pos+=4;
-      int len=reader.readIntAbsolute(pos);
-      pos+=4;
-      Object val=reader.getValueQuickly(pos,len);
+    IgniteBiTuple<Integer,Integer> footer=PortableUtils.footerAbsolute(reader,start);
+    int footerPos=footer.get1();
+    int footerEnd=footer.get2();
+    int rawPos=PortableUtils.rawOffsetAbsolute(reader,start);
+    while (footerPos < footerEnd) {
+      int fieldId=reader.readIntPositioned(footerPos);
+      IgniteBiTuple<Integer,Integer> posAndLen=fieldPositionAndLength(footerPos,footerEnd,rawPos);
+      Object val=reader.getValueQuickly(posAndLen.get1(),posAndLen.get2());
       readCache.put(fieldId,val);
-      pos+=len;
+      footerPos+=8;
     }
     this.readCache=readCache;
   }

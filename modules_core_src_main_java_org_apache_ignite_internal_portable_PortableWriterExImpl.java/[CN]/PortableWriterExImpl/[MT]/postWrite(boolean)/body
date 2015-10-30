@@ -1,0 +1,14 @@
+{
+  if (schema != null) {
+    out.writeInt(start + SCHEMA_ID_POS,schemaId);
+    out.writeInt(start + SCHEMA_OR_RAW_OFF_POS,out.position() - start);
+    schema.writeAndPop(this,fieldCnt);
+    if (rawOffPos != 0)     out.writeInt(rawOffPos - start);
+  }
+ else {
+    int flags=(userType ? PortableUtils.FLAG_USR_TYP : 0) | PortableUtils.FLAG_RAW_ONLY;
+    out.writeShort(start + FLAGS_POS,(short)flags);
+    out.writeInt(start + SCHEMA_OR_RAW_OFF_POS,(rawOffPos == 0 ? out.position() : rawOffPos) - start);
+  }
+  out.writeInt(start + TOTAL_LEN_POS,out.position() - start);
+}
