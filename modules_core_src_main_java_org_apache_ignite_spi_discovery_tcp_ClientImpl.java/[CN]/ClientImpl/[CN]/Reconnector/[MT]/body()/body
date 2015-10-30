@@ -6,22 +6,23 @@
   if (log.isDebugEnabled())   log.debug("Started reconnect process [join=" + join + ", timeout="+ timeout+ ']');
   try {
     while (true) {
-      T2<Socket,Boolean> joinRes=joinTopology(true,timeout);
+      T2<SocketStream,Boolean> joinRes=joinTopology(true,timeout);
       if (joinRes == null) {
         if (join) {
-          joinError(new IgniteSpiException("Join process timed out, connection failed and " + "failed to reconnect (consider increasing 'joinTimeout' configuration property) " + "[joinTimeout=" + spi.joinTimeout + ", sock="+ sock+ ']'));
+          joinError(new IgniteSpiException("Join process timed out, connection failed and " + "failed to reconnect (consider increasing 'joinTimeout' configuration property) " + "[joinTimeout=" + spi.joinTimeout + ']'));
         }
- else         U.error(log,"Failed to reconnect to cluster (consider increasing 'networkTimeout'" + " configuration  property) [networkTimeout=" + spi.netTimeout + ", sock="+ sock+ ']');
+ else         U.error(log,"Failed to reconnect to cluster (consider increasing 'networkTimeout'" + " configuration  property) [networkTimeout=" + spi.netTimeout + ']');
         return;
       }
-      sock=joinRes.get1();
+      sockStream=joinRes.get1();
       clientAck=joinRes.get2();
+      Socket sock=sockStream.socket();
       if (isInterrupted())       throw new InterruptedException();
       int oldTimeout=0;
       try {
         oldTimeout=sock.getSoTimeout();
         sock.setSoTimeout((int)spi.netTimeout);
-        InputStream in=new BufferedInputStream(sock.getInputStream());
+        InputStream in=sockStream.stream();
         sock.setKeepAlive(true);
         sock.setTcpNoDelay(true);
         List<TcpDiscoveryAbstractMessage> msgs=null;
@@ -65,11 +66,13 @@
   }
  catch (  IOException|IgniteCheckedException e) {
     err=e;
+    success=false;
     U.error(log,"Failed to reconnect",e);
   }
  finally {
     if (!success) {
-      U.closeQuiet(sock);
+      SocketStream sockStream=this.sockStream;
+      if (sockStream != null)       U.closeQuiet(sockStream.socket());
       if (join)       joinError(new IgniteSpiException("Failed to connect to cluster, connection failed and failed " + "to reconnect.",err));
  else       msgWorker.addMessage(SPI_RECONNECT_FAILED);
     }

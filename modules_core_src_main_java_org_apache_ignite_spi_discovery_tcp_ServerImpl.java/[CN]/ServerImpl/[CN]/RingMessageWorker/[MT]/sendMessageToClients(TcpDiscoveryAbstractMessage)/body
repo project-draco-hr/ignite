@@ -1,0 +1,18 @@
+{
+  if (redirectToClients(msg)) {
+    byte[] marshalledMsg=null;
+    for (    ClientMessageWorker clientMsgWorker : clientMsgWorkers.values()) {
+      TcpDiscoveryAbstractMessage msgClone;
+      try {
+        if (marshalledMsg == null)         marshalledMsg=spi.marsh.marshal(msg);
+        msgClone=spi.marsh.unmarshal(marshalledMsg,null);
+      }
+ catch (      IgniteCheckedException e) {
+        U.error(log,"Failed to marshal message: " + msg,e);
+        msgClone=msg;
+      }
+      prepareNodeAddedMessage(msgClone,clientMsgWorker.clientNodeId,null,null,null);
+      clientMsgWorker.addMessage(msgClone);
+    }
+  }
+}

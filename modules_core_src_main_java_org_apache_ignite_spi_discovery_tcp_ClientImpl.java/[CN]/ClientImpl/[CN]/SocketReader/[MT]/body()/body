@@ -1,17 +1,18 @@
 {
   while (!isInterrupted()) {
-    Socket sock;
+    SocketStream sockStream;
     UUID rmtNodeId;
 synchronized (mux) {
-      if (this.sock == null) {
+      if (this.sockStream == null) {
         mux.wait();
         continue;
       }
-      sock=this.sock;
+      sockStream=this.sockStream;
       rmtNodeId=this.rmtNodeId;
     }
+    Socket sock=sockStream.socket();
     try {
-      InputStream in=new BufferedInputStream(sock.getInputStream());
+      InputStream in=sockStream.stream();
       sock.setKeepAlive(true);
       sock.setTcpNoDelay(true);
       while (!isInterrupted()) {
@@ -32,22 +33,19 @@ synchronized (mux) {
         if (log.isDebugEnabled())         log.debug("Message has been received: " + msg);
         spi.stats.onMessageReceived(msg);
         boolean ack=msg instanceof TcpDiscoveryClientAckResponse;
-        if (!ack) {
-          if (spi.ensured(msg) && joinLatch.getCount() == 0L)           lastMsgId=msg.id();
-          msgWorker.addMessage(msg);
-        }
+        if (!ack)         msgWorker.addMessage(msg);
  else         sockWriter.ackReceived((TcpDiscoveryClientAckResponse)msg);
       }
     }
  catch (    IOException e) {
-      msgWorker.addMessage(new SocketClosedMessage(sock));
+      msgWorker.addMessage(new SocketClosedMessage(sockStream));
       if (log.isDebugEnabled())       U.error(log,"Connection failed [sock=" + sock + ", locNodeId="+ getLocalNodeId()+ ']',e);
     }
  finally {
       U.closeQuiet(sock);
 synchronized (mux) {
-        if (this.sock == sock) {
-          this.sock=null;
+        if (this.sockStream == sockStream) {
+          this.sockStream=null;
           this.rmtNodeId=null;
         }
       }
