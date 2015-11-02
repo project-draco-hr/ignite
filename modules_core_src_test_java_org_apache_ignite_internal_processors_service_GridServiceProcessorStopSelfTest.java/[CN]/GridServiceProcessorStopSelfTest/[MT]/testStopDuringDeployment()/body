@@ -1,0 +1,27 @@
+{
+  final CountDownLatch depLatch=new CountDownLatch(1);
+  final CountDownLatch finishLatch=new CountDownLatch(1);
+  final Ignite ignite=startGrid(0);
+  Thread t=new Thread(new Runnable(){
+    @Override public void run(){
+      IgniteServices svcs=ignite.services();
+      IgniteServices services=svcs.withAsync();
+      services.deployClusterSingleton("myClusterSingletonService",new TestServiceImpl());
+      depLatch.countDown();
+      try {
+        services.future().get();
+      }
+ catch (      IgniteException e) {
+        finishLatch.countDown();
+      }
+catch (      Throwable e) {
+        log.error("Service deployment error: ",e);
+      }
+    }
+  }
+);
+  t.start();
+  depLatch.await();
+  Ignition.stopAll(true);
+  assertTrue("Deploy future isn't completed",finishLatch.await(15,TimeUnit.SECONDS));
+}

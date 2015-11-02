@@ -1,0 +1,68 @@
+{
+  final Ignite srv=ignite(1);
+  CacheConfiguration<Integer,Integer> ccfg=cacheConfiguration(PARTITIONED,FULL_SYNC,1,store,false);
+  final List<Ignite> clients=clients();
+  final String cacheName=srv.createCache(ccfg).getName();
+  final AtomicBoolean stop=new AtomicBoolean();
+  try {
+    final List<IgniteCache<Integer,Integer>> caches=new ArrayList<>();
+    for (    Ignite client : clients) {
+      if (nearCache)       caches.add(client.createNearCache(cacheName,new NearCacheConfiguration<Integer,Integer>()));
+ else       caches.add(client.<Integer,Integer>cache(cacheName));
+    }
+    IgniteInternalFuture<?> restartFut=restart ? restartFuture(stop,null) : null;
+    for (int i=0; i < 20; i+=2) {
+      final AtomicInteger cntr=new AtomicInteger();
+      final Integer key1=i;
+      final Integer key2=i + 1;
+      final AtomicInteger threadIdx=new AtomicInteger();
+      final int THREADS=10;
+      final CyclicBarrier barrier=new CyclicBarrier(THREADS);
+      final ConcurrentSkipListSet<Integer> vals1=new ConcurrentSkipListSet<>();
+      final ConcurrentSkipListSet<Integer> vals2=new ConcurrentSkipListSet<>();
+      GridTestUtils.runMultiThreadedAsync(new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          int idx=threadIdx.getAndIncrement() % caches.size();
+          IgniteCache<Integer,Integer> cache=caches.get(idx);
+          Ignite ignite=cache.unwrap(Ignite.class);
+          IgniteTransactions txs=ignite.transactions();
+          log.info("Started update thread: " + ignite.name());
+          barrier.await();
+          for (int i=0; i < 1000; i++) {
+            try {
+              try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+                Integer val1=cache.get(key1);
+                Integer val2=cache.get(key2);
+                Integer newVal1=val1 == null ? 1 : val1 + 1;
+                Integer newVal2=val2 == null ? 1 : val2 + 1;
+                cache.put(key1,newVal1);
+                cache.put(key2,newVal2);
+                tx.commit();
+                assertTrue(vals1.add(newVal1));
+                assertTrue(vals2.add(newVal2));
+              }
+               cntr.incrementAndGet();
+            }
+ catch (            TransactionOptimisticException ignore) {
+            }
+catch (            IgniteException|CacheException e) {
+              assertTrue("Unexpected exception [err=" + e + ", cause="+ e.getCause()+ ']',restart && X.hasCause(e,ClusterTopologyCheckedException.class));
+            }
+          }
+          return null;
+        }
+      }
+,THREADS,"update-thread").get();
+      log.info("Iteration [iter=" + i + ", val="+ cntr.get()+ ']');
+      assertTrue(cntr.get() > 0);
+      checkValue(key1,cntr.get(),cacheName,restart);
+      checkValue(key2,cntr.get(),cacheName,restart);
+    }
+    stop.set(true);
+    if (restartFut != null)     restartFut.get();
+  }
+  finally {
+    stop.set(true);
+    destroyCache(cacheName);
+  }
+}
