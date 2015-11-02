@@ -1,0 +1,18 @@
+{
+  return GridTestUtils.runAsync(new Callable<Object>(){
+    private boolean stop(){
+      if (stop != null)       return stop.get();
+      return fut.isDone();
+    }
+    @Override public Object call() throws Exception {
+      while (!stop()) {
+        Ignite ignite=startGrid(SRVS + CLIENTS);
+        assertFalse(ignite.configuration().isClientMode());
+        U.sleep(300);
+        stopGrid(SRVS + CLIENTS);
+      }
+      return null;
+    }
+  }
+,"restart-thread");
+}
