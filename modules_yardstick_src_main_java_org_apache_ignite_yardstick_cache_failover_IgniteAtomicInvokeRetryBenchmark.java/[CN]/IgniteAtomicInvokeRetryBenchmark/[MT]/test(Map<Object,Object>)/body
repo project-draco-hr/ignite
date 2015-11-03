@@ -1,0 +1,18 @@
+{
+  final int k=nextRandom(args.range());
+  String key="key-" + k;
+  rwl.readLock().lock();
+  try {
+    if (ex != null)     throw ex;
+    AtomicLong nextAtomicVal=nextValMap.putIfAbsent(key,new AtomicLong(1));
+    Long nextVal=1L;
+    if (nextAtomicVal != null)     nextVal=nextAtomicVal.incrementAndGet();
+    asyncCache.invoke(key,new AddInSetEntryProcessor(),nextVal);
+    asyncCache.future().get(args.cacheOperationTimeoutMillis());
+  }
+  finally {
+    rwl.readLock().unlock();
+  }
+  if (ex != null)   throw ex;
+  return true;
+}
