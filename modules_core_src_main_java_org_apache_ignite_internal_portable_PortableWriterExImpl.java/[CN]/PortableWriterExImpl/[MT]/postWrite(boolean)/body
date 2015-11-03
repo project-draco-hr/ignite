@@ -2,8 +2,16 @@
   if (schema != null) {
     out.writeInt(start + SCHEMA_ID_POS,schemaId);
     out.writeInt(start + SCHEMA_OR_RAW_OFF_POS,out.position() - start);
-    schema.writeAndPop(this,fieldCnt);
+    int offsetByteCnt=schema.write(this,fieldCnt);
     if (rawOffPos != 0)     out.writeInt(rawOffPos - start);
+    if (offsetByteCnt == PortableUtils.OFFSET_1) {
+      int flags=(userType ? PortableUtils.FLAG_USR_TYP : 0) | PortableUtils.FLAG_OFFSET_ONE_BYTE;
+      out.writeShort(start + FLAGS_POS,(short)flags);
+    }
+ else     if (offsetByteCnt == PortableUtils.OFFSET_2) {
+      int flags=(userType ? PortableUtils.FLAG_USR_TYP : 0) | PortableUtils.FLAG_OFFSET_TWO_BYTES;
+      out.writeShort(start + FLAGS_POS,(short)flags);
+    }
   }
  else {
     int flags=(userType ? PortableUtils.FLAG_USR_TYP : 0) | PortableUtils.FLAG_RAW_ONLY;
