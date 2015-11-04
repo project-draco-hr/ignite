@@ -17,12 +17,11 @@
       if (metricsUpdateFreq > -1L)       updateJobMetrics();
     }
  else {
-      rwLock.readLock();
+      if (!rwLock.tryReadLock()) {
+        if (log.isDebugEnabled())         log.debug("Skipping collision handling on job finish (node is stopping).");
+        return;
+      }
       try {
-        if (stopping) {
-          if (log.isDebugEnabled())           log.debug("Skipping collision handling on job finish (node is stopping).");
-          return;
-        }
         handleCollisions();
       }
   finally {
