@@ -1,8 +1,11 @@
 {
   if (log.isDebugEnabled())   log.debug("DHT rebalancer onKernalStop callback.");
+  stopping=true;
   cctx.events().removeListener(discoLsnr);
   busyLock.writeLock().lock();
   if (supplyPool != null)   supplyPool.stop();
   if (demandPool != null)   demandPool.stop();
+  IgniteCheckedException err=stopError();
+  for (  GridDhtForceKeysFuture fut : forceKeyFuts.values())   fut.onDone(err);
   top=null;
 }

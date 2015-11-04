@@ -1,10 +1,9 @@
 {
-  rwLock.readLock();
+  if (!rwLock.tryReadLock()) {
+    if (log.isDebugEnabled())     log.debug("Received job session request while stopping grid (will ignore): " + req);
+    return;
+  }
   try {
-    if (stopping) {
-      if (log.isDebugEnabled())       log.debug("Received job session request while stopping grid (will ignore): " + req);
-      return;
-    }
     GridTaskSessionImpl ses=ctx.session().getSession(req.getSessionId());
     if (ses == null) {
       if (log.isDebugEnabled())       log.debug("Received job session request for non-existing session: " + req);
