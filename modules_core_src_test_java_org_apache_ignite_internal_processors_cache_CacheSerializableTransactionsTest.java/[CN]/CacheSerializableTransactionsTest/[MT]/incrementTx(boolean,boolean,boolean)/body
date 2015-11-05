@@ -10,21 +10,7 @@
       if (nearCache)       caches.add(client.createNearCache(cacheName,new NearCacheConfiguration<Integer,Integer>()));
  else       caches.add(client.<Integer,Integer>cache(cacheName));
     }
-    IgniteInternalFuture<?> restartFut=null;
-    if (restart) {
-      restartFut=GridTestUtils.runAsync(new Callable<Object>(){
-        @Override public Object call() throws Exception {
-          while (!stop.get()) {
-            stopGrid(0);
-            U.sleep(300);
-            Ignite ignite=startGrid(0);
-            assertFalse(ignite.configuration().isClientMode());
-          }
-          return null;
-        }
-      }
-);
-    }
+    IgniteInternalFuture<?> restartFut=restart ? restartFuture(stop,null) : null;
     for (int i=0; i < 30; i++) {
       final AtomicInteger cntr=new AtomicInteger();
       final Integer key=i;
@@ -67,6 +53,6 @@ catch (            IgniteException|CacheException e) {
   }
   finally {
     stop.set(true);
-    destroyCache(srv,cacheName);
+    destroyCache(cacheName);
   }
 }

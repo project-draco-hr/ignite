@@ -12,13 +12,15 @@
         return;
       }
       Collection<ClusterNode> top=updateTopologyHistory(msg.topologyVersion(),msg);
-      if (!pending && joinLatch.getCount() > 0) {
+      if (state != CONNECTED) {
         if (log.isDebugEnabled())         log.debug("Discarding node left message (join process is not finished): " + msg);
         return;
       }
       notifyDiscovery(EVT_NODE_LEFT,msg.topologyVersion(),node,top);
       spi.stats.onNodeLeft();
     }
- else     if (log.isDebugEnabled())     log.debug("Ignore topology message, local node not added to topology: " + msg);
+ else {
+      if (log.isDebugEnabled())       log.debug("Ignore topology message, local node not added to topology: " + msg);
+    }
   }
 }

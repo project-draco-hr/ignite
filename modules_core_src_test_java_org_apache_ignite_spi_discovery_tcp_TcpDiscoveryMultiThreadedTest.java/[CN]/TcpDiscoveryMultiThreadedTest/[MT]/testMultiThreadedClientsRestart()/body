@@ -1,25 +1,29 @@
 {
-  fail("https://issues.apache.org/jira/browse/IGNITE-1123");
-  clientFlagGlobal=false;
-  info("Test timeout: " + (getTestTimeout() / (60 * 1000)) + " min.");
-  startGridsMultiThreaded(GRID_CNT);
-  clientFlagGlobal=true;
-  startGridsMultiThreaded(GRID_CNT,CLIENT_GRID_CNT);
   final AtomicBoolean done=new AtomicBoolean();
-  final AtomicInteger clientIdx=new AtomicInteger(GRID_CNT);
-  IgniteInternalFuture<?> fut1=multithreadedAsync(new Callable<Object>(){
-    @Override public Object call() throws Exception {
-      clientFlagPerThread.set(true);
-      int idx=clientIdx.getAndIncrement();
-      while (!done.get()) {
-        stopGrid(idx,true);
-        startGrid(idx);
+  try {
+    clientFlagGlobal=false;
+    info("Test timeout: " + (getTestTimeout() / (60 * 1000)) + " min.");
+    startGridsMultiThreaded(GRID_CNT);
+    clientFlagGlobal=true;
+    startGridsMultiThreaded(GRID_CNT,CLIENT_GRID_CNT);
+    final AtomicInteger clientIdx=new AtomicInteger(GRID_CNT);
+    IgniteInternalFuture<?> fut1=multithreadedAsync(new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        clientFlagPerThread.set(true);
+        int idx=clientIdx.getAndIncrement();
+        while (!done.get()) {
+          stopGrid(idx,true);
+          startGrid(idx);
+        }
+        return null;
       }
-      return null;
     }
+,CLIENT_GRID_CNT,"client-restart");
+    Thread.sleep(getTestTimeout() - 60 * 1000);
+    done.set(true);
+    fut1.get();
   }
-,CLIENT_GRID_CNT);
-  Thread.sleep(getTestTimeout() - 60 * 1000);
-  done.set(true);
-  fut1.get();
+  finally {
+    done.set(true);
+  }
 }

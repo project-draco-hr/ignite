@@ -1,0 +1,14 @@
+{
+  super.start(cfg);
+  RuntimeMXBean mxBean=ManagementFactory.getRuntimeMXBean();
+  List<String> jvmOpts=mxBean.getInputArguments();
+  StringBuilder jvmOptsStr=new StringBuilder();
+  for (  String opt : jvmOpts)   jvmOptsStr.append(opt).append(' ');
+  cfg.customProperties().put("JVM_OPTS",jvmOptsStr.toString());
+  cfg.customProperties().put("PROPS_ENV",System.getenv("PROPS_ENV"));
+  cfg.customProperties().put("CLASSPATH",mxBean.getClassPath());
+  cfg.customProperties().put("JAVA",System.getenv("JAVA"));
+  IgniteCache<Integer,BenchmarkConfiguration> srvsCfgsCache=ignite().getOrCreateCache(new CacheConfiguration<Integer,BenchmarkConfiguration>().setName("serversConfigs"));
+  srvsCfgsCache.put(cfg.memberId(),cfg);
+  println("Put at cache [" + cfg.memberId() + "="+ cfg+ "]");
+}

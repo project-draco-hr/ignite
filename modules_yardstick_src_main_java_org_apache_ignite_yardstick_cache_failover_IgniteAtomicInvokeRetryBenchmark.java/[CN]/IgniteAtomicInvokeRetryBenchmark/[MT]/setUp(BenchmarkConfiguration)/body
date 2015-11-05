@@ -1,0 +1,59 @@
+{
+  super.setUp(cfg);
+  Thread thread=new Thread(new Runnable(){
+    @Override public void run(){
+      try {
+        final int timeout=args.cacheOperationTimeoutMillis();
+        final int range=args.range();
+        while (!Thread.currentThread().isInterrupted()) {
+          Thread.sleep(args.cacheConsistencyCheckingPeriod() * 1000);
+          rwl.writeLock().lock();
+          try {
+            println("Start cache validation.");
+            long startTime=U.currentTimeMillis();
+            Map<String,Set> badCacheEntries=new HashMap<>();
+            for (            Map.Entry<String,AtomicLong> e : nextValMap.entrySet()) {
+              String key=e.getKey();
+              asyncCache.get(key);
+              Set set=asyncCache.<Set>future().get(timeout);
+              if (set == null || e.getValue() == null || !Objects.equals(e.getValue().get(),(long)set.size()))               badCacheEntries.put(key,set);
+            }
+            if (!badCacheEntries.isEmpty()) {
+              for (              Map.Entry<String,Set> e : badCacheEntries.entrySet()) {
+                String key=e.getKey();
+                println("Got unexpected set size [key='" + key + "', expSize="+ nextValMap.get(key)+ ", cacheVal="+ e.getValue()+ "]");
+              }
+              println("Next values map contant:");
+              for (              Map.Entry<String,AtomicLong> e : nextValMap.entrySet())               println("Map Entry [key=" + e.getKey() + ", val="+ e.getValue()+ "]");
+              println("Cache content:");
+              for (int k2=0; k2 < range; k2++) {
+                String key2="key-" + k2;
+                asyncCache.get(key2);
+                Object val=asyncCache.future().get(timeout);
+                if (val != null)                 println("Cache Entry [key=" + key2 + ", val="+ val+ "]");
+              }
+              throw new IllegalStateException("Cache and local map are in inconsistent state " + "[badKeys=" + badCacheEntries.keySet() + ']');
+            }
+            println("Clearing all data.");
+            asyncCache.removeAll();
+            asyncCache.future().get(timeout);
+            nextValMap.clear();
+            println("Cache validation successfully finished in " + (U.currentTimeMillis() - startTime) / 1000 + " sec.");
+          }
+  finally {
+            rwl.writeLock().unlock();
+          }
+        }
+      }
+ catch (      Throwable e) {
+        ex=new Exception(e);
+        println("Got exception: " + e);
+        e.printStackTrace();
+        if (e instanceof Error)         throw (Error)e;
+      }
+    }
+  }
+,"cache-" + cacheName() + "-validator");
+  thread.setDaemon(true);
+  thread.start();
+}
