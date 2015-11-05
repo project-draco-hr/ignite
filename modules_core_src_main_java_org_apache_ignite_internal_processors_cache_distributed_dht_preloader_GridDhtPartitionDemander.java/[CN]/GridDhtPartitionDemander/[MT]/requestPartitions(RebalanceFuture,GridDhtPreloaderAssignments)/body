@@ -1,0 +1,43 @@
+{
+  for (  Map.Entry<ClusterNode,GridDhtPartitionDemandMessage> e : assigns.entrySet()) {
+    if (topologyChanged(fut))     return false;
+    final ClusterNode node=e.getKey();
+    GridDhtPartitionDemandMessage d=e.getValue();
+    fut.appendPartitions(node.id(),d.partitions());
+  }
+  for (  Map.Entry<ClusterNode,GridDhtPartitionDemandMessage> e : assigns.entrySet()) {
+    final ClusterNode node=e.getKey();
+    final CacheConfiguration cfg=cctx.config();
+    final Collection<Integer> parts=fut.remaining.get(node.id()).get2();
+    GridDhtPartitionDemandMessage d=e.getValue();
+    if (node.version().compareTo(GridDhtPreloader.REBALANCING_VER_2_SINCE) >= 0) {
+      U.log(log,"Starting rebalancing [cache=" + cctx.name() + ", mode="+ cfg.getRebalanceMode()+ ", fromNode="+ node.id()+ ", partitionsCount="+ parts.size()+ ", topology="+ fut.topologyVersion()+ ", updateSeq="+ fut.updateSeq+ "]");
+      int lsnrCnt=cctx.gridConfig().getRebalanceThreadPoolSize();
+      List<Set<Integer>> sParts=new ArrayList<>(lsnrCnt);
+      for (int cnt=0; cnt < lsnrCnt; cnt++)       sParts.add(new HashSet<Integer>());
+      Iterator<Integer> it=parts.iterator();
+      int cnt=0;
+      while (it.hasNext())       sParts.get(cnt++ % lsnrCnt).add(it.next());
+      for (cnt=0; cnt < lsnrCnt; cnt++) {
+        if (!sParts.get(cnt).isEmpty()) {
+          GridDhtPartitionDemandMessage initD=new GridDhtPartitionDemandMessage(d,sParts.get(cnt));
+          initD.topic(rebalanceTopics.get(cnt));
+          initD.updateSequence(fut.updateSeq);
+          initD.timeout(cctx.config().getRebalanceTimeout());
+synchronized (fut) {
+            if (!fut.isDone())             cctx.io().sendOrderedMessage(node,rebalanceTopics.get(cnt),initD,cctx.ioPolicy(),initD.timeout());
+          }
+          if (log.isDebugEnabled())           log.debug("Requested rebalancing [from node=" + node.id() + ", listener index="+ cnt+ ", partitions count="+ sParts.get(cnt).size()+ " ("+ partitionsList(sParts.get(cnt))+ ")]");
+        }
+      }
+    }
+ else {
+      U.log(log,"Starting rebalancing (old api) [cache=" + cctx.name() + ", mode="+ cfg.getRebalanceMode()+ ", fromNode="+ node.id()+ ", partitionsCount="+ parts.size()+ ", topology="+ fut.topologyVersion()+ ", updateSeq="+ fut.updateSeq+ "]");
+      d.timeout(cctx.config().getRebalanceTimeout());
+      d.workerId(0);
+      DemandWorker dw=new DemandWorker(dmIdx.incrementAndGet(),fut);
+      dw.run(node,d);
+    }
+  }
+  return true;
+}

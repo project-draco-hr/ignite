@@ -1,0 +1,49 @@
+{
+  final Ignite ignite=startGrid(0);
+  startGrid(1);
+  generateData(ignite,CACHE_NAME_DHT_PARTITIONED,0,0);
+  log.info("Preloading started.");
+  long start=System.currentTimeMillis();
+  concurrentStartFinished=false;
+  Thread t1=new Thread(){
+    @Override public void run(){
+      Random rdm=new Random();
+      while (!concurrentStartFinished) {
+        for (int i=0; i < TEST_SIZE; i++) {
+          if (i % (TEST_SIZE / 10) == 0)           log.info("Prepared " + i * 100 / (TEST_SIZE) + "% entries (" + TEST_SIZE + ").");
+          int ii=rdm.nextInt(TEST_SIZE);
+          ignite.cache(CACHE_NAME_DHT_PARTITIONED).put(ii,ii + CACHE_NAME_DHT_PARTITIONED.hashCode());
+        }
+      }
+    }
+  }
+;
+  Thread t2=new Thread(){
+    @Override public void run(){
+      while (!concurrentStartFinished) {
+        try {
+          checkData(ignite,CACHE_NAME_DHT_PARTITIONED,0,0);
+        }
+ catch (        IgniteCheckedException e) {
+          e.printStackTrace();
+        }
+      }
+    }
+  }
+;
+  t1.start();
+  t2.start();
+  startGrid(2);
+  startGrid(3);
+  stopGrid(2);
+  startGrid(4);
+  waitForRebalancing(3,6);
+  waitForRebalancing(4,6);
+  concurrentStartFinished=true;
+  awaitPartitionMapExchange(true);
+  checkSupplyContextMapIsEmpty();
+  t1.join();
+  t2.join();
+  long spend=(System.currentTimeMillis() - start) / 1000;
+  info("Time to rebalance entries: " + spend);
+}

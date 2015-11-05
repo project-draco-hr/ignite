@@ -1,0 +1,28 @@
+{
+  reader.setBuffer(buf);
+  if (!reader.beforeMessageRead())   return false;
+  if (!super.readFrom(buf,reader))   return false;
+switch (reader.state()) {
+case 3:
+    infos=reader.readMap("infos",MessageCollectionItemType.INT,MessageCollectionItemType.MSG,false);
+  if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 4:
+last=reader.readCollection("last",MessageCollectionItemType.INT);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 5:
+missed=reader.readCollection("missed",MessageCollectionItemType.INT);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 6:
+topVer=reader.readMessage("topVer");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 7:
+updateSeq=reader.readLong("updateSeq");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+}
+return reader.afterMessageRead(GridDhtPartitionSupplyMessageV2.class);
+}

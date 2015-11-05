@@ -9,6 +9,9 @@
     for (    GridDhtPartitionsExchangeFuture f : exchFuts.values())     f.onDone(stopErr);
   }
   for (  AffinityReadyFuture f : readyFuts.values())   f.onDone(stopErr);
+  if (!cctx.kernalContext().clientNode()) {
+    for (int cnt=0; cnt < cctx.gridConfig().getRebalanceThreadPoolSize(); cnt++)     cctx.io().removeOrderedHandler(rebalanceTopic(cnt));
+  }
   U.cancel(exchWorker);
   if (log.isDebugEnabled())   log.debug("Before joining on exchange worker: " + exchWorker);
   U.join(exchWorker,log);
