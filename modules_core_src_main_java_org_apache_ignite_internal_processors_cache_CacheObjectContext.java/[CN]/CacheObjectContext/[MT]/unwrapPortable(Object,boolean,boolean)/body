@@ -1,0 +1,17 @@
+{
+  if (o instanceof Map.Entry) {
+    Map.Entry entry=(Map.Entry)o;
+    Object key=entry.getKey();
+    Object uKey=unwrapPortable(key,keepPortable,cpy);
+    Object val=entry.getValue();
+    Object uVal=unwrapPortable(val,keepPortable,cpy);
+    return (key != uKey || val != uVal) ? F.t(uKey,uVal) : o;
+  }
+ else   if (o instanceof Collection)   return unwrapPortablesIfNeeded((Collection<Object>)o,keepPortable,cpy);
+ else   if (o instanceof Map)   return unwrapPortablesIfNeeded((Map<Object,Object>)o,keepPortable,cpy);
+ else   if (o instanceof CacheObject) {
+    CacheObject co=(CacheObject)o;
+    if (!keepPortable || co.isPlatformType())     return unwrapPortable(co.value(this,true),keepPortable,cpy);
+  }
+  return o;
+}

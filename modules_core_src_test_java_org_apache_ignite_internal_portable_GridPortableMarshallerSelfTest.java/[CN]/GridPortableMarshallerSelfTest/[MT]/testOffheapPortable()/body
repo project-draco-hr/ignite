@@ -1,35 +1,35 @@
 {
   PortableMarshaller marsh=new PortableMarshaller();
-  marsh.setTypeConfigurations(Arrays.asList(new PortableTypeConfiguration(SimpleObject.class.getName())));
+  marsh.setTypeConfigurations(Arrays.asList(new BinaryTypeConfiguration(SimpleObject.class.getName())));
   PortableContext ctx=initPortableContext(marsh);
   SimpleObject simpleObj=simpleObject();
-  PortableObjectImpl obj=marshal(simpleObj,marsh);
+  BinaryObjectImpl obj=marshal(simpleObj,marsh);
   long ptr=0;
   long ptr1=0;
   long ptr2=0;
   try {
     ptr=copyOffheap(obj);
-    PortableObjectOffheapImpl offheapObj=new PortableObjectOffheapImpl(ctx,ptr,0,obj.array().length);
+    BinaryObjectOffheapImpl offheapObj=new BinaryObjectOffheapImpl(ctx,ptr,0,obj.array().length);
     assertTrue(offheapObj.equals(offheapObj));
     assertFalse(offheapObj.equals(null));
     assertFalse(offheapObj.equals("str"));
     assertTrue(offheapObj.equals(obj));
     assertTrue(obj.equals(offheapObj));
     ptr1=copyOffheap(obj);
-    PortableObjectOffheapImpl offheapObj1=new PortableObjectOffheapImpl(ctx,ptr1,0,obj.array().length);
+    BinaryObjectOffheapImpl offheapObj1=new BinaryObjectOffheapImpl(ctx,ptr1,0,obj.array().length);
     assertTrue(offheapObj.equals(offheapObj1));
     assertTrue(offheapObj1.equals(offheapObj));
     assertEquals(obj.typeId(),offheapObj.typeId());
     assertEquals(obj.hashCode(),offheapObj.hashCode());
     checkSimpleObjectData(simpleObj,offheapObj);
-    PortableObjectOffheapImpl innerOffheapObj=offheapObj.field("inner");
+    BinaryObjectOffheapImpl innerOffheapObj=offheapObj.field("inner");
     assertNotNull(innerOffheapObj);
     checkSimpleObjectData(simpleObj.inner,innerOffheapObj);
-    obj=(PortableObjectImpl)offheapObj.heapCopy();
+    obj=(BinaryObjectImpl)offheapObj.heapCopy();
     assertEquals(obj.typeId(),offheapObj.typeId());
     assertEquals(obj.hashCode(),offheapObj.hashCode());
     checkSimpleObjectData(simpleObj,obj);
-    PortableObjectImpl innerObj=obj.field("inner");
+    BinaryObjectImpl innerObj=obj.field("inner");
     assertNotNull(innerObj);
     checkSimpleObjectData(simpleObj.inner,innerObj);
     simpleObj.d=0;
@@ -37,7 +37,7 @@
     assertFalse(offheapObj.equals(obj));
     assertFalse(obj.equals(offheapObj));
     ptr2=copyOffheap(obj);
-    PortableObjectOffheapImpl offheapObj2=new PortableObjectOffheapImpl(ctx,ptr2,0,obj.array().length);
+    BinaryObjectOffheapImpl offheapObj2=new BinaryObjectOffheapImpl(ctx,ptr2,0,obj.array().length);
     assertFalse(offheapObj.equals(offheapObj2));
     assertFalse(offheapObj2.equals(offheapObj));
   }

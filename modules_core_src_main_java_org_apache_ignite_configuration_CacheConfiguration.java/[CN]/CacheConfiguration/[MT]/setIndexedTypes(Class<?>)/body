@@ -1,11 +1,20 @@
 {
-  A.ensure(indexedTypes == null || (indexedTypes.length & 1) == 0,"Number of indexed types is expected to be even. Refer to method javadoc for details.");
-  if (indexedTypes != null) {
-    int len=indexedTypes.length;
-    Class<?>[] newIndexedTypes=new Class<?>[len];
-    for (int i=0; i < len; i++)     newIndexedTypes[i]=U.box(indexedTypes[i]);
-    this.indexedTypes=newIndexedTypes;
+  A.notNull(indexedTypes,"indexedTypes");
+  int len=indexedTypes.length;
+  if (len == 0)   return this;
+  A.ensure((len & 1) == 0,"Number of indexed types is expected to be even. Refer to method javadoc for details.");
+  if (this.indexedTypes != null)   throw new CacheException("Indexed types can be set only once.");
+  Class<?>[] newIndexedTypes=new Class<?>[len];
+  for (int i=0; i < len; i++) {
+    if (indexedTypes[i] == null)     throw new NullPointerException("Indexed types array contains null at index: " + i);
+    newIndexedTypes[i]=U.box(indexedTypes[i]);
   }
- else   this.indexedTypes=null;
+  if (qryEntities == null)   qryEntities=new ArrayList<>();
+  for (int i=0; i < len; i+=2) {
+    Class<?> keyCls=newIndexedTypes[i];
+    Class<?> valCls=newIndexedTypes[i + 1];
+    TypeDescriptor desc=processKeyAndValueClasses(keyCls,valCls);
+    qryEntities.add(convert(desc));
+  }
   return this;
 }

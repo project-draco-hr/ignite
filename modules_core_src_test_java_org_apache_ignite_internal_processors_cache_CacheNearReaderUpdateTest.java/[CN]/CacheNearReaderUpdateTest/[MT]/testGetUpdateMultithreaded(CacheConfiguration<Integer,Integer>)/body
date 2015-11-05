@@ -1,0 +1,14 @@
+{
+  final List<Ignite> putNodes=new ArrayList<>();
+  for (int i=0; i < SRVS + CLIENTS - 1; i++)   putNodes.add(ignite(i));
+  final List<Ignite> getNodes=new ArrayList<>();
+  getNodes.add(ignite(SRVS + CLIENTS - 1));
+  getNodes.add(ignite(0));
+  logCacheInfo(ccfg);
+  getUpdateMultithreaded(ccfg,putNodes,getNodes,null,null);
+  if (ccfg.getAtomicityMode() == TRANSACTIONAL) {
+    getUpdateMultithreaded(ccfg,putNodes,getNodes,PESSIMISTIC,REPEATABLE_READ);
+    getUpdateMultithreaded(ccfg,putNodes,getNodes,OPTIMISTIC,REPEATABLE_READ);
+    getUpdateMultithreaded(ccfg,putNodes,getNodes,OPTIMISTIC,SERIALIZABLE);
+  }
+}

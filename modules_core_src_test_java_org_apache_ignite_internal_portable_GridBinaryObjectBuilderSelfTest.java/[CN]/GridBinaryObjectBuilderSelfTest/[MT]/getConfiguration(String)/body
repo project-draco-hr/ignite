@@ -1,0 +1,20 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  PortableMarshaller marsh=new PortableMarshaller();
+  marsh.setClassNames(Arrays.asList(Key.class.getName(),Value.class.getName(),"org.gridgain.grid.internal.util.portable.mutabletest.*"));
+  BinaryTypeConfiguration customIdMapper=new BinaryTypeConfiguration();
+  customIdMapper.setClassName(CustomIdMapper.class.getName());
+  customIdMapper.setIdMapper(new BinaryTypeIdMapper(){
+    @Override public int typeId(    String clsName){
+      return ~PortableContext.DFLT_ID_MAPPER.typeId(clsName);
+    }
+    @Override public int fieldId(    int typeId,    String fieldName){
+      return typeId + ~PortableContext.DFLT_ID_MAPPER.fieldId(typeId,fieldName);
+    }
+  }
+);
+  marsh.setTypeConfigurations(Collections.singleton(customIdMapper));
+  marsh.setConvertStringToBytes(useUtf8());
+  cfg.setMarshaller(marsh);
+  return cfg;
+}

@@ -1,0 +1,71 @@
+{
+  Ignite ignite0=ignite(gridCount() - 1);
+  assertTrue(ignite0.configuration().isClientMode());
+  Ignite ignite1=ignite(0);
+  assertFalse(ignite1.configuration().isClientMode());
+  Affinity<Object> aff0=ignite0.affinity(null);
+  Affinity<Object> aff1=ignite1.affinity(null);
+  for (int i=0; i < 100; i++) {
+    TestObject1 obj1=new TestObject1(i,i + 1);
+    assertEquals(aff1.mapKeyToPrimaryAndBackups(obj1),aff0.mapKeyToPrimaryAndBackups(obj1));
+    TestObject2 obj2=new TestObject2(i,i + 1);
+    assertEquals(aff1.mapKeyToPrimaryAndBackups(obj2),aff0.mapKeyToPrimaryAndBackups(obj2));
+  }
+{
+    BinaryObjectBuilder builder=ignite0.binary().builder("TestObject3");
+    builder.setField("f1",1);
+    ignite0.cache(null).put(0,builder.build());
+    IgniteCache<Integer,BinaryObject> cache=ignite0.cache(null).withKeepBinary();
+    BinaryObject obj=cache.get(0);
+    BinaryType meta=obj.type();
+    assertNotNull(meta);
+    assertEquals(1,meta.fields().size());
+    meta=ignite0.binary().metadata(TestObject1.class);
+    assertNotNull(meta);
+    assertEquals("val2",meta.affinityKeyFieldName());
+    meta=ignite0.binary().metadata(TestObject2.class);
+    assertNotNull(meta);
+    assertNull(meta.affinityKeyFieldName());
+  }
+{
+    BinaryObjectBuilder builder=ignite1.binary().builder("TestObject3");
+    builder.setField("f2",2);
+    ignite1.cache(null).put(1,builder.build());
+    IgniteCache<Integer,BinaryObject> cache=ignite1.cache(null).withKeepBinary();
+    BinaryObject obj=cache.get(0);
+    BinaryType meta=obj.type();
+    assertNotNull(meta);
+    assertEquals(2,meta.fields().size());
+    meta=ignite1.binary().metadata(TestObject1.class);
+    assertNotNull(meta);
+    assertEquals("val2",meta.affinityKeyFieldName());
+    meta=ignite1.binary().metadata(TestObject2.class);
+    assertNotNull(meta);
+    assertNull(meta.affinityKeyFieldName());
+  }
+  BinaryType meta=ignite0.binary().metadata("TestObject3");
+  assertNotNull(meta);
+  assertEquals(2,meta.fields().size());
+  IgniteCache<Integer,BinaryObject> cache=ignite0.cache(null).withKeepBinary();
+  BinaryObject obj=cache.get(1);
+  assertEquals(Integer.valueOf(2),obj.field("f2"));
+  assertNull(obj.field("f1"));
+  meta=obj.type();
+  assertNotNull(meta);
+  assertEquals(2,meta.fields().size());
+  Collection<BinaryType> meta1=ignite1.binary().metadata();
+  Collection<BinaryType> meta2=ignite1.binary().metadata();
+  assertEquals(meta1.size(),meta2.size());
+  for (  BinaryType m1 : meta1) {
+    boolean found=false;
+    for (    BinaryType m2 : meta1) {
+      if (m1.typeName().equals(m2.typeName())) {
+        assertEquals(m1.affinityKeyFieldName(),m2.affinityKeyFieldName());
+        assertEquals(m1.fields(),m2.fields());
+        found=true;
+        break;
+      }
+    }
+    assertTrue(found);
+  }
+}

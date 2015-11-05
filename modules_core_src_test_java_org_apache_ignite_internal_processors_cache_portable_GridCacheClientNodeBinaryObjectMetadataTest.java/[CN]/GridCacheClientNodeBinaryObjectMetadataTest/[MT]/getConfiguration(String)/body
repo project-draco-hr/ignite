@@ -1,0 +1,14 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  PortableMarshaller marsh=new PortableMarshaller();
+  marsh.setClassNames(Arrays.asList(TestObject1.class.getName(),TestObject2.class.getName()));
+  BinaryTypeConfiguration typeCfg=new BinaryTypeConfiguration();
+  typeCfg.setClassName(TestObject1.class.getName());
+  CacheKeyConfiguration keyCfg=new CacheKeyConfiguration(TestObject1.class.getName(),"val2");
+  cfg.setCacheKeyCfg(keyCfg);
+  marsh.setTypeConfigurations(Arrays.asList(typeCfg));
+  if (gridName.equals(getTestGridName(gridCount() - 1)))   cfg.setClientMode(true);
+  cfg.setMarshaller(marsh);
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setForceServerMode(true);
+  return cfg;
+}
