@@ -1,0 +1,37 @@
+{
+  TypeDescriptors descs=new TypeDescriptors();
+  if (clsNames != null) {
+    BinaryTypeIdMapper idMapper=new IdMapperWrapper(globalIdMapper);
+    for (    String clsName : clsNames) {
+      if (clsName.endsWith(".*")) {
+        String pkgName=clsName.substring(0,clsName.length() - 2);
+        for (        String clsName0 : classesInPackage(pkgName))         descs.add(clsName0,idMapper,null,null,globalKeepDeserialized,true);
+      }
+ else       descs.add(clsName,idMapper,null,null,globalKeepDeserialized,true);
+    }
+  }
+  Map<String,String> affFields=new HashMap<>();
+  if (!F.isEmpty(igniteCfg.getCacheKeyConfiguration())) {
+    for (    CacheKeyConfiguration keyCfg : igniteCfg.getCacheKeyConfiguration())     affFields.put(keyCfg.getTypeName(),keyCfg.getAffinityKeyFieldName());
+  }
+  if (typeCfgs != null) {
+    for (    BinaryTypeConfiguration typeCfg : typeCfgs) {
+      String clsName=typeCfg.getClassName();
+      if (clsName == null)       throw new BinaryObjectException("Class name is required for portable type configuration.");
+      BinaryTypeIdMapper idMapper=globalIdMapper;
+      if (typeCfg.getIdMapper() != null)       idMapper=typeCfg.getIdMapper();
+      idMapper=new IdMapperWrapper(idMapper);
+      BinarySerializer serializer=globalSerializer;
+      if (typeCfg.getSerializer() != null)       serializer=typeCfg.getSerializer();
+      boolean keepDeserialized=typeCfg.isKeepDeserialized() != null ? typeCfg.isKeepDeserialized() : globalKeepDeserialized;
+      if (clsName.endsWith(".*")) {
+        String pkgName=clsName.substring(0,clsName.length() - 2);
+        for (        String clsName0 : classesInPackage(pkgName))         descs.add(clsName0,idMapper,serializer,affFields.get(clsName0),keepDeserialized,true);
+      }
+ else       descs.add(clsName,idMapper,serializer,affFields.get(clsName),keepDeserialized,false);
+    }
+  }
+  for (  TypeDescriptor desc : descs.descriptors()) {
+    registerUserType(desc.clsName,desc.idMapper,desc.serializer,desc.affKeyFieldName,desc.keepDeserialized);
+  }
+}
