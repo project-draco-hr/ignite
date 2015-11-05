@@ -1,0 +1,13 @@
+{
+  if (state.getReference() != RENTING || state.getStamp() != 0 || groupReserved())   return;
+  clearAll();
+  if (map.isEmpty() && state.compareAndSet(RENTING,EVICTED,0,0)) {
+    if (log.isDebugEnabled())     log.debug("Evicted partition: " + this);
+    if (!GridQueryProcessor.isEnabled(cctx.config()))     clearSwap();
+    if (cctx.isDrEnabled())     cctx.dr().partitionEvicted(id);
+    cctx.dataStructures().onPartitionEvicted(id);
+    rent.onDone();
+    ((GridDhtPreloader)cctx.preloader()).onPartitionEvicted(this,true);
+    clearDeferredDeletes();
+  }
+}

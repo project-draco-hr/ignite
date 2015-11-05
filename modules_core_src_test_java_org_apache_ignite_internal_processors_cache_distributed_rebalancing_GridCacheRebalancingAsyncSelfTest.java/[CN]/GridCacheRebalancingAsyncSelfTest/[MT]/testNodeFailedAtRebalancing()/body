@@ -1,0 +1,12 @@
+{
+  Ignite ignite=startGrid(0);
+  generateData(ignite,0,0);
+  log.info("Preloading started.");
+  startGrid(1);
+  GridDhtPartitionDemander.RebalanceFuture fut=(GridDhtPartitionDemander.RebalanceFuture)grid(1).context().cache().internalCache(CACHE_NAME_DHT_REPLICATED).preloader().rebalanceFuture();
+  fut.get();
+  U.sleep(10);
+  ((TestTcpDiscoverySpi)grid(1).configuration().getDiscoverySpi()).simulateNodeFailure();
+  waitForRebalancing(0,3);
+  checkSupplyContextMapIsEmpty();
+}

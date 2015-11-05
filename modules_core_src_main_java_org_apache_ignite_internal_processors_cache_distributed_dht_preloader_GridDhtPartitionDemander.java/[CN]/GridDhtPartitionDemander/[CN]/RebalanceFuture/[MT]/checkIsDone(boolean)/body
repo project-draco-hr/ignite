@@ -1,0 +1,19 @@
+{
+  if (remaining.isEmpty()) {
+    if (cctx.events().isRecordable(EVT_CACHE_REBALANCE_STOPPED) && (!cctx.isReplicated() || sendStoppedEvnt))     preloadEvent(EVT_CACHE_REBALANCE_STOPPED,exchFut.discoveryEvent());
+    if (log.isDebugEnabled())     log.debug("Completed rebalance future.");
+    cctx.shared().exchange().scheduleResendPartitions();
+    Collection<Integer> m=new HashSet<>();
+    for (    Map.Entry<UUID,Collection<Integer>> e : missed.entrySet()) {
+      if (e.getValue() != null && !e.getValue().isEmpty())       m.addAll(e.getValue());
+    }
+    if (!m.isEmpty()) {
+      U.log(log,("Reassigning partitions that were missed: " + m));
+      onDone(false);
+      cctx.shared().exchange().forceDummyExchange(true,exchFut);
+      return;
+    }
+    if (!cancelled && !cctx.preloader().syncFuture().isDone())     ((GridFutureAdapter)cctx.preloader().syncFuture()).onDone();
+    onDone(!cancelled);
+  }
+}

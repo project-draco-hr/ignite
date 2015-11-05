@@ -1,0 +1,15 @@
+{
+  if (log.isDebugEnabled())   log.debug("Waiting for another cache to start rebalancing [cacheName=" + cctx.name() + ", waitCache="+ name+ ']');
+  RebalanceFuture wFut=(RebalanceFuture)cctx.kernalContext().cache().internalCache(name).preloader().rebalanceFuture();
+  if (!topologyChanged(fut) && wFut.updateSeq == fut.updateSeq) {
+    if (!wFut.get()) {
+      U.log(log,"Skipping waiting of " + name + " cache [top="+ fut.topologyVersion()+ "] (cache rebalanced with missed partitions)");
+      return false;
+    }
+    return true;
+  }
+ else {
+    U.log(log,"Skipping waiting of " + name + " cache [top="+ fut.topologyVersion()+ "] (topology already changed)");
+    return false;
+  }
+}
