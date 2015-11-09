@@ -1,9 +1,8 @@
 {
-  pending.remove(fut);
   try {
     T t=fut.get();
     try {
-      if (rdc != null && !rdc.collect(t) && !res.isMarked())       res.compareAndSet(null,rdc.reduce(),false,true);
+      if (rdc != null && !rdc.collect(t))       onDone(rdc.reduce());
     }
  catch (    RuntimeException e) {
       U.error(null,"Failed to execute compound future reducer: " + this,e);
@@ -16,21 +15,23 @@ catch (    AssertionError e) {
     }
   }
  catch (  IgniteTxOptimisticCheckedException|IgniteFutureCancelledCheckedException|ClusterTopologyCheckedException e) {
-    err.compareAndSet(null,e);
+    if (!ignoreFailure(e))     onDone(e);
   }
 catch (  IgniteCheckedException e) {
-    if (!ignoreFailure(e))     U.error(null,"Failed to execute compound future reducer: " + this,e);
-    err.compareAndSet(null,e);
+    if (!ignoreFailure(e)) {
+      U.error(null,"Failed to execute compound future reducer: " + this,e);
+      onDone(e);
+    }
   }
 catch (  RuntimeException e) {
     U.error(null,"Failed to execute compound future reducer: " + this,e);
-    err.compareAndSet(null,e);
+    onDone(e);
   }
 catch (  AssertionError e) {
     U.error(null,"Failed to execute compound future reducer: " + this,e);
     onDone(e);
     throw e;
   }
-  lsnrCalls.incrementAndGet();
+  lsnrCallsUpd.incrementAndGet(GridCompoundFuture.this);
   checkComplete();
 }

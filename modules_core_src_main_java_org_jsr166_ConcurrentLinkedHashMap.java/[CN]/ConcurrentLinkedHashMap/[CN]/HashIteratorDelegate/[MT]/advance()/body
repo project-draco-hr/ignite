@@ -1,0 +1,19 @@
+{
+  if (next0 != null && advanceInBucket(next0,true))   return;
+  while (nextTblIdx >= 0) {
+    HashEntry<K,V> bucket=curTbl[nextTblIdx--];
+    if (bucket != null && advanceInBucket(bucket,false))     return;
+  }
+  while (nextSegIdx >= 0) {
+    int nextSegIdx0=nextSegIdx--;
+    Segment seg=segments[nextSegIdx0];
+    curTbl=seg.tbl;
+    for (int j=curTbl.length - 1; j >= 0; --j) {
+      HashEntry<K,V> bucket=curTbl[j];
+      if (bucket != null && advanceInBucket(bucket,false)) {
+        nextTblIdx=j - 1;
+        return;
+      }
+    }
+  }
+}

@@ -1,20 +1,16 @@
 {
-  Throwable err=this.err.get();
-  boolean ignore=ignoreFailure(err);
-  if (init.get() && (res.isMarked() || lsnrCalls.get() == futs.sizex() || (err != null && !ignore)) && finished.compareAndSet(false,true)) {
+  if (flagSet(INITED) && !isDone() && lsnrCalls == futuresSize()) {
     try {
-      if (err == null && rdc != null && !res.isMarked())       res.compareAndSet(null,rdc.reduce(),false,true);
+      onDone(rdc != null ? rdc.reduce() : null);
     }
  catch (    RuntimeException e) {
       U.error(null,"Failed to execute compound future reducer: " + this,e);
       onDone(e);
-      return;
     }
 catch (    AssertionError e) {
       U.error(null,"Failed to execute compound future reducer: " + this,e);
       onDone(e);
       throw e;
     }
-    onDone(res.getReference(),ignore ? null : err);
   }
 }
