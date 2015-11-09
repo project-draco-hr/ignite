@@ -1,5 +1,13 @@
 {
   TransactionState state=state();
   if (state != ROLLING_BACK && state != ROLLED_BACK && state != COMMITTING && state != COMMITTED)   rollback();
-  awaitCompletion();
+synchronized (this) {
+    try {
+      while (!done())       wait();
+    }
+ catch (    InterruptedException e) {
+      Thread.currentThread().interrupt();
+      if (!done())       throw new IgniteCheckedException("Got interrupted while waiting for transaction to complete: " + this,e);
+    }
+  }
 }

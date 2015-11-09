@@ -1,4 +1,12 @@
 {
-  this.topVer.compareAndSet(AffinityTopologyVersion.NONE,topVer);
-  return this.topVer.get();
+  AffinityTopologyVersion topVer0=this.topVer;
+  if (!AffinityTopologyVersion.NONE.equals(topVer0))   return topVer0;
+synchronized (this) {
+    topVer0=this.topVer;
+    if (AffinityTopologyVersion.NONE.equals(topVer0)) {
+      this.topVer=topVer;
+      return topVer;
+    }
+    return topVer0;
+  }
 }

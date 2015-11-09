@@ -1,5 +1,5 @@
 {
-  if (entry.cached().isLocal())   return false;
+  if (entry.cached().isLocal())   return;
   GridDhtCacheEntry cached=(GridDhtCacheEntry)entry.cached();
   GridCacheContext cacheCtx=entry.context();
   GridDhtCacheAdapter<?,?> dht=cacheCtx.isNear() ? cacheCtx.near().dht() : cacheCtx.dht();
@@ -8,7 +8,6 @@
     entry.op(NOOP);
     entry.ttl(CU.toTtl(expiry.getExpiryForAccess()));
   }
-  boolean ret;
   while (true) {
     try {
       Collection<ClusterNode> dhtNodes=dht.topology().nodes(cached.partition(),tx.topologyVersion());
@@ -20,8 +19,8 @@
         if (log.isDebugEnabled())         log.debug("Mapping entry to near nodes [nodes=" + U.toShortString(nearNodes) + ", entry="+ entry+ ']');
       }
  else       if (log.isDebugEnabled())       log.debug("Entry has no near readers: " + entry);
-      ret=map(entry,F.view(dhtNodes,F.remoteNodes(cctx.localNodeId())),dhtMap,futDhtMap);
-      ret|=map(entry,F.view(nearNodes,F0.notIn(dhtNodes)),nearMap,futNearMap);
+      map(entry,F.view(dhtNodes,F.remoteNodes(cctx.localNodeId())),dhtMap,futDhtMap);
+      map(entry,F.view(nearNodes,F0.notIn(dhtNodes)),nearMap,futNearMap);
       break;
     }
  catch (    GridCacheEntryRemovedException ignore) {
@@ -29,5 +28,4 @@
       entry.cached(cached);
     }
   }
-  return ret;
 }

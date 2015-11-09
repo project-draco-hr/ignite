@@ -1,2 +1,11 @@
 {
+  cnt.incrementAndGet();
+  IgniteBiInClosure<K,V> lsnr=this.lsnr;
+  int delta=cnt.get() - max;
+  for (int i=0; i < delta && cnt.get() > max; i++) {
+    Entry<K,V> e=pollFirstEntry();
+    if (e == null)     return;
+    cnt.decrementAndGet();
+    if (lsnr != null)     lsnr.apply(e.getKey(),e.getValue());
+  }
 }

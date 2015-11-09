@@ -1,0 +1,37 @@
+{
+  Collection<IgniteInternalCache<?,?>> cachesx=((IgniteKernal)ignite).cachesx(null);
+  for (  IgniteInternalCache<?,?> cache : cachesx) {
+    try {
+      GridDhtPartitionTopology top=cache.context().isNear() ? cache.context().near().dht().topology() : cache.context().dht().topology();
+      BenchmarkUtils.println("Validating cache: " + cache.name());
+      for (; ; ) {
+        boolean success=true;
+        if (top.topologyVersion().topologyVersion() == ignite.cluster().topologyVersion()) {
+          for (          Map.Entry<UUID,GridDhtPartitionMap> e : top.partitionMap(true).entrySet()) {
+            for (            Map.Entry<Integer,GridDhtPartitionState> p : e.getValue().entrySet()) {
+              if (p.getValue() != GridDhtPartitionState.OWNING) {
+                BenchmarkUtils.println("Not owning partition [part=" + p.getKey() + ", state="+ p.getValue()+ ']');
+                success=false;
+                break;
+              }
+            }
+            if (!success)             break;
+          }
+        }
+ else {
+          BenchmarkUtils.println("Topology version is different [cache=" + top.topologyVersion() + ", cluster="+ ignite.cluster().topologyVersion()+ ']');
+          success=false;
+        }
+        if (!success)         Thread.sleep(1000);
+ else {
+          BenchmarkUtils.println("Cache state is fine: " + cache.name());
+          break;
+        }
+      }
+    }
+ catch (    RuntimeException e1) {
+      BenchmarkUtils.println("Ignored exception: " + e1);
+    }
+  }
+  return null;
+}
