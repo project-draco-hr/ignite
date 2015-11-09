@@ -1,5 +1,5 @@
 {
-  long qryId=qryIdGen.getAndIncrement();
+  final long qryId=qryIdGen.getAndIncrement();
   try {
     Query qry;
 switch (req.queryType()) {
@@ -21,10 +21,13 @@ throw new IgniteException("Incorrect query type [type=" + req.queryType() + "]")
 }
 IgniteCache<Object,Object> cache=ctx.grid().cache(req.cacheName());
 if (cache == null) return new GridRestResponse(GridRestResponse.STATUS_FAILED,"Failed to find cache with name: " + req.cacheName());
-QueryCursor qryCur=cache.query(qry);
+final QueryCursor qryCur=cache.query(qry);
 Iterator cur=qryCur.iterator();
-qryCurs.put(qryId,new IgniteBiTuple<>(qryCur,cur));
-CacheQueryResult res=createQueryResult(qryCurs,cur,req,qryId);
+QueryCursorIterator qryCurIt=new QueryCursorIterator(qryCur,cur);
+qryCurIt.lock();
+try {
+qryCurs.put(qryId,qryCurIt);
+CacheQueryResult res=createQueryResult(cur,req,qryId,qryCurs);
 switch (req.queryType()) {
 case SQL:
 case SQL_FIELDS:
@@ -39,10 +42,16 @@ valField.setFieldName("value");
 res.setFieldsMetadata(U.sealList(keyField,valField));
 break;
 }
+List<GridQueryFieldMetadata> fieldsMeta=((QueryCursorImpl<?>)qryCur).fieldsMeta();
+res.setFieldsMetadata(convertMetadata(fieldsMeta));
 return new GridRestResponse(res);
 }
+  finally {
+qryCurIt.unlock();
+}
+}
  catch (Exception e) {
-qryCurs.remove(qryId);
+removeQueryCursor(qryId,qryCurs);
 return new GridRestResponse(GridRestResponse.STATUS_FAILED,e.getMessage());
 }
 }

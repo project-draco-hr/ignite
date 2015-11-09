@@ -1,3 +1,25 @@
 {
   super(ctx);
+  final long idleQryCurTimeout=ctx.config().getConnectorConfiguration().getIdleQueryCursorTimeout();
+  long idleQryCurCheckFreq=ctx.config().getConnectorConfiguration().getIdleQueryCursorCheckFrequency();
+  ctx.timeout().schedule(new Runnable(){
+    @Override public void run(){
+      long time=U.currentTimeMillis();
+      for (      Map.Entry<Long,QueryCursorIterator> e : qryCurs.entrySet()) {
+        QueryCursorIterator qryCurIt=e.getValue();
+        long createTime=qryCurIt.timestamp();
+        if (createTime + idleQryCurTimeout > time && qryCurIt.tryLock()) {
+          try {
+            qryCurIt.timestamp(-1);
+            qryCurs.remove(e.getKey(),qryCurIt);
+            qryCurIt.close();
+          }
+  finally {
+            qryCurIt.unlock();
+          }
+        }
+      }
+    }
+  }
+,idleQryCurCheckFreq,idleQryCurCheckFreq);
 }
