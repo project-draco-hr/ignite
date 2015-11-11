@@ -1,6 +1,6 @@
 {
   while (true) {
-    try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+    try (Transaction tx=igniteTx.txStart(txConcurrency,txIsolation)){
       T res=clo.call();
       tx.commit();
       return res;
@@ -15,7 +15,7 @@
 catch (    ClusterTopologyException e) {
       e.retryReadyFuture().get();
     }
-catch (    TransactionRollbackException ignore) {
+catch (    TransactionRollbackException|TransactionOptimisticException ignore) {
     }
   }
 }
