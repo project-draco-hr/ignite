@@ -1,0 +1,22 @@
+{
+  int threads=5;
+  final int keys=50;
+  final CyclicBarrier beforeBarrier=new CyclicBarrier(threads);
+  ConcurrentVerifyStore store=new ConcurrentVerifyStore(keys);
+  final CacheStoreBalancingWrapper<Integer,Integer> wrapper=new CacheStoreBalancingWrapper<>(store);
+  GridTestUtils.runMultiThreaded(new Runnable(){
+    @Override public void run(){
+      for (int i=0; i < keys; i++) {
+        try {
+          beforeBarrier.await();
+        }
+ catch (        InterruptedException|BrokenBarrierException e) {
+          throw new RuntimeException(e);
+        }
+        info("Load key: " + i);
+        wrapper.load(i);
+      }
+    }
+  }
+,threads,"load-thread");
+}
