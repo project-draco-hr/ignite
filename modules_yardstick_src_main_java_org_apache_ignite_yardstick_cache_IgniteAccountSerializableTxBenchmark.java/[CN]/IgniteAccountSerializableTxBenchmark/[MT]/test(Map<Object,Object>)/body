@@ -1,10 +1,11 @@
 {
   Set<Integer> accountIds=new HashSet<>();
-  while (accountIds.size() < ACCOUNT_NUMBER)   accountIds.add(nextRandom(args.range()));
+  int accNum=args.batch();
+  while (accountIds.size() < accNum)   accountIds.add(nextRandom(args.range()));
   while (true) {
     try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
       Map<Integer,Account> accounts=(Map)cache.getAll(accountIds);
-      if (accounts.size() != ACCOUNT_NUMBER)       throw new Exception("Failed to find accounts: " + accountIds);
+      if (accounts.size() != accNum)       throw new Exception("Failed to find accounts: " + accountIds);
       Integer fromId=accountIds.iterator().next();
       int fromBalance=accounts.get(fromId).balance();
       for (      Integer id : accountIds) {
