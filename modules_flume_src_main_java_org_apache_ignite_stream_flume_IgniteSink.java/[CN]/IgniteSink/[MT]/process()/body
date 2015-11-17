@@ -1,0 +1,36 @@
+{
+  Channel channel=getChannel();
+  Transaction transaction=channel.getTransaction();
+  int eventCount=0;
+  try {
+    transaction.begin();
+    List<Event> batch=new ArrayList<>(batchSize);
+    for (; eventCount < batchSize; ++eventCount) {
+      Event event=channel.take();
+      if (event == null) {
+        break;
+      }
+      batch.add(event);
+    }
+    if (!batch.isEmpty()) {
+      ignite.cache(cacheName).putAll(eventTransformer.transform(batch));
+      if (batch.size() < batchSize)       sinkCounter.incrementBatchUnderflowCount();
+ else       sinkCounter.incrementBatchCompleteCount();
+    }
+ else {
+      sinkCounter.incrementBatchEmptyCount();
+    }
+    sinkCounter.addToEventDrainAttemptCount(batch.size());
+    transaction.commit();
+    sinkCounter.addToEventDrainSuccessCount(batch.size());
+  }
+ catch (  Exception e) {
+    log.error("Failed to process events",e);
+    transaction.rollback();
+    throw new EventDeliveryException(e);
+  }
+ finally {
+    transaction.close();
+  }
+  return eventCount == 0 ? Status.BACKOFF : Status.READY;
+}
