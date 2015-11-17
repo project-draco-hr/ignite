@@ -1,0 +1,9 @@
+{
+  if (cacheCtx == null || cacheCtx.isLocal())   return cctx.exchange().lastTopologyFuture();
+  cacheCtx.topology().readLock();
+  if (cacheCtx.topology().stopping()) {
+    fut.onDone(new IgniteCheckedException("Failed to perform cache operation (cache is stopped): " + cacheCtx.name()));
+    return null;
+  }
+  return cacheCtx.topology().topologyVersionFuture();
+}

@@ -1,2 +1,15 @@
 {
+  if (!F.isEmpty(maps)) {
+    for (    GridDistributedTxMapping map : maps) {
+      ClusterNode n=map.node();
+      GridDistributedTxMapping m=mappings.get(n.id());
+      if (m == null) {
+        mappings.put(m=new GridDistributedTxMapping(n));
+        m.near(map.near());
+        if (map.explicitLock())         m.markExplicitLock();
+      }
+      for (      IgniteTxEntry entry : map.entries())       m.add(entry);
+    }
+    if (log.isDebugEnabled())     log.debug("Added mappings to transaction [locId=" + cctx.localNodeId() + ", mappings="+ maps+ ", tx="+ this+ ']');
+  }
 }

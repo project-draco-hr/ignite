@@ -9,7 +9,9 @@
  else       onError(new IgniteTxRollbackCheckedException("Invalid transaction state for " + "prepare [state=" + tx.state() + ", tx="+ this+ ']'));
       return;
     }
-    prepare(tx.writeEntries(),topLocked);
+    IgniteTxEntry singleWrite=tx.singleWrite();
+    if (singleWrite != null)     prepareSingle(singleWrite,topLocked);
+ else     prepare(tx.writeEntries(),topLocked);
     markInitialized();
   }
  catch (  TransactionTimeoutException e) {
