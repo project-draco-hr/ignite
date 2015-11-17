@@ -1,0 +1,17 @@
+{
+  try {
+    final int FAIL_ORDER=3;
+    nodeSpi.set(new TestFailedNodesSpi(FAIL_ORDER));
+    final Ignite ignite0=startGrid(0);
+    nodeSpi.set(new TestFailedNodesSpi(FAIL_ORDER));
+    startGrid(1);
+    nodeSpi.set(new TestFailedNodesSpi(FAIL_ORDER));
+    Ignite ignite2=startGrid(2);
+    assertEquals(2,ignite2.cluster().nodes().size());
+    waitNodeStop(ignite0.name());
+    tryCreateCache(2);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

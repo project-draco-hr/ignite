@@ -1,0 +1,33 @@
+{
+  try {
+    ThreadLocalRandom rnd=ThreadLocalRandom.current();
+    for (int iter=0; iter < 3; iter++) {
+      final int NODES=iter == 0 ? 2 : rnd.nextInt(3,6);
+      for (int i=0; i < NODES; i++) {
+        nodeSpi.set(new TestFailedNodesSpi(-1));
+        startGrid(i);
+      }
+      Map<Long,Ignite> nodes=new HashMap<>();
+      for (int i=0; i < NODES; i++) {
+        Ignite ignite=ignite(i);
+        nodes.put(ignite.cluster().localNode().order(),ignite);
+      }
+      Ignite ignite=ignite(rnd.nextInt(NODES));
+      log.info("Iteration [iter=" + iter + ", nodes="+ NODES+ ", failFrom="+ ignite.name()+ ']');
+      TestFailedNodesSpi spi=(TestFailedNodesSpi)ignite.configuration().getDiscoverySpi();
+      spi.failSingleMsg=true;
+      long order=ignite.cluster().localNode().order();
+      long nextOrder=order == NODES ? 1 : order + 1;
+      Ignite failingNode=nodes.get(nextOrder);
+      assertNotNull(failingNode);
+      waitNodeStop(failingNode.name());
+      Ignite newNode=startGrid(NODES);
+      assertEquals(NODES,newNode.cluster().nodes().size());
+      tryCreateCache(NODES);
+      stopAllGrids();
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}
