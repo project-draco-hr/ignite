@@ -1,0 +1,26 @@
+{
+  boolean rmv=false;
+  try {
+synchronized (this) {
+      CacheObject prev=saveValueForIndexUnlocked();
+      if (!markObsolete0(ver,false,extras)) {
+        if (log.isDebugEnabled())         log.debug("Entry could not be marked obsolete (it is still used or has readers): " + this);
+        return false;
+      }
+      rdrs=ReaderId.EMPTY_ARRAY;
+      if (log.isDebugEnabled())       log.debug("Entry has been marked obsolete: " + this);
+      clearIndex(prev);
+      update(null,0L,0L,ver);
+      if (swap) {
+        releaseSwap();
+        if (log.isDebugEnabled())         log.debug("Entry has been cleared from swap storage: " + this);
+      }
+      if (cctx.store().isLocal())       cctx.store().remove(null,keyValue(false));
+      rmv=true;
+      return true;
+    }
+  }
+  finally {
+    if (rmv)     cctx.cache().removeIfObsolete(key);
+  }
+}

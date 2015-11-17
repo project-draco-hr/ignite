@@ -1,0 +1,130 @@
+{
+  GridDhtPartitionSupplyMessage s=new GridDhtPartitionSupplyMessage(d.workerId(),d.updateSequence(),cctx.cacheId(),cctx.deploymentEnabled());
+  ClusterNode node=cctx.node(id);
+  if (node == null)   return;
+  long preloadThrottle=cctx.config().getRebalanceThrottle();
+  boolean ack=false;
+  try {
+    for (    int part : d.partitions()) {
+      GridDhtLocalPartition loc=top.localPartition(part,d.topologyVersion(),false);
+      if (loc == null || loc.state() != OWNING || !loc.reserve()) {
+        s.missed(part);
+        if (log.isDebugEnabled())         log.debug("Requested partition is not owned by local node [part=" + part + ", demander="+ id+ ']');
+        continue;
+      }
+      GridCacheEntryInfoCollectSwapListener swapLsnr=null;
+      try {
+        if (cctx.isSwapOrOffheapEnabled()) {
+          swapLsnr=new GridCacheEntryInfoCollectSwapListener(log);
+          cctx.swap().addOffHeapListener(part,swapLsnr);
+          cctx.swap().addSwapListener(part,swapLsnr);
+        }
+        boolean partMissing=false;
+        for (        GridCacheEntryEx e : loc.entries()) {
+          if (!cctx.affinity().belongs(node,part,d.topologyVersion())) {
+            s.missed(part);
+            if (log.isDebugEnabled())             log.debug("Demanding node does not need requested partition [part=" + part + ", nodeId="+ id+ ']');
+            partMissing=true;
+            break;
+          }
+          if (s.messageSize() >= cctx.config().getRebalanceBatchSize()) {
+            ack=true;
+            if (!replyOld(node,d,s))             return;
+            if (preloadThrottle > 0)             U.sleep(preloadThrottle);
+            s=new GridDhtPartitionSupplyMessage(d.workerId(),d.updateSequence(),cctx.cacheId(),cctx.deploymentEnabled());
+          }
+          GridCacheEntryInfo info=e.info();
+          if (info != null && !info.isNew()) {
+            if (preloadPred == null || preloadPred.apply(info))             s.addEntry(part,info,cctx);
+ else             if (log.isDebugEnabled())             log.debug("Rebalance predicate evaluated to false (will not sender cache entry): " + info);
+          }
+        }
+        if (partMissing)         continue;
+        if (cctx.isSwapOrOffheapEnabled()) {
+          GridCloseableIterator<Map.Entry<byte[],GridCacheSwapEntry>> iter=cctx.swap().iterator(part);
+          if (iter != null) {
+            try {
+              boolean prepared=false;
+              for (              Map.Entry<byte[],GridCacheSwapEntry> e : iter) {
+                if (!cctx.affinity().belongs(node,part,d.topologyVersion())) {
+                  s.missed(part);
+                  if (log.isDebugEnabled())                   log.debug("Demanding node does not need requested partition " + "[part=" + part + ", nodeId="+ id+ ']');
+                  partMissing=true;
+                  break;
+                }
+                if (s.messageSize() >= cctx.config().getRebalanceBatchSize()) {
+                  ack=true;
+                  if (!replyOld(node,d,s))                   return;
+                  if (preloadThrottle > 0)                   U.sleep(preloadThrottle);
+                  s=new GridDhtPartitionSupplyMessage(d.workerId(),d.updateSequence(),cctx.cacheId(),cctx.deploymentEnabled());
+                }
+                GridCacheSwapEntry swapEntry=e.getValue();
+                GridCacheEntryInfo info=new GridCacheEntryInfo();
+                info.keyBytes(e.getKey());
+                info.ttl(swapEntry.ttl());
+                info.expireTime(swapEntry.expireTime());
+                info.version(swapEntry.version());
+                info.value(swapEntry.value());
+                if (preloadPred == null || preloadPred.apply(info))                 s.addEntry0(part,info,cctx);
+ else {
+                  if (log.isDebugEnabled())                   log.debug("Rebalance predicate evaluated to false (will not send " + "cache entry): " + info);
+                  continue;
+                }
+                if (depEnabled && !prepared) {
+                  ClassLoader ldr=swapEntry.keyClassLoaderId() != null ? cctx.deploy().getClassLoader(swapEntry.keyClassLoaderId()) : swapEntry.valueClassLoaderId() != null ? cctx.deploy().getClassLoader(swapEntry.valueClassLoaderId()) : null;
+                  if (ldr == null)                   continue;
+                  if (ldr instanceof GridDeploymentInfo) {
+                    s.prepare((GridDeploymentInfo)ldr);
+                    prepared=true;
+                  }
+                }
+              }
+              if (partMissing)               continue;
+            }
+  finally {
+              iter.close();
+            }
+          }
+        }
+        if (swapLsnr != null) {
+          cctx.swap().removeOffHeapListener(part,swapLsnr);
+          cctx.swap().removeSwapListener(part,swapLsnr);
+        }
+        if (swapLsnr != null) {
+          Collection<GridCacheEntryInfo> entries=swapLsnr.entries();
+          swapLsnr=null;
+          for (          GridCacheEntryInfo info : entries) {
+            if (!cctx.affinity().belongs(node,part,d.topologyVersion())) {
+              s.missed(part);
+              if (log.isDebugEnabled())               log.debug("Demanding node does not need requested partition " + "[part=" + part + ", nodeId="+ id+ ']');
+              break;
+            }
+            if (s.messageSize() >= cctx.config().getRebalanceBatchSize()) {
+              ack=true;
+              if (!replyOld(node,d,s))               return;
+              s=new GridDhtPartitionSupplyMessage(d.workerId(),d.updateSequence(),cctx.cacheId(),cctx.deploymentEnabled());
+            }
+            if (preloadPred == null || preloadPred.apply(info))             s.addEntry(part,info,cctx);
+ else             if (log.isDebugEnabled())             log.debug("Rebalance predicate evaluated to false (will not sender cache entry): " + info);
+          }
+        }
+        s.last(part);
+        if (ack) {
+          s.markAck();
+          break;
+        }
+      }
+  finally {
+        loc.release();
+        if (swapLsnr != null) {
+          cctx.swap().removeOffHeapListener(part,swapLsnr);
+          cctx.swap().removeSwapListener(part,swapLsnr);
+        }
+      }
+    }
+    replyOld(node,d,s);
+  }
+ catch (  IgniteCheckedException e) {
+    U.error(log,"Failed to send partition supply message to node: " + node.id(),e);
+  }
+}

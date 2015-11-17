@@ -1,0 +1,17 @@
+{
+  ClusterNode node=cctx.discovery().node(nodeId);
+  if (node == null)   return;
+  if (node.version().compareTo(GridDhtPreloader.REBALANCING_VER_2_SINCE) >= 0) {
+    GridDhtPartitionDemandMessage d=new GridDhtPartitionDemandMessage(-1,this.topologyVersion(),cctx.cacheId());
+    d.timeout(cctx.config().getRebalanceTimeout());
+    try {
+      for (int idx=0; idx < cctx.gridConfig().getRebalanceThreadPoolSize(); idx++) {
+        d.topic(GridCachePartitionExchangeManager.rebalanceTopic(idx));
+        cctx.io().sendOrderedMessage(node,GridCachePartitionExchangeManager.rebalanceTopic(idx),d,cctx.ioPolicy(),cctx.config().getRebalanceTimeout());
+      }
+    }
+ catch (    IgniteCheckedException e) {
+      if (log.isDebugEnabled())       log.debug("Failed to send failover context cleanup request to node");
+    }
+  }
+}

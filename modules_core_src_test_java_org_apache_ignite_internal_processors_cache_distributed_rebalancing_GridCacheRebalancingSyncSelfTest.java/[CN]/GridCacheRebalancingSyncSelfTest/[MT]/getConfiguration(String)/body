@@ -1,0 +1,35 @@
+{
+  IgniteConfiguration iCfg=super.getConfiguration(gridName);
+  ((TcpDiscoverySpi)iCfg.getDiscoverySpi()).setIpFinder(ipFinder);
+  ((TcpDiscoverySpi)iCfg.getDiscoverySpi()).setForceServerMode(true);
+  if (getTestGridName(10).equals(gridName))   iCfg.setClientMode(true);
+  CacheConfiguration<Integer,Integer> cachePCfg=new CacheConfiguration<>();
+  cachePCfg.setName(CACHE_NAME_DHT_PARTITIONED);
+  cachePCfg.setCacheMode(CacheMode.PARTITIONED);
+  cachePCfg.setRebalanceMode(CacheRebalanceMode.SYNC);
+  cachePCfg.setBackups(1);
+  cachePCfg.setRebalanceBatchSize(1);
+  cachePCfg.setRebalanceBatchesPrefetchCount(1);
+  cachePCfg.setRebalanceOrder(2);
+  CacheConfiguration<Integer,Integer> cachePCfg2=new CacheConfiguration<>();
+  cachePCfg2.setName(CACHE_NAME_DHT_PARTITIONED_2);
+  cachePCfg2.setCacheMode(CacheMode.PARTITIONED);
+  cachePCfg2.setRebalanceMode(CacheRebalanceMode.SYNC);
+  cachePCfg2.setBackups(1);
+  cachePCfg2.setRebalanceOrder(2);
+  CacheConfiguration<Integer,Integer> cacheRCfg=new CacheConfiguration<>();
+  cacheRCfg.setName(CACHE_NAME_DHT_REPLICATED);
+  cacheRCfg.setCacheMode(CacheMode.REPLICATED);
+  cacheRCfg.setRebalanceMode(CacheRebalanceMode.SYNC);
+  cacheRCfg.setRebalanceBatchSize(1);
+  cacheRCfg.setRebalanceBatchesPrefetchCount(Integer.MAX_VALUE);
+  ((TcpCommunicationSpi)iCfg.getCommunicationSpi()).setSharedMemoryPort(-1);
+  CacheConfiguration<Integer,Integer> cacheRCfg2=new CacheConfiguration<>();
+  cacheRCfg2.setName(CACHE_NAME_DHT_REPLICATED_2);
+  cacheRCfg2.setCacheMode(CacheMode.REPLICATED);
+  cacheRCfg2.setRebalanceMode(CacheRebalanceMode.SYNC);
+  cacheRCfg2.setRebalanceOrder(4);
+  iCfg.setCacheConfiguration(cachePCfg,cachePCfg2,cacheRCfg,cacheRCfg2);
+  iCfg.setRebalanceThreadPoolSize(2);
+  return iCfg;
+}

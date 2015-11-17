@@ -1,0 +1,27 @@
+{
+  partsToEvict.add(part);
+  if (partsEvictOwning.get() == 0 && partsEvictOwning.compareAndSet(0,1)) {
+    cctx.closures().callLocalSafe(new GPC<Boolean>(){
+      @Override public Boolean call(){
+        boolean locked=true;
+        while (locked || !partsToEvict.isEmptyx()) {
+          if (!locked && !partsEvictOwning.compareAndSet(0,1))           return false;
+          try {
+            GridDhtLocalPartition part=partsToEvict.poll();
+            if (part != null)             part.tryEvict();
+          }
+  finally {
+            if (!partsToEvict.isEmptyx())             locked=true;
+ else {
+              boolean res=partsEvictOwning.compareAndSet(1,0);
+              assert res;
+              locked=false;
+            }
+          }
+        }
+        return true;
+      }
+    }
+,true);
+  }
+}

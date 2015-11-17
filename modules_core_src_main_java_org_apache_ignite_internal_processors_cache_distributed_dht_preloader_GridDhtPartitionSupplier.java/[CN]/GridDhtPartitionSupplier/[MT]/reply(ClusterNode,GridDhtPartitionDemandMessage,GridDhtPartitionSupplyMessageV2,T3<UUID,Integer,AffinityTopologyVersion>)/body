@@ -1,0 +1,15 @@
+{
+  try {
+    if (log.isDebugEnabled())     log.debug("Replying to partition demand [node=" + n.id() + ", demand="+ d+ ", supply="+ s+ ']');
+    cctx.io().sendOrderedMessage(n,d.topic(),s,cctx.ioPolicy(),d.timeout());
+    if (cctx.config().getRebalanceThrottle() > 0)     U.sleep(cctx.config().getRebalanceThrottle());
+    return true;
+  }
+ catch (  ClusterTopologyCheckedException ignore) {
+    if (log.isDebugEnabled())     log.debug("Failed to send partition supply message because node left grid: " + n.id());
+synchronized (scMap) {
+      clearContext(scMap.remove(scId),log);
+    }
+    return false;
+  }
+}

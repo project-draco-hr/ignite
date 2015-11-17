@@ -1,0 +1,17 @@
+{
+  boolean finished=false;
+  while (!finished) {
+    finished=true;
+    for (    GridCacheAdapter c : grid(id).context().cache().internalCaches()) {
+      GridDhtPartitionDemander.RebalanceFuture fut=(GridDhtPartitionDemander.RebalanceFuture)c.preloader().rebalanceFuture();
+      if (fut.topologyVersion() == null || !fut.topologyVersion().equals(top)) {
+        finished=false;
+        break;
+      }
+ else       if (!fut.get()) {
+        finished=false;
+        log.warning("Rebalancing finished with missed partitions.");
+      }
+    }
+  }
+}

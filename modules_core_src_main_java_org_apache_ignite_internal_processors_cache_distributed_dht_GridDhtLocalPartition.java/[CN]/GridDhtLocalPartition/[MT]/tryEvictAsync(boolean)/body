@@ -1,5 +1,5 @@
 {
-  if (map.isEmpty() && !GridQueryProcessor.isEnabled(cctx.config()) && state.compareAndSet(RENTING,EVICTED,0,0)) {
+  if (map.isEmpty() && !GridQueryProcessor.isEnabled(cctx.config()) && state.getReference() == RENTING && state.getStamp() == 0 && state.compareAndSet(RENTING,EVICTED,0,0)) {
     if (log.isDebugEnabled())     log.debug("Evicted partition: " + this);
     clearSwap();
     if (cctx.isDrEnabled())     cctx.dr().partitionEvicted(id);
@@ -7,12 +7,6 @@
     rent.onDone();
     ((GridDhtPreloader)cctx.preloader()).onPartitionEvicted(this,updateSeq);
     clearDeferredDeletes();
-    return new GridFinishedFuture<>(true);
   }
-  return cctx.closures().callLocalSafe(new GPC<Boolean>(){
-    @Override public Boolean call(){
-      return tryEvict(true);
-    }
-  }
-,true);
+ else   cctx.preloader().evictPartitionAsync(this);
 }

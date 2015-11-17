@@ -1,8 +1,11 @@
 {
   long timeout=cctx.gridConfig().getNetworkTimeout();
   boolean startEvtFired=false;
+  int cnt=0;
+  IgniteInternalFuture asyncStartFut=null;
   while (!isCancelled()) {
     GridDhtPartitionsExchangeFuture exchFut=null;
+    cnt++;
     try {
       boolean preloadFinished=true;
       for (      GridCacheContext cacheCtx : cctx.cacheContexts()) {
@@ -63,11 +66,72 @@
         busy=false;
       }
       if (assignsMap != null) {
+        int size=assignsMap.size();
+        rebalanceQ.clear();
+        NavigableMap<Integer,List<Integer>> orderMap=new TreeMap<>();
         for (        Map.Entry<Integer,GridDhtPreloaderAssignments> e : assignsMap.entrySet()) {
           int cacheId=e.getKey();
           GridCacheContext<K,V> cacheCtx=cctx.cacheContext(cacheId);
-          cacheCtx.preloader().addAssignments(e.getValue(),forcePreload);
+          int order=cacheCtx.config().getRebalanceOrder();
+          if (orderMap.get(order) == null)           orderMap.put(order,new ArrayList<Integer>(size));
+          orderMap.get(order).add(cacheId);
         }
+        Callable<Boolean> marshR=null;
+        List<Callable<Boolean>> orderedRs=new ArrayList<>(size);
+        for (        Integer order : orderMap.keySet()) {
+          for (          Integer cacheId : orderMap.get(order)) {
+            GridCacheContext<K,V> cacheCtx=cctx.cacheContext(cacheId);
+            List<String> waitList=new ArrayList<>(size - 1);
+            for (            List<Integer> cIds : orderMap.headMap(order).values()) {
+              for (              Integer cId : cIds) {
+                waitList.add(cctx.cacheContext(cId).name());
+              }
+            }
+            Callable<Boolean> r=cacheCtx.preloader().addAssignments(assignsMap.get(cacheId),forcePreload,waitList,cnt);
+            if (r != null) {
+              U.log(log,"Cache rebalancing scheduled: [cache=" + cacheCtx.name() + ", waitList="+ waitList.toString()+ "]");
+              if (cacheId == CU.cacheId(GridCacheUtils.MARSH_CACHE_NAME))               marshR=r;
+ else               orderedRs.add(r);
+            }
+          }
+        }
+        if (asyncStartFut != null)         asyncStartFut.get();
+        rebalanceQ.addAll(orderedRs);
+        if (marshR != null || !rebalanceQ.isEmpty()) {
+          if (futQ.isEmpty()) {
+            U.log(log,"Rebalancing required" + "[top=" + exchFut.topologyVersion() + ", evt="+ exchFut.discoveryEvent().name()+ ", node="+ exchFut.discoveryEvent().eventNode().id()+ ']');
+            if (marshR != null)             try {
+              marshR.call();
+            }
+ catch (            Exception ex) {
+              if (log.isDebugEnabled())               log.debug("Failed to send initial demand request to node");
+              continue;
+            }
+            final GridFutureAdapter fut=new GridFutureAdapter();
+            asyncStartFut=fut;
+            cctx.kernalContext().closure().callLocalSafe(new GPC<Boolean>(){
+              @Override public Boolean call(){
+                try {
+                  while (true) {
+                    Callable<Boolean> r=rebalanceQ.poll();
+                    if (r == null)                     return false;
+                    if (!r.call())                     return false;
+                  }
+                }
+ catch (                Exception ex) {
+                  if (log.isDebugEnabled())                   log.debug("Failed to send initial demand request to node");
+                  return false;
+                }
+ finally {
+                  fut.onDone();
+                }
+              }
+            }
+,true);
+          }
+ else           U.log(log,"Skipping rebalancing (obsolete exchange ID) " + "[top=" + exchFut.topologyVersion() + ", evt="+ exchFut.discoveryEvent().name()+ ", node="+ exchFut.discoveryEvent().eventNode().id()+ ']');
+        }
+ else         U.log(log,"Skipping rebalancing (nothing scheduled) " + "[top=" + exchFut.topologyVersion() + ", evt="+ exchFut.discoveryEvent().name()+ ", node="+ exchFut.discoveryEvent().eventNode().id()+ ']');
       }
     }
  catch (    IgniteInterruptedCheckedException e) {

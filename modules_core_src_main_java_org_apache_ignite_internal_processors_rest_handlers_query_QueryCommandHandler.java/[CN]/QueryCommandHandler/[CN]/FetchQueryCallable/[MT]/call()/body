@@ -1,12 +1,21 @@
 {
   try {
-    Iterator cur=qryCurs.get(req.queryId()).get2();
-    if (cur == null)     return new GridRestResponse(GridRestResponse.STATUS_FAILED,"Failed to find query with ID: " + req.queryId());
-    CacheQueryResult res=createQueryResult(qryCurs,cur,req,req.queryId());
-    return new GridRestResponse(res);
+    QueryCursorIterator qryCurIt=qryCurs.get(req.queryId());
+    if (qryCurIt == null)     return new GridRestResponse(GridRestResponse.STATUS_FAILED,"Failed to find query with ID: " + req.queryId());
+    qryCurIt.lock();
+    try {
+      if (qryCurIt.timestamp() == -1)       return new GridRestResponse(GridRestResponse.STATUS_FAILED,"Query is closed by timeout. Restart query with ID: " + req.queryId());
+      qryCurIt.timestamp(U.currentTimeMillis());
+      Iterator cur=qryCurIt.iterator();
+      CacheQueryResult res=createQueryResult(cur,req,req.queryId(),qryCurs);
+      return new GridRestResponse(res);
+    }
+  finally {
+      qryCurIt.unlock();
+    }
   }
  catch (  Exception e) {
-    qryCurs.remove(req.queryId());
+    removeQueryCursor(req.queryId(),qryCurs);
     return new GridRestResponse(GridRestResponse.STATUS_FAILED,e.getMessage());
   }
 }

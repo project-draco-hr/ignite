@@ -1,0 +1,15 @@
+{
+  Map<String,GridCacheSqlMetadata> map=new HashMap<>();
+  for (  ComputeJobResult r : results) {
+    if (!r.isCancelled() && r.getException() == null) {
+      for (      GridCacheSqlMetadata m : r.<Collection<GridCacheSqlMetadata>>getData()) {
+        if (!map.containsKey(m.cacheName()))         map.put(m.cacheName(),m);
+      }
+    }
+  }
+  Collection<GridCacheSqlMetadata> metas=new ArrayList<>(map.size());
+  GridCacheSqlMetadata cacheMeta=map.remove(cacheName);
+  if (cacheMeta != null)   metas.add(cacheMeta);
+  metas.addAll(map.values());
+  return new GridRestResponse(metas);
+}

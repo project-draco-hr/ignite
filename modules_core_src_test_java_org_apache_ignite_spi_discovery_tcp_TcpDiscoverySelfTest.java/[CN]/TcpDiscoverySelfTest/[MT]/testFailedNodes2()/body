@@ -1,0 +1,26 @@
+{
+  try {
+    final int FAIL_ORDER=3;
+    nodeSpi.set(new TestFailedNodesSpi(FAIL_ORDER));
+    Ignite ignite0=startGrid(0);
+    nodeSpi.set(new TestFailedNodesSpi(FAIL_ORDER));
+    startGrid(1);
+    final AtomicInteger nodeIdx=new AtomicInteger(1);
+    GridTestUtils.runMultiThreaded(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        int idx=nodeIdx.incrementAndGet();
+        nodeSpi.set(new TestFailedNodesSpi(FAIL_ORDER));
+        startGrid(idx);
+        return null;
+      }
+    }
+,3,"start-node");
+    Ignite ignite2=ignite(2);
+    waitForRemoteNodes(ignite2,3);
+    waitNodeStop(ignite0.name());
+    tryCreateCache(4);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

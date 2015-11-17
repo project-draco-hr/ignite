@@ -1,0 +1,18 @@
+{
+  this.cacheName=cacheName;
+  GridDiscoveryManager discovery=ignite.context().discovery();
+  boolean sameCaches=true;
+  int hash=discovery.nodeCaches(F.first(subgrid)).hashCode();
+  for (int i=1; i < subgrid.size(); i++) {
+    if (hash != discovery.nodeCaches(subgrid.get(i)).hashCode()) {
+      sameCaches=false;
+      break;
+    }
+  }
+  Map<ComputeJob,ClusterNode> map=U.newHashMap(sameCaches ? 1 : subgrid.size());
+  if (sameCaches)   map.put(new MetadataJob(),ignite.localNode());
+ else {
+    for (    ClusterNode node : subgrid)     map.put(new MetadataJob(),node);
+  }
+  return map;
+}

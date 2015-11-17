@@ -5,28 +5,27 @@
   }
   if (!fut.trackable())   return true;
   while (true) {
-    Collection<GridCacheFuture<?>> old=futs.putIfAbsent(fut.version(),new ConcurrentLinkedDeque8<GridCacheFuture<?>>(){
-      /** 
- */
-      private int hash;
+    Collection<GridCacheFuture<?>> old=futs.get(fut.version());
+    if (old == null) {
+      Collection<GridCacheFuture<?>> col=new HashSet<GridCacheFuture<?>>(U.capacity(4),0.75f){
 {
-        add(fut);
+          add(fut);
+        }
+        @Override public int hashCode(){
+          return System.identityHashCode(this);
+        }
+        @Override public boolean equals(        Object obj){
+          return obj == this;
+        }
       }
-      @Override public int hashCode(){
-        if (hash == 0)         hash=System.identityHashCode(this);
-        return hash;
-      }
-      @Override public boolean equals(      Object obj){
-        return obj == this;
-      }
+;
+      old=futs.putIfAbsent(fut.version(),col);
     }
-);
     if (old != null) {
       boolean empty, dup=false;
 synchronized (old) {
         empty=old.isEmpty();
-        if (!empty)         dup=old.contains(fut);
-        if (!empty && !dup)         old.add(fut);
+        if (!empty)         dup=!old.add(fut);
       }
       if (empty) {
         if (futs.remove(fut.version(),old)) {
