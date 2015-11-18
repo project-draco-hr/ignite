@@ -1,22 +1,26 @@
 {
+  short flags=userType ? PortableUtils.FLAG_USR_TYP : 0;
+  boolean useCompactFooter=ctx.isCompactFooter() && userType;
+  if (useCompactFooter)   flags|=PortableUtils.FLAG_COMPACT_FOOTER;
   if (schema != null) {
+    flags|=PortableUtils.FLAG_HAS_SCHEMA;
     out.writeInt(start + SCHEMA_ID_POS,schemaId);
     out.writeInt(start + SCHEMA_OR_RAW_OFF_POS,out.position() - start);
-    int offsetByteCnt=schema.write(this,fieldCnt);
-    if (rawOffPos != 0)     out.writeInt(rawOffPos - start);
-    if (offsetByteCnt == PortableUtils.OFFSET_1) {
-      int flags=(userType ? PortableUtils.FLAG_USR_TYP : 0) | PortableUtils.FLAG_OFFSET_ONE_BYTE;
-      out.writeShort(start + FLAGS_POS,(short)flags);
-    }
- else     if (offsetByteCnt == PortableUtils.OFFSET_2) {
-      int flags=(userType ? PortableUtils.FLAG_USR_TYP : 0) | PortableUtils.FLAG_OFFSET_TWO_BYTES;
-      out.writeShort(start + FLAGS_POS,(short)flags);
+    int offsetByteCnt=schema.write(this,fieldCnt,useCompactFooter);
+    if (offsetByteCnt == PortableUtils.OFFSET_1)     flags|=PortableUtils.FLAG_OFFSET_ONE_BYTE;
+ else     if (offsetByteCnt == PortableUtils.OFFSET_2)     flags|=PortableUtils.FLAG_OFFSET_TWO_BYTES;
+    if (rawOffPos != 0) {
+      flags|=PortableUtils.FLAG_HAS_RAW;
+      out.writeInt(rawOffPos - start);
     }
   }
  else {
-    int flags=(userType ? PortableUtils.FLAG_USR_TYP : 0) | PortableUtils.FLAG_RAW_ONLY;
-    out.writeShort(start + FLAGS_POS,(short)flags);
-    out.writeInt(start + SCHEMA_OR_RAW_OFF_POS,(rawOffPos == 0 ? out.position() : rawOffPos) - start);
+    if (rawOffPos != 0) {
+      flags|=PortableUtils.FLAG_HAS_RAW;
+      out.writeInt(start + SCHEMA_OR_RAW_OFF_POS,rawOffPos - start);
+    }
+ else     out.writeInt(start + SCHEMA_OR_RAW_OFF_POS,0);
   }
+  out.writeShort(start + FLAGS_POS,flags);
   out.writeInt(start + TOTAL_LEN_POS,out.position() - start);
 }

@@ -1,0 +1,48 @@
+{
+  PortableMarshaller marsh=createMarshaller();
+  BinaryTypeConfiguration customType1=new BinaryTypeConfiguration(Value.class.getName());
+  customType1.setIdMapper(new BinaryIdMapper(){
+    @Override public int typeId(    String clsName){
+      return 300;
+    }
+    @Override public int fieldId(    int typeId,    String fieldName){
+switch (fieldName) {
+case "val1":
+        return 301;
+case "val2":
+      return 302;
+default :
+    return 0;
+}
+}
+}
+);
+BinaryTypeConfiguration customType2=new BinaryTypeConfiguration("NonExistentClass1");
+customType2.setIdMapper(new BinaryIdMapper(){
+@Override public int typeId(String clsName){
+return 400;
+}
+@Override public int fieldId(int typeId,String fieldName){
+switch (fieldName) {
+case "val1":
+  return 401;
+case "val2":
+return 402;
+default :
+return 0;
+}
+}
+}
+);
+marsh.setTypeConfigurations(Arrays.asList(new BinaryTypeConfiguration(Key.class.getName()),new BinaryTypeConfiguration("NonExistentClass2"),customType1,customType2));
+PortableContext ctx=initializePortableContext(marsh);
+assertEquals("val".hashCode(),ctx.fieldId("key".hashCode(),"val"));
+assertEquals("val".hashCode(),ctx.fieldId("nonexistentclass2".hashCode(),"val"));
+assertEquals("val".hashCode(),ctx.fieldId("notconfiguredclass".hashCode(),"val"));
+assertEquals(301,ctx.fieldId(300,"val1"));
+assertEquals(302,ctx.fieldId(300,"val2"));
+assertEquals("val3".hashCode(),ctx.fieldId(300,"val3"));
+assertEquals(401,ctx.fieldId(400,"val1"));
+assertEquals(402,ctx.fieldId(400,"val2"));
+assertEquals("val3".hashCode(),ctx.fieldId(400,"val3"));
+}

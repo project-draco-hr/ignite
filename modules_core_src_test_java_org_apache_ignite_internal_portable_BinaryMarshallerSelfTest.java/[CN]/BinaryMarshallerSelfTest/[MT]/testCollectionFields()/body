@@ -1,0 +1,18 @@
+{
+  PortableMarshaller marsh=createMarshaller();
+  marsh.setTypeConfigurations(Arrays.asList(new BinaryTypeConfiguration(CollectionFieldsObject.class.getName()),new BinaryTypeConfiguration(Key.class.getName()),new BinaryTypeConfiguration(Value.class.getName())));
+  Object[] arr=new Object[]{new Value(1),new Value(2),new Value(3)};
+  Collection<Value> col=Arrays.asList(new Value(4),new Value(5),new Value(6));
+  Map<Key,Value> map=F.asMap(new Key(10),new Value(10),new Key(20),new Value(20),new Key(30),new Value(30));
+  CollectionFieldsObject obj=new CollectionFieldsObject(arr,col,map);
+  BinaryObject po=marshal(obj,marsh);
+  Object[] arr0=po.field("arr");
+  assertEquals(3,arr0.length);
+  int i=1;
+  for (  Object valPo : arr0)   assertEquals(i++,((BinaryObject)valPo).<Value>deserialize().val);
+  Collection<BinaryObject> col0=po.field("col");
+  i=4;
+  for (  BinaryObject valPo : col0)   assertEquals(i++,valPo.<Value>deserialize().val);
+  Map<BinaryObject,BinaryObject> map0=po.field("map");
+  for (  Map.Entry<BinaryObject,BinaryObject> e : map0.entrySet())   assertEquals(e.getKey().<Key>deserialize().key,e.getValue().<Value>deserialize().val);
+}
