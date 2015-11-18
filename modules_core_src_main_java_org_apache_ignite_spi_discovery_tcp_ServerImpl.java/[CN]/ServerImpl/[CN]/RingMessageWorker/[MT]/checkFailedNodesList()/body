@@ -1,0 +1,19 @@
+{
+  List<TcpDiscoveryNodeFailedMessage> msgs=null;
+synchronized (mux) {
+    for (Iterator<TcpDiscoveryNode> it=failedNodes.iterator(); it.hasNext(); ) {
+      TcpDiscoveryNode node=it.next();
+      if (ring.node(node.id()) != null) {
+        if (msgs == null)         msgs=new ArrayList<>(failedNodes.size());
+        msgs.add(new TcpDiscoveryNodeFailedMessage(getLocalNodeId(),node.id(),node.internalOrder()));
+      }
+ else       it.remove();
+    }
+  }
+  if (msgs != null) {
+    for (    TcpDiscoveryNodeFailedMessage msg : msgs) {
+      if (log.isDebugEnabled())       log.debug("Add node failed message for node from failed nodes list: " + msg);
+      addMessage(msg);
+    }
+  }
+}

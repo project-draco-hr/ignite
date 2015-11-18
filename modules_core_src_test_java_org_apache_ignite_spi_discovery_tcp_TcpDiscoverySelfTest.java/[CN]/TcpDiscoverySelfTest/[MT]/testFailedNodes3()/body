@@ -1,0 +1,17 @@
+{
+  try {
+    nodeSpi.set(new TestFailedNodesSpi(-1));
+    Ignite ignite0=startGrid(0);
+    nodeSpi.set(new TestFailedNodesSpi(2));
+    Ignite ignite1=startGrid(1);
+    assertEquals(1,ignite1.cluster().nodes().size());
+    waitNodeStop(ignite0.name());
+    ignite1.getOrCreateCache(new CacheConfiguration<>()).put(1,1);
+    startGrid(2);
+    assertEquals(2,ignite1.cluster().nodes().size());
+    tryCreateCache(2);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

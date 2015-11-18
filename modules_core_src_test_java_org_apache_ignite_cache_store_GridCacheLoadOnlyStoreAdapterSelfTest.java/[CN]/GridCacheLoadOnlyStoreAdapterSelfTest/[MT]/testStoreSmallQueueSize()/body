@@ -1,0 +1,18 @@
+{
+  try {
+    int inputSize=1500;
+    store=new ParallelTestStore(inputSize);
+    store.setBatchSize(1);
+    store.setBatchQueueSize(1);
+    store.setThreadsCount(2);
+    startGrids(gridCount());
+    awaitPartitionMapExchange();
+    jcache().localLoadCache(null,1,2,3);
+    int cnt=0;
+    for (int i=0; i < gridCount(); i++)     cnt+=jcache(i).localSize();
+    assertEquals(inputSize,cnt);
+  }
+  finally {
+    stopAllGrids();
+  }
+}
