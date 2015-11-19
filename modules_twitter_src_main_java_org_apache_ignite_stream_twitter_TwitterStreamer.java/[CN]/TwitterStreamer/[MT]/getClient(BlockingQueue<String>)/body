@@ -1,0 +1,36 @@
+{
+  StreamingEndpoint endpoint;
+  HttpHosts hosts;
+switch (endpointUrl.toLowerCase()) {
+case StatusesFilterEndpoint.PATH:
+    endpoint=new StatusesFilterEndpoint();
+  hosts=HttpHosts.STREAM_HOST;
+break;
+case StatusesFirehoseEndpoint.PATH:
+endpoint=new StatusesFirehoseEndpoint();
+hosts=HttpHosts.STREAM_HOST;
+break;
+case StatusesSampleEndpoint.PATH:
+endpoint=new StatusesSampleEndpoint();
+hosts=HttpHosts.STREAM_HOST;
+break;
+case UserstreamEndpoint.PATH:
+endpoint=new UserstreamEndpoint();
+hosts=HttpHosts.USERSTREAM_HOST;
+break;
+case SitestreamEndpoint.PATH:
+String follow=apiParams.remove(SITE_USER_ID_KEY);
+List<Long> followers=Lists.newArrayList();
+for (String follower : Splitter.on(',').trimResults().omitEmptyStrings().split(follow)) followers.add(Long.valueOf(follower));
+endpoint=new SitestreamEndpoint(followers);
+hosts=HttpHosts.SITESTREAM_HOST;
+break;
+default :
+endpoint=new DefaultStreamingEndpoint(endpointUrl,HttpConstants.HTTP_GET,false);
+hosts=HttpHosts.STREAM_HOST;
+}
+for (Map.Entry<String,String> entry : apiParams.entrySet()) {
+endpoint.addPostParameter(entry.getKey(),entry.getValue());
+}
+return buildClient(tweetQueue,hosts,endpoint);
+}
