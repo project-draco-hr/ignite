@@ -21,6 +21,12 @@
     }
   }
 ;
+  IgniteInClosure<IgniteCache<Object,Object>> getAllOp=new CI1<IgniteCache<Object,Object>>(){
+    @Override public void apply(    IgniteCache<Object,Object> cache){
+      cache.getAll(F.asSet(1,2));
+    }
+  }
+;
   int cnt=0;
   for (  CacheAtomicityMode atomicityMode : CacheAtomicityMode.values()) {
     CacheAtomicWriteOrderMode[] writeOrders=atomicityMode == ATOMIC ? CacheAtomicWriteOrderMode.values() : new CacheAtomicWriteOrderMode[]{CacheAtomicWriteOrderMode.CLOCK};
@@ -38,7 +44,8 @@
           client.destroyCache(ccfg.getName());
         }
         log.info("Test cache get [atomicity=" + atomicityMode + ", syncMode="+ syncMode+ ']');
-        checkOperationInProgressFails(client,ccfg,GridNearGetResponse.class,getOp);
+        checkOperationInProgressFails(client,ccfg,GridNearSingleGetResponse.class,getOp);
+        checkOperationInProgressFails(client,ccfg,GridNearGetResponse.class,getAllOp);
         client.destroyCache(ccfg.getName());
       }
     }

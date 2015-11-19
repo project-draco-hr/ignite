@@ -63,14 +63,13 @@ break;
 case 50:
 {
 GridNearGetResponse res=(GridNearGetResponse)msg;
-GridCacheFuture fut=ctx.mvcc().future(res.version(),res.futureId());
+CacheGetFuture fut=(CacheGetFuture)ctx.mvcc().future(res.futureId());
 if (fut == null) {
 if (log.isDebugEnabled()) log.debug("Failed to find future for get response [sender=" + nodeId + ", res="+ res+ ']');
 return;
 }
 res.error(res.classError());
-if (fut instanceof GridNearGetFuture) ((GridNearGetFuture)fut).onResult(nodeId,res);
- else ((GridPartitionedGetFuture)fut).onResult(nodeId,res);
+fut.onResult(nodeId,res);
 }
 break;
 case 51:
@@ -98,6 +97,26 @@ break;
 case 114:
 {
 processMessage(nodeId,msg,c);
+}
+break;
+case 116:
+{
+GridNearSingleGetRequest req=(GridNearSingleGetRequest)msg;
+GridNearSingleGetResponse res=new GridNearSingleGetResponse(ctx.cacheId(),req.futureId(),req.topologyVersion(),null,false,req.deployInfo() != null);
+res.error(req.classError());
+sendResponseOnFailedMessage(nodeId,res,cctx,ctx.ioPolicy());
+}
+break;
+case 117:
+{
+GridNearSingleGetResponse res=(GridNearSingleGetResponse)msg;
+GridPartitionedSingleGetFuture fut=(GridPartitionedSingleGetFuture)ctx.mvcc().future(res.futureId());
+if (fut == null) {
+if (log.isDebugEnabled()) log.debug("Failed to find future for get response [sender=" + nodeId + ", res="+ res+ ']');
+return;
+}
+res.error(res.classError());
+fut.onResult(nodeId,res);
 }
 break;
 default :
