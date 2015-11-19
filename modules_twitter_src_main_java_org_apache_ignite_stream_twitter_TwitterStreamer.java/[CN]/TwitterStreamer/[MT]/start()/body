@@ -1,0 +1,27 @@
+{
+  if (!running.compareAndSet(0,1))   throw new IgniteException("Attempted to start an already started Twitter Streamer");
+  validateConfig();
+  log=getIgnite().log();
+  final BlockingQueue<String> tweetQueue=new LinkedBlockingQueue<>(bufferCapacity);
+  client=getClient(tweetQueue);
+  client.connect();
+  tweetStreamProcessor=Executors.newFixedThreadPool(threadsCount);
+  for (int i=0; i < threadsCount; i++) {
+    Callable<Boolean> task=new Callable<Boolean>(){
+      @Override public Boolean call(){
+        while (true) {
+          try {
+            String tweet=tweetQueue.take();
+            addMessage(tweet);
+          }
+ catch (          InterruptedException e) {
+            U.warn(log,"Tweets transformation was interrupted",e);
+            return true;
+          }
+        }
+      }
+    }
+;
+    tweetStreamProcessor.submit(task);
+  }
+}

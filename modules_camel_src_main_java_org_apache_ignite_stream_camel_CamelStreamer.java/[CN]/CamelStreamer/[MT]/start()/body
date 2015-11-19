@@ -1,0 +1,37 @@
+{
+  A.notNullOrEmpty(endpointUri,"endpoint URI must be provided");
+  A.ensure(!(getSingleTupleExtractor() == null && getMultipleTupleExtractor() == null),"tuple extractor missing");
+  if (camelCtx == null)   camelCtx=new DefaultCamelContext();
+  if (camelCtx.getStatus() == ServiceStatus.Started || camelCtx.getStatus() == ServiceStatus.Starting)   throw new IgniteException("Failed to start Camel streamer (CamelContext already started or starting).");
+  log=getIgnite().log();
+  try {
+    endpoint=CamelContextHelper.getMandatoryEndpoint(camelCtx,endpointUri);
+  }
+ catch (  Exception e) {
+    U.error(log,e);
+    throw new IgniteException("Failed to start Camel streamer [errMsg=" + e.getMessage() + ']');
+  }
+  try {
+    consumer=endpoint.createConsumer(this);
+  }
+ catch (  Exception e) {
+    U.error(log,e);
+    throw new IgniteException("Failed to start Camel streamer [errMsg=" + e.getMessage() + ']');
+  }
+  try {
+    ServiceHelper.startServices(camelCtx,endpoint,consumer);
+  }
+ catch (  Exception e) {
+    U.error(log,e);
+    try {
+      ServiceHelper.stopAndShutdownServices(camelCtx,endpoint,consumer);
+      consumer=null;
+      endpoint=null;
+    }
+ catch (    Exception e1) {
+      throw new IgniteException("Failed to start Camel streamer; failed to stop the context, endpoint or " + "consumer during rollback of failed initialization [errMsg=" + e.getMessage() + ", stopErrMsg="+ e1.getMessage()+ ']');
+    }
+    throw new IgniteException("Failed to start Camel streamer [errMsg=" + e.getMessage() + ']');
+  }
+  U.log(log,"Started Camel streamer consuming from endpoint URI: " + endpointUri);
+}

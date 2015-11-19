@@ -1,0 +1,20 @@
+{
+  if (!processResponse(nodeId))   return false;
+  if (canRemap) {
+    final AffinityTopologyVersion updTopVer=new AffinityTopologyVersion(Math.max(topVer.topologyVersion() + 1,cctx.discovery().topologyVersion()));
+    cctx.affinity().affinityReadyFuture(updTopVer).listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
+      @Override public void apply(      IgniteInternalFuture<AffinityTopologyVersion> fut){
+        try {
+          fut.get();
+          remap(updTopVer);
+        }
+ catch (        IgniteCheckedException e) {
+          onDone(e);
+        }
+      }
+    }
+);
+  }
+ else   remap(topVer);
+  return true;
+}
