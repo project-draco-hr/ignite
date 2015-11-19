@@ -1,7 +1,10 @@
 {
   GridDhtPartitionsSingleMessage m=new GridDhtPartitionsSingleMessage(id,clientOnlyExchange,cctx.versions().last());
   for (  GridCacheContext cacheCtx : cctx.cacheContexts()) {
-    if (!cacheCtx.isLocal())     m.addLocalPartitionMap(cacheCtx.cacheId(),cacheCtx.topology().localPartitionMap());
+    if (!cacheCtx.isLocal()) {
+      m.addLocalPartitionMap(cacheCtx.cacheId(),cacheCtx.topology().localPartitionMap());
+      m.partitionUpdateCounters(cacheCtx.cacheId(),cacheCtx.topology().updateCounters());
+    }
   }
   if (log.isDebugEnabled())   log.debug("Sending local partitions [nodeId=" + node.id() + ", exchId="+ exchId+ ", msg="+ m+ ']');
   cctx.io().send(node,m,SYSTEM_POOL);

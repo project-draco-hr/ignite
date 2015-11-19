@@ -1,0 +1,36 @@
+{
+  this.cfg=cfg;
+  if (drv instanceof IgniteCacheAbstractBenchmark) {
+    IgniteCacheAbstractBenchmark drv0=(IgniteCacheAbstractBenchmark)drv;
+    if (drv0.cache() != null) {
+      ContinuousQuery<Integer,Integer> qry=new ContinuousQuery<>();
+      qry.setLocalListener(new CacheEntryUpdatedListener<Integer,Integer>(){
+        @Override public void onUpdated(        Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> events) throws CacheEntryListenerException {
+          int size=0;
+          for (          CacheEntryEvent<? extends Integer,? extends Integer> e : events)           ++size;
+          cnt.addAndGet(size);
+        }
+      }
+);
+      qryCur=drv0.cache().query(qry);
+      buildingService=Executors.newSingleThreadExecutor();
+      buildingService.submit(new Runnable(){
+        @Override public void run(){
+          try {
+            while (!Thread.currentThread().isInterrupted()) {
+              Thread.sleep(1000);
+              long evts=cnt.getAndSet(0);
+              BenchmarkProbePoint pnt=new BenchmarkProbePoint(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()),new double[]{evts});
+              collectPoint(pnt);
+            }
+          }
+ catch (          InterruptedException e) {
+          }
+        }
+      }
+);
+      println(cfg,getClass().getSimpleName() + " probe is started.");
+    }
+  }
+  if (qryCur == null)   errorHelp(cfg,"Can not start " + getClass().getSimpleName() + " probe. Probably, the driver doesn't provide \"cache()\" method.");
+}

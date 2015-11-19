@@ -1,0 +1,31 @@
+{
+  this.backups=2;
+  final int SRV_NODES=4;
+  startGridsMultiThreaded(SRV_NODES);
+  client=true;
+  Ignite qryClient=startGrid(SRV_NODES);
+  client=false;
+  IgniteCache<Object,Object> qryClnCache=qryClient.cache(null);
+  Affinity<Object> aff=qryClient.affinity(null);
+  final CacheEventListener2 lsnr=new CacheEventListener2();
+  ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+  qry.setLocalListener(lsnr);
+  qry.setRemoteFilter(new CacheEventFilter());
+  QueryCursor<?> cur=qryClnCache.query(qry);
+  for (int i=0; i < 10; i++) {
+    final int idx=i % (SRV_NODES - 1);
+    log.info("Stop node: " + idx);
+    stopGrid(idx);
+    awaitPartitionMapExchange();
+    List<T3<Object,Object,Object>> afterRestEvents=new ArrayList<>();
+    for (int j=0; j < aff.partitions(); j++) {
+      Integer oldVal=(Integer)qryClnCache.get(j);
+      qryClnCache.put(j,i);
+      afterRestEvents.add(new T3<>((Object)j,(Object)i,(Object)oldVal));
+    }
+    checkEvents(new ArrayList<>(afterRestEvents),lsnr,false);
+    log.info("Start node: " + idx);
+    startGrid(idx);
+  }
+  cur.close();
+}
