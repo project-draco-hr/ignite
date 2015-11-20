@@ -4,10 +4,16 @@
     if (!cacheCtx.isLocal()) {
       AffinityTopologyVersion startTopVer=cacheCtx.startTopologyVersion();
       boolean ready=startTopVer == null || startTopVer.compareTo(id.topologyVersion()) <= 0;
-      if (ready)       m.addFullPartitionsMap(cacheCtx.cacheId(),cacheCtx.topology().partitionMap(true));
+      if (ready) {
+        m.addFullPartitionsMap(cacheCtx.cacheId(),cacheCtx.topology().partitionMap(true));
+        m.addPartitionUpdateCounters(cacheCtx.cacheId(),cacheCtx.topology().updateCounters());
+      }
     }
   }
-  for (  GridClientPartitionTopology top : cctx.exchange().clientTopologies())   m.addFullPartitionsMap(top.cacheId(),top.partitionMap(true));
+  for (  GridClientPartitionTopology top : cctx.exchange().clientTopologies()) {
+    m.addFullPartitionsMap(top.cacheId(),top.partitionMap(true));
+    m.addPartitionUpdateCounters(top.cacheId(),top.updateCounters());
+  }
   if (log.isDebugEnabled())   log.debug("Sending full partition map [nodeIds=" + F.viewReadOnly(nodes,F.node2id()) + ", exchId="+ exchId+ ", msg="+ m+ ']');
   cctx.io().safeSend(nodes,m,SYSTEM_POOL,null);
 }

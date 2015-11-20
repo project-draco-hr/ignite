@@ -25,5 +25,10 @@ synchronized (this) {
     }
   }
   IgniteInternalTx tx=cctx.tm().localTxx();
-  return tx == null || !tx.removed(txKey());
+  if (tx != null) {
+    IgniteTxEntry e=tx.entry(txKey());
+    boolean rmvd=e != null && e.op() == DELETE;
+    return !rmvd;
+  }
+  return true;
 }

@@ -1,0 +1,22 @@
+{
+  try {
+    for (    CacheEntryEvent<?,?> evt : evts) {
+      CountDownLatch latch=this.latch;
+      log.info("Received cache event [evt=" + evt + ", left="+ (latch != null ? latch.getCount() : null)+ ']');
+      this.evts.put(evt.getKey(),evt);
+      keys.add((Integer)evt.getKey());
+      if (allEvts != null)       allEvts.add(evt);
+      assertTrue(latch != null);
+      assertTrue(latch.getCount() > 0);
+      latch.countDown();
+      if (latch.getCount() == 0) {
+        this.latch=null;
+        keys.clear();
+      }
+    }
+  }
+ catch (  Throwable e) {
+    err=true;
+    log.error("Unexpected error",e);
+  }
+}

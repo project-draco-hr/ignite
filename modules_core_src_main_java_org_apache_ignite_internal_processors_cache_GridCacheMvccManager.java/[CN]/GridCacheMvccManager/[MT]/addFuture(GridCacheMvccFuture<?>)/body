@@ -1,0 +1,51 @@
+{
+  if (fut.isDone()) {
+    fut.markNotTrackable();
+    return true;
+  }
+  if (!fut.trackable())   return true;
+  while (true) {
+    Collection<GridCacheMvccFuture<?>> old=mvccFuts.get(fut.version());
+    if (old == null) {
+      Collection<GridCacheMvccFuture<?>> col=new HashSet<GridCacheMvccFuture<?>>(U.capacity(4),0.75f){
+{
+          add(fut);
+        }
+        @Override public int hashCode(){
+          return System.identityHashCode(this);
+        }
+        @Override public boolean equals(        Object obj){
+          return obj == this;
+        }
+      }
+;
+      old=mvccFuts.putIfAbsent(fut.version(),col);
+    }
+    if (old != null) {
+      boolean empty, dup=false;
+synchronized (old) {
+        empty=old.isEmpty();
+        if (!empty)         dup=!old.add(fut);
+      }
+      if (empty) {
+        if (mvccFuts.remove(fut.version(),old)) {
+          if (log.isDebugEnabled())           log.debug("Removed future list from futures map for lock version: " + fut.version());
+        }
+        continue;
+      }
+      if (dup) {
+        if (log.isDebugEnabled())         log.debug("Found duplicate future in futures map (will not add): " + fut);
+        return false;
+      }
+    }
+    if (fut instanceof GridCacheMappedVersion) {
+      GridCacheVersion from=((GridCacheMappedVersion)fut).mappedVersion();
+      if (from != null)       mapVersion(from,fut.version());
+    }
+    if (log.isDebugEnabled())     log.debug("Added future to future map: " + fut);
+    break;
+  }
+  if (fut.isDone())   removeMvccFuture(fut);
+ else   onFutureAdded(fut);
+  return true;
+}

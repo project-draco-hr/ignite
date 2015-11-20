@@ -1,0 +1,19 @@
+{
+  this.backups=2;
+  final int SRV_NODES=4;
+  startGridsMultiThreaded(SRV_NODES);
+  client=true;
+  Ignite qryClient=startGrid(SRV_NODES);
+  client=false;
+  IgniteCache<Object,Object> qryClnCache=qryClient.cache(null);
+  final CacheEventListener3 lsnr=new CacheEventListener3();
+  ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+  qry.setLocalListener(lsnr);
+  qry.setRemoteFilter(new CacheEventFilter());
+  try (QueryCursor<?> cur=qryClnCache.query(qry)){
+    List<Integer> keys=testKeys(grid(0).cache(null),1);
+    for (    Integer key : keys)     qryClnCache.put(key,-1);
+    qryClnCache.put(keys.get(0),100);
+  }
+   assertEquals(lsnr.evts.size(),1);
+}

@@ -1,0 +1,18 @@
+{
+  A.notNull(springCfgPath,"Ignite config file");
+  A.notNull(cacheName,"Cache name");
+  A.notNull(eventTransformerCls,"Event transformer class");
+  sinkCounter.start();
+  try {
+    if (ignite == null)     ignite=Ignition.start(springCfgPath);
+    if (eventTransformerCls != null && !eventTransformerCls.isEmpty()) {
+      Class<? extends EventTransformer> clazz=(Class<? extends EventTransformer<Event,Object,Object>>)Class.forName(eventTransformerCls);
+      eventTransformer=clazz.newInstance();
+    }
+  }
+ catch (  Exception e) {
+    log.error("Failed to start grid",e);
+    throw new FlumeException("Failed to start grid",e);
+  }
+  super.start();
+}

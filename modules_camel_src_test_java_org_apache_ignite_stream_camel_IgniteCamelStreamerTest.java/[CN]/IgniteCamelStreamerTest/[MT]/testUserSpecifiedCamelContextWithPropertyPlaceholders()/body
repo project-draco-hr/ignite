@@ -1,0 +1,15 @@
+{
+  CamelContext context=new DefaultCamelContext();
+  PropertiesComponent pc=new PropertiesComponent("camel.test.properties");
+  context.addComponent("properties",pc);
+  url=url.replaceAll("/ignite","{{test.contextPath}}");
+  streamer=createCamelStreamer(dataStreamer);
+  streamer.setSingleTupleExtractor(singleTupleExtractor());
+  streamer.setCamelContext(context);
+  CountDownLatch latch=subscribeToPutEvents(50);
+  streamer.start();
+  url=streamer.getCamelContext().getEndpoints().iterator().next().getEndpointUri().replaceAll("jetty:","");
+  sendMessages(0,50,false);
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+  assertCacheEntriesLoaded(50);
+}

@@ -1,0 +1,108 @@
+{
+  this.backups=atomicityMode() == CacheAtomicityMode.ATOMIC ? backups : backups < 2 ? 2 : backups;
+  final int SRV_NODES=4;
+  startGridsMultiThreaded(SRV_NODES);
+  client=true;
+  Ignite qryClient=startGrid(SRV_NODES);
+  client=false;
+  IgniteCache<Object,Object> qryClientCache=qryClient.cache(null);
+  Affinity<Object> aff=qryClient.affinity(null);
+  CacheEventListener1 lsnr=new CacheEventListener1(false);
+  ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+  qry.setLocalListener(lsnr);
+  QueryCursor<?> cur=qryClientCache.query(qry);
+  int PARTS=10;
+  Map<Object,T2<Object,Object>> updates=new HashMap<>();
+  List<T3<Object,Object,Object>> expEvts=new ArrayList<>();
+  for (int i=0; i < (atomicityMode() == CacheAtomicityMode.ATOMIC ? SRV_NODES - 1 : SRV_NODES - 2); i++) {
+    log.info("Stop iteration: " + i);
+    TestCommunicationSpi spi=(TestCommunicationSpi)ignite(i).configuration().getCommunicationSpi();
+    Ignite ignite=ignite(i);
+    IgniteCache<Object,Object> cache=ignite.cache(null);
+    List<Integer> keys=testKeys(cache,PARTS);
+    CountDownLatch latch=new CountDownLatch(keys.size());
+    lsnr.latch=latch;
+    boolean first=true;
+    for (    Integer key : keys) {
+      log.info("Put [node=" + ignite.name() + ", key="+ key+ ", part="+ aff.partition(key)+ ']');
+      T2<Object,Object> t=updates.get(key);
+      if (updateFromClient) {
+        if (atomicityMode() == CacheAtomicityMode.TRANSACTIONAL) {
+          try (Transaction tx=qryClient.transactions().txStart()){
+            qryClientCache.put(key,key);
+            tx.commit();
+          }
+ catch (          CacheException|ClusterTopologyException e) {
+            log.warning("Failed put. [Key=" + key + ", val="+ key+ "]");
+            continue;
+          }
+        }
+ else         qryClientCache.put(key,key);
+      }
+ else {
+        if (atomicityMode() == CacheAtomicityMode.TRANSACTIONAL) {
+          try (Transaction tx=ignite.transactions().txStart()){
+            cache.put(key,key);
+            tx.commit();
+          }
+ catch (          CacheException|ClusterTopologyException e) {
+            log.warning("Failed put. [Key=" + key + ", val="+ key+ "]");
+            continue;
+          }
+        }
+ else         cache.put(key,key);
+      }
+      if (t == null) {
+        updates.put(key,new T2<>((Object)key,null));
+        expEvts.add(new T3<>((Object)key,(Object)key,null));
+      }
+ else {
+        updates.put(key,new T2<>((Object)key,(Object)key));
+        expEvts.add(new T3<>((Object)key,(Object)key,(Object)key));
+      }
+      if (first) {
+        spi.skipMsg=true;
+        first=false;
+      }
+    }
+    stopGrid(i);
+    if (!latch.await(5,SECONDS)) {
+      Set<Integer> keys0=new HashSet<>(keys);
+      keys0.removeAll(lsnr.keys);
+      log.info("Missed events for keys: " + keys0);
+      fail("Failed to wait for notifications [exp=" + keys.size() + ", left="+ lsnr.latch.getCount()+ ']');
+    }
+    checkEvents(expEvts,lsnr);
+  }
+  for (int i=0; i < (atomicityMode() == CacheAtomicityMode.ATOMIC ? SRV_NODES - 1 : SRV_NODES - 2); i++) {
+    log.info("Start iteration: " + i);
+    Ignite ignite=startGrid(i);
+    IgniteCache<Object,Object> cache=ignite.cache(null);
+    List<Integer> keys=testKeys(cache,PARTS);
+    CountDownLatch latch=new CountDownLatch(keys.size());
+    lsnr.latch=latch;
+    for (    Integer key : keys) {
+      log.info("Put [node=" + ignite.name() + ", key="+ key+ ", part="+ aff.partition(key)+ ']');
+      T2<Object,Object> t=updates.get(key);
+      if (t == null) {
+        updates.put(key,new T2<>((Object)key,null));
+        expEvts.add(new T3<>((Object)key,(Object)key,null));
+      }
+ else {
+        updates.put(key,new T2<>((Object)key,(Object)key));
+        expEvts.add(new T3<>((Object)key,(Object)key,(Object)key));
+      }
+      if (updateFromClient)       qryClientCache.put(key,key);
+ else       cache.put(key,key);
+    }
+    if (!latch.await(10,SECONDS)) {
+      Set<Integer> keys0=new HashSet<>(keys);
+      keys0.removeAll(lsnr.keys);
+      log.info("Missed events for keys: " + keys0);
+      fail("Failed to wait for notifications [exp=" + keys.size() + ", left="+ lsnr.latch.getCount()+ ']');
+    }
+    checkEvents(expEvts,lsnr);
+  }
+  cur.close();
+  assertFalse("Unexpected error during test, see log for details.",err);
+}

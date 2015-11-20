@@ -1,0 +1,32 @@
+{
+  startGrids(2);
+  client=true;
+  final int CLIENT_ID=3;
+  Ignite clientNode=startGrid(CLIENT_ID);
+  client=false;
+  for (int i=0; i < 10; i++) {
+    log.info("Start iteration: " + i);
+    final CacheEventListener lsnr=new CacheEventListener();
+    ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+    qry.setLocalListener(lsnr);
+    QueryCursor<?> cur=clientNode.cache(null).query(qry);
+    lsnr.latch=new CountDownLatch(1);
+    Ignite joined1=startGrid(4);
+    IgniteCache<Object,Object> joinedCache1=joined1.cache(null);
+    joinedCache1.put(primaryKey(joinedCache1),1);
+    assertTrue("Failed to wait for event.",lsnr.latch.await(5,SECONDS));
+    cur.close();
+    lsnr.latch=new CountDownLatch(1);
+    Ignite joined2=startGrid(5);
+    IgniteCache<Object,Object> joinedCache2=joined2.cache(null);
+    joinedCache2.put(primaryKey(joinedCache2),2);
+    assertFalse("Unexpected event received.",GridTestUtils.waitForCondition(new GridAbsPredicate(){
+      @Override public boolean apply(){
+        return 1 != lsnr.latch.getCount();
+      }
+    }
+,1000));
+    stopGrid(4);
+    stopGrid(5);
+  }
+}

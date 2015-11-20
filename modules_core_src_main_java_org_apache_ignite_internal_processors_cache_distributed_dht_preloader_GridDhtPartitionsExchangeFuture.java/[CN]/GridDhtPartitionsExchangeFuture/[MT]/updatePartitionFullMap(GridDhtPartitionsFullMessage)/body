@@ -1,11 +1,12 @@
 {
   for (  Map.Entry<Integer,GridDhtPartitionFullMap> entry : msg.partitions().entrySet()) {
     Integer cacheId=entry.getKey();
+    Map<Integer,Long> cntrMap=msg.partitionUpdateCounters(cacheId);
     GridCacheContext cacheCtx=cctx.cacheContext(cacheId);
-    if (cacheCtx != null)     cacheCtx.topology().update(exchId,entry.getValue());
+    if (cacheCtx != null)     cacheCtx.topology().update(exchId,entry.getValue(),cntrMap);
  else {
       ClusterNode oldest=CU.oldestAliveCacheServerNode(cctx,AffinityTopologyVersion.NONE);
-      if (oldest != null && oldest.isLocal())       cctx.exchange().clientTopology(cacheId,this).update(exchId,entry.getValue());
+      if (oldest != null && oldest.isLocal())       cctx.exchange().clientTopology(cacheId,this).update(exchId,entry.getValue(),cntrMap);
     }
   }
 }

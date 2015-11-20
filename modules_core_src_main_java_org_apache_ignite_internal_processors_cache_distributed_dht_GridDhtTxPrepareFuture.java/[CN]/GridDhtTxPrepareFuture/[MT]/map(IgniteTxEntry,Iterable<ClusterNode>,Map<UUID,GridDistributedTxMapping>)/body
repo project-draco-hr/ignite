@@ -1,0 +1,18 @@
+{
+  if (nodes != null) {
+    for (    ClusterNode n : nodes) {
+      GridDistributedTxMapping global=globalMap.get(n.id());
+      if (!F.isEmpty(entry.entryProcessors())) {
+        GridDhtPartitionState state=entry.context().topology().partitionState(n.id(),entry.cached().partition());
+        if (state != GridDhtPartitionState.OWNING && state != GridDhtPartitionState.EVICTED) {
+          CacheObject procVal=entry.entryProcessorCalculatedValue();
+          entry.op(procVal == null ? DELETE : UPDATE);
+          entry.value(procVal,true,false);
+          entry.entryProcessors(null);
+        }
+      }
+      if (global == null)       globalMap.put(n.id(),global=new GridDistributedTxMapping(n));
+      global.add(entry);
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  Object msg0=((GridIoMessage)msg).message();
+  if (skipAllMsg)   return;
+  if (msg0 instanceof GridContinuousMessage) {
+    if (skipMsg) {
+      if (log.isDebugEnabled())       log.debug("Skip continuous message: " + msg0);
+      return;
+    }
+ else {
+      AtomicBoolean sndFirstOnly=this.sndFirstOnly;
+      if (sndFirstOnly != null && !sndFirstOnly.compareAndSet(false,true)) {
+        if (log.isDebugEnabled())         log.debug("Skip continuous message: " + msg0);
+        return;
+      }
+    }
+  }
+  super.sendMessage(node,msg,ackC);
+}

@@ -1,0 +1,33 @@
+{
+  startGrids(3);
+  client=true;
+  final int CLIENT_ID=3;
+  Ignite clnNode=startGrid(CLIENT_ID);
+  client=false;
+  IgniteOutClosure<IgniteCache<Integer,Integer>> rndCache=new IgniteOutClosure<IgniteCache<Integer,Integer>>(){
+    int cnt=0;
+    @Override public IgniteCache<Integer,Integer> apply(){
+      ++cnt;
+      return grid(CLIENT_ID).cache(null);
+    }
+  }
+;
+  final CacheEventListener lsnr=new CacheEventListener();
+  ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+  qry.setLocalListener(lsnr);
+  QueryCursor<?> cur=clnNode.cache(null).query(qry);
+  boolean first=true;
+  int keyCnt=1;
+  for (int i=0; i < 10; i++) {
+    log.info("Start iteration: " + i);
+    if (first)     first=false;
+ else {
+      for (int srv=0; srv < CLIENT_ID - 1; srv++)       startGrid(srv);
+    }
+    lsnr.latch=new CountDownLatch(keyCnt);
+    for (int key=0; key < keyCnt; key++)     rndCache.apply().put(key,key);
+    assertTrue("Failed to wait for event. Left events: " + lsnr.latch.getCount(),lsnr.latch.await(10,SECONDS));
+    for (int srv=0; srv < CLIENT_ID - 1; srv++)     stopGrid(srv);
+  }
+  cur.close();
+}
