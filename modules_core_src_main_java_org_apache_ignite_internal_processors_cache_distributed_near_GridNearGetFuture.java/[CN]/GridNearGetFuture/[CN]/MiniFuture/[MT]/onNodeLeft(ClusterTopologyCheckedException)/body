@@ -8,23 +8,18 @@
   }
  else {
     final AffinityTopologyVersion updTopVer=new AffinityTopologyVersion(Math.max(topVer.topologyVersion() + 1,cctx.discovery().topologyVersion()));
-    final GridFutureRemapTimeoutObject timeout=new GridFutureRemapTimeoutObject(this,cctx.kernalContext().config().getNetworkTimeout(),updTopVer,e);
     cctx.affinity().affinityReadyFuture(updTopVer).listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
       @Override public void apply(      IgniteInternalFuture<AffinityTopologyVersion> fut){
-        if (timeout.finish()) {
-          cctx.kernalContext().timeout().removeTimeoutObject(timeout);
-          try {
-            fut.get();
-            map(keys.keySet(),F.t(node,keys),updTopVer);
-            onDone(Collections.<K,V>emptyMap());
-          }
- catch (          IgniteCheckedException e) {
-            GridNearGetFuture.this.onDone(e);
-          }
+        try {
+          fut.get();
+          map(keys.keySet(),F.t(node,keys),updTopVer);
+          onDone(Collections.<K,V>emptyMap());
+        }
+ catch (        IgniteCheckedException e) {
+          GridNearGetFuture.this.onDone(e);
         }
       }
     }
 );
-    cctx.kernalContext().timeout().addTimeoutObject(timeout);
   }
 }

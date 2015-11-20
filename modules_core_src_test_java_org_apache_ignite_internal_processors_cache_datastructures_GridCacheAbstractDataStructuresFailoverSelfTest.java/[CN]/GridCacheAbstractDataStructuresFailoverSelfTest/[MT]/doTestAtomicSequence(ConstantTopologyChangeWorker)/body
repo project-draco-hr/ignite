@@ -1,0 +1,19 @@
+{
+  try (IgniteAtomicSequence s=grid(0).atomicSequence(STRUCTURE_NAME,1,true)){
+    IgniteInternalFuture<?> fut=topWorker.startChangingTopology(new IgniteClosure<Ignite,Object>(){
+      @Override public Object apply(      Ignite ignite){
+        assertTrue(ignite.atomicSequence(STRUCTURE_NAME,1,false).get() > 0);
+        return null;
+      }
+    }
+);
+    long old=s.get();
+    while (!fut.isDone()) {
+      assertEquals(old,s.get());
+      long val=s.incrementAndGet();
+      assertTrue(val > old);
+      old=val;
+    }
+    fut.get();
+  }
+ }

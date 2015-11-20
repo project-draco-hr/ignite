@@ -1,0 +1,57 @@
+{
+  final Semaphore sem=new Semaphore(TOP_CHANGE_THREAD_CNT);
+  final ConcurrentSkipListSet<String> startedNodes=new ConcurrentSkipListSet<>();
+  barrier=new CyclicBarrier(TOP_CHANGE_THREAD_CNT,new Runnable(){
+    @Override public void run(){
+      try {
+        assertEquals(TOP_CHANGE_THREAD_CNT * 3,startedNodes.size());
+        for (        String name : startedNodes) {
+          stopGrid(name,false);
+          awaitPartitionMapExchange();
+        }
+        startedNodes.clear();
+        sem.release(TOP_CHANGE_THREAD_CNT);
+        barrier.reset();
+      }
+ catch (      Exception e) {
+        if (failed.compareAndSet(false,true)) {
+          sem.release(TOP_CHANGE_THREAD_CNT);
+          barrier.reset();
+          throw F.wrap(e);
+        }
+      }
+    }
+  }
+);
+  IgniteInternalFuture<?> fut=GridTestUtils.runMultiThreadedAsync(new CA(){
+    @Override public void apply(){
+      try {
+        for (int i=0; i < TOP_CHANGE_CNT; i++) {
+          sem.acquire();
+          if (failed.get())           return;
+          for (int j=0; j < 3; j++) {
+            if (failed.get())             return;
+            String name=UUID.randomUUID().toString();
+            startedNodes.add(name);
+            Ignite g=startGrid(name);
+            callback.apply(g);
+          }
+          try {
+            barrier.await();
+          }
+ catch (          BrokenBarrierException e) {
+          }
+        }
+      }
+ catch (      Exception e) {
+        if (failed.compareAndSet(false,true)) {
+          sem.release(TOP_CHANGE_THREAD_CNT);
+          barrier.reset();
+          throw F.wrap(e);
+        }
+      }
+    }
+  }
+,TOP_CHANGE_THREAD_CNT,"topology-change-thread");
+  return fut;
+}

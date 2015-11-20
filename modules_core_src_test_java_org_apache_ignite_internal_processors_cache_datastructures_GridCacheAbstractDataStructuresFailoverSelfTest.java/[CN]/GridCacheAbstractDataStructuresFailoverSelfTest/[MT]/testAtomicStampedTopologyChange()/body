@@ -1,2 +1,13 @@
 {
-}
+  try (IgniteAtomicStamped atomic=grid(0).atomicStamped(STRUCTURE_NAME,10,10,true)){
+    Ignite g=startGrid(NEW_GRID_NAME);
+    IgniteBiTuple<Integer,Integer> t=g.atomicStamped(STRUCTURE_NAME,10,10,false).get();
+    assertEquals((Integer)10,t.get1());
+    assertEquals((Integer)10,t.get2());
+    g.atomicStamped(STRUCTURE_NAME,10,10,false).set(20,20);
+    stopGrid(NEW_GRID_NAME);
+    t=grid(0).atomicStamped(STRUCTURE_NAME,10,10,false).get();
+    assertEquals((Integer)20,t.get1());
+    assertEquals((Integer)20,t.get2());
+  }
+ }

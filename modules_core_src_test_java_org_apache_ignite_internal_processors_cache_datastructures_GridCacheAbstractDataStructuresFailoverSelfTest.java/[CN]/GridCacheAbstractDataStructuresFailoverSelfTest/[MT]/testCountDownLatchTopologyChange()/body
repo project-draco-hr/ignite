@@ -1,2 +1,14 @@
 {
-}
+  try (IgniteCountDownLatch latch=grid(0).countDownLatch(STRUCTURE_NAME,20,true,true)){
+    try {
+      Ignite g=startGrid(NEW_GRID_NAME);
+      assertEquals(20,g.countDownLatch(STRUCTURE_NAME,20,true,false).count());
+      g.countDownLatch(STRUCTURE_NAME,20,true,false).countDown(10);
+      stopGrid(NEW_GRID_NAME);
+      assertEquals(10,grid(0).countDownLatch(STRUCTURE_NAME,20,true,false).count());
+    }
+  finally {
+      grid(0).countDownLatch(STRUCTURE_NAME,20,true,false).countDownAll();
+    }
+  }
+ }

@@ -4,6 +4,7 @@
     final Ignite failedNode=startGrid("testPingInterruptedOnNodeFailedFailingNode");
     startGrid("testPingInterruptedOnNodeFailedSimpleNode");
     ((TestTcpDiscoverySpi)failedNode.configuration().getDiscoverySpi()).ignorePingResponse=true;
+    final UUID failedNodeId=failedNode.cluster().localNode().id();
     final CountDownLatch pingLatch=new CountDownLatch(1);
     final CountDownLatch eventLatch=new CountDownLatch(1);
     final AtomicBoolean pingRes=new AtomicBoolean(true);
@@ -11,7 +12,7 @@
     long startTs=System.currentTimeMillis();
     pingingNode.events().localListen(new IgnitePredicate<Event>(){
       @Override public boolean apply(      Event event){
-        if (((DiscoveryEvent)event).eventNode().id().equals(failedNode.cluster().localNode().id())) {
+        if (((DiscoveryEvent)event).eventNode().id().equals(failedNodeId)) {
           failRes.set(true);
           eventLatch.countDown();
         }
@@ -22,7 +23,7 @@
     IgniteInternalFuture<?> pingFut=multithreadedAsync(new Callable<Object>(){
       @Override public Object call() throws Exception {
         pingLatch.countDown();
-        pingRes.set(pingingNode.configuration().getDiscoverySpi().pingNode(failedNode.cluster().localNode().id()));
+        pingRes.set(pingingNode.configuration().getDiscoverySpi().pingNode(failedNodeId));
         return null;
       }
     }
