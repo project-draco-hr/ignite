@@ -1,0 +1,26 @@
+{
+  Ignite qryClient=startGridsMultiThreaded(2);
+  CacheEventListener1 lsnr=new CacheEventListener1(false);
+  ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+  qry.setLocalListener(lsnr);
+  IgniteCache<Object,Object> cache=qryClient.cache(null);
+  QueryCursor<?> cur=cache.query(qry);
+  final Collection<Object> backupQueue=backupQueue(ignite(1));
+  assertEquals(0,backupQueue.size());
+  List<Integer> keys=primaryKeys(cache,BACKUP_ACK_THRESHOLD);
+  CountDownLatch latch=new CountDownLatch(keys.size());
+  lsnr.latch=latch;
+  for (  Integer key : keys) {
+    log.info("Put: " + key);
+    cache.put(key,key);
+  }
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return backupQueue.isEmpty();
+    }
+  }
+,3000);
+  assertTrue("Backup queue is not cleared: " + backupQueue,backupQueue.size() < BACKUP_ACK_THRESHOLD);
+  if (!latch.await(5,SECONDS))   fail("Failed to wait for notifications [exp=" + keys.size() + ", left="+ lsnr.latch.getCount()+ ']');
+  cur.close();
+}

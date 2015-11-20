@@ -1,0 +1,47 @@
+{
+  CacheConfiguration<Integer,Integer> ccfg=cache.getConfiguration(CacheConfiguration.class);
+  Ignite node=cache.unwrap(Ignite.class);
+  TestCommunicationSpi spi=(TestCommunicationSpi)node.configuration().getCommunicationSpi();
+  spi.record(GridNearSingleGetRequest.class);
+  Ignite primary=primaryNode(key,cache.getName());
+  assertNotSame(node,primary);
+  TestCommunicationSpi primarySpi=(TestCommunicationSpi)primary.configuration().getCommunicationSpi();
+  primarySpi.record(GridNearSingleGetResponse.class);
+  assertNull(cache.get(key));
+  checkMessages(spi,primarySpi);
+  assertFalse(cache.containsKey(key));
+  checkMessages(spi,primarySpi);
+  cache.put(key,1);
+  assertNotNull(cache.get(key));
+  if (backup)   checkNoMessages(spi,primarySpi);
+ else   checkMessages(spi,primarySpi);
+  assertTrue(cache.containsKey(key));
+  if (backup)   checkNoMessages(spi,primarySpi);
+ else   checkMessages(spi,primarySpi);
+  if (ccfg.getAtomicityMode() == TRANSACTIONAL) {
+    cache.remove(key);
+    try (Transaction tx=node.transactions().txStart(OPTIMISTIC,REPEATABLE_READ)){
+      assertNull(cache.get(key));
+      tx.commit();
+    }
+     checkMessages(spi,primarySpi);
+    try (Transaction tx=node.transactions().txStart(OPTIMISTIC,REPEATABLE_READ)){
+      assertFalse(cache.containsKey(key));
+      tx.commit();
+    }
+     checkMessages(spi,primarySpi);
+    cache.put(key,1);
+    try (Transaction tx=node.transactions().txStart(OPTIMISTIC,REPEATABLE_READ)){
+      assertNotNull(cache.get(key));
+      tx.commit();
+    }
+     if (backup)     checkNoMessages(spi,primarySpi);
+ else     checkMessages(spi,primarySpi);
+    try (Transaction tx=node.transactions().txStart(OPTIMISTIC,REPEATABLE_READ)){
+      assertTrue(cache.containsKey(key));
+      tx.commit();
+    }
+     if (backup)     checkNoMessages(spi,primarySpi);
+ else     checkMessages(spi,primarySpi);
+  }
+}

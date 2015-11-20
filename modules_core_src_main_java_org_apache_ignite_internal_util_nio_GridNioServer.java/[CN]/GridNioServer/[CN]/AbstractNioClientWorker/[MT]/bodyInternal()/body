@@ -1,5 +1,6 @@
 {
   try {
+    long lastIdleCheck=U.currentTimeMillis();
     while (!closed && selector.isOpen()) {
       NioOperationFuture req;
       while ((req=changeReqs.poll()) != null) {
@@ -50,8 +51,14 @@ case RESUME_READ:
   }
 }
 }
-if (selector.select(2000) > 0) processSelectedKeys(selector.selectedKeys());
+if (selector.select(2000) > 0) {
+processSelectedKeys(selector.selectedKeys());
+}
+long now=U.currentTimeMillis();
+if (now - lastIdleCheck > 2000) {
+lastIdleCheck=now;
 checkIdle(selector.keys());
+}
 }
 }
  catch (ClosedByInterruptException e) {

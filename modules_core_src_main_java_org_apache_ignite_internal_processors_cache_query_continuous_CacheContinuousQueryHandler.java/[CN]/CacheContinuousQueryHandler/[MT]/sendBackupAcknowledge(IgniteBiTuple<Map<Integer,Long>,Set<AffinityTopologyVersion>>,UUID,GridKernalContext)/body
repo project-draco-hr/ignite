@@ -1,0 +1,28 @@
+{
+  if (t != null) {
+    ctx.closure().runLocalSafe(new Runnable(){
+      @Override public void run(){
+        GridCacheContext<K,V> cctx=cacheContext(ctx);
+        CacheContinuousQueryBatchAck msg=new CacheContinuousQueryBatchAck(cctx.cacheId(),routineId,t.get1());
+        Collection<ClusterNode> nodes=new HashSet<>();
+        for (        AffinityTopologyVersion topVer : t.get2())         nodes.addAll(ctx.discovery().cacheNodes(topVer));
+        for (        ClusterNode node : nodes) {
+          if (!node.id().equals(ctx.localNodeId())) {
+            try {
+              cctx.io().send(node,msg,GridIoPolicy.SYSTEM_POOL);
+            }
+ catch (            ClusterTopologyCheckedException e) {
+              IgniteLogger log=ctx.log(getClass());
+              if (log.isDebugEnabled())               log.debug("Failed to send acknowledge message, node left " + "[msg=" + msg + ", node="+ node+ ']');
+            }
+catch (            IgniteCheckedException e) {
+              IgniteLogger log=ctx.log(getClass());
+              U.error(log,"Failed to send acknowledge message " + "[msg=" + msg + ", node="+ node+ ']',e);
+            }
+          }
+        }
+      }
+    }
+);
+  }
+}

@@ -1,0 +1,16 @@
+{
+  return new StreamMultipleTupleExtractor<Exchange,Integer,String>(){
+    @Override public Map<Integer,String> extract(    Exchange exchange){
+      final Map<String,String> map=Splitter.on("\n").omitEmptyStrings().withKeyValueSeparator(",").split(exchange.getIn().getBody(String.class));
+      final Map<Integer,String> answer=new HashMap<>();
+      F.forEach(map.keySet(),new IgniteInClosure<String>(){
+        @Override public void apply(        String s){
+          answer.put(Integer.parseInt(s),map.get(s));
+        }
+      }
+);
+      return answer;
+    }
+  }
+;
+}

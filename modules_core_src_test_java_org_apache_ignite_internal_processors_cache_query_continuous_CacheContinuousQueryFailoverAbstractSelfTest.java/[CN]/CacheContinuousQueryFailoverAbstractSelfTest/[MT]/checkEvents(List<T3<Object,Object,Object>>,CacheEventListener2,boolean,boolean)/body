@@ -1,0 +1,67 @@
+{
+  if (wait)   GridTestUtils.waitForCondition(new PA(){
+    @Override public boolean apply(){
+      return expEvts.size() == lsnr.size();
+    }
+  }
+,2000L);
+  Map<Integer,List<CacheEntryEvent<?,?>>> prevMap=new HashMap<>(lsnr.evts.size());
+  for (  Map.Entry<Integer,List<CacheEntryEvent<?,?>>> e : lsnr.evts.entrySet())   prevMap.put(e.getKey(),new ArrayList<>(e.getValue()));
+  List<T3<Object,Object,Object>> lostEvents=new ArrayList<>();
+  for (  T3<Object,Object,Object> exp : expEvts) {
+    List<CacheEntryEvent<?,?>> rcvdEvts=lsnr.evts.get(exp.get1());
+    if (F.eq(exp.get2(),exp.get3()))     continue;
+    if (rcvdEvts == null || rcvdEvts.isEmpty()) {
+      lostEvents.add(exp);
+      continue;
+    }
+    Iterator<CacheEntryEvent<?,?>> iter=rcvdEvts.iterator();
+    boolean found=false;
+    while (iter.hasNext()) {
+      CacheEntryEvent<?,?> e=iter.next();
+      if ((exp.get2() != null && e.getValue() != null && exp.get2().equals(e.getValue())) && equalOldValue(e,exp)) {
+        found=true;
+        iter.remove();
+        break;
+      }
+    }
+    if (!found)     lostEvents.add(exp);
+  }
+  boolean dup=false;
+  if (!lsnr.evts.isEmpty()) {
+    for (    List<CacheEntryEvent<?,?>> evts : lsnr.evts.values()) {
+      if (!evts.isEmpty()) {
+        for (        CacheEntryEvent<?,?> e : evts) {
+          boolean found=false;
+          for (          T3<Object,Object,Object> lostEvt : lostEvents) {
+            if (e.getKey().equals(lostEvt.get1()) && e.getValue().equals(lostEvt.get2())) {
+              found=true;
+              lostEvents.remove(lostEvt);
+              break;
+            }
+          }
+          if (!found) {
+            dup=true;
+            break;
+          }
+        }
+      }
+    }
+    if (dup) {
+      for (      List<CacheEntryEvent<?,?>> e : lsnr.evts.values()) {
+        if (!e.isEmpty()) {
+          for (          CacheEntryEvent<?,?> event : e)           log.error("Got duplicate event: " + event);
+        }
+      }
+    }
+  }
+  if (!lostAllow && lostEvents.size() > 100) {
+    log.error("Lost event cnt: " + lostEvents.size());
+    for (    T3<Object,Object,Object> e : lostEvents)     log.error("Lost event: " + e);
+    fail("Lose events, see log for details.");
+  }
+  log.error("Lost event cnt: " + lostEvents.size());
+  expEvts.clear();
+  lsnr.evts.clear();
+  lsnr.vals.clear();
+}

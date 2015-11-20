@@ -10,5 +10,10 @@
     dhtVerKeys=dhtVers.keySet();
     dhtVerVals=dhtVers.values();
   }
-  if (txNodes != null)   txNodesBytes=ctx.marshaller().marshal(txNodes);
+  if (ctx.exchange().minimumNodeVersion(topologyVersion()).compareTo(TX_NODES_DIRECT_MARSHALLABLE_SINCE) < 0) {
+    if (txNodes != null && txNodesBytes == null)     txNodesBytes=ctx.marshaller().marshal(txNodes);
+  }
+ else {
+    if (txNodesMsg == null)     txNodesMsg=F.viewReadOnly(txNodes,COL_TO_MSG);
+  }
 }
