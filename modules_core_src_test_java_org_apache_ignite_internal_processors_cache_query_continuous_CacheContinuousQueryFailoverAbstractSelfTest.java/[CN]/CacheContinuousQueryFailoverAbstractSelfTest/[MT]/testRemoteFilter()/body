@@ -1,0 +1,62 @@
+{
+  this.backups=2;
+  final int SRV_NODES=4;
+  startGridsMultiThreaded(SRV_NODES);
+  client=true;
+  Ignite qryClient=startGrid(SRV_NODES);
+  client=false;
+  IgniteCache<Object,Object> qryClientCache=qryClient.cache(null);
+  if (cacheMode() != REPLICATED)   assertEquals(backups,qryClientCache.getConfiguration(CacheConfiguration.class).getBackups());
+  Affinity<Object> aff=qryClient.affinity(null);
+  ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+  final CacheEventListener3 lsnr=new CacheEventListener3();
+  qry.setLocalListener(lsnr);
+  qry.setRemoteFilter(lsnr);
+  int PARTS=10;
+  QueryCursor<?> cur=qryClientCache.query(qry);
+  Map<Object,T2<Object,Object>> updates=new HashMap<>();
+  final List<T3<Object,Object,Object>> expEvts=new ArrayList<>();
+  for (int i=0; i < (atomicityMode() == CacheAtomicityMode.ATOMIC ? SRV_NODES - 1 : SRV_NODES - 2); i++) {
+    log.info("Stop iteration: " + i);
+    TestCommunicationSpi spi=(TestCommunicationSpi)ignite(i).configuration().getCommunicationSpi();
+    Ignite ignite=ignite(i);
+    IgniteCache<Object,Object> cache=ignite.cache(null);
+    List<Integer> keys=testKeys(cache,PARTS);
+    boolean first=true;
+    boolean filtered=false;
+    for (    Integer key : keys) {
+      log.info("Put [node=" + ignite.name() + ", key="+ key+ ", part="+ aff.partition(key)+ ", filtered="+ filtered+ ']');
+      T2<Object,Object> t=updates.get(key);
+      Integer val=filtered ? (key % 2 == 0 ? key + 1 : key) : key * 2;
+      if (t == null) {
+        updates.put(key,new T2<>((Object)val,null));
+        if (!filtered)         expEvts.add(new T3<>((Object)key,(Object)val,null));
+      }
+ else {
+        updates.put(key,new T2<>((Object)val,(Object)key));
+        if (!filtered)         expEvts.add(new T3<>((Object)key,(Object)val,(Object)key));
+      }
+      cache.put(key,val);
+      if (first) {
+        spi.skipMsg=true;
+        first=false;
+      }
+      filtered=!filtered;
+    }
+    stopGrid(i);
+    boolean check=GridTestUtils.waitForCondition(new PAX(){
+      @Override public boolean applyx() throws IgniteCheckedException {
+        return expEvts.size() == lsnr.keys.size();
+      }
+    }
+,5000L);
+    if (!check) {
+      Set<Integer> keys0=new HashSet<>(keys);
+      keys0.removeAll(lsnr.keys);
+      log.info("Missed events for keys: " + keys0);
+      fail("Failed to wait for notifications [exp=" + keys.size() + ", left="+ keys0.size()+ ']');
+    }
+    checkEvents(expEvts,lsnr,false);
+  }
+  cur.close();
+}

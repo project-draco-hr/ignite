@@ -1,0 +1,53 @@
+{
+  ClusterNode primary=affinityNode(key,topVer);
+  if (primary == null) {
+    onDone(new ClusterTopologyServerNotFoundException("Failed to map keys for cache " + "(all partition nodes left the grid) [topVer=" + topVer + ", cache="+ cctx.name()+ ']'));
+    return null;
+  }
+  boolean allowLocRead=(cctx.affinityNode() && !forcePrimary) || primary.isLocal();
+  if (allowLocRead) {
+    GridDhtCacheAdapter colocated=cctx.dht();
+    while (true) {
+      GridCacheEntryEx entry;
+      try {
+        entry=colocated.context().isSwapOrOffheapEnabled() ? colocated.entryEx(key) : colocated.peekEx(key);
+        if (entry != null) {
+          boolean isNew=entry.isNewLocked();
+          CacheObject v=null;
+          GridCacheVersion ver=null;
+          if (needVer) {
+            T2<CacheObject,GridCacheVersion> res=entry.innerGetVersioned(null,true,true,false,!skipVals,subjId,null,taskName,expiryPlc);
+            if (res != null) {
+              v=res.get1();
+              ver=res.get2();
+            }
+          }
+ else {
+            v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiryPlc);
+          }
+          colocated.context().evicts().touch(entry,topVer);
+          if (v == null) {
+            if (isNew && entry.markObsoleteIfEmpty(ver))             colocated.removeIfObsolete(key);
+          }
+ else {
+            if (!skipVals && cctx.config().isStatisticsEnabled())             cctx.cache().metrics0().onRead(true);
+            if (!skipVals)             setResult(v,ver);
+ else             setSkipValueResult(true,ver);
+            return null;
+          }
+        }
+        break;
+      }
+ catch (      GridDhtInvalidPartitionException ignored) {
+        break;
+      }
+catch (      IgniteCheckedException e) {
+        onDone(e);
+        return null;
+      }
+catch (      GridCacheEntryRemovedException ignored) {
+      }
+    }
+  }
+  return primary;
+}

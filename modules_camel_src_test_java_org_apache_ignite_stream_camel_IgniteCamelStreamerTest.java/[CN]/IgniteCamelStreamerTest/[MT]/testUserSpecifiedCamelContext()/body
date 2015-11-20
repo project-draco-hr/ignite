@@ -1,0 +1,19 @@
+{
+  final AtomicInteger cnt=new AtomicInteger();
+  CamelContext context=new DefaultCamelContext();
+  context.setTracing(true);
+  context.addLifecycleStrategy(new LifecycleStrategySupport(){
+    @Override public void onEndpointAdd(    Endpoint endpoint){
+      cnt.incrementAndGet();
+    }
+  }
+);
+  streamer.setSingleTupleExtractor(singleTupleExtractor());
+  streamer.setCamelContext(context);
+  CountDownLatch latch=subscribeToPutEvents(50);
+  streamer.start();
+  sendMessages(0,50,false);
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+  assertCacheEntriesLoaded(50);
+  assertTrue(cnt.get() > 0);
+}

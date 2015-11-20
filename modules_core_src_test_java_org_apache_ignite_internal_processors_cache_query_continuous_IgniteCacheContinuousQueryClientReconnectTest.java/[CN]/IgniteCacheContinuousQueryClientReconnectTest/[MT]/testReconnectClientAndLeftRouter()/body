@@ -1,0 +1,26 @@
+{
+  Ignite client=grid(serverCount());
+  final Ignite srv=clientRouter(client);
+  final String clnRouterName=srv.name();
+  assertTrue(client.cluster().localNode().isClient());
+  final CacheEventListener lsnr=new CacheEventListener();
+  ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+  qry.setLocalListener(lsnr);
+  IgniteCache<Object,Object> clnCache=client.cache(null);
+  QueryCursor<?> cur=clnCache.query(qry);
+  int keyCnt=100;
+  lsnr.latch=new CountDownLatch(keyCnt);
+  for (int key=0; key < keyCnt; key++)   clnCache.put(key,key);
+  assertTrue("Failed to wait for event.",lsnr.latch.await(5,SECONDS));
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      stopGrid(clnRouterName);
+    }
+  }
+);
+  assertFalse("Client connected to the same server node.",clnRouterName.equals(clientRouter(client).name()));
+  lsnr.latch=new CountDownLatch(keyCnt);
+  for (int key=0; key < keyCnt; key++)   clnCache.put(key,key);
+  assertTrue("Failed to wait for event.",lsnr.latch.await(5,SECONDS));
+  cur.close();
+}

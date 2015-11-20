@@ -1,0 +1,14 @@
+{
+  GridContinuousProcessor proc=((IgniteKernal)ignite).context().continuous();
+  ConcurrentMap<Object,Object> infos=GridTestUtils.getFieldValue(proc,"rmtInfos");
+  Collection<Object> backupQueue=null;
+  for (  Object info : infos.values()) {
+    GridContinuousHandler hnd=GridTestUtils.getFieldValue(info,"hnd");
+    if (hnd.isForQuery() && hnd.cacheName() == null) {
+      backupQueue=GridTestUtils.getFieldValue(hnd,"backupQueue");
+      break;
+    }
+  }
+  assertNotNull(backupQueue);
+  return backupQueue;
+}

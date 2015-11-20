@@ -1,0 +1,15 @@
+{
+  streamer.setSingleTupleExtractor(singleTupleExtractor());
+  streamer.setResponseProcessor(new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getOut().setBody("Foo bar");
+    }
+  }
+);
+  CountDownLatch latch=subscribeToPutEvents(50);
+  streamer.start();
+  List<String> responses=sendMessages(0,50,false);
+  for (  String r : responses)   assertEquals("Foo bar",r);
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+  assertCacheEntriesLoaded(50);
+}

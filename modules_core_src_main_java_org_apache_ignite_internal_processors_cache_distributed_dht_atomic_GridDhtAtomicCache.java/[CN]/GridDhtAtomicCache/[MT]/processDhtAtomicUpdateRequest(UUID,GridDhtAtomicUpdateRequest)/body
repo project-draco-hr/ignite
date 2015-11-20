@@ -13,12 +13,15 @@
         try {
           entry=entryExx(key);
           CacheObject val=req.value(i);
+          CacheObject prevVal=req.previousValue(i);
           EntryProcessor<Object,Object,Object> entryProcessor=req.entryProcessor(i);
+          Long updateIdx=req.updateCounter(i);
           GridCacheOperation op=entryProcessor != null ? TRANSFORM : (val != null) ? UPDATE : DELETE;
           long ttl=req.ttl(i);
           long expireTime=req.conflictExpireTime(i);
-          GridCacheUpdateAtomicResult updRes=entry.innerUpdate(ver,nodeId,nodeId,op,op == TRANSFORM ? entryProcessor : val,op == TRANSFORM ? req.invokeArguments() : null,false,false,false,req.keepBinary(),null,true,true,false,!req.forceTransformBackups(),req.topologyVersion(),CU.empty0(),replicate ? DR_BACKUP : DR_NONE,ttl,expireTime,req.conflictVersion(i),false,intercept,req.subjectId(),taskName);
+          GridCacheUpdateAtomicResult updRes=entry.innerUpdate(ver,nodeId,nodeId,op,op == TRANSFORM ? entryProcessor : val,op == TRANSFORM ? req.invokeArguments() : null,false,false,false,req.keepBinary(),null,true,true,false,!req.forceTransformBackups(),req.topologyVersion(),CU.empty0(),replicate ? DR_BACKUP : DR_NONE,ttl,expireTime,req.conflictVersion(i),false,intercept,req.subjectId(),taskName,prevVal,updateIdx);
           if (updRes.removeVersion() != null)           ctx.onDeferredDelete(entry,updRes.removeVersion());
+          if (updRes.success() && !entry.isNear())           ctx.continuousQueries().onEntryUpdated(entry.key(),updRes.newValue(),updRes.oldValue(),entry.isInternal() || !context().userCache(),entry.partition(),false,false,updRes.updateCounter(),req.topologyVersion());
           entry.onUnlock();
           break;
         }

@@ -1,0 +1,15 @@
+{
+  lock.readLock().lock();
+  try {
+    Map<Integer,Long> res=new HashMap<>(cntrMap);
+    for (    GridDhtLocalPartition part : locParts.values()) {
+      Long cntr0=res.get(part.id());
+      Long cntr1=part.updateCounter();
+      if (cntr0 == null || cntr1 > cntr0)       res.put(part.id(),cntr1);
+    }
+    return res;
+  }
+  finally {
+    lock.readLock().unlock();
+  }
+}

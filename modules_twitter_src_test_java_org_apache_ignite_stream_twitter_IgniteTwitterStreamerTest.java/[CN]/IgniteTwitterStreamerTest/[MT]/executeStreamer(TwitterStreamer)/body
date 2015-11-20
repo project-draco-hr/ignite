@@ -1,0 +1,25 @@
+{
+  CacheListener listener=subscribeToPutEvents();
+  streamer.start();
+  try {
+    streamer.start();
+    fail("Successful start of already started Twitter Streamer");
+  }
+ catch (  IgniteException ex) {
+  }
+  CountDownLatch latch=listener.getLatch();
+  latch.await();
+  unsubscribeToPutEvents(listener);
+  streamer.stop();
+  try {
+    streamer.stop();
+    fail("Successful stop of already stopped Twitter Streamer");
+  }
+ catch (  IgniteException ex) {
+  }
+  Status status=TwitterObjectFactory.createStatus(tweet);
+  IgniteCache<Long,String> cache=grid().cache(null);
+  String cachedValue=cache.get(status.getId());
+  assertTrue(cachedValue != null && cachedValue.equals(status.getText()));
+  assertTrue(cache.size() == 1);
+}

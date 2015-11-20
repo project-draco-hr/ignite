@@ -1,0 +1,26 @@
+{
+  try {
+    for (    CacheEntryEvent<?,?> evt : evts) {
+      Integer key=(Integer)evt.getKey();
+      Integer val=(Integer)evt.getValue();
+      assertNotNull(key);
+      assertNotNull(val);
+      Integer prevVal=vals.get(key);
+      boolean dup=false;
+      if (prevVal != null && prevVal.equals(val))       dup=true;
+      if (!dup) {
+        vals.put(key,val);
+        List<CacheEntryEvent<?,?>> keyEvts=this.evts.get(key);
+        if (keyEvts == null) {
+          keyEvts=Collections.synchronizedList(new ArrayList<CacheEntryEvent<?,?>>());
+          this.evts.put(key,keyEvts);
+        }
+        keyEvts.add(evt);
+      }
+    }
+  }
+ catch (  Throwable e) {
+    err=true;
+    log.error("Unexpected error",e);
+  }
+}

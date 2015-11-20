@@ -1,0 +1,42 @@
+{
+  startGridsMultiThreaded(2);
+  client=true;
+  Ignite qryClient=startGrid(2);
+  CacheEventListener1 lsnr=new CacheEventListener1(false);
+  ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+  qry.setLocalListener(lsnr);
+  QueryCursor<?> cur=qryClient.cache(null).query(qry);
+  final Collection<Object> backupQueue=backupQueue(ignite(1));
+  assertEquals(0,backupQueue.size());
+  IgniteCache<Object,Object> cache0=ignite(0).cache(null);
+  List<Integer> keys=primaryKeys(cache0,BACKUP_ACK_THRESHOLD);
+  CountDownLatch latch=new CountDownLatch(keys.size());
+  lsnr.latch=latch;
+  for (  Integer key : keys) {
+    log.info("Put: " + key);
+    cache0.put(key,key);
+  }
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return backupQueue.isEmpty();
+    }
+  }
+,2000);
+  assertTrue("Backup queue is not cleared: " + backupQueue,backupQueue.size() < BACKUP_ACK_THRESHOLD);
+  if (!latch.await(5,SECONDS))   fail("Failed to wait for notifications [exp=" + keys.size() + ", left="+ lsnr.latch.getCount()+ ']');
+  keys=primaryKeys(cache0,BACKUP_ACK_THRESHOLD / 2);
+  latch=new CountDownLatch(keys.size());
+  lsnr.latch=latch;
+  for (  Integer key : keys)   cache0.put(key,key);
+  final long ACK_FREQ=5000;
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return backupQueue.isEmpty();
+    }
+  }
+,ACK_FREQ + 2000);
+  assertTrue("Backup queue is not cleared: " + backupQueue,backupQueue.isEmpty());
+  if (!latch.await(5,SECONDS))   fail("Failed to wait for notifications [exp=" + keys.size() + ", left="+ lsnr.latch.getCount()+ ']');
+  cur.close();
+  assertFalse("Unexpected error during test, see log for details.",err);
+}
