@@ -4,26 +4,38 @@
   this.ldr=ldr;
   this.rCtx=rCtx;
   start=in.position();
-  byte hdr=in.readBytePositioned(start);
+  byte hdr=in.readByte();
   if (hdr == GridPortableMarshaller.OBJ) {
-    in.readByte();
     PortableUtils.checkProtocolVersion(in.readByte());
     short flags=in.readShort();
+    int typeId0=in.readInt();
+    in.readInt();
+    int len=in.readInt();
+    schemaId=in.readInt();
+    int offset=in.readInt();
     userType=PortableUtils.isUserType(flags);
     fieldIdLen=PortableUtils.fieldIdLength(flags);
     fieldOffsetLen=PortableUtils.fieldOffsetLength(flags);
-    int typeId0=in.readIntPositioned(start + GridPortableMarshaller.TYPE_ID_POS);
-    IgniteBiTuple<Integer,Integer> footer=PortableUtils.footerAbsolute(in,start);
-    footerStart=footer.get1();
-    footerLen=footer.get2() - footerStart;
-    schemaId=in.readIntPositioned(start + GridPortableMarshaller.SCHEMA_ID_POS);
-    rawOff=PortableUtils.rawOffsetAbsolute(in,start);
+    if (PortableUtils.hasSchema(flags)) {
+      footerStart=start + offset;
+      if (PortableUtils.hasRaw(flags)) {
+        footerLen=len - offset - 4;
+        rawOff=start + in.readIntPositioned(start + len - 4);
+      }
+ else {
+        footerLen=len - offset;
+        rawOff=start + len;
+      }
+    }
+ else {
+      footerStart=start + len;
+      footerLen=0;
+      if (PortableUtils.hasRaw(flags))       rawOff=start + offset;
+ else       rawOff=start + len;
+    }
     if (typeId0 == UNREGISTERED_TYPE_ID) {
-      in.position(start + GridPortableMarshaller.DFLT_HDR_LEN);
       int off=in.position();
-      Class cls=doReadClass(typeId0);
-      PortableClassDescriptor desc=ctx.descriptorForClass(cls);
-      typeId=desc.typeId();
+      typeId=ctx.descriptorForClass(doReadClass(typeId0)).typeId();
       int clsNameLen=in.position() - off;
       hdrLen=DFLT_HDR_LEN + clsNameLen;
     }
@@ -33,7 +45,6 @@
     }
     idMapper=userType ? ctx.userTypeIdMapper(typeId) : null;
     schema=PortableUtils.hasSchema(flags) ? getOrCreateSchema() : null;
-    in.position(start);
   }
  else {
     typeId=0;
@@ -48,4 +59,5 @@
     fieldOffsetLen=0;
     schema=null;
   }
+  in.position(start);
 }
