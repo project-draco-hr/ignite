@@ -1,5 +1,4 @@
 {
-  PortableMarshaller marsh1=createMarshaller();
   BinaryTypeConfiguration customMappingType=new BinaryTypeConfiguration(TestBinary.class.getName());
   customMappingType.setIdMapper(new BinaryIdMapper(){
     @Override public int typeId(    String clsName){
@@ -19,12 +18,10 @@
     }
   }
 );
-  marsh1.setTypeConfigurations(Arrays.asList(new BinaryTypeConfiguration(SimpleObject.class.getName()),customMappingType));
+  BinaryMarshaller marsh1=binaryMarshaller(Arrays.asList(new BinaryTypeConfiguration(SimpleObject.class.getName()),customMappingType));
   TestBinary obj=binaryObject();
   BinaryObjectImpl po=marshal(obj,marsh1);
-  PortableMarshaller marsh2=createMarshaller();
-  marsh2.setTypeConfigurations(Arrays.asList(new BinaryTypeConfiguration(SimpleObject.class.getName()),new BinaryTypeConfiguration(TestBinary.class.getName())));
-  PortableContext ctx=initializePortableContext(marsh2);
-  po.context(ctx);
+  BinaryMarshaller marsh2=binaryMarshaller(Arrays.asList(new BinaryTypeConfiguration(SimpleObject.class.getName()),new BinaryTypeConfiguration(TestBinary.class.getName())));
+  po=marshal(obj,marsh2);
   assertEquals(obj,po.deserialize());
 }

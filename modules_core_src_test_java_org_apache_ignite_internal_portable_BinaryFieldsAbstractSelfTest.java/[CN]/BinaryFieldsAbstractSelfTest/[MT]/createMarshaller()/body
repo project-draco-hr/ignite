@@ -1,9 +1,12 @@
 {
   PortableContext ctx=new PortableContext(BinaryCachingMetadataHandler.create(),new IgniteConfiguration());
-  PortableMarshaller marsh=new PortableMarshaller();
-  marsh.setCompactFooter(compactFooter());
-  marsh.setTypeConfigurations(Arrays.asList(new BinaryTypeConfiguration(TestObject.class.getName()),new BinaryTypeConfiguration(TestOuterObject.class.getName()),new BinaryTypeConfiguration(TestInnerObject.class.getName())));
+  BinaryMarshaller marsh=new BinaryMarshaller();
+  BinaryConfiguration bCfg=new BinaryConfiguration();
+  bCfg.setCompactFooter(compactFooter());
+  bCfg.setTypeConfigurations(Arrays.asList(new BinaryTypeConfiguration(TestObject.class.getName()),new BinaryTypeConfiguration(TestOuterObject.class.getName()),new BinaryTypeConfiguration(TestInnerObject.class.getName())));
+  IgniteConfiguration iCfg=new IgniteConfiguration();
+  iCfg.setBinaryConfiguration(bCfg);
   marsh.setContext(new MarshallerContextTestImpl(null));
-  IgniteUtils.invoke(PortableMarshaller.class,marsh,"setPortableContext",ctx);
+  IgniteUtils.invoke(BinaryMarshaller.class,marsh,"setPortableContext",ctx,iCfg);
   return marsh;
 }

@@ -1,11 +1,8 @@
 {
   IgniteConfiguration cfg=super.getConfiguration(gridName);
-  PortableMarshaller marsh=new PortableMarshaller();
-  marsh.setCompactFooter(compactFooter());
-  marsh.setClassNames(Arrays.asList(Key.class.getName(),Value.class.getName(),"org.gridgain.grid.internal.util.portable.mutabletest.*"));
-  BinaryTypeConfiguration customIdMapper=new BinaryTypeConfiguration();
-  customIdMapper.setClassName(CustomIdMapper.class.getName());
-  customIdMapper.setIdMapper(new BinaryIdMapper(){
+  BinaryTypeConfiguration customTypeCfg=new BinaryTypeConfiguration();
+  customTypeCfg.setTypeName(CustomIdMapper.class.getName());
+  customTypeCfg.setIdMapper(new BinaryIdMapper(){
     @Override public int typeId(    String clsName){
       return ~BinaryInternalIdMapper.defaultInstance().typeId(clsName);
     }
@@ -14,7 +11,10 @@
     }
   }
 );
-  marsh.setTypeConfigurations(Collections.singleton(customIdMapper));
-  cfg.setMarshaller(marsh);
+  BinaryConfiguration bCfg=new BinaryConfiguration();
+  bCfg.setCompactFooter(compactFooter());
+  bCfg.setTypeConfigurations(Arrays.asList(new BinaryTypeConfiguration(Key.class.getName()),new BinaryTypeConfiguration(Value.class.getName()),new BinaryTypeConfiguration("org.gridgain.grid.internal.util.portable.mutabletest.*"),customTypeCfg));
+  cfg.setBinaryConfiguration(bCfg);
+  cfg.setMarshaller(new BinaryMarshaller());
   return cfg;
 }
