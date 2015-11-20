@@ -1,0 +1,51 @@
+{
+  this.ctx=ctx;
+  this.in=in;
+  this.ldr=ldr;
+  this.rCtx=rCtx;
+  start=in.position();
+  byte hdr=in.readBytePositioned(start);
+  if (hdr == GridPortableMarshaller.OBJ) {
+    in.readByte();
+    PortableUtils.checkProtocolVersion(in.readByte());
+    short flags=in.readShort();
+    userType=PortableUtils.isUserType(flags);
+    fieldIdLen=PortableUtils.fieldIdLength(flags);
+    fieldOffsetLen=PortableUtils.fieldOffsetLength(flags);
+    int typeId0=in.readIntPositioned(start + GridPortableMarshaller.TYPE_ID_POS);
+    IgniteBiTuple<Integer,Integer> footer=PortableUtils.footerAbsolute(in,start);
+    footerStart=footer.get1();
+    footerLen=footer.get2() - footerStart;
+    schemaId=in.readIntPositioned(start + GridPortableMarshaller.SCHEMA_ID_POS);
+    rawOff=PortableUtils.rawOffsetAbsolute(in,start);
+    if (typeId0 == UNREGISTERED_TYPE_ID) {
+      in.position(start + GridPortableMarshaller.DFLT_HDR_LEN);
+      int off=in.position();
+      Class cls=doReadClass(typeId0);
+      PortableClassDescriptor desc=ctx.descriptorForClass(cls);
+      typeId=desc.typeId();
+      int clsNameLen=in.position() - off;
+      hdrLen=DFLT_HDR_LEN + clsNameLen;
+    }
+ else {
+      typeId=typeId0;
+      hdrLen=DFLT_HDR_LEN;
+    }
+    idMapper=userType ? ctx.userTypeIdMapper(typeId) : null;
+    schema=PortableUtils.hasSchema(flags) ? getOrCreateSchema() : null;
+    in.position(start);
+  }
+ else {
+    typeId=0;
+    rawOff=0;
+    hdrLen=0;
+    footerStart=0;
+    footerLen=0;
+    idMapper=null;
+    schemaId=0;
+    userType=false;
+    fieldIdLen=0;
+    fieldOffsetLen=0;
+    schema=null;
+  }
+}
