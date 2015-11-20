@@ -1,0 +1,37 @@
+{
+  try {
+    return CU.outTx(retryTopologySafe(new Callable<Boolean>(){
+      @Override public Boolean call() throws Exception {
+        try (IgniteInternalTx tx=CU.txStartInternal(ctx,semView,PESSIMISTIC,REPEATABLE_READ)){
+          GridCacheSemaphoreState val=semView.get(key);
+          if (val == null)           throw new IgniteCheckedException("Failed to find semaphore with given name: " + name);
+          Map<UUID,Integer> map=val.getWaiters();
+          if (!map.containsKey(nodeId)) {
+            tx.rollback();
+            return false;
+          }
+          int numPermits=map.get(nodeId);
+          if (numPermits > 0)           val.setCount(val.getCount() + numPermits);
+          map.remove(nodeId);
+          val.setWaiters(map);
+          semView.put(key,val);
+          sync.nodeMap=map;
+          tx.commit();
+          return true;
+        }
+ catch (        Error|Exception e) {
+          if (!ctx.kernalContext().isStopping())           U.error(log,"Failed to compare and set: " + this,e);
+          throw e;
+        }
+      }
+    }
+),ctx);
+  }
+ catch (  IgniteCheckedException e) {
+    if (ctx.kernalContext().isStopping()) {
+      if (log.isDebugEnabled())       log.debug("Ignoring failure in semaphore on node left handler (node is stopping): " + e);
+      return true;
+    }
+ else     throw U.convertException(e);
+  }
+}

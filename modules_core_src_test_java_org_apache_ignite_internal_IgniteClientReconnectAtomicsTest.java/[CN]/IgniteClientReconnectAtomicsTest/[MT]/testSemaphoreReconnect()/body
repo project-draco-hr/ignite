@@ -1,0 +1,25 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  IgniteSemaphore clientSemaphore=client.semaphore("semaphore1",3,false,true);
+  assertEquals(3,clientSemaphore.availablePermits());
+  final IgniteSemaphore srvSemaphore=srv.semaphore("semaphore1",3,false,false);
+  assertEquals(3,srvSemaphore.availablePermits());
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      srvSemaphore.acquire();
+    }
+  }
+);
+  assertEquals(2,srvSemaphore.availablePermits());
+  assertEquals(2,clientSemaphore.availablePermits());
+  srvSemaphore.acquire();
+  assertEquals(1,srvSemaphore.availablePermits());
+  assertEquals(1,clientSemaphore.availablePermits());
+  clientSemaphore.acquire();
+  assertEquals(0,srvSemaphore.availablePermits());
+  assertEquals(0,clientSemaphore.availablePermits());
+  assertFalse(srvSemaphore.tryAcquire());
+  assertFalse(srvSemaphore.tryAcquire());
+}

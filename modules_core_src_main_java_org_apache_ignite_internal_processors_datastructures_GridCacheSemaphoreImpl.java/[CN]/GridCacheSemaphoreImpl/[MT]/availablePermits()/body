@@ -1,0 +1,22 @@
+{
+  int ret;
+  try {
+    initializeSemaphore();
+    ret=CU.outTx(retryTopologySafe(new Callable<Integer>(){
+      @Override public Integer call() throws Exception {
+        try (IgniteInternalTx tx=CU.txStartInternal(ctx,semView,PESSIMISTIC,REPEATABLE_READ)){
+          GridCacheSemaphoreState val=semView.get(key);
+          if (val == null)           throw new IgniteException("Failed to find semaphore with given name: " + name);
+          int count=val.getCount();
+          tx.rollback();
+          return count;
+        }
+       }
+    }
+),ctx);
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+  return ret;
+}
