@@ -1,6 +1,6 @@
 {
   final String name=IgniteUuid.randomUuid().toString();
-  final int DS_TYPES=7;
+  final int DS_TYPES=8;
   final int THREADS=DS_TYPES * 3;
   for (int iter=0; iter < 20; iter++) {
     log.info("Iteration: " + iter);
@@ -44,6 +44,10 @@ case 6:
 log.info("Create set, grid: " + ignite.name());
 res=ignite.set(name,config(false));
 break;
+case 7:
+log.info("Create atomic semaphore, grid: " + ignite.name());
+res=ignite.semaphore(name,0,false,true);
+break;
 default :
 fail();
 return null;
@@ -65,7 +69,7 @@ int createdCnt=0;
 for (IgniteInternalFuture<Object> fut : futs) {
 Object res=fut.get();
 if (res instanceof IgniteException) continue;
-assertTrue("Unexpected object: " + res,res instanceof IgniteAtomicLong || res instanceof IgniteAtomicSequence || res instanceof IgniteAtomicReference|| res instanceof IgniteAtomicStamped|| res instanceof IgniteCountDownLatch|| res instanceof IgniteQueue|| res instanceof IgniteSet);
+assertTrue("Unexpected object: " + res,res instanceof IgniteAtomicLong || res instanceof IgniteAtomicSequence || res instanceof IgniteAtomicReference|| res instanceof IgniteAtomicStamped|| res instanceof IgniteCountDownLatch|| res instanceof IgniteQueue|| res instanceof IgniteSet|| res instanceof IgniteSemaphore);
 log.info("Data structure created: " + dataStructure);
 createdCnt++;
 if (dataStructure != null) assertEquals(dataStructure.getClass(),res.getClass());
