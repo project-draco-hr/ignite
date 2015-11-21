@@ -1,9 +1,13 @@
 {
   try {
-    GridCacheQueueHeader hdr=(GridCacheQueueHeader)cache.get(queueKey);
-    checkRemoved(hdr);
-    if (hdr.empty())     return null;
-    return (T)cache.get(itemKey(hdr.head()));
+    while (true) {
+      GridCacheQueueHeader hdr=(GridCacheQueueHeader)cache.get(queueKey);
+      checkRemoved(hdr);
+      if (hdr.empty())       return null;
+      T val=(T)cache.get(itemKey(hdr.head()));
+      if (val == null)       continue;
+      return val;
+    }
   }
  catch (  IgniteCheckedException e) {
     throw U.convertException(e);

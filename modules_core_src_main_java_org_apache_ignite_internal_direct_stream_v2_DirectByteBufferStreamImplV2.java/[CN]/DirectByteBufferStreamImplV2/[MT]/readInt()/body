@@ -1,0 +1,21 @@
+{
+  lastFinished=false;
+  int val=0;
+  while (buf.hasRemaining()) {
+    int pos=buf.position();
+    byte b=UNSAFE.getByte(heapArr,baseOff + pos);
+    buf.position(pos + 1);
+    prim|=((long)b & 0x7F) << (7 * primShift);
+    if ((b & 0x80) == 0) {
+      lastFinished=true;
+      val=(int)prim;
+      if (val == Integer.MIN_VALUE)       val=Integer.MAX_VALUE;
+ else       val--;
+      prim=0;
+      primShift=0;
+      break;
+    }
+ else     primShift++;
+  }
+  return val;
+}

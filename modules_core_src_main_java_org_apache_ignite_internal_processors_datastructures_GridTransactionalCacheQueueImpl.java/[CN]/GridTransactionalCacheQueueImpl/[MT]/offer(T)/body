@@ -1,10 +1,9 @@
 {
   A.notNull(item,"item");
   try {
-    boolean retVal;
-    int cnt=0;
-    while (true) {
-      try {
+    return retryTopologySafe(new Callable<Boolean>(){
+      @Override public Boolean call() throws Exception {
+        boolean retVal;
         try (IgniteInternalTx tx=cache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
           Long idx=(Long)cache.invoke(queueKey,new AddProcessor(id,1)).get();
           if (idx != null) {
@@ -14,21 +13,19 @@
           }
  else           retVal=false;
           tx.commit();
-          break;
+          return retVal;
         }
        }
- catch (      ClusterTopologyCheckedException|TransactionRollbackException|IgniteTxRollbackCheckedException e) {
-        if (e instanceof ClusterGroupEmptyCheckedException)         throw e;
-        if (cnt++ == MAX_UPDATE_RETRIES)         throw e;
- else {
-          U.warn(log,"Failed to add item, will retry [err=" + e + ']');
-          U.sleep(RETRY_DELAY);
-        }
-      }
     }
-    return retVal;
+).call();
   }
  catch (  IgniteCheckedException e) {
     throw U.convertException(e);
+  }
+catch (  RuntimeException e) {
+    throw e;
+  }
+catch (  Exception e) {
+    throw new IgniteException(e.getMessage(),e);
   }
 }
