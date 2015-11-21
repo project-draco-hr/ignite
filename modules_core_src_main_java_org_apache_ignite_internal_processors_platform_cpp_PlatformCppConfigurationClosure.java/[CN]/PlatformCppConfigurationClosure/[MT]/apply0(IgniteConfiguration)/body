@@ -1,0 +1,31 @@
+{
+  PlatformConfiguration interopCfg=igniteCfg.getPlatformConfiguration();
+  if (interopCfg != null && !(interopCfg instanceof PlatformCppConfiguration))   throw new IgniteException("Illegal interop configuration (must be of type " + PlatformCppConfiguration.class.getName() + "): "+ interopCfg.getClass().getName());
+  PlatformCppConfiguration cppCfg=interopCfg != null ? (PlatformCppConfiguration)interopCfg : null;
+  if (cppCfg == null)   cppCfg=new PlatformCppConfiguration();
+  PlatformMemoryManagerImpl memMgr=new PlatformMemoryManagerImpl(gate,1024);
+  PlatformCppConfigurationEx cppCfg0=new PlatformCppConfigurationEx(cppCfg,gate,memMgr);
+  igniteCfg.setPlatformConfiguration(cppCfg0);
+  Marshaller marsh=igniteCfg.getMarshaller();
+  if (marsh == null) {
+    igniteCfg.setMarshaller(new BinaryMarshaller());
+    cppCfg0.warnings(Collections.singleton("Marshaller is automatically set to " + BinaryMarshaller.class.getName() + " (other nodes must have the same marshaller type)."));
+  }
+ else   if (!(marsh instanceof BinaryMarshaller))   throw new IgniteException("Unsupported marshaller (only " + BinaryMarshaller.class.getName() + " can be used when running Apache Ignite C++): "+ marsh.getClass().getName());
+  BinaryConfiguration bCfg=igniteCfg.getBinaryConfiguration();
+  if (bCfg == null) {
+    bCfg=new BinaryConfiguration();
+    bCfg.setCompactFooter(false);
+    igniteCfg.setBinaryConfiguration(bCfg);
+  }
+  if (bCfg.isCompactFooter())   throw new IgniteException("Unsupported " + BinaryMarshaller.class.getName() + " \"compactFooter\" flag: must be false when running Apache Ignite C++.");
+  String ggHome=igniteCfg.getIgniteHome();
+  if (ggHome == null)   ggHome=U.getIgniteHome();
+ else   U.setIgniteHome(ggHome);
+  try {
+    U.setWorkDirectory(igniteCfg.getWorkDirectory(),ggHome);
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+}

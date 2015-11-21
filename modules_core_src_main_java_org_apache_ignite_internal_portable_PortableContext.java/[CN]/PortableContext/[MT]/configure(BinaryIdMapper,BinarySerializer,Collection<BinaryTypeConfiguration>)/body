@@ -1,0 +1,26 @@
+{
+  TypeDescriptors descs=new TypeDescriptors();
+  Map<String,String> affFields=new HashMap<>();
+  if (!F.isEmpty(igniteCfg.getCacheKeyConfiguration())) {
+    for (    CacheKeyConfiguration keyCfg : igniteCfg.getCacheKeyConfiguration())     affFields.put(keyCfg.getTypeName(),keyCfg.getAffinityKeyFieldName());
+  }
+  if (typeCfgs != null) {
+    for (    BinaryTypeConfiguration typeCfg : typeCfgs) {
+      String clsName=typeCfg.getTypeName();
+      if (clsName == null)       throw new BinaryObjectException("Class name is required for portable type configuration.");
+      BinaryIdMapper idMapper=globalIdMapper;
+      if (typeCfg.getIdMapper() != null)       idMapper=typeCfg.getIdMapper();
+      idMapper=BinaryInternalIdMapper.create(idMapper);
+      BinarySerializer serializer=globalSerializer;
+      if (typeCfg.getSerializer() != null)       serializer=typeCfg.getSerializer();
+      if (clsName.endsWith(".*")) {
+        String pkgName=clsName.substring(0,clsName.length() - 2);
+        for (        String clsName0 : classesInPackage(pkgName))         descs.add(clsName0,idMapper,serializer,affFields.get(clsName0),true);
+      }
+ else       descs.add(clsName,idMapper,serializer,affFields.get(clsName),false);
+    }
+  }
+  for (  TypeDescriptor desc : descs.descriptors()) {
+    registerUserType(desc.clsName,desc.idMapper,desc.serializer,desc.affKeyFieldName);
+  }
+}

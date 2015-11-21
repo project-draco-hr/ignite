@@ -1,0 +1,29 @@
+{
+  checkInternal(key);
+  GridNearCacheEntry cached=cacheCtx.near().peekExx(key.key());
+  try {
+    if (cached == null) {
+      evicted.add(key);
+      return false;
+    }
+ else {
+      cached.unswap();
+      CacheObject peek=cached.peek(true,false,false,null);
+      if (peek == null && cached.evictInternal(false,xidVer,null)) {
+        cached.context().cache().removeIfObsolete(key.key());
+        evicted.add(key);
+        return false;
+      }
+ else {
+        IgniteTxEntry txEntry=new IgniteTxEntry(cacheCtx,this,op,val,-1L,-1L,cached,drVer,skipStore,keepBinary);
+        txState.addWriteEntry(key,txEntry);
+        return true;
+      }
+    }
+  }
+ catch (  GridCacheEntryRemovedException ignore) {
+    evicted.add(key);
+    if (log.isDebugEnabled())     log.debug("Got removed entry when adding reads to remote transaction (will ignore): " + cached);
+    return false;
+  }
+}

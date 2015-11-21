@@ -1,0 +1,26 @@
+{
+  Collection<BinaryTypeConfiguration> clsNames=new ArrayList<>();
+  clsNames.add(new BinaryTypeConfiguration(DecimalReflective.class.getName()));
+  clsNames.add(new BinaryTypeConfiguration(DecimalMarshalAware.class.getName()));
+  BinaryMarshaller marsh=binaryMarshaller(clsNames);
+  DecimalReflective obj1=new DecimalReflective();
+  obj1.val=BigDecimal.ZERO;
+  obj1.valArr=new BigDecimal[]{BigDecimal.ONE,BigDecimal.TEN};
+  BinaryObjectImpl portObj=marshal(obj1,marsh);
+  assertEquals(obj1.val,portObj.field("val"));
+  assertArrayEquals(obj1.valArr,portObj.<BigDecimal[]>field("valArr"));
+  assertEquals(obj1.val,portObj.<DecimalReflective>deserialize().val);
+  assertArrayEquals(obj1.valArr,portObj.<DecimalReflective>deserialize().valArr);
+  DecimalMarshalAware obj2=new DecimalMarshalAware();
+  obj2.val=BigDecimal.ZERO;
+  obj2.valArr=new BigDecimal[]{BigDecimal.ONE,BigDecimal.TEN.negate()};
+  obj2.rawVal=BigDecimal.TEN;
+  obj2.rawValArr=new BigDecimal[]{BigDecimal.ZERO,BigDecimal.ONE};
+  portObj=marshal(obj2,marsh);
+  assertEquals(obj2.val,portObj.field("val"));
+  assertArrayEquals(obj2.valArr,portObj.<BigDecimal[]>field("valArr"));
+  assertEquals(obj2.val,portObj.<DecimalMarshalAware>deserialize().val);
+  assertArrayEquals(obj2.valArr,portObj.<DecimalMarshalAware>deserialize().valArr);
+  assertEquals(obj2.rawVal,portObj.<DecimalMarshalAware>deserialize().rawVal);
+  assertArrayEquals(obj2.rawValArr,portObj.<DecimalMarshalAware>deserialize().rawValArr);
+}

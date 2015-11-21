@@ -3,6 +3,7 @@
   IgniteCacheProxy cache=ctx.cache().jcache(cacheName).cacheNoGate();
   cache.context().awaitStarted();
   if (skipStore)   cache=(IgniteCacheProxy<?,?>)cache.withSkipStore();
+  if (keepBinary)   cache=(IgniteCacheProxy<?,?>)cache.withKeepBinary();
   if (ignoreDepOwnership)   cache.context().deploy().ignoreOwnership(true);
   try {
     final GridCacheContext cctx=cache.context();
@@ -18,7 +19,7 @@
     if (unwrapEntries()) {
       Collection<Map.Entry> col0=F.viewReadOnly(col,new C1<DataStreamerEntry,Map.Entry>(){
         @Override public Map.Entry apply(        DataStreamerEntry e){
-          return e.toEntry(cctx);
+          return e.toEntry(cctx,keepBinary);
         }
       }
 );

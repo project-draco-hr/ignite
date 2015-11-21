@@ -2,7 +2,7 @@
   if (!swapEnabled)   return null;
   final GridTuple<GridCacheSwapEntry> t=F.t1();
   final GridTuple<IgniteCheckedException> err=F.t1();
-  SwapKey swapKey=new SwapKey(key.value(cctx.cacheObjectContext(),false),part,key.valueBytes(cctx.cacheObjectContext()));
+  SwapKey swapKey=new SwapKey(key,part,key.valueBytes(cctx.cacheObjectContext()));
   ClassLoader ldr=cctx.deploy().globalLoader();
   final GridCacheQueryManager qryMgr=cctx.queries();
   if (qryMgr.enabled() && !readSwapBeforeRemove(key,swapKey,ldr))   return null;
@@ -16,7 +16,7 @@
           t.set(entry);
           CacheObject v=entry.value();
           if (cctx.events().isRecordable(EVT_CACHE_OBJECT_UNSWAPPED)) {
-            cctx.events().addEvent(part,key,cctx.nodeId(),(IgniteUuid)null,null,EVT_CACHE_OBJECT_UNSWAPPED,null,false,v,true,null,null,null);
+            cctx.events().addEvent(part,key,cctx.nodeId(),(IgniteUuid)null,null,EVT_CACHE_OBJECT_UNSWAPPED,null,false,v,true,null,null,null,false);
           }
           if (cctx.config().isStatisticsEnabled())           cctx.cache().metrics0().onSwapRemove();
           onUnswapped(part,key,entry);

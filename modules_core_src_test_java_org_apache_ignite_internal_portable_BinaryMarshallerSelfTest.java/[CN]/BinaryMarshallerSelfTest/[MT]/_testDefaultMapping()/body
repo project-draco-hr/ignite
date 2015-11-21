@@ -1,0 +1,27 @@
+{
+  BinaryTypeConfiguration customMappingType=new BinaryTypeConfiguration(TestBinary.class.getName());
+  customMappingType.setIdMapper(new BinaryIdMapper(){
+    @Override public int typeId(    String clsName){
+      String typeName;
+      try {
+        Method mtd=PortableContext.class.getDeclaredMethod("typeName",String.class);
+        mtd.setAccessible(true);
+        typeName=(String)mtd.invoke(null,clsName);
+      }
+ catch (      NoSuchMethodException|InvocationTargetException|IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+      return typeName.toLowerCase().hashCode();
+    }
+    @Override public int fieldId(    int typeId,    String fieldName){
+      return fieldName.toLowerCase().hashCode();
+    }
+  }
+);
+  BinaryMarshaller marsh1=binaryMarshaller(Arrays.asList(new BinaryTypeConfiguration(SimpleObject.class.getName()),customMappingType));
+  TestBinary obj=binaryObject();
+  BinaryObjectImpl po=marshal(obj,marsh1);
+  BinaryMarshaller marsh2=binaryMarshaller(Arrays.asList(new BinaryTypeConfiguration(SimpleObject.class.getName()),new BinaryTypeConfiguration(TestBinary.class.getName())));
+  po=marshal(obj,marsh2);
+  assertEquals(obj,po.deserialize());
+}

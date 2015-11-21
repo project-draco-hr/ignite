@@ -1,0 +1,18 @@
+{
+  try {
+    final Map<K,V> loaded=new HashMap<>();
+    doInvoke(new IgniteInClosureX<BinaryRawWriterEx>(){
+      @Override public void applyx(      BinaryRawWriterEx writer) throws IgniteCheckedException {
+        writer.writeByte(OP_LOAD_ALL);
+        writer.writeLong(session());
+        writer.writeString(ses.cacheName());
+        writer.writeCollection((Collection)keys);
+      }
+    }
+,new LoadAllCallback<>(platformCtx,loaded));
+    return loaded;
+  }
+ catch (  IgniteCheckedException e) {
+    throw new CacheLoaderException(e);
+  }
+}

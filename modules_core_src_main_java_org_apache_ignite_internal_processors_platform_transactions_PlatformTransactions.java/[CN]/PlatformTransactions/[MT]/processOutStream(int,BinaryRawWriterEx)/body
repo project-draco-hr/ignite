@@ -1,0 +1,19 @@
+{
+switch (type) {
+case OP_CACHE_CONFIG_PARAMETERS:
+    TransactionConfiguration txCfg=platformCtx.kernalContext().config().getTransactionConfiguration();
+  writer.writeEnum(txCfg.getDefaultTxConcurrency());
+writer.writeEnum(txCfg.getDefaultTxIsolation());
+writer.writeLong(txCfg.getDefaultTxTimeout());
+break;
+case OP_METRICS:
+TransactionMetrics metrics=txs.metrics();
+writer.writeTimestamp(new Timestamp(metrics.commitTime()));
+writer.writeTimestamp(new Timestamp(metrics.rollbackTime()));
+writer.writeInt(metrics.txCommits());
+writer.writeInt(metrics.txRollbacks());
+break;
+default :
+super.processOutStream(type,writer);
+}
+}

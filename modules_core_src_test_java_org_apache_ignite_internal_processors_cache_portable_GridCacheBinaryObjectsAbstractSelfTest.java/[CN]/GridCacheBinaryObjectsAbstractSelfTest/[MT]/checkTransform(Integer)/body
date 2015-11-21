@@ -1,0 +1,57 @@
+{
+  log.info("Transform: " + key);
+  IgniteCache<Integer,BinaryObject> c=keepPortableCache();
+  try {
+    c.invoke(key,new EntryProcessor<Integer,BinaryObject,Void>(){
+      @Override public Void process(      MutableEntry<Integer,BinaryObject> e,      Object... args){
+        BinaryObject val=e.getValue();
+        assertNull("Unexpected value: " + val,val);
+        return null;
+      }
+    }
+);
+    jcache(0).put(key,new TestObject(1));
+    c.invoke(key,new EntryProcessor<Integer,BinaryObject,Void>(){
+      @Override public Void process(      MutableEntry<Integer,BinaryObject> e,      Object... args){
+        BinaryObject val=e.getValue();
+        assertNotNull("Unexpected value: " + val,val);
+        assertEquals(new Integer(1),val.field("val"));
+        Ignite ignite=e.unwrap(Ignite.class);
+        IgniteBinary portables=ignite.binary();
+        BinaryObjectBuilder builder=portables.builder(val);
+        builder.setField("val",2);
+        e.setValue(builder.build());
+        return null;
+      }
+    }
+);
+    BinaryObject obj=c.get(key);
+    assertEquals(new Integer(2),obj.field("val"));
+    c.invoke(key,new EntryProcessor<Integer,BinaryObject,Void>(){
+      @Override public Void process(      MutableEntry<Integer,BinaryObject> e,      Object... args){
+        BinaryObject val=e.getValue();
+        assertNotNull("Unexpected value: " + val,val);
+        assertEquals(new Integer(2),val.field("val"));
+        e.setValue(val);
+        return null;
+      }
+    }
+);
+    obj=c.get(key);
+    assertEquals(new Integer(2),obj.field("val"));
+    c.invoke(key,new EntryProcessor<Integer,BinaryObject,Void>(){
+      @Override public Void process(      MutableEntry<Integer,BinaryObject> e,      Object... args){
+        BinaryObject val=e.getValue();
+        assertNotNull("Unexpected value: " + val,val);
+        assertEquals(new Integer(2),val.field("val"));
+        e.remove();
+        return null;
+      }
+    }
+);
+    assertNull(c.get(key));
+  }
+  finally {
+    c.remove(key);
+  }
+}

@@ -1,0 +1,21 @@
+{
+  lock.writeLock().lock();
+  try {
+    if (closed)     throw new CacheEntryListenerException("Failed to deploy the filter because it has been closed.");
+    PlatformContext ctx=PlatformUtils.platformContext(grid);
+    try (PlatformMemory mem=ctx.memory().allocate()){
+      PlatformOutputStream out=mem.output();
+      BinaryRawWriterEx writer=ctx.writer(out);
+      writer.writeObject(filter);
+      out.synchronize();
+      ptr=ctx.gateway().continuousQueryFilterCreate(mem.pointer());
+    }
+ catch (    Exception e) {
+      close();
+      throw new CacheEntryListenerException("Failed to deploy the filter.",e);
+    }
+  }
+  finally {
+    lock.writeLock().unlock();
+  }
+}
