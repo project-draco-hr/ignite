@@ -1,0 +1,22 @@
+{
+  if (definition.getIsolationLevel() == TransactionDefinition.ISOLATION_READ_UNCOMMITTED)   throw new InvalidIsolationLevelException("Ignite does not support READ_UNCOMMITTED isolation level.");
+  IgniteTransactionObject txObject=(IgniteTransactionObject)transaction;
+  Transaction tx=null;
+  try {
+    if (txObject.getTransactionHolder() == null || txObject.getTransactionHolder().isSynchronizedWithTransaction()) {
+      long timeout=ignite.configuration().getTransactionConfiguration().getDefaultTxTimeout();
+      if (definition.getTimeout() > 0)       timeout=TimeUnit.SECONDS.toMillis(definition.getTimeout());
+      Transaction newTx=ignite.transactions().txStart(transactionConcurrency,convertToIgniteIsolationLevel(definition.getIsolationLevel()),timeout,0);
+      if (log.isDebugEnabled())       log.debug("Started Ignite transaction: " + newTx);
+      txObject.setTransactionHolder(new IgniteTransactionHolder(newTx),true);
+    }
+    txObject.getTransactionHolder().setSynchronizedWithTransaction(true);
+    txObject.getTransactionHolder().setTransactionActive(true);
+    tx=txObject.getTransactionHolder().getTransaction();
+    if (txObject.isNewTransactionHolder())     TransactionSynchronizationManager.bindResource(this.ignite,txObject.getTransactionHolder());
+  }
+ catch (  Exception ex) {
+    if (tx != null)     tx.close();
+    throw new CannotCreateTransactionException("Could not create Ignite transaction",ex);
+  }
+}
