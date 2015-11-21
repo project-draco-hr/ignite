@@ -1,0 +1,31 @@
+{
+  if (!initGuard.get() && initGuard.compareAndSet(false,true)) {
+    try {
+      sync=CU.outTx(retryTopologySafe(new Callable<Sync>(){
+        @Override public Sync call() throws Exception {
+          try (IgniteInternalTx tx=CU.txStartInternal(ctx,semView,PESSIMISTIC,REPEATABLE_READ)){
+            GridCacheSemaphoreState val=semView.get(key);
+            if (val == null) {
+              if (log.isDebugEnabled())               log.debug("Failed to find semaphore with given name: " + name);
+              return null;
+            }
+            final int count=val.getCount();
+            Map<UUID,Integer> waiters=val.getWaiters();
+            final boolean failoverSafe=val.isFailoverSafe();
+            tx.commit();
+            return new Sync(count,waiters,failoverSafe);
+          }
+         }
+      }
+),ctx);
+      if (log.isDebugEnabled())       log.debug("Initialized internal sync structure: " + sync);
+    }
+  finally {
+      initLatch.countDown();
+    }
+  }
+ else {
+    U.await(initLatch);
+    if (sync == null)     throw new IgniteCheckedException("Internal semaphore has not been properly initialized.");
+  }
+}

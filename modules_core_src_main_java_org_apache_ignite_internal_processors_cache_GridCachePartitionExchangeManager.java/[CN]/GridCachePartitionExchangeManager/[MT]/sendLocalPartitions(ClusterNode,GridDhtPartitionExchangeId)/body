@@ -2,12 +2,13 @@
   GridDhtPartitionsSingleMessage m=new GridDhtPartitionsSingleMessage(id,cctx.kernalContext().clientNode(),cctx.versions().last());
   for (  GridCacheContext cacheCtx : cctx.cacheContexts()) {
     if (!cacheCtx.isLocal()) {
-      GridDhtPartitionMap locMap=cacheCtx.topology().localPartitionMap();
+      GridDhtPartitionMap2 locMap=cacheCtx.topology().localPartitionMap();
+      if (node.version().compareTo(GridDhtPartitionMap2.SINCE) < 0)       locMap=new GridDhtPartitionMap(locMap.nodeId(),locMap.updateSequence(),locMap.map());
       m.addLocalPartitionMap(cacheCtx.cacheId(),locMap);
     }
   }
   for (  GridClientPartitionTopology top : clientTops.values()) {
-    GridDhtPartitionMap locMap=top.localPartitionMap();
+    GridDhtPartitionMap2 locMap=top.localPartitionMap();
     m.addLocalPartitionMap(top.cacheId(),locMap);
   }
   if (log.isDebugEnabled())   log.debug("Sending local partitions [nodeId=" + node.id() + ", msg="+ m+ ']');

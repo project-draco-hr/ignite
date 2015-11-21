@@ -1,0 +1,29 @@
+{
+  if (!msgTypeDone) {
+    if (!buf.hasRemaining()) {
+      lastFinished=false;
+      return null;
+    }
+    byte type=readByte();
+    msg=type == Byte.MIN_VALUE ? null : msgFactory.create(type);
+    msgTypeDone=true;
+  }
+  if (msg != null) {
+    try {
+      reader.beforeInnerMessageRead();
+      reader.setCurrentReadClass(msg.getClass());
+      lastFinished=msg.readFrom(buf,reader);
+    }
+  finally {
+      reader.afterInnerMessageRead(lastFinished);
+    }
+  }
+ else   lastFinished=true;
+  if (lastFinished) {
+    Message msg0=msg;
+    msgTypeDone=false;
+    msg=null;
+    return (T)msg0;
+  }
+ else   return null;
+}
