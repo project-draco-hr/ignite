@@ -4,9 +4,10 @@
     if (msg.exchangeId() == null) {
       if (log.isDebugEnabled())       log.debug("Received local partition update [nodeId=" + node.id() + ", parts="+ msg+ ']');
       boolean updated=false;
-      for (      Map.Entry<Integer,GridDhtPartitionMap> entry : msg.partitions().entrySet()) {
+      for (      Map.Entry<Integer,GridDhtPartitionMap2> entry : msg.partitions().entrySet()) {
         Integer cacheId=entry.getKey();
         GridCacheContext<K,V> cacheCtx=cctx.cacheContext(cacheId);
+        if (cacheCtx != null && cacheCtx.startTopologyVersion() != null && entry.getValue() != null && entry.getValue().topologyVersion() != null && cacheCtx.startTopologyVersion().compareTo(entry.getValue().topologyVersion()) > 0)         continue;
         GridDhtPartitionTopology top=null;
         if (cacheCtx == null)         top=clientTops.get(cacheId);
  else         if (!cacheCtx.isLocal())         top=cacheCtx.topology();

@@ -2,7 +2,9 @@
   GridDhtPartitionsSingleMessage m=new GridDhtPartitionsSingleMessage(id,clientOnlyExchange,cctx.versions().last());
   for (  GridCacheContext cacheCtx : cctx.cacheContexts()) {
     if (!cacheCtx.isLocal()) {
-      m.addLocalPartitionMap(cacheCtx.cacheId(),cacheCtx.topology().localPartitionMap());
+      GridDhtPartitionMap2 locMap=cacheCtx.topology().localPartitionMap();
+      if (node.version().compareTo(GridDhtPartitionMap2.SINCE) < 0)       locMap=new GridDhtPartitionMap(locMap.nodeId(),locMap.updateSequence(),locMap.map());
+      m.addLocalPartitionMap(cacheCtx.cacheId(),locMap);
       m.partitionUpdateCounters(cacheCtx.cacheId(),cacheCtx.topology().updateCounters());
     }
   }
