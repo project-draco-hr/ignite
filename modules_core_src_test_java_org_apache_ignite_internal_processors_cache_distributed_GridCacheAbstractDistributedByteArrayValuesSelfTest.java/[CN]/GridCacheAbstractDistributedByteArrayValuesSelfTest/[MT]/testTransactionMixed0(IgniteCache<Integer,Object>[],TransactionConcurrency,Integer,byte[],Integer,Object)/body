@@ -1,5 +1,6 @@
 {
   for (  IgniteCache<Integer,Object> cache : caches) {
+    info("Checking cache: " + cache.getName());
     Transaction tx=cache.unwrap(Ignite.class).transactions().txStart(concurrency,REPEATABLE_READ);
     try {
       cache.put(key1,val1);
@@ -10,6 +11,7 @@
       tx.close();
     }
     for (    IgniteCache<Integer,Object> cacheInner : caches) {
+      info("Getting value from cache: " + cacheInner.getName());
       tx=cacheInner.unwrap(Ignite.class).transactions().txStart(concurrency,REPEATABLE_READ);
       try {
         assertArrayEquals(val1,(byte[])cacheInner.get(key1));

@@ -1,0 +1,35 @@
+{
+  try (Ignite ignite=Ignition.start("examples/config/binary/example-ignite-binary.xml")){
+    System.out.println();
+    System.out.println(">>> Binary objects cache query example started.");
+    CacheConfiguration<Integer,Organization> orgCacheCfg=new CacheConfiguration<>();
+    orgCacheCfg.setCacheMode(CacheMode.PARTITIONED);
+    orgCacheCfg.setName(ORGANIZATION_CACHE_NAME);
+    orgCacheCfg.setQueryEntities(Arrays.asList(createOrganizationQueryEntity()));
+    CacheConfiguration<EmployeeKey,Employee> employeeCacheCfg=new CacheConfiguration<>();
+    employeeCacheCfg.setCacheMode(CacheMode.PARTITIONED);
+    employeeCacheCfg.setName(EMPLOYEE_CACHE_NAME);
+    employeeCacheCfg.setQueryEntities(Arrays.asList(createEmployeeQueryEntity()));
+    try (IgniteCache<Integer,Organization> orgCache=ignite.createCache(orgCacheCfg);IgniteCache<EmployeeKey,Employee> employeeCache=ignite.createCache(employeeCacheCfg)){
+      if (ignite.cluster().forDataNodes(orgCache.getName()).nodes().isEmpty()) {
+        System.out.println();
+        System.out.println(">>> This example requires remote cache nodes to be started.");
+        System.out.println(">>> Please start at least 1 remote cache node.");
+        System.out.println(">>> Refer to example's javadoc for details on configuration.");
+        System.out.println();
+        return;
+      }
+      populateCache(orgCache,employeeCache);
+      IgniteCache<BinaryObject,BinaryObject> binaryCache=employeeCache.withKeepBinary();
+      sqlQuery(binaryCache);
+      sqlJoinQuery(binaryCache);
+      sqlFieldsQuery(binaryCache);
+      textQuery(binaryCache);
+      System.out.println();
+    }
+  finally {
+      ignite.destroyCache(ORGANIZATION_CACHE_NAME);
+      ignite.destroyCache(EMPLOYEE_CACHE_NAME);
+    }
+  }
+ }

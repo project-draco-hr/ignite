@@ -1,0 +1,15 @@
+{
+  try (PlatformMemory outMem=ctx.memory().allocate()){
+    PlatformOutputStream out=outMem.output();
+    BinaryRawWriterEx writer=ctx.writer(out);
+    writeEntryAndProcessor(entry,writer);
+    out.synchronize();
+    try (PlatformMemory inMem=ctx.memory().allocate()){
+      PlatformInputStream in=inMem.input();
+      ctx.gateway().cacheInvoke(outMem.pointer(),inMem.pointer());
+      in.synchronize();
+      BinaryRawReaderEx reader=ctx.reader(in);
+      return readResultAndUpdateEntry(ctx,entry,reader);
+    }
+   }
+ }

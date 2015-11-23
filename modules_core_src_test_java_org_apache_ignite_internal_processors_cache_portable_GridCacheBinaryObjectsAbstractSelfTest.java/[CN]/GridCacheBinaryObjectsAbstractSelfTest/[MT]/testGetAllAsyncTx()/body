@@ -1,0 +1,30 @@
+{
+  if (atomicityMode() != TRANSACTIONAL)   return;
+  IgniteCache<Integer,TestObject> c=jcache(0);
+  IgniteCache<Integer,TestObject> cacheAsync=c.withAsync();
+  for (int i=0; i < ENTRY_CNT; i++)   c.put(i,new TestObject(i));
+  for (int i=0; i < ENTRY_CNT; ) {
+    Set<Integer> keys=new HashSet<>();
+    for (int j=0; j < 10; j++)     keys.add(i++);
+    try (Transaction tx=grid(0).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+      cacheAsync.getAll(keys);
+      Map<Integer,TestObject> objs=cacheAsync.<Map<Integer,TestObject>>future().get();
+      assertEquals(10,objs.size());
+      for (      Map.Entry<Integer,TestObject> e : objs.entrySet())       assertEquals(e.getKey().intValue(),e.getValue().val);
+      tx.commit();
+    }
+   }
+  IgniteCache<Integer,BinaryObject> cache=keepPortableCache();
+  for (int i=0; i < ENTRY_CNT; ) {
+    Set<Integer> keys=new HashSet<>();
+    for (int j=0; j < 10; j++)     keys.add(i++);
+    IgniteCache<Integer,BinaryObject> asyncCache=cache.withAsync();
+    try (Transaction tx=grid(0).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+      asyncCache.getAll(keys);
+      Map<Integer,BinaryObject> objs=asyncCache.<Map<Integer,BinaryObject>>future().get();
+      assertEquals(10,objs.size());
+      for (      Map.Entry<Integer,BinaryObject> e : objs.entrySet())       assertEquals(new Integer(e.getKey().intValue()),e.getValue().field("val"));
+      tx.commit();
+    }
+   }
+}

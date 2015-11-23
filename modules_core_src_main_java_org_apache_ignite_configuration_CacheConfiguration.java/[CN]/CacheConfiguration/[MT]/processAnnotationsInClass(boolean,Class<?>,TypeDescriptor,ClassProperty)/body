@@ -1,0 +1,44 @@
+{
+  if (U.isJdk(cls) || isGeometryClass(cls)) {
+    if (parent == null && !key && isSqlType(cls)) {
+      String idxName=_VAL + "_idx";
+      type.addIndex(idxName,isGeometryClass(cls) ? GEO_SPATIAL : SORTED);
+      type.addFieldToIndex(idxName,_VAL,0,false);
+    }
+    return;
+  }
+  if (parent != null && parent.knowsClass(cls))   throw new CacheException("Recursive reference found in type: " + cls.getName());
+  if (parent == null) {
+    QueryTextField txtAnnCls=cls.getAnnotation(QueryTextField.class);
+    if (txtAnnCls != null)     type.valueTextIndex(true);
+    QueryGroupIndex grpIdx=cls.getAnnotation(QueryGroupIndex.class);
+    if (grpIdx != null)     type.addIndex(grpIdx.name(),SORTED);
+    QueryGroupIndex.List grpIdxList=cls.getAnnotation(QueryGroupIndex.List.class);
+    if (grpIdxList != null && !F.isEmpty(grpIdxList.value())) {
+      for (      QueryGroupIndex idx : grpIdxList.value())       type.addIndex(idx.name(),SORTED);
+    }
+  }
+  for (Class<?> c=cls; c != null && !c.equals(Object.class); c=c.getSuperclass()) {
+    for (    Field field : c.getDeclaredFields()) {
+      QuerySqlField sqlAnn=field.getAnnotation(QuerySqlField.class);
+      QueryTextField txtAnn=field.getAnnotation(QueryTextField.class);
+      if (sqlAnn != null || txtAnn != null) {
+        ClassProperty prop=new ClassProperty(field);
+        prop.parent(parent);
+        processAnnotation(key,sqlAnn,txtAnn,field.getType(),prop,type);
+        type.addProperty(prop,true);
+      }
+    }
+    for (    Method mtd : c.getDeclaredMethods()) {
+      QuerySqlField sqlAnn=mtd.getAnnotation(QuerySqlField.class);
+      QueryTextField txtAnn=mtd.getAnnotation(QueryTextField.class);
+      if (sqlAnn != null || txtAnn != null) {
+        if (mtd.getParameterTypes().length != 0)         throw new CacheException("Getter with QuerySqlField " + "annotation cannot have parameters: " + mtd);
+        ClassProperty prop=new ClassProperty(mtd);
+        prop.parent(parent);
+        processAnnotation(key,sqlAnn,txtAnn,mtd.getReturnType(),prop,type);
+        type.addProperty(prop,true);
+      }
+    }
+  }
+}

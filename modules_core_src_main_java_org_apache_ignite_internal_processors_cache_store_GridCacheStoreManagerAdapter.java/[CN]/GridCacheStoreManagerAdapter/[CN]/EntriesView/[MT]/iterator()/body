@@ -19,12 +19,10 @@
       while (it0.hasNext()) {
         Map.Entry<?,IgniteBiTuple<?,GridCacheVersion>> e=it0.next();
         Object k=e.getKey();
-        if (rmvd != null && rmvd.contains(k))         continue;
         Object v=locStore ? e.getValue() : e.getValue().get1();
-        if (convertPortable()) {
-          k=cctx.unwrapPortableIfNeeded(k,false);
-          v=cctx.unwrapPortableIfNeeded(v,false);
-        }
+        k=cctx.unwrapPortableIfNeeded(k,!convertPortable());
+        v=cctx.unwrapPortableIfNeeded(v,!convertPortable());
+        if (rmvd != null && rmvd.contains(k))         continue;
         next=new CacheEntryImpl<>(k,v);
         break;
       }

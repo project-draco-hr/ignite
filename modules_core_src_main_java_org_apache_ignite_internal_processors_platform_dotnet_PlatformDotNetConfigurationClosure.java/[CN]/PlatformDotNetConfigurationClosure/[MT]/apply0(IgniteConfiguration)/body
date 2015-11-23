@@ -1,0 +1,32 @@
+{
+  PlatformConfiguration interopCfg=igniteCfg.getPlatformConfiguration();
+  if (interopCfg != null && !(interopCfg instanceof PlatformDotNetConfiguration))   throw new IgniteException("Illegal platform configuration (must be of type " + PlatformDotNetConfiguration.class.getName() + "): "+ interopCfg.getClass().getName());
+  PlatformDotNetConfiguration dotNetCfg=interopCfg != null ? (PlatformDotNetConfiguration)interopCfg : null;
+  if (dotNetCfg == null)   dotNetCfg=new PlatformDotNetConfiguration();
+  memMgr=new PlatformMemoryManagerImpl(gate,1024);
+  PlatformDotNetConfigurationEx dotNetCfg0=new PlatformDotNetConfigurationEx(dotNetCfg,gate,memMgr);
+  igniteCfg.setPlatformConfiguration(dotNetCfg0);
+  Marshaller marsh=igniteCfg.getMarshaller();
+  if (marsh == null) {
+    igniteCfg.setMarshaller(new BinaryMarshaller());
+    dotNetCfg0.warnings(Collections.singleton("Marshaller is automatically set to " + BinaryMarshaller.class.getName() + " (other nodes must have the same marshaller type)."));
+  }
+ else   if (!(marsh instanceof BinaryMarshaller))   throw new IgniteException("Unsupported marshaller (only " + BinaryMarshaller.class.getName() + " can be used when running Apache Ignite.NET): "+ marsh.getClass().getName());
+  BinaryConfiguration bCfg=igniteCfg.getBinaryConfiguration();
+  if (bCfg == null) {
+    bCfg=new BinaryConfiguration();
+    bCfg.setCompactFooter(false);
+    igniteCfg.setBinaryConfiguration(bCfg);
+  }
+  if (bCfg.isCompactFooter())   throw new IgniteException("Unsupported " + BinaryMarshaller.class.getName() + " \"compactFooter\" flag: must be false when running Apache Ignite.NET.");
+  String ggHome=igniteCfg.getIgniteHome();
+  if (ggHome == null)   ggHome=U.getIgniteHome();
+ else   U.setIgniteHome(ggHome);
+  try {
+    U.setWorkDirectory(igniteCfg.getWorkDirectory(),ggHome);
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+  prepare(igniteCfg,dotNetCfg0);
+}

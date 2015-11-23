@@ -1,0 +1,19 @@
+{
+  assertEquals(false,INSTANCE.isAcquired());
+  BinaryMarshaller marsh=binaryMarshaller();
+  try (BinaryWriterExImpl writer=new BinaryWriterExImpl(portableContext(marsh))){
+    assertEquals(true,INSTANCE.isAcquired());
+    writer.writeString("Thread local test");
+    writer.array();
+    assertEquals(true,INSTANCE.isAcquired());
+  }
+   assertEquals(false,INSTANCE.isAcquired());
+  marsh=binaryMarshaller();
+  marsh.marshal(new SimpleObject());
+  assertEquals(false,INSTANCE.isAcquired());
+  marsh=binaryMarshaller();
+  BinaryObjectBuilder builder=new BinaryObjectBuilderImpl(portableContext(marsh),"org.gridgain.foo.bar.TestClass");
+  builder.setField("a","1");
+  BinaryObject portableObj=builder.build();
+  assertEquals(false,INSTANCE.isAcquired());
+}

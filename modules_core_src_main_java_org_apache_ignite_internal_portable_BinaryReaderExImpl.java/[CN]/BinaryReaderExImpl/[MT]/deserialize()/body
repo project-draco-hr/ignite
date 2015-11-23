@@ -1,0 +1,144 @@
+{
+  Object obj;
+  byte flag=in.readByte();
+switch (flag) {
+case NULL:
+    obj=null;
+  break;
+case HANDLE:
+int handle=start - in.readInt();
+obj=rCtx.get(handle);
+if (obj == null) {
+int retPos=in.position();
+in.position(handle);
+obj=doReadObject();
+in.position(retPos);
+}
+break;
+case OBJ:
+PortableClassDescriptor desc=ctx.descriptorForTypeId(userType,typeId,ldr);
+in.position(start + hdrLen);
+if (desc == null) throw new BinaryInvalidTypeException("Unknown type ID: " + typeId);
+obj=desc.read(this);
+in.position(footerStart + footerLen);
+break;
+case BYTE:
+obj=in.readByte();
+break;
+case SHORT:
+obj=in.readShort();
+break;
+case INT:
+obj=in.readInt();
+break;
+case LONG:
+obj=in.readLong();
+break;
+case FLOAT:
+obj=in.readFloat();
+break;
+case DOUBLE:
+obj=in.readDouble();
+break;
+case CHAR:
+obj=in.readChar();
+break;
+case BOOLEAN:
+obj=in.readBoolean();
+break;
+case DECIMAL:
+obj=doReadDecimal();
+break;
+case STRING:
+obj=doReadString();
+break;
+case UUID:
+obj=doReadUuid();
+break;
+case DATE:
+obj=doReadDate();
+break;
+case TIMESTAMP:
+obj=doReadTimestamp();
+break;
+case BYTE_ARR:
+obj=doReadByteArray();
+break;
+case SHORT_ARR:
+obj=doReadShortArray();
+break;
+case INT_ARR:
+obj=doReadIntArray();
+break;
+case LONG_ARR:
+obj=doReadLongArray();
+break;
+case FLOAT_ARR:
+obj=doReadFloatArray();
+break;
+case DOUBLE_ARR:
+obj=doReadDoubleArray();
+break;
+case CHAR_ARR:
+obj=doReadCharArray();
+break;
+case BOOLEAN_ARR:
+obj=doReadBooleanArray();
+break;
+case DECIMAL_ARR:
+obj=doReadDecimalArray();
+break;
+case STRING_ARR:
+obj=doReadStringArray();
+break;
+case UUID_ARR:
+obj=doReadUuidArray();
+break;
+case DATE_ARR:
+obj=doReadDateArray();
+break;
+case TIMESTAMP_ARR:
+obj=doReadTimestampArray();
+break;
+case OBJ_ARR:
+obj=doReadObjectArray(true);
+break;
+case COL:
+obj=doReadCollection(true,null);
+break;
+case MAP:
+obj=doReadMap(true,null);
+break;
+case MAP_ENTRY:
+obj=doReadMapEntry(true);
+break;
+case PORTABLE_OBJ:
+obj=doReadPortableObject();
+((BinaryObjectImpl)obj).context(ctx);
+if (!GridPortableMarshaller.KEEP_PORTABLES.get()) obj=((BinaryObject)obj).deserialize();
+break;
+case ENUM:
+obj=doReadEnum(doReadClass());
+break;
+case ENUM_ARR:
+obj=doReadEnumArray(doReadClass());
+break;
+case CLASS:
+obj=doReadClass();
+break;
+case OPTM_MARSH:
+int dataLen=in.readInt();
+ByteArrayInputStream input=new ByteArrayInputStream(in.array(),in.position(),dataLen);
+try {
+obj=ctx.optimizedMarsh().unmarshal(input,null);
+}
+ catch (IgniteCheckedException e) {
+throw new BinaryObjectException("Failed to unmarshal object with optimized marshaller",e);
+}
+in.position(in.position() + dataLen);
+break;
+default :
+throw new BinaryObjectException("Invalid flag value: " + flag);
+}
+return obj;
+}
