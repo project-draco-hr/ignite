@@ -2,7 +2,9 @@
   if (isDone())   return false;
   if (log.isDebugEnabled())   log.debug("Received onOwnerChanged() callback [entry=" + entry + ", owner="+ owner+ "]");
   if (owner != null && owner.version().equals(lockVer)) {
-    pendingLocks.remove(entry.key());
+synchronized (this) {
+      pendingLocks.remove(entry.key());
+    }
     if (checkLocks())     map(entries());
     return true;
   }
