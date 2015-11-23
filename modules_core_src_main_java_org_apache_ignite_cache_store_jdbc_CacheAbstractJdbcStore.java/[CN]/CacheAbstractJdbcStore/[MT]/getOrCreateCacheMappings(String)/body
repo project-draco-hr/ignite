@@ -1,0 +1,58 @@
+{
+  Map<Object,EntryMapping> entryMappings=cacheMappings.get(cacheName);
+  if (entryMappings != null)   return entryMappings;
+  cacheMappingsLock.lock();
+  try {
+    entryMappings=cacheMappings.get(cacheName);
+    if (entryMappings != null)     return entryMappings;
+    if (types == null) {
+      CacheConfiguration ccfg=ignite.cache(cacheName).getConfiguration(CacheConfiguration.class);
+      Collection<CacheTypeMetadata> oldTypes=ccfg.getTypeMetadata();
+      types=new JdbcType[oldTypes.size()];
+      int idx=0;
+      for (      CacheTypeMetadata oldType : oldTypes) {
+        JdbcType newType=new JdbcType();
+        newType.setCacheName(cacheName);
+        newType.setDatabaseSchema(oldType.getDatabaseSchema());
+        newType.setDatabaseTable(oldType.getDatabaseTable());
+        newType.setKeyType(oldType.getKeyType());
+        newType.setKeyFields(translateFields(oldType.getKeyFields()));
+        newType.setValueType(oldType.getValueType());
+        newType.setValueFields(translateFields(oldType.getValueFields()));
+        types[idx]=newType;
+        idx++;
+      }
+    }
+    List<JdbcType> cacheTypes=new ArrayList<>(types.length);
+    for (    JdbcType type : types)     if ((cacheName != null && cacheName.equals(type.getCacheName())) || (cacheName == null && type.getCacheName() == null))     cacheTypes.add(type);
+    entryMappings=U.newHashMap(cacheTypes.size());
+    if (!cacheTypes.isEmpty()) {
+      boolean binarySupported=ignite.configuration().getMarshaller() instanceof BinaryMarshaller;
+      for (      JdbcType type : cacheTypes) {
+        String keyType=type.getKeyType();
+        String valType=type.getValueType();
+        TypeKind keyKind=kindForName(keyType);
+        if (!binarySupported && keyKind == TypeKind.BINARY)         throw new CacheException("Key type has no class [cache=" + U.maskName(cacheName) + ", type="+ keyType+ "]");
+        checkTypeConfiguration(cacheName,keyKind,keyType,type.getKeyFields());
+        Object keyTypeId=typeIdForTypeName(keyKind,keyType);
+        if (entryMappings.containsKey(keyTypeId))         throw new CacheException("Key type must be unique in type metadata [cache=" + U.maskName(cacheName) + ", type="+ keyType+ "]");
+        TypeKind valKind=kindForName(valType);
+        checkTypeConfiguration(cacheName,valKind,valType,type.getValueFields());
+        entryMappings.put(keyTypeId,new EntryMapping(cacheName,dialect,type,keyKind,valKind));
+        if (binarySupported && keyKind == TypeKind.POJO) {
+          keyTypeId=typeIdForTypeName(TypeKind.BINARY,keyType);
+          valKind=valKind == TypeKind.POJO ? TypeKind.BINARY : valKind;
+          entryMappings.put(keyTypeId,new EntryMapping(cacheName,dialect,type,TypeKind.BINARY,valKind));
+        }
+      }
+      Map<String,Map<Object,EntryMapping>> mappings=new HashMap<>(cacheMappings);
+      mappings.put(cacheName,entryMappings);
+      prepareBuilders(cacheName,cacheTypes);
+      cacheMappings=mappings;
+    }
+    return entryMappings;
+  }
+  finally {
+    cacheMappingsLock.unlock();
+  }
+}
