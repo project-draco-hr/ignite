@@ -6,21 +6,21 @@ case NULL:
     obj=null;
   break;
 case HANDLE:
-int handle=start - in.readInt();
-obj=rCtx.get(handle);
+int handlePos=start - in.readInt();
+obj=rCtx.get(handlePos);
 if (obj == null) {
 int retPos=in.position();
-in.position(handle);
+streamPosition(handlePos);
 obj=doReadObject();
-in.position(retPos);
+streamPosition(retPos);
 }
 break;
 case OBJ:
 PortableClassDescriptor desc=ctx.descriptorForTypeId(userType,typeId,ldr);
-in.position(start + hdrLen);
+streamPosition(dataStart);
 if (desc == null) throw new BinaryInvalidTypeException("Unknown type ID: " + typeId);
 obj=desc.read(this);
-in.position(footerStart + footerLen);
+streamPosition(footerStart + footerLen);
 break;
 case BYTE:
 obj=in.readByte();
@@ -127,15 +127,7 @@ case CLASS:
 obj=doReadClass();
 break;
 case OPTM_MARSH:
-int dataLen=in.readInt();
-ByteArrayInputStream input=new ByteArrayInputStream(in.array(),in.position(),dataLen);
-try {
-obj=ctx.optimizedMarsh().unmarshal(input,null);
-}
- catch (IgniteCheckedException e) {
-throw new BinaryObjectException("Failed to unmarshal object with optimized marshaller",e);
-}
-in.position(in.position() + dataLen);
+obj=doReadOptimized();
 break;
 default :
 throw new BinaryObjectException("Invalid flag value: " + flag);

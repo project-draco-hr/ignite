@@ -5,24 +5,34 @@ switch (flag) {
 case NULL:
     return null;
 case HANDLE:
-  int handle=start - in.readInt();
-BinaryObject handledPo=rCtx.get(handle);
-if (handledPo != null) return handledPo;
-in.position(handle);
-return unmarshal();
+{
+    int handlePos=start - in.readInt();
+    Object obj=rCtx.get(handlePos);
+    if (obj == null) {
+      int retPos=in.position();
+      streamPosition(handlePos);
+      obj=unmarshal();
+      streamPosition(retPos);
+    }
+    return obj;
+  }
 case OBJ:
-PortableUtils.checkProtocolVersion(in.readByte());
-BinaryObjectEx po;
-if (detach) {
-in.position(start + GridPortableMarshaller.TOTAL_LEN_POS);
-int len=in.readInt();
-in.position(start);
-po=new BinaryObjectImpl(ctx,in.readByteArray(len),0);
+{
+  PortableUtils.checkProtocolVersion(in.readByte());
+  int len=PortableUtils.length(in,start);
+  BinaryObjectEx po;
+  if (detach) {
+    streamPosition(start);
+    po=new BinaryObjectImpl(ctx,in.readByteArray(len),0);
+  }
+ else {
+    if (in.offheapPointer() == 0)     po=new BinaryObjectImpl(ctx,in.array(),start);
+ else     po=new BinaryObjectOffheapImpl(ctx,in.offheapPointer(),start,in.remaining() + in.position());
+    streamPosition(start + po.length());
+  }
+  rCtx.put(start,po);
+  return po;
 }
- else po=in.offheapPointer() > 0 ? new BinaryObjectOffheapImpl(ctx,in.offheapPointer(),start,in.remaining() + in.position()) : new BinaryObjectImpl(ctx,in.array(),start);
-rCtx.put(start,po);
-in.position(start + po.length());
-return po;
 case BYTE:
 return in.readByte();
 case SHORT:
@@ -92,16 +102,7 @@ return doReadEnumArray(doReadClass());
 case CLASS:
 return doReadClass();
 case OPTM_MARSH:
-int len=in.readInt();
-ByteArrayInputStream input=new ByteArrayInputStream(in.array(),in.position(),len);
-Object obj;
-try {
-obj=ctx.optimizedMarsh().unmarshal(input,null);
-}
- catch (IgniteCheckedException e) {
-throw new BinaryObjectException("Failed to unmarshal object with optmMarsh marshaller",e);
-}
-return obj;
+return doReadOptimized();
 default :
 throw new BinaryObjectException("Invalid flag value: " + flag);
 }
