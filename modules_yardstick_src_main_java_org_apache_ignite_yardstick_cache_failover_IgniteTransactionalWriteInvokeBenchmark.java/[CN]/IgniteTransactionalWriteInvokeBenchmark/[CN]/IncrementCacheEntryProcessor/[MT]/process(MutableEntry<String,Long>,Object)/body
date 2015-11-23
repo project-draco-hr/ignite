@@ -1,4 +1,21 @@
 {
-  entry.setValue(entry.getValue() == null ? 0 : entry.getValue() + 1);
+  if (entry.getValue() == null) {
+    String cacheName=(String)arguments[0];
+    IgniteKernal kernal=(IgniteKernal)entry.unwrap(Ignite.class);
+    Affinity<String> aff=kernal.affinity(cacheName);
+    final int partIdx=aff.partition(entry.getKey());
+    final Collection<ClusterNode> nodes=aff.mapKeyToPrimaryAndBackups(entry.getKey());
+    List<GridDhtLocalPartition> locPartitions=kernal.cachex(cacheName).context().topology().localPartitions();
+    GridDhtLocalPartition part=null;
+    for (    GridDhtLocalPartition p : locPartitions) {
+      if (p.id() == partIdx) {
+        part=p;
+        break;
+      }
+    }
+    kernal.log().warning("Found unexpected null-value, debug info:" + "\n    entry=" + entry + "\n    key="+ entry.getKey()+ "\n    locNodeId="+ kernal.cluster().localNode().id()+ "\n    primaryAndBackupsNodes="+ nodes+ "\n    part="+ part+ "\n    partIdx="+ partIdx+ "\n    locParts="+ locPartitions+ "\n    allPartMap="+ kernal.cachex(cacheName).context().topology().partitionMap(true));
+    return new Object();
+  }
+  entry.setValue(entry.getValue() + 1);
   return null;
 }
