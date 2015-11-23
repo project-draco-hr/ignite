@@ -2,23 +2,24 @@
   ExecutorService pool=null;
   String cacheName=session().cacheName();
   try {
-    pool=Executors.newFixedThreadPool(maxPoolSz);
+    pool=Executors.newFixedThreadPool(maxPoolSize);
     Collection<Future<?>> futs=new ArrayList<>();
+    Map<Object,EntryMapping> mappings=getOrCreateCacheMappings(cacheName);
     if (args != null && args.length > 0) {
       if (args.length % 2 != 0)       throw new CacheLoaderException("Expected even number of arguments, but found: " + args.length);
-      if (log.isDebugEnabled())       log.debug("Start loading entries from db using user queries from arguments");
+      if (log.isDebugEnabled())       log.debug("Start loading entries from db using user queries from arguments...");
       for (int i=0; i < args.length; i+=2) {
         String keyType=args[i].toString();
         String selQry=args[i + 1].toString();
-        EntryMapping em=entryMapping(cacheName,keyTypeId(keyType),keyType);
+        EntryMapping em=entryMapping(cacheName,typeIdForTypeName(kindForName(keyType),keyType));
         futs.add(pool.submit(new LoadCacheCustomQueryWorker<>(em,selQry,clo)));
       }
     }
  else {
-      Collection<EntryMapping> entryMappings=cacheMappings(session().cacheName()).values();
+      Collection<EntryMapping> entryMappings=mappings.values();
       for (      EntryMapping em : entryMappings) {
         if (parallelLoadCacheMinThreshold > 0) {
-          log.debug("Multithread loading entries from db [cache name=" + cacheName + ", key type="+ em.keyType()+ " ]");
+          if (log.isDebugEnabled())           log.debug("Multithread loading entries from db [cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]");
           Connection conn=null;
           try {
             conn=connection();
@@ -48,16 +49,16 @@
           }
         }
  else {
-          if (log.isDebugEnabled())           log.debug("Single thread loading entries from db [cache name=" + cacheName + ", key type="+ em.keyType()+ " ]");
+          if (log.isDebugEnabled())           log.debug("Single thread loading entries from db [cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]");
           futs.add(pool.submit(loadCacheFull(em,clo)));
         }
       }
     }
     for (    Future<?> fut : futs)     U.get(fut);
-    if (log.isDebugEnabled())     log.debug("Cache loaded from db: " + cacheName);
+    if (log.isDebugEnabled())     log.debug("Cache loaded from db: " + U.maskName(cacheName));
   }
  catch (  IgniteCheckedException e) {
-    throw new CacheLoaderException("Failed to load cache: " + cacheName,e.getCause());
+    throw new CacheLoaderException("Failed to load cache: " + U.maskName(cacheName),e.getCause());
   }
  finally {
     U.shutdownNow(getClass(),pool,log);
