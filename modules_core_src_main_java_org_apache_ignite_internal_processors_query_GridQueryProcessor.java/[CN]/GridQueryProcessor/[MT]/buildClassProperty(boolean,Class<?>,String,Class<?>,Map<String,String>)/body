@@ -6,14 +6,19 @@
     if (fullName.length() != 0)     fullName.append('.');
     fullName.append(prop);
     String alias=aliases.get(fullName.toString());
-    ClassProperty tmp;
-    try {
-      StringBuilder bld=new StringBuilder("get");
-      bld.append(prop);
-      bld.setCharAt(3,Character.toUpperCase(bld.charAt(3)));
-      tmp=new ClassProperty(cls.getMethod(bld.toString()),key,alias);
+    StringBuilder bld=new StringBuilder("get");
+    bld.append(prop);
+    bld.setCharAt(3,Character.toUpperCase(bld.charAt(3)));
+    String[] mtdNames=new String[]{bld.toString(),prop};
+    ClassProperty tmp=null;
+    for (    String mtdName : mtdNames) {
+      try {
+        tmp=new ClassProperty(cls.getMethod(mtdName),key,alias);
+      }
+ catch (      NoSuchMethodException ignore) {
+      }
     }
- catch (    NoSuchMethodException ignore) {
+    if (tmp == null) {
       try {
         tmp=new ClassProperty(cls.getDeclaredField(prop),key,alias);
       }
