@@ -1,13 +1,14 @@
 {
   SwapSpaceSpi swap=ignite(nodeIdx).configuration().getSwapSpaceSpi();
-  IgniteSpiCloseableIterator<Integer> it=swap.keyIterator(SPACE_NAME,null);
+  IgniteSpiCloseableIterator<KeyCacheObject> it=swap.keyIterator(SPACE_NAME,null);
   assertNotNull(it);
   Affinity aff=ignite(nodeIdx).affinity(null);
   ClusterNode node=ignite(nodeIdx).cluster().localNode();
   List<Integer> primary=new ArrayList<>();
   List<Integer> backups=new ArrayList<>();
+  CacheObjectContext coctx=((IgniteEx)ignite(nodeIdx)).context().cache().internalCache().context().cacheObjectContext();
   while (it.hasNext()) {
-    Integer key=it.next();
+    Integer key=it.next().value(coctx,false);
     if (aff.isPrimary(node,key))     primary.add(key);
  else {
       assertTrue(aff.isBackup(node,key));

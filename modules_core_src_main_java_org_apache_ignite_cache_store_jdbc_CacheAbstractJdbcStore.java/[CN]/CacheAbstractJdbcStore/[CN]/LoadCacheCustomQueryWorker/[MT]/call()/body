@@ -1,5 +1,5 @@
 {
-  if (log.isDebugEnabled())   log.debug("Load cache using custom query [cache name= " + em.cacheName + ", key type="+ em.keyType()+ ", query="+ qry+ "]");
+  if (log.isDebugEnabled())   log.debug("Load cache using custom query [cache= " + U.maskName(em.cacheName) + ", keyType="+ em.keyType()+ ", query="+ qry+ "]");
   Connection conn=null;
   PreparedStatement stmt=null;
   try {
@@ -10,8 +10,8 @@
     Map<String,Integer> colIdxs=U.newHashMap(meta.getColumnCount());
     for (int i=1; i <= meta.getColumnCount(); i++)     colIdxs.put(meta.getColumnLabel(i),i);
     while (rs.next()) {
-      K1 key=buildObject(em.cacheName,em.keyType(),em.keyColumns(),colIdxs,rs);
-      V1 val=buildObject(em.cacheName,em.valueType(),em.valueColumns(),colIdxs,rs);
+      K1 key=buildObject(em.cacheName,em.keyType(),em.keyKind(),em.keyColumns(),em.keyCols,colIdxs,rs);
+      V1 val=buildObject(em.cacheName,em.valueType(),em.valueKind(),em.valueColumns(),null,colIdxs,rs);
       clo.apply(key,val);
     }
     return null;

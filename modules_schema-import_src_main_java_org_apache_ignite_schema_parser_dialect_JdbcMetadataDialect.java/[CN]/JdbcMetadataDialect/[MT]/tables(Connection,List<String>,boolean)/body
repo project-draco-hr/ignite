@@ -2,7 +2,7 @@
   DatabaseMetaData dbMeta=conn.getMetaData();
   Set<String> sys=systemSchemas();
   Collection<DbTable> tbls=new ArrayList<>();
-  if (schemas.size() == 0)   schemas.add(null);
+  if (schemas.isEmpty())   schemas.add(null);
   for (  String toSchema : schemas) {
     try (ResultSet tblsRs=dbMeta.getTables(useCatalog() ? toSchema : null,useSchema() ? toSchema : null,"%",tblsOnly ? TABLES_ONLY : TABLES_AND_VIEWS)){
       while (tblsRs.next()) {
@@ -22,23 +22,26 @@
             cols.add(new DbColumn(colName,colsRs.getInt(COL_DATA_TYPE_IDX),pkCols.contains(colName),colsRs.getInt(COL_NULLABLE_IDX) == DatabaseMetaData.columnNullable));
           }
         }
-         Map<String,Map<String,Boolean>> idxs=new LinkedHashMap<>();
+         Map<String,QueryIndex> idxs=new LinkedHashMap<>();
         try (ResultSet idxRs=dbMeta.getIndexInfo(tblCatalog,tblSchema,tblName,false,true)){
           while (idxRs.next()) {
             String idxName=idxRs.getString(IDX_NAME_IDX);
             String colName=idxRs.getString(IDX_COL_NAME_IDX);
             if (idxName == null || colName == null)             continue;
-            Map<String,Boolean> idx=idxs.get(idxName);
+            QueryIndex idx=idxs.get(idxName);
             if (idx == null) {
-              idx=new LinkedHashMap<>();
+              idx=new QueryIndex();
+              idx.setName(idxName);
+              idx.setIndexType(QueryIndexType.SORTED);
+              idx.setFields(new LinkedHashMap<String,Boolean>());
               idxs.put(idxName,idx);
             }
             String askOrDesc=idxRs.getString(IDX_ASC_OR_DESC_IDX);
-            Boolean desc=askOrDesc != null ? "D".equals(askOrDesc) : null;
-            idx.put(colName,desc);
+            Boolean asc=askOrDesc == null || "A".equals(askOrDesc);
+            idx.getFields().put(colName,asc);
           }
         }
-         tbls.add(table(schema,tblName,cols,idxs));
+         tbls.add(table(schema,tblName,cols,idxs.values()));
       }
     }
    }

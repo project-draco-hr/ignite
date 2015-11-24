@@ -1,0 +1,18 @@
+{
+  try {
+    portables=true;
+    startGrids(2);
+    awaitPartitionMapExchange();
+    Ignite g0=grid(0);
+    IgniteDataStreamer<Integer,TestObject2> dataLdr=g0.dataStreamer(null);
+    dataLdr.perNodeBufferSize(1);
+    dataLdr.autoFlushFrequency(1L);
+    Map<Integer,TestObject2> map=U.newHashMap(KEYS_COUNT);
+    for (int i=0; i < KEYS_COUNT; i++)     map.put(i,new TestObject2(i));
+    dataLdr.addData(map).get();
+    dataLdr.close();
+  }
+  finally {
+    G.stopAll(true);
+  }
+}

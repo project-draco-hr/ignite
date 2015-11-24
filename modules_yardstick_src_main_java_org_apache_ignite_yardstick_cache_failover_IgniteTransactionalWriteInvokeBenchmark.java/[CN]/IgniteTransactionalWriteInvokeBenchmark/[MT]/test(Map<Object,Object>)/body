@@ -1,2 +1,44 @@
 {
+  final int k=nextRandom(args.range());
+  final String[] keys=new String[args.keysCount()];
+  final String masterKey="key-" + k + "-master";
+  for (int i=0; i < keys.length; i++)   keys[i]="key-" + k + "-"+ i;
+  final int scenario=nextRandom(2);
+  final Set<String> badKeys=new LinkedHashSet<>();
+  doInTransaction(ignite().transactions(),PESSIMISTIC,REPEATABLE_READ,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      final int timeout=args.cacheOperationTimeoutMillis();
+switch (scenario) {
+case 0:
+        Map<String,Long> map=new HashMap<>();
+      asyncCache.get(masterKey);
+    Long cacheVal=asyncCache.<Long>future().get(timeout);
+  map.put(masterKey,cacheVal);
+for (String key : keys) {
+  asyncCache.get(key);
+  cacheVal=asyncCache.<Long>future().get(timeout);
+  map.put(key,cacheVal);
+}
+Set<Long> values=new HashSet<>(map.values());
+if (values.size() != 1) throw new IgniteConsistencyException("Found different values for keys [map=" + map + "]");
+break;
+case 1:
+asyncCache.get(masterKey);
+Long val=asyncCache.<Long>future().get(timeout);
+if (val == null) badKeys.add(masterKey);
+asyncCache.put(masterKey,val == null ? -1 : val + 1);
+asyncCache.future().get(timeout);
+for (String key : keys) {
+asyncCache.invoke(key,new IncrementCacheEntryProcessor(),cacheName());
+Object o=asyncCache.future().get(timeout);
+if (o != null) badKeys.add(key);
+}
+break;
+}
+return null;
+}
+}
+);
+if (!F.isEmpty(badKeys)) throw new IgniteConsistencyException("Found unexpected null-value(s) for the following " + "key(s) (look for debug information on server nodes): " + badKeys);
+return true;
 }

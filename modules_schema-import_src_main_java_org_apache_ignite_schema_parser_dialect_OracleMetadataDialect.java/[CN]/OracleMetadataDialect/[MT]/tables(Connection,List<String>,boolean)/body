@@ -2,14 +2,14 @@
   Collection<DbTable> tbls=new ArrayList<>();
   PreparedStatement pkStmt=conn.prepareStatement(SQL_PRIMARY_KEYS);
   PreparedStatement idxStmt=conn.prepareStatement(SQL_INDEXES);
-  if (schemas.size() == 0)   schemas.add(null);
+  if (schemas.isEmpty())   schemas.add(null);
   Set<String> sysSchemas=systemSchemas();
   try (Statement colsStmt=conn.createStatement()){
     for (    String schema : schemas) {
       if (systemSchemas().contains(schema) || (schema != null && schema.startsWith("FLOWS_")))       continue;
       Collection<DbColumn> cols=new ArrayList<>();
       Set<String> pkCols=Collections.emptySet();
-      Map<String,Map<String,Boolean>> idxs=Collections.emptyMap();
+      Collection<QueryIndex> idxs=Collections.emptyList();
       String sql=String.format(SQL_COLUMNS,tblsOnly ? "INNER JOIN all_tables b on a.table_name = b.table_name and a.owner = b.owner" : "",schema != null ? String.format(" WHERE a.owner = '%s' ",schema) : "");
       try (ResultSet colsRs=colsStmt.executeQuery(sql)){
         String prevSchema="";

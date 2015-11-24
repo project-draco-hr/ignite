@@ -1,0 +1,18 @@
+{
+  try {
+    BinaryObjectBuilder builder=ignite.binary().builder(typeName);
+    boolean calcHash=hashFields != null;
+    Collection<Object> hashValues=calcHash ? new ArrayList<>(hashFields.size()) : null;
+    for (    JdbcTypeField field : fields) {
+      Integer colIdx=loadColIdxs.get(field.getDatabaseFieldName());
+      Object colVal=getColumnValue(rs,colIdx,field.getJavaFieldType());
+      builder.setField(field.getJavaFieldName(),colVal);
+      if (calcHash)       hashValues.add(colVal);
+    }
+    if (calcHash)     builder.hashCode(hasher.hashCode(hashValues));
+    return builder.build();
+  }
+ catch (  SQLException e) {
+    throw new CacheException("Failed to read binary object",e);
+  }
+}

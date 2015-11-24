@@ -2,7 +2,8 @@
   A.notNull(key,"key",val,"val");
   boolean statsEnabled=ctx.config().isStatisticsEnabled();
   long start=statsEnabled ? System.nanoTime() : 0L;
-  boolean res=(Boolean)updateAllInternal(UPDATE,Collections.singleton(key),Collections.singleton(val),null,expiryPerCall(),false,false,filter,ctx.writeThrough(),ctx.readThrough());
+  CacheOperationContext opCtx=ctx.operationContextPerCall();
+  boolean res=(Boolean)updateAllInternal(UPDATE,Collections.singleton(key),Collections.singleton(val),null,expiryPerCall(),false,false,filter,ctx.writeThrough(),ctx.readThrough(),opCtx != null && opCtx.isKeepBinary());
   if (statsEnabled)   metrics0().addPutTimeNanos(System.nanoTime() - start);
   return res;
 }

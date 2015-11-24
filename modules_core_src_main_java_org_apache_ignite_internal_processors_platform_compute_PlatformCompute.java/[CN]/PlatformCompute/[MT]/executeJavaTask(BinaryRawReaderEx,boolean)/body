@@ -1,0 +1,21 @@
+{
+  String taskName=reader.readString();
+  boolean keepPortable=reader.readBoolean();
+  Object arg=reader.readObjectDetached();
+  Collection<UUID> nodeIds=readNodeIds(reader);
+  IgniteCompute compute0=computeForTask(nodeIds);
+  if (async)   compute0=compute0.withAsync();
+  if (!keepPortable && arg instanceof BinaryObjectImpl)   arg=((BinaryObject)arg).deserialize();
+  Object res=compute0.execute(taskName,arg);
+  if (async) {
+    curFut.set(compute0.future().chain(new C1<IgniteFuture,Object>(){
+      private static final long serialVersionUID=0L;
+      @Override public Object apply(      IgniteFuture fut){
+        return toPortable(fut.get());
+      }
+    }
+));
+    return null;
+  }
+ else   return toPortable(res);
+}

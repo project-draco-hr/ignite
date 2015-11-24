@@ -1,0 +1,12 @@
+{
+  boolean canWrite=writer.canWrite(obj,err);
+  if (!canWrite)   return false;
+  try (PlatformMemory mem=ctx.memory().allocate()){
+    PlatformOutputStream out=mem.output();
+    BinaryRawWriterEx outWriter=ctx.writer(out);
+    writer.write(outWriter,obj,err);
+    out.synchronize();
+    ctx.gateway().futureObjectResult(futPtr,mem.pointer());
+  }
+   return true;
+}

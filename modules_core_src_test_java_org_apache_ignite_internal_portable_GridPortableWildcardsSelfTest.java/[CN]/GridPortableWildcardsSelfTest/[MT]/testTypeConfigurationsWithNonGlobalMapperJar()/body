@@ -1,0 +1,18 @@
+{
+  BinaryMarshaller marsh=portableMarshaller(new BinaryIdMapper(){
+    @SuppressWarnings("IfMayBeConditional") @Override public int typeId(    String clsName){
+      if (clsName.endsWith("1"))       return 300;
+ else       if (clsName.endsWith("2"))       return 400;
+ else       return -500;
+    }
+    @Override public int fieldId(    int typeId,    String fieldName){
+      return 0;
+    }
+  }
+,Arrays.asList(new BinaryTypeConfiguration("org.apache.ignite.portable.testjar.*"),new BinaryTypeConfiguration("unknown.*")));
+  PortableContext ctx=portableContext(marsh);
+  Map<String,BinaryIdMapper> typeMappers=U.field(ctx,"typeMappers");
+  assertEquals(3,typeMappers.size());
+  assertEquals(300,typeMappers.get("GridPortableTestClass1").typeId("GridPortableTestClass1"));
+  assertEquals(400,typeMappers.get("GridPortableTestClass2").typeId("GridPortableTestClass2"));
+}
