@@ -1,0 +1,32 @@
+{
+  Map<String,PojoMethodsCache> cacheMethods=pojosMthds.get(cacheName);
+  if (cacheMethods == null)   throw new CacheLoaderException("Failed to find POJO types metadata for cache: " + U.maskName(cacheName));
+  PojoMethodsCache mc=cacheMethods.get(typeName);
+  if (mc == null)   throw new CacheLoaderException("Failed to find POJO type metadata for type: " + typeName);
+  try {
+    Object obj=mc.ctor.newInstance();
+    for (    JdbcTypeField fld : flds) {
+      String fldJavaName=fld.getJavaFieldName();
+      Method setter=mc.setters.get(fldJavaName);
+      if (setter == null)       throw new IllegalStateException("Failed to find setter in POJO class [type=" + typeName + ", prop="+ fldJavaName+ "]");
+      String fldDbName=fld.getDatabaseFieldName();
+      Integer colIdx=loadColIdxs.get(fldDbName);
+      try {
+        Object colVal=getColumnValue(rs,colIdx,fld.getJavaFieldType());
+        try {
+          setter.invoke(obj,colVal);
+        }
+ catch (        Exception e) {
+          throw new CacheLoaderException("Failed to set property in POJO class [type=" + typeName + ", prop="+ fldJavaName+ ", col="+ colIdx+ ", dbName="+ fldDbName+ "]",e);
+        }
+      }
+ catch (      SQLException e) {
+        throw new CacheLoaderException("Failed to read object property [type= " + typeName + ", prop="+ fldJavaName+ ", col="+ colIdx+ ", dbName="+ fldDbName+ "]",e);
+      }
+    }
+    return obj;
+  }
+ catch (  Exception e) {
+    throw new CacheLoaderException("Failed to construct instance of class: " + typeName,e);
+  }
+}

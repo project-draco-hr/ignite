@@ -18,7 +18,11 @@
     beans.setAttribute("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance");
     beans.setAttribute("xmlns:util","http://www.springframework.org/schema/util");
     beans.setAttribute("xsi:schemaLocation","http://www.springframework.org/schema/beans " + "http://www.springframework.org/schema/beans/spring-beans.xsd " + "http://www.springframework.org/schema/util "+ "http://www.springframework.org/schema/util/spring-util.xsd");
-    for (    PojoDescriptor pojo : pojos)     addTypeMetadata(doc,beans,pkg,pojo,includeKeys);
+    Element factoryBean=addBean(doc,beans,CacheJdbcPojoStoreFactory.class);
+    Element typesElem=addProperty(doc,factoryBean,"types",null);
+    Element typesItemsElem=addElement(doc,typesElem,"list");
+    for (    PojoDescriptor pojo : pojos)     addJdbcPojoStoreFactory(doc,typesItemsElem,pkg,pojo,includeKeys);
+    for (    PojoDescriptor pojo : pojos)     addQueryEntity(doc,beans,pkg,pojo);
     TransformerFactory transformerFactory=TransformerFactory.newInstance();
     Transformer transformer=transformerFactory.newTransformer();
     transformer.setOutputProperty(OutputKeys.INDENT,"yes");

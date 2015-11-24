@@ -1,0 +1,33 @@
+{
+  this.cacheName=cacheName;
+  this.dialect=dialect;
+  this.typeMeta=typeMeta;
+  this.keyKind=keyKind;
+  this.valKind=valKind;
+  JdbcTypeField[] keyFields=typeMeta.getKeyFields();
+  JdbcTypeField[] valFields=typeMeta.getValueFields();
+  keyCols=databaseColumns(F.asList(keyFields));
+  uniqValFlds=F.view(F.asList(valFields),new IgnitePredicate<JdbcTypeField>(){
+    @Override public boolean apply(    JdbcTypeField col){
+      return !keyCols.contains(col.getDatabaseFieldName());
+    }
+  }
+);
+  String schema=typeMeta.getDatabaseSchema();
+  String tblName=typeMeta.getDatabaseTable();
+  fullTblName=F.isEmpty(schema) ? tblName : schema + "." + tblName;
+  Collection<String> uniqValCols=databaseColumns(uniqValFlds);
+  cols=F.concat(false,keyCols,uniqValCols);
+  loadColIdxs=U.newHashMap(cols.size());
+  int idx=1;
+  for (  String col : cols)   loadColIdxs.put(col,idx++);
+  loadCacheQry=dialect.loadCacheQuery(fullTblName,cols);
+  loadCacheSelRangeQry=dialect.loadCacheSelectRangeQuery(fullTblName,keyCols);
+  loadQrySingle=dialect.loadQuery(fullTblName,keyCols,cols,1);
+  maxKeysPerStmt=dialect.getMaxParameterCount() / keyCols.size();
+  loadQry=dialect.loadQuery(fullTblName,keyCols,cols,maxKeysPerStmt);
+  insQry=dialect.insertQuery(fullTblName,keyCols,uniqValCols);
+  updQry=dialect.updateQuery(fullTblName,keyCols,uniqValCols);
+  mergeQry=dialect.mergeQuery(fullTblName,keyCols,uniqValCols);
+  remQry=dialect.removeQuery(fullTblName,keyCols);
+}

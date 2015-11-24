@@ -1,2 +1,79 @@
 {
+  Connection conn=store.openConnection(false);
+  PreparedStatement orgStmt=conn.prepareStatement("INSERT INTO Organization(id, name, city) VALUES (?, ?, ?)");
+  for (int i=0; i < ORGANIZATION_CNT; i++) {
+    orgStmt.setInt(1,i);
+    orgStmt.setString(2,"name" + i);
+    orgStmt.setString(3,"city" + i % 10);
+    orgStmt.addBatch();
+  }
+  orgStmt.executeBatch();
+  U.closeQuiet(orgStmt);
+  conn.commit();
+  PreparedStatement prnStmt=conn.prepareStatement("INSERT INTO Person(id, org_id, name) VALUES (?, ?, ?)");
+  for (int i=0; i < PERSON_CNT; i++) {
+    prnStmt.setInt(1,i);
+    prnStmt.setInt(2,i % 100);
+    prnStmt.setString(3,"name" + i);
+    prnStmt.addBatch();
+  }
+  prnStmt.executeBatch();
+  conn.commit();
+  U.closeQuiet(prnStmt);
+  PreparedStatement prnComplexStmt=conn.prepareStatement("INSERT INTO Person_Complex(id, org_id, city_id, name, salary) VALUES (?, ?, ?, ?, ?)");
+  for (int i=0; i < PERSON_CNT; i++) {
+    prnComplexStmt.setInt(1,i);
+    prnComplexStmt.setInt(2,i % 500);
+    prnComplexStmt.setInt(3,i % 100);
+    prnComplexStmt.setString(4,"name" + i);
+    if (i > 0)     prnComplexStmt.setInt(5,1000 + i * 500);
+ else     prnComplexStmt.setNull(5,Types.INTEGER);
+    prnComplexStmt.addBatch();
+  }
+  prnComplexStmt.executeBatch();
+  U.closeQuiet(prnComplexStmt);
+  conn.commit();
+  U.closeQuiet(conn);
+  final Collection<OrganizationKey> orgKeys=new ConcurrentLinkedQueue<>();
+  final Collection<PersonKey> prnKeys=new ConcurrentLinkedQueue<>();
+  final Collection<PersonComplexKey> prnComplexKeys=new ConcurrentLinkedQueue<>();
+  IgniteBiInClosure<Object,Object> c=new CI2<Object,Object>(){
+    @Override public void apply(    Object k,    Object v){
+      if (k instanceof OrganizationKey && v instanceof Organization)       orgKeys.add((OrganizationKey)k);
+ else       if (k instanceof PersonKey && v instanceof Person)       prnKeys.add((PersonKey)k);
+ else       if (k instanceof PersonComplexKey && v instanceof Person) {
+        PersonComplexKey key=(PersonComplexKey)k;
+        Person val=(Person)v;
+        assertTrue("Key ID should be the same as value ID",key.getId() == val.getId());
+        assertTrue("Key orgID should be the same as value orgID",key.getOrgId() == val.getOrgId());
+        assertEquals("name" + key.getId(),val.getName());
+        prnComplexKeys.add((PersonComplexKey)k);
+      }
+    }
+  }
+;
+  store.loadCache(c);
+  assertEquals(ORGANIZATION_CNT,orgKeys.size());
+  assertEquals(PERSON_CNT,prnKeys.size());
+  assertEquals(PERSON_CNT,prnComplexKeys.size());
+  Collection<OrganizationKey> tmpOrgKeys=new ArrayList<>(orgKeys);
+  Collection<PersonKey> tmpPrnKeys=new ArrayList<>(prnKeys);
+  Collection<PersonComplexKey> tmpPrnComplexKeys=new ArrayList<>(prnComplexKeys);
+  orgKeys.clear();
+  prnKeys.clear();
+  prnComplexKeys.clear();
+  store.loadCache(c,OrganizationKey.class.getName(),"SELECT name, city, id FROM ORGANIZATION",PersonKey.class.getName(),"SELECT org_id, id, name FROM Person WHERE id < 1000");
+  assertEquals(ORGANIZATION_CNT,orgKeys.size());
+  assertEquals(1000,prnKeys.size());
+  assertEquals(0,prnComplexKeys.size());
+  store.deleteAll(tmpOrgKeys);
+  store.deleteAll(tmpPrnKeys);
+  store.deleteAll(tmpPrnComplexKeys);
+  orgKeys.clear();
+  prnKeys.clear();
+  prnComplexKeys.clear();
+  store.loadCache(c);
+  assertTrue(orgKeys.isEmpty());
+  assertTrue(prnKeys.isEmpty());
+  assertTrue(prnComplexKeys.isEmpty());
 }

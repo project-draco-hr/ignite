@@ -1,0 +1,22 @@
+{
+  try {
+    if (fieldVal != null) {
+      if (field.getJavaFieldType() == UUID.class) {
+switch (field.getDatabaseFieldType()) {
+case Types.BINARY:
+          fieldVal=U.uuidToBytes((UUID)fieldVal);
+        break;
+case Types.CHAR:
+case Types.VARCHAR:
+      fieldVal=fieldVal.toString();
+    break;
+}
+}
+stmt.setObject(idx,fieldVal);
+}
+ else stmt.setNull(idx,field.getDatabaseFieldType());
+}
+ catch (SQLException e) {
+throw new CacheException("Failed to set statement parameter name: " + field.getDatabaseFieldName(),e);
+}
+}

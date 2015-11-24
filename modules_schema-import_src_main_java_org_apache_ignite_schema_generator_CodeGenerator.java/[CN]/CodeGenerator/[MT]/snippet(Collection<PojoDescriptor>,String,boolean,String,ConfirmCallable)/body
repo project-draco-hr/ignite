@@ -7,81 +7,118 @@
     if (NO == choice || NO_TO_ALL == choice)     return;
   }
   Collection<String> src=new ArrayList<>(256);
-  header(src,pkg,"org.apache.ignite.cache.*;org.apache.ignite.cache.store.*;" + "org.apache.ignite.configuration.*;org.apache.ignite.lang.*;;" + "javax.cache.configuration.*;java.sql.*;java.util.*","CacheConfig","CacheConfig");
+  header(src,pkg,"java.sql.*;java.util.*;" + "org.apache.ignite.cache.*;org.apache.ignite.cache.store.jdbc.*;" + "org.apache.ignite.configuration.*","CacheConfig","CacheConfig");
+  for (  PojoDescriptor pojo : pojos) {
+    String tbl=pojo.table();
+    String valClsName=pojo.valueClassName();
+    add1(src,"/**");
+    add1(src,"* Create JDBC type for " + tbl + ".");
+    add1(src,"*");
+    add1(src,"* @param cacheName Cache name.");
+    add1(src,"*/");
+    add1(src,"private static JdbcType jdbcType" + valClsName + "(String cacheName) {");
+    add2(src,"JdbcType jdbcType = new JdbcType();");
+    add0(src,"");
+    add2(src,"jdbcType.setCacheName(cacheName);");
+    add2(src,"jdbcType.setDatabaseSchema(\"" + pojo.schema() + "\");");
+    add2(src,"jdbcType.setDatabaseTable(\"" + tbl + "\");");
+    add2(src,"jdbcType.setKeyType(\"" + pkg + "."+ pojo.keyClassName()+ "\");");
+    add2(src,"jdbcType.setValueType(\"" + pkg + "."+ valClsName+ "\");");
+    add0(src,"");
+    add2(src,"// Key fields for " + tbl + ".");
+    add2(src,"Collection<JdbcTypeField> keys = new ArrayList<>();");
+    addFields(src,"keys",pojo.keyFields());
+    add2(src,"jdbcType.setKeyFields(keys.toArray(new JdbcTypeField[keys.size()]));");
+    add0(src,"");
+    add2(src,"// Value fields for " + tbl + ".");
+    add2(src,"Collection<JdbcTypeField> vals = new ArrayList<>();");
+    addFields(src,"vals",pojo.valueFields(includeKeys));
+    add2(src,"jdbcType.setValueFields(vals.toArray(new JdbcTypeField[vals.size()]));");
+    add0(src,"");
+    add2(src,"return jdbcType;");
+    add1(src,"}");
+    add0(src,"");
+    add1(src,"/**");
+    add1(src,"* Create SQL Query descriptor for " + tbl + ".");
+    add1(src,"*/");
+    add1(src,"private static QueryEntity queryEntity" + valClsName + "() {");
+    add2(src,"QueryEntity qryEntity = new QueryEntity();");
+    add0(src,"");
+    add2(src,"qryEntity.setKeyType(\"" + pkg + "."+ pojo.keyClassName()+ "\");");
+    add2(src,"qryEntity.setValueType(\"" + pkg + "."+ valClsName+ "\");");
+    add0(src,"");
+    add2(src,"// Query fields for " + tbl + ".");
+    add2(src,"LinkedHashMap<String, String> fields = new LinkedHashMap<>();");
+    add0(src,"");
+    for (    PojoField field : pojo.fields())     add2(src,"fields.put(\"" + field.javaName() + "\", \""+ javaTypeName(field)+ "\");");
+    add0(src,"");
+    add2(src,"qryEntity.setFields(fields);");
+    add0(src,"");
+    Collection<QueryIndex> idxs=pojo.indexes();
+    if (!idxs.isEmpty()) {
+      add2(src,"// Indexes for " + tbl + ".");
+      add2(src,"Collection<QueryIndex> idxs = new ArrayList<>();");
+      add0(src,"");
+      boolean firstIdx=true;
+      for (      QueryIndex idx : idxs) {
+        if (idx.getFields().size() == 1) {
+          Map.Entry<String,Boolean> fld=F.first(idx.getFields().entrySet());
+          add2(src,"idxs.add(new QueryIndex(\"" + fld.getKey() + "\", "+ fld.getValue()+ ", \""+ idx.getName()+ "\"));");
+          add0(src,"");
+        }
+ else {
+          add2(src,(firstIdx ? "QueryIndex " : "") + "idx = new QueryIndex();");
+          add0(src,"");
+          add2(src,"idx.setName(\"" + idx.getName() + "\");");
+          add0(src,"");
+          add2(src,(firstIdx ? "LinkedHashMap<String, Boolean> " : "") + "idxFlds = new LinkedHashMap<>();");
+          add0(src,"");
+          for (          Map.Entry<String,Boolean> idxFld : idx.getFields().entrySet())           add2(src,"idxFlds.put(\"" + idxFld.getKey() + "\", "+ idxFld.getValue()+ ");");
+          add0(src,"");
+          add2(src,"idx.setFields(idxFlds);");
+          add0(src,"");
+          add2(src,"idxs.add(idx);");
+          add0(src,"");
+          firstIdx=false;
+        }
+      }
+      add2(src,"qryEntity.setIndexes(idxs);");
+      add0(src,"");
+    }
+    add2(src,"return qryEntity;");
+    add1(src,"}");
+    add0(src,"");
+  }
   add1(src,"/**");
   add1(src,"* Configure cache.");
   add1(src,"*");
-  add1(src,"* @param name Cache name.");
+  add1(src,"* @param cacheName Cache name.");
   add1(src,"* @param storeFactory Cache store factory.");
   add1(src,"*/");
-  add1(src,"public static <K, V> CacheConfiguration<K, V> cache(String name," + " Factory<CacheStore<K, V>> storeFactory) {");
+  add1(src,"public static <K, V> CacheConfiguration<K, V> cache(String cacheName," + " CacheJdbcPojoStoreFactory<K, V> storeFactory) {");
   add2(src,"if (storeFactory == null)");
   add3(src," throw new IllegalArgumentException(\"Cache store factory cannot be null.\");");
   add0(src,"");
-  add2(src,"CacheConfiguration<K, V> ccfg = new CacheConfiguration<>(name);");
+  add2(src,"CacheConfiguration<K, V> ccfg = new CacheConfiguration<>(cacheName);");
   add0(src,"");
   add2(src,"ccfg.setCacheStoreFactory(storeFactory);");
   add2(src,"ccfg.setReadThrough(true);");
   add2(src,"ccfg.setWriteThrough(true);");
   add0(src,"");
-  add2(src,"// Configure cache types. ");
-  add2(src,"Collection<CacheTypeMetadata> meta = new ArrayList<>();");
+  add2(src,"// Configure JDBC types. ");
+  add2(src,"Collection<JdbcType> jdbcTypes = new ArrayList<>();");
   add0(src,"");
-  boolean first=true;
-  boolean firstAsc=true;
-  boolean firstDesc=true;
-  boolean firstGrps=true;
-  boolean firstGrp=true;
-  for (  PojoDescriptor pojo : pojos) {
-    String tbl=pojo.table();
-    add2(src,"// " + tbl + ".");
-    add2(src,(first ? "CacheTypeMetadata " : "") + "type = new CacheTypeMetadata();");
-    add0(src,"");
-    add2(src,"meta.add(type);");
-    add0(src,"");
-    add2(src,"type.setDatabaseSchema(\"" + pojo.schema() + "\");");
-    add2(src,"type.setDatabaseTable(\"" + tbl + "\");");
-    add2(src,"type.setKeyType(" + pojo.keyClassName() + ".class.getName());");
-    add2(src,"type.setValueType(" + pojo.valueClassName() + ".class.getName());");
-    add0(src,"");
-    add2(src,"// Key fields for " + tbl + ".");
-    add2(src,(first ? "Collection<CacheTypeFieldMetadata> " : "") + "keys = new ArrayList<>();");
-    addFields(src,"keys",pojo.keyFields());
-    add2(src,"type.setKeyFields(keys);");
-    add0(src,"");
-    add2(src,"// Value fields for " + tbl + ".");
-    add2(src,(first ? "Collection<CacheTypeFieldMetadata> " : "") + "vals = new ArrayList<>();");
-    addFields(src,"vals",pojo.valueFields(includeKeys));
-    add2(src,"type.setValueFields(vals);");
-    add0(src,"");
-    addQueryFields(src,pojo.fields(),"qryFlds","setQueryFields","// Query fields for " + tbl + ".",first);
-    firstAsc=addQueryFields(src,pojo.ascendingFields(),"ascFlds","setAscendingFields","// Ascending fields for " + tbl + ".",firstAsc);
-    firstDesc=addQueryFields(src,pojo.descendingFields(),"descFlds","setDescendingFields","// Descending fields for " + tbl + ".",firstDesc);
-    Map<String,Map<String,IndexItem>> groups=pojo.groups();
-    if (!groups.isEmpty()) {
-      add2(src,"// Groups for " + tbl + ".");
-      add2(src,(firstGrps ? "Map<String, LinkedHashMap<String, IgniteBiTuple<Class<?>, Boolean>>> " : "") + "grps = new LinkedHashMap<>();");
-      add0(src,"");
-      firstGrps=false;
-      for (      Map.Entry<String,Map<String,IndexItem>> group : groups.entrySet()) {
-        add2(src,(firstGrp ? "LinkedHashMap<String, IgniteBiTuple<Class<?>, Boolean>> " : "") + "grpItems = new LinkedHashMap<>();");
-        add0(src,"");
-        for (        Map.Entry<String,IndexItem> grpItem : group.getValue().entrySet()) {
-          IndexItem idxCol=grpItem.getValue();
-          add2(src,"grpItems.put(\"" + grpItem.getKey() + "\", "+ "new IgniteBiTuple<Class<?>, Boolean>("+ javaTypeName(idxCol.type())+ ".class, "+ idxCol.descending()+ "));");
-        }
-        add0(src,"");
-        add2(src,"grps.put(\"" + group.getKey() + "\", grpItems);");
-        add0(src,"");
-        firstGrp=false;
-      }
-      add2(src,"type.setGroups(grps);");
-      add0(src,"");
-    }
-    add2(src,"ccfg.setTypeMetadata(meta);");
-    add0(src,"");
-    first=false;
-  }
+  for (  PojoDescriptor pojo : pojos)   add2(src,"jdbcTypes.add(jdbcType" + pojo.valueClassName() + "(cacheName));");
+  add0(src,"");
+  add2(src,"storeFactory.setTypes(jdbcTypes.toArray(new JdbcType[jdbcTypes.size()]));");
+  add0(src,"");
+  add2(src,"// Configure query entities. ");
+  add2(src,"Collection<QueryEntity> qryEntities = new ArrayList<>();");
+  add0(src,"");
+  for (  PojoDescriptor pojo : pojos)   add2(src,"qryEntities.add(queryEntity" + pojo.valueClassName() + "());");
+  add0(src,"");
+  add2(src,"ccfg.setQueryEntities(qryEntities);");
+  add0(src,"");
   add2(src,"return ccfg;");
   add1(src,"}");
   add0(src,"}");

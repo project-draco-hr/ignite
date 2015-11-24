@@ -1,5 +1,12 @@
 {
-  BasicJdbcDialect dialect=new BasicJdbcDialect(){
+  CacheJdbcPojoStore<Object,Object> store=store();
+  store.setDialect(new H2Dialect(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public boolean hasMerge(){
+      return false;
+    }
     /** 
  * {@inheritDoc} 
  */
@@ -7,12 +14,8 @@
       return super.updateQuery(tblName,keyCols,valCols) + " AND 1 = 0";
     }
   }
-;
-  store.setDialect(dialect);
-  Map<String,Map<Object,CacheAbstractJdbcStore.EntryMapping>> cacheMappings=GridTestUtils.getFieldValue(store,CacheAbstractJdbcStore.class,"cacheMappings");
-  CacheAbstractJdbcStore.EntryMapping em=cacheMappings.get(null).get(OrganizationKey.class);
-  CacheTypeMetadata typeMeta=GridTestUtils.getFieldValue(em,CacheAbstractJdbcStore.EntryMapping.class,"typeMeta");
-  cacheMappings.get(null).put(OrganizationKey.class,new CacheAbstractJdbcStore.EntryMapping(null,dialect,typeMeta));
+);
+  inject(store);
   Connection conn=store.openConnection(false);
   PreparedStatement orgStmt=conn.prepareStatement("INSERT INTO Organization(id, name, city) VALUES (?, ?, ?)");
   orgStmt.setInt(1,1);
@@ -26,6 +29,7 @@
   ses.newSession(null);
   try {
     store.write(new CacheEntryImpl<>(k1,v1));
+    fail("CacheWriterException wasn't thrown.");
   }
  catch (  CacheWriterException e) {
     if (!e.getMessage().startsWith("Failed insert entry in database, violate a unique index or primary key") || e.getSuppressed().length != 2)     throw e;
