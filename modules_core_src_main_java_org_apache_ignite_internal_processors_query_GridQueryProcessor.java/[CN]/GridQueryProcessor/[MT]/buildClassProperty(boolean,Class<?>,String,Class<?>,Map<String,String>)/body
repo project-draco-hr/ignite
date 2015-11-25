@@ -9,23 +9,27 @@
     StringBuilder bld=new StringBuilder("get");
     bld.append(prop);
     bld.setCharAt(3,Character.toUpperCase(bld.charAt(3)));
-    String[] mtdNames=new String[]{bld.toString(),prop};
     ClassProperty tmp=null;
-    for (    String mtdName : mtdNames) {
-      try {
-        tmp=new ClassProperty(cls.getMethod(mtdName),key,alias);
-      }
- catch (      NoSuchMethodException ignore) {
-      }
+    try {
+      tmp=new ClassProperty(cls.getMethod(bld.toString()),key,alias);
+    }
+ catch (    NoSuchMethodException ignore) {
     }
     if (tmp == null) {
       try {
         tmp=new ClassProperty(cls.getDeclaredField(prop),key,alias);
       }
  catch (      NoSuchFieldException ignored) {
-        return null;
       }
     }
+    if (tmp == null) {
+      try {
+        tmp=new ClassProperty(cls.getMethod(prop),key,alias);
+      }
+ catch (      NoSuchMethodException ignored) {
+      }
+    }
+    if (tmp == null)     return null;
     tmp.parent(res);
     cls=tmp.type();
     res=tmp;
