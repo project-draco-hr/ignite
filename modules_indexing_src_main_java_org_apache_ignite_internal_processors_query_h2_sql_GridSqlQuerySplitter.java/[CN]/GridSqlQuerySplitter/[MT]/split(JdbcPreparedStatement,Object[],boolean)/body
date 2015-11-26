@@ -36,8 +36,13 @@
     mapQry.distinct(!aggregateFound && mapQry.groupColumns() == null && mapQry.havingColumn() < 0);
     rdcQry.distinct(true);
   }
-  GridCacheTwoStepQuery res=new GridCacheTwoStepQuery(spaces,new GridCacheSqlQuery(rdcQry.getSQL(),findParams(rdcQry,params,new ArrayList<>()).toArray()));
-  res.addMapQuery(new GridCacheSqlQuery(mapQry.getSQL(),findParams(mapQry,params,new ArrayList<>(params.length)).toArray()).columns(collectColumns(mapExps)));
+  IntArray paramIdxs=new IntArray(params.length);
+  GridCacheSqlQuery rdc=new GridCacheSqlQuery(rdcQry.getSQL(),findParams(rdcQry,params,new ArrayList<>(),paramIdxs).toArray());
+  rdc.parameterIndexes(toIntArray(paramIdxs));
+  paramIdxs=new IntArray(params.length);
+  GridCacheSqlQuery map=new GridCacheSqlQuery(mapQry.getSQL(),findParams(mapQry,params,new ArrayList<>(params.length),paramIdxs).toArray()).columns(collectColumns(mapExps));
+  map.parameterIndexes(toIntArray(paramIdxs));
+  GridCacheTwoStepQuery res=new GridCacheTwoStepQuery(spaces,rdc,rdcQry.simpleQuery()).addMapQuery(map);
   res.explain(explain);
   return res;
 }
