@@ -37,5 +37,11 @@ catch (      CacheException e) {
   fut.get();
   for (int i=0; i < SRV_CNT; i++)   ((TestCommunicationSpi)grid(i).configuration().getCommunicationSpi()).stopBlock(false);
   cache.put(1,1);
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return cache.get(1) != null;
+    }
+  }
+,5000);
   assertEquals(1,cache.get(1));
 }
