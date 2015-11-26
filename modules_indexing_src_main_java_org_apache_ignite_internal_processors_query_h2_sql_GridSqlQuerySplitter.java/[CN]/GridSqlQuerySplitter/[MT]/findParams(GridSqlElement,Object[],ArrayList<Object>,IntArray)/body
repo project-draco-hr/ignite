@@ -1,0 +1,14 @@
+{
+  if (el == null)   return;
+  if (el instanceof GridSqlParameter) {
+    final int idx=((GridSqlParameter)el).index();
+    while (target.size() < idx)     target.add(null);
+    if (params.length <= idx)     throw new IgniteException("Invalid number of query parameters. " + "Cannot find " + idx + " parameter.");
+    Object param=params[idx];
+    if (idx == target.size())     target.add(param);
+ else     target.set(idx,param);
+    paramIdxs.add(idx);
+  }
+ else   if (el instanceof GridSqlSubquery)   findParams(((GridSqlSubquery)el).select(),params,target,paramIdxs);
+ else   for (  GridSqlElement child : el)   findParams(child,params,target,paramIdxs);
+}

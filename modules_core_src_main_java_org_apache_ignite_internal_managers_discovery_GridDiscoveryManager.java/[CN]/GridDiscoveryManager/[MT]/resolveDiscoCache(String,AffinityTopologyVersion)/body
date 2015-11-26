@@ -2,8 +2,10 @@
   Snapshot snap=topSnap.get();
   DiscoCache cache=AffinityTopologyVersion.NONE.equals(topVer) || topVer.equals(snap.topVer) ? snap.discoCache : discoCacheHist.get(topVer);
   if (cache == null) {
-    Map.Entry<AffinityTopologyVersion,DiscoCache> eldest=Collections.min(discoCacheHist.entrySet(),histCmp);
-    if (topVer.compareTo(eldest.getKey()) < 0)     cache=eldest.getValue();
+    Map.Entry<AffinityTopologyVersion,DiscoCache> eldest=discoCacheHist.firstEntry();
+    if (eldest != null) {
+      if (topVer.compareTo(eldest.getKey()) < 0)       cache=eldest.getValue();
+    }
   }
   if (cache == null) {
     throw new IgniteException("Failed to resolve nodes topology [cacheName=" + cacheName + ", topVer="+ topVer+ ", history="+ discoCacheHist.keySet()+ ", locNode="+ ctx.discovery().localNode()+ ']');

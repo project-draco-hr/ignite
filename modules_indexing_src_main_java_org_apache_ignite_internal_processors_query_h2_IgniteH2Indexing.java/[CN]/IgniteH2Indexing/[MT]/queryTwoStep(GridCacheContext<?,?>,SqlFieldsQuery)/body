@@ -1,35 +1,49 @@
 {
-  String space=cctx.name();
-  String sqlQry=qry.getSql();
+  final String space=cctx.name();
+  final String sqlQry=qry.getSql();
   Connection c=connectionForSpace(space);
-  PreparedStatement stmt;
-  try {
-    stmt=c.prepareStatement(sqlQry);
-  }
- catch (  SQLException e) {
-    throw new CacheException("Failed to parse query: " + sqlQry,e);
-  }
-  try {
-    bindParameters(stmt,F.asList(qry.getArgs()));
-  }
- catch (  IgniteCheckedException e) {
-    throw new CacheException("Failed to bind parameters: [qry=" + sqlQry + ", params="+ Arrays.deepToString(qry.getArgs())+ "]",e);
-  }
   GridCacheTwoStepQuery twoStepQry;
   List<GridQueryFieldMetadata> meta;
-  try {
-    twoStepQry=GridSqlQuerySplitter.split((JdbcPreparedStatement)stmt,qry.getArgs(),qry.isCollocated());
-    meta=meta(stmt.getMetaData());
+  final T3<String,String,Boolean> cachedQryKey=new T3<>(space,sqlQry,qry.isCollocated());
+  TwoStepCachedQuery cachedQry=twoStepCache.get(cachedQryKey);
+  if (cachedQry != null) {
+    twoStepQry=cachedQry.twoStepQry.copy(qry.getArgs());
+    meta=cachedQry.meta;
   }
- catch (  SQLException e) {
-    throw new CacheException(e);
-  }
- finally {
-    U.close(stmt,log);
+ else {
+    PreparedStatement stmt;
+    try {
+      stmt=prepareStatement(c,sqlQry,false);
+    }
+ catch (    SQLException e) {
+      throw new CacheException("Failed to parse query: " + sqlQry,e);
+    }
+    try {
+      try {
+        bindParameters(stmt,F.asList(qry.getArgs()));
+      }
+ catch (      IgniteCheckedException e) {
+        throw new CacheException("Failed to bind parameters: [qry=" + sqlQry + ", params="+ Arrays.deepToString(qry.getArgs())+ "]",e);
+      }
+      try {
+        twoStepQry=GridSqlQuerySplitter.split((JdbcPreparedStatement)stmt,qry.getArgs(),qry.isCollocated());
+        meta=meta(stmt.getMetaData());
+      }
+ catch (      SQLException e) {
+        throw new CacheException(e);
+      }
+    }
+  finally {
+      U.close(stmt,log);
+    }
   }
   if (log.isDebugEnabled())   log.debug("Parsed query: `" + sqlQry + "` into two step query: "+ twoStepQry);
   twoStepQry.pageSize(qry.getPageSize());
   QueryCursorImpl<List<?>> cursor=new QueryCursorImpl<>(queryTwoStep(cctx,twoStepQry,cctx.keepPortable()));
   cursor.fieldsMeta(meta);
+  if (cachedQry == null && !twoStepQry.explain()) {
+    cachedQry=new TwoStepCachedQuery(meta,twoStepQry.copy(null));
+    twoStepCache.putIfAbsent(cachedQryKey,cachedQry);
+  }
   return cursor;
 }

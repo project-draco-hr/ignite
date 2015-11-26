@@ -9,9 +9,10 @@
  catch (  IgniteCheckedException e) {
     throw new BinaryObjectException("Failed to register class.",e);
   }
-  PortableClassDescriptor desc=new PortableClassDescriptor(this,cls,true,typeId,typeName,null,idMapper,null,true,registered,false);
+  String affFieldName=affinityFieldName(cls);
+  PortableClassDescriptor desc=new PortableClassDescriptor(this,cls,true,typeId,typeName,affFieldName,idMapper,null,true,registered,false);
   Collection<PortableSchema> schemas=desc.schema() != null ? Collections.singleton(desc.schema()) : null;
-  metaHnd.addMeta(typeId,new BinaryMetadata(typeId,typeName,desc.fieldsMeta(),null,schemas).wrap(this));
+  metaHnd.addMeta(typeId,new BinaryMetadata(typeId,typeName,desc.fieldsMeta(),affFieldName,schemas).wrap(this));
   if (IgniteUtils.detectClassLoader(cls).equals(dfltLdr))   userTypes.put(typeId,desc);
   descByCls.put(cls,desc);
   mappers.putIfAbsent(typeId,idMapper);
