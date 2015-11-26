@@ -1,3 +1,27 @@
 {
-  return null;
+  if (binaryMock != null)   return binaryMock;
+  if (ctx == null) {
+    ctx=new PortableContext(BinaryCachingMetadataHandler.create(),configuration()){
+      @Override public int typeId(      String typeName){
+        return typeName.hashCode();
+      }
+    }
+;
+  }
+  binaryMock=new NoOpBinary(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public int typeId(    String typeName){
+      return typeName.hashCode();
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public BinaryObjectBuilder builder(    String typeName) throws BinaryObjectException {
+      return new BinaryObjectBuilderImpl(ctx,typeName);
+    }
+  }
+;
+  return binaryMock;
 }
