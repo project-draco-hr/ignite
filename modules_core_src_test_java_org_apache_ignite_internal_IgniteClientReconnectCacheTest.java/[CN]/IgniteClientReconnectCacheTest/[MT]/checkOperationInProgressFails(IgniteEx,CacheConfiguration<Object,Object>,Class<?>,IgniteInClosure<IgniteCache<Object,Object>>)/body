@@ -34,8 +34,12 @@ catch (      CacheException e) {
   assertNotDone(fut);
   log.info("Fail client: " + client.localNode().id());
   srvSpi.failNode(client.localNode().id(),null);
-  fut.get();
-  for (int i=0; i < SRV_CNT; i++)   ((TestCommunicationSpi)grid(i).configuration().getCommunicationSpi()).stopBlock(false);
+  try {
+    fut.get();
+  }
+  finally {
+    for (int i=0; i < SRV_CNT; i++)     ((TestCommunicationSpi)grid(i).configuration().getCommunicationSpi()).stopBlock(false);
+  }
   cache.put(1,1);
   GridTestUtils.waitForCondition(new GridAbsPredicate(){
     @Override public boolean apply(){
