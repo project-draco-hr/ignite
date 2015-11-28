@@ -10,13 +10,15 @@
   }
   GridCacheAdapter cache0=internalCache(cache);
   GridCacheContext cctx=cache0.context();
+  boolean binary=cctx.cacheObjects().isPortableEnabled(null);
   for (  Map.Entry<TestKey,TestValue> e : map.entrySet()) {
     GridCacheEntryEx entry=cache0.peekEx(e.getKey());
     assertNotNull("No entry for key: " + e.getKey(),entry);
     TestKey key0=entry.key().value(cctx.cacheObjectContext(),false);
     assertNotSame(key0,e.getKey());
     TestKey key1=entry.key().value(cctx.cacheObjectContext(),true);
-    assertSame(key0,key1);
+    if (!binary)     assertSame(key0,key1);
+ else     assertNotSame(key0,key1);
     TestValue val0=entry.rawGet().value(cctx.cacheObjectContext(),false);
     assertNotSame(val0,e.getValue());
     TestValue val1=entry.rawGet().value(cctx.cacheObjectContext(),true);

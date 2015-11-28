@@ -1,0 +1,25 @@
+{
+  int key1=primaryKey(ignite(1).cache("cache"));
+  int key2=primaryKey(ignite(2).cache("cache"));
+  TestCommunicationSpi spi=(TestCommunicationSpi)ignite(1).configuration().getCommunicationSpi();
+  spi.blockMessages(GridNearTxPrepareResponse.class,ignite(0).cluster().localNode().id());
+  IgniteCache<Object,Object> cache=ignite(0).cache("cache").withAsync();
+  cache.putAll(F.asMap(key1,"val1",key2,new TestValue()));
+  try {
+    Thread.sleep(500);
+    IgniteInternalFuture<Void> fut=GridTestUtils.runAsync(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        startGrid(4);
+        return null;
+      }
+    }
+);
+    Thread.sleep(500);
+    spi.stopBlock();
+    cache.future().get();
+    fut.get();
+  }
+  finally {
+    stopGrid(4);
+  }
+}
