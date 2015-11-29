@@ -1,19 +1,19 @@
 {
-  Map<String,PojoMethodsCache> pojoMethods=U.newHashMap(types.size() * 2);
+  Map<String,PojoPropertiesCache> pojoProps=U.newHashMap(types.size() * 2);
   for (  JdbcType type : types) {
     String keyTypeName=type.getKeyType();
     TypeKind keyKind=kindForName(keyTypeName);
     if (keyKind == TypeKind.POJO) {
-      if (pojoMethods.containsKey(keyTypeName))       throw new CacheException("Found duplicate key type [cache=" + U.maskName(cacheName) + ", keyType="+ keyTypeName+ "]");
-      pojoMethods.put(keyTypeName,new PojoMethodsCache(keyTypeName,type.getKeyFields()));
+      if (pojoProps.containsKey(keyTypeName))       throw new CacheException("Found duplicate key type [cache=" + U.maskName(cacheName) + ", keyType="+ keyTypeName+ "]");
+      pojoProps.put(keyTypeName,new PojoPropertiesCache(keyTypeName,type.getKeyFields()));
     }
     String valTypeName=type.getValueType();
     TypeKind valKind=kindForName(valTypeName);
-    if (valKind == TypeKind.POJO)     pojoMethods.put(valTypeName,new PojoMethodsCache(valTypeName,type.getValueFields()));
+    if (valKind == TypeKind.POJO)     pojoProps.put(valTypeName,new PojoPropertiesCache(valTypeName,type.getValueFields()));
   }
-  if (!pojoMethods.isEmpty()) {
-    Map<String,Map<String,PojoMethodsCache>> newPojosMethods=new HashMap<>(pojosMthds);
-    newPojosMethods.put(cacheName,pojoMethods);
-    pojosMthds=newPojosMethods;
+  if (!pojoProps.isEmpty()) {
+    Map<String,Map<String,PojoPropertiesCache>> newPojosProps=new HashMap<>(pojosProps);
+    newPojosProps.put(cacheName,pojoProps);
+    pojosProps=newPojosProps;
   }
 }

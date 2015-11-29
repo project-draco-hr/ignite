@@ -1,0 +1,30 @@
+{
+  try {
+    cls=Class.forName(clsName);
+    ctor=cls.getDeclaredConstructor();
+    if (!ctor.isAccessible())     ctor.setAccessible(true);
+  }
+ catch (  ClassNotFoundException e) {
+    throw new CacheException("Failed to find class: " + clsName,e);
+  }
+catch (  NoSuchMethodException e) {
+    throw new CacheException("Failed to find default constructor for class: " + clsName,e);
+  }
+  props=U.newHashMap(jdbcFlds.length);
+  for (  JdbcTypeField jdbcFld : jdbcFlds) {
+    String fldName=jdbcFld.getJavaFieldName();
+    String mthName=capitalFirst(fldName);
+    Method getter=methodByName(cls,"get" + mthName);
+    if (getter == null)     getter=methodByName(cls,"is" + mthName);
+    if (getter == null)     getter=methodByName(cls,fldName);
+    Method setter=methodByName(cls,"set" + mthName,jdbcFld.getJavaFieldType());
+    if (setter == null)     setter=methodByName(cls,fldName,jdbcFld.getJavaFieldType());
+    if (getter != null && setter != null)     props.put(fldName,new ClassProperty(getter,setter,null));
+ else     try {
+      props.put(fldName,new ClassProperty(null,null,cls.getDeclaredField(fldName)));
+    }
+ catch (    NoSuchFieldException ignored) {
+      throw new CacheException("Failed to find property in POJO class [class=" + clsName + ", prop="+ fldName+ "]");
+    }
+  }
+}

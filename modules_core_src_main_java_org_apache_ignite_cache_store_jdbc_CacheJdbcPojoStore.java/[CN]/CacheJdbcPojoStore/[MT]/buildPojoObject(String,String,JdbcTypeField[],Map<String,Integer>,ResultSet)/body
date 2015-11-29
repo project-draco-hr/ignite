@@ -1,20 +1,20 @@
 {
-  Map<String,PojoMethodsCache> cacheMethods=pojosMthds.get(cacheName);
-  if (cacheMethods == null)   throw new CacheLoaderException("Failed to find POJO types metadata for cache: " + U.maskName(cacheName));
-  PojoMethodsCache mc=cacheMethods.get(typeName);
-  if (mc == null)   throw new CacheLoaderException("Failed to find POJO type metadata for type: " + typeName);
+  Map<String,PojoPropertiesCache> cacheProps=pojosProps.get(cacheName);
+  if (cacheProps == null)   throw new CacheLoaderException("Failed to find POJO types metadata for cache: " + U.maskName(cacheName));
+  PojoPropertiesCache ppc=cacheProps.get(typeName);
+  if (ppc == null)   throw new CacheLoaderException("Failed to find POJO type metadata for type: " + typeName);
   try {
-    Object obj=mc.ctor.newInstance();
+    Object obj=ppc.ctor.newInstance();
     for (    JdbcTypeField fld : flds) {
       String fldJavaName=fld.getJavaFieldName();
-      Method setter=mc.setters.get(fldJavaName);
-      if (setter == null)       throw new IllegalStateException("Failed to find setter in POJO class [type=" + typeName + ", prop="+ fldJavaName+ "]");
+      ClassProperty prop=ppc.props.get(fldJavaName);
+      if (prop == null)       throw new IllegalStateException("Failed to find property in POJO class [type=" + typeName + ", prop="+ fldJavaName+ "]");
       String fldDbName=fld.getDatabaseFieldName();
       Integer colIdx=loadColIdxs.get(fldDbName);
       try {
         Object colVal=getColumnValue(rs,colIdx,fld.getJavaFieldType());
         try {
-          setter.invoke(obj,colVal);
+          prop.set(obj,colVal);
         }
  catch (        Exception e) {
           throw new CacheLoaderException("Failed to set property in POJO class [type=" + typeName + ", prop="+ fldJavaName+ ", col="+ colIdx+ ", dbName="+ fldDbName+ "]",e);
