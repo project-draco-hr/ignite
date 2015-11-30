@@ -1,0 +1,9 @@
+{
+  IgnitePair<UUID> key=F.pair(from,to);
+  IgnitePair<Queue<Message>> val=msgMap.get(key);
+  if (val == null) {
+    IgnitePair<Queue<Message>> old=msgMap.putIfAbsent(key,val=F.<Queue<Message>>pair(new ConcurrentLinkedQueue<Message>(),new ConcurrentLinkedQueue<Message>()));
+    if (old != null)     val=old;
+  }
+  (sent ? val.get1() : val.get2()).add(msg);
+}

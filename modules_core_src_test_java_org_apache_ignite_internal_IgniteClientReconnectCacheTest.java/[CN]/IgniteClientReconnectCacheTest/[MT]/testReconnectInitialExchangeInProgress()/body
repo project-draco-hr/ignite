@@ -42,10 +42,14 @@ catch (      Throwable e) {
   }
 );
   TestTcpDiscoverySpi srvSpi=spi(srv);
-  assertTrue(joinLatch.await(5000,MILLISECONDS));
-  U.sleep(1000);
-  assertNotDone(fut);
-  srvSpi.failNode(clientId,null);
-  srvCommSpi.stopBlock(false);
+  try {
+    assertTrue(joinLatch.await(5000,MILLISECONDS));
+    U.sleep(1000);
+    assertNotDone(fut);
+    srvSpi.failNode(clientId,null);
+  }
+  finally {
+    srvCommSpi.stopBlock(false);
+  }
   assertTrue(fut.get());
 }

@@ -8,6 +8,12 @@
  else     onError(null,new IgniteTxRollbackCheckedException("Invalid transaction state for " + "prepare [state=" + tx.state() + ", tx="+ this+ ']'));
     return;
   }
-  prepare(tx.readEntries(),tx.writeEntries(),remap,topLocked);
-  markInitialized();
+  boolean set=cctx.tm().setTxTopologyHint(tx);
+  try {
+    prepare(tx.readEntries(),tx.writeEntries(),remap,topLocked);
+    markInitialized();
+  }
+  finally {
+    if (set)     cctx.tm().setTxTopologyHint(null);
+  }
 }

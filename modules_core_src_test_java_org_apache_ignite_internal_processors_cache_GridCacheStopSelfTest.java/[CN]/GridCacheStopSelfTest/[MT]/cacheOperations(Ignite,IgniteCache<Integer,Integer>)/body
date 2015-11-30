@@ -1,0 +1,14 @@
+{
+  ThreadLocalRandom rnd=ThreadLocalRandom.current();
+  Integer key=rnd.nextInt(1000);
+  cache.put(key,key);
+  cache.get(key);
+  try (Transaction tx=node.transactions().txStart(OPTIMISTIC,REPEATABLE_READ)){
+    cache.put(key,key);
+    tx.commit();
+  }
+   try (Transaction tx=node.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+    cache.put(key,key);
+    tx.commit();
+  }
+ }

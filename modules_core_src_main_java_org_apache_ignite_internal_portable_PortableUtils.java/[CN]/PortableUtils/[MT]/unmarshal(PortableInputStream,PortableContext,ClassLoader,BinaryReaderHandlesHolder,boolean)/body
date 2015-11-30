@@ -20,7 +20,7 @@ case OBJ:
 {
   checkProtocolVersion(in.readByte());
   int len=length(in,start);
-  BinaryObjectEx po;
+  BinaryObjectExImpl po;
   if (detach) {
     in.position(start);
     po=new BinaryObjectImpl(ctx,in.readByteArray(len),0);
@@ -96,13 +96,14 @@ return doReadMapEntry(in,ctx,ldr,handles,false);
 case PORTABLE_OBJ:
 return doReadPortableObject(in,ctx);
 case ENUM:
-return doReadEnum(in,doReadClass(in,ctx,ldr));
+return doReadPortableEnum(in,ctx,doReadEnumType(in));
 case ENUM_ARR:
-return doReadEnumArray(in,ctx,ldr,doReadClass(in,ctx,ldr));
+doReadEnumType(in);
+return doReadPortableEnumArray(in,ctx);
 case CLASS:
 return doReadClass(in,ctx,ldr);
 case OPTM_MARSH:
-return doReadOptimized(in,ctx);
+return doReadOptimized(in,ctx,ldr);
 default :
 throw new BinaryObjectException("Invalid flag value: " + flag);
 }

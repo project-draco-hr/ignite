@@ -1,0 +1,37 @@
+{
+  final Collection<VisorCacheTypeMetadata> metas=new ArrayList<>();
+  Map<String,VisorCacheTypeMetadata> metaMap=U.newHashMap(qryEntities != null ? qryEntities.size() : 0);
+  if (qryEntities != null)   for (  QueryEntity qryEntity : qryEntities) {
+    VisorCacheTypeMetadata meta=from(qryEntity);
+    metas.add(meta);
+    metaMap.put(meta.keyType,meta);
+  }
+  if (factory != null && factory instanceof CacheJdbcPojoStoreFactory) {
+    CacheJdbcPojoStoreFactory jdbcFactory=(CacheJdbcPojoStoreFactory)factory;
+    for (    JdbcType jdbcType : jdbcFactory.getTypes()) {
+      VisorCacheTypeMetadata meta=metaMap.get(jdbcType.getKeyType());
+      boolean notFound=meta == null;
+      if (notFound) {
+        meta=new VisorCacheTypeMetadata();
+        meta.keyType=jdbcType.getKeyType();
+        meta.valType=jdbcType.getValueType();
+        meta.qryFlds=Collections.emptyMap();
+        meta.ascFlds=Collections.emptyMap();
+        meta.descFlds=Collections.emptyMap();
+        meta.txtFlds=Collections.emptyList();
+        meta.grps=Collections.emptyMap();
+      }
+      meta.dbSchema=jdbcType.getDatabaseSchema();
+      meta.dbTbl=jdbcType.getDatabaseTable();
+      JdbcTypeField[] keyFields=jdbcType.getKeyFields();
+      meta.keyFields=new ArrayList<>(keyFields.length);
+      for (      JdbcTypeField fld : keyFields)       meta.keyFields.add(new VisorCacheTypeFieldMetadata(fld.getDatabaseFieldName(),fld.getDatabaseFieldType(),fld.getDatabaseFieldName(),U.compact(fld.getJavaFieldType().getName())));
+      JdbcTypeField[] valFields=jdbcType.getValueFields();
+      meta.valFields=new ArrayList<>(valFields.length);
+      for (      JdbcTypeField fld : valFields)       meta.valFields.add(new VisorCacheTypeFieldMetadata(fld.getDatabaseFieldName(),fld.getDatabaseFieldType(),fld.getDatabaseFieldName(),U.compact(fld.getJavaFieldType().getName())));
+      if (notFound)       metas.add(meta);
+    }
+  }
+  if (types != null)   for (  CacheTypeMetadata type : types)   metas.add(from(type));
+  return metas;
+}

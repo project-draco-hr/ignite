@@ -1,0 +1,36 @@
+{
+  GridDhtFuture<Object> fut=cctx.dht().dhtPreloader().request(keys.keySet(),topVer);
+  if (!F.isEmpty(fut.invalidPartitions())) {
+    if (retries == null)     retries=new HashSet<>();
+    retries.addAll(fut.invalidPartitions());
+  }
+  add(new GridEmbeddedFuture<>(new IgniteBiClosure<Object,Exception,Collection<GridCacheEntryInfo>>(){
+    @Override public Collection<GridCacheEntryInfo> apply(    Object o,    Exception e){
+      if (e != null) {
+        if (log.isDebugEnabled())         log.debug("Failed to request keys from preloader [keys=" + keys + ", err="+ e+ ']');
+        onDone(e);
+      }
+      Map<KeyCacheObject,Boolean> mappedKeys=null;
+      for (      Map.Entry<KeyCacheObject,Boolean> key : keys.entrySet()) {
+        int part=cctx.affinity().partition(key.getKey());
+        if (retries == null || !retries.contains(part)) {
+          if (!map(key.getKey(),parts)) {
+            if (retries == null)             retries=new HashSet<>();
+            retries.add(part);
+            if (mappedKeys == null) {
+              mappedKeys=U.newLinkedHashMap(keys.size());
+              for (              Map.Entry<KeyCacheObject,Boolean> key1 : keys.entrySet()) {
+                if (key1.getKey() == key.getKey())                 break;
+                mappedKeys.put(key.getKey(),key1.getValue());
+              }
+            }
+          }
+ else           if (mappedKeys != null)           mappedKeys.put(key.getKey(),key.getValue());
+        }
+      }
+      add(getAsync(mappedKeys == null ? keys : mappedKeys));
+      return Collections.emptyList();
+    }
+  }
+,fut));
+}

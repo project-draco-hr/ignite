@@ -7,7 +7,7 @@
     ((PortableBuilderSerializationAware)val).writeTo(writer,this);
     return;
   }
-  if (val instanceof BinaryObjectEx) {
+  if (val instanceof BinaryObjectExImpl) {
     if (portableObjToWrapper == null)     portableObjToWrapper=new IdentityHashMap<>();
     BinaryObjectBuilderImpl wrapper=portableObjToWrapper.get(val);
     if (wrapper == null) {
@@ -31,8 +31,12 @@
     return;
   }
   if (val.getClass().isEnum()) {
+    String typeName=PortableContext.typeName(val.getClass().getName());
+    int typeId=writer.context().typeId(typeName);
+    BinaryMetadata meta=new BinaryMetadata(typeId,typeName,null,null,null,true);
+    writer.context().updateMetadata(typeId,meta);
     writer.writeByte(GridPortableMarshaller.ENUM);
-    writer.writeInt(writer.context().typeId(val.getClass().getName()));
+    writer.writeInt(typeId);
     writer.writeInt(((Enum)val).ordinal());
     return;
   }

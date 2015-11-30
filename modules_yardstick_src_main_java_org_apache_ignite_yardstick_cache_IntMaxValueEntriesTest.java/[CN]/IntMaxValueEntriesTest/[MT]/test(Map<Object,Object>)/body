@@ -1,0 +1,47 @@
+{
+  final IgniteCache<Integer,Object> cache=cache();
+  final IgniteDataStreamer<Integer,Object> stmr=ignite().dataStreamer(cache.getName());
+  final List<Thread> threads=new ArrayList<>(THREADS);
+  final LongAdder8 addedCnt=new LongAdder8();
+  int delta=(int)((KEYS_HI + Math.abs(KEYS_LO)) / THREADS);
+  System.out.println("Delta: " + delta);
+  for (int i=0; i < THREADS; i++) {
+    final int lo=i == 0 ? KEYS_LO : delta * i + 1;
+    final int hi=i == THREADS - 1 ? (int)KEYS_HI : (int)((long)delta * (i + 1));
+    Thread t=new Thread(new Runnable(){
+      @Override public void run(){
+        ThreadLocalRandom rnd=ThreadLocalRandom.current();
+        byte val=(byte)rnd.nextInt();
+        println("Start from " + lo + " to "+ hi);
+        for (int j=lo, k=0; j < hi; j++, k++) {
+          stmr.addData(j,val++);
+          addedCnt.increment();
+          if (k % REPORT_DELTA == 0)           println(addedCnt.sum() + " entries");
+        }
+        println("Thread finished. " + addedCnt.sum() + " entries.");
+      }
+    }
+);
+    threads.add(t);
+    t.start();
+  }
+  for (  Thread thread : threads)   thread.join();
+  println("All threads finished. " + addedCnt.sum() + " entries.");
+  println("Streamer flush");
+  stmr.flush();
+  println("Streamer flushed");
+  println("Calculating cache size");
+  println("Cache size: " + cache.size());
+  println("Calculating long cache size");
+  println("Cache size long: " + cache.sizeLong());
+  Thread.sleep(10000);
+  println("Iterating started");
+  long cnt=0;
+  for (  Cache.Entry<Integer,Object> ignored : cache) {
+    cnt++;
+    if (cnt > 0 && cnt % REPORT_DELTA == 0)     println("Iterated via " + cnt + " entries");
+  }
+  println("Iterated via " + cnt + " entries");
+  cache.destroy();
+  return true;
+}

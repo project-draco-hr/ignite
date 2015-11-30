@@ -1,0 +1,23 @@
+{
+  IgniteConfiguration c=super.getConfiguration(gridName);
+  c.setDiscoverySpi(new TcpDiscoverySpi().setForceServerMode(true).setIpFinder(ipFinder));
+  CacheConfiguration cc=defaultCacheConfiguration();
+  c.setMarshaller(new OptimizedMarshaller());
+  cc.setName("cache");
+  cc.setAtomicityMode(TRANSACTIONAL);
+  cc.setWriteSynchronizationMode(FULL_SYNC);
+  cc.setRebalanceMode(SYNC);
+  QueryEntity qryEntity=new QueryEntity();
+  qryEntity.setKeyType(Integer.class.getName());
+  qryEntity.setValueType("MyClass");
+  LinkedHashMap<String,String> fields=new LinkedHashMap<>();
+  fields.put("strField",String.class.getName());
+  fields.put("intField",Integer.class.getName());
+  fields.put("doubleField",Double.class.getName());
+  qryEntity.setFields(fields);
+  qryEntity.setFields(fields);
+  qryEntity.setIndexes(Arrays.asList(new QueryIndex("strField"),new QueryIndex("intField"),new QueryIndex("doubleField")));
+  cc.setQueryEntities(Collections.singletonList(qryEntity));
+  c.setCacheConfiguration(cc);
+  return c;
+}
