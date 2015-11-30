@@ -1,0 +1,21 @@
+{
+  try (IgniteSemaphore sem=grid(0).semaphore(STRUCTURE_NAME,20,false,true)){
+    Ignite g=startGrid(NEW_GRID_NAME);
+    IgniteSemaphore sem2=g.semaphore(STRUCTURE_NAME,20,false,false);
+    sem2.acquire(20);
+    assertEquals(0,sem.availablePermits());
+    new Timer().schedule(new TimerTask(){
+      @Override public void run(){
+        stopGrid(NEW_GRID_NAME);
+      }
+    }
+,2000);
+    try {
+      sem.acquire(1);
+    }
+ catch (    IgniteInterruptedException e) {
+      return;
+    }
+  }
+   fail("Thread hasn't been interrupted");
+}
