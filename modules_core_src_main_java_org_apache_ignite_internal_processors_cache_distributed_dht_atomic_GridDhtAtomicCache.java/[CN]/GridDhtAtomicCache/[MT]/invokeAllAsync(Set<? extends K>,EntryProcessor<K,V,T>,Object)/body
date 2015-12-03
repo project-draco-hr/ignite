@@ -12,20 +12,8 @@
   IgniteInternalFuture<Map<K,EntryProcessorResult<T>>> resFut=updateAllAsync0(null,invokeMap,args,null,null,false,false,null,true);
   return resFut.chain(new CX1<IgniteInternalFuture<Map<K,EntryProcessorResult<T>>>,Map<K,EntryProcessorResult<T>>>(){
     @Override public Map<K,EntryProcessorResult<T>> applyx(    IgniteInternalFuture<Map<K,EntryProcessorResult<T>>> fut) throws IgniteCheckedException {
-      Map<K,EntryProcessorResult<T>> resMap=fut.get();
-      if (resMap != null) {
-        return F.viewReadOnly(resMap,new C1<EntryProcessorResult<T>,EntryProcessorResult<T>>(){
-          @Override public EntryProcessorResult<T> apply(          EntryProcessorResult<T> res){
-            if (res instanceof CacheInvokeResult) {
-              CacheInvokeResult invokeRes=(CacheInvokeResult)res;
-              if (invokeRes.result() != null)               res=CacheInvokeResult.fromResult((T)ctx.unwrapPortableIfNeeded(invokeRes.result(),keepBinary,false));
-            }
-            return res;
-          }
-        }
-);
-      }
-      return null;
+      Map<Object,EntryProcessorResult> resMap=(Map)fut.get();
+      return ctx.unwrapInvokeResult(resMap,keepBinary);
     }
   }
 );
