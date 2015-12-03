@@ -98,12 +98,14 @@
         if (marshR != null || !rebalanceQ.isEmpty()) {
           if (futQ.isEmpty()) {
             U.log(log,"Rebalancing required" + "[top=" + exchFut.topologyVersion() + ", evt="+ exchFut.discoveryEvent().name()+ ", node="+ exchFut.discoveryEvent().eventNode().id()+ ']');
-            if (marshR != null)             try {
-              marshR.call();
-            }
- catch (            Exception ex) {
-              if (log.isDebugEnabled())               log.debug("Failed to send initial demand request to node");
-              continue;
+            if (marshR != null) {
+              try {
+                marshR.call();
+              }
+ catch (              Exception ex) {
+                if (log.isDebugEnabled())                 log.debug("Failed to send initial demand request to node");
+                continue;
+              }
             }
             final GridFutureAdapter fut=new GridFutureAdapter();
             asyncStartFut=fut;
@@ -127,9 +129,13 @@
             }
 ,true);
           }
- else           U.log(log,"Skipping rebalancing (obsolete exchange ID) " + "[top=" + exchFut.topologyVersion() + ", evt="+ exchFut.discoveryEvent().name()+ ", node="+ exchFut.discoveryEvent().eventNode().id()+ ']');
+ else {
+            U.log(log,"Skipping rebalancing (obsolete exchange ID) " + "[top=" + exchFut.topologyVersion() + ", evt="+ exchFut.discoveryEvent().name()+ ", node="+ exchFut.discoveryEvent().eventNode().id()+ ']');
+          }
         }
- else         U.log(log,"Skipping rebalancing (nothing scheduled) " + "[top=" + exchFut.topologyVersion() + ", evt="+ exchFut.discoveryEvent().name()+ ", node="+ exchFut.discoveryEvent().eventNode().id()+ ']');
+ else {
+          U.log(log,"Skipping rebalancing (nothing scheduled) " + "[top=" + exchFut.topologyVersion() + ", evt="+ exchFut.discoveryEvent().name()+ ", node="+ exchFut.discoveryEvent().eventNode().id()+ ']');
+        }
       }
     }
  catch (    IgniteInterruptedCheckedException e) {
