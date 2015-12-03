@@ -1,0 +1,26 @@
+{
+  if (IgniteOsgiUtils.gridCount() > 0) {
+    throw new IgniteException("Failed to start Ignite instance (another instance is already running " + "and ignite-osgi is currently limited to a single instance per container).");
+  }
+  bundleCtx=ctx;
+  IgniteConfiguration cfg=igniteConfiguration();
+  A.notNull(cfg,"Ignite configuration");
+  ClassLoader clsLdr;
+  if (classLoadingStrategy() == OsgiClassLoadingStrategyType.BUNDLE_DELEGATING)   clsLdr=new BundleDelegatingClassLoader(bundleCtx.getBundle(),Ignite.class.getClassLoader());
+ else   clsLdr=new ContainerSweepClassLoader(bundleCtx.getBundle(),Ignite.class.getClassLoader());
+  cfg.setClassLoader(clsLdr);
+  onBeforeStart(ctx);
+  try {
+    ignite=Ignition.start(cfg);
+  }
+ catch (  Throwable t) {
+    U.error(log,"Failed to start Ignite via OSGi Activator [errMsg=" + t.getMessage() + ']',t);
+    onAfterStart(ctx,t);
+    return;
+  }
+  log=ignite.log();
+  log.info("Started Ignite from OSGi Activator [name=" + ignite.name() + ']');
+  IgniteOsgiUtils.classloaders().put(ignite,clsLdr);
+  exportOsgiService(ignite);
+  onAfterStart(ctx,null);
+}
