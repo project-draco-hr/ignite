@@ -29,6 +29,17 @@
     assertEquals("63",strRes);
     checkValue(key,63);
     tx=startTx(txMode);
+    TestValue testVal=cache.invoke(key,new UserClassValueProcessor());
+    if (tx != null)     tx.commit();
+    assertEquals("63",testVal.value());
+    checkValue(key,63);
+    tx=startTx(txMode);
+    Collection<TestValue> testValCol=cache.invoke(key,new CollectionReturnProcessor());
+    if (tx != null)     tx.commit();
+    assertEquals(10,testValCol.size());
+    for (    TestValue val : testValCol)     assertEquals("64",val.value());
+    checkValue(key,63);
+    tx=startTx(txMode);
     GridTestUtils.assertThrows(log,new Callable<Void>(){
       @Override public Void call() throws Exception {
         cache.invoke(key,new ExceptionProcessor(63));
