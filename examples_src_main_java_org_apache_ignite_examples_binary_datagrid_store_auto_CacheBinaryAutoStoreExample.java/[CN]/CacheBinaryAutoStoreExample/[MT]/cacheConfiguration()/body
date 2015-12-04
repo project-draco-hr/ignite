@@ -1,0 +1,21 @@
+{
+  CacheJdbcPojoStoreFactory<Long,Person> storeFactory=new CacheJdbcPojoStoreFactory<>();
+  storeFactory.setDataSourceBean("h2-example-db");
+  storeFactory.setDialect(new H2Dialect());
+  JdbcType jdbcType=new JdbcType();
+  jdbcType.setCacheName(CACHE_NAME);
+  jdbcType.setDatabaseSchema("PUBLIC");
+  jdbcType.setDatabaseTable("PERSON");
+  jdbcType.setKeyType("java.lang.Long");
+  jdbcType.setKeyFields(new JdbcTypeField(Types.BIGINT,"ID",Long.class,"id"));
+  jdbcType.setValueType("org.apache.ignite.examples.model.Person");
+  jdbcType.setValueFields(new JdbcTypeField(Types.BIGINT,"ID",Long.class,"id"),new JdbcTypeField(Types.VARCHAR,"FIRST_NAME",String.class,"firstName"),new JdbcTypeField(Types.VARCHAR,"LAST_NAME",String.class,"lastName"));
+  storeFactory.setTypes(jdbcType);
+  CacheConfiguration<Long,Person> cfg=new CacheConfiguration<>(CACHE_NAME);
+  cfg.setCacheStoreFactory(storeFactory);
+  cfg.setAtomicityMode(TRANSACTIONAL);
+  cfg.setKeepBinaryInStore(true);
+  cfg.setReadThrough(true);
+  cfg.setWriteThrough(true);
+  return cfg;
+}
