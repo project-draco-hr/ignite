@@ -1,10 +1,10 @@
 {
   try {
     QueryCursorIterator qryCurIt=qryCurs.get(req.queryId());
-    if (qryCurIt == null)     return new GridRestResponse(GridRestResponse.STATUS_FAILED,"Failed to find query with ID: " + req.queryId());
+    if (qryCurIt == null)     return new GridRestResponse(GridRestResponse.STATUS_FAILED,"Failed to find query with ID: " + req.queryId() + ". "+ "Possible reasons: wrong query ID, no more data to fetch from query, query was closed by timeout"+ " or node where query was executed is not found.");
     qryCurIt.lock();
     try {
-      if (qryCurIt.timestamp() == -1)       return new GridRestResponse(GridRestResponse.STATUS_FAILED,"Query is closed by timeout. Restart query with ID: " + req.queryId());
+      if (qryCurIt.timestamp() == -1)       return new GridRestResponse(GridRestResponse.STATUS_FAILED,"Query with ID: " + req.queryId() + " was closed by timeout");
       qryCurIt.timestamp(U.currentTimeMillis());
       Iterator cur=qryCurIt.iterator();
       CacheQueryResult res=createQueryResult(cur,req,req.queryId(),qryCurs);
