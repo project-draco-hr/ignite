@@ -14,7 +14,15 @@
     Class<?> keyCls=newIndexedTypes[i];
     Class<?> valCls=newIndexedTypes[i + 1];
     TypeDescriptor desc=processKeyAndValueClasses(keyCls,valCls);
-    qryEntities.add(convert(desc));
+    QueryEntity converted=convert(desc);
+    boolean dup=false;
+    for (    QueryEntity entity : qryEntities) {
+      if (F.eq(entity.getValueType(),converted.getValueType())) {
+        dup=true;
+        break;
+      }
+    }
+    if (!dup)     qryEntities.add(converted);
   }
   return this;
 }
