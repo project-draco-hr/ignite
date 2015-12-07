@@ -1,0 +1,22 @@
+{
+  Ignite client1=ignite(SRV_CNT);
+  IgniteCache<Integer,TestValue> clientCache1=client1.createCache(ccfg);
+  IgniteCache<Integer,TestValue> srvCache=ignite(0).cache(ccfg.getName());
+  awaitPartitionMapExchange();
+  int key=0;
+  checkEntryProcessCall(key++,clientCache1,null,null,expCallCnt);
+  if (ccfg.getAtomicityMode() == TRANSACTIONAL) {
+    checkEntryProcessCall(key++,clientCache1,OPTIMISTIC,REPEATABLE_READ,expCallCnt + 1);
+    checkEntryProcessCall(key++,clientCache1,PESSIMISTIC,REPEATABLE_READ,expCallCnt + 1);
+    checkEntryProcessCall(key++,clientCache1,OPTIMISTIC,SERIALIZABLE,expCallCnt + 1);
+  }
+  for (int i=100; i < 110; i++) {
+    checkEntryProcessCall(key++,srvCache,null,null,expCallCnt);
+    if (ccfg.getAtomicityMode() == TRANSACTIONAL) {
+      checkEntryProcessCall(key++,srvCache,OPTIMISTIC,REPEATABLE_READ,expCallCnt + 1);
+      checkEntryProcessCall(key++,srvCache,PESSIMISTIC,REPEATABLE_READ,expCallCnt + 1);
+      checkEntryProcessCall(key++,srvCache,OPTIMISTIC,SERIALIZABLE,expCallCnt + 1);
+    }
+  }
+  for (int i=0; i < NODES; i++)   ignite(i).destroyCache(ccfg.getName());
+}
