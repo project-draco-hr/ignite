@@ -1,0 +1,15 @@
+{
+  IgniteQueue<Integer> queue=grid(0).queue("queue",0,config(true));
+  for (int i=0; i < 1000; i++)   assertTrue(queue.add(i));
+  assertEquals(1000,queue.size());
+  GridCacheContext cctx=GridTestUtils.getFieldValue(queue,"cctx");
+  UUID setNodeId=null;
+  for (int i=0; i < gridCount(); i++) {
+    IgniteKernal grid=(IgniteKernal)grid(i);
+    Iterator<GridCacheEntryEx> entries=grid.context().cache().internalCache(cctx.name()).map().allEntries0().iterator();
+    if (entries.hasNext()) {
+      if (setNodeId == null)       setNodeId=grid.localNode().id();
+ else       fail("For collocated queue all items should be stored on single node.");
+    }
+  }
+}

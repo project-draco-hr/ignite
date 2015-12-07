@@ -1,8 +1,17 @@
 {
   if (log.isDebugEnabled())   log.debug("Received onComplete(..) callback [success=" + success + ", fut="+ this+ ']');
   if (!success && !stopping)   undoLocks(true);
-  if (tx != null)   cctx.tm().txContext(tx);
-  if (err == null && !stopping)   loadMissingFromStore();
+  boolean set=false;
+  if (tx != null) {
+    cctx.tm().txContext(tx);
+    set=cctx.tm().setTxTopologyHint(tx);
+  }
+  try {
+    if (err == null && !stopping)     loadMissingFromStore();
+  }
+  finally {
+    if (set)     cctx.tm().setTxTopologyHint(null);
+  }
   if (super.onDone(success,err)) {
     if (log.isDebugEnabled())     log.debug("Completing future: " + this);
     cctx.mvcc().removeMvccFuture(this);

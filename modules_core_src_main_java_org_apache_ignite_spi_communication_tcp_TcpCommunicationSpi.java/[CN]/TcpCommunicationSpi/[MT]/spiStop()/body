@@ -1,2 +1,17 @@
 {
+  assert stopping;
+  unregisterMBean();
+  if (nioSrvr != null)   nioSrvr.stop();
+  U.interrupt(commWorker);
+  U.join(commWorker,log);
+  U.cancel(shmemAcceptWorker);
+  U.join(shmemAcceptWorker,log);
+  U.cancel(shmemWorkers);
+  U.join(shmemWorkers,log);
+  shmemWorkers.clear();
+  for (  GridCommunicationClient client : clients.values())   client.forceClose();
+  nioSrvr=null;
+  commWorker=null;
+  boundTcpPort=-1;
+  if (log.isDebugEnabled())   log.debug(stopInfo());
 }

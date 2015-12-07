@@ -1,6 +1,16 @@
 {
   IgniteConfiguration cfg=getConfiguration(gridName,getTestResources());
   cfg.setNodeId(null);
+  if (GridTestProperties.getProperty(GridTestProperties.BINARY_COMPACT_FOOTERS) != null) {
+    if (!Boolean.valueOf(GridTestProperties.getProperty(GridTestProperties.BINARY_COMPACT_FOOTERS))) {
+      BinaryConfiguration bCfg=cfg.getBinaryConfiguration();
+      if (bCfg == null) {
+        bCfg=new BinaryConfiguration();
+        cfg.setBinaryConfiguration(bCfg);
+      }
+      bCfg.setCompactFooter(false);
+    }
+  }
   if (gridName != null && gridName.matches(".*\\d")) {
     String idStr=UUID.randomUUID().toString();
     if (gridName.startsWith(getTestGridName())) {
