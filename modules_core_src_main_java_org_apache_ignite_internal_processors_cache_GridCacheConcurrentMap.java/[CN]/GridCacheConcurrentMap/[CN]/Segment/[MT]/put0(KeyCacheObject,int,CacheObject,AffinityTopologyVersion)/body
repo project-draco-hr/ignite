@@ -1,35 +1,28 @@
 {
   try {
-    SegmentHeader hdr=this.hdr;
-    int c=hdr.size();
-    if (c++ > threshold) {
-      rehash();
-      hdr=this.hdr;
-    }
-    int hdrId=hdr.id();
-    GridCacheMapEntry[] tab=hdr.table();
+    int c=size;
+    if (c++ > threshold)     rehash();
+    HashEntry[] tab=tbl;
     int idx=hash & (tab.length - 1);
-    GridCacheMapEntry bin=tab[idx];
-    GridCacheMapEntry e=bin;
-    while (e != null && (e.hash() != hash || !key.equals(e.key)))     e=e.next(hdrId);
+    HashEntry bin=tab[idx];
+    HashEntry e=bin;
+    while (e != null && (e.mapEntry.hash() != hash || !key.equals(e.mapEntry.key())))     e=e.next;
     GridCacheMapEntry retVal;
     if (e != null) {
-      retVal=e;
-      e.rawPut(val,0);
+      retVal=e.mapEntry;
+      retVal.rawPut(val,0);
     }
  else {
-      GridCacheMapEntry next=bin != null ? bin : null;
-      GridCacheMapEntry newRoot=factory.create(ctx,topVer,key,hash,val,next,hdr.id());
-synchronized (newRoot) {
-        tab[idx]=newRoot;
-        retVal=newRoot;
-        if (!retVal.isInternal()) {
-          mapPubSize.increment();
-          pubSize.increment();
-        }
+      HashEntry next=bin != null ? bin : null;
+      GridCacheMapEntry newEntry=factory.create(ctx,topVer,key,hash,val);
+      tab[idx]=new HashEntry(newEntry,next);
+      retVal=newEntry;
+      if (!retVal.isInternal()) {
+        mapPubSize.increment();
+        pubSize.increment();
       }
       mapSize.increment();
-      hdr.size(c);
+      size=c;
     }
     return retVal;
   }

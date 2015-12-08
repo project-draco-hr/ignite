@@ -1,24 +1,35 @@
 {
-  SegmentHeader oldHdr=hdr;
-  if (oldHdr.previous() != null && oldHdr.previous().hasReads())   return;
-  int oldId=hdr.id();
-  GridCacheMapEntry[] oldTbl=oldHdr.table();
+  HashEntry[] oldTbl=tbl;
   int oldCap=oldTbl.length;
   if (oldCap >= MAX_CAP)   return;
-  SegmentHeader newHdr=new SegmentHeader(oldCap << 1,oldId + 1,oldHdr);
-  oldHdr.next(newHdr);
-  newHdr.size(oldHdr.size());
-  GridCacheMapEntry[] newTbl=newHdr.table();
+  HashEntry[] newTbl=new HashEntry[oldCap << 1];
   threshold=(int)(newTbl.length * loadFactor);
   int sizeMask=newTbl.length - 1;
-  for (  GridCacheMapEntry bin1 : oldTbl) {
-    for (GridCacheMapEntry e=bin1; e != null; e=e.next(oldId)) {
-      int idx=e.hash() & sizeMask;
-      GridCacheMapEntry bin2=newTbl[idx];
-      newTbl[idx]=e;
-      e.next(newHdr.id(),bin2);
+  for (int i=0; i < oldCap; i++) {
+    HashEntry e=oldTbl[i];
+    if (e != null) {
+      HashEntry next=e.next;
+      int idx=e.mapEntry.hash() & sizeMask;
+      if (next == null)       newTbl[idx]=e;
+ else {
+        HashEntry lastRun=e;
+        int lastIdx=idx;
+        for (HashEntry last=next; last != null; last=last.next) {
+          int k=last.mapEntry.hash() & sizeMask;
+          if (k != lastIdx) {
+            lastIdx=k;
+            lastRun=last;
+          }
+        }
+        newTbl[lastIdx]=lastRun;
+        for (HashEntry p=e; p != lastRun; p=p.next) {
+          int k=p.mapEntry.hash() & sizeMask;
+          HashEntry n=newTbl[k];
+          newTbl[k]=new HashEntry(p.mapEntry,n);
+        }
+      }
     }
   }
-  hdr=newHdr;
+  tbl=newTbl;
   if (DEBUG)   checkSegmentConsistency();
 }

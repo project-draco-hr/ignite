@@ -1,31 +1,30 @@
 {
   lock();
   try {
-    SegmentHeader hdr=this.hdr;
-    GridCacheMapEntry[] tbl=hdr.table();
     int idx=hash & (tbl.length - 1);
-    GridCacheMapEntry bin=tbl[idx];
+    HashEntry bin=tbl[idx];
     if (bin == null)     return null;
-    GridCacheMapEntry prev=null;
-    GridCacheMapEntry e=bin;
-    while (e != null && (e.hash() != hash || !key.equals(e.key))) {
+    HashEntry prev=null;
+    HashEntry e=bin;
+    while (e != null && (e.mapEntry.hash() != hash || !key.equals(e.mapEntry.key))) {
       prev=e;
-      e=e.next(hdr.id());
+      e=e.next;
     }
     if (e != null) {
-      if (filter != null && !filter.apply(e))       return null;
-      if (prev == null)       tbl[idx]=e.next(hdr.id());
- else       prev.next(hdr.id(),e.next(hdr.id()));
+      if (filter != null && !filter.apply(e.mapEntry))       return null;
+      if (prev == null)       tbl[idx]=e.next;
+ else       prev.next=e.next;
 synchronized (e) {
-        if (!e.isInternal() && !e.deleted()) {
+        if (!e.mapEntry.isInternal() && !e.mapEntry.deleted()) {
           mapPubSize.decrement();
           pubSize.decrement();
         }
       }
       mapSize.decrement();
-      hdr.decrementSize();
+      --size;
+      return e.mapEntry;
     }
-    return e;
+    return null;
   }
   finally {
     if (DEBUG)     checkSegmentConsistency();
