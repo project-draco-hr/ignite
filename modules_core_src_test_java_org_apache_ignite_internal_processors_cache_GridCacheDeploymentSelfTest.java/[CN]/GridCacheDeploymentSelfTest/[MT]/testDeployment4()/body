@@ -2,6 +2,7 @@
   try {
     depMode=CONTINUOUS;
     Ignite g1=startGrid(1);
+    if (g1.configuration().getMarshaller() instanceof BinaryMarshaller)     fail("http://atlassian.gridgain.com/jira/browse/GG-10791");
     Ignite g2=startGrid(2);
     Ignite g0=startGrid(GRID_NAME);
     info("Started grids:");
@@ -18,8 +19,6 @@
     g0.compute().execute(cls,new T2<>(g1.cluster().localNode(),key));
     stopGrid(GRID_NAME);
     assertEquals(1,g1.cache(null).localSize(CachePeekMode.ALL));
-    assertEquals(1,g1.cache(null).localSize(CachePeekMode.ALL));
-    assertEquals(1,g2.cache(null).localSize(CachePeekMode.ALL));
     assertEquals(1,g2.cache(null).localSize(CachePeekMode.ALL));
     startGrid(3);
   }
