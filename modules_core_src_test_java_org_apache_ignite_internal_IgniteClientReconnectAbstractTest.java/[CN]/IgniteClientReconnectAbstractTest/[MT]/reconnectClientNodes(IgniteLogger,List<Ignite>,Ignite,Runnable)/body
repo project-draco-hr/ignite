@@ -7,11 +7,11 @@
   IgnitePredicate<Event> p=new IgnitePredicate<Event>(){
     @Override public boolean apply(    Event evt){
       if (evt.type() == EVT_CLIENT_NODE_DISCONNECTED) {
-        info("Disconnected: " + evt);
+        log.info("Disconnected: " + evt);
         disconnectLatch.countDown();
       }
  else       if (evt.type() == EVT_CLIENT_NODE_RECONNECTED) {
-        info("Reconnected: " + evt);
+        log.info("Reconnected: " + evt);
         reconnectLatch.countDown();
       }
       return true;
@@ -20,10 +20,10 @@
 ;
   for (  Ignite client : clients)   client.events().localListen(p,EVT_CLIENT_NODE_DISCONNECTED,EVT_CLIENT_NODE_RECONNECTED);
   for (  Ignite client : clients)   srvSpi.failNode(client.cluster().localNode().id(),null);
-  waitReconnectEvent(disconnectLatch);
+  waitReconnectEvent(log,disconnectLatch);
   if (disconnectedC != null)   disconnectedC.run();
   log.info("Allow reconnect.");
   for (  Ignite client : clients)   spi(client).writeLatch.countDown();
-  waitReconnectEvent(reconnectLatch);
+  waitReconnectEvent(log,reconnectLatch);
   for (  Ignite client : clients)   client.events().stopLocalListen(p);
 }

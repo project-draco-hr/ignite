@@ -2,8 +2,14 @@
   Throwable err=null;
   try {
     ctx.disconnected(false);
-    for (    GridComponent comp : ctx.components())     comp.onReconnected(clusterRestarted);
-    ctx.cache().context().exchange().reconnectExchangeFuture().listen(new CI1<IgniteInternalFuture<?>>(){
+    GridCompoundFuture<?,?> reconnectFut=new GridCompoundFuture<>();
+    for (    GridComponent comp : ctx.components()) {
+      IgniteInternalFuture<?> fut=comp.onReconnected(clusterRestarted);
+      if (fut != null)       reconnectFut.add((IgniteInternalFuture)fut);
+    }
+    reconnectFut.add((IgniteInternalFuture)ctx.cache().context().exchange().reconnectExchangeFuture());
+    reconnectFut.markInitialized();
+    reconnectFut.listen(new CI1<IgniteInternalFuture<?>>(){
       @Override public void apply(      IgniteInternalFuture<?> fut){
         try {
           fut.get();
