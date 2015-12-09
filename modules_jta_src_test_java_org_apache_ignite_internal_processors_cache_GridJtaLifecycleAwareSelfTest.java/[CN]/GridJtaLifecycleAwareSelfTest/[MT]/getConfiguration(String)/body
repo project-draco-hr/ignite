@@ -1,0 +1,22 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  cfg.setDiscoverySpi(new TcpDiscoverySpi());
+  CacheConfiguration ccfg=defaultCacheConfiguration();
+  ccfg.setCacheMode(PARTITIONED);
+  ccfg.setNearConfiguration(near ? new NearCacheConfiguration() : null);
+  ccfg.setCacheMode(CacheMode.PARTITIONED);
+  ccfg.setName(CACHE_NAME);
+switch (tmConfigurationType) {
+case CACHE_LOOKUP:
+    ccfg.setTransactionManagerLookupClassName(TestTxLookup.class.getName());
+  break;
+case GLOBAL_LOOKUP:
+cfg.getTransactionConfiguration().setTxManagerLookupClassName(TestTxLookup.class.getName());
+break;
+case FACTORY:
+cfg.getTransactionConfiguration().setTxManagerFactory(new TestTxFactory());
+break;
+}
+cfg.setCacheConfiguration(ccfg);
+return cfg;
+}

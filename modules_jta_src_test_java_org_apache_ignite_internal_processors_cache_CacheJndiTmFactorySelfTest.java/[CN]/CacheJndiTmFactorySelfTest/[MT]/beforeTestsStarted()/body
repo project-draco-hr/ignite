@@ -1,0 +1,15 @@
+{
+  super.beforeTestsStarted();
+  initCtxFactoryBackup=System.getProperty(Context.INITIAL_CONTEXT_FACTORY);
+  urlPkgPrefixesBackup=System.getProperty(Context.URL_PKG_PREFIXES);
+  System.setProperty(Context.INITIAL_CONTEXT_FACTORY,"org.apache.naming.java.javaURLContextFactory");
+  System.setProperty(Context.URL_PKG_PREFIXES,"org.apache.naming");
+  InitialContext ic=new InitialContext();
+  ic.createSubcontext("java:");
+  ic.createSubcontext("java:/comp");
+  ic.createSubcontext("java:/comp/env");
+  ic.createSubcontext("java:/comp/env/tm");
+  ic.bind(TM_JNDI_NAME,new TestTransactionManager());
+  ic.bind(TM_JNDI_NAME2,new TestTransactionManager2());
+  ic.bind(NOT_TM_JNDI_NAME,1);
+}
