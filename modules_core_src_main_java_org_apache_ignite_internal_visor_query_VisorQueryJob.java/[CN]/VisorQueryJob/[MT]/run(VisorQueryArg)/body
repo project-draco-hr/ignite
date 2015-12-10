@@ -1,15 +1,13 @@
 {
   try {
     UUID nid=ignite.localNode().id();
+    boolean near=SCAN_NEAR_CACHE.equalsIgnoreCase(arg.queryTxt());
     boolean scan=arg.queryTxt() == null;
-    String qryId=(scan ? SCAN_QRY_NAME : SQL_QRY_NAME) + "-" + UUID.randomUUID();
+    String qryId=((scan || near) ? SCAN_QRY_NAME : SQL_QRY_NAME) + "-" + UUID.randomUUID();
     IgniteCache<Object,Object> c=cache(arg.cacheName());
-    if (scan) {
-      ScanQuery<Object,Object> qry=new ScanQuery<>(null);
-      qry.setPageSize(arg.pageSize());
-      qry.setLocal(arg.local());
+    if (near || scan) {
       long start=U.currentTimeMillis();
-      VisorQueryCursor<Cache.Entry<Object,Object>> cur=new VisorQueryCursor<>(c.query(qry));
+      VisorQueryCursor<Cache.Entry<Object,Object>> cur=new VisorQueryCursor<>(near ? near(c) : scan(c,arg));
       List<Object[]> rows=fetchScanQueryRows(cur,arg.pageSize());
       long duration=U.currentTimeMillis() - start;
       boolean hasNext=cur.hasNext();
