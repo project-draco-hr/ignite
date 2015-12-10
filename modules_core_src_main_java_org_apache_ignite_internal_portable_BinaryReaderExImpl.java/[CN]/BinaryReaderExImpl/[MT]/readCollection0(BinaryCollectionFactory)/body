@@ -1,0 +1,20 @@
+{
+switch (checkFlag(COL)) {
+case NORMAL:
+    return (Collection)PortableUtils.doReadCollection(in,ctx,ldr,this,true,factory);
+case HANDLE:
+{
+    int handlePos=PortableUtils.positionForHandle(in) - in.readInt();
+    Object obj=getHandle(handlePos);
+    if (obj == null) {
+      int retPos=in.position();
+      streamPosition(handlePos);
+      obj=readCollection0(factory);
+      streamPosition(retPos);
+    }
+    return (Collection)obj;
+  }
+default :
+return null;
+}
+}
