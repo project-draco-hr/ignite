@@ -9,14 +9,14 @@
       boolean isNear=entry != null;
       if (isNear) {
         if (needVer) {
-          T2<CacheObject,GridCacheVersion> res=entry.innerGetVersioned(null,true,true,true,!skipVals,subjId,null,taskName,expiryPlc,!deserializePortable);
+          T2<CacheObject,GridCacheVersion> res=entry.innerGetVersioned(null,true,true,true,!skipVals,subjId,null,taskName,expiryPlc,!deserializeBinary);
           if (res != null) {
             v=res.get1();
             ver=res.get2();
           }
         }
  else {
-          v=entry.innerGet(tx,false,false,true,true,true,!skipVals,false,subjId,null,taskName,expiryPlc,!deserializePortable);
+          v=entry.innerGet(tx,false,false,true,true,true,!skipVals,false,subjId,null,taskName,expiryPlc,!deserializeBinary);
         }
       }
       ClusterNode affNode=null;
@@ -28,14 +28,14 @@
           if (dhtEntry != null) {
             boolean isNew=dhtEntry.isNewLocked() || !dhtEntry.valid(topVer);
             if (needVer) {
-              T2<CacheObject,GridCacheVersion> res=dhtEntry.innerGetVersioned(null,true,true,false,!isNear && !skipVals,subjId,null,taskName,expiryPlc,!deserializePortable);
+              T2<CacheObject,GridCacheVersion> res=dhtEntry.innerGetVersioned(null,true,true,false,!isNear && !skipVals,subjId,null,taskName,expiryPlc,!deserializeBinary);
               if (res != null) {
                 v=res.get1();
                 ver=res.get2();
               }
             }
  else {
-              v=dhtEntry.innerGet(tx,true,false,true,true,false,!isNear && !skipVals,false,subjId,null,taskName,expiryPlc,!deserializePortable);
+              v=dhtEntry.innerGet(tx,true,false,true,true,false,!isNear && !skipVals,false,subjId,null,taskName,expiryPlc,!deserializeBinary);
             }
             if (v == null && isNew && dhtEntry.markObsoleteIfEmpty(ver))             dht.removeIfObsolete(key);
           }
@@ -72,8 +72,8 @@
             add(new GridFinishedFuture<>(Collections.singletonMap(key0,val0)));
           }
  else {
-            K key0=(K)cctx.unwrapPortableIfNeeded(key,!deserializePortable,false);
-            V val0=!skipVals ? (V)cctx.unwrapPortableIfNeeded(v,!deserializePortable,false) : (V)Boolean.TRUE;
+            K key0=(K)cctx.unwrapBinaryIfNeeded(key,!deserializeBinary,false);
+            V val0=!skipVals ? (V)cctx.unwrapBinaryIfNeeded(v,!deserializeBinary,false) : (V)Boolean.TRUE;
             add(new GridFinishedFuture<>(Collections.singletonMap(key0,val0)));
           }
         }

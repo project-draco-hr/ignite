@@ -14,14 +14,14 @@
             CacheObject v=null;
             GridCacheVersion ver=null;
             if (needVer) {
-              T2<CacheObject,GridCacheVersion> res=entry.innerGetVersioned(null,true,true,false,!skipVals,subjId,null,taskName,expiryPlc,!deserializePortable);
+              T2<CacheObject,GridCacheVersion> res=entry.innerGetVersioned(null,true,true,false,!skipVals,subjId,null,taskName,expiryPlc,!deserializeBinary);
               if (res != null) {
                 v=res.get1();
                 ver=res.get2();
               }
             }
  else {
-              v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiryPlc,!deserializePortable);
+              v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiryPlc,!deserializeBinary);
             }
             if (v == null) {
               GridCacheVersion obsoleteVer=context().versions().next();
@@ -32,7 +32,7 @@
               if (locVals == null)               locVals=U.newHashMap(keys.size());
               if (needVer)               locVals.put((K)key,(V)new T2<>((Object)(skipVals ? true : v),ver));
  else {
-                ctx.addResult(locVals,key,v,skipVals,keepCacheObj,deserializePortable,true);
+                ctx.addResult(locVals,key,v,skipVals,keepCacheObj,deserializeBinary,true);
               }
             }
           }
@@ -61,7 +61,7 @@ catch (        IgniteCheckedException e) {
     }
   }
   if (expiryPlc != null)   expiryPlc.reset();
-  GridPartitionedGetFuture<K,V> fut=new GridPartitionedGetFuture<>(ctx,keys,topVer,readThrough,forcePrimary,subjId,taskName,deserializePortable,expiryPlc,skipVals,canRemap,needVer,keepCacheObj);
+  GridPartitionedGetFuture<K,V> fut=new GridPartitionedGetFuture<>(ctx,keys,topVer,readThrough,forcePrimary,subjId,taskName,deserializeBinary,expiryPlc,skipVals,canRemap,needVer,keepCacheObj);
   fut.init();
   return fut;
 }

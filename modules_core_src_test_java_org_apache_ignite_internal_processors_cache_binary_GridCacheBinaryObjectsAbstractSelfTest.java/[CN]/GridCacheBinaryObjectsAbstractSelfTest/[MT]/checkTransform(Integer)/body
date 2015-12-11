@@ -1,6 +1,6 @@
 {
   log.info("Transform: " + key);
-  IgniteCache<Integer,BinaryObject> c=keepPortableCache();
+  IgniteCache<Integer,BinaryObject> c=keepBinaryCache();
   try {
     c.invoke(key,new EntryProcessor<Integer,BinaryObject,Void>(){
       @Override public Void process(      MutableEntry<Integer,BinaryObject> e,      Object... args){
@@ -17,8 +17,8 @@
         assertNotNull("Unexpected value: " + val,val);
         assertEquals(new Integer(1),val.field("val"));
         Ignite ignite=e.unwrap(Ignite.class);
-        IgniteBinary portables=ignite.binary();
-        BinaryObjectBuilder builder=portables.builder(val);
+        IgniteBinary binaries=ignite.binary();
+        BinaryObjectBuilder builder=binaries.builder(val);
         builder.setField("val",2);
         e.setValue(builder.build());
         return null;
