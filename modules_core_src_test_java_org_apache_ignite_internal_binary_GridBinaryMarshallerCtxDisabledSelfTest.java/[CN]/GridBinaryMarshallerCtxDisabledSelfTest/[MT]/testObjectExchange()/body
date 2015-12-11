@@ -1,0 +1,27 @@
+{
+  BinaryMarshaller marsh=new BinaryMarshaller();
+  marsh.setContext(new MarshallerContextWithNoStorage());
+  IgniteConfiguration cfg=new IgniteConfiguration();
+  BinaryContext context=new BinaryContext(BinaryCachingMetadataHandler.create(),cfg);
+  IgniteUtils.invoke(BinaryMarshaller.class,marsh,"setPortableContext",context,cfg);
+  SimpleObject simpleObj=new SimpleObject();
+  simpleObj.b=2;
+  simpleObj.bArr=new byte[]{2,3,4,5,5};
+  simpleObj.c='A';
+  simpleObj.enumVal=TestEnum.D;
+  simpleObj.objArr=new Object[]{"hello","world","from","me"};
+  simpleObj.enumArr=new TestEnum[]{TestEnum.C,TestEnum.B};
+  SimpleObject otherObj=new SimpleObject();
+  otherObj.b=3;
+  otherObj.bArr=new byte[]{5,3,4};
+  simpleObj.otherObj=otherObj;
+  assertEquals(simpleObj,marsh.unmarshal(marsh.marshal(simpleObj),null));
+  SimpleBinary simplePortable=new SimpleBinary();
+  simplePortable.str="portable";
+  simplePortable.arr=new long[]{100,200,300};
+  assertEquals(simplePortable,marsh.unmarshal(marsh.marshal(simplePortable),null));
+  SimpleExternalizable simpleExtr=new SimpleExternalizable();
+  simpleExtr.str="externalizable";
+  simpleExtr.arr=new long[]{20000,300000,400000};
+  assertEquals(simpleExtr,marsh.unmarshal(marsh.marshal(simpleExtr),null));
+}

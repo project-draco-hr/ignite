@@ -1,0 +1,22 @@
+{
+  super(reader,reader.position() - 1);
+  int typeId=reader.readInt();
+  if (typeId == GridBinaryMarshaller.UNREGISTERED_TYPE_ID) {
+    clsName=reader.readString();
+    Class cls;
+    try {
+      cls=U.forName(reader.readString(),reader.portableContext().configuration().getClassLoader());
+    }
+ catch (    ClassNotFoundException e) {
+      throw new BinaryInvalidTypeException("Failed to load the class: " + clsName,e);
+    }
+    compTypeId=reader.portableContext().descriptorForClass(cls,true).typeId();
+  }
+ else {
+    compTypeId=typeId;
+    clsName=null;
+  }
+  int size=reader.readInt();
+  for (int i=0; i < size; i++)   reader.skipValue();
+  len=reader.position() - valOff;
+}
