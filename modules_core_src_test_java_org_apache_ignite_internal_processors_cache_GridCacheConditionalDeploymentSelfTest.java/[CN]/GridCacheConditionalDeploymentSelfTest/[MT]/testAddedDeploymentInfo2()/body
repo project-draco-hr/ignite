@@ -1,10 +1,13 @@
 {
   GridCacheContext ctx=cacheContext();
-  assertTrue(ctx.deploymentEnabled());
-  GridCacheIoManager ioMgr=cacheIoManager();
-  TestMessage msg=new TestMessage();
-  assertNull(msg.deployInfo());
-  msg.addDepInfo=false;
-  IgniteUtils.invoke(GridCacheIoManager.class,ioMgr,"onSend",msg,grid(1).cluster().localNode().id());
-  assertNull(msg.deployInfo());
+  if (grid(0).configuration().getMarshaller() instanceof BinaryMarshaller)   assertFalse(ctx.deploymentEnabled());
+ else {
+    assertTrue(ctx.deploymentEnabled());
+    GridCacheIoManager ioMgr=cacheIoManager();
+    TestMessage msg=new TestMessage();
+    assertNull(msg.deployInfo());
+    msg.addDepInfo=false;
+    IgniteUtils.invoke(GridCacheIoManager.class,ioMgr,"onSend",msg,grid(1).cluster().localNode().id());
+    assertNull(msg.deployInfo());
+  }
 }

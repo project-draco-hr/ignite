@@ -1,0 +1,133 @@
+{
+  Object obj;
+  byte flag=in.readByte();
+switch (flag) {
+case NULL:
+    obj=null;
+  break;
+case HANDLE:
+int handlePos=start - in.readInt();
+obj=getHandle(handlePos);
+if (obj == null) {
+int retPos=in.position();
+streamPosition(handlePos);
+obj=PortableUtils.doReadObject(in,ctx,ldr,this);
+streamPosition(retPos);
+}
+break;
+case OBJ:
+PortableClassDescriptor desc=ctx.descriptorForTypeId(userType,typeId,ldr,true);
+streamPosition(dataStart);
+if (desc == null) throw new BinaryInvalidTypeException("Unknown type ID: " + typeId);
+obj=desc.read(this);
+streamPosition(footerStart + footerLen);
+break;
+case BYTE:
+obj=in.readByte();
+break;
+case SHORT:
+obj=in.readShort();
+break;
+case INT:
+obj=in.readInt();
+break;
+case LONG:
+obj=in.readLong();
+break;
+case FLOAT:
+obj=in.readFloat();
+break;
+case DOUBLE:
+obj=in.readDouble();
+break;
+case CHAR:
+obj=in.readChar();
+break;
+case BOOLEAN:
+obj=in.readBoolean();
+break;
+case DECIMAL:
+obj=PortableUtils.doReadDecimal(in);
+break;
+case STRING:
+obj=PortableUtils.doReadString(in);
+break;
+case UUID:
+obj=PortableUtils.doReadUuid(in);
+break;
+case DATE:
+obj=PortableUtils.doReadDate(in);
+break;
+case TIMESTAMP:
+obj=PortableUtils.doReadTimestamp(in);
+break;
+case BYTE_ARR:
+obj=PortableUtils.doReadByteArray(in);
+break;
+case SHORT_ARR:
+obj=PortableUtils.doReadShortArray(in);
+break;
+case INT_ARR:
+obj=PortableUtils.doReadIntArray(in);
+break;
+case LONG_ARR:
+obj=PortableUtils.doReadLongArray(in);
+break;
+case FLOAT_ARR:
+obj=PortableUtils.doReadFloatArray(in);
+break;
+case DOUBLE_ARR:
+obj=PortableUtils.doReadDoubleArray(in);
+break;
+case CHAR_ARR:
+obj=PortableUtils.doReadCharArray(in);
+break;
+case BOOLEAN_ARR:
+obj=PortableUtils.doReadBooleanArray(in);
+break;
+case DECIMAL_ARR:
+obj=PortableUtils.doReadDecimalArray(in);
+break;
+case STRING_ARR:
+obj=PortableUtils.doReadStringArray(in);
+break;
+case UUID_ARR:
+obj=PortableUtils.doReadUuidArray(in);
+break;
+case DATE_ARR:
+obj=PortableUtils.doReadDateArray(in);
+break;
+case TIMESTAMP_ARR:
+obj=PortableUtils.doReadTimestampArray(in);
+break;
+case OBJ_ARR:
+obj=PortableUtils.doReadObjectArray(in,ctx,ldr,this,true);
+break;
+case COL:
+obj=PortableUtils.doReadCollection(in,ctx,ldr,this,true,null);
+break;
+case MAP:
+obj=PortableUtils.doReadMap(in,ctx,ldr,this,true,null);
+break;
+case PORTABLE_OBJ:
+obj=PortableUtils.doReadPortableObject(in,ctx);
+((BinaryObjectImpl)obj).context(ctx);
+if (!GridPortableMarshaller.KEEP_PORTABLES.get()) obj=((BinaryObject)obj).deserialize();
+break;
+case ENUM:
+obj=PortableUtils.doReadEnum(in,PortableUtils.doReadClass(in,ctx,ldr));
+break;
+case ENUM_ARR:
+obj=PortableUtils.doReadEnumArray(in,ctx,ldr,PortableUtils.doReadClass(in,ctx,ldr));
+break;
+case CLASS:
+obj=PortableUtils.doReadClass(in,ctx,ldr);
+break;
+case OPTM_MARSH:
+obj=PortableUtils.doReadOptimized(in,ctx,ldr);
+break;
+default :
+throw new BinaryObjectException("Invalid flag value: " + flag);
+}
+return obj;
+}

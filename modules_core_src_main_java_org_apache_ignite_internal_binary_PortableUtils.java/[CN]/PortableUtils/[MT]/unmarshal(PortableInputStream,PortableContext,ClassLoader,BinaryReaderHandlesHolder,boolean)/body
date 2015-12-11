@@ -1,0 +1,108 @@
+{
+  int start=in.position();
+  byte flag=in.readByte();
+switch (flag) {
+case GridPortableMarshaller.NULL:
+    return null;
+case GridPortableMarshaller.HANDLE:
+{
+    int handlePos=start - in.readInt();
+    Object obj=handles.getHandle(handlePos);
+    if (obj == null) {
+      int retPos=in.position();
+      in.position(handlePos);
+      obj=unmarshal(in,ctx,ldr,handles);
+      in.position(retPos);
+    }
+    return obj;
+  }
+case GridPortableMarshaller.OBJ:
+{
+  checkProtocolVersion(in.readByte());
+  int len=length(in,start);
+  BinaryObjectExImpl po;
+  if (detach) {
+    in.position(start);
+    po=new BinaryObjectImpl(ctx,in.readByteArray(len),0);
+  }
+ else {
+    if (in.offheapPointer() == 0)     po=new BinaryObjectImpl(ctx,in.array(),start);
+ else     po=new BinaryObjectOffheapImpl(ctx,in.offheapPointer(),start,in.remaining() + in.position());
+    in.position(start + po.length());
+  }
+  handles.setHandle(po,start);
+  return po;
+}
+case GridPortableMarshaller.BYTE:
+return in.readByte();
+case GridPortableMarshaller.SHORT:
+return in.readShort();
+case GridPortableMarshaller.INT:
+return in.readInt();
+case GridPortableMarshaller.LONG:
+return in.readLong();
+case GridPortableMarshaller.FLOAT:
+return in.readFloat();
+case GridPortableMarshaller.DOUBLE:
+return in.readDouble();
+case GridPortableMarshaller.CHAR:
+return in.readChar();
+case GridPortableMarshaller.BOOLEAN:
+return in.readBoolean();
+case GridPortableMarshaller.DECIMAL:
+return doReadDecimal(in);
+case GridPortableMarshaller.STRING:
+return doReadString(in);
+case GridPortableMarshaller.UUID:
+return doReadUuid(in);
+case GridPortableMarshaller.DATE:
+return doReadDate(in);
+case GridPortableMarshaller.TIMESTAMP:
+return doReadTimestamp(in);
+case GridPortableMarshaller.BYTE_ARR:
+return doReadByteArray(in);
+case GridPortableMarshaller.SHORT_ARR:
+return doReadShortArray(in);
+case GridPortableMarshaller.INT_ARR:
+return doReadIntArray(in);
+case GridPortableMarshaller.LONG_ARR:
+return doReadLongArray(in);
+case GridPortableMarshaller.FLOAT_ARR:
+return doReadFloatArray(in);
+case GridPortableMarshaller.DOUBLE_ARR:
+return doReadDoubleArray(in);
+case GridPortableMarshaller.CHAR_ARR:
+return doReadCharArray(in);
+case GridPortableMarshaller.BOOLEAN_ARR:
+return doReadBooleanArray(in);
+case GridPortableMarshaller.DECIMAL_ARR:
+return doReadDecimalArray(in);
+case GridPortableMarshaller.STRING_ARR:
+return doReadStringArray(in);
+case GridPortableMarshaller.UUID_ARR:
+return doReadUuidArray(in);
+case GridPortableMarshaller.DATE_ARR:
+return doReadDateArray(in);
+case GridPortableMarshaller.TIMESTAMP_ARR:
+return doReadTimestampArray(in);
+case GridPortableMarshaller.OBJ_ARR:
+return doReadObjectArray(in,ctx,ldr,handles,false);
+case GridPortableMarshaller.COL:
+return doReadCollection(in,ctx,ldr,handles,false,null);
+case GridPortableMarshaller.MAP:
+return doReadMap(in,ctx,ldr,handles,false,null);
+case GridPortableMarshaller.PORTABLE_OBJ:
+return doReadPortableObject(in,ctx);
+case GridPortableMarshaller.ENUM:
+return doReadPortableEnum(in,ctx,doReadEnumType(in));
+case GridPortableMarshaller.ENUM_ARR:
+doReadEnumType(in);
+return doReadPortableEnumArray(in,ctx);
+case GridPortableMarshaller.CLASS:
+return doReadClass(in,ctx,ldr);
+case GridPortableMarshaller.OPTM_MARSH:
+return doReadOptimized(in,ctx,ldr);
+default :
+throw new BinaryObjectException("Invalid flag value: " + flag);
+}
+}

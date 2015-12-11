@@ -1,0 +1,22 @@
+{
+  try {
+    Ignite ignite0=startGrid(0);
+    TestMessageWorkerFailureSpi2 spi0=new TestMessageWorkerFailureSpi2();
+    nodeSpi.set(spi0);
+    try {
+      startGrid(1);
+      fail();
+    }
+ catch (    Exception e) {
+      log.error("Expected error: " + e,e);
+    }
+    Ignite ignite1=startGrid(1);
+    assertEquals(2,ignite1.cluster().nodes().size());
+    assertEquals(4,ignite1.cluster().topologyVersion());
+    assertEquals(2,ignite0.cluster().nodes().size());
+    assertEquals(4,ignite0.cluster().topologyVersion());
+  }
+  finally {
+    stopAllGrids();
+  }
+}

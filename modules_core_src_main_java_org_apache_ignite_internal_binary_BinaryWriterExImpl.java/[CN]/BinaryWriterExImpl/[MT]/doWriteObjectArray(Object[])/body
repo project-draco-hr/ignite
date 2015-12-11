@@ -1,0 +1,16 @@
+{
+  if (val == null)   out.writeByte(GridPortableMarshaller.NULL);
+ else {
+    if (tryWriteAsHandle(val))     return;
+    PortableClassDescriptor desc=ctx.descriptorForClass(val.getClass().getComponentType(),false);
+    out.unsafeEnsure(1 + 4);
+    out.unsafeWriteByte(GridPortableMarshaller.OBJ_ARR);
+    if (desc.registered())     out.unsafeWriteInt(desc.typeId());
+ else {
+      out.unsafeWriteInt(GridPortableMarshaller.UNREGISTERED_TYPE_ID);
+      doWriteString(val.getClass().getComponentType().getName());
+    }
+    out.writeInt(val.length);
+    for (    Object obj : val)     doWriteObject(obj);
+  }
+}

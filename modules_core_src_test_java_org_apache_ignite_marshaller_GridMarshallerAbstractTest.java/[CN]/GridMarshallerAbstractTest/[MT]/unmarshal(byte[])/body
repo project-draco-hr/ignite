@@ -1,3 +1,19 @@
 {
-  return marsh.<T>unmarshal(buf,Thread.currentThread().getContextClassLoader());
+  RunnableFuture<T> f=new FutureTask<>(new Callable<T>(){
+    @Override public T call() throws IgniteCheckedException {
+      return marsh.<T>unmarshal(buf,Thread.currentThread().getContextClassLoader());
+    }
+  }
+);
+  new IgniteThread(gridName,"unmarshal-thread",f).start();
+  try {
+    return f.get();
+  }
+ catch (  Exception e) {
+    if (e.getCause() instanceof IgniteCheckedException) {
+      throw (IgniteCheckedException)e.getCause();
+    }
+    fail(e.getCause().getMessage());
+  }
+  return null;
 }

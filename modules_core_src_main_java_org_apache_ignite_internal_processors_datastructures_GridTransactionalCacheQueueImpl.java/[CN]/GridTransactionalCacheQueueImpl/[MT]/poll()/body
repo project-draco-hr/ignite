@@ -1,2 +1,35 @@
 {
+  try {
+    return retryTopologySafe(new Callable<T>(){
+      @Override public T call() throws Exception {
+        T retVal;
+        while (true) {
+          try (IgniteInternalTx tx=cache.txStartEx(PESSIMISTIC,REPEATABLE_READ)){
+            Long idx=(Long)cache.invoke(queueKey,new PollProcessor(id)).get();
+            if (idx != null) {
+              checkRemoved(idx);
+              retVal=(T)cache.getAndRemove(itemKey(idx));
+              if (retVal == null) {
+                tx.commit();
+                continue;
+              }
+            }
+ else             retVal=null;
+            tx.commit();
+            return retVal;
+          }
+         }
+      }
+    }
+).call();
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+catch (  RuntimeException e) {
+    throw e;
+  }
+catch (  Exception e) {
+    throw new IgniteException(e.getMessage(),e);
+  }
 }

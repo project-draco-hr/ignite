@@ -1,0 +1,36 @@
+{
+  try {
+    clientMode=false;
+    startGrid(0);
+    clientMode=true;
+    startGrid(1);
+    Class valCls=grid(1).configuration().getClassLoader().loadClass(TEST_VALUE);
+    assertTrue(grid(1).configuration().isClientMode());
+    assertFalse(grid(0).configuration().isClientMode());
+    IgniteCache cache1=grid(1).cache(null);
+    IgniteCache cache0=grid(0).cache(null);
+    if (withKeepBinary) {
+      cache1=cache1.withKeepBinary();
+      cache0=cache0.withKeepBinary();
+    }
+    cache1.put("key",valCls.newInstance());
+    if (withKeepBinary) {
+      BinaryObject obj=(BinaryObject)(cache0.get("key"));
+      try {
+        obj.deserialize();
+        fail("Exception did not happened.");
+      }
+ catch (      BinaryInvalidTypeException e) {
+      }
+    }
+ else     try {
+      cache0.get("key");
+      fail("Exception did not happened.");
+    }
+ catch (    BinaryInvalidTypeException e) {
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

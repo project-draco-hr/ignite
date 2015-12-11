@@ -1,0 +1,32 @@
+{
+  ClusterNode newNode=new TcpDiscoveryNode();
+  GridTestUtils.setFieldValue(newNode,"consistentId",getTestGridName(4));
+  GridTestUtils.setFieldValue(newNode,"id",UUID.randomUUID());
+  List<ClusterNode> topNodes=new ArrayList<>();
+  Collections.addAll(topNodes,nodes);
+  topNodes.add(newNode);
+  DiscoveryEvent discoEvt=new DiscoveryEvent(newNode,"",EventType.EVT_NODE_JOINED,newNode);
+  final long topVer=ignite.cluster().topologyVersion();
+  GridAffinityFunctionContextImpl ctx=new GridAffinityFunctionContextImpl(topNodes,null,discoEvt,new AffinityTopologyVersion(topVer + 1),1);
+  AffinityFunction affFunc=ignite.cache(null).getConfiguration(CacheConfiguration.class).getAffinity();
+  List<List<ClusterNode>> newAff=affFunc.assignPartitions(ctx);
+  List<List<ClusterNode>> curAff=((IgniteKernal)ignite).context().cache().internalCache(null).context().affinity().assignments(new AffinityTopologyVersion(topVer));
+  Integer key1=null;
+  Integer key2=null;
+  Affinity<Integer> aff=ignite.affinity(null);
+  for (int i=0; i < curAff.size(); i++) {
+    if (key1 == null) {
+      List<ClusterNode> oldNodes=curAff.get(i);
+      List<ClusterNode> newNodes=newAff.get(i);
+      if (oldNodes.equals(newNodes))       key1=findKey(aff,i);
+    }
+    if (key2 == null) {
+      ClusterNode oldPrimary=F.first(curAff.get(i));
+      ClusterNode newPrimary=F.first(newAff.get(i));
+      if (!oldPrimary.equals(newPrimary))       key2=findKey(aff,i);
+    }
+    if (key1 != null && key2 != null)     break;
+  }
+  if (key1 == null || key2 == null)   fail("Failed to find nodes required for test.");
+  return new IgniteBiTuple<>(key1,key2);
+}

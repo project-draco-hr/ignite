@@ -1,27 +1,33 @@
 {
   try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
     System.out.println();
-    System.out.println(">>> Cache auto store example started.");
+    System.out.println(">>> Populate database with data...");
+    DbH2ServerStartup.populateDatabase();
+    System.out.println();
+    System.out.println(">>> Cache auto store example started...");
     try (IgniteCache<Long,Person> cache=ignite.getOrCreateCache(cacheConfiguration())){
       try (Transaction tx=ignite.transactions().txStart()){
         Person val=cache.get(id);
-        System.out.println("Read value: " + val);
-        val=cache.getAndPut(id,new Person(id,"Isaac","Newton"));
-        System.out.println("Overwrote old value: " + val);
+        System.out.println(">>> Read value: " + val);
+        val=cache.getAndPut(id,new Person(id,1L,"Isaac","Newton",100.10,"English physicist and mathematician"));
+        System.out.println(">>> Overwrote old value: " + val);
         val=cache.get(id);
-        System.out.println("Read value: " + val);
+        System.out.println(">>> Read value: " + val);
+        System.out.println(">>> Update salary in transaction...");
+        val.salary*=2;
+        cache.put(id,val);
         tx.commit();
       }
-       System.out.println("Read value after commit: " + cache.get(id));
+       System.out.println(">>> Read value after commit: " + cache.get(id));
       cache.clear();
       System.out.println(">>> ------------------------------------------");
       System.out.println(">>> Load data to cache from DB with custom SQL...");
       cache.loadCache(null,"java.lang.Long","select * from PERSON where id <= 3");
-      System.out.println("Loaded cache entries: " + cache.size());
+      System.out.println(">>> Loaded cache entries: " + cache.size());
       cache.clear();
       System.out.println(">>> Load ALL data to cache from DB...");
       cache.loadCache(null);
-      System.out.println("Loaded cache entries: " + cache.size());
+      System.out.println(">>> Loaded cache entries: " + cache.size());
     }
    }
  }

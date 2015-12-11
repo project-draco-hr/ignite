@@ -1,33 +1,30 @@
 {
-  SegmentHeader hdr=headerForRead();
-  try {
-    GridCacheMapEntry[] tbl=hdr.table();
-    Collection<GridCacheMapEntry> entries=new ArrayList<>(3);
-    int pubCnt=0;
-    int start=RAND.nextInt(tbl.length);
+  if (size == 0)   return null;
+  HashEntry[] tbl=this.tbl;
+  Collection<GridCacheMapEntry> entries=new ArrayList<>(3);
+  int pubCnt=0;
+  int start=RAND.nextInt(tbl.length);
+  outerLoop: {
     for (int i=start; i < start + tbl.length; i++) {
-      GridCacheMapEntry first=tbl[i % tbl.length];
+      HashEntry first=tbl[i & (tbl.length - 1)];
       if (first == null)       continue;
-      entries.add(first);
-      for (GridCacheMapEntry e=first; e != null; e=e.next(hdr.id()))       if (!e.isInternal())       pubCnt++;
-      if (entries.size() == 3)       break;
-    }
-    if (entries.isEmpty())     return null;
-    if (pubCnt == 0)     return null;
-    int idx=RAND.nextInt(pubCnt);
-    int i=0;
-    GridCacheMapEntry retVal=null;
-    for (    GridCacheMapEntry e : entries) {
-      for (; e != null; e=e.next(hdr.id())) {
-        if (!(e.key instanceof GridCacheInternal)) {
-          retVal=e;
-          if (idx == i++)           break;
-        }
+      for (HashEntry e=first; e != null; e=e.next) {
+        if (!e.mapEntry.isInternal())         pubCnt++;
+        entries.add(e.mapEntry);
+        if (entries.size() == 3)         break outerLoop;
       }
     }
-    return retVal;
   }
-  finally {
-    hdr.onReadEnd();
+  if (entries.isEmpty())   return null;
+  if (pubCnt == 0)   return null;
+  int idx=RAND.nextInt(pubCnt);
+  int i=0;
+  GridCacheMapEntry retVal=null;
+  for (  GridCacheMapEntry e : entries) {
+    if (!(e.key instanceof GridCacheInternal)) {
+      retVal=e;
+      if (idx == i++)       break;
+    }
   }
+  return retVal;
 }

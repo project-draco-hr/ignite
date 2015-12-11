@@ -1,0 +1,14 @@
+{
+  if (val == null)   out.writeByte(GridPortableMarshaller.NULL);
+ else {
+    PortableClassDescriptor desc=ctx.descriptorForClass(val.getClass(),false);
+    out.unsafeEnsure(1 + 4);
+    out.unsafeWriteByte(GridPortableMarshaller.ENUM);
+    if (desc.registered())     out.unsafeWriteInt(desc.typeId());
+ else {
+      out.unsafeWriteInt(GridPortableMarshaller.UNREGISTERED_TYPE_ID);
+      doWriteString(val.getClass().getName());
+    }
+    out.writeInt(val.ordinal());
+  }
+}

@@ -1,0 +1,16 @@
+{
+  if (val == null)   out.writeByte(GridPortableMarshaller.NULL);
+ else {
+    out.unsafeEnsure(1 + 4 + 4);
+    out.unsafeWriteByte(GridPortableMarshaller.DECIMAL);
+    BigInteger intVal=val.unscaledValue();
+    if (intVal.signum() == -1) {
+      intVal=intVal.negate();
+      out.unsafeWriteInt(val.scale() | 0x80000000);
+    }
+ else     out.unsafeWriteInt(val.scale());
+    byte[] vals=intVal.toByteArray();
+    out.unsafeWriteInt(vals.length);
+    out.writeByteArray(vals);
+  }
+}

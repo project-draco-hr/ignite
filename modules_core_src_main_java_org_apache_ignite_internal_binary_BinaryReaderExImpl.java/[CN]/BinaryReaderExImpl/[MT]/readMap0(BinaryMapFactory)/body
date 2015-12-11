@@ -1,0 +1,20 @@
+{
+switch (checkFlag(MAP)) {
+case NORMAL:
+    return (Map)PortableUtils.doReadMap(in,ctx,ldr,this,true,factory);
+case HANDLE:
+{
+    int handlePos=PortableUtils.positionForHandle(in) - in.readInt();
+    Object obj=getHandle(handlePos);
+    if (obj == null) {
+      int retPos=in.position();
+      streamPosition(handlePos);
+      obj=readMap0(factory);
+      streamPosition(retPos);
+    }
+    return (Map)obj;
+  }
+default :
+return null;
+}
+}

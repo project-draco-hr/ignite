@@ -1,6 +1,22 @@
 {
   super.start0();
   if (cctx.txConfig() != null) {
+    tmFactory=cctx.txConfig().getTxManagerFactory();
+    if (tmFactory != null) {
+      cctx.kernalContext().resource().injectGeneric(tmFactory);
+      if (tmFactory instanceof LifecycleAware)       ((LifecycleAware)tmFactory).start();
+      Object txMgr;
+      try {
+        txMgr=tmFactory.create();
+      }
+ catch (      Exception e) {
+        throw new IgniteCheckedException("Failed to create transaction manager [tmFactory=" + tmFactory + "]",e);
+      }
+      if (txMgr == null)       throw new IgniteCheckedException("Failed to create transaction manager (transaction manager " + "factory created null-value transaction manager) [tmFactory=" + tmFactory + "]");
+      if (!(txMgr instanceof TransactionManager))       throw new IgniteCheckedException("Failed to create transaction manager (transaction manager " + "factory created object that is not an instance of TransactionManager) [tmFactory=" + tmFactory + ", txMgr="+ txMgr+ "]");
+      jtaTm=(TransactionManager)txMgr;
+      return;
+    }
     String txLookupClsName=cctx.txConfig().getTxManagerLookupClassName();
     if (txLookupClsName != null)     tmLookupRef.set(createTmLookup(txLookupClsName));
   }

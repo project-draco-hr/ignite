@@ -1,0 +1,38 @@
+{
+  ConstantTopologyChangeWorker topWorker=new ConstantTopologyChangeWorker(TOP_CHANGE_THREAD_CNT);
+  try (final IgniteQueue<Integer> q=grid(0).queue(STRUCTURE_NAME,0,config(false))){
+    for (int i=0; i < 1000; i++)     q.add(i);
+    final IgniteInternalFuture<?> fut=topWorker.startChangingTopology(new IgniteClosure<Ignite,Object>(){
+      @Override public Object apply(      Ignite ignite){
+        return null;
+      }
+    }
+);
+    IgniteInternalFuture<?> takeFut=GridTestUtils.runAsync(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        while (!fut.isDone())         q.take();
+        return null;
+      }
+    }
+);
+    IgniteInternalFuture<?> pollFut=GridTestUtils.runAsync(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        while (!fut.isDone())         q.poll();
+        return null;
+      }
+    }
+);
+    IgniteInternalFuture<?> addFut=GridTestUtils.runAsync(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        while (!fut.isDone())         q.add(0);
+        return null;
+      }
+    }
+);
+    fut.get();
+    pollFut.get();
+    addFut.get();
+    q.add(0);
+    takeFut.get();
+  }
+ }

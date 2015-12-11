@@ -1,0 +1,32 @@
+{
+  UserTransaction jtaTx=jotm.getUserTransaction();
+  IgniteEx ignite=grid(0);
+  IgniteCache<String,Integer> cache1=jcache();
+  IgniteCache<Object,Object> cache2=ignite.cache("cache-2");
+  assertNull(ignite.transactions().tx());
+  jtaTx.begin();
+  try {
+    cache1.put("key",0);
+    cache2.put("key",0);
+    cache1.put("key1",1);
+    cache2.put("key2",2);
+    assertEquals(0,(int)cache1.get("key"));
+    assertEquals(0,(int)cache1.get("key"));
+    assertEquals(1,(int)cache1.get("key1"));
+    assertEquals(2,(int)cache2.get("key2"));
+    assertEquals(ignite.transactions().tx().state(),ACTIVE);
+    jtaTx.commit();
+    assertNull(ignite.transactions().tx());
+    assertEquals(0,(int)cache1.get("key"));
+    assertEquals(0,(int)cache2.get("key"));
+    assertEquals(1,(int)cache1.get("key1"));
+    assertEquals(2,(int)cache2.get("key2"));
+  }
+  finally {
+    if (jtaTx.getStatus() == Status.STATUS_ACTIVE)     jtaTx.rollback();
+  }
+  assertEquals(0,(int)cache1.get("key"));
+  assertEquals(0,(int)cache2.get("key"));
+  assertEquals(1,(int)cache1.get("key1"));
+  assertEquals(2,(int)cache2.get("key2"));
+}

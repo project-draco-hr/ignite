@@ -1,0 +1,19 @@
+{
+  try {
+    TestEventDiscardSpi spi=new TestEventDiscardSpi();
+    nodeSpi.set(spi);
+    Ignite ignite0=startGrid(0);
+    startGrid(1);
+    ignite0.createCache(new CacheConfiguration<>());
+    ignite0.destroyCache(null);
+    stopGrid(1);
+    log.info("Start new node.");
+    spi.checkDuplicates=true;
+    startGrid(1);
+    spi.checkDuplicates=false;
+    assertFalse(spi.failed);
+  }
+  finally {
+    stopAllGrids();
+  }
+}
