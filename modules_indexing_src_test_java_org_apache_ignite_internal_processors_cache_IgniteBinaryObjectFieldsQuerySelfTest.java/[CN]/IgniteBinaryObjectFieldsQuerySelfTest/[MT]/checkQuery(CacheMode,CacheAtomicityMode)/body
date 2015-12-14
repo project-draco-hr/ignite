@@ -1,0 +1,19 @@
+{
+  IgniteCache<Object,Object> cache=grid(3).getOrCreateCache(cache(cacheMode,atomicity));
+  try {
+    populate(cache);
+    QueryCursor<Cache.Entry<Object,Object>> cur=cache.query(new SqlQuery("Person","order " + "by id asc"));
+    List<Cache.Entry<Object,Object>> all=cur.getAll();
+    assertEquals(100,all.size());
+    for (int i=0; i < 100; i++) {
+      Object person=all.get(i).getValue();
+      assertEquals(i,U.field(person,"id"));
+      assertEquals("person-" + i,U.field(person,"name"));
+      assertEquals("person-last-" + i,U.field(person,"lastName"));
+      assertEquals((double)(i * 25),U.field(person,"salary"));
+    }
+  }
+  finally {
+    grid(3).destroyCache(null);
+  }
+}

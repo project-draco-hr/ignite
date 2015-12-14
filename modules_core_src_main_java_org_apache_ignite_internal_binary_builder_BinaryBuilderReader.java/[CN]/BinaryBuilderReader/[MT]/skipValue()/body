@@ -1,0 +1,97 @@
+{
+  byte type=arr[pos++];
+  int len;
+switch (type) {
+case GridBinaryMarshaller.NULL:
+    return;
+case GridBinaryMarshaller.OBJ:
+  pos+=readInt(GridBinaryMarshaller.TOTAL_LEN_POS - 1) - 1;
+return;
+case GridBinaryMarshaller.BOOLEAN:
+case GridBinaryMarshaller.BYTE:
+len=1;
+break;
+case GridBinaryMarshaller.CHAR:
+case GridBinaryMarshaller.SHORT:
+len=2;
+break;
+case GridBinaryMarshaller.HANDLE:
+case GridBinaryMarshaller.FLOAT:
+case GridBinaryMarshaller.INT:
+len=4;
+break;
+case GridBinaryMarshaller.ENUM:
+len=8;
+break;
+case GridBinaryMarshaller.LONG:
+case GridBinaryMarshaller.DOUBLE:
+len=8;
+break;
+case GridBinaryMarshaller.BYTE_ARR:
+case GridBinaryMarshaller.BOOLEAN_ARR:
+len=4 + readLength();
+break;
+case GridBinaryMarshaller.STRING:
+len=4 + readStringLength();
+break;
+case GridBinaryMarshaller.DECIMAL:
+len=4 + 4 + readInt(4);
+break;
+case GridBinaryMarshaller.UUID:
+len=8 + 8;
+break;
+case GridBinaryMarshaller.DATE:
+len=8;
+break;
+case GridBinaryMarshaller.TIMESTAMP:
+len=8 + 4;
+break;
+case GridBinaryMarshaller.CHAR_ARR:
+case GridBinaryMarshaller.SHORT_ARR:
+len=4 + readLength() * 2;
+break;
+case GridBinaryMarshaller.INT_ARR:
+case GridBinaryMarshaller.FLOAT_ARR:
+len=4 + readLength() * 4;
+break;
+case GridBinaryMarshaller.LONG_ARR:
+case GridBinaryMarshaller.DOUBLE_ARR:
+len=4 + readLength() * 8;
+break;
+case GridBinaryMarshaller.DECIMAL_ARR:
+case GridBinaryMarshaller.DATE_ARR:
+case GridBinaryMarshaller.TIMESTAMP_ARR:
+case GridBinaryMarshaller.OBJ_ARR:
+case GridBinaryMarshaller.ENUM_ARR:
+case GridBinaryMarshaller.UUID_ARR:
+case GridBinaryMarshaller.STRING_ARR:
+{
+int size=readInt();
+for (int i=0; i < size; i++) skipValue();
+return;
+}
+case GridBinaryMarshaller.COL:
+{
+int size=readInt();
+pos++;
+for (int i=0; i < size; i++) skipValue();
+return;
+}
+case GridBinaryMarshaller.MAP:
+{
+int size=readInt();
+pos++;
+for (int i=0; i < size; i++) {
+skipValue();
+skipValue();
+}
+return;
+}
+case GridBinaryMarshaller.BINARY_OBJ:
+len=readInt() + 4;
+break;
+default :
+throw new BinaryObjectException("Invalid flag value: " + type);
+}
+pos+=len;
+}

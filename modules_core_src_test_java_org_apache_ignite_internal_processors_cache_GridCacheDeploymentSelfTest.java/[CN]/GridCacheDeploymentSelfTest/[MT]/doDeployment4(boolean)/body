@@ -1,0 +1,27 @@
+{
+  try {
+    depMode=CONTINUOUS;
+    Ignite g1=startGrid(1);
+    Ignite g2=startGrid(2);
+    Ignite g0=startGrid(GRID_NAME);
+    info("Started grids:");
+    info("g0: " + g0.cluster().localNode().id());
+    info("g1: " + g1.cluster().localNode().id());
+    info("g2: " + g2.cluster().localNode().id());
+    ClassLoader ldr=getExternalClassLoader();
+    Class cls=ldr.loadClass(TEST_TASK_3);
+    String key="";
+    for (int i=0; i < 1000; i++) {
+      key="1" + i;
+      if (g1.cluster().mapKeyToNode(null,key).id().equals(g2.cluster().localNode().id()) && g1.affinity(null).isBackup((backupLeavesGrid ? g0 : g1).cluster().localNode(),key))       break;
+    }
+    g0.compute().execute(cls,new T2<>(g1.cluster().localNode(),key));
+    stopGrid(GRID_NAME);
+    assertEquals(1,g1.cache(null).localSize(CachePeekMode.ALL));
+    assertEquals(1,g2.cache(null).localSize(CachePeekMode.ALL));
+    startGrid(3);
+  }
+  finally {
+    stopAllGrids();
+  }
+}

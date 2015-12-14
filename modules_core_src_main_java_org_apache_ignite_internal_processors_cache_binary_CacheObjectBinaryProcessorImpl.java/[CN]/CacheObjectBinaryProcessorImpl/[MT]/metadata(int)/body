@@ -1,11 +1,16 @@
 {
   try {
-    if (clientNode)     return clientMetaDataCache.get(typeId);
+    if (clientNode) {
+      BinaryType typeMeta=clientMetaDataCache.get(typeId);
+      if (typeMeta != null)       return typeMeta;
+      BinaryMetadata meta=metaDataCache.getTopologySafe(new BinaryMetadataKey(typeId));
+      return meta != null ? meta.wrap(binaryCtx) : null;
+    }
  else {
-      PortableMetadataKey key=new PortableMetadataKey(typeId);
+      BinaryMetadataKey key=new BinaryMetadataKey(typeId);
       BinaryMetadata meta=metaDataCache.localPeek(key);
       if (meta == null && !metaDataCache.context().preloader().syncFuture().isDone())       meta=metaDataCache.getTopologySafe(key);
-      return meta != null ? meta.wrap(portableCtx) : null;
+      return meta != null ? meta.wrap(binaryCtx) : null;
     }
   }
  catch (  CacheException e) {

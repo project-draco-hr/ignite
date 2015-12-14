@@ -11,13 +11,13 @@
           entry=ctx.isSwapOrOffheapEnabled() ? entryEx(key) : peekEx(key);
           if (entry != null) {
             boolean isNew=entry.isNewLocked();
-            CacheObject v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiry,!deserializePortable);
+            CacheObject v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiry,!deserializeBinary);
             if (v == null) {
               GridCacheVersion obsoleteVer=context().versions().next();
               if (isNew && entry.markObsoleteIfEmpty(obsoleteVer))               removeIfObsolete(key);
               success=false;
             }
- else             ctx.addResult(locVals,key,v,skipVals,false,deserializePortable,true);
+ else             ctx.addResult(locVals,key,v,skipVals,false,deserializeBinary,true);
           }
  else           success=false;
           break;
@@ -44,7 +44,7 @@ catch (        IgniteCheckedException e) {
     }
   }
   if (expiry != null)   expiry.reset();
-  GridPartitionedGetFuture<K,V> fut=new GridPartitionedGetFuture<>(ctx,keys,topVer,!skipStore,forcePrimary,subjId,taskName,deserializePortable,expiry,skipVals,canRemap,false,false);
+  GridPartitionedGetFuture<K,V> fut=new GridPartitionedGetFuture<>(ctx,keys,topVer,!skipStore,forcePrimary,subjId,taskName,deserializeBinary,expiry,skipVals,canRemap,false,false);
   fut.init();
   return fut;
 }

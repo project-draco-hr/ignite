@@ -1,10 +1,11 @@
 {
   ByteBuffer buf=ByteBuffer.allocate(8 * 1024);
-  DirectMessageWriter w=new DirectMessageWriter(proto);
-  m.writeTo(buf,w);
+  m.writeTo(buf,writer(proto));
   buf.flip();
-  DirectMessageReader r=new DirectMessageReader(new GridIoMessageFactory(null),proto);
-  r.setBuffer(buf);
-  Message mx=r.readMessage(null);
+  byte type=buf.get();
+  assertEquals(m.directType(),type);
+  GridIoMessageFactory msgFactory=new GridIoMessageFactory(null);
+  Message mx=msgFactory.create(type);
+  mx.readFrom(buf,reader(msgFactory,proto));
   assertEquals(m,mx);
 }

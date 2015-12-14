@@ -1,0 +1,28 @@
+{
+  Map<Integer,BinarySchemaRegistry> schemas0=schemas;
+  if (schemas0 == null) {
+synchronized (this) {
+      schemas0=schemas;
+      if (schemas0 == null) {
+        schemas0=new HashMap<>();
+        BinarySchemaRegistry reg=new BinarySchemaRegistry();
+        schemas0.put(typeId,reg);
+        schemas=schemas0;
+        return reg;
+      }
+    }
+  }
+  BinarySchemaRegistry reg=schemas0.get(typeId);
+  if (reg == null) {
+synchronized (this) {
+      reg=schemas.get(typeId);
+      if (reg == null) {
+        reg=new BinarySchemaRegistry();
+        schemas0=new HashMap<>(schemas);
+        schemas0.put(typeId,reg);
+        schemas=schemas0;
+      }
+    }
+  }
+  return reg;
+}

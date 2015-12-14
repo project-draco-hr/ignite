@@ -1,73 +1,73 @@
 {
   Object val;
-  int schemaOffset=PortablePrimitives.readInt(arr,start + GridPortableMarshaller.SCHEMA_OR_RAW_OFF_POS);
-  short flags=PortablePrimitives.readShort(arr,start + GridPortableMarshaller.FLAGS_POS);
-  int fieldIdLen=PortableUtils.isCompactFooter(flags) ? 0 : PortableUtils.FIELD_ID_LEN;
-  int fieldOffsetLen=PortableUtils.fieldOffsetLength(flags);
+  int schemaOffset=BinaryPrimitives.readInt(arr,start + GridBinaryMarshaller.SCHEMA_OR_RAW_OFF_POS);
+  short flags=BinaryPrimitives.readShort(arr,start + GridBinaryMarshaller.FLAGS_POS);
+  int fieldIdLen=BinaryUtils.isCompactFooter(flags) ? 0 : BinaryUtils.FIELD_ID_LEN;
+  int fieldOffsetLen=BinaryUtils.fieldOffsetLength(flags);
   int fieldOffsetPos=start + schemaOffset + order * (fieldIdLen + fieldOffsetLen) + fieldIdLen;
   int fieldPos;
-  if (fieldOffsetLen == PortableUtils.OFFSET_1)   fieldPos=start + ((int)PortablePrimitives.readByte(arr,fieldOffsetPos) & 0xFF);
- else   if (fieldOffsetLen == PortableUtils.OFFSET_2)   fieldPos=start + ((int)PortablePrimitives.readShort(arr,fieldOffsetPos) & 0xFFFF);
- else   fieldPos=start + PortablePrimitives.readInt(arr,fieldOffsetPos);
-  byte hdr=PortablePrimitives.readByte(arr,fieldPos);
+  if (fieldOffsetLen == BinaryUtils.OFFSET_1)   fieldPos=start + ((int)BinaryPrimitives.readByte(arr,fieldOffsetPos) & 0xFF);
+ else   if (fieldOffsetLen == BinaryUtils.OFFSET_2)   fieldPos=start + ((int)BinaryPrimitives.readShort(arr,fieldOffsetPos) & 0xFFFF);
+ else   fieldPos=start + BinaryPrimitives.readInt(arr,fieldOffsetPos);
+  byte hdr=BinaryPrimitives.readByte(arr,fieldPos);
 switch (hdr) {
-case GridPortableMarshaller.INT:
-    val=PortablePrimitives.readInt(arr,fieldPos + 1);
+case GridBinaryMarshaller.INT:
+    val=BinaryPrimitives.readInt(arr,fieldPos + 1);
   break;
-case GridPortableMarshaller.LONG:
-val=PortablePrimitives.readLong(arr,fieldPos + 1);
+case GridBinaryMarshaller.LONG:
+val=BinaryPrimitives.readLong(arr,fieldPos + 1);
 break;
-case GridPortableMarshaller.BOOLEAN:
-val=PortablePrimitives.readBoolean(arr,fieldPos + 1);
+case GridBinaryMarshaller.BOOLEAN:
+val=BinaryPrimitives.readBoolean(arr,fieldPos + 1);
 break;
-case GridPortableMarshaller.SHORT:
-val=PortablePrimitives.readShort(arr,fieldPos + 1);
+case GridBinaryMarshaller.SHORT:
+val=BinaryPrimitives.readShort(arr,fieldPos + 1);
 break;
-case GridPortableMarshaller.BYTE:
-val=PortablePrimitives.readByte(arr,fieldPos + 1);
+case GridBinaryMarshaller.BYTE:
+val=BinaryPrimitives.readByte(arr,fieldPos + 1);
 break;
-case GridPortableMarshaller.CHAR:
-val=PortablePrimitives.readChar(arr,fieldPos + 1);
+case GridBinaryMarshaller.CHAR:
+val=BinaryPrimitives.readChar(arr,fieldPos + 1);
 break;
-case GridPortableMarshaller.FLOAT:
-val=PortablePrimitives.readFloat(arr,fieldPos + 1);
+case GridBinaryMarshaller.FLOAT:
+val=BinaryPrimitives.readFloat(arr,fieldPos + 1);
 break;
-case GridPortableMarshaller.DOUBLE:
-val=PortablePrimitives.readDouble(arr,fieldPos + 1);
+case GridBinaryMarshaller.DOUBLE:
+val=BinaryPrimitives.readDouble(arr,fieldPos + 1);
 break;
-case GridPortableMarshaller.STRING:
+case GridBinaryMarshaller.STRING:
 {
-int dataLen=PortablePrimitives.readInt(arr,fieldPos + 1);
+int dataLen=BinaryPrimitives.readInt(arr,fieldPos + 1);
 val=new String(arr,fieldPos + 5,dataLen,UTF_8);
 break;
 }
-case GridPortableMarshaller.DATE:
+case GridBinaryMarshaller.DATE:
 {
-long time=PortablePrimitives.readLong(arr,fieldPos + 1);
+long time=BinaryPrimitives.readLong(arr,fieldPos + 1);
 val=new Date(time);
 break;
 }
-case GridPortableMarshaller.TIMESTAMP:
+case GridBinaryMarshaller.TIMESTAMP:
 {
-long time=PortablePrimitives.readLong(arr,fieldPos + 1);
-int nanos=PortablePrimitives.readInt(arr,fieldPos + 1 + 8);
+long time=BinaryPrimitives.readLong(arr,fieldPos + 1);
+int nanos=BinaryPrimitives.readInt(arr,fieldPos + 1 + 8);
 Timestamp ts=new Timestamp(time);
 ts.setNanos(ts.getNanos() + nanos);
 val=ts;
 break;
 }
-case GridPortableMarshaller.UUID:
+case GridBinaryMarshaller.UUID:
 {
-long most=PortablePrimitives.readLong(arr,fieldPos + 1);
-long least=PortablePrimitives.readLong(arr,fieldPos + 1 + 8);
+long most=BinaryPrimitives.readLong(arr,fieldPos + 1);
+long least=BinaryPrimitives.readLong(arr,fieldPos + 1 + 8);
 val=new UUID(most,least);
 break;
 }
-case GridPortableMarshaller.DECIMAL:
+case GridBinaryMarshaller.DECIMAL:
 {
-int scale=PortablePrimitives.readInt(arr,fieldPos + 1);
-int dataLen=PortablePrimitives.readInt(arr,fieldPos + 5);
-byte[] data=PortablePrimitives.readByteArray(arr,fieldPos + 9,dataLen);
+int scale=BinaryPrimitives.readInt(arr,fieldPos + 1);
+int dataLen=BinaryPrimitives.readInt(arr,fieldPos + 5);
+byte[] data=BinaryPrimitives.readByteArray(arr,fieldPos + 9,dataLen);
 BigInteger intVal=new BigInteger(data);
 if (scale < 0) {
 scale&=0x7FFFFFFF;
@@ -76,11 +76,11 @@ intVal=intVal.negate();
 val=new BigDecimal(intVal,scale);
 break;
 }
-case GridPortableMarshaller.NULL:
+case GridBinaryMarshaller.NULL:
 val=null;
 break;
 default :
-val=PortableUtils.unmarshal(PortableHeapInputStream.create(arr,fieldPos),ctx,null);
+val=BinaryUtils.unmarshal(BinaryHeapInputStream.create(arr,fieldPos),ctx,null);
 break;
 }
 return (F)val;
