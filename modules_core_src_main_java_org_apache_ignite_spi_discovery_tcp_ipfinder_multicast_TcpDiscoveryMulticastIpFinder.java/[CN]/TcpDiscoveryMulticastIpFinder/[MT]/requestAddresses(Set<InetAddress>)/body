@@ -1,0 +1,27 @@
+{
+  if (reqItfs.size() > 1) {
+    Collection<InetSocketAddress> ret=new HashSet<>();
+    Collection<AddressReceiver> rcvrs=new ArrayList<>();
+    for (    InetAddress itf : reqItfs) {
+      AddressReceiver rcvr=new AddressReceiver(mcastAddr,itf);
+      rcvr.start();
+      rcvrs.add(rcvr);
+    }
+    for (    AddressReceiver rcvr : rcvrs) {
+      try {
+        rcvr.join();
+        ret.addAll(rcvr.addresses());
+      }
+ catch (      InterruptedException ignore) {
+        U.warn(log,"Got interrupted while receiving address request.");
+        Thread.currentThread().interrupt();
+        break;
+      }
+    }
+    return ret;
+  }
+ else {
+    T2<Collection<InetSocketAddress>,Boolean> res=requestAddresses(mcastAddr,F.first(reqItfs));
+    return res.get1();
+  }
+}
