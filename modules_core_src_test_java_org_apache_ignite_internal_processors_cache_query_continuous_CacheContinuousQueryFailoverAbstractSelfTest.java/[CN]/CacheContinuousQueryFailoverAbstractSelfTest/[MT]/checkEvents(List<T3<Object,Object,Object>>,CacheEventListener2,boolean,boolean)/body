@@ -7,12 +7,12 @@
 ,2000L);
   Map<Integer,List<CacheEntryEvent<?,?>>> prevMap=new HashMap<>(lsnr.evts.size());
   for (  Map.Entry<Integer,List<CacheEntryEvent<?,?>>> e : lsnr.evts.entrySet())   prevMap.put(e.getKey(),new ArrayList<>(e.getValue()));
-  List<T3<Object,Object,Object>> lostEvents=new ArrayList<>();
+  List<T3<Object,Object,Object>> lostEvts=new ArrayList<>();
   for (  T3<Object,Object,Object> exp : expEvts) {
     List<CacheEntryEvent<?,?>> rcvdEvts=lsnr.evts.get(exp.get1());
     if (F.eq(exp.get2(),exp.get3()))     continue;
     if (rcvdEvts == null || rcvdEvts.isEmpty()) {
-      lostEvents.add(exp);
+      lostEvts.add(exp);
       continue;
     }
     Iterator<CacheEntryEvent<?,?>> iter=rcvdEvts.iterator();
@@ -25,7 +25,7 @@
         break;
       }
     }
-    if (!found)     lostEvents.add(exp);
+    if (!found)     lostEvts.add(exp);
   }
   boolean dup=false;
   if (!lsnr.evts.isEmpty()) {
@@ -33,10 +33,10 @@
       if (!evts.isEmpty()) {
         for (        CacheEntryEvent<?,?> e : evts) {
           boolean found=false;
-          for (          T3<Object,Object,Object> lostEvt : lostEvents) {
+          for (          T3<Object,Object,Object> lostEvt : lostEvts) {
             if (e.getKey().equals(lostEvt.get1()) && e.getValue().equals(lostEvt.get2())) {
               found=true;
-              lostEvents.remove(lostEvt);
+              lostEvts.remove(lostEvt);
               break;
             }
           }
@@ -55,12 +55,12 @@
       }
     }
   }
-  if (!lostAllow && lostEvents.size() > 100) {
-    log.error("Lost event cnt: " + lostEvents.size());
-    for (    T3<Object,Object,Object> e : lostEvents)     log.error("Lost event: " + e);
+  if (!lostAllow && lostEvts.size() > 100) {
+    log.error("Lost event cnt: " + lostEvts.size());
+    for (    T3<Object,Object,Object> e : lostEvts)     log.error("Lost event: " + e);
     fail("Lose events, see log for details.");
   }
-  log.error("Lost event cnt: " + lostEvents.size());
+  log.error("Lost event cnt: " + lostEvts.size());
   expEvts.clear();
   lsnr.evts.clear();
   lsnr.vals.clear();
