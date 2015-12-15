@@ -1,0 +1,22 @@
+{
+  super.setUp(cfg);
+  txs=ignite().transactions();
+  clo=new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      Set<Integer> keys=new TreeSet<>();
+      while (keys.size() < args.batch())       keys.add(nextRandom(args.range()));
+      Map<Integer,Object> vals=cache.getAll(keys);
+      Map<Integer,SampleValue> updates=new TreeMap<>();
+      for (      Map.Entry<Integer,Object> e : vals.entrySet()) {
+        if (e.getValue() != null) {
+          int key=nextRandom(args.range());
+          updates.put(key,new SampleValue(key));
+        }
+ else         updates.put(e.getKey(),new SampleValue(e.getKey()));
+      }
+      cache.putAll(updates);
+      return null;
+    }
+  }
+;
+}
