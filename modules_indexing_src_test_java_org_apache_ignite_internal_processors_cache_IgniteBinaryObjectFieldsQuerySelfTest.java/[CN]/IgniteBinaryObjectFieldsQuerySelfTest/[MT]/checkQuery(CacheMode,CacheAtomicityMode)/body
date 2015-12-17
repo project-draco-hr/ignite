@@ -1,5 +1,5 @@
 {
-  IgniteCache<Object,Object> cache=grid(3).getOrCreateCache(cache(cacheMode,atomicity));
+  IgniteCache<Object,Object> cache=grid(GRID_CNT - 1).getOrCreateCache(cache(cacheMode,atomicity));
   try {
     populate(cache);
     QueryCursor<Cache.Entry<Object,Object>> cur=cache.query(new SqlQuery("Person","order " + "by id asc"));
@@ -11,6 +11,16 @@
       assertEquals("person-" + i,U.field(person,"name"));
       assertEquals("person-last-" + i,U.field(person,"lastName"));
       assertEquals((double)(i * 25),U.field(person,"salary"));
+    }
+    int max=49;
+    ScanQuery<BinaryObject,BinaryObject> scanQry=new ScanQuery<>(new PersonKeyFilter(max));
+    QueryCursor<Cache.Entry<BinaryObject,BinaryObject>> curs=grid(GRID_CNT - 1).cache(null).withKeepBinary().query(scanQry);
+    List<Cache.Entry<BinaryObject,BinaryObject>> records=curs.getAll();
+    assertEquals(50,records.size());
+    for (    Cache.Entry<BinaryObject,BinaryObject> entry : records) {
+      BinaryObject key=entry.getKey();
+      assertTrue(key.<Integer>field("id") <= max);
+      assertEquals(PERSON_KEY_CLS_NAME,key.deserialize().getClass().getName());
     }
   }
   finally {
