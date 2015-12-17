@@ -1,0 +1,28 @@
+{
+  IgniteCache<Integer,Integer> txCache=ignite.cache(TX_CACHE1);
+  IgniteCache<Integer,Integer> getCache=ignite.cache(cacheName);
+  final int NEW_NODE=SRVS + CLIENTS;
+  Ignite srv=startGrid(NEW_NODE);
+  try {
+    Integer key=primaryKey(srv.cache(cacheName));
+    getCache.put(key,1);
+    IgniteInternalFuture<?> stopFut=GridTestUtils.runAsync(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        U.sleep(500);
+        log.info("Stop node.");
+        stopGrid(NEW_NODE);
+        log.info("Node stopped.");
+        return null;
+      }
+    }
+,"stop-thread");
+    try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+      txCache.get(key + 1);
+      while (!stopFut.isDone())       assertEquals(1,(Object)getCache.get(key));
+      tx.commit();
+    }
+   }
+  finally {
+    stopGrid(NEW_NODE);
+  }
+}

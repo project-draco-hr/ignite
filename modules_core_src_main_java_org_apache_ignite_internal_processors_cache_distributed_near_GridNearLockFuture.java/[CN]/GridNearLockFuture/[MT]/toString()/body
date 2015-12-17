@@ -1,3 +1,13 @@
 {
-  return S.toString(GridNearLockFuture.class,this,"inTx",inTx(),"super",super.toString());
+  Collection<String> futs=F.viewReadOnly(futures(),new C1<IgniteInternalFuture<?>,String>(){
+    @Override public String apply(    IgniteInternalFuture<?> f){
+      if (isMini(f)) {
+        MiniFuture m=(MiniFuture)f;
+        return "[node=" + m.node().id() + ", loc="+ m.node().isLocal()+ ", done="+ f.isDone()+ "]";
+      }
+ else       return "[loc=true, done=" + f.isDone() + "]";
+    }
+  }
+);
+  return S.toString(GridNearLockFuture.class,this,"innerFuts",futs,"inTx",inTx(),"super",super.toString());
 }
