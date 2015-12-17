@@ -1,0 +1,45 @@
+{
+  IgniteConfiguration cfg=new IgniteConfiguration();
+  cfg.setLocalHost("127.0.0.1");
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setIpFinder(new TcpDiscoveryVmIpFinder(true));
+  cfg.setDiscoverySpi(discoSpi);
+  cfg.setMarshaller(new BinaryMarshaller());
+  if (useReflectiveSerializer()) {
+    BinaryTypeConfiguration binTypCfg1=new BinaryTypeConfiguration(EntityPlain.class.getName());
+    BinaryTypeConfiguration binTypCfg2=new BinaryTypeConfiguration(EntitySerializable.class.getName());
+    BinaryTypeConfiguration binTypCfg3=new BinaryTypeConfiguration(EntityExternalizable.class.getName());
+    BinaryTypeConfiguration binTypCfg4=new BinaryTypeConfiguration(EntityBinarylizable.class.getName());
+    BinaryTypeConfiguration binTypCfg5=new BinaryTypeConfiguration(EntityWriteReadObject.class.getName());
+    binTypCfg1.setSerializer(new BinaryReflectiveSerializer());
+    binTypCfg2.setSerializer(new BinaryReflectiveSerializer());
+    binTypCfg3.setSerializer(new BinaryReflectiveSerializer());
+    binTypCfg4.setSerializer(new BinaryReflectiveSerializer());
+    binTypCfg5.setSerializer(new BinaryReflectiveSerializer());
+    List<BinaryTypeConfiguration> binTypCfgs=new ArrayList<>();
+    binTypCfgs.add(binTypCfg1);
+    binTypCfgs.add(binTypCfg2);
+    binTypCfgs.add(binTypCfg3);
+    binTypCfgs.add(binTypCfg4);
+    binTypCfgs.add(binTypCfg5);
+    BinaryConfiguration binCfg=new BinaryConfiguration();
+    binCfg.setTypeConfigurations(binTypCfgs);
+    cfg.setBinaryConfiguration(binCfg);
+  }
+  CacheConfiguration cacheCfg=new CacheConfiguration();
+  cacheCfg.setName(null);
+  cacheCfg.setCacheMode(CacheMode.PARTITIONED);
+  cacheCfg.setAtomicityMode(CacheAtomicityMode.ATOMIC);
+  cacheCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  cacheCfg.setRebalanceMode(CacheRebalanceMode.SYNC);
+  List<CacheTypeMetadata> metas=new ArrayList<>();
+  metas.add(metaForClass(EntityPlain.class));
+  metas.add(metaForClass(EntitySerializable.class));
+  metas.add(metaForClass(EntityExternalizable.class));
+  metas.add(metaForClass(EntityBinarylizable.class));
+  metas.add(metaForClass(EntityWriteReadObject.class));
+  cacheCfg.setTypeMetadata(metas);
+  cfg.setCacheConfiguration(cacheCfg);
+  ignite=Ignition.start(cfg);
+  cache=ignite.cache(null);
+}

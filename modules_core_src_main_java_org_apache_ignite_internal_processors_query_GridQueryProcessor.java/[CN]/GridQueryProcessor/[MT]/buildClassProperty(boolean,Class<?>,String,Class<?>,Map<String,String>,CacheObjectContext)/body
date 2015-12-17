@@ -1,0 +1,39 @@
+{
+  String[] path=pathStr.split("\\.");
+  ClassProperty res=null;
+  StringBuilder fullName=new StringBuilder();
+  for (  String prop : path) {
+    if (fullName.length() != 0)     fullName.append('.');
+    fullName.append(prop);
+    String alias=aliases.get(fullName.toString());
+    StringBuilder bld=new StringBuilder("get");
+    bld.append(prop);
+    bld.setCharAt(3,Character.toUpperCase(bld.charAt(3)));
+    ClassProperty tmp=null;
+    try {
+      tmp=new ClassProperty(cls.getMethod(bld.toString()),key,alias,coCtx);
+    }
+ catch (    NoSuchMethodException ignore) {
+    }
+    if (tmp == null) {
+      try {
+        tmp=new ClassProperty(cls.getDeclaredField(prop),key,alias,coCtx);
+      }
+ catch (      NoSuchFieldException ignored) {
+      }
+    }
+    if (tmp == null) {
+      try {
+        tmp=new ClassProperty(cls.getMethod(prop),key,alias,coCtx);
+      }
+ catch (      NoSuchMethodException ignored) {
+      }
+    }
+    if (tmp == null)     return null;
+    tmp.parent(res);
+    cls=tmp.type();
+    res=tmp;
+  }
+  if (!U.box(resType).isAssignableFrom(U.box(res.type())))   return null;
+  return res;
+}

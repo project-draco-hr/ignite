@@ -1,0 +1,13 @@
+{
+  for (Class c=cls; c != null && !c.equals(Object.class); c=c.getSuperclass()) {
+    if (Externalizable.class.isAssignableFrom(c))     return true;
+    try {
+      Method writeObj=c.getDeclaredMethod("writeObject",ObjectOutputStream.class);
+      Method readObj=c.getDeclaredMethod("readObject",ObjectInputStream.class);
+      if (!Modifier.isStatic(writeObj.getModifiers()) && !Modifier.isStatic(readObj.getModifiers()) && writeObj.getReturnType() == void.class && readObj.getReturnType() == void.class)       return true;
+    }
+ catch (    NoSuchMethodException ignored) {
+    }
+  }
+  return false;
+}
