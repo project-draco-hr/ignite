@@ -1,7 +1,8 @@
 {
-  AffinityTopologyVersion topVer=cctx.mvcc().lastExplicitLockTopologyVersion(Thread.currentThread().getId());
+  long threadId=Thread.currentThread().getId();
+  AffinityTopologyVersion topVer=cctx.mvcc().lastExplicitLockTopologyVersion(threadId);
   if (topVer == null && tx != null && tx.system()) {
-    IgniteInternalTx tx0=cctx.tm().anyActiveThreadTx(tx);
+    IgniteInternalTx tx0=cctx.tm().anyActiveThreadTx(threadId,tx);
     if (tx0 != null)     topVer=tx0.topologyVersionSnapshot();
   }
   if (topVer != null) {
