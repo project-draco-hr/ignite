@@ -6,17 +6,26 @@
   mapQry.explain(false);
   GridSqlSelect rdcQry=new GridSqlSelect().from(table(0));
   List<GridSqlElement> mapExps=F.addAll(new ArrayList<GridSqlElement>(mapQry.allColumns()),mapQry.columns(false));
-  GridSqlElement[] rdcExps=new GridSqlElement[mapQry.visibleColumns()];
+  final int visibleCols=mapQry.visibleColumns();
+  final int havingCol=mapQry.havingColumn();
+  List<GridSqlElement> rdcExps=new ArrayList<>(visibleCols);
   Set<String> colNames=new HashSet<>();
   boolean aggregateFound=false;
-  for (int i=0, len=mapExps.size(); i < len; i++)   aggregateFound|=splitSelectExpression(mapExps,rdcExps,colNames,i,collocated);
+  for (int i=0, len=mapExps.size(); i < len; i++)   aggregateFound|=splitSelectExpression(mapExps,rdcExps,colNames,i,collocated,i == havingCol);
   mapQry.clearColumns();
   for (  GridSqlElement exp : mapExps)   mapQry.addColumn(exp,true);
-  for (  GridSqlElement rdcExp : rdcExps)   rdcQry.addColumn(rdcExp,true);
-  for (int i=rdcExps.length; i < mapExps.size(); i++)   rdcQry.addColumn(column(((GridSqlAlias)mapExps.get(i)).alias()),false);
+  for (int i=0; i < visibleCols; i++)   rdcQry.addColumn(rdcExps.get(i),true);
+  for (int i=visibleCols; i < rdcExps.size(); i++)   rdcQry.addColumn(rdcExps.get(i),false);
+  for (int i=rdcExps.size(); i < mapExps.size(); i++)   rdcQry.addColumn(column(((GridSqlAlias)mapExps.get(i)).alias()),false);
   if (mapQry.groupColumns() != null && !collocated)   rdcQry.groupColumns(mapQry.groupColumns());
-  if (mapQry.havingColumn() >= 0 && !collocated) {
-    rdcQry.whereAnd(column(columnName(mapQry.havingColumn())));
+  if (havingCol >= 0 && !collocated) {
+    for (int i=visibleCols; i < rdcQry.allColumns(); i++) {
+      GridSqlElement c=rdcQry.column(i);
+      if (c instanceof GridSqlAlias && HAVING_COLUMN.equals(((GridSqlAlias)c).alias())) {
+        rdcQry.havingColumn(i);
+        break;
+      }
+    }
     mapQry.havingColumn(-1);
   }
   if (!mapQry.sort().isEmpty()) {

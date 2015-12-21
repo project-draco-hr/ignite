@@ -1,0 +1,29 @@
+{
+  IgniteCache<Integer,Integer> c=ignite(0).getOrCreateCache(cacheConfig("ints",true,Integer.class,Integer.class));
+  try {
+    Random rnd=new GridRandom();
+    Map<Integer,AtomicLong> cntMap=new HashMap<>();
+    for (int i=0; i < 1000; i++) {
+      int v=(int)(50 * rnd.nextGaussian());
+      c.put(i,v);
+      AtomicLong cnt=cntMap.get(v);
+      if (cnt == null)       cntMap.put(v,cnt=new AtomicLong());
+      cnt.incrementAndGet();
+    }
+    assertTrue(cntMap.size() > 10);
+    String sqlQry="select _val, count(*) cnt from Integer group by _val having cnt > ?";
+    X.println("Plan: " + c.query(new SqlFieldsQuery("explain " + sqlQry).setArgs(0)).getAll());
+    for (int i=-1; i <= 1001; i+=10) {
+      List<List<?>> res=c.query(new SqlFieldsQuery(sqlQry).setArgs(i)).getAll();
+      for (      List<?> row : res) {
+        int v=(Integer)row.get(0);
+        long cnt=(Long)row.get(1);
+        assertTrue(cnt + " > " + i,cnt > i);
+        assertEquals(cntMap.get(v).longValue(),cnt);
+      }
+    }
+  }
+  finally {
+    c.destroy();
+  }
+}

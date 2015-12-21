@@ -8,21 +8,19 @@
   }
   if (!collocated && hasAggregates(el)) {
     aggregateFound=true;
-    if (alias == null)     alias=alias(columnName(idx),el);
+    if (alias == null)     alias=alias(isHaving ? HAVING_COLUMN : columnName(idx),el);
     splitAggregates(alias,0,mapSelect,idx,true);
-    if (idx < rdcSelect.length)     rdcSelect[idx]=alias;
+    set(rdcSelect,idx,alias);
   }
  else {
-    String mapColAlias=columnName(idx);
+    String mapColAlias=isHaving ? HAVING_COLUMN : columnName(idx);
     String rdcColAlias;
     if (alias == null)     rdcColAlias=el instanceof GridSqlColumn ? ((GridSqlColumn)el).columnName() : mapColAlias;
  else     rdcColAlias=alias.alias();
     mapSelect.set(idx,alias(mapColAlias,el));
-    if (idx < rdcSelect.length) {
-      GridSqlElement rdcEl=column(mapColAlias);
-      if (colNames.add(rdcColAlias))       rdcEl=alias(rdcColAlias,rdcEl);
-      rdcSelect[idx]=rdcEl;
-    }
+    GridSqlElement rdcEl=column(mapColAlias);
+    if (colNames.add(rdcColAlias))     rdcEl=alias(rdcColAlias,rdcEl);
+    set(rdcSelect,idx,rdcEl);
   }
   return aggregateFound;
 }
