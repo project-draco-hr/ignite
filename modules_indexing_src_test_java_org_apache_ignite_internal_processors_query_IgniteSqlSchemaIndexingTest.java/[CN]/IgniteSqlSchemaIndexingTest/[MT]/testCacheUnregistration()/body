@@ -1,0 +1,20 @@
+{
+  startGridsMultiThreaded(3,true);
+  final CacheConfiguration<Integer,Fact> cfg=cacheConfig("Insensitive_Cache",true,Integer.class,Fact.class).setSqlSchema("Insensitive_Cache");
+  final CacheConfiguration<Integer,Fact> collisionCfg=cacheConfig("InsensitiveCache",true,Integer.class,Fact.class).setSqlSchema("Insensitive_Cache");
+  IgniteCache<Integer,Fact> cache=ignite(0).createCache(cfg);
+  SqlFieldsQuery qry=new SqlFieldsQuery("select f.id, f.name " + "from InSENSitive_Cache.Fact f");
+  cache.put(1,new Fact(1,"cacheInsensitive"));
+  for (  List<?> row : cache.query(qry)) {
+    assertEquals(2,row.size());
+    assertEquals(1,row.get(0));
+    assertEquals("cacheInsensitive",row.get(1));
+  }
+  ignite(0).destroyCache(cache.getName());
+  cache=ignite(0).createCache(collisionCfg);
+  cache.put(1,new Fact(1,"cacheInsensitive"));
+  cache.put(2,new Fact(2,"ThisIsANewCache"));
+  cache.put(3,new Fact(3,"With3RecordsAndAnotherName"));
+  assertEquals(3,cache.query(qry).getAll().size());
+  ignite(0).destroyCache(cache.getName());
+}
