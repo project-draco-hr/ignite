@@ -1,0 +1,19 @@
+{
+  for (int r=0; r < 5; r++) {
+    startGrids(GRID_CNT);
+    try {
+      for (int i=0; i < 1000; i++) {
+        IndexedEntity entity=new IndexedEntity("indexed " + i);
+        grid(0).cache(null).put(new AffinityKey<>(i,i),entity);
+      }
+      Ignite started=startGrid(GRID_CNT);
+      for (int i=0; i < 100; i++) {
+        QueryCursor<Cache.Entry<AffinityKey<Integer>,IndexedEntity>> res=started.cache(null).query(new TextQuery<AffinityKey<Integer>,IndexedEntity>(IndexedEntity.class,"indexed"));
+        assertEquals(1000,res.getAll().size());
+      }
+    }
+  finally {
+      stopAllGrids();
+    }
+  }
+}
