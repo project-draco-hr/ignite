@@ -1,0 +1,24 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  CacheConfiguration cache=new CacheConfiguration();
+  cache.setCacheMode(PARTITIONED);
+  cache.setAtomicityMode(atomicityMode());
+  cache.setWriteSynchronizationMode(FULL_SYNC);
+  cache.setBackups(1);
+  QueryEntity qryEntity=new QueryEntity();
+  qryEntity.setKeyType(AffinityKey.class.getName());
+  qryEntity.setValueType(IndexedEntity.class.getName());
+  LinkedHashMap<String,String> fields=new LinkedHashMap<>();
+  fields.put("val",String.class.getName());
+  qryEntity.setFields(fields);
+  qryEntity.setIndexes(Arrays.asList(new QueryIndex("val",QueryIndexType.FULLTEXT)));
+  cache.setQueryEntities(Arrays.asList(qryEntity));
+  cfg.setCacheConfiguration(cache);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(IP_FINDER);
+  TcpCommunicationSpi commSpi=new TcpCommunicationSpi();
+  commSpi.setSharedMemoryPort(-1);
+  cfg.setCommunicationSpi(commSpi);
+  cfg.setDiscoverySpi(disco);
+  return cfg;
+}
