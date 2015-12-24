@@ -2,9 +2,8 @@
   final CountDownLatch depLatch=new CountDownLatch(1);
   final CountDownLatch finishLatch=new CountDownLatch(1);
   final Ignite ignite=startGrid(0);
-  Thread t=new Thread(new Runnable(){
-    @Override public void run(){
-      Thread.currentThread().setName("deploy-thread");
+  IgniteInternalFuture<?> fut=GridTestUtils.runAsync(new Callable<Void>(){
+    @Override public Void call() throws Exception {
       IgniteServices svcs=ignite.services();
       IgniteServices services=svcs.withAsync();
       services.deployClusterSingleton("myClusterSingletonService",new TestServiceImpl());
@@ -15,16 +14,17 @@
  catch (      IgniteException e) {
         finishLatch.countDown();
       }
-catch (      Throwable e) {
-        log.error("Service deployment error: ",e);
+ finally {
+        finishLatch.countDown();
       }
+      return null;
     }
   }
-);
-  t.start();
+,"deploy-thread");
   depLatch.await();
   Ignition.stopAll(true);
   boolean wait=finishLatch.await(15,TimeUnit.SECONDS);
   if (!wait)   U.dumpThreads(log);
   assertTrue("Deploy future isn't completed",wait);
+  fut.get();
 }

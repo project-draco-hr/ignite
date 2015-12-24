@@ -1,0 +1,40 @@
+{
+  try {
+    cctx.kernalContext().gateway().readLock();
+  }
+ catch (  IllegalStateException|IgniteClientDisconnectedException e) {
+    if (log.isDebugEnabled())     log.debug("Failed to acquire kernal gateway [err=" + e + ']');
+    return;
+  }
+  try {
+    if (log.isDebugEnabled())     log.debug("Processing node failed event [locNodeId=" + cctx.localNodeId() + ", failedNodeId="+ evtNodeId+ ']');
+    for (    final IgniteInternalTx tx : txs()) {
+      if ((tx.near() && !tx.local()) || (tx.storeUsed() && tx.masterNodeIds().contains(evtNodeId))) {
+        salvageTx(tx,false,RECOVERY_FINISH);
+      }
+ else {
+        if (tx.originatingNodeId().equals(evtNodeId)) {
+          if (tx.state() == PREPARED)           commitIfPrepared(tx);
+ else {
+            IgniteInternalFuture<?> prepFut=tx.currentPrepareFuture();
+            if (prepFut != null) {
+              prepFut.listen(new CI1<IgniteInternalFuture<?>>(){
+                @Override public void apply(                IgniteInternalFuture<?> fut){
+                  if (tx.state() == PREPARED)                   commitIfPrepared(tx);
+ else                   if (tx.setRollbackOnly())                   tx.rollbackAsync();
+                }
+              }
+);
+            }
+ else {
+              if (tx.setRollbackOnly())               tx.rollbackAsync();
+            }
+          }
+        }
+      }
+    }
+  }
+  finally {
+    cctx.kernalContext().gateway().readUnlock();
+  }
+}
