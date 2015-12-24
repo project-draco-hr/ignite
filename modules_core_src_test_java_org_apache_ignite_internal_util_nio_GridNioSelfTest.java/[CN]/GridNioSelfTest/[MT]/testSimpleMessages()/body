@@ -13,13 +13,13 @@
     }
   }
 ;
-  GridNioServer<?> srvr=startServer(port,new GridPlainParser(),lsnr);
+  final GridNioServer<?> srvr=startServer(new GridPlainParser(),lsnr);
   try {
     IgniteInternalFuture<?> fut=multithreadedAsync(new Runnable(){
       @Override public void run(){
         byte[] msg=new byte[MSG_SIZE];
         for (int i=0; i < msg.length; i++)         msg[i]=(byte)(i ^ (i * i - 1));
-        for (int i=0; i < RECONNECT_MSG_CNT; i++)         validateSendMessage(msg);
+        for (int i=0; i < RECONNECT_MSG_CNT; i++)         validateSendMessage(srvr.port(),msg);
       }
     }
 ,THREAD_CNT);
