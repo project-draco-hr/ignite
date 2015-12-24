@@ -2,16 +2,21 @@
   Ignition.setClientMode(true);
   try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
     if (!ExamplesUtils.hasServerNodes(ignite))     return;
-    IgniteCache<AffinityUuid,String> stmCache=ignite.getOrCreateCache(CacheConfig.wordCache());
-    SqlFieldsQuery top10Qry=new SqlFieldsQuery("select _val, count(_val) as cnt from String group by _val order by cnt desc limit 10",true);
-    SqlFieldsQuery statsQry=new SqlFieldsQuery("select avg(cnt), min(cnt), max(cnt) from (select count(_val) as cnt from String group by _val)");
-    while (true) {
-      List<List<?>> top10=stmCache.query(top10Qry).getAll();
-      List<List<?>> stats=stmCache.query(statsQry).getAll();
-      List<?> row=stats.get(0);
-      if (row.get(0) != null)       System.out.printf("Query results [avg=%.2f, min=%d, max=%d]%n",row.get(0),row.get(1),row.get(2));
-      ExamplesUtils.printQueryResults(top10);
-      Thread.sleep(5000);
+    CacheConfiguration<AffinityUuid,String> cfg=CacheConfig.wordCache();
+    try (IgniteCache<AffinityUuid,String> stmCache=ignite.getOrCreateCache(cfg)){
+      SqlFieldsQuery top10Qry=new SqlFieldsQuery("select _val, count(_val) as cnt from String group by _val order by cnt desc limit 10",true);
+      SqlFieldsQuery statsQry=new SqlFieldsQuery("select avg(cnt), min(cnt), max(cnt) from (select count(_val) as cnt from String group by _val)");
+      while (true) {
+        List<List<?>> top10=stmCache.query(top10Qry).getAll();
+        List<List<?>> stats=stmCache.query(statsQry).getAll();
+        List<?> row=stats.get(0);
+        if (row.get(0) != null)         System.out.printf("Query results [avg=%.2f, min=%d, max=%d]%n",row.get(0),row.get(1),row.get(2));
+        ExamplesUtils.printQueryResults(top10);
+        Thread.sleep(5000);
+      }
+    }
+  finally {
+      ignite.destroyCache(cfg.getName());
     }
   }
  }

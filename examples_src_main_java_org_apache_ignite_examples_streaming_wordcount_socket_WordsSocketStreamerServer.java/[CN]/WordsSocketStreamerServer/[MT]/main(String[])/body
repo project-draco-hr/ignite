@@ -1,42 +1,42 @@
 {
   Ignition.setClientMode(true);
-  Ignite ignite=Ignition.start("examples/config/example-ignite.xml");
-  if (!ExamplesUtils.hasServerNodes(ignite)) {
-    ignite.close();
-    return;
-  }
-  IgniteCache<AffinityUuid,String> stmCache=ignite.getOrCreateCache(CacheConfig.wordCache());
-  IgniteDataStreamer<AffinityUuid,String> stmr=ignite.dataStreamer(stmCache.getName());
-  InetAddress addr=InetAddress.getLocalHost();
-  SocketStreamer<String,AffinityUuid,String> sockStmr=new SocketStreamer<>();
-  sockStmr.setAddr(addr);
-  sockStmr.setPort(PORT);
-  sockStmr.setDelimiter(DELIM);
-  sockStmr.setIgnite(ignite);
-  sockStmr.setStreamer(stmr);
-  sockStmr.setConverter(new SocketMessageConverter<String>(){
-    @Override public String convert(    byte[] msg){
-      try {
-        return new String(msg,"ASCII");
+  CacheConfiguration<AffinityUuid,String> cfg=CacheConfig.wordCache();
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    if (!ExamplesUtils.hasServerNodes(ignite))     return;
+    try (IgniteCache<AffinityUuid,String> stmCache=ignite.getOrCreateCache(cfg)){
+      IgniteDataStreamer<AffinityUuid,String> stmr=ignite.dataStreamer(stmCache.getName());
+      InetAddress addr=InetAddress.getLocalHost();
+      SocketStreamer<String,AffinityUuid,String> sockStmr=new SocketStreamer<>();
+      sockStmr.setAddr(addr);
+      sockStmr.setPort(PORT);
+      sockStmr.setDelimiter(DELIM);
+      sockStmr.setIgnite(ignite);
+      sockStmr.setStreamer(stmr);
+      sockStmr.setConverter(new SocketMessageConverter<String>(){
+        @Override public String convert(        byte[] msg){
+          try {
+            return new String(msg,"ASCII");
+          }
+ catch (          UnsupportedEncodingException e) {
+            throw new IgniteException(e);
+          }
+        }
       }
- catch (      UnsupportedEncodingException e) {
-        throw new IgniteException(e);
+);
+      sockStmr.setSingleTupleExtractor(new StreamSingleTupleExtractor<String,AffinityUuid,String>(){
+        @Override public Map.Entry<AffinityUuid,String> extract(        String word){
+          return new IgniteBiTuple<>(new AffinityUuid(word),word);
+        }
       }
+);
+      sockStmr.start();
+    }
+ catch (    IgniteException e) {
+      System.err.println("Streaming server didn't start due to an error: ");
+      e.printStackTrace();
+    }
+ finally {
+      ignite.destroyCache(cfg.getName());
     }
   }
-);
-  sockStmr.setSingleTupleExtractor(new StreamSingleTupleExtractor<String,AffinityUuid,String>(){
-    @Override public Map.Entry<AffinityUuid,String> extract(    String word){
-      return new IgniteBiTuple<>(new AffinityUuid(word),word);
-    }
-  }
-);
-  try {
-    sockStmr.start();
-  }
- catch (  IgniteException e) {
-    System.err.println("Streaming server didn't start due to an error: ");
-    e.printStackTrace();
-    ignite.close();
-  }
-}
+ }

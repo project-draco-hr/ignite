@@ -2,8 +2,6 @@
   try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
     System.out.println();
     System.out.println(">>> Cache star schema example started.");
-    ignite.destroyCache(PARTITIONED_CACHE_NAME);
-    ignite.destroyCache(REPLICATED_CACHE_NAME);
     CacheConfiguration<Integer,FactPurchase> factCacheCfg=new CacheConfiguration<>(PARTITIONED_CACHE_NAME);
     factCacheCfg.setCacheMode(CacheMode.PARTITIONED);
     factCacheCfg.setIndexedTypes(Integer.class,FactPurchase.class);
@@ -16,5 +14,9 @@
       queryStorePurchases();
       queryProductPurchases();
     }
-   }
+  finally {
+      ignite.destroyCache(PARTITIONED_CACHE_NAME);
+      ignite.destroyCache(REPLICATED_CACHE_NAME);
+    }
+  }
  }
