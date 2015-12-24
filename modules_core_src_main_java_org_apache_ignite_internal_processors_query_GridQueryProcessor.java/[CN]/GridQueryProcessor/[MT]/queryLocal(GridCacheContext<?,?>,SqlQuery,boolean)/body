@@ -1,0 +1,40 @@
+{
+  if (!busyLock.enterBusy())   throw new IllegalStateException("Failed to execute query (grid is stopping).");
+  try {
+    return executeQuery(cctx,new IgniteOutClosureX<Iterator<Cache.Entry<K,V>>>(){
+      @Override public Iterator<Cache.Entry<K,V>> applyx() throws IgniteCheckedException {
+        String space=cctx.name();
+        String type=qry.getType();
+        String sqlQry=qry.getSql();
+        Object[] params=qry.getArgs();
+        TypeDescriptor typeDesc=typesByName.get(new TypeName(space,type));
+        if (typeDesc == null || !typeDesc.registered())         throw new CacheException("Failed to find SQL table for type: " + type);
+        final GridCloseableIterator<IgniteBiTuple<K,V>> i=idx.query(space,sqlQry,F.asList(params),typeDesc,idx.backupFilter(null,null,null));
+        sendQueryExecutedEvent(sqlQry,params);
+        return new ClIter<Cache.Entry<K,V>>(){
+          @Override public void close() throws Exception {
+            i.close();
+          }
+          @Override public boolean hasNext(){
+            return i.hasNext();
+          }
+          @Override public Cache.Entry<K,V> next(){
+            IgniteBiTuple<K,V> t=i.next();
+            return new CacheEntryImpl<>((K)cctx.unwrapBinaryIfNeeded(t.getKey(),keepBinary,false),(V)cctx.unwrapBinaryIfNeeded(t.getValue(),keepBinary,false));
+          }
+          @Override public void remove(){
+            throw new UnsupportedOperationException();
+          }
+        }
+;
+      }
+    }
+,false);
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+ finally {
+    busyLock.leaveBusy();
+  }
+}

@@ -1,0 +1,12 @@
+{
+  Class<?> keyCls=ldr.loadClass(PERSON_KEY_CLS_NAME);
+  Class<?> cls=ldr.loadClass(PERSON_CLS_NAME);
+  Ignite client=grid("client");
+  CacheConfiguration<Object,Object> cfg=new CacheConfiguration<>("testCache");
+  IgniteCache<Object,Object> cache=client.getOrCreateCache(cfg);
+  for (int i=0; i < 100; i++) {
+    Object key=keyCls.newInstance();
+    GridTestUtils.setFieldValue(key,"id",i);
+    cache.put(key,cls.newInstance());
+  }
+}

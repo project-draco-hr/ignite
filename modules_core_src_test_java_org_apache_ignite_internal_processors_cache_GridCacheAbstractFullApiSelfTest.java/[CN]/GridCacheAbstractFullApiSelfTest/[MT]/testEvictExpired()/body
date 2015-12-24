@@ -1,12 +1,18 @@
 {
-  IgniteCache<String,Integer> cache=jcache();
-  String key=primaryKeysForCache(cache,1).get(0);
+  final IgniteCache<String,Integer> cache=jcache();
+  final String key=primaryKeysForCache(cache,1).get(0);
   cache.put(key,1);
   assertEquals((Integer)1,cache.get(key));
   long ttl=500;
   final ExpiryPolicy expiry=new TouchedExpiryPolicy(new Duration(MILLISECONDS,ttl));
   grid(0).cache(null).withExpiryPolicy(expiry).put(key,1);
-  Thread.sleep(ttl + 100);
+  boolean wait=waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return cache.localPeek(key) == null;
+    }
+  }
+,ttl + 1000);
+  assertTrue("Failed to wait for entry expiration.",wait);
   cache.localEvict(Collections.singleton(key));
   assertNull(peek(cache,"key"));
   cache.localPromote(Collections.singleton(key));

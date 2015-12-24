@@ -2,10 +2,19 @@
   IgniteConfiguration cfg=super.getConfiguration(gridName);
   cfg.setLocalHost("127.0.0.1");
   TcpDiscoverySpi spi=new TcpDiscoverySpi();
-  spi.setIpFinder(new TcpDiscoveryMulticastIpFinder());
-  if (getTestGridName(1).equals(gridName)) {
+  TcpDiscoveryMulticastIpFinder ipFinder=new TcpDiscoveryMulticastIpFinder();
+  ipFinder.setAddressRequestAttempts(10);
+  spi.setIpFinder(ipFinder);
+  Boolean clientFlag=client.get();
+  client.set(null);
+  if (clientFlag != null && clientFlag) {
     cfg.setClientMode(true);
     spi.setForceServerMode(forceSrv);
+  }
+ else {
+    Integer port=discoPort.get();
+    discoPort.set(null);
+    if (port != null)     spi.setLocalPort(port);
   }
   cfg.setDiscoverySpi(spi);
   return cfg;

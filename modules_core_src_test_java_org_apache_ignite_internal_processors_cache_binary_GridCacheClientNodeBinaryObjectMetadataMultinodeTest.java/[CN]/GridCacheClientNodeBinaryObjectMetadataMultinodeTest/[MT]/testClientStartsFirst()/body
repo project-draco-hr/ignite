@@ -1,6 +1,6 @@
 {
   client=true;
-  Ignite ignite0=startGrid(0);
+  final Ignite ignite0=startGrid(0);
   assertTrue(ignite0.configuration().isClientMode());
   client=false;
   Ignite ignite1=startGrid(1);
@@ -12,5 +12,11 @@
     builder.setField("f0",i);
     cache.put(i,builder.build());
   }
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return ignite0.binary().types().size() == 100;
+    }
+  }
+,5000);
   assertEquals(100,ignite(0).binary().types().size());
 }

@@ -1,0 +1,33 @@
+{
+  final Ignite ignite0=startGrid(0);
+  ignite0.getOrCreateCache(new CacheConfiguration<String,Object>().setName("testCache").setAtomicityMode(ATOMIC).setCacheMode(REPLICATED).setWriteSynchronizationMode(FULL_SYNC).setAtomicWriteOrderMode(PRIMARY));
+  latch=new CountDownLatch(1);
+  final ClusterGroup grp=ignite0.cluster().forPredicate(new IgnitePredicate<ClusterNode>(){
+    @Override public boolean apply(    ClusterNode node){
+      System.out.println("Predicated started [thread=" + Thread.currentThread().getName() + ']');
+      latch.countDown();
+      try {
+        Thread.sleep(3000);
+      }
+ catch (      InterruptedException ignore) {
+      }
+      System.out.println("Call contains key [thread=" + Thread.currentThread().getName() + ']');
+      boolean ret=ignite0.cache("testCache").containsKey(node.id().toString());
+      System.out.println("After contains key [ret=" + ret + ", thread="+ Thread.currentThread().getName()+ ']');
+      return ret;
+    }
+  }
+);
+  IgniteInternalFuture<?> fut=GridTestUtils.runAsync(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      info("Start deploy service.");
+      ignite0.services(grp).deployNodeSingleton("testService",new TestService());
+      info("Service deployed.");
+      return null;
+    }
+  }
+,"deploy-thread");
+  latch.await();
+  startGrid(1);
+  fut.get();
+}

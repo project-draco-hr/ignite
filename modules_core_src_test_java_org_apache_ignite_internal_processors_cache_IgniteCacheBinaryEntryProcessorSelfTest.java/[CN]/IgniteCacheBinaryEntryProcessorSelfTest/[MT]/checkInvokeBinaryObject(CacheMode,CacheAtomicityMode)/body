@@ -1,0 +1,37 @@
+{
+  Ignite client=ignite(SRV_CNT);
+  IgniteCache<Integer,TestValue> clientCache=client.createCache(cacheConfiguration(cacheMode,atomicityMode));
+  try {
+    IgniteBinary binary=client.binary();
+    for (int i=0; i < 100; i++) {
+      clientCache.put(i,new TestValue(i,"value-" + i));
+      BinaryObjectBuilder bldr=binary.builder("NoClass");
+      bldr.setField("val",i);
+      bldr.setField("strVal","value-" + i);
+      clientCache.withKeepBinary().put(-(i + 1),bldr.build());
+    }
+    IgniteCache<Integer,BinaryObject> binaryClientCache=clientCache.withKeepBinary();
+    for (int i=0; i < 100; i++) {
+      binaryClientCache.invoke(i,new TestEntryProcessor());
+      binaryClientCache.invoke(-(i + 1),new TestEntryProcessor());
+    }
+    for (int g=0; g < NODES; g++) {
+      IgniteCache<Integer,TestValue> nodeCache=ignite(g).cache(null);
+      IgniteCache<Integer,BinaryObject> nodeBinaryCache=nodeCache.withKeepBinary();
+      for (int i=0; i < 100; i++) {
+        TestValue updated=nodeCache.get(i);
+        assertEquals((Integer)(i + 1),updated.value());
+        assertEquals("updated-" + i,updated.stringValue());
+        BinaryObject updatedBinary=nodeBinaryCache.get(i);
+        assertEquals(new Integer(i + 1),updatedBinary.field("val"));
+        assertEquals("updated-" + i,updatedBinary.field("strVal"));
+        updatedBinary=nodeBinaryCache.get(-(i + 1));
+        assertEquals(new Integer(i + 1),updatedBinary.field("val"));
+        assertEquals("updated-" + i,updatedBinary.field("strVal"));
+      }
+    }
+  }
+  finally {
+    client.destroyCache(null);
+  }
+}

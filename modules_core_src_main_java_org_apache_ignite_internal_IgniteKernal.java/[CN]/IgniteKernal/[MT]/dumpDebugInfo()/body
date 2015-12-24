@@ -1,7 +1,17 @@
 {
-  boolean client=ctx.clientNode();
-  ClusterNode locNode=ctx.discovery().localNode();
-  UUID routerId=locNode instanceof TcpDiscoveryNode ? ((TcpDiscoveryNode)locNode).clientRouterNodeId() : null;
-  U.warn(log,"Dumping debug info for node [id=" + locNode.id() + ", name="+ ctx.gridName()+ ", order="+ locNode.order()+ ", topVer="+ ctx.discovery().topologyVersion()+ ", client="+ client+ (client && routerId != null ? ", routerId=" + routerId : "")+ ']');
-  ctx.cache().context().exchange().dumpDebugInfo();
+  try {
+    GridKernalContextImpl ctx=this.ctx;
+    GridDiscoveryManager discoMrg=ctx != null ? ctx.discovery() : null;
+    ClusterNode locNode=discoMrg != null ? discoMrg.localNode() : null;
+    if (ctx != null && discoMrg != null && locNode != null) {
+      boolean client=ctx.clientNode();
+      UUID routerId=locNode instanceof TcpDiscoveryNode ? ((TcpDiscoveryNode)locNode).clientRouterNodeId() : null;
+      U.warn(log,"Dumping debug info for node [id=" + locNode.id() + ", name="+ ctx.gridName()+ ", order="+ locNode.order()+ ", topVer="+ discoMrg.topologyVersion()+ ", client="+ client+ (client && routerId != null ? ", routerId=" + routerId : "")+ ']');
+      ctx.cache().context().exchange().dumpDebugInfo();
+    }
+ else     U.warn(log,"Dumping debug info for node, context is not initialized [name=" + gridName + ']');
+  }
+ catch (  Exception e) {
+    U.error(log,"Failed to dump debug info for node: " + e,e);
+  }
 }

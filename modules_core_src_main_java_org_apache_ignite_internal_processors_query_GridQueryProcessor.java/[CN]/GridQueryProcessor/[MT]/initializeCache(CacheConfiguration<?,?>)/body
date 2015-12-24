@@ -1,15 +1,22 @@
 {
   idx.registerCache(ccfg);
   try {
+    List<Class<?>> mustDeserializeClss=null;
+    boolean binaryEnabled=ctx.cacheObjects().isBinaryEnabled(ccfg);
+    CacheObjectContext coCtx=binaryEnabled ? ctx.cacheObjects().contextForCache(ccfg) : null;
     if (!F.isEmpty(ccfg.getQueryEntities())) {
       for (      QueryEntity qryEntity : ccfg.getQueryEntities()) {
         if (F.isEmpty(qryEntity.getValueType()))         throw new IgniteCheckedException("Value type is not set: " + qryEntity);
         TypeDescriptor desc=new TypeDescriptor();
-        Class<?> keyCls=U.classForName(qryEntity.getKeyType(),Object.class);
+        Class<?> keyCls=U.classForName(qryEntity.getKeyType(),null);
         Class<?> valCls=U.classForName(qryEntity.getValueType(),null);
+        boolean keyMustDeserialize=mustDeserializeBinary(keyCls);
+        boolean valMustDeserialize=mustDeserializeBinary(valCls);
+        boolean keyOrValMustDeserialize=keyMustDeserialize || valMustDeserialize;
+        if (keyCls == null)         keyCls=Object.class;
         String simpleValType=valCls == null ? typeName(qryEntity.getValueType()) : typeName(valCls);
         desc.name(simpleValType);
-        if (ctx.cacheObjects().isBinaryEnabled(ccfg)) {
+        if (binaryEnabled && !keyOrValMustDeserialize) {
           if (SQL_TYPES.contains(valCls))           desc.valueClass(valCls);
  else           desc.valueClass(Object.class);
           if (SQL_TYPES.contains(keyCls))           desc.keyClass(keyCls);
@@ -21,15 +28,20 @@
           desc.valueClass(valCls);
           desc.keyClass(keyCls);
         }
+        if (binaryEnabled && keyOrValMustDeserialize) {
+          if (mustDeserializeClss == null)           mustDeserializeClss=new ArrayList<>();
+          if (keyMustDeserialize)           mustDeserializeClss.add(keyCls);
+          if (valMustDeserialize)           mustDeserializeClss.add(valCls);
+        }
         TypeId typeId;
         TypeId altTypeId=null;
-        if (valCls == null || ctx.cacheObjects().isBinaryEnabled(ccfg)) {
+        if (valCls == null || (binaryEnabled && !keyOrValMustDeserialize)) {
           processBinaryMeta(qryEntity,desc);
           typeId=new TypeId(ccfg.getName(),ctx.cacheObjects().typeId(qryEntity.getValueType()));
           if (valCls != null)           altTypeId=new TypeId(ccfg.getName(),valCls);
         }
  else {
-          processClassMeta(qryEntity,desc);
+          processClassMeta(qryEntity,desc,coCtx);
           typeId=new TypeId(ccfg.getName(),valCls);
           altTypeId=new TypeId(ccfg.getName(),ctx.cacheObjects().typeId(qryEntity.getValueType()));
         }
@@ -44,10 +56,14 @@
         if (F.isEmpty(meta.getValueType()))         throw new IgniteCheckedException("Value type is not set: " + meta);
         if (meta.getQueryFields().isEmpty() && meta.getAscendingFields().isEmpty() && meta.getDescendingFields().isEmpty()&& meta.getGroups().isEmpty())         continue;
         TypeDescriptor desc=new TypeDescriptor();
-        Class<?> keyCls=U.classForName(meta.getKeyType(),Object.class);
+        Class<?> keyCls=U.classForName(meta.getKeyType(),null);
         Class<?> valCls=U.classForName(meta.getValueType(),null);
+        boolean keyMustDeserialize=mustDeserializeBinary(keyCls);
+        boolean valMustDeserialize=mustDeserializeBinary(valCls);
+        boolean keyOrValMustDeserialize=keyMustDeserialize || valMustDeserialize;
+        if (keyCls == null)         keyCls=Object.class;
         desc.name(meta.getSimpleValueType());
-        if (ctx.cacheObjects().isBinaryEnabled(ccfg)) {
+        if (binaryEnabled && !keyOrValMustDeserialize) {
           if (SQL_TYPES.contains(valCls))           desc.valueClass(valCls);
  else           desc.valueClass(Object.class);
           if (SQL_TYPES.contains(keyCls))           desc.keyClass(keyCls);
@@ -57,15 +73,20 @@
           desc.valueClass(valCls);
           desc.keyClass(keyCls);
         }
+        if (binaryEnabled && keyOrValMustDeserialize) {
+          if (mustDeserializeClss == null)           mustDeserializeClss=new ArrayList<>();
+          if (keyMustDeserialize)           mustDeserializeClss.add(keyCls);
+          if (valMustDeserialize)           mustDeserializeClss.add(valCls);
+        }
         TypeId typeId;
         TypeId altTypeId=null;
-        if (valCls == null || ctx.cacheObjects().isBinaryEnabled(ccfg)) {
+        if (valCls == null || (binaryEnabled && !keyOrValMustDeserialize)) {
           processBinaryMeta(meta,desc);
           typeId=new TypeId(ccfg.getName(),ctx.cacheObjects().typeId(meta.getValueType()));
           if (valCls != null)           altTypeId=new TypeId(ccfg.getName(),valCls);
         }
  else {
-          processClassMeta(meta,desc);
+          processClassMeta(meta,desc,coCtx);
           typeId=new TypeId(ccfg.getName(),valCls);
           altTypeId=new TypeId(ccfg.getName(),ctx.cacheObjects().typeId(meta.getValueType()));
         }
@@ -74,6 +95,9 @@
         if (altTypeId != null)         types.put(altTypeId,desc);
         desc.registered(idx.registerType(ccfg.getName(),desc));
       }
+    }
+    if (mustDeserializeClss != null) {
+      U.quietAndWarn(log,"Some classes in query configuration cannot be written in binary format " + "because they either implement Externalizable interface or have writeObject/readObject methods. " + "Instances of these classes will be deserialized in order to build indexes. Please ensure that "+ "all nodes have these classes in classpath. To enable binary serialization either implement " + Binarylizable.class.getSimpleName() + " interface or set explicit serializer using "+ "BinaryTypeConfiguration.setSerializer() method: "+ mustDeserializeClss);
     }
   }
  catch (  IgniteCheckedException|RuntimeException e) {

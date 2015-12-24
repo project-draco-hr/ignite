@@ -1,0 +1,17 @@
+{
+  Ignite client=ignite(CLIENT);
+  final IgniteCache<Integer,Integer> clientCache=client.createCache(cacheConfiguration(PARTITIONED,ATOMIC));
+  try {
+    client.compute(client.cluster().forRemotes().forRandom()).call(new IgniteCallable<Object>(){
+      @Override public Object call() throws Exception {
+        clientCache.withKeepBinary();
+        clientCache.withSkipStore();
+        return null;
+      }
+    }
+);
+  }
+  finally {
+    client.destroyCache(null);
+  }
+}

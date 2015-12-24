@@ -1,0 +1,19 @@
+{
+  try {
+    GridCacheGateway<K,V> gate=this.gate;
+    CacheOperationContext prev=onEnter(gate,opCtx);
+    try {
+      if (isAsync())       throw new UnsupportedOperationException();
+ else {
+        EntryProcessorResult<T> res=delegate.invoke(topVer,key,entryProcessor,args);
+        return res != null ? res.get() : null;
+      }
+    }
+  finally {
+      onLeave(gate,prev);
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    throw cacheException(e);
+  }
+}

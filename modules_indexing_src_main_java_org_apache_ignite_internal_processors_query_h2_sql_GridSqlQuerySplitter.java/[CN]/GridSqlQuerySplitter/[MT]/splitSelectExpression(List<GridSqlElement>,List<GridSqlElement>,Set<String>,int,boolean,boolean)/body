@@ -1,0 +1,26 @@
+{
+  GridSqlElement el=mapSelect.get(idx);
+  GridSqlAlias alias=null;
+  boolean aggregateFound=false;
+  if (el instanceof GridSqlAlias) {
+    alias=(GridSqlAlias)el;
+    el=alias.child();
+  }
+  if (!collocated && hasAggregates(el)) {
+    aggregateFound=true;
+    if (alias == null)     alias=alias(isHaving ? HAVING_COLUMN : columnName(idx),el);
+    splitAggregates(alias,0,mapSelect,idx,true);
+    set(rdcSelect,idx,alias);
+  }
+ else {
+    String mapColAlias=isHaving ? HAVING_COLUMN : columnName(idx);
+    String rdcColAlias;
+    if (alias == null)     rdcColAlias=el instanceof GridSqlColumn ? ((GridSqlColumn)el).columnName() : mapColAlias;
+ else     rdcColAlias=alias.alias();
+    mapSelect.set(idx,alias(mapColAlias,el));
+    GridSqlElement rdcEl=column(mapColAlias);
+    if (colNames.add(rdcColAlias))     rdcEl=alias(rdcColAlias,rdcEl);
+    set(rdcSelect,idx,rdcEl);
+  }
+  return aggregateFound;
+}

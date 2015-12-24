@@ -1,2 +1,116 @@
 {
+  GridNearLockMapping map;
+synchronized (this) {
+    map=mappings.poll();
+  }
+  if (map == null)   return;
+  final GridNearLockRequest req=map.request();
+  final Collection<KeyCacheObject> mappedKeys=map.distributedKeys();
+  final ClusterNode node=map.node();
+  if (filter != null && filter.length != 0)   req.filter(filter,cctx);
+  if (node.isLocal()) {
+    req.miniId(IgniteUuid.randomUuid());
+    if (log.isDebugEnabled())     log.debug("Before locally locking near request: " + req);
+    IgniteInternalFuture<GridNearLockResponse> fut=dht().lockAllAsync(cctx,cctx.localNode(),req,filter);
+    add(new GridEmbeddedFuture<>(new C2<GridNearLockResponse,Exception,Boolean>(){
+      @Override public Boolean apply(      GridNearLockResponse res,      Exception e){
+        if (CU.isLockTimeoutOrCancelled(e) || (res != null && CU.isLockTimeoutOrCancelled(res.error())))         return false;
+        if (e != null) {
+          onError(e);
+          return false;
+        }
+        if (res == null) {
+          onError(new IgniteCheckedException("Lock response is null for future: " + this));
+          return false;
+        }
+        if (res.error() != null) {
+          onError(res.error());
+          return false;
+        }
+        if (log.isDebugEnabled())         log.debug("Acquired lock for local DHT mapping [locId=" + cctx.nodeId() + ", mappedKeys="+ mappedKeys+ ", fut="+ GridNearLockFuture.this+ ']');
+        try {
+          int i=0;
+          for (          KeyCacheObject k : mappedKeys) {
+            while (true) {
+              GridNearCacheEntry entry=cctx.near().entryExx(k,req.topologyVersion());
+              try {
+                IgniteBiTuple<GridCacheVersion,CacheObject> oldValTup=valMap.get(entry.key());
+                boolean hasBytes=entry.hasValue();
+                CacheObject oldVal=entry.rawGet();
+                CacheObject newVal=res.value(i);
+                GridCacheVersion dhtVer=res.dhtVersion(i);
+                GridCacheVersion mappedVer=res.mappedVersion(i);
+                boolean record=retval && oldValTup != null && oldValTup.get1().equals(dhtVer);
+                if (newVal == null) {
+                  if (oldValTup != null) {
+                    if (oldValTup.get1().equals(dhtVer))                     newVal=oldValTup.get2();
+                    oldVal=oldValTup.get2();
+                  }
+                }
+                entry.resetFromPrimary(newVal,lockVer,dhtVer,node.id(),topVer);
+                entry.readyNearLock(lockVer,mappedVer,res.committedVersions(),res.rolledbackVersions(),res.pending());
+                if (inTx() && implicitTx() && tx.onePhaseCommit()) {
+                  boolean pass=res.filterResult(i);
+                  tx.entry(cctx.txKey(k)).filters(pass ? CU.empty0() : CU.alwaysFalse0Arr());
+                }
+                if (record) {
+                  if (cctx.events().isRecordable(EVT_CACHE_OBJECT_READ))                   cctx.events().addEvent(entry.partition(),entry.key(),tx,null,EVT_CACHE_OBJECT_READ,newVal,newVal != null,oldVal,hasBytes,CU.subjectId(tx,cctx.shared()),null,inTx() ? tx.resolveTaskName() : null,keepBinary);
+                  if (cctx.cache().configuration().isStatisticsEnabled())                   cctx.cache().metrics0().onRead(oldVal != null);
+                }
+                if (log.isDebugEnabled())                 log.debug("Processed response for entry [res=" + res + ", entry="+ entry+ ']');
+                break;
+              }
+ catch (              GridCacheEntryRemovedException ignored) {
+                if (log.isDebugEnabled())                 log.debug("Failed to add candidates because entry was " + "removed (will renew).");
+synchronized (GridNearLockFuture.this) {
+                  entries.set(i,(GridDistributedCacheEntry)cctx.cache().entryEx(entry.key()));
+                }
+              }
+            }
+            i++;
+          }
+          proceedMapping();
+        }
+ catch (        IgniteCheckedException ex) {
+          onError(ex);
+          return false;
+        }
+        return true;
+      }
+    }
+,fut));
+  }
+ else {
+    final MiniFuture fut=new MiniFuture(node,mappedKeys);
+    req.miniId(fut.futureId());
+    add(fut);
+    IgniteInternalFuture<?> txSync=null;
+    if (inTx())     txSync=cctx.tm().awaitFinishAckAsync(node.id(),tx.threadId());
+    if (txSync == null || txSync.isDone()) {
+      try {
+        if (log.isDebugEnabled())         log.debug("Sending near lock request [node=" + node.id() + ", req="+ req+ ']');
+        cctx.io().send(node,req,cctx.ioPolicy());
+      }
+ catch (      ClusterTopologyCheckedException ex) {
+        fut.onResult(ex);
+      }
+    }
+ else {
+      txSync.listen(new CI1<IgniteInternalFuture<?>>(){
+        @Override public void apply(        IgniteInternalFuture<?> t){
+          try {
+            if (log.isDebugEnabled())             log.debug("Sending near lock request [node=" + node.id() + ", req="+ req+ ']');
+            cctx.io().send(node,req,cctx.ioPolicy());
+          }
+ catch (          ClusterTopologyCheckedException ex) {
+            fut.onResult(ex);
+          }
+catch (          IgniteCheckedException e) {
+            onError(e);
+          }
+        }
+      }
+);
+    }
+  }
 }

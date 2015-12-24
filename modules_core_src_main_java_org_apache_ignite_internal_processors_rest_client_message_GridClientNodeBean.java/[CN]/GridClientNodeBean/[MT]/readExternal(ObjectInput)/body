@@ -1,9 +1,17 @@
 {
   tcpPort=in.readInt();
   in.readInt();
-  dfltCacheMode=U.readString(in);
+  String dfltCacheMode=U.readString(in);
   attrs=U.readMap(in);
-  caches=U.readMap(in);
+  Map<String,String> cacheMap=U.readMap(in);
+  if (cacheMap == null && dfltCacheMode != null) {
+    cacheMap=U.newHashMap(1);
+    cacheMap.put(null,dfltCacheMode);
+  }
+  if (cacheMap != null) {
+    caches=new ArrayList<>(cacheMap.size());
+    for (    Map.Entry<String,String> e : cacheMap.entrySet())     caches.add(new GridClientCacheBean(e.getKey(),GridClientCacheMode.valueOf(e.getValue()),null));
+  }
   tcpAddrs=U.readCollection(in);
   tcpHostNames=U.readCollection(in);
   U.readCollection(in);

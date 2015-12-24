@@ -2,10 +2,16 @@
   UUID clientNodeId=grid(0).cluster().localNode().id();
   for (int i=0; i < NODES_CNT; i++) {
     log.info("Iteration: " + i);
-    Ignite ignite=grid(i);
+    final Ignite ignite=grid(i);
     ignite.services(ignite.cluster().forClients()).deployNodeSingleton(SINGLETON_NAME,new TestService());
-    ClusterGroup grp=ignite.cluster();
+    final ClusterGroup grp=ignite.cluster();
     assertEquals(NODES_CNT,grp.nodes().size());
+    GridTestUtils.waitForCondition(new GridAbsPredicate(){
+      @Override public boolean apply(){
+        return ignite.services(grp).serviceDescriptors().size() == 1;
+      }
+    }
+,5000);
     Collection<ServiceDescriptor> srvDscs=ignite.services(grp).serviceDescriptors();
     assertEquals(1,srvDscs.size());
     Map<UUID,Integer> nodesMap=F.first(srvDscs).topologySnapshot();
