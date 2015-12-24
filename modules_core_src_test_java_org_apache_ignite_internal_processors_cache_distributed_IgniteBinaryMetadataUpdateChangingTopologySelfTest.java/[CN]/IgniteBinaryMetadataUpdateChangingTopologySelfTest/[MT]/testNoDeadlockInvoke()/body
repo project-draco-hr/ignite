@@ -4,7 +4,7 @@
   TestCommunicationSpi spi=(TestCommunicationSpi)ignite(1).configuration().getCommunicationSpi();
   spi.blockMessages(GridNearTxPrepareResponse.class,ignite(0).cluster().localNode().id());
   IgniteCache<Object,Object> cache=ignite(0).cache("cache").withAsync();
-  cache.putAll(F.asMap(key1,"val1",key2,new TestValue1()));
+  cache.invokeAll(F.asSet(key1,key2),new TestEntryProcessor());
   try {
     Thread.sleep(500);
     IgniteInternalFuture<Void> fut=GridTestUtils.runAsync(new Callable<Void>(){
