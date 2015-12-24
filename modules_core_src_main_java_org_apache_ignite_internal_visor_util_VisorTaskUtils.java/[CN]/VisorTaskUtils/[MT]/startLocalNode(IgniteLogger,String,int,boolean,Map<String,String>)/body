@@ -1,0 +1,39 @@
+{
+  String quitePar=quite ? "" : "-v";
+  String cmdFile=new File("bin",U.isWindows() ? "ignite.bat" : "ignite.sh").getPath();
+  File cmdFilePath=U.resolveIgnitePath(cmdFile);
+  if (cmdFilePath == null || !cmdFilePath.exists())   throw new FileNotFoundException(String.format("File not found: %s",cmdFile));
+  String ignite=cmdFilePath.getCanonicalPath();
+  File nodesCfgPath=U.resolveIgnitePath(cfgPath);
+  if (nodesCfgPath == null || !nodesCfgPath.exists())   throw new FileNotFoundException(String.format("File not found: %s",cfgPath));
+  String nodeCfg=nodesCfgPath.getCanonicalPath();
+  log(log,String.format("Starting %s local %s with '%s' config",nodesToStart,nodesToStart > 1 ? "nodes" : "node",nodeCfg));
+  List<Process> run=new ArrayList<>();
+  try {
+    for (int i=0; i < nodesToStart; i++) {
+      if (U.isMacOs()) {
+        StringBuilder envs=new StringBuilder();
+        Map<String,String> macEnv=new HashMap<>(System.getenv());
+        if (envVars != null) {
+          for (          Map.Entry<String,String> ent : envVars.entrySet())           if (macEnv.containsKey(ent.getKey())) {
+            String old=macEnv.get(ent.getKey());
+            if (old == null || old.isEmpty())             macEnv.put(ent.getKey(),ent.getValue());
+ else             macEnv.put(ent.getKey(),old + ':' + ent.getValue());
+          }
+ else           macEnv.put(ent.getKey(),ent.getValue());
+        }
+        for (        Map.Entry<String,String> entry : macEnv.entrySet()) {
+          String val=entry.getValue();
+          if (val.indexOf(';') < 0 && val.indexOf('\'') < 0)           envs.append(String.format("export %s='%s'; ",entry.getKey(),val.replace('\n',' ').replace("'","\'")));
+        }
+        run.add(openInConsole(envs.toString(),ignite,quitePar,nodeCfg));
+      }
+ else       run.add(openInConsole(null,envVars,ignite,quitePar,nodeCfg));
+    }
+    return run;
+  }
+ catch (  Exception e) {
+    for (    Process proc : run)     proc.destroy();
+    throw e;
+  }
+}
