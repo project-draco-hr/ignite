@@ -1,7 +1,7 @@
 {
   final CyclicBarrier barrier=new CyclicBarrier(THREAD_CNT);
   final AtomicReference<Exception> err=new AtomicReference<>();
-  GridNioServer<?> srvr=startServer(port,new GridBufferedParser(true,ByteOrder.nativeOrder()),new EchoListener());
+  final GridNioServer<?> srvr=startServer(new GridBufferedParser(true,ByteOrder.nativeOrder()),new EchoListener());
   try {
     IgniteInternalFuture<?> fut=multithreadedAsync(new Runnable(){
       @SuppressWarnings("BusyWait") @Override public void run(){
@@ -9,7 +9,7 @@
           for (int i=0; i < 100 && !Thread.currentThread().isInterrupted(); i++) {
             TestClient client=null;
             try {
-              client=createClient(U.getLocalHost(),port,U.getLocalHost());
+              client=createClient(U.getLocalHost(),srvr.port(),U.getLocalHost());
               MessageWithId msg=new MessageWithId(idProvider.getAndIncrement());
               byte[] data=serializeMessage(msg);
               for (int j=0; j < 10; j++)               client.sendMessage(data,data.length);

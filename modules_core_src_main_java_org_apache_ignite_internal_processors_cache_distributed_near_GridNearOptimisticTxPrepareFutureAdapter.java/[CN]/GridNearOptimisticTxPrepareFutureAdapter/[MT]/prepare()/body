@@ -1,7 +1,9 @@
 {
   long threadId=Thread.currentThread().getId();
-  AffinityTopologyVersion topVer=cctx.mvcc().lastExplicitLockTopologyVersion(threadId);
-  if (topVer == null && tx != null && tx.system())   topVer=cctx.tm().lockedTopologyVersion(threadId,tx);
+  AffinityTopologyVersion topVer=null;
+  if (tx.system())   topVer=tx.topologyVersionSnapshot();
+  if (topVer == null)   topVer=cctx.mvcc().lastExplicitLockTopologyVersion(threadId);
+  if (topVer == null && tx.system())   topVer=cctx.tm().lockedTopologyVersion(threadId,tx);
   if (topVer != null) {
     tx.topologyVersion(topVer);
     cctx.mvcc().addFuture(this);
