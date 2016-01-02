@@ -1,2 +1,52 @@
 {
+  if (isEmpty(m) || isAlwaysFalse(p))   return Collections.emptyMap();
+  return isAlwaysTrue(p) ? m : new GridSerializableMap<K,V>(){
+    /** 
+ */
+    private static final long serialVersionUID=5531745605372387948L;
+    /** 
+ * Entry predicate. 
+ */
+    private IgnitePredicate<Entry<K,V>> ep=new P1<Map.Entry<K,V>>(){
+      @Override public boolean apply(      Entry<K,V> e){
+        return p.apply(e.getKey());
+      }
+    }
+;
+    @NotNull @Override public Set<Entry<K,V>> entrySet(){
+      return new GridSerializableSet<Map.Entry<K,V>>(){
+        @NotNull @Override public Iterator<Entry<K,V>> iterator(){
+          return identityIterator(m.entrySet(),ep);
+        }
+        @Override public int size(){
+          return F.size(m.keySet(),p);
+        }
+        @SuppressWarnings({"unchecked"}) @Override public boolean remove(        Object o){
+          return ep.apply((Map.Entry<K,V>)o) && m.entrySet().remove(o);
+        }
+        @SuppressWarnings({"unchecked"}) @Override public boolean contains(        Object o){
+          return ep.apply((Map.Entry<K,V>)o) && m.entrySet().contains(o);
+        }
+        @Override public boolean isEmpty(){
+          return !iterator().hasNext();
+        }
+      }
+;
+    }
+    @Override public boolean isEmpty(){
+      return entrySet().isEmpty();
+    }
+    @SuppressWarnings({"unchecked"}) @Nullable @Override public V get(    Object key){
+      return p.apply((K)key) ? m.get(key) : null;
+    }
+    @Nullable @Override public V put(    K key,    V val){
+      V oldVal=get(key);
+      if (p.apply(key))       m.put(key,val);
+      return oldVal;
+    }
+    @SuppressWarnings({"unchecked"}) @Override public boolean containsKey(    Object key){
+      return p.apply((K)key) && m.containsKey(key);
+    }
+  }
+;
 }

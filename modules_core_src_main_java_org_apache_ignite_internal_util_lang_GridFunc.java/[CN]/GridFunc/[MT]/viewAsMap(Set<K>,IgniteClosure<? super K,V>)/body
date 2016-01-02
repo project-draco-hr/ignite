@@ -1,0 +1,64 @@
+{
+  A.notNull(mapClo,"trans");
+  if (isEmpty(c))   return Collections.emptyMap();
+  return new GridSerializableMap<K,V>(){
+    @NotNull @Override public Set<Entry<K,V>> entrySet(){
+      return new GridSerializableSet<Entry<K,V>>(){
+        @NotNull @Override public Iterator<Entry<K,V>> iterator(){
+          return new Iterator<Entry<K,V>>(){
+            private Iterator<K> it=identityIteratorReadOnly(c);
+            @Override public boolean hasNext(){
+              return it.hasNext();
+            }
+            @Override public Entry<K,V> next(){
+              final K e=it.next();
+              return new Entry<K,V>(){
+                @Override public K getKey(){
+                  return e;
+                }
+                @Override public V getValue(){
+                  return mapClo.apply(e);
+                }
+                @Override public V setValue(                V val){
+                  throw new UnsupportedOperationException("Put is not supported for readonly collection view.");
+                }
+              }
+;
+            }
+            @Override public void remove(){
+              throw new UnsupportedOperationException("Remove is not support for readonly collection view.");
+            }
+          }
+;
+        }
+        @Override public int size(){
+          return c.size();
+        }
+        @Override public boolean remove(        Object o){
+          throw new UnsupportedOperationException("Remove is not support for readonly collection view.");
+        }
+        @Override public boolean isEmpty(){
+          return c.isEmpty();
+        }
+      }
+;
+    }
+    @Override public boolean isEmpty(){
+      return c.isEmpty();
+    }
+    @SuppressWarnings("unchecked") @Nullable @Override public V get(    Object key){
+      if (containsKey(key))       return mapClo.apply((K)key);
+      return null;
+    }
+    @Nullable @Override public V put(    K key,    V val){
+      throw new UnsupportedOperationException("Put is not supported for readonly collection view.");
+    }
+    @Override public V remove(    Object key){
+      throw new UnsupportedOperationException("Remove is not supported for readonly collection view.");
+    }
+    @SuppressWarnings("SuspiciousMethodCalls") @Override public boolean containsKey(    Object key){
+      return c.contains(key);
+    }
+  }
+;
+}

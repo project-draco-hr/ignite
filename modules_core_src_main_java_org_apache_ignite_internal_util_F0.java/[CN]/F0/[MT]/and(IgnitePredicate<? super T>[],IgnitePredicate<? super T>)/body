@@ -1,2 +1,37 @@
 {
+  if (F.isAlwaysFalse(p1) || F.isAlwaysFalse(p2))   return F.alwaysFalse();
+  if (F.isAlwaysTrue(p1) && F.isAlwaysTrue(p2))   return F.alwaysTrue();
+  final boolean e1=F.isEmpty(p1);
+  final boolean e2=F.isEmpty(p2);
+  if (e1 && e2)   return F.alwaysTrue();
+  if (e1) {
+    if (p2.length == 1)     return (IgnitePredicate<T>)p2[0];
+  }
+  if (e2) {
+    if (p1.length == 1)     return (IgnitePredicate<T>)p1[0];
+  }
+  if ((e1 || isAllNodePredicates(p1)) && (e2 || isAllNodePredicates(p2))) {
+    Set<UUID> ids=new GridLeanSet<>();
+    if (!e1) {
+      for (      IgnitePredicate<? super T> p : p1)       ids.addAll(((GridNodePredicate)p).nodeIds());
+    }
+    if (!e2) {
+      for (      IgnitePredicate<? super T> p : p2)       ids.addAll(((GridNodePredicate)p).nodeIds());
+    }
+    return (IgnitePredicate<T>)new GridNodePredicate(ids);
+  }
+ else {
+    return new P1<T>(){
+      @Override public boolean apply(      T t){
+        if (!e1) {
+          for (          IgnitePredicate<? super T> p : p1)           if (p != null && !p.apply(t))           return false;
+        }
+        if (!e2) {
+          for (          IgnitePredicate<? super T> p : p2)           if (p != null && !p.apply(t))           return false;
+        }
+        return true;
+      }
+    }
+;
+  }
 }

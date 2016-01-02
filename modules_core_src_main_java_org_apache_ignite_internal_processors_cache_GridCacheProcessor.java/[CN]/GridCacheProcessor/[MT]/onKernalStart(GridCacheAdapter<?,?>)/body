@@ -7,7 +7,10 @@
     dht.onKernalStart();
     if (log.isDebugEnabled())     log.debug("Executed onKernalStart() callback for DHT cache: " + dht.name());
   }
-  for (  GridCacheManager mgr : F.view(ctx.managers(),F0.notContains(dhtExcludes(ctx))))   mgr.onKernalStart();
+  Collection<GridCacheManager> excluded=dhtExcludes(ctx);
+  for (  GridCacheManager mgr : ctx.managers()) {
+    if (!excluded.contains(mgr))     mgr.onKernalStart();
+  }
   cache.onKernalStart();
   if (ctx.events().isRecordable(EventType.EVT_CACHE_STARTED))   ctx.events().addEvent(EventType.EVT_CACHE_STARTED);
   if (log.isDebugEnabled())   log.debug("Executed onKernalStart() callback for cache [name=" + cache.name() + ", mode="+ cache.configuration().getCacheMode()+ ']');

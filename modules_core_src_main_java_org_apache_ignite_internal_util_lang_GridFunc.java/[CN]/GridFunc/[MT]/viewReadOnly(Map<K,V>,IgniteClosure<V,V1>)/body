@@ -1,0 +1,68 @@
+{
+  A.notNull(trans,"trans");
+  if (isEmpty(m))   return Collections.emptyMap();
+  return new GridSerializableMap<K,V1>(){
+    @NotNull @Override public Set<Entry<K,V1>> entrySet(){
+      return new GridSerializableSet<Map.Entry<K,V1>>(){
+        @NotNull @Override public Iterator<Entry<K,V1>> iterator(){
+          return new Iterator<Entry<K,V1>>(){
+            private Iterator<Entry<K,V>> it=identityIteratorReadOnly(m.entrySet());
+            @Override public boolean hasNext(){
+              return it.hasNext();
+            }
+            @Override public Entry<K,V1> next(){
+              final Entry<K,V> e=it.next();
+              return new Entry<K,V1>(){
+                @Override public K getKey(){
+                  return e.getKey();
+                }
+                @Override public V1 getValue(){
+                  return trans.apply(e.getValue());
+                }
+                @Override public V1 setValue(                V1 val){
+                  throw new UnsupportedOperationException("Put is not supported for readonly map view.");
+                }
+              }
+;
+            }
+            @Override public void remove(){
+              throw new UnsupportedOperationException("Remove is not support for readonly map view.");
+            }
+          }
+;
+        }
+        @Override public int size(){
+          return m.size();
+        }
+        @SuppressWarnings({"unchecked"}) @Override public boolean remove(        Object o){
+          throw new UnsupportedOperationException("Remove is not support for readonly map view.");
+        }
+        @SuppressWarnings({"unchecked"}) @Override public boolean contains(        Object o){
+          return m.entrySet().contains(o);
+        }
+        @Override public boolean isEmpty(){
+          return m.isEmpty();
+        }
+      }
+;
+    }
+    @Override public boolean isEmpty(){
+      return m.isEmpty();
+    }
+    @SuppressWarnings({"unchecked"}) @Nullable @Override public V1 get(    Object key){
+      V v=m.get(key);
+      if (v != null)       return trans.apply(v);
+      return null;
+    }
+    @Nullable @Override public V1 put(    K key,    V1 val){
+      throw new UnsupportedOperationException("Put is not supported for readonly map view.");
+    }
+    @Override public V1 remove(    Object key){
+      throw new UnsupportedOperationException("Remove is not supported for readonly map view.");
+    }
+    @SuppressWarnings({"unchecked"}) @Override public boolean containsKey(    Object key){
+      return m.containsKey(key);
+    }
+  }
+;
+}

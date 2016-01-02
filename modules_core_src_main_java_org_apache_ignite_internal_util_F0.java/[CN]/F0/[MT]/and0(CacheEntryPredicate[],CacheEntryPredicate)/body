@@ -1,2 +1,45 @@
 {
+  if (CU.isAlwaysFalse0(p1) || CU.isAlwaysFalse0(p2))   return CU.alwaysFalse0();
+  if (CU.isAlwaysTrue0(p1) && CU.isAlwaysTrue0(p2))   return CU.alwaysTrue0();
+  final boolean e1=F.isEmpty(p1);
+  final boolean e2=F.isEmpty(p2);
+  if (e1 && e2)   return CU.alwaysTrue0();
+  if (e1) {
+    if (p2.length == 1)     return p2[0];
+  }
+  if (e2) {
+    if (p1.length == 1)     return p1[0];
+  }
+  return new CacheEntrySerializablePredicate(new CacheEntryPredicateAdapter(){
+    @Override public boolean apply(    GridCacheEntryEx e){
+      if (!e1) {
+        for (        CacheEntryPredicate p : p1)         if (p != null && !p.apply(e))         return false;
+      }
+      if (!e2) {
+        for (        CacheEntryPredicate p : p2)         if (p != null && !p.apply(e))         return false;
+      }
+      return true;
+    }
+    @Override public void entryLocked(    boolean locked){
+      if (p1 != null) {
+        for (        CacheEntryPredicate p : p1) {
+          if (p != null)           p.entryLocked(locked);
+        }
+      }
+      if (p2 != null) {
+        for (        CacheEntryPredicate p : p2) {
+          if (p != null)           p.entryLocked(locked);
+        }
+      }
+    }
+    @Override public void prepareMarshal(    GridCacheContext ctx) throws IgniteCheckedException {
+      if (!e1) {
+        for (        CacheEntryPredicate p : p1)         p.prepareMarshal(ctx);
+      }
+      if (!e2) {
+        for (        CacheEntryPredicate p : p2)         p.prepareMarshal(ctx);
+      }
+    }
+  }
+);
 }
