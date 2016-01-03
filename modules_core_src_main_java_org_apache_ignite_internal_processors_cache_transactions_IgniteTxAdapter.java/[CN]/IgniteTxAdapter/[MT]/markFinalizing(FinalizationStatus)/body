@@ -2,16 +2,16 @@
   boolean res;
 switch (status) {
 case USER_FINISH:
-    res=finalizing.compareAndSet(FinalizationStatus.NONE,FinalizationStatus.USER_FINISH);
+    res=FINALIZING_UPD.compareAndSet(this,FinalizationStatus.NONE,FinalizationStatus.USER_FINISH);
   break;
 case RECOVERY_WAIT:
-finalizing.compareAndSet(FinalizationStatus.NONE,FinalizationStatus.RECOVERY_WAIT);
-FinalizationStatus cur=finalizing.get();
+FINALIZING_UPD.compareAndSet(this,FinalizationStatus.NONE,FinalizationStatus.RECOVERY_WAIT);
+FinalizationStatus cur=finalizing;
 res=cur == FinalizationStatus.RECOVERY_WAIT || cur == FinalizationStatus.RECOVERY_FINISH;
 break;
 case RECOVERY_FINISH:
-FinalizationStatus old=finalizing.get();
-res=old != FinalizationStatus.USER_FINISH && finalizing.compareAndSet(old,status);
+FinalizationStatus old=finalizing;
+res=old != FinalizationStatus.USER_FINISH && FINALIZING_UPD.compareAndSet(this,old,status);
 break;
 default :
 throw new IllegalArgumentException("Cannot set finalization status: " + status);

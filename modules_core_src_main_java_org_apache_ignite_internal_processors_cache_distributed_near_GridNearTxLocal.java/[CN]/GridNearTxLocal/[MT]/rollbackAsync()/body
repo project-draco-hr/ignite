@@ -1,10 +1,10 @@
 {
   if (log.isDebugEnabled())   log.debug("Rolling back near tx: " + this);
-  GridNearTxFinishFuture fut=rollbackFut.get();
+  GridNearTxFinishFuture fut=rollbackFut;
   if (fut != null)   return fut;
-  if (!rollbackFut.compareAndSet(null,fut=new GridNearTxFinishFuture<>(cctx,this,false)))   return rollbackFut.get();
+  if (!ROLLBACK_FUT_UPD.compareAndSet(this,null,fut=new GridNearTxFinishFuture<>(cctx,this,false)))   return rollbackFut;
   cctx.mvcc().addFuture(fut,fut.futureId());
-  IgniteInternalFuture<?> prepFut=this.prepFut.get();
+  IgniteInternalFuture<?> prepFut=this.prepFut;
   if (prepFut == null || prepFut.isDone()) {
     try {
       if (prepFut != null)       prepFut.get();
@@ -23,7 +23,7 @@
  catch (        IgniteCheckedException e) {
           if (log.isDebugEnabled())           log.debug("Got optimistic tx failure [tx=" + this + ", err="+ e+ ']');
         }
-        GridNearTxFinishFuture fut0=rollbackFut.get();
+        GridNearTxFinishFuture fut0=rollbackFut;
         fut0.finish();
       }
     }

@@ -1,11 +1,11 @@
 {
-  GridNearTxPrepareFutureAdapter fut=(GridNearTxPrepareFutureAdapter)prepFut.get();
+  GridNearTxPrepareFutureAdapter fut=(GridNearTxPrepareFutureAdapter)prepFut;
   if (fut == null) {
     if (optimistic()) {
       fut=serializable() ? new GridNearOptimisticSerializableTxPrepareFuture(cctx,this) : new GridNearOptimisticTxPrepareFuture(cctx,this);
     }
  else     fut=new GridNearPessimisticTxPrepareFuture(cctx,this);
-    if (!prepFut.compareAndSet(null,fut))     return prepFut.get();
+    if (!PREP_FUT_UPD.compareAndSet(this,null,fut))     return prepFut;
   }
  else   return fut;
   mapExplicitLocks();

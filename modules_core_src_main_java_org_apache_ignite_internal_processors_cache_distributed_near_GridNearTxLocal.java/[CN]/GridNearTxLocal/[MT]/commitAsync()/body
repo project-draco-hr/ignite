@@ -1,24 +1,24 @@
 {
   if (log.isDebugEnabled())   log.debug("Committing near local tx: " + this);
   prepareAsync();
-  GridNearTxFinishFuture fut=commitFut.get();
-  if (fut == null && !commitFut.compareAndSet(null,fut=new GridNearTxFinishFuture<>(cctx,this,true)))   return commitFut.get();
+  GridNearTxFinishFuture fut=commitFut;
+  if (fut == null && !COMMIT_FUT_UPD.compareAndSet(this,null,fut=new GridNearTxFinishFuture<>(cctx,this,true)))   return commitFut;
   cctx.mvcc().addFuture(fut,fut.futureId());
-  final IgniteInternalFuture<?> prepareFut=prepFut.get();
+  final IgniteInternalFuture<?> prepareFut=prepFut;
   prepareFut.listen(new CI1<IgniteInternalFuture<?>>(){
     @Override public void apply(    IgniteInternalFuture<?> f){
-      GridNearTxFinishFuture fut0=commitFut.get();
+      GridNearTxFinishFuture fut0=commitFut;
       try {
         prepareFut.get();
         fut0.finish();
       }
  catch (      Error|RuntimeException e) {
-        commitErr.compareAndSet(null,e);
+        COMMIT_ERR_UPD.compareAndSet(GridNearTxLocal.this,null,e);
         fut0.onDone(e);
         throw e;
       }
 catch (      IgniteCheckedException e) {
-        commitErr.compareAndSet(null,e);
+        COMMIT_ERR_UPD.compareAndSet(GridNearTxLocal.this,null,e);
         fut0.onDone(e);
       }
     }
