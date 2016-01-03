@@ -1,5 +1,5 @@
 {
-  A.notNull(c,"c",trans,"trans",p,"p");
+  A.notNull(c,"c",trans,"trans");
   if (isAlwaysFalse(p))   return F.emptyIterator();
   return new GridIteratorAdapter<T2>(){
     /** 
@@ -15,27 +15,38 @@
  */
     private Iterator<? extends T1> iter=c.iterator();
     @Override public boolean hasNextX(){
-      if (!moved)       return more;
+      if (isEmpty(p))       return iter.hasNext();
  else {
-        more=false;
-        while (iter.hasNext()) {
-          elem=iter.next();
-          if (p.apply(elem)) {
-            more=true;
-            moved=false;
-            return true;
+        if (!moved)         return more;
+ else {
+          more=false;
+          while (iter.hasNext()) {
+            elem=iter.next();
+            boolean isAll=true;
+            for (            IgnitePredicate<? super T1> r : p)             if (r != null && !r.apply(elem)) {
+              isAll=false;
+              break;
+            }
+            if (isAll) {
+              more=true;
+              moved=false;
+              return true;
+            }
           }
+          elem=null;
+          return false;
         }
-        elem=null;
-        return false;
       }
     }
     @Nullable @Override public T2 nextX(){
-      if (hasNext()) {
-        moved=true;
-        return trans.apply(elem);
+      if (isEmpty(p))       return trans.apply(iter.next());
+ else {
+        if (hasNext()) {
+          moved=true;
+          return trans.apply(elem);
+        }
+ else         throw new NoSuchElementException();
       }
- else       throw new NoSuchElementException();
     }
     @Override public void removeX(){
       if (readOnly)       throw new UnsupportedOperationException("Cannot modify read-only iterator.");
