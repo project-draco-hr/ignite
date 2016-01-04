@@ -1,0 +1,21 @@
+{
+  try {
+    Class.forName(NativeCodeLoader.class.getName(),true,APP_CLS_LDR);
+    final Vector<Object> curVector=U.field(this,"nativeLibraries");
+    ClassLoader ldr=APP_CLS_LDR;
+    while (ldr != null) {
+      Vector vector=U.field(ldr,"nativeLibraries");
+      for (      Object lib : vector) {
+        String libName=U.field(lib,"name");
+        if (libName.contains(LIBHADOOP)) {
+          curVector.add(lib);
+          return;
+        }
+      }
+      ldr=ldr.getParent();
+    }
+  }
+ catch (  Exception e) {
+    U.quietAndWarn(null,"Failed to initialize Hadoop native library " + "(native Hadoop methods might not work properly): " + e);
+  }
+}

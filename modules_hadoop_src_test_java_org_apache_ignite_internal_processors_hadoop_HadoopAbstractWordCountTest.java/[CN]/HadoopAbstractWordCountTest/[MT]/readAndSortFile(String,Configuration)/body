@@ -1,0 +1,20 @@
+{
+  final List<String> list=new ArrayList<>();
+  final boolean snappyDecode=conf != null && conf.getBoolean(FileOutputFormat.COMPRESS,false);
+  if (snappyDecode) {
+    try (SequenceFile.Reader reader=new SequenceFile.Reader(conf,SequenceFile.Reader.file(new Path(fileName)))){
+      Text key=new Text();
+      IntWritable val=new IntWritable();
+      while (reader.next(key,val))       list.add(key + "\t" + val);
+    }
+   }
+ else {
+    try (InputStream is0=igfs.open(new IgfsPath(fileName))){
+      BufferedReader reader=new BufferedReader(new InputStreamReader(is0));
+      String line;
+      while ((line=reader.readLine()) != null)       list.add(line);
+    }
+   }
+  Collections.sort(list);
+  return Joiner.on('\n').join(list) + "\n";
+}

@@ -4,7 +4,7 @@
     X.println(homeVariable + " is set to: " + homeVal);
     return;
   }
-  List<String> urls=F.asList("http://apache-mirror.rbc.ru/pub/apache/","http://www.eu.apache.org/dist/","http://www.us.apache.org/dist/");
+  List<String> urls=F.asList("http://archive.apache.org/dist/","http://apache-mirror.rbc.ru/pub/apache/","http://www.eu.apache.org/dist/","http://www.us.apache.org/dist/");
   String tmpPath=System.getProperty("java.io.tmpdir");
   X.println("tmp: " + tmpPath);
   File install=new File(tmpPath + File.separatorChar + "__hadoop");
@@ -33,6 +33,11 @@
           File dest=new File(install,entry.getName());
           if (entry.isDirectory()) {
             if (!dest.mkdirs())             throw new IllegalStateException();
+          }
+ else           if (entry.isSymbolicLink()) {
+            Path theLinkItself=Paths.get(install.getAbsolutePath(),entry.getName());
+            Path linkTarget=Paths.get(entry.getLinkName());
+            Files.createSymbolicLink(theLinkItself,linkTarget);
           }
  else {
             File parent=dest.getParentFile();
