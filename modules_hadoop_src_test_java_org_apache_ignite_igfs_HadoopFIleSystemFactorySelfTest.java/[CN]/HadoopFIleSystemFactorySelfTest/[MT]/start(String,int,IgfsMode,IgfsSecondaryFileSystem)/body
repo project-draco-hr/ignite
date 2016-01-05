@@ -1,0 +1,36 @@
+{
+  IgfsIpcEndpointConfiguration endpointCfg=new IgfsIpcEndpointConfiguration();
+  endpointCfg.setType(IgfsIpcEndpointType.TCP);
+  endpointCfg.setHost("127.0.0.1");
+  endpointCfg.setPort(endpointPort);
+  FileSystemConfiguration igfsCfg=new FileSystemConfiguration();
+  igfsCfg.setDataCacheName("dataCache");
+  igfsCfg.setMetaCacheName("metaCache");
+  igfsCfg.setName(name);
+  igfsCfg.setDefaultMode(dfltMode);
+  igfsCfg.setIpcEndpointConfiguration(endpointCfg);
+  igfsCfg.setSecondaryFileSystem(secondaryFs);
+  CacheConfiguration dataCacheCfg=defaultCacheConfiguration();
+  dataCacheCfg.setName("dataCache");
+  dataCacheCfg.setCacheMode(PARTITIONED);
+  dataCacheCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  dataCacheCfg.setAffinityMapper(new IgfsGroupDataBlocksKeyMapper(2));
+  dataCacheCfg.setBackups(0);
+  dataCacheCfg.setAtomicityMode(TRANSACTIONAL);
+  dataCacheCfg.setOffHeapMaxMemory(0);
+  CacheConfiguration metaCacheCfg=defaultCacheConfiguration();
+  metaCacheCfg.setName("metaCache");
+  metaCacheCfg.setCacheMode(REPLICATED);
+  metaCacheCfg.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  metaCacheCfg.setAtomicityMode(TRANSACTIONAL);
+  IgniteConfiguration cfg=new IgniteConfiguration();
+  cfg.setGridName(name);
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setIpFinder(new TcpDiscoveryVmIpFinder(true));
+  cfg.setDiscoverySpi(discoSpi);
+  cfg.setCacheConfiguration(dataCacheCfg,metaCacheCfg);
+  cfg.setFileSystemConfiguration(igfsCfg);
+  cfg.setLocalHost("127.0.0.1");
+  cfg.setConnectorConfiguration(null);
+  return (IgfsEx)G.start(cfg).fileSystem(name);
+}

@@ -1,0 +1,24 @@
+{
+  cfg=HadoopUtils.safeCreateConfiguration();
+  if (cfgPaths != null) {
+    for (    String cfgPath : cfgPaths) {
+      if (cfgPath == null)       throw new NullPointerException("Configuration path cannot be null: " + Arrays.toString(cfgPaths));
+ else {
+        URL url=U.resolveIgniteUrl(cfgPath);
+        if (url == null) {
+          throw new IgniteException("Failed to resolve secondary file system configuration path " + "(ensure that it exists locally and you have read access to it): " + cfgPath);
+        }
+        cfg.addResource(url);
+      }
+    }
+  }
+  if (uri == null)   fullUri=FileSystem.getDefaultUri(cfg);
+ else {
+    try {
+      fullUri=new URI(uri);
+    }
+ catch (    URISyntaxException use) {
+      throw new IgniteException("Failed to resolve secondary file system URI: " + uri);
+    }
+  }
+}

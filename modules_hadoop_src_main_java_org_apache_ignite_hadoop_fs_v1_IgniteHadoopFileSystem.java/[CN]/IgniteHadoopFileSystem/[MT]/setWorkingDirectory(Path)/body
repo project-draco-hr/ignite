@@ -1,14 +1,21 @@
 {
-  if (newPath == null) {
-    Path homeDir=getHomeDirectory();
-    if (secondaryFs != null)     secondaryFs.setWorkingDirectory(toSecondary(homeDir));
-    workingDir=homeDir;
-  }
+  try {
+    if (newPath == null) {
+      Path homeDir=getHomeDirectory();
+      FileSystem secondaryFs=secondaryFileSystem();
+      if (secondaryFs != null)       secondaryFs.setWorkingDirectory(toSecondary(homeDir));
+      workingDir=homeDir;
+    }
  else {
-    Path fixedNewPath=fixRelativePart(newPath);
-    String res=fixedNewPath.toUri().getPath();
-    if (!DFSUtil.isValidName(res))     throw new IllegalArgumentException("Invalid DFS directory name " + res);
-    if (secondaryFs != null)     secondaryFs.setWorkingDirectory(toSecondary(fixedNewPath));
-    workingDir=fixedNewPath;
+      Path fixedNewPath=fixRelativePart(newPath);
+      String res=fixedNewPath.toUri().getPath();
+      if (!DFSUtil.isValidName(res))       throw new IllegalArgumentException("Invalid DFS directory name " + res);
+      FileSystem secondaryFs=secondaryFileSystem();
+      if (secondaryFs != null)       secondaryFs.setWorkingDirectory(toSecondary(fixedNewPath));
+      workingDir=fixedNewPath;
+    }
+  }
+ catch (  IOException e) {
+    throw new RuntimeException("Failed to obtain secondary file system instance.",e);
   }
 }

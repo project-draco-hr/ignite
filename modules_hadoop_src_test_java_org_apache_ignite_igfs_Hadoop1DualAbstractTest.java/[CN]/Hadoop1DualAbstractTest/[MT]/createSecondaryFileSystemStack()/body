@@ -1,8 +1,11 @@
 {
   startUnderlying();
   prepareConfiguration();
-  IgniteHadoopIgfsSecondaryFileSystem second=new IgniteHadoopIgfsSecondaryFileSystem(secondaryUri,secondaryConfFullPath);
-  FileSystem fileSystem=second.fileSystem();
-  igfsSecondary=new HadoopFileSystemUniversalFileSystemAdapter(fileSystem);
+  CachingHadoopFileSystemFactory factory=new CachingHadoopFileSystemFactory();
+  factory.setUri(secondaryUri);
+  factory.setConfigPaths(secondaryConfFullPath);
+  IgniteHadoopIgfsSecondaryFileSystem second=new IgniteHadoopIgfsSecondaryFileSystem();
+  second.setFileSystemFactory(factory);
+  igfsSecondary=new HadoopFileSystemUniversalFileSystemAdapter(factory);
   return second;
 }

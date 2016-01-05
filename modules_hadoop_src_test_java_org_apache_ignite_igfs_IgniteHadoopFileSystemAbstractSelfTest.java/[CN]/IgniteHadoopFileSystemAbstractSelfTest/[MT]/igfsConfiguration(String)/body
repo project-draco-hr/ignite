@@ -5,7 +5,15 @@
   cfg.setName("igfs");
   cfg.setPrefetchBlocks(1);
   cfg.setDefaultMode(mode);
-  if (mode != PRIMARY)   cfg.setSecondaryFileSystem(new IgniteHadoopIgfsSecondaryFileSystem(SECONDARY_URI,SECONDARY_CFG_PATH,SECONDARY_FS_USER));
+  if (mode != PRIMARY) {
+    CachingHadoopFileSystemFactory fac=new CachingHadoopFileSystemFactory();
+    fac.setUri(SECONDARY_URI);
+    fac.setConfigPaths(SECONDARY_CFG_PATH);
+    IgniteHadoopIgfsSecondaryFileSystem sec=new IgniteHadoopIgfsSecondaryFileSystem();
+    sec.setFileSystemFactory(fac);
+    sec.setDefaultUserName(SECONDARY_FS_USER);
+    cfg.setSecondaryFileSystem(sec);
+  }
   cfg.setIpcEndpointConfiguration(primaryIpcEndpointConfiguration(gridName));
   cfg.setManagementPort(-1);
   cfg.setBlockSize(512 * 1024);
