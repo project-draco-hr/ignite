@@ -3,6 +3,13 @@
   int bytesToCp=arrSize << 1;
   fromStream(bytesToCp);
   short[] arr=new short[arrSize];
-  UNSAFE.copyMemory(buf,byteArrOff + offset(bytesToCp),arr,shortArrOff,bytesToCp);
+  long off=BYTE_ARR_OFF + offset(bytesToCp);
+  if (BIG_ENDIAN) {
+    for (int i=0; i < arr.length; i++) {
+      arr[i]=GridUnsafe.getShortLE(buf,off);
+      off+=2;
+    }
+  }
+ else   GridUnsafe.copyMemory(buf,off,arr,SHORT_ARR_OFF,bytesToCp);
   return arr;
 }

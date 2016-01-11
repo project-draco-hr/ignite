@@ -4,8 +4,8 @@
     while (true) {
       try {
         GridDhtCacheEntry entry=entryExx(key,topVer);
-        UNSAFE.monitorEnter(entry);
-        if (entry.obsolete())         UNSAFE.monitorExit(entry);
+        GridUnsafe.monitorEnter(entry);
+        if (entry.obsolete())         GridUnsafe.monitorExit(entry);
  else         return Collections.singletonList(entry);
       }
  catch (      GridDhtInvalidPartitionException e) {
@@ -31,10 +31,10 @@
       for (int i=0; i < locked.size(); i++) {
         GridCacheMapEntry entry=locked.get(i);
         if (entry == null)         continue;
-        UNSAFE.monitorEnter(entry);
+        GridUnsafe.monitorEnter(entry);
         if (entry.obsolete()) {
           for (int j=0; j <= i; j++) {
-            if (locked.get(j) != null)             UNSAFE.monitorExit(locked.get(j));
+            if (locked.get(j) != null)             GridUnsafe.monitorExit(locked.get(j));
           }
           locked.clear();
           retry=true;

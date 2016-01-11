@@ -2,6 +2,13 @@
   writeInt(arr.length);
   int bytesToCp=arr.length << 3;
   requestFreeSize(bytesToCp);
-  UNSAFE.copyMemory(arr,longArrOff,bytes,byteArrOff + off,bytesToCp);
+  if (BIG_ENDIAN) {
+    long off=BYTE_ARR_OFF + this.off;
+    for (    long val : arr) {
+      GridUnsafe.putLongLE(bytes,off,val);
+      off+=8;
+    }
+  }
+ else   GridUnsafe.copyMemory(arr,LONG_ARR_OFF,bytes,BYTE_ARR_OFF + off,bytesToCp);
   onWrite(bytesToCp);
 }
