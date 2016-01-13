@@ -1,0 +1,65 @@
+{
+  Ignite ignite=startGrid(0);
+  Map<Integer,Object> data=new HashMap<>();
+  final Map<Integer,byte[]> dataBytes=new HashMap<>();
+  for (int i=0; i < 10; i++) {
+    Object obj=null;
+switch (i % 10) {
+case 0:
+      obj=new TestClass1();
+    break;
+case 1:
+  obj=new TestClass2();
+break;
+case 2:
+obj=new TestClass3();
+break;
+case 3:
+obj=new TestClass4();
+break;
+case 4:
+obj=new TestClass5();
+break;
+case 5:
+obj=new TestClass6();
+break;
+case 6:
+obj=new TestClass7();
+break;
+case 7:
+obj=new TestClass8();
+break;
+case 8:
+obj=new TestClass9();
+break;
+case 9:
+obj=new TestClass10();
+break;
+default :
+fail();
+}
+data.put(i,obj);
+dataBytes.put(i,ignite.configuration().getMarshaller().marshal(obj));
+}
+ignite.cache(null).putAll(data);
+stopGrid(0);
+for (int i=0; i < 3; i++) {
+log.info("Iteration: " + i);
+final AtomicInteger idx=new AtomicInteger();
+GridTestUtils.runMultiThreaded(new Callable<Void>(){
+@Override public Void call() throws Exception {
+int node=idx.getAndIncrement();
+Ignite ignite=startGrid(node);
+IgniteCache<Object,Object> cache=ignite.cache(null);
+for (Map.Entry<Integer,byte[]> e : dataBytes.entrySet()) {
+Object obj=ignite.configuration().getMarshaller().unmarshal(e.getValue(),null);
+cache.put(e.getKey(),obj);
+}
+ignite.cache(null).getAll(dataBytes.keySet());
+return null;
+}
+}
+,10,"test-thread");
+stopAllGrids();
+}
+}
