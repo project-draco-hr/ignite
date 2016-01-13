@@ -1,11 +1,11 @@
 {
+  boolean found=false;
   for (  IgniteInternalFuture<?> fut : futures())   if (isMini(fut)) {
-    MiniFuture f=(MiniFuture)fut;
-    if (f.node().id().equals(nodeId)) {
+    MinFuture f=(MinFuture)fut;
+    if (f.onNodeLeft(nodeId)) {
       mappings.remove(nodeId);
-      f.onResult(new ClusterTopologyCheckedException("Remote node left grid (will fail): " + nodeId));
-      return true;
+      found=true;
     }
   }
-  return false;
+  return found;
 }

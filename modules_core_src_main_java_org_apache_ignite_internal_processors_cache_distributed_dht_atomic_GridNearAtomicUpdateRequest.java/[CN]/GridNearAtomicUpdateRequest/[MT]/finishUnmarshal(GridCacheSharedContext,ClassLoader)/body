@@ -2,13 +2,15 @@
   super.finishUnmarshal(ctx,ldr);
   GridCacheContext cctx=ctx.cacheContext(cacheId);
   finishUnmarshalCacheObjects(keys,cctx,ldr);
-  if (op == TRANSFORM)   entryProcessors=unmarshalCollection(entryProcessorsBytes,ctx,ldr);
+  if (op == TRANSFORM) {
+    if (entryProcessors == null)     entryProcessors=unmarshalCollection(entryProcessorsBytes,ctx,ldr);
+    if (invokeArgs == null)     invokeArgs=unmarshalInvokeArguments(invokeArgsBytes,ctx,ldr);
+  }
  else   finishUnmarshalCacheObjects(vals,cctx,ldr);
   if (filter != null) {
     for (    CacheEntryPredicate p : filter) {
       if (p != null)       p.finishUnmarshal(cctx,ldr);
     }
   }
-  invokeArgs=unmarshalInvokeArguments(invokeArgsBytes,ctx,ldr);
-  if (expiryPlcBytes != null)   expiryPlc=ctx.marshaller().unmarshal(expiryPlcBytes,ldr);
+  if (expiryPlcBytes != null && expiryPlc == null)   expiryPlc=ctx.marshaller().unmarshal(expiryPlcBytes,ldr);
 }

@@ -1,0 +1,18 @@
+{
+  startGridsMultiThreaded(SRVS,false);
+  client=true;
+  Ignite clientNode=startGrid(SRVS);
+  assertTrue(clientNode.configuration().isClientMode());
+  client=false;
+  clientNode.createCache(cacheConfiguration(backups,useStore));
+  awaitPartitionMapExchange();
+  Ignite srv=ignite(0);
+  assertFalse(srv.configuration().isClientMode());
+  for (  Boolean pessimistic : Arrays.asList(false,true)) {
+    checkRecovery(backupKey(srv.cache(null)),srv,pessimistic,useStore);
+    checkRecovery(nearKey(srv.cache(null)),srv,pessimistic,useStore);
+    checkRecovery(nearKey(clientNode.cache(null)),clientNode,pessimistic,useStore);
+    srv=ignite(0);
+    assertFalse(srv.configuration().isClientMode());
+  }
+}

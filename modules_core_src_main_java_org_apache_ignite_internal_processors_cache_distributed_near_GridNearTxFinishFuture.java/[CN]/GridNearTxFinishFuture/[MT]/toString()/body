@@ -1,9 +1,17 @@
 {
   Collection<String> futs=F.viewReadOnly(futures(),new C1<IgniteInternalFuture<?>,String>(){
     @SuppressWarnings("unchecked") @Override public String apply(    IgniteInternalFuture<?> f){
-      if (isMini(f)) {
-        MiniFuture m=(MiniFuture)f;
-        return "[node=" + m.node().id() + ", loc="+ m.node().isLocal()+ ", done="+ f.isDone()+ "]";
+      if (f.getClass() == FinishMiniFuture.class) {
+        FinishMiniFuture fut=(FinishMiniFuture)f;
+        return "FinishFuture[node=" + fut.node().id() + ", loc="+ fut.node().isLocal()+ ", done="+ fut.isDone()+ "]";
+      }
+ else       if (f.getClass() == CheckBackupMiniFuture.class) {
+        CheckBackupMiniFuture fut=(CheckBackupMiniFuture)f;
+        return "CheckBackupFuture[node=" + fut.node().id() + ", loc="+ fut.node().isLocal()+ ", done="+ f.isDone()+ "]";
+      }
+ else       if (f.getClass() == CheckRemoteTxMiniFuture.class) {
+        CheckRemoteTxMiniFuture fut=(CheckRemoteTxMiniFuture)f;
+        return "CheckRemoteTxMiniFuture[nodes=" + fut.nodes() + ", done="+ f.isDone()+ "]";
       }
  else       return "[loc=true, done=" + f.isDone() + "]";
     }

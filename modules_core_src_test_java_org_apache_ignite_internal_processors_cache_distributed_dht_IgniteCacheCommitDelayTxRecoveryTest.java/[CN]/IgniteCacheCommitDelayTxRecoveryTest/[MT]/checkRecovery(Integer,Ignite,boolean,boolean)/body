@@ -1,0 +1,52 @@
+{
+  Ignite primary=primaryNode(key,null);
+  assertNotSame(ignite,primary);
+  List<Ignite> backups=backupNodes(key,null);
+  assertFalse(backups.isEmpty());
+  final Set<String> backupNames=new HashSet<>();
+  for (  Ignite node : backups)   backupNames.add(node.name());
+  log.info("Check recovery [key=" + key + ", pessimistic="+ pessimistic+ ", primary="+ primary.name()+ ", backups="+ backupNames+ ", node="+ ignite.name()+ ']');
+  final IgniteCache<Integer,Integer> cache=ignite.cache(null);
+  cache.put(key,0);
+  commitStartedLatch=new CountDownLatch(backupNames.size());
+  commitFinishLatch=new CountDownLatch(1);
+  commit=false;
+  TestEntryProcessor.skipFirst=useStore ? ignite.name() : null;
+  IgniteInternalFuture<?> fut=GridTestUtils.runAsync(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      log.info("Start update.");
+      if (pessimistic) {
+        try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+          cache.invoke(key,new TestEntryProcessor(backupNames));
+          commit=true;
+          log.info("Start commit.");
+          assertEquals(backupNames.size(),commitStartedLatch.getCount());
+          tx.commit();
+        }
+       }
+ else {
+        commit=true;
+        cache.invoke(key,new TestEntryProcessor(backupNames));
+      }
+      log.info("End update, execute get.");
+      Integer val=cache.get(key);
+      log.info("Get value: " + val);
+      assertEquals(1,(Object)val);
+      return null;
+    }
+  }
+,"update-thread");
+  assertTrue(commitStartedLatch.await(30,SECONDS));
+  log.info("Stop node: " + primary.name());
+  primary.close();
+  commitFinishLatch.countDown();
+  fut.get();
+  for (  Ignite node : G.allGrids())   assertEquals(1,node.cache(null).get(key));
+  cache.put(key,2);
+  for (  Ignite node : G.allGrids())   assertEquals(2,node.cache(null).get(key));
+  startGrid(primary.name());
+  for (  Ignite node : G.allGrids())   assertEquals(2,node.cache(null).get(key));
+  cache.put(key,3);
+  for (  Ignite node : G.allGrids())   assertEquals(3,node.cache(null).get(key));
+  awaitPartitionMapExchange();
+}

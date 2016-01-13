@@ -1,0 +1,12 @@
+{
+  readyNearMappingFromBackup(m);
+  Throwable err=res.checkCommittedError();
+  if (err != null) {
+    if (err instanceof IgniteCheckedException) {
+      ClusterTopologyCheckedException cause=((IgniteCheckedException)err).getCause(ClusterTopologyCheckedException.class);
+      if (cause != null)       cause.retryReadyFuture(cctx.nextAffinityReadyFuture(tx.topologyVersion()));
+    }
+    onDone(err);
+  }
+ else   onDone(tx);
+}
