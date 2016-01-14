@@ -2,18 +2,24 @@
   MessageReader reader=ses.meta(READER_META_KEY);
   if (reader == null)   ses.addMeta(READER_META_KEY,reader=readerFactory.reader(ses,msgFactory));
   Message msg=ses.removeMeta(MSG_META_KEY);
-  if (msg == null && buf.hasRemaining())   msg=msgFactory.create(buf.get());
-  boolean finished=false;
-  if (buf.hasRemaining()) {
-    if (reader != null)     reader.setCurrentReadClass(msg.getClass());
-    finished=msg.readFrom(buf,reader);
-  }
-  if (finished) {
-    if (reader != null)     reader.reset();
-    return msg;
-  }
+  try {
+    if (msg == null && buf.hasRemaining())     msg=msgFactory.create(buf.get());
+    boolean finished=false;
+    if (buf.hasRemaining()) {
+      if (reader != null)       reader.setCurrentReadClass(msg.getClass());
+      finished=msg.readFrom(buf,reader);
+    }
+    if (finished) {
+      if (reader != null)       reader.reset();
+      return msg;
+    }
  else {
-    ses.addMeta(MSG_META_KEY,msg);
-    return null;
+      ses.addMeta(MSG_META_KEY,msg);
+      return null;
+    }
+  }
+ catch (  Throwable e) {
+    U.error(log,"Failed to read message [msg=" + msg + ", buf="+ buf+ ", reader="+ reader+ ", ses="+ ses+ "]",e);
+    throw e;
   }
 }
