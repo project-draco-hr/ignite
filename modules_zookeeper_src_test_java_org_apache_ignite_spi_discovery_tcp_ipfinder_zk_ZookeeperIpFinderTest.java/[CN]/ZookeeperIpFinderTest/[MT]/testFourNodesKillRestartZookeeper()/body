@@ -1,5 +1,5 @@
 {
-  setAllowDuplicateRegistrations(false);
+  allowDuplicateRegistrations=false;
   System.setProperty(TcpDiscoveryZookeeperIpFinder.PROP_ZK_CONNECTION_STRING,zkCluster.getConnectString());
   startGrids(4);
   waitForRemoteNodes(grid(0),3);
@@ -12,6 +12,17 @@
   zkCurator.blockUntilConnected();
   assertEquals(4,zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size());
   stopAllGrids();
-  Thread.sleep(2000);
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      try {
+        return zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size() == 0;
+      }
+ catch (      Exception e) {
+        fail("Unexpected error: ");
+        return true;
+      }
+    }
+  }
+,5000);
   assertEquals(0,zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size());
 }

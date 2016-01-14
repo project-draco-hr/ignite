@@ -1,7 +1,10 @@
 {
   long threadId=Thread.currentThread().getId();
   AffinityTopologyVersion topVer=null;
-  if (tx.system())   topVer=tx.topologyVersionSnapshot();
+  if (tx.system()) {
+    topVer=tx.topologyVersionSnapshot();
+    if (topVer == null)     topVer=cctx.exchange().readyAffinityVersion();
+  }
   if (topVer == null)   topVer=cctx.mvcc().lastExplicitLockTopologyVersion(threadId);
   if (topVer == null && tx.system())   topVer=cctx.tm().lockedTopologyVersion(threadId,tx);
   if (topVer != null) {

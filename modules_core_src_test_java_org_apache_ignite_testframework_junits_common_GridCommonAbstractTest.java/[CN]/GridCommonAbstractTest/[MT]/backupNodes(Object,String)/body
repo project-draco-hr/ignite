@@ -1,0 +1,13 @@
+{
+  List<Ignite> allGrids=Ignition.allGrids();
+  assertFalse("There are no alive nodes.",F.isEmpty(allGrids));
+  Ignite ignite=allGrids.get(0);
+  Affinity<Object> aff=ignite.affinity(cacheName);
+  Collection<ClusterNode> nodes=aff.mapKeyToPrimaryAndBackups(key);
+  assertTrue("Expected more than one node for key [key=" + key + ", nodes="+ nodes+ ']',nodes.size() > 1);
+  Iterator<ClusterNode> it=nodes.iterator();
+  it.next();
+  List<Ignite> backups=new ArrayList<>(nodes.size() - 1);
+  while (it.hasNext())   backups.add(grid(it.next()));
+  return backups;
+}

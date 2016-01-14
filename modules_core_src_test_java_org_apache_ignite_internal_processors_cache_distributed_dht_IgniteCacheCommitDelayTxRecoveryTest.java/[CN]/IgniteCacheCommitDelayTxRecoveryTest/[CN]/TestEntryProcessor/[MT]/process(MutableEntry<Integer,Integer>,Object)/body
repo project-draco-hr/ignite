@@ -1,0 +1,24 @@
+{
+  Ignite ignite=entry.unwrap(Ignite.class);
+  System.out.println(Thread.currentThread().getName() + " process [node=" + ignite.name()+ ", commit="+ commit+ ", skipFirst="+ skipFirst+ ']');
+  boolean skip=false;
+  if (commit && ignite.name().equals(skipFirst)) {
+    skipFirst=null;
+    skip=true;
+  }
+  if (!skip && commit && nodeNames.contains(ignite.name())) {
+    try {
+      System.out.println(Thread.currentThread().getName() + " start process invoke.");
+      assertTrue(commitStartedLatch != null && commitStartedLatch.getCount() > 0);
+      commitStartedLatch.countDown();
+      assertTrue(commitFinishLatch.await(10,SECONDS));
+      System.out.println(Thread.currentThread().getName() + " end process invoke.");
+    }
+ catch (    InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+ else   System.out.println(Thread.currentThread().getName() + " invoke set value.");
+  entry.setValue(1);
+  return null;
+}
