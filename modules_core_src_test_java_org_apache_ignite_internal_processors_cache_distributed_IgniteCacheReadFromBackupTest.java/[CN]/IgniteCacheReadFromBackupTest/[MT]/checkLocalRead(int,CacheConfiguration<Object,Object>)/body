@@ -1,0 +1,17 @@
+{
+  for (int i=0; i < nodes; i++) {
+    Ignite ignite=ignite(i);
+    log.info("Check node: " + ignite.name());
+    IgniteCache<Integer,Integer> cache=ignite.cache(ccfg.getName());
+    List<Integer> backupKeys=backupKeys(cache,2,0);
+    Integer backupKey=backupKeys.get(0);
+    Integer nearKey=ccfg.getCacheMode() == PARTITIONED ? nearKey(cache) : null;
+    checkLocalRead(ignite,ccfg,backupKey,nearKey);
+    Set<Integer> keys=new HashSet<>(backupKeys);
+    Map<Integer,Integer> vals=cache.getAll(keys);
+    for (    Integer key : keys)     assertNull(vals.get(key));
+    TestRecordingCommunicationSpi spi=(TestRecordingCommunicationSpi)ignite.configuration().getCommunicationSpi();
+    List<Object> msgs=spi.recordedMessages();
+    assertEquals(0,msgs.size());
+  }
+}

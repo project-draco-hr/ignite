@@ -1,65 +1,27 @@
 {
-  GridDhtCacheAdapter<K,V> colocated=cache();
-  boolean remote=false;
-  boolean allowLocRead=(cctx.affinityNode() && !forcePrimary) || cctx.affinity().primary(cctx.localNode(),key,topVer);
-  while (true) {
-    GridCacheEntryEx entry;
-    try {
-      if (allowLocRead) {
-        try {
-          entry=colocated.context().isSwapOrOffheapEnabled() ? colocated.entryEx(key) : colocated.peekEx(key);
-          if (entry != null) {
-            boolean isNew=entry.isNewLocked();
-            CacheObject v=null;
-            GridCacheVersion ver=null;
-            if (needVer) {
-              T2<CacheObject,GridCacheVersion> res=entry.innerGetVersioned(null,true,true,false,!skipVals,subjId,null,taskName,expiryPlc,!deserializeBinary);
-              if (res != null) {
-                v=res.get1();
-                ver=res.get2();
-              }
-            }
- else {
-              v=entry.innerGet(null,true,false,true,true,false,!skipVals,false,subjId,null,taskName,expiryPlc,!deserializeBinary);
-            }
-            colocated.context().evicts().touch(entry,topVer);
-            if (v == null) {
-              if (isNew && entry.markObsoleteIfEmpty(ver))               colocated.removeIfObsolete(key);
-            }
- else {
-              if (needVer)               versionedResult(locVals,key,v,ver);
- else               cctx.addResult(locVals,key,v,skipVals,keepCacheObjects,deserializeBinary,true);
-              return false;
-            }
-          }
-        }
- catch (        GridDhtInvalidPartitionException ignored) {
-        }
-      }
-      ClusterNode node=affinityNode(key,topVer);
-      if (node == null) {
-        onDone(new ClusterTopologyServerNotFoundException("Failed to map keys for cache " + "(all partition nodes left the grid)."));
-        return false;
-      }
-      remote=!node.isLocal();
-      LinkedHashMap<KeyCacheObject,Boolean> keys=mapped.get(node);
-      if (keys != null && keys.containsKey(key)) {
-        if (REMAP_CNT_UPD.incrementAndGet(this) > MAX_REMAP_CNT) {
-          onDone(new ClusterTopologyCheckedException("Failed to remap key to a new node after " + MAX_REMAP_CNT + " attempts (key got remapped to the same node) [key="+ key+ ", node="+ U.toShortString(node)+ ", mappings="+ mapped+ ']'));
-          return false;
-        }
-      }
-      LinkedHashMap<KeyCacheObject,Boolean> old=mappings.get(node);
-      if (old == null)       mappings.put(node,old=new LinkedHashMap<>(3,1f));
-      old.put(key,false);
-      break;
-    }
- catch (    IgniteCheckedException e) {
-      onDone(e);
-      break;
-    }
-catch (    GridCacheEntryRemovedException ignored) {
+  int part=cctx.affinity().partition(key);
+  List<ClusterNode> affNodes=cctx.affinity().nodes(part,topVer);
+  if (affNodes.isEmpty()) {
+    onDone(serverNotFoundError(topVer));
+    return false;
+  }
+  boolean fastLocGet=(!forcePrimary || affNodes.get(0).isLocal()) && cctx.allowFastLocalRead(part,affNodes,topVer);
+  if (fastLocGet && localGet(key,part,locVals))   return false;
+  ClusterNode node=affinityNode(affNodes);
+  if (node == null) {
+    onDone(serverNotFoundError(topVer));
+    return false;
+  }
+  boolean remote=!node.isLocal();
+  LinkedHashMap<KeyCacheObject,Boolean> keys=mapped.get(node);
+  if (keys != null && keys.containsKey(key)) {
+    if (REMAP_CNT_UPD.incrementAndGet(this) > MAX_REMAP_CNT) {
+      onDone(new ClusterTopologyCheckedException("Failed to remap key to a new node after " + MAX_REMAP_CNT + " attempts (key got remapped to the same node) [key="+ key+ ", node="+ U.toShortString(node)+ ", mappings="+ mapped+ ']'));
+      return false;
     }
   }
+  LinkedHashMap<KeyCacheObject,Boolean> old=mappings.get(node);
+  if (old == null)   mappings.put(node,old=new LinkedHashMap<>(3,1f));
+  old.put(key,false);
   return remote;
 }

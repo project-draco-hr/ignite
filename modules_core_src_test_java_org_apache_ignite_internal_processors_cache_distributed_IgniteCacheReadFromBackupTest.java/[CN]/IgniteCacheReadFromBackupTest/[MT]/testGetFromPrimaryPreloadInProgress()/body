@@ -1,0 +1,50 @@
+{
+  for (  final CacheConfiguration<Object,Object> ccfg : cacheConfigurations()) {
+    boolean near=(ccfg.getNearConfiguration() != null);
+    log.info("Test cache [mode=" + ccfg.getCacheMode() + ", atomicity="+ ccfg.getAtomicityMode()+ ", backups="+ ccfg.getBackups()+ ", near="+ near+ "]");
+    ignite(0).createCache(ccfg);
+    awaitPartitionMapExchange();
+    try {
+      Map<Ignite,Integer> backupKeys=new HashMap<>();
+      Map<Ignite,Integer> nearKeys=new HashMap<>();
+      for (int i=0; i < NODES; i++) {
+        Ignite ignite=ignite(i);
+        IgniteCache<Integer,Integer> cache=ignite.cache(ccfg.getName());
+        backupKeys.put(ignite,backupKey(cache));
+        if (ccfg.getCacheMode() == PARTITIONED)         nearKeys.put(ignite,nearKey(cache));
+        TestRecordingCommunicationSpi spi=(TestRecordingCommunicationSpi)ignite.configuration().getCommunicationSpi();
+        spi.blockMessages(new IgnitePredicate<GridIoMessage>(){
+          @Override public boolean apply(          GridIoMessage ioMsg){
+            if (!ioMsg.message().getClass().equals(GridDhtPartitionSupplyMessageV2.class))             return false;
+            GridDhtPartitionSupplyMessageV2 msg=(GridDhtPartitionSupplyMessageV2)ioMsg.message();
+            return msg.cacheId() == CU.cacheId(ccfg.getName());
+          }
+        }
+);
+      }
+      try (Ignite newNode=startGrid(NODES)){
+        IgniteCache<Integer,Integer> cache=newNode.cache(ccfg.getName());
+        TestRecordingCommunicationSpi newNodeSpi=recordGetRequests(newNode,near);
+        Integer key=backupKey(cache);
+        assertNull(cache.get(key));
+        List<Object> msgs=newNodeSpi.recordedMessages();
+        assertEquals(1,msgs.size());
+        for (int i=0; i < NODES; i++) {
+          Ignite ignite=ignite(i);
+          log.info("Check node: " + ignite.name());
+          checkLocalRead(ignite,ccfg,backupKeys.get(ignite),nearKeys.get(ignite));
+        }
+        for (int i=0; i < NODES; i++) {
+          Ignite ignite=ignite(i);
+          TestRecordingCommunicationSpi spi=(TestRecordingCommunicationSpi)ignite.configuration().getCommunicationSpi();
+          spi.stopBlock();
+        }
+        awaitPartitionMapExchange();
+        checkLocalRead(NODES + 1,ccfg);
+      }
+     }
+  finally {
+      ignite(0).destroyCache(ccfg.getName());
+    }
+  }
+}
