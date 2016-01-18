@@ -1,0 +1,31 @@
+{
+  String cacheName="cache";
+  CacheConfiguration ccfg=new CacheConfiguration(cacheName);
+  ccfg.setBackups(1);
+  Ignite ig=ignite(0);
+  ig.createCache(ccfg);
+  try {
+    final IgniteServices svcs=ig.services();
+    final String svcName="myService";
+    svcs.deployKeyAffinitySingleton(svcName,new TestService(),cacheName,"key");
+    boolean res=GridTestUtils.waitForCondition(new PA(){
+      @Override public boolean apply(){
+        return svcs.service(svcName) != null;
+      }
+    }
+,10 * 1000);
+    assertTrue("Service was not deployed",res);
+    ig.destroyCache(cacheName);
+    res=GridTestUtils.waitForCondition(new PA(){
+      @Override public boolean apply(){
+        return svcs.service(svcName) == null;
+      }
+    }
+,10 * 1000);
+    assertTrue("Service was not undeployed",res);
+  }
+  finally {
+    ig.services().cancelAll();
+    ig.destroyCache(cacheName);
+  }
+}
