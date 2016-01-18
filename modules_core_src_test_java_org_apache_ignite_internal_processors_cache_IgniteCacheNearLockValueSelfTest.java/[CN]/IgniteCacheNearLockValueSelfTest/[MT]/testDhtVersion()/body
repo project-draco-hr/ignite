@@ -4,18 +4,17 @@
   try (IgniteCache<Object,Object> cache=ignite(0).getOrCreateCache(pCfg,new NearCacheConfiguration<>())){
     cache.put("key1","val1");
     for (int i=0; i < 3; i++) {
-      ((TestCommunicationSpi)ignite(0).configuration().getCommunicationSpi()).clear();
-      ((TestCommunicationSpi)ignite(1).configuration().getCommunicationSpi()).clear();
       try (Transaction tx=ignite(0).transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
         cache.get("key1");
         tx.commit();
       }
-       TestCommunicationSpi comm=(TestCommunicationSpi)ignite(0).configuration().getCommunicationSpi();
-      assertEquals(1,comm.requests().size());
+       TestRecordingCommunicationSpi comm=(TestRecordingCommunicationSpi)ignite(0).configuration().getCommunicationSpi();
+      Collection<GridNearLockRequest> reqs=(Collection)comm.recordedMessages();
+      assertEquals(1,reqs.size());
       GridCacheAdapter<Object,Object> primary=((IgniteKernal)grid(1)).internalCache("partitioned");
       GridCacheEntryEx dhtEntry=primary.peekEx(primary.context().toCacheKeyObject("key1"));
       assertNotNull(dhtEntry);
-      GridNearLockRequest req=comm.requests().iterator().next();
+      GridNearLockRequest req=reqs.iterator().next();
       assertEquals(dhtEntry.version(),req.dhtVersion(0));
       GridCacheAdapter<Object,Object> near=((IgniteKernal)grid(0)).internalCache("partitioned");
       GridNearCacheEntry nearEntry=(GridNearCacheEntry)near.peekEx(near.context().toCacheKeyObject("key1"));
