@@ -8,13 +8,7 @@
   if (!keepBinary && arg instanceof BinaryObjectImpl)   arg=((BinaryObject)arg).deserialize();
   Object res=compute0.execute(taskName,arg);
   if (async) {
-    curFut.set(compute0.future().chain(new C1<IgniteFuture,Object>(){
-      private static final long serialVersionUID=0L;
-      @Override public Object apply(      IgniteFuture fut){
-        return toBinary(fut.get());
-      }
-    }
-));
+    curFut.set(new ComputeConvertingFuture(compute0.future()));
     return null;
   }
  else   return toBinary(res);
