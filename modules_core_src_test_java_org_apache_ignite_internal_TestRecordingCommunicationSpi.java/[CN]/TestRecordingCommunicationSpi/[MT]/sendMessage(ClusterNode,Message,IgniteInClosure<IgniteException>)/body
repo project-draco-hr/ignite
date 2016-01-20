@@ -1,0 +1,23 @@
+{
+  if (msg instanceof GridIoMessage) {
+    GridIoMessage ioMsg=(GridIoMessage)msg;
+    Object msg0=ioMsg.message();
+synchronized (this) {
+      if (recordCls != null && msg0.getClass().equals(recordCls))       recordedMsgs.add(msg0);
+      boolean block=false;
+      if (blockP != null && blockP.apply(ioMsg))       block=true;
+ else {
+        Set<String> blockNodes=blockCls.get(msg0.getClass());
+        if (blockNodes != null) {
+          String nodeName=(String)node.attributes().get(ATTR_GRID_NAME);
+          block=blockNodes.contains(nodeName);
+        }
+      }
+      if (block) {
+        blockedMsgs.add(new T2<>(node,ioMsg));
+        return;
+      }
+    }
+  }
+  super.sendMessage(node,msg,ackC);
+}

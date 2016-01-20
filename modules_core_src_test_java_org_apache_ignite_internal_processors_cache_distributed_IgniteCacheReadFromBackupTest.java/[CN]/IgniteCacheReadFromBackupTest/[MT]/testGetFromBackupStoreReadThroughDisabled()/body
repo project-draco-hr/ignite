@@ -1,0 +1,16 @@
+{
+  for (  CacheConfiguration<Object,Object> ccfg : cacheConfigurations()) {
+    ccfg.setCacheStoreFactory(new TestStoreFactory());
+    ccfg.setReadThrough(false);
+    boolean near=(ccfg.getNearConfiguration() != null);
+    log.info("Test cache [mode=" + ccfg.getCacheMode() + ", atomicity="+ ccfg.getAtomicityMode()+ ", backups="+ ccfg.getBackups()+ ", near="+ near+ "]");
+    ignite(0).createCache(ccfg);
+    awaitPartitionMapExchange();
+    try {
+      checkLocalRead(NODES,ccfg);
+    }
+  finally {
+      ignite(0).destroyCache(ccfg.getName());
+    }
+  }
+}

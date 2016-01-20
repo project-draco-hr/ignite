@@ -1,0 +1,30 @@
+{
+  startGrids(3);
+  try {
+    IgniteEx ignite=grid(0);
+    IgniteCache<String,MyMap> cache=ignite.cache("cache");
+    Set<String> keys=new HashSet<>();
+    for (int i=0; i < 100; i++) {
+      String key="a" + i;
+      ;
+      MyMap map=new MyMap();
+      map.put("a",new Value());
+      cache.put(key,map);
+      map=cache.get(key);
+      keys.add(key);
+      Object a=map.get("a");
+      assertNotNull(a);
+      assertEquals(Value.class,a.getClass());
+    }
+    Map<String,MyMap> vals=cache.getAll(keys);
+    for (    String key : keys) {
+      MyMap map=vals.get(key);
+      Object a=map.get("a");
+      assertNotNull(a);
+      assertEquals(Value.class,a.getClass());
+    }
+  }
+  finally {
+    stopAllGrids();
+  }
+}

@@ -7,16 +7,26 @@
       return;
     }
     Connection conn=null;
-    Statement stmt=null;
     boolean committed=false;
     try {
       conn=dataSrc.getConnection();
       conn.setAutoCommit(false);
       conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
-      stmt=conn.createStatement();
-      stmt.executeUpdate(CREATE_ADDRS_TABLE_QRY);
-      conn.commit();
-      committed=true;
+      DatabaseMetaData dbm=conn.getMetaData();
+      try (ResultSet tables=dbm.getTables(null,null,ADDRS_TABLE_NAME,null)){
+        if (!tables.next()) {
+          try (Statement stmt=conn.createStatement()){
+            stmt.executeUpdate(CREATE_ADDRS_TABLE_QRY);
+            conn.commit();
+          }
+ catch (          SQLException e) {
+            try (ResultSet tablesAgain=dbm.getTables(null,null,ADDRS_TABLE_NAME,null)){
+              if (!tablesAgain.next())               throw e;
+            }
+           }
+        }
+      }
+       committed=true;
       if (log.isDebugEnabled())       log.debug("DB schema has been initialized.");
     }
  catch (    SQLException e) {
@@ -25,7 +35,6 @@
     }
  finally {
       if (!committed)       U.rollbackConnectionQuiet(conn);
-      U.closeQuiet(stmt);
       U.closeQuiet(conn);
       initLatch.countDown();
     }

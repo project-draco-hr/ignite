@@ -1,0 +1,30 @@
+{
+  checkTopologyVersion(new AffinityTopologyVersion(NODES,0));
+  int minorVer=0;
+  for (int i=0; i < 5; i++) {
+    log.info("Iteration: " + i);
+    GridTestUtils.runMultiThreaded(new IgniteInClosure<Integer>(){
+      @Override public void apply(      Integer idx){
+        Ignite ignite=ignite(idx);
+        ignite.getOrCreateCache(new CacheConfiguration<>());
+      }
+    }
+,NODES,"cache-thread");
+    minorVer++;
+    checkTopologyVersion(new AffinityTopologyVersion(NODES,minorVer));
+    ignite(0).compute().affinityRun(null,1,new IgniteRunnable(){
+      @Override public void run(){
+      }
+    }
+);
+    GridTestUtils.runMultiThreaded(new IgniteInClosure<Integer>(){
+      @Override public void apply(      Integer idx){
+        Ignite ignite=ignite(idx);
+        ignite.destroyCache(null);
+      }
+    }
+,NODES,"cache-thread");
+    minorVer++;
+    checkTopologyVersion(new AffinityTopologyVersion(NODES,minorVer));
+  }
+}

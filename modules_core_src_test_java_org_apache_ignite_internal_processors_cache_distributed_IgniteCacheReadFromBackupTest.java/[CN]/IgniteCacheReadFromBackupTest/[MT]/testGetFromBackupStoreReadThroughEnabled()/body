@@ -1,0 +1,25 @@
+{
+  for (  CacheConfiguration<Object,Object> ccfg : cacheConfigurations()) {
+    ccfg.setCacheStoreFactory(new TestStoreFactory());
+    ccfg.setReadThrough(true);
+    boolean near=(ccfg.getNearConfiguration() != null);
+    log.info("Test cache [mode=" + ccfg.getCacheMode() + ", atomicity="+ ccfg.getAtomicityMode()+ ", backups="+ ccfg.getBackups()+ ", near="+ near+ "]");
+    ignite(0).createCache(ccfg);
+    awaitPartitionMapExchange();
+    try {
+      for (int i=0; i < NODES; i++) {
+        Ignite ignite=ignite(i);
+        log.info("Check node: " + ignite.name());
+        IgniteCache<Integer,Integer> cache=ignite.cache(ccfg.getName());
+        TestRecordingCommunicationSpi spi=recordGetRequests(ignite,near);
+        Integer key=backupKey(cache);
+        assertNull(cache.get(key));
+        List<Object> msgs=spi.recordedMessages();
+        assertEquals(1,msgs.size());
+      }
+    }
+  finally {
+      ignite(0).destroyCache(ccfg.getName());
+    }
+  }
+}

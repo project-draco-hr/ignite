@@ -1,0 +1,14 @@
+{
+  if (stopped)   return;
+  if (!(tuple.getValueByField(igniteTupleField) instanceof Map))   throw new IgniteException("Map as a streamer input is expected!");
+  final Map<K,V> gridVals=(Map<K,V>)tuple.getValueByField(igniteTupleField);
+  try {
+    if (log.isDebugEnabled())     log.debug("Tuple (id:" + tuple.getMessageId() + ") from storm: "+ gridVals);
+    getStreamer().addData(gridVals);
+    collector.ack(tuple);
+  }
+ catch (  Exception e) {
+    log.error("Error while processing tuple of " + gridVals,e);
+    collector.fail(tuple);
+  }
+}

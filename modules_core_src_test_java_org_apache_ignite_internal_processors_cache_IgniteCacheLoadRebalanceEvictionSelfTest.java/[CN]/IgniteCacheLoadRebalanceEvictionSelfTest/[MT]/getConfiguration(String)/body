@@ -1,0 +1,22 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setIpFinder(IP_FINDER);
+  cfg.setDiscoverySpi(discoSpi);
+  LruEvictionPolicy evictionPolicy=new LruEvictionPolicy<>();
+  evictionPolicy.setMaxSize(LRU_MAX_SIZE);
+  CacheConfiguration<String,byte[]> cacheCfg=new CacheConfiguration<>();
+  cacheCfg.setAtomicityMode(CacheAtomicityMode.ATOMIC);
+  cacheCfg.setEvictSynchronized(false);
+  cacheCfg.setCacheMode(CacheMode.PARTITIONED);
+  cacheCfg.setBackups(1);
+  cacheCfg.setReadFromBackup(true);
+  cacheCfg.setEvictionPolicy(evictionPolicy);
+  cacheCfg.setOffHeapMaxMemory(1024 * 1024 * 1024L);
+  cacheCfg.setStatisticsEnabled(true);
+  cacheCfg.setWriteThrough(false);
+  cacheCfg.setReadThrough(false);
+  cacheCfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory(new Storage()));
+  cfg.setCacheConfiguration(cacheCfg);
+  return cfg;
+}
