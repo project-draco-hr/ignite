@@ -1,11 +1,16 @@
 {
-  Collection<IgniteInternalFuture<?>> futs=new ArrayList<>();
   Iterator<Cache.Entry<Object,Object>> it=serviceEntries(ServiceDeploymentPredicate.INSTANCE);
+  GridCompoundFuture res=null;
   while (it.hasNext()) {
     Cache.Entry<Object,Object> e=it.next();
     if (!(e.getKey() instanceof GridServiceDeploymentKey))     continue;
     GridServiceDeployment dep=(GridServiceDeployment)e.getValue();
-    futs.add(cancel(dep.configuration().getName()));
+    if (res == null)     res=new GridCompoundFuture<>();
+    res.add(cancel(dep.configuration().getName()));
   }
-  return futs.isEmpty() ? new GridFinishedFuture<>() : new GridCompoundFuture(null,futs);
+  if (res != null) {
+    res.markInitialized();
+    return res;
+  }
+ else   return new GridFinishedFuture<>();
 }
