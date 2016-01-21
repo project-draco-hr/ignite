@@ -24,7 +24,14 @@
   evictCfg=VisorCacheEvictionConfiguration.from(ccfg);
   nearCfg=VisorCacheNearConfiguration.from(ccfg);
   dfltCfg=VisorCacheDefaultConfiguration.from(ccfg);
-  storeCfg=new VisorCacheStoreConfiguration().from(ignite,ccfg);
-  qryCfg=new VisorCacheQueryConfiguration().from(ccfg);
+  boolean compatibility=false;
+  for (  org.apache.ignite.cluster.ClusterNode node : ignite.cluster().nodes()) {
+    if (node.version().compareToIgnoreTimestamp(VER_1_4_1) <= 0) {
+      compatibility=true;
+      break;
+    }
+  }
+  storeCfg=(compatibility ? new VisorCacheStoreConfiguration() : new VisorCacheStoreConfigurationV2()).from(ignite,ccfg);
+  qryCfg=(compatibility ? new VisorCacheQueryConfiguration() : new VisorCacheQueryConfigurationV2()).from(ccfg);
   return this;
 }
