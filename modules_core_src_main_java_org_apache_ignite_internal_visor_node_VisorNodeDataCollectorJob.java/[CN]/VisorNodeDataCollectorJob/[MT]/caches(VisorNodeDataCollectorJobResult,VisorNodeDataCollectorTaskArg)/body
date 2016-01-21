@@ -6,7 +6,14 @@
       if (arg.systemCaches() || !(isSystemCache(cacheName) || isIgfsCache(cfg,cacheName))) {
         long start0=U.currentTimeMillis();
         try {
-          VisorCache cache=new VisorCacheV2().from(ignite,cacheName,arg.sample());
+          boolean compatibility=false;
+          for (          ClusterNode node : ignite.cluster().nodes()) {
+            if (node.version().compareToIgnoreTimestamp(VER_1_4_1) <= 0) {
+              compatibility=true;
+              break;
+            }
+          }
+          VisorCache cache=(compatibility ? new VisorCache() : new VisorCacheV2()).from(ignite,cacheName,arg.sample());
           if (cache != null)           res.caches().add(cache);
         }
  catch (        IllegalStateException|IllegalArgumentException e) {
