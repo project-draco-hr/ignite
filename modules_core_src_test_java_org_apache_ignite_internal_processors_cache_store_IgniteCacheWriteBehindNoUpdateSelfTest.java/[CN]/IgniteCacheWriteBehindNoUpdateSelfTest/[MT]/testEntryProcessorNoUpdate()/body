@@ -1,0 +1,16 @@
+{
+  IgniteCache<Object,Object> cache=ignite(0).cache(THROTTLES_CACHE_NAME);
+  IgniteCache<Object,Object> skipStore=cache.withSkipStore();
+  int entryCnt=500;
+  Set<String> keys=new HashSet<>();
+  for (int i=0; i < entryCnt; i++) {
+    skipStore.put(String.valueOf(i),i);
+    keys.add(String.valueOf(i));
+  }
+  TestCacheStore testStore=(TestCacheStore)grid(0).context().cache().cache(THROTTLES_CACHE_NAME).context().store().configuredStore();
+  assertEquals(0,testStore.writeCnt.get());
+  cache.invokeAll(keys,new NoOpEntryProcessor());
+  assertEquals(0,testStore.writeCnt.get());
+  cache.invokeAll(keys,new OpEntryProcessor());
+  assertEquals(1,testStore.writeCnt.get());
+}

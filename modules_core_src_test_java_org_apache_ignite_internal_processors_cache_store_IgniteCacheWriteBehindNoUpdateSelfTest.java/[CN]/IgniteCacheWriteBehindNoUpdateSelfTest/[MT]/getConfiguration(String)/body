@@ -1,0 +1,17 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  CacheConfiguration<String,Long> ccfg=new CacheConfiguration<>();
+  ccfg.setAtomicityMode(CacheAtomicityMode.ATOMIC);
+  ccfg.setCacheMode(CacheMode.PARTITIONED);
+  ccfg.setBackups(1);
+  ccfg.setReadFromBackup(true);
+  ccfg.setCopyOnRead(false);
+  ccfg.setName(THROTTLES_CACHE_NAME);
+  Duration expiryDuration=new Duration(TimeUnit.MINUTES,1);
+  ccfg.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(expiryDuration));
+  ccfg.setReadThrough(false);
+  ccfg.setWriteThrough(true);
+  ccfg.setCacheStoreFactory(new FactoryBuilder.SingletonFactory<>(new TestCacheStore()));
+  cfg.setCacheConfiguration(ccfg);
+  return cfg;
+}
