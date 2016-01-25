@@ -1,2 +1,35 @@
 {
+  OutputFormat outputFormat=null;
+  Exception err=null;
+  JobContextImpl jobCtx=taskCtx.jobContext();
+  try {
+    InputSplit nativeSplit=hadoopContext().getInputSplit();
+    if (nativeSplit == null)     throw new IgniteCheckedException("Input split cannot be null.");
+    InputFormat inFormat=ReflectionUtils.newInstance(jobCtx.getInputFormatClass(),hadoopContext().getConfiguration());
+    RecordReader reader=inFormat.createRecordReader(nativeSplit,hadoopContext());
+    reader.initialize(nativeSplit,hadoopContext());
+    hadoopContext().reader(reader);
+    HadoopJobInfo jobInfo=taskCtx.job().info();
+    outputFormat=jobInfo.hasCombiner() || jobInfo.hasReducer() ? null : prepareWriter(jobCtx);
+    Mapper mapper=ReflectionUtils.newInstance(jobCtx.getMapperClass(),hadoopContext().getConfiguration());
+    try {
+      mapper.run(new WrappedMapper().getMapContext(hadoopContext()));
+    }
+  finally {
+      closeWriter();
+    }
+    commit(outputFormat);
+  }
+ catch (  InterruptedException e) {
+    err=e;
+    Thread.currentThread().interrupt();
+    throw new IgniteInterruptedCheckedException(e);
+  }
+catch (  Exception e) {
+    err=e;
+    throw new IgniteCheckedException(e);
+  }
+ finally {
+    if (err != null)     abort(outputFormat);
+  }
 }
