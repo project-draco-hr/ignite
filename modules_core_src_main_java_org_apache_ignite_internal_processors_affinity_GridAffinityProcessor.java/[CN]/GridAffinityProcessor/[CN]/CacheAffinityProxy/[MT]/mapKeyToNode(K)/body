@@ -1,7 +1,10 @@
 {
+  A.notNull(key,"key");
   ctx.gateway().readLock();
   try {
-    return GridAffinityProcessor.this.mapKeyToNode(cacheName,key);
+    AffinityInfo affInfo=cache();
+    Map<ClusterNode,Collection<K>> map=affinityMap(affInfo,Collections.singletonList(key));
+    return F.first(map.keySet());
   }
  catch (  IgniteCheckedException e) {
     throw new IgniteException(e);
