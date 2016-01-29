@@ -1,5 +1,11 @@
 {
   A.notNull(key,"key");
-  if (key instanceof CacheObject && !(key instanceof BinaryObject))   key=((CacheObject)key).value(cctx.cacheObjectContext(),false);
-  return cctx.config().getAffinityMapper().affinityKey(key);
+  if (key instanceof CacheObject && !(key instanceof BinaryObject)) {
+    CacheObjectContext ctx=cctx.cacheObjectContext();
+    if (ctx == null)     throw new IgniteException(FAILED_TO_FIND_CACHE_ERR_MSG + cctx.name());
+    key=((CacheObject)key).value(ctx,false);
+  }
+  CacheConfiguration ccfg=cctx.config();
+  if (ccfg == null)   throw new IgniteException(FAILED_TO_FIND_CACHE_ERR_MSG + cctx.name());
+  return ccfg.getAffinityMapper().affinityKey(key);
 }

@@ -1,0 +1,23 @@
+{
+  System.out.println();
+  System.out.println("--------------------");
+  System.out.println("IGNITE BENCHMARK INFO: ");
+  System.out.println("\tclient mode:                " + booleanProperty(PROP_CLIENT_MODE));
+  System.out.println("\tdata nodes:                 " + intProperty(PROP_DATA_NODES,DFLT_DATA_NODES));
+  System.out.println("\tbackups:                    " + intProperty(PROP_BACKUPS));
+  System.out.println("\tatomicity mode:             " + enumProperty(PROP_ATOMICITY_MODE,CacheAtomicityMode.class));
+  System.out.println("\twrite synchronization mode: " + enumProperty(PROP_WRITE_SYNC_MODE,CacheWriteSynchronizationMode.class));
+  System.out.println("--------------------");
+  System.out.println();
+  int nodesCnt=intProperty(PROP_DATA_NODES,DFLT_DATA_NODES);
+  A.ensure(nodesCnt >= 1,"nodesCnt >= 1");
+  node=Ignition.start(configuration("node0"));
+  for (int i=1; i < nodesCnt; i++)   Ignition.start(configuration("node" + i));
+  boolean isClient=booleanProperty(PROP_CLIENT_MODE);
+  if (isClient) {
+    IgniteConfiguration clientCfg=configuration("client");
+    clientCfg.setClientMode(true);
+    node=Ignition.start(clientCfg);
+  }
+  cache=node.cache(null);
+}
