@@ -5,14 +5,13 @@
   Map<ClusterNode,Collection<K>> res=new HashMap<>(nodesCnt,1.0f);
   for (  K key : keys) {
     ClusterNode primary=cctx.affinity().primary(key,topVer);
-    if (primary != null) {
-      Collection<K> mapped=res.get(primary);
-      if (mapped == null) {
-        mapped=new ArrayList<>(Math.max(keys.size() / nodesCnt,16));
-        res.put(primary,mapped);
-      }
-      mapped.add(key);
+    if (primary == null)     throw new IgniteException("Failed to get primare node [topVer=" + topVer + ", key="+ key+ ']');
+    Collection<K> mapped=res.get(primary);
+    if (mapped == null) {
+      mapped=new ArrayList<>(Math.max(keys.size() / nodesCnt,16));
+      res.put(primary,mapped);
     }
+    mapped.add(key);
   }
   return res;
 }
