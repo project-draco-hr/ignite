@@ -10,7 +10,7 @@
     kafkaStmr.setStreamer(stmr);
     kafkaStmr.setTopic(topic);
     kafkaStmr.setThreads(4);
-    kafkaStmr.setConsumerConfig(createDefaultConsumerConfig(getZKAddress(),"groupX"));
+    kafkaStmr.setConsumerConfig(createDefaultConsumerConfig(embeddedBroker.getZookeeperAddress(),"groupX"));
     StringDecoder strDecoder=new StringDecoder(new VerifiableProperties());
     kafkaStmr.setKeyDecoder(strDecoder);
     kafkaStmr.setValueDecoder(strDecoder);
@@ -24,7 +24,7 @@
     }
 ;
     ignite.events(ignite.cluster().forCacheNodes(null)).remoteListen(locLsnr,null,EVT_CACHE_OBJECT_PUT);
-    latch.await();
+    assertTrue(latch.await(10,TimeUnit.SECONDS));
     for (    Map.Entry<String,String> entry : keyValMap.entrySet())     assertEquals(entry.getValue(),cache.get(entry.getKey()));
   }
   finally {
