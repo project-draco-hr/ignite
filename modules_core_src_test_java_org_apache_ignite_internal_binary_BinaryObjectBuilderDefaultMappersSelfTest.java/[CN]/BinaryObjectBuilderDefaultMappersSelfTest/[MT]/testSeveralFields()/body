@@ -1,0 +1,20 @@
+{
+  BinaryObjectBuilder builder=builder("Class");
+  builder.hashCode(100);
+  builder.setField("i",111);
+  builder.setField("f",111.111f);
+  builder.setField("iArr",new int[]{1,2,3});
+  builder.setField("obj",new Key(1));
+  builder.setField("col",Arrays.asList(new Value(1),new Value(2)));
+  BinaryObject po=builder.build();
+  assertEquals(expectedHashCode("Class"),po.type().typeId());
+  assertEquals(100,po.hashCode());
+  assertEquals(111,po.<Integer>field("i").intValue());
+  assertEquals(111.111f,po.<Float>field("f").floatValue(),0);
+  assertTrue(Arrays.equals(new int[]{1,2,3},po.<int[]>field("iArr")));
+  assertEquals(1,po.<BinaryObject>field("obj").<Key>deserialize().i);
+  List<BinaryObject> list=po.field("col");
+  assertEquals(2,list.size());
+  assertEquals(1,list.get(0).<Value>deserialize().i);
+  assertEquals(2,list.get(1).<Value>deserialize().i);
+}

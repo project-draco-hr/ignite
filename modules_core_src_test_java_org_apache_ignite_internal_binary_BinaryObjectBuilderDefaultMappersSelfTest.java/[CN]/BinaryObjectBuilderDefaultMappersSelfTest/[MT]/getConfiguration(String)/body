@@ -1,0 +1,23 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  BinaryTypeConfiguration customTypeCfg=new BinaryTypeConfiguration();
+  customTypeCfg.setTypeName(CustomIdMapper.class.getName());
+  customTypeCfg.setIdMapper(new BinaryIdMapper(){
+    @Override public int typeId(    String clsName){
+      return ~BinaryContext.defaultIdMapper().typeId(clsName);
+    }
+    @Override public int fieldId(    int typeId,    String fieldName){
+      return typeId + ~BinaryContext.defaultIdMapper().fieldId(typeId,fieldName);
+    }
+  }
+);
+  BinaryConfiguration bCfg=new BinaryConfiguration();
+  bCfg.setCompactFooter(compactFooter());
+  bCfg.setTypeConfigurations(Arrays.asList(new BinaryTypeConfiguration(Key.class.getName()),new BinaryTypeConfiguration(Value.class.getName()),new BinaryTypeConfiguration("org.gridgain.grid.internal.util.binary.mutabletest.*"),customTypeCfg));
+  bCfg.setIdMapper(new BinaryBasicIdMapper(false));
+  bCfg.setNameMapper(new BinaryBasicNameMapper(false));
+  cfg.setBinaryConfiguration(bCfg);
+  cfg.setMarshaller(new BinaryMarshaller());
+  this.cfg=cfg;
+  return cfg;
+}

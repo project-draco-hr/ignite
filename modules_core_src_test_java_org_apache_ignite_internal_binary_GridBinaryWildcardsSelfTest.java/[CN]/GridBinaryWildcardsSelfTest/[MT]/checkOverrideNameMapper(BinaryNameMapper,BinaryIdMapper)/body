@@ -1,0 +1,22 @@
+{
+  BinaryTypeConfiguration typeCfg=new BinaryTypeConfiguration();
+  typeCfg.setTypeName(CLASS2_FULL_NAME);
+  typeCfg.setNameMapper(new BinaryNameMapper(){
+    @Override public String typeName(    String clsName){
+      return "type2";
+    }
+    @Override public String fieldName(    String fieldName){
+      return "field2";
+    }
+  }
+);
+  BinaryMarshaller marsh=binaryMarshaller(nameMapper,mapper,Arrays.asList(new BinaryTypeConfiguration("org.apache.ignite.internal.binary.test.*"),typeCfg));
+  BinaryContext ctx=binaryContext(marsh);
+  Map<Integer,Class> typeIds=U.field(ctx,"userTypes");
+  assertEquals(3,typeIds.size());
+  assertTrue(typeIds.containsKey(typeId(CLASS1_FULL_NAME,nameMapper,mapper)));
+  assertTrue(typeIds.containsKey(typeId(INNER_CLASS_FULL_NAME,nameMapper,mapper)));
+  assertTrue(typeIds.containsKey("type2".hashCode()));
+  Map<String,org.apache.ignite.internal.binary.BinaryInternalMapper> typeMappers=U.field(ctx,"cls2Mappers");
+  assertEquals("type2",typeMappers.get(CLASS2_FULL_NAME).nameMapper().typeName(CLASS2_FULL_NAME));
+}

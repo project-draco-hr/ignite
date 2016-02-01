@@ -1,0 +1,20 @@
+{
+  BinaryMarshaller marsh=binaryMarshaller(null,new BinaryIdMapper(){
+    @SuppressWarnings("IfMayBeConditional") @Override public int typeId(    String clsName){
+      if (clsName.endsWith("1"))       return 300;
+ else       if (clsName.endsWith("2"))       return 400;
+ else       if (clsName.endsWith("InnerClass"))       return 500;
+ else       return -500;
+    }
+    @Override public int fieldId(    int typeId,    String fieldName){
+      return 0;
+    }
+  }
+,Arrays.asList(new BinaryTypeConfiguration("org.apache.ignite.internal.binary.test.*"),new BinaryTypeConfiguration("unknown.*")));
+  BinaryContext ctx=binaryContext(marsh);
+  Map<String,org.apache.ignite.internal.binary.BinaryInternalMapper> typeMappers=U.field(ctx,"cls2Mappers");
+  assertEquals(3,typeMappers.size());
+  assertEquals(300,typeMappers.get(CLASS1_FULL_NAME).idMapper().typeId(CLASS1_FULL_NAME));
+  assertEquals(400,typeMappers.get(CLASS2_FULL_NAME).idMapper().typeId(CLASS2_FULL_NAME));
+  assertEquals(500,typeMappers.get(INNER_CLASS_FULL_NAME).idMapper().typeId(INNER_CLASS_FULL_NAME));
+}

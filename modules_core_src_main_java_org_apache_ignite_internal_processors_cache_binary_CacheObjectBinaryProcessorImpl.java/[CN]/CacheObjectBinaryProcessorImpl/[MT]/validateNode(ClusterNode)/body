@@ -1,0 +1,14 @@
+{
+  IgniteNodeValidationResult res=super.validateNode(rmtNode);
+  if (res != null)   return res;
+  if (getBoolean(IGNITE_SKIP_CONFIGURATION_CONSISTENCY_CHECK) || !(marsh instanceof BinaryMarshaller))   return null;
+  Object rmtBinaryCfg=rmtNode.attribute(IgniteNodeAttributes.ATTR_BINARY_CONFIGURATION);
+  if (rmtNode.version().compareTo(BINARY_CFG_CHECK_SINCE) < 0)   return null;
+  ClusterNode locNode=ctx.discovery().localNode();
+  Object locBinaryCfg=locNode.attribute(IgniteNodeAttributes.ATTR_BINARY_CONFIGURATION);
+  if (!F.eq(locBinaryCfg,rmtBinaryCfg)) {
+    String msg="Local node's binary configuration is not equal to remote node's binary configuration " + "[locNodeId=%s, rmtNodeId=%s, locBinaryCfg=%s, rmtBinaryCfg=%s]";
+    return new IgniteNodeValidationResult(rmtNode.id(),String.format(msg,locNode.id(),rmtNode.id(),locBinaryCfg,rmtBinaryCfg),String.format(msg,rmtNode.id(),locNode.id(),rmtBinaryCfg,locBinaryCfg));
+  }
+  return null;
+}

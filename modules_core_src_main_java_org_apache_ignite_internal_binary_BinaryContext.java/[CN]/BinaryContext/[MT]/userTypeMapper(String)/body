@@ -1,0 +1,10 @@
+{
+  BinaryInternalMapper mapper=cls2Mappers.get(clsName);
+  if (mapper != null)   return mapper;
+  mapper=resolveMapper(clsName,igniteCfg.getBinaryConfiguration());
+  BinaryInternalMapper prevMap=cls2Mappers.putIfAbsent(clsName,mapper);
+  if (prevMap != null && !mapper.equals(prevMap))   throw new IgniteException("Different mappers [clsName=" + clsName + ", newMapper="+ mapper+ ", prevMap="+ prevMap+ "]");
+  prevMap=typeId2Mapper.putIfAbsent(mapper.typeId(clsName),mapper);
+  if (prevMap != null && !mapper.equals(prevMap))   throw new IgniteException("Different mappers [clsName=" + clsName + ", newMapper="+ mapper+ ", prevMap="+ prevMap+ "]");
+  return mapper;
+}
