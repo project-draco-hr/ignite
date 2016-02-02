@@ -1,0 +1,43 @@
+{
+  try {
+    Ignite g1=startGrid(1);
+    if (g1.configuration().getMarshaller() instanceof BinaryMarshaller) {
+      stopAllGrids();
+      needStore=true;
+      g1=startGrid(1);
+      ClassLoader ldr=grid(1).configuration().getClassLoader();
+      CacheConfiguration cfg=defaultCacheConfiguration();
+      Ignite g2=startGrid(2);
+      isClient=true;
+      Ignite g3=startGrid(3);
+      isClient=false;
+      IgniteCache<Integer,Object> cache1=g1.cache(null);
+      IgniteCache<Integer,Object> cache2=g2.cache(null);
+      IgniteCache<Integer,Object> cache3=g3.cache(null);
+      cache1.put(1,1);
+      assertEquals(1,cache2.get(1));
+      assertEquals(1,cache3.get(1));
+      needStore=false;
+      stopAllGrids();
+      g1=startGrid(1);
+      g2=startGrid(2);
+      isClient=true;
+      g3=startGrid(3);
+      isClient=false;
+      Object sf=ldr.loadClass("org.apache.ignite.tests.p2p.CacheDeploymentTestStoreFactory").newInstance();
+      cfg.setCacheStoreFactory((Factory)sf);
+      cfg.setName("customStore");
+      cache1=g1.createCache(cfg);
+      cache2=g2.getOrCreateCache(cfg);
+      cache3=g3.getOrCreateCache(cfg);
+      cache1.put(1,1);
+      assertEquals(1,cache2.get(1));
+      assertEquals(1,cache3.get(1));
+    }
+  }
+  finally {
+    needStore=false;
+    isClient=false;
+    stopAllGrids();
+  }
+}
