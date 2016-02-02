@@ -1,10 +1,11 @@
 {
-  this.cfg=igniteCfg;
+  cfg=igniteCfg;
   try (PlatformMemory outMem=memMgr.allocate()){
     try (PlatformMemory inMem=memMgr.allocate()){
       PlatformOutputStream out=outMem.output();
-      BinaryRawWriterEx writer=marshaller().writer(out);
-      PlatformUtils.writeDotNetConfiguration(writer,interopCfg.unwrap());
+      GridBinaryMarshaller marshaller=PlatformUtils.marshaller();
+      BinaryRawWriterEx writer=marshaller.writer(out);
+      PlatformConfigurationUtils.writeDotNetConfiguration(writer,interopCfg.unwrap());
       List<PlatformDotNetLifecycleBean> beans=beans(igniteCfg);
       writer.writeInt(beans.size());
       for (      PlatformDotNetLifecycleBean bean : beans) {
@@ -13,7 +14,7 @@
       }
       out.synchronize();
       gate.extensionCallbackInLongLongOutLong(PlatformUtils.OP_PREPARE_DOT_NET,outMem.pointer(),inMem.pointer());
-      processPrepareResult(inMem.input());
+      processPrepareResult(marshaller.reader(inMem.input()));
     }
    }
  }
