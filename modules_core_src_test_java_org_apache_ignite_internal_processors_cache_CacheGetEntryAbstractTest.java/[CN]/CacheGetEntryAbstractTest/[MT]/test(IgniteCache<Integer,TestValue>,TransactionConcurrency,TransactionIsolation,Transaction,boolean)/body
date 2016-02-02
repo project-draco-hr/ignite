@@ -1,0 +1,52 @@
+{
+  if (tx == null) {
+    Set<Integer> keys=createdBeforeTxKeys();
+    for (    int i : keys)     checkData(cache,i,oneEntry,null,keys);
+    keys=createdBeforeTxWithBinaryKeys();
+    for (    int i : keys)     checkBinaryData(cache,i,oneEntry,null,keys);
+    for (    int i : removedBeforeTxKeys())     checkRemoved(cache,i,oneEntry);
+    for (    int i : removedBeforeTxWithBinaryKeys())     checkBinaryRemoved(cache,i,oneEntry);
+  }
+ else {
+    Set<Integer> keys=createdBeforeTxKeys2();
+    for (    int i : keys) {
+      checkData(cache,i,oneEntry,null,keys);
+      checkData(cache,i,oneEntry,null,keys);
+    }
+    keys=createdBeforeTxWithBinaryKeys2();
+    for (    int i : keys) {
+      checkBinaryData(cache,i,oneEntry,null,keys);
+      checkBinaryData(cache,i,oneEntry,null,keys);
+    }
+    String verGetErr=null;
+    if (txConcurrency == OPTIMISTIC && txIsolation == REPEATABLE_READ)     verGetErr=ENTRY_AFTER_GET_ERR;
+    keys=createdBeforeTxKeys3();
+    for (    int i : keys) {
+      if (oneEntry)       cache.get(i);
+ else {
+        Set<Integer> set=new HashSet<>();
+        for (int j=0; j < 10; j++)         set.add(i + j);
+        cache.getAll(set);
+      }
+      checkData(cache,i,oneEntry,verGetErr,keys);
+    }
+    keys=createdBeforeTxWithBinaryKeys3();
+    for (    int i : keys) {
+      if (oneEntry)       cache.get(i);
+ else {
+        Set<Integer> set=new HashSet<>();
+        for (int j=0; j < 10; j++)         set.add(i + j);
+        cache.getAll(set);
+      }
+      checkBinaryData(cache,i,oneEntry,verGetErr,keys);
+    }
+    keys=createdAtTxKeys();
+    for (    int i : keys)     checkData(cache,i,oneEntry,UPDATED_ENTRY_ERR,keys);
+    keys=createdAtTxWithBinaryKeys();
+    for (    int i : keys)     checkBinaryData(cache,i,oneEntry,UPDATED_ENTRY_ERR,keys);
+    for (    int i : removedBeforeTxKeys())     checkRemoved(cache,i,oneEntry);
+    for (    int i : removedBeforeTxWithBinaryKeys())     checkBinaryRemoved(cache,i,oneEntry);
+    for (    int i : removedAtTxKeys())     checkRemoved(cache,i,oneEntry);
+    for (    int i : removedAtTxWithBinaryKeys())     checkBinaryRemoved(cache,i,oneEntry);
+  }
+}

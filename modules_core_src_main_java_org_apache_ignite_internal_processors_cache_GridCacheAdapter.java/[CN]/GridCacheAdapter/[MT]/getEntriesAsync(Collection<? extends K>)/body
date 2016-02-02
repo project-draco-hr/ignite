@@ -1,0 +1,20 @@
+{
+  A.notNull(keys,"keys");
+  final boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  final long start=statsEnabled ? System.nanoTime() : 0L;
+  IgniteInternalFuture<Map<K,T2<V,GridCacheVersion>>> fut=(IgniteInternalFuture<Map<K,T2<V,GridCacheVersion>>>)((IgniteInternalFuture)getAllAsync(keys,!ctx.keepBinary(),true));
+  final boolean intercept=ctx.config().getInterceptor() != null;
+  IgniteInternalFuture<Collection<CacheEntry<K,V>>> rf=fut.chain(new CX1<IgniteInternalFuture<Map<K,T2<V,GridCacheVersion>>>,Collection<CacheEntry<K,V>>>(){
+    @Override public Collection<CacheEntry<K,V>> applyx(    IgniteInternalFuture<Map<K,T2<V,GridCacheVersion>>> f) throws IgniteCheckedException {
+      if (intercept)       return interceptGetEntries(keys,f.get());
+ else {
+        Map<K,CacheEntry<K,V>> res=U.newHashMap(f.get().size());
+        for (        Map.Entry<K,T2<V,GridCacheVersion>> e : f.get().entrySet())         res.put(e.getKey(),new CacheEntryImplEx<>(e.getKey(),e.getValue().get1(),e.getValue().get2()));
+        return res.values();
+      }
+    }
+  }
+);
+  if (statsEnabled)   fut.listen(new UpdateGetTimeStatClosure<Map<K,T2<V,GridCacheVersion>>>(metrics0(),start));
+  return rf;
+}

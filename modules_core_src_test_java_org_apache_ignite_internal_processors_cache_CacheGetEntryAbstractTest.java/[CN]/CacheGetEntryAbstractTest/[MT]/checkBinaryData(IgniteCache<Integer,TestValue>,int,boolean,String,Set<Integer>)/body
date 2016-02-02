@@ -1,0 +1,45 @@
+{
+  IgniteCache<Integer,BinaryObject> cacheB=cache.withKeepBinary();
+  if (oneEntry) {
+    final CacheEntry<Integer,BinaryObject> e=cacheB.getEntry(i);
+    if (getVerErr == null)     compareVersionWithPrimaryNode(e,cache);
+ else {
+      Throwable err=GridTestUtils.assertThrows(log,new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          e.version();
+          return null;
+        }
+      }
+,IgniteException.class,null);
+      assertTrue("Unexpected error message: " + err.getMessage(),err.getMessage().startsWith(getVerErr));
+    }
+    assertEquals(((TestValue)e.getValue().deserialize()).val,i);
+  }
+ else {
+    Set<Integer> set=new HashSet<>();
+    int expCnt=0;
+    for (int j=0; j < 10; j++) {
+      Integer key=i + j;
+      set.add(key);
+      if (expKeys.contains(key))       expCnt++;
+    }
+    Collection<CacheEntry<Integer,BinaryObject>> entries=cacheB.getEntries(set);
+    assertEquals(expCnt,entries.size());
+    for (    final CacheEntry<Integer,BinaryObject> e : entries) {
+      if (getVerErr == null)       compareVersionWithPrimaryNode(e,cache);
+ else {
+        Throwable err=GridTestUtils.assertThrows(log,new Callable<Void>(){
+          @Override public Void call() throws Exception {
+            e.version();
+            return null;
+          }
+        }
+,IgniteException.class,null);
+        assertTrue("Unexpected error message: " + err.getMessage(),err.getMessage().startsWith(getVerErr));
+      }
+      TestValue tv=e.getValue().deserialize();
+      assertEquals((Integer)tv.val,e.getKey());
+      assertTrue(set.contains((tv).val));
+    }
+  }
+}

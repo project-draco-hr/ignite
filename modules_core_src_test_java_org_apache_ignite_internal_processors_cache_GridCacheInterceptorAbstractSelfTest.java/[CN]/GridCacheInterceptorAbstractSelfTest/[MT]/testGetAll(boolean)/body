@@ -1,0 +1,91 @@
+{
+  Set<String> keys=new LinkedHashSet<>();
+  for (int i=0; i < 1000; i++)   keys.add(String.valueOf(i));
+  interceptor.retInterceptor=new NullGetInterceptor();
+  IgniteCache<String,Integer> cache=jcache(0);
+  IgniteCache<String,Integer> cacheAsync=cache.withAsync();
+  Collection<CacheEntry<String,Integer>> c;
+  Map<String,Integer> map;
+  if (needVer) {
+    c=cache.getEntries(keys);
+    assertTrue(c.isEmpty());
+  }
+ else {
+    map=cache.getAll(keys);
+    for (    String key : keys)     assertEquals(null,map.get(key));
+  }
+  assertEquals(1000,interceptor.invokeCnt.get());
+  interceptor.reset();
+  interceptor.retInterceptor=new GetAllInterceptor1();
+  if (needVer) {
+    c=cache.getEntries(keys);
+    assertEquals(500,c.size());
+    for (    CacheEntry<String,Integer> e : c) {
+      int k=Integer.valueOf(e.getKey());
+      assertEquals((Integer)(k * 2),e.getValue());
+    }
+  }
+ else {
+    map=cache.getAll(keys);
+    for (    String key : keys) {
+      int k=Integer.valueOf(key);
+      if (k % 2 == 0)       assertEquals(null,map.get(key));
+ else       assertEquals((Integer)(k * 2),map.get(key));
+    }
+  }
+  assertEquals(1000,interceptor.invokeCnt.get());
+  interceptor.disabled=true;
+  for (int i=0; i < 500; i++)   cache.put(String.valueOf(i),i);
+  interceptor.disabled=false;
+  for (int j=0; j < 2; j++) {
+    interceptor.reset();
+    interceptor.retInterceptor=new GetAllInterceptor2();
+    if (needVer) {
+      if (j == 0)       c=cache.getEntries(keys);
+ else {
+        cacheAsync.getEntries(keys);
+        c=cacheAsync.<Collection<CacheEntry<String,Integer>>>future().get();
+      }
+      for (      CacheEntry<String,Integer> e : c) {
+        int k=Integer.valueOf(e.getKey());
+switch (k % 3) {
+case 1:
+          Integer exp=k < 500 ? k : null;
+        assertEquals(exp,e.getValue());
+      break;
+case 2:
+    assertEquals((Integer)(k * 3),e.getValue());
+  break;
+default :
+fail();
+}
+}
+}
+ else {
+if (j == 0) map=cache.getAll(keys);
+ else {
+cacheAsync.getAll(keys);
+map=cacheAsync.<Map<String,Integer>>future().get();
+}
+int i=0;
+for (String key : keys) {
+switch (i % 3) {
+case 0:
+assertEquals(null,map.get(key));
+break;
+case 1:
+Integer exp=i < 500 ? i : null;
+assertEquals(exp,map.get(key));
+break;
+case 2:
+assertEquals((Integer)(i * 3),map.get(key));
+break;
+default :
+fail();
+}
+i++;
+}
+}
+assertEquals(1000,interceptor.invokeCnt.get());
+}
+}

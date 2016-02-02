@@ -1,0 +1,11 @@
+{
+  A.notNull(keys,"keys");
+  boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  long start=statsEnabled ? System.nanoTime() : 0L;
+  Map<K,T2<V,GridCacheVersion>> map=(Map<K,T2<V,GridCacheVersion>>)getAll(keys,!ctx.keepBinary(),true);
+  Collection<CacheEntry<K,V>> res=new HashSet<>();
+  if (ctx.config().getInterceptor() != null)   res=interceptGetEntries(keys,map);
+ else   for (  Map.Entry<K,T2<V,GridCacheVersion>> e : map.entrySet())   res.add(new CacheEntryImplEx<>(e.getKey(),e.getValue().get1(),e.getValue().get2()));
+  if (statsEnabled)   metrics0().addGetTimeNanos(System.nanoTime() - start);
+  return res;
+}

@@ -1,0 +1,53 @@
+{
+  ctx.checkSecurity(SecurityPermission.CACHE_READ);
+  if (F.isEmpty(keys))   return Collections.emptyMap();
+  CacheOperationContext opCtx=ctx.operationContextPerCall();
+  UUID subjId=ctx.subjectIdPerCall(null,opCtx);
+  Map<K,V> vals=new HashMap<>(keys.size(),1.0f);
+  if (keyCheck)   validateCacheKeys(keys);
+  final IgniteCacheExpiryPolicy expiry=expiryPolicy(opCtx != null ? opCtx.expiry() : null);
+  boolean success=true;
+  for (  K key : keys) {
+    if (key == null)     throw new NullPointerException("Null key.");
+    GridCacheEntryEx entry=null;
+    KeyCacheObject cacheKey=ctx.toCacheKeyObject(key);
+    while (true) {
+      try {
+        entry=swapOrOffheap ? entryEx(cacheKey) : peekEx(cacheKey);
+        if (entry != null) {
+          CacheObject v;
+          GridCacheVersion ver;
+          if (needVer) {
+            T2<CacheObject,GridCacheVersion> res=entry.innerGetVersioned(null,swapOrOffheap,true,false,!skipVals,subjId,null,taskName,expiry,!deserializeBinary);
+            if (res != null) {
+              v=res.get1();
+              ver=res.get2();
+              ctx.addResult(vals,cacheKey,v,skipVals,false,deserializeBinary,true,ver);
+            }
+ else             success=false;
+          }
+ else {
+            v=entry.innerGet(null,swapOrOffheap,false,false,true,true,!skipVals,false,subjId,null,taskName,expiry,!deserializeBinary);
+            if (v != null) {
+              ctx.addResult(vals,cacheKey,v,skipVals,false,deserializeBinary,true);
+            }
+ else             success=false;
+          }
+        }
+ else {
+          if (!storeEnabled && configuration().isStatisticsEnabled() && !skipVals)           metrics0().onRead(false);
+          success=false;
+        }
+        break;
+      }
+ catch (      GridCacheEntryRemovedException ignored) {
+      }
+ finally {
+        if (entry != null)         ctx.evicts().touch(entry,ctx.affinity().affinityTopologyVersion());
+      }
+      if (!success && storeEnabled)       break;
+    }
+  }
+  if (success || !storeEnabled)   return vals;
+  return getAllAsync(keys,opCtx == null || !opCtx.skipStore(),false,subjId,taskName,deserializeBinary,false,expiry,skipVals,true,needVer).get();
+}

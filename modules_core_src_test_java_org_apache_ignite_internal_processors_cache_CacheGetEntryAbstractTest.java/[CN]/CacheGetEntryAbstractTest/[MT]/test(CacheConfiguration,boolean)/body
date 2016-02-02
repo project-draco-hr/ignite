@@ -1,0 +1,23 @@
+{
+  final IgniteCache<Integer,TestValue> cache=grid(0).createCache(cfg);
+  try {
+    init(cache);
+    test(cache,null,null,null,oneEntry);
+    if (cfg.getAtomicityMode() == TRANSACTIONAL) {
+      TransactionConcurrency txConcurrency=concurrency();
+      TransactionIsolation txIsolation=isolation();
+      try (Transaction tx=grid(0).transactions().txStart(txConcurrency,txIsolation)){
+        initTx(cache);
+        test(cache,txConcurrency,txIsolation,tx,oneEntry);
+        tx.commit();
+      }
+       testConcurrentTx(cache,OPTIMISTIC,REPEATABLE_READ,oneEntry);
+      testConcurrentTx(cache,OPTIMISTIC,READ_COMMITTED,oneEntry);
+      testConcurrentTx(cache,PESSIMISTIC,REPEATABLE_READ,oneEntry);
+      testConcurrentTx(cache,PESSIMISTIC,READ_COMMITTED,oneEntry);
+    }
+  }
+  finally {
+    cache.destroy();
+  }
+}

@@ -1,2 +1,142 @@
 {
+  if (F.isEmpty(keys))   return new GridFinishedFuture<>(Collections.<K1,V1>emptyMap());
+  IgniteTxLocalAdapter tx=null;
+  if (checkTx) {
+    try {
+      checkJta();
+    }
+ catch (    IgniteCheckedException e) {
+      return new GridFinishedFuture<>(e);
+    }
+    tx=ctx.tm().threadLocalTx(ctx.systemTx() ? ctx : null);
+  }
+  if (tx == null || tx.implicit()) {
+    try {
+      final AffinityTopologyVersion topVer=tx == null ? (canRemap ? ctx.affinity().affinityTopologyVersion() : ctx.shared().exchange().readyAffinityVersion()) : tx.topologyVersion();
+      final Map<K1,V1> map=new GridLeanMap<>(keys.size());
+      final boolean storeEnabled=!skipVals && readThrough && ctx.readThrough();
+      final boolean needEntry=storeEnabled || ctx.isSwapOrOffheapEnabled();
+      Map<KeyCacheObject,GridCacheVersion> misses=null;
+      for (      KeyCacheObject key : keys) {
+        while (true) {
+          GridCacheEntryEx entry=needEntry ? entryEx(key) : peekEx(key);
+          if (entry == null) {
+            if (!skipVals && ctx.config().isStatisticsEnabled())             ctx.cache().metrics0().onRead(false);
+            break;
+          }
+          try {
+            T2<CacheObject,GridCacheVersion> res=entry.innerGetVersioned(null,ctx.isSwapOrOffheapEnabled(),true,!skipVals,!skipVals,subjId,null,taskName,expiry,!deserializeBinary);
+            if (res == null) {
+              if (storeEnabled) {
+                GridCacheVersion ver=entry.version();
+                if (misses == null)                 misses=new GridLeanMap<>();
+                misses.put(key,ver);
+              }
+ else               ctx.evicts().touch(entry,topVer);
+            }
+ else {
+              ctx.addResult(map,key,res.get1(),skipVals,keepCacheObjects,deserializeBinary,true,needVer ? res.get2() : null);
+              if (tx == null || (!tx.implicit() && tx.isolation() == READ_COMMITTED))               ctx.evicts().touch(entry,topVer);
+              if (keys.size() == 1)               return new GridFinishedFuture<>(map);
+            }
+            break;
+          }
+ catch (          GridCacheEntryRemovedException ignored) {
+            if (log.isDebugEnabled())             log.debug("Got removed entry in getAllAsync(..) method (will retry): " + key);
+          }
+        }
+      }
+      if (storeEnabled && misses != null) {
+        final Map<KeyCacheObject,GridCacheVersion> loadKeys=misses;
+        final IgniteTxLocalAdapter tx0=tx;
+        final Collection<KeyCacheObject> loaded=new HashSet<>();
+        return new GridEmbeddedFuture(ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<Map<K1,V1>>(){
+          @Override public Map<K1,V1> call() throws Exception {
+            ctx.store().loadAll(null,loadKeys.keySet(),new CI2<KeyCacheObject,Object>(){
+              @Override public void apply(              KeyCacheObject key,              Object val){
+                GridCacheVersion ver=loadKeys.get(key);
+                if (ver == null) {
+                  if (log.isDebugEnabled())                   log.debug("Value from storage was never asked for [key=" + key + ", val="+ val+ ']');
+                  return;
+                }
+                loaded.add(key);
+                CacheObject cacheVal=ctx.toCacheObject(val);
+                while (true) {
+                  GridCacheEntryEx entry=entryEx(key);
+                  try {
+                    GridCacheVersion verSet=entry.versionedValue(cacheVal,ver,null);
+                    boolean set=verSet != null;
+                    if (log.isDebugEnabled())                     log.debug("Set value loaded from store into entry [" + "set=" + set + ", curVer="+ ver+ ", newVer="+ verSet+ ", "+ "entry="+ entry+ ']');
+                    if (val != null) {
+                      ctx.addResult(map,key,cacheVal,skipVals,keepCacheObjects,deserializeBinary,false,needVer ? set ? verSet : ver : null);
+                    }
+                    if (tx0 == null || (!tx0.implicit() && tx0.isolation() == READ_COMMITTED))                     ctx.evicts().touch(entry,topVer);
+                    break;
+                  }
+ catch (                  GridCacheEntryRemovedException ignore) {
+                    if (log.isDebugEnabled())                     log.debug("Got removed entry during getAllAsync (will retry): " + entry);
+                  }
+catch (                  IgniteCheckedException e) {
+                    throw new GridClosureException(e);
+                  }
+                }
+              }
+            }
+);
+            if (loaded.size() != loadKeys.size()) {
+              for (              KeyCacheObject key : loadKeys.keySet()) {
+                if (loaded.contains(key))                 continue;
+                if (tx0 == null || (!tx0.implicit() && tx0.isolation() == READ_COMMITTED)) {
+                  GridCacheEntryEx entry=peekEx(key);
+                  if (entry != null)                   ctx.evicts().touch(entry,topVer);
+                }
+              }
+            }
+            return map;
+          }
+        }
+),true),new C2<Map<K,V>,Exception,IgniteInternalFuture<Map<K,V>>>(){
+          @Override public IgniteInternalFuture<Map<K,V>> apply(          Map<K,V> map,          Exception e){
+            if (e != null)             return new GridFinishedFuture<>(e);
+            if (tx0 == null || (!tx0.implicit() && tx0.isolation() == READ_COMMITTED)) {
+              Collection<KeyCacheObject> notFound=new HashSet<>(loadKeys.keySet());
+              notFound.removeAll(loaded);
+              for (              KeyCacheObject key : notFound) {
+                GridCacheEntryEx entry=peekEx(key);
+                if (entry != null)                 ctx.evicts().touch(entry,topVer);
+              }
+            }
+            return new GridFinishedFuture<>(Collections.<K,V>emptyMap());
+          }
+        }
+,new C2<Map<K1,V1>,Exception,Map<K1,V1>>(){
+          @Override public Map<K1,V1> apply(          Map<K1,V1> loaded,          Exception e){
+            if (e == null)             map.putAll(loaded);
+            return map;
+          }
+        }
+);
+      }
+ else {
+        if (misses != null) {
+          for (          KeyCacheObject key : misses.keySet()) {
+            GridCacheEntryEx entry=peekEx(key);
+            if (entry != null)             ctx.evicts().touch(entry,topVer);
+          }
+        }
+      }
+      return new GridFinishedFuture<>(map);
+    }
+ catch (    IgniteCheckedException e) {
+      return new GridFinishedFuture<>(e);
+    }
+  }
+ else {
+    return asyncOp(tx,new AsyncOp<Map<K1,V1>>(keys){
+      @Override public IgniteInternalFuture<Map<K1,V1>> op(      IgniteTxLocalAdapter tx){
+        return tx.getAllAsync(ctx,keys,deserializeBinary,skipVals,false,!readThrough,needVer);
+      }
+    }
+,ctx.operationContextPerCall());
+  }
 }

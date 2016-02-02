@@ -1,0 +1,15 @@
+{
+  ctx.checkSecurity(SecurityPermission.CACHE_READ);
+  if (keyCheck)   validateCacheKey(key);
+  CacheOperationContext opCtx=ctx.operationContextPerCall();
+  subjId=ctx.subjectIdPerCall(null,opCtx);
+  final UUID subjId0=subjId;
+  final ExpiryPolicy expiryPlc=skipVals ? null : opCtx != null ? opCtx.expiry() : null;
+  final boolean skipStore=opCtx != null && opCtx.skipStore();
+  return asyncOp(new CO<IgniteInternalFuture<V>>(){
+    @Override public IgniteInternalFuture<V> apply(){
+      return getAsync0(ctx.toCacheKeyObject(key),forcePrimary,subjId0,taskName,deserializeBinary,expiryPlc,skipVals,skipStore,canRemap,needVer);
+    }
+  }
+);
+}

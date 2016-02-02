@@ -1,0 +1,13 @@
+{
+  CacheConfiguration cfg=cache.getConfiguration(CacheConfiguration.class);
+  if (cfg.getCacheMode() != LOCAL) {
+    Ignite prim=primaryNode(e.getKey(),cache.getName());
+    GridCacheAdapter<Object,Object> cacheAdapter=((IgniteKernal)prim).internalCache(cache.getName());
+    if (cfg.getNearConfiguration() != null)     cacheAdapter=((GridNearCacheAdapter)cacheAdapter).dht();
+    IgniteCacheObjectProcessor cacheObjects=cacheAdapter.context().cacheObjects();
+    CacheObjectContext cacheObjCtx=cacheAdapter.context().cacheObjectContext();
+    GridCacheMapEntry mapEntry=cacheAdapter.map().getEntry(cacheObjects.toCacheKeyObject(cacheObjCtx,e.getKey(),true));
+    assertNotNull("No entry for key: " + e.getKey(),mapEntry);
+    assertEquals(mapEntry.version(),e.version());
+  }
+}

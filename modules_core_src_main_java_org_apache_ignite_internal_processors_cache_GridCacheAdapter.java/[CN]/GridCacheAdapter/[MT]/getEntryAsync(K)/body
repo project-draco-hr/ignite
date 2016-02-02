@@ -1,0 +1,21 @@
+{
+  A.notNull(key,"key");
+  final boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  final long start=statsEnabled ? System.nanoTime() : 0L;
+  IgniteInternalFuture<T2<V,GridCacheVersion>> fut=(IgniteInternalFuture<T2<V,GridCacheVersion>>)getAsync(key,!ctx.keepBinary(),true);
+  final boolean intercept=ctx.config().getInterceptor() != null;
+  IgniteInternalFuture<CacheEntry<K,V>> fr=fut.chain(new CX1<IgniteInternalFuture<T2<V,GridCacheVersion>>,CacheEntry<K,V>>(){
+    @Override public CacheEntry<K,V> applyx(    IgniteInternalFuture<T2<V,GridCacheVersion>> f) throws IgniteCheckedException {
+      T2<V,GridCacheVersion> t=f.get();
+      CacheEntry<K,V> val=t != null ? new CacheEntryImplEx<>(key,t.get1(),t.get2()) : null;
+      if (intercept) {
+        V val0=(V)ctx.config().getInterceptor().onGet(key,t != null ? val.getValue() : null);
+        return new CacheEntryImplEx<>(key,val0,t != null ? t.get2() : null);
+      }
+ else       return val;
+    }
+  }
+);
+  if (statsEnabled)   fut.listen(new UpdateGetTimeStatClosure<T2<V,GridCacheVersion>>(metrics0(),start));
+  return fr;
+}

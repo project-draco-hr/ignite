@@ -1,0 +1,49 @@
+{
+  interceptor.retInterceptor=new NullGetInterceptor();
+  log.info("Get 1.");
+  IgniteCache<String,Integer> cache=jcache(0);
+  assertEquals(null,needVer ? cache.getEntry(key) : cache.get(key));
+  assertEquals(1,interceptor.invokeCnt.get());
+  assertEquals(0,interceptor.getMap.size());
+  interceptor.reset();
+  interceptor.retInterceptor=new OneGetInterceptor();
+  log.info("Get 2.");
+  assertEquals((Integer)1,needVer ? cache.getEntry(key).getValue() : cache.get(key));
+  assertEquals(1,interceptor.invokeCnt.get());
+  assertEquals(0,interceptor.getMap.size());
+  interceptor.reset();
+  interceptor.disabled=true;
+  cache.put(key,100);
+  interceptor.disabled=false;
+  interceptor.retInterceptor=new NullGetInterceptor();
+  log.info("Get 3.");
+  assertEquals(null,needVer ? cache.getEntry(key) : cache.get(key));
+  assertEquals(1,interceptor.invokeCnt.get());
+  assertEquals(1,interceptor.getMap.size());
+  assertEquals(100,interceptor.getMap.get(key));
+  checkCacheValue(key,100);
+  interceptor.reset();
+  interceptor.retInterceptor=new GetIncrementInterceptor();
+  log.info("Get 4.");
+  assertEquals((Integer)101,needVer ? cache.getEntry(key).getValue() : cache.get(key));
+  assertEquals(1,interceptor.invokeCnt.get());
+  assertEquals(1,interceptor.getMap.size());
+  assertEquals(100,interceptor.getMap.get(key));
+  checkCacheValue(key,100);
+  interceptor.reset();
+  interceptor.retInterceptor=new GetIncrementInterceptor();
+  log.info("GetAsync 1.");
+  IgniteCache<String,Integer> cacheAsync=cache.withAsync();
+  if (needVer) {
+    cacheAsync.getEntry(key);
+    assertEquals((Integer)101,cacheAsync.<CacheEntry<String,Integer>>future().get().getValue());
+  }
+ else {
+    cacheAsync.get(key);
+    assertEquals((Integer)101,cacheAsync.<Integer>future().get());
+  }
+  assertEquals(1,interceptor.invokeCnt.get());
+  assertEquals(1,interceptor.getMap.size());
+  assertEquals(100,interceptor.getMap.get(key));
+  checkCacheValue(key,100);
+}

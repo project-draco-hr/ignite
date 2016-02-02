@@ -1,0 +1,13 @@
+{
+  IgniteCache<String,Integer> cache=grid(1).cache(null);
+  for (int k=0; k < 1000; k++)   cache.put("key" + k,k);
+  stopAllGrids();
+  startGrids(2);
+  Ignite ignite=grid(1);
+  cache=ignite.cache(null);
+  for (int k=0; k < 1000; k++) {
+    String key="key" + k;
+    if (needVer)     assertNotNull("Null value for key: " + key,cache.getEntry(key));
+ else     assertNotNull("Null value for key: " + key,cache.get(key));
+  }
+}

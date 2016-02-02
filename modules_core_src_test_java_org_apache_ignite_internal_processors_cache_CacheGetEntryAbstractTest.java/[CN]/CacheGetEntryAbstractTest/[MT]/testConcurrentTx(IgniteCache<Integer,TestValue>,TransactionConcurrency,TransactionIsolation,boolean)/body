@@ -1,0 +1,22 @@
+{
+  GridTestUtils.runMultiThreaded(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      IgniteTransactions txs=grid(0).transactions();
+      long stopTime=System.currentTimeMillis() + 3000;
+      while (System.currentTimeMillis() < stopTime) {
+        Set<Integer> keys=new LinkedHashSet<>();
+        for (int i=0; i < 100; i++)         keys.add(i);
+        try (Transaction tx=txs.txStart(txConcurrency,txIsolation)){
+          if (oneEntry) {
+            for (int i=0; i < 100; i++)             cache.getEntry(i);
+          }
+ else           cache.getEntries(keys);
+          for (int i=0; i < 100; i++)           cache.put(i,new TestValue(i));
+          tx.commit();
+        }
+       }
+      return null;
+    }
+  }
+,10,"tx-thread");
+}
