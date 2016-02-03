@@ -1,7 +1,28 @@
 {
-  ClusterGroup nodes=ctx.kernalContext().grid().cluster().forCacheNodes(ctx.name());
+  ClusterGroup oldNodes=ctx.kernalContext().grid().cluster().forCacheNodes(ctx.name()).forPredicate(new IgnitePredicate<ClusterNode>(){
+    @Override public boolean apply(    ClusterNode node){
+      return node.version().compareToIgnoreTimestamp(LOAD_CACHE_JOB_SINCE) < 0;
+    }
+  }
+);
+  ClusterGroup newNodes=ctx.kernalContext().grid().cluster().forCacheNodes(ctx.name()).forPredicate(new IgnitePredicate<ClusterNode>(){
+    @Override public boolean apply(    ClusterNode node){
+      return node.version().compareToIgnoreTimestamp(LOAD_CACHE_JOB_SINCE) >= 0;
+    }
+  }
+);
   ctx.kernalContext().task().setThreadContext(TC_NO_FAILOVER,true);
   CacheOperationContext opCtx=ctx.operationContextPerCall();
   ExpiryPolicy plc=opCtx != null ? opCtx.expiry() : null;
-  return ctx.kernalContext().closure().callAsync(BROADCAST,Arrays.asList(new LoadCacheClosure<>(ctx.name(),p,args,plc)),nodes.nodes());
+  GridCompoundFuture<Object,?> fut=new GridCompoundFuture<>();
+  if (!F.isEmpty(oldNodes.nodes())) {
+    ComputeTaskInternalFuture oldNodesFut=ctx.kernalContext().closure().callAsync(BROADCAST,Arrays.asList(new LoadCacheClosure<>(ctx.name(),p,args,plc)),oldNodes.nodes());
+    fut.add(oldNodesFut);
+  }
+  if (!F.isEmpty(newNodes.nodes())) {
+    ComputeTaskInternalFuture newNodesFut=ctx.kernalContext().closure().callAsync(BROADCAST,Arrays.asList(new LoadCacheJob<>(ctx.name(),ctx.affinity().affinityTopologyVersion(),p,args,plc)),newNodes.nodes());
+    fut.add(newNodesFut);
+  }
+  fut.markInitialized();
+  return fut;
 }
