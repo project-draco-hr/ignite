@@ -1,0 +1,22 @@
+{
+  selectedKeys=null;
+  selector=GridNioServer.this.createSelector(null);
+  if (DISABLE_KEYSET_OPTIMIZATION)   return;
+  try {
+    SelectedSelectionKeySet selectedKeySet=new SelectedSelectionKeySet();
+    Class<?> selectorImplClass=Class.forName("sun.nio.ch.SelectorImpl",false,U.gridClassLoader());
+    if (!selectorImplClass.isAssignableFrom(selector.getClass()))     return;
+    Field selectedKeysField=selectorImplClass.getDeclaredField("selectedKeys");
+    Field publicSelectedKeysField=selectorImplClass.getDeclaredField("publicSelectedKeys");
+    selectedKeysField.setAccessible(true);
+    publicSelectedKeysField.setAccessible(true);
+    selectedKeysField.set(selector,selectedKeySet);
+    publicSelectedKeysField.set(selector,selectedKeySet);
+    selectedKeys=selectedKeySet;
+    if (log.isDebugEnabled())     log.debug("Instrumented an optimized java.util.Set into: " + selector);
+  }
+ catch (  Exception e) {
+    selectedKeys=null;
+    if (log.isDebugEnabled())     log.debug("Failed to instrument an optimized java.util.Set into selector [selector=" + selector + ", err="+ e+ ']');
+  }
+}

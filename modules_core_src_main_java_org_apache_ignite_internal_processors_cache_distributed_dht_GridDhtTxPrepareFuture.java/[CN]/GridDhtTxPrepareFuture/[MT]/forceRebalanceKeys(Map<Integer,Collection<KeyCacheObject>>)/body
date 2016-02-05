@@ -1,2 +1,20 @@
 {
+  if (F.isEmpty(keysMap))   return null;
+  GridCompoundFuture<Object,Object> compFut=null;
+  IgniteInternalFuture<Object> lastForceFut=null;
+  for (  Map.Entry<Integer,Collection<KeyCacheObject>> entry : keysMap.entrySet()) {
+    if (lastForceFut != null && compFut == null) {
+      compFut=new GridCompoundFuture();
+      compFut.add(lastForceFut);
+    }
+    int cacheId=entry.getKey();
+    Collection<KeyCacheObject> keys=entry.getValue();
+    lastForceFut=cctx.cacheContext(cacheId).preloader().request(keys,tx.topologyVersion());
+    if (compFut != null && lastForceFut != null)     compFut.add(lastForceFut);
+  }
+  if (compFut != null) {
+    compFut.markInitialized();
+    return compFut;
+  }
+ else   return lastForceFut;
 }

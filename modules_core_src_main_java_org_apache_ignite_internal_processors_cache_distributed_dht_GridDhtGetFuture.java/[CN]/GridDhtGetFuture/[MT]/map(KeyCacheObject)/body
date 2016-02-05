@@ -1,9 +1,10 @@
 {
   GridDhtLocalPartition part=topVer.topologyVersion() > 0 ? cache().topology().localPartition(cctx.affinity().partition(key),topVer,true) : cache().topology().localPartition(key,false);
   if (part == null)   return false;
-  if (!parts.contains(part)) {
+  if (parts == null || !F.contains(parts,part.id())) {
     if (part.reserve()) {
-      parts.add(part);
+      parts=parts == null ? new int[1] : Arrays.copyOf(parts,parts.length + 1);
+      parts[parts.length - 1]=part.id();
       return true;
     }
  else     return false;

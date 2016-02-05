@@ -1,5 +1,7 @@
 {
-  if (map.isEmpty() && !GridQueryProcessor.isEnabled(cctx.config()) && state.getReference() == RENTING && state.getStamp() == 0 && state.compareAndSet(RENTING,EVICTED,0,0)) {
+  long reservations=state.get();
+  int ord=(int)(reservations >> 32);
+  if (map.isEmpty() && !GridQueryProcessor.isEnabled(cctx.config()) && ord == RENTING.ordinal() && (reservations & 0xFFFF) == 0 && casState(reservations,EVICTED)) {
     if (log.isDebugEnabled())     log.debug("Evicted partition: " + this);
     clearSwap();
     if (cctx.isDrEnabled())     cctx.dr().partitionEvicted(id);

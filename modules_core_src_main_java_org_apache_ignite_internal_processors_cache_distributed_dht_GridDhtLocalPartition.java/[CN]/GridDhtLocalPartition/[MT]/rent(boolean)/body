@@ -1,9 +1,9 @@
 {
   while (true) {
-    int reservations=state.getStamp();
-    GridDhtPartitionState s=state.getReference();
-    if (s == RENTING || s == EVICTED)     return rent;
-    if (state.compareAndSet(s,RENTING,reservations,reservations)) {
+    long reservations=state.get();
+    int ord=(int)(reservations >> 32);
+    if (ord == RENTING.ordinal() || ord == EVICTED.ordinal())     return rent;
+    if (casState(reservations,RENTING)) {
       if (log.isDebugEnabled())       log.debug("Moved partition to RENTING state: " + this);
       tryEvictAsync(updateSeq);
       break;
