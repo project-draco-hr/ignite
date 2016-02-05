@@ -1,0 +1,17 @@
+{
+  try {
+    Ignite ignite=startGrids(2);
+    MyProxy p=(MyProxy)Proxy.newProxyInstance(getClass().getClassLoader(),new Class[]{MyProxy.class},new InvocationHandler(){
+      @Override public Object invoke(      Object proxy,      Method method,      Object[] args) throws Throwable {
+        if ("value".equals(method.getName()))         return 42;
+        throw new IllegalStateException();
+      }
+    }
+);
+    int val=ignite.compute(ignite.cluster().forRemotes()).call(new MyCallable(p));
+    assertEquals(42,val);
+  }
+  finally {
+    stopAllGrids();
+  }
+}
