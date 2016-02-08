@@ -1,0 +1,25 @@
+{
+  try {
+    needStore=false;
+    useExtClassLoader=true;
+    Ignite g1=startGrid(1);
+    Ignite g2=startGrid(2);
+    isClient=true;
+    Ignite g3=startGrid(3);
+    Object sf=getExternalClassLoader().loadClass("org.apache.ignite.tests.p2p.CacheDeploymentTestStoreFactory").newInstance();
+    CacheConfiguration cfg=defaultCacheConfiguration();
+    cfg.setCacheStoreFactory((Factory)sf);
+    cfg.setName("customStore");
+    IgniteCache<Integer,Object> cache1=g1.getOrCreateCache(cfg);
+    IgniteCache<Integer,Object> cache2=g2.getOrCreateCache("customStore");
+    IgniteCache<Integer,Object> cache3=g3.getOrCreateCache("customStore");
+    cache1.put(1,1);
+    assertEquals(1,cache2.get(1));
+    assertEquals(1,cache3.get(1));
+  }
+  finally {
+    needStore=false;
+    isClient=false;
+    useExtClassLoader=false;
+  }
+}
