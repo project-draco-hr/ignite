@@ -1,0 +1,22 @@
+{
+  final int PLC_MAX_SIZE=50;
+  CacheConfiguration<Integer,Object> ccfg=cacheConfiguration(grid(0).name());
+  ccfg.setName("testOnHeapWithOffHeapSwap");
+  ccfg.setStatisticsEnabled(true);
+  ccfg.setOffHeapMaxMemory(MAX_MEMORY_SIZE);
+  FifoEvictionPolicy plc=new FifoEvictionPolicy();
+  plc.setMaxMemorySize(MAX_MEMORY_SIZE);
+  plc.setMaxSize(PLC_MAX_SIZE);
+  ccfg.setSwapEnabled(true);
+  ccfg.setMemoryMode(CacheMemoryMode.ONHEAP_TIERED);
+  ccfg.setEvictionPolicy(plc);
+  final IgniteCache<Integer,Object> cache=grid(0).getOrCreateCache(ccfg);
+  fillCache(cache,getTestTimeout());
+  assertEquals(cache.size(CachePeekMode.SWAP) + cache.size(CachePeekMode.ONHEAP) + cache.size(CachePeekMode.OFFHEAP),cache.size(CachePeekMode.ALL));
+  assertTrue(PLC_MAX_SIZE >= cache.size(CachePeekMode.ONHEAP));
+  assertTrue(PLC_MAX_SIZE - 5 <= cache.size(CachePeekMode.ONHEAP));
+  assertTrue(MAX_VALS_AMOUNT >= cache.size(CachePeekMode.OFFHEAP));
+  assertTrue(MAX_VALS_AMOUNT - 5 <= cache.size(CachePeekMode.OFFHEAP));
+  assertTrue((MAX_VALS_AMOUNT + 5) * VAL_SIZE > cache.metrics().getOffHeapAllocatedSize());
+  assertTrue((MAX_VALS_AMOUNT - 5) * VAL_SIZE < cache.metrics().getOffHeapAllocatedSize());
+}

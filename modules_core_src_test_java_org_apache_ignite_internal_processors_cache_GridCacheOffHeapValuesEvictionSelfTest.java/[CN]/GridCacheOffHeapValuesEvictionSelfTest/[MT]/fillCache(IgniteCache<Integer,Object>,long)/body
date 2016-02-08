@@ -1,0 +1,15 @@
+{
+  final byte[] val=new byte[VAL_SIZE];
+  final AtomicInteger keyStart=new AtomicInteger(0);
+  final CountDownLatch latch=new CountDownLatch(4);
+  GridTestUtils.runMultiThreaded(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      final int start=keyStart.addAndGet(VALS_AMOUNT);
+      for (int i=start; i < start + VALS_AMOUNT; i++)       cache.put(i,val);
+      latch.countDown();
+      return null;
+    }
+  }
+,THREAD_COUNT,"test");
+  latch.await(timeout,TimeUnit.MILLISECONDS);
+}
