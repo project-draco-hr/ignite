@@ -1,0 +1,11 @@
+{
+  Ignite node=ignite(0);
+  final IgniteCache<Object,Object> cache=node.cache(null);
+  IgniteBinary binary=node.binary();
+  BinaryObjectBuilder builder=binary.builder(TestBuilderValue.class.getName());
+  cache.put(0,builder.build());
+  builder.setField("iVal",1);
+  cache.put(1,builder.build());
+  List<Cache.Entry<Object,Object>> entries=cache.query(new SqlQuery<>(TestBuilderValue.class,"true")).getAll();
+  assertEquals(2,entries.size());
+}
