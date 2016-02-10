@@ -1,14 +1,14 @@
 {
-  final CacheEntryCreatedListener<Integer,Integer> lsnr=new CreateUpdateRemoveExpireListener(){
-    @Override public void onRemoved(    Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> evts){
+  final CacheEntryCreatedListener<Object,Object> lsnr=new CreateUpdateRemoveExpireListener(){
+    @Override public void onRemoved(    Iterable<CacheEntryEvent<?,?>> evts){
       super.onRemoved(evts);
       awaitLatch();
     }
-    @Override public void onCreated(    Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> evts){
+    @Override public void onCreated(    Iterable<CacheEntryEvent<?,?>> evts){
       super.onCreated(evts);
       awaitLatch();
     }
-    @Override public void onUpdated(    Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> evts){
+    @Override public void onUpdated(    Iterable<CacheEntryEvent<?,?>> evts){
       super.onUpdated(evts);
       awaitLatch();
     }
@@ -22,13 +22,13 @@
     }
   }
 ;
-  CacheEntryListenerConfiguration<Integer,Integer> lsnrCfg=new MutableCacheEntryListenerConfiguration<>(new Factory<CacheEntryListener<Integer,Integer>>(){
-    @Override public CacheEntryListener<Integer,Integer> create(){
+  CacheEntryListenerConfiguration<Object,Object> lsnrCfg=new MutableCacheEntryListenerConfiguration<>(new Factory<CacheEntryListener<Object,Object>>(){
+    @Override public CacheEntryListener<Object,Object> create(){
       return lsnr;
     }
   }
 ,null,true,true);
-  IgniteCache<Integer,Integer> cache=jcache();
+  IgniteCache<Object,Object> cache=jcache();
   cache.registerCacheEntryListener(lsnrCfg);
   try {
     for (    Integer key : keys()) {
@@ -46,7 +46,7 @@
       checkEvent(evts.iterator(),key,CREATED,3,null);
       if (!eagerTtl()) {
         U.sleep(1100);
-        assertNull(primaryCache(key,cache.getName()).get(key));
+        assertNull(primaryCache(key,cache.getName()).get(key(key)));
         evtsLatch.await(5000,MILLISECONDS);
         assertEquals(1,evts.size());
       }

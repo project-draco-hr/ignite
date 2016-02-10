@@ -12,11 +12,11 @@
         updateReq=new GridDhtAtomicUpdateRequest(cctx.cacheId(),nodeId,futVer,writeVer,syncMode,topVer,forceTransformBackups,this.updateReq.subjectId(),this.updateReq.taskNameHash(),forceTransformBackups ? this.updateReq.invokeArguments() : null,cctx.deploymentEnabled(),this.updateReq.keepBinary());
         mappings.put(nodeId,updateReq);
       }
-      updateReq.addWriteValue(entry.key(),val,entryProcessor,ttl,conflictExpireTime,conflictVer,addPrevVal,entry.partition(),prevVal,updateCntr);
+      updateReq.addWriteValue(entry.key(),val,entryProcessor,ttl,conflictExpireTime,conflictVer,addPrevVal,entry.partition(),prevVal,updateCntr,lsnrs != null);
     }
- else     if (dhtNodes.size() == 1) {
+ else     if (lsnrs != null && dhtNodes.size() == 1) {
       try {
-        cctx.continuousQueries().onEntryUpdated(entry.key(),val,prevVal,entry.key().internal() || !cctx.userCache(),entry.partition(),true,false,updateCntr,updateReq.topologyVersion());
+        cctx.continuousQueries().onEntryUpdated(lsnrs,entry.key(),val,prevVal,entry.key().internal() || !cctx.userCache(),entry.partition(),true,false,updateCntr,updateReq.topologyVersion());
       }
  catch (      IgniteCheckedException e) {
         U.warn(log,"Failed to send continuous query message. [key=" + entry.key() + ", newVal="+ val+ ", err="+ e+ "]");
