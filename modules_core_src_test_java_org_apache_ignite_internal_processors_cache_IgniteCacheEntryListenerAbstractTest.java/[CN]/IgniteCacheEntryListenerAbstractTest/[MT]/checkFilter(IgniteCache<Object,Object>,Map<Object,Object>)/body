@@ -1,0 +1,67 @@
+{
+  evts=Collections.synchronizedList(new ArrayList<CacheEntryEvent<?,?>>());
+  final int expEvts=(vals.size() / 2) * 4;
+  evtsLatch=new CountDownLatch(expEvts);
+  cache.removeAll(vals.keySet());
+  cache.putAll(vals);
+  final Map<Object,Object> newVals=new HashMap<>();
+  for (  Object key : vals.keySet())   newVals.put(key,value(-1));
+  cache.withExpiryPolicy(new ModifiedExpiryPolicy(new Duration(MILLISECONDS,500))).putAll(newVals);
+  U.sleep(1000);
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      for (      Object key : newVals.keySet()) {
+        if (primaryCache(key,cache.getName()).get(key) != null)         return false;
+      }
+      return true;
+    }
+  }
+,5000);
+  evtsLatch.await(5000,MILLISECONDS);
+  assertEquals(expEvts,evts.size());
+  Set<Object> rmvd=new HashSet<>();
+  Set<Object> created=new HashSet<>();
+  Set<Object> updated=new HashSet<>();
+  Set<Object> expired=new HashSet<>();
+  for (  CacheEntryEvent<?,?> evt : evts) {
+    Integer key;
+    if (useObjects)     key=((ListenerTestKey)evt.getKey()).key;
+ else     key=(Integer)evt.getKey();
+    assertTrue(key % 2 == 0);
+    assertTrue(vals.keySet().contains(evt.getKey()));
+switch (evt.getEventType()) {
+case REMOVED:
+      assertNull(evt.getValue());
+    assertEquals(vals.get(evt.getKey()),evt.getOldValue());
+  assertTrue(rmvd.add(evt.getKey()));
+break;
+case CREATED:
+assertEquals(vals.get(evt.getKey()),evt.getValue());
+assertNull(evt.getOldValue());
+assertTrue(rmvd.contains(evt.getKey()));
+assertTrue(created.add(evt.getKey()));
+break;
+case UPDATED:
+assertEquals(value(-1),evt.getValue());
+assertEquals(vals.get(evt.getKey()),evt.getOldValue());
+assertTrue(rmvd.contains(evt.getKey()));
+assertTrue(created.contains(evt.getKey()));
+assertTrue(updated.add(evt.getKey()));
+break;
+case EXPIRED:
+assertNull(evt.getValue());
+assertEquals(value(-1),evt.getOldValue());
+assertTrue(rmvd.contains(evt.getKey()));
+assertTrue(created.contains(evt.getKey()));
+assertTrue(updated.contains(evt.getKey()));
+assertTrue(expired.add(evt.getKey()));
+break;
+default :
+fail("Unexpected type: " + evt.getEventType());
+}
+}
+assertEquals(vals.size() / 2,rmvd.size());
+assertEquals(vals.size() / 2,created.size());
+assertEquals(vals.size() / 2,updated.size());
+assertEquals(vals.size() / 2,expired.size());
+}

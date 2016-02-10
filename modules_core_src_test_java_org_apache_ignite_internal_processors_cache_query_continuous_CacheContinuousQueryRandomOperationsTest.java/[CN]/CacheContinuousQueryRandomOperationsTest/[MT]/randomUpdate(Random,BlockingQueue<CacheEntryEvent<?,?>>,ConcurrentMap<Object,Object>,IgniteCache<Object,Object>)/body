@@ -1,0 +1,113 @@
+{
+  Object key=new QueryTestKey(rnd.nextInt(KEYS));
+  Object newVal=value(rnd);
+  Object oldVal=expData.get(key);
+  int op=rnd.nextInt(11);
+switch (op) {
+case 0:
+{
+      cache.put(key,newVal);
+      waitEvent(evtsQueue,key,newVal,oldVal);
+      expData.put(key,newVal);
+      break;
+    }
+case 1:
+{
+    cache.getAndPut(key,newVal);
+    waitEvent(evtsQueue,key,newVal,oldVal);
+    expData.put(key,newVal);
+    break;
+  }
+case 2:
+{
+  cache.remove(key);
+  waitEvent(evtsQueue,key,null,oldVal);
+  expData.remove(key);
+  break;
+}
+case 3:
+{
+cache.getAndRemove(key);
+waitEvent(evtsQueue,key,null,oldVal);
+expData.remove(key);
+break;
+}
+case 4:
+{
+cache.invoke(key,new EntrySetValueProcessor(newVal,rnd.nextBoolean()));
+waitEvent(evtsQueue,key,newVal,oldVal);
+expData.put(key,newVal);
+break;
+}
+case 5:
+{
+cache.invoke(key,new EntrySetValueProcessor(null,rnd.nextBoolean()));
+waitEvent(evtsQueue,key,null,oldVal);
+expData.remove(key);
+break;
+}
+case 6:
+{
+cache.putIfAbsent(key,newVal);
+if (oldVal == null) {
+waitEvent(evtsQueue,key,newVal,null);
+expData.put(key,newVal);
+}
+ else checkNoEvent(evtsQueue);
+break;
+}
+case 7:
+{
+cache.getAndPutIfAbsent(key,newVal);
+if (oldVal == null) {
+waitEvent(evtsQueue,key,newVal,null);
+expData.put(key,newVal);
+}
+ else checkNoEvent(evtsQueue);
+break;
+}
+case 8:
+{
+cache.replace(key,newVal);
+if (oldVal != null) {
+waitEvent(evtsQueue,key,newVal,oldVal);
+expData.put(key,newVal);
+}
+ else checkNoEvent(evtsQueue);
+break;
+}
+case 9:
+{
+cache.getAndReplace(key,newVal);
+if (oldVal != null) {
+waitEvent(evtsQueue,key,newVal,oldVal);
+expData.put(key,newVal);
+}
+ else checkNoEvent(evtsQueue);
+break;
+}
+case 10:
+{
+if (oldVal != null) {
+Object replaceVal=value(rnd);
+boolean success=replaceVal.equals(oldVal);
+if (success) {
+cache.replace(key,replaceVal,newVal);
+waitEvent(evtsQueue,key,newVal,oldVal);
+expData.put(key,newVal);
+}
+ else {
+cache.replace(key,replaceVal,newVal);
+checkNoEvent(evtsQueue);
+}
+}
+ else {
+cache.replace(key,value(rnd),newVal);
+checkNoEvent(evtsQueue);
+}
+break;
+}
+default :
+fail();
+}
+}
