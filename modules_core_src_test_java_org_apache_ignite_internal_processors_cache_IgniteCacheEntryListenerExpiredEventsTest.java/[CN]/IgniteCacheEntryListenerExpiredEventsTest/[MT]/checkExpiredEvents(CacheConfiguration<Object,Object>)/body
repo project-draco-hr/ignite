@@ -1,0 +1,23 @@
+{
+  IgniteCache<Object,Object> cache=ignite(0).createCache(ccfg);
+  try {
+    evtCntr=new AtomicInteger();
+    CacheEntryListenerConfiguration<Object,Object> lsnrCfg=new MutableCacheEntryListenerConfiguration<>(new ExpiredListenerFactory(),null,true,false);
+    cache.registerCacheEntryListener(lsnrCfg);
+    IgniteCache<Object,Object> expiryCache=cache.withExpiryPolicy(new ModifiedExpiryPolicy(new Duration(MILLISECONDS,500)));
+    expiryCache.put(1,1);
+    for (int i=0; i < 10; i++)     cache.get(i);
+    boolean wait=GridTestUtils.waitForCondition(new GridAbsPredicate(){
+      @Override public boolean apply(){
+        return evtCntr.get() > 0;
+      }
+    }
+,5000);
+    assertTrue(wait);
+    U.sleep(100);
+    assertEquals(1,evtCntr.get());
+  }
+  finally {
+    ignite(0).destroyCache(cache.getName());
+  }
+}

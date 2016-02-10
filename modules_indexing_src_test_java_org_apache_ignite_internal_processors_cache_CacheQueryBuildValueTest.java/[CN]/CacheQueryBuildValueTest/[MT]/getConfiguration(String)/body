@@ -1,0 +1,24 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  cfg.setMarshaller(null);
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(IP_FINDER);
+  CacheConfiguration<Object,Object> ccfg=new CacheConfiguration<>();
+  QueryEntity entity=new QueryEntity();
+  entity.setKeyType(Integer.class.getName());
+  entity.setValueType(TestBuilderValue.class.getName());
+  ArrayList<QueryIndex> idxs=new ArrayList<>();
+  QueryIndex idx=new QueryIndex("iVal");
+  idxs.add(idx);
+  LinkedHashMap<String,String> fields=new LinkedHashMap<>();
+  fields.put("iVal",Integer.class.getName());
+  entity.setFields(fields);
+  entity.setIndexes(idxs);
+  ccfg.setQueryEntities(Collections.singleton(entity));
+  cfg.setCacheConfiguration(ccfg);
+  BinaryConfiguration binaryCfg=new BinaryConfiguration();
+  BinaryTypeConfiguration typeCfg=new BinaryTypeConfiguration();
+  typeCfg.setTypeName(TestBuilderValue.class.getName());
+  binaryCfg.setTypeConfigurations(Collections.singletonList(typeCfg));
+  cfg.setBinaryConfiguration(binaryCfg);
+  return cfg;
+}
