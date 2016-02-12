@@ -31,10 +31,18 @@
   assertTrue(locLsnr.latch.await(5000,MILLISECONDS));
   assertTrue(latch.await(5000,MILLISECONDS));
   log.info("Stop listen, should not get remote messages anymore.");
-  client.message().stopRemoteListen(opId);
+  (stopFromClient ? client : srv).message().stopRemoteListen(opId);
   srv.message().send(topic,"msg3");
   locLsnr.latch=new CountDownLatch(1);
   latch=new CountDownLatch(1);
   assertTrue(locLsnr.latch.await(5000,MILLISECONDS));
   assertFalse(latch.await(3000,MILLISECONDS));
+  log.info("New nodes should not register stopped listeners.");
+  startGrid(serverCount() + 1);
+  srv.message().send(topic,"msg4");
+  locLsnr.latch=new CountDownLatch(1);
+  latch=new CountDownLatch(1);
+  assertTrue(locLsnr.latch.await(5000,MILLISECONDS));
+  assertFalse(latch.await(3000,MILLISECONDS));
+  stopGrid(serverCount() + 1);
 }
