@@ -1,0 +1,22 @@
+{
+  CacheConfiguration<Integer,Object> ccfg=cacheConfiguration(grid(0).name());
+  ccfg.setName("testPutOffHeapValues");
+  ccfg.setStatisticsEnabled(true);
+  ccfg.setOffHeapMaxMemory(MAX_MEMORY_SIZE);
+  FifoEvictionPolicy plc=new FifoEvictionPolicy();
+  plc.setMaxMemorySize(MAX_MEMORY_SIZE);
+  ccfg.setSwapEnabled(true);
+  ccfg.setMemoryMode(CacheMemoryMode.OFFHEAP_VALUES);
+  ccfg.setEvictionPolicy(plc);
+  final IgniteCache<Integer,Object> cache=grid(0).getOrCreateCache(ccfg);
+  fillCache(cache,getTestTimeout());
+  assertEquals(VALS_AMOUNT * THREAD_COUNT,cache.size(CachePeekMode.ALL));
+  assertEquals(0,cache.size(CachePeekMode.NEAR));
+  assertEquals(0,cache.size(CachePeekMode.OFFHEAP));
+  assertTrue(MAX_VALS_AMOUNT >= cache.size(CachePeekMode.ONHEAP));
+  assertTrue(MAX_VALS_AMOUNT - 5 <= cache.size(CachePeekMode.ONHEAP));
+  assertEquals(cache.size(CachePeekMode.ALL) - cache.size(CachePeekMode.ONHEAP),cache.size(CachePeekMode.SWAP));
+  assertTrue((MAX_VALS_AMOUNT + 5) * VAL_SIZE > cache.metrics().getOffHeapAllocatedSize());
+  assertTrue((MAX_VALS_AMOUNT - 5) * VAL_SIZE < cache.metrics().getOffHeapAllocatedSize());
+  assertTrue(cache.metrics().getOffHeapAllocatedSize() >= cache.size(CachePeekMode.ONHEAP) * VAL_SIZE);
+}

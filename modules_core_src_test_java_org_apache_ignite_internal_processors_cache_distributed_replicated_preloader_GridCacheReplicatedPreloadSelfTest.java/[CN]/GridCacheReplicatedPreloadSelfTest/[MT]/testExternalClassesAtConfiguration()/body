@@ -1,0 +1,48 @@
+{
+  try {
+    extClassloadingAtCfg=true;
+    useExtClassLoader=true;
+    Ignite g1=startGrid(1);
+    Ignite g2=startGrid(2);
+    isClient=true;
+    Ignite g3=startGrid(3);
+    IgniteCache<Integer,Object> cache1=g1.cache(null);
+    IgniteCache<Integer,Object> cache2=g2.cache(null);
+    IgniteCache<Integer,Object> cache3=g3.cache(null);
+    final Class<CacheEntryListener> cls1=(Class<CacheEntryListener>)getExternalClassLoader().loadClass("org.apache.ignite.tests.p2p.CacheDeploymentCacheEntryListener");
+    final Class<CacheEntryEventSerializableFilter> cls2=(Class<CacheEntryEventSerializableFilter>)getExternalClassLoader().loadClass("org.apache.ignite.tests.p2p.CacheDeploymentCacheEntryEventSerializableFilter");
+    CacheEntryListenerConfiguration<Integer,Object> lsnrCfg=new MutableCacheEntryListenerConfiguration<>(new Factory<CacheEntryListener<Integer,Object>>(){
+      @Override public CacheEntryListener<Integer,Object> create(){
+        try {
+          return cls1.newInstance();
+        }
+ catch (        Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+,new Factory<CacheEntryEventSerializableFilter<Integer,Object>>(){
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public CacheEntryEventSerializableFilter<Integer,Object> create(){
+        try {
+          return cls2.newInstance();
+        }
+ catch (        Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+,true,true);
+    cache1.registerCacheEntryListener(lsnrCfg);
+    cache1.put(1,1);
+    assertEquals(1,cache2.get(1));
+    assertEquals(1,cache3.get(1));
+  }
+  finally {
+    extClassloadingAtCfg=false;
+    isClient=false;
+    useExtClassLoader=false;
+  }
+}
