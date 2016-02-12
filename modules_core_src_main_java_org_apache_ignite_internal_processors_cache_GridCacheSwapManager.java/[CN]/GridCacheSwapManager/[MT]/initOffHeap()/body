@@ -4,11 +4,11 @@
   long init=max > 0 ? max / 1024 : 8L * 1024L * 1024L;
   int parts=cctx.config().getAffinity().partitions();
   GridOffHeapEvictListener lsnr;
-  if (swapEnabled) {
-    offheapToSwapEvicts=true;
+  if (swapEnabled || GridQueryProcessor.isEnabled(cctx.config())) {
+    unwindOffheapEvicts=true;
     lsnr=new GridOffHeapEvictListener(){
       @Override public void onEvict(      int part,      int hash,      byte[] kb,      byte[] vb){
-        assert offheapToSwapEvicts;
+        assert unwindOffheapEvicts;
         onOffheapEvict();
         Collection<IgniteBiTuple<byte[],byte[]>> evicts=offheapEvicts.get();
         if (evicts == null)         offheapEvicts.set(evicts=new ArrayList<>());
