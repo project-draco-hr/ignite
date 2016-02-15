@@ -1,0 +1,26 @@
+{
+  final IgniteCache<Integer,Integer> cache=ignite.cache(null);
+  if (rollback) {
+    while (true) {
+      try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+        updateEntries(cache,newValue,invoke,keys);
+        tx.rollback();
+        break;
+      }
+ catch (      CacheException e) {
+        if (e.getCause() instanceof ClusterTopologyException) {
+          ClusterTopologyException topEx=(ClusterTopologyException)e.getCause();
+          topEx.retryReadyFuture().get();
+        }
+ else         throw e;
+      }
+catch (      ClusterTopologyException e) {
+        IgniteFuture<?> fut=e.retryReadyFuture();
+        fut.get();
+      }
+catch (      TransactionRollbackException ignore) {
+      }
+    }
+  }
+ else   updateEntries(cache,newValue,invoke,keys);
+}
