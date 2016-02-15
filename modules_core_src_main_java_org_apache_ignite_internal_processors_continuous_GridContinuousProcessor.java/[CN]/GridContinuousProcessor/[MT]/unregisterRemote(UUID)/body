@@ -1,2 +1,17 @@
 {
+  RemoteRoutineInfo remote;
+  LocalRoutineInfo loc;
+  stopLock.lock();
+  try {
+    remote=rmtInfos.remove(routineId);
+    loc=locInfos.remove(routineId);
+    if (remote == null)     stopped.add(routineId);
+  }
+  finally {
+    stopLock.unlock();
+  }
+  if (remote != null)   unregisterHandler(routineId,remote.hnd,false);
+ else   if (loc != null) {
+    unregisterHandler(routineId,loc.hnd,false);
+  }
 }
