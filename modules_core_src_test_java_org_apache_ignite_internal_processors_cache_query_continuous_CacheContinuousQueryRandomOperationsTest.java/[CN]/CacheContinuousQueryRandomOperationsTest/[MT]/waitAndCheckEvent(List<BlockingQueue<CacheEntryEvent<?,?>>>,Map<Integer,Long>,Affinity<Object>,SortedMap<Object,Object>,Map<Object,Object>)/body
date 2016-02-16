@@ -1,0 +1,29 @@
+{
+  for (  BlockingQueue<CacheEntryEvent<?,?>> evtsQueue : evtsQueues) {
+    Map<Object,CacheEntryEvent> rcvEvts=new HashMap<>();
+    for (int i=0; i < vals.size(); i++) {
+      CacheEntryEvent<?,?> evt=evtsQueue.poll(5,SECONDS);
+      rcvEvts.put(evt.getKey(),evt);
+    }
+    assertEquals(vals.size(),rcvEvts.size());
+    for (    Map.Entry<Object,Object> e : vals.entrySet()) {
+      Object key=e.getKey();
+      Object val=e.getValue();
+      Object oldVal=expData.get(key);
+      if (val == null && oldVal == null) {
+        checkNoEvent(evtsQueues);
+        continue;
+      }
+      CacheEntryEvent evt=rcvEvts.get(key);
+      assertNotNull("Failed to wait for event [key=" + key + ", val="+ val+ ", oldVal="+ oldVal+ ']',evt);
+      assertEquals(key,evt.getKey());
+      assertEquals(val,evt.getValue());
+      assertEquals(oldVal,evt.getOldValue());
+      long cntr=partCntrs.get(aff.partition(key));
+      CacheQueryEntryEvent qryEntryEvt=(CacheQueryEntryEvent)evt.unwrap(CacheQueryEntryEvent.class);
+      assertNotNull(cntr);
+      assertNotNull(qryEntryEvt);
+      assertEquals(cntr,qryEntryEvt.getPartitionUpdateCounter());
+    }
+  }
+}
