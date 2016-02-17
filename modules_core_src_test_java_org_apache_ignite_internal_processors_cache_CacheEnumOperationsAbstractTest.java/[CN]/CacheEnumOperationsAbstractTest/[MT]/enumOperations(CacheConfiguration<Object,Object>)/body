@@ -1,0 +1,19 @@
+{
+  ignite(0).createCache(ccfg);
+  try {
+    int key=0;
+    int nodes;
+    if (!singleNode()) {
+      nodes=6;
+      ignite(nodes - 1).createNearCache(ccfg.getName(),new NearCacheConfiguration<>());
+    }
+ else     nodes=1;
+    for (int i=0; i < nodes; i++) {
+      IgniteCache<Object,Object> cache=ignite(i).cache(ccfg.getName());
+      for (int j=0; j < 100; j++)       enumOperations(cache,key++);
+    }
+  }
+  finally {
+    ignite(0).destroyCache(ccfg.getName());
+  }
+}
