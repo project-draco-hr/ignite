@@ -1,0 +1,25 @@
+{
+  int key1Hash=key1.hashCode();
+  int key2Hash=key2.hashCode();
+  int res=Integer.compare(key1Hash,key2Hash);
+  if (res == 0) {
+    key1=(CacheObject)cctx1.unwrapTemporary(key1);
+    key2=(CacheObject)cctx2.unwrapTemporary(key2);
+    try {
+      byte[] key1ValBytes=key1.valueBytes(cctx1.cacheObjectContext());
+      byte[] key2ValBytes=key2.valueBytes(cctx2.cacheObjectContext());
+      res=Integer.compare(key1ValBytes.length,key2ValBytes.length);
+      if (res == 0) {
+        for (int i=0; i < key1ValBytes.length; i++) {
+          res=Byte.compare(key1ValBytes[i],key2ValBytes[i]);
+          if (res != 0)           break;
+        }
+      }
+      if (res == 0)       res=Boolean.compare(cctx1.isNear(),cctx2.isNear());
+    }
+ catch (    IgniteCheckedException e) {
+      throw new IgniteException(e);
+    }
+  }
+  return res;
+}

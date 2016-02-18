@@ -1,0 +1,16 @@
+{
+  startGrids(1);
+  long ttl=60L;
+  final String key="key1";
+  final IgniteCache<String,String> cache=jcache();
+  for (int i=0; i < 1000; i++) {
+    final IgniteCache<String,String> cache0=cache.withExpiryPolicy(new ModifiedExpiryPolicy(new Duration(TimeUnit.HOURS,ttl)));
+    cache0.put(key,key);
+    info("PUT DONE");
+  }
+  int pSize=grid(0).context().cache().internalCache(null).context().ttl().pendingSize();
+  assertTrue("Too many pending entries: " + pSize,pSize <= 1);
+  cache.remove(key);
+  pSize=grid(0).context().cache().internalCache(null).context().ttl().pendingSize();
+  assertEquals(0,pSize);
+}

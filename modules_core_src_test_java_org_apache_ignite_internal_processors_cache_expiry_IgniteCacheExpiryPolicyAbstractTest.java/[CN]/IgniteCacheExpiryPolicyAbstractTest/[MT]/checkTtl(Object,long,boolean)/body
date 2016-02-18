@@ -3,36 +3,34 @@
   for (int i=0; i < gridCount(); i++) {
     IgniteKernal grid=(IgniteKernal)grid(i);
     GridCacheAdapter<Object,Object> cache=grid.context().cache().internalCache();
-    GridCacheEntryEx e=cache.peekEx(key);
-    if (e == null && cache.context().isNear())     e=cache.context().near().dht().peekEx(key);
-    if (e != null && e.deleted()) {
-      assertEquals(0,e.ttl());
-      assertFalse(cache.affinity().isPrimaryOrBackup(grid.localNode(),key));
-      continue;
-    }
-    if (e == null)     assertTrue("Not found " + key,!cache.affinity().isPrimaryOrBackup(grid.localNode(),key));
- else {
-      found=true;
-      if (wait) {
-        final GridCacheEntryEx e0=e;
-        GridTestUtils.waitForCondition(new PA(){
-          @Override public boolean apply(){
-            try {
-              return e0.ttl() == ttl;
-            }
- catch (            Exception e) {
-              fail("Unexpected error: " + e);
-              return true;
-            }
-          }
+    if (cache.context().isNear())     cache=cache.context().near().dht();
+    while (true) {
+      try {
+        GridCacheEntryEx e=memoryMode() == CacheMemoryMode.ONHEAP_TIERED ? cache.peekEx(key) : cache.entryEx(key);
+        if (e != null && e.deleted()) {
+          assertEquals(0,e.ttl());
+          assertFalse(cache.affinity().isPrimaryOrBackup(grid.localNode(),key));
+          continue;
         }
-,3000);
+        if (e == null)         assertTrue("Not found " + key,!cache.affinity().isPrimaryOrBackup(grid.localNode(),key));
+ else {
+          e.unswap();
+          found=true;
+          if (wait)           waitTtl(cache,key,ttl);
+          boolean primary=cache.affinity().isPrimary(grid.localNode(),key);
+          boolean backup=cache.affinity().isBackup(grid.localNode(),key);
+          assertEquals("Unexpected ttl [grid=" + i + ", nodeId="+ grid.getLocalNodeId()+ ", key="+ key+ ", e="+ e+ ", primary="+ primary+ ", backup="+ backup+ ']',ttl,e.ttl());
+          if (ttl > 0)           assertTrue(e.expireTime() > 0);
+ else           assertEquals(0,e.expireTime());
+        }
+        break;
       }
-      boolean primary=cache.affinity().isPrimary(grid.localNode(),key);
-      boolean backup=cache.affinity().isBackup(grid.localNode(),key);
-      assertEquals("Unexpected ttl [grid=" + i + ", key="+ key+ ", e="+ e+ ", primary="+ primary+ ", backup="+ backup+ ']',ttl,e.ttl());
-      if (ttl > 0)       assertTrue(e.expireTime() > 0);
- else       assertEquals(0,e.expireTime());
+ catch (      GridCacheEntryRemovedException ignore) {
+        info("RETRY");
+      }
+catch (      GridDhtInvalidPartitionException ignore) {
+        break;
+      }
     }
   }
   assertTrue(found);

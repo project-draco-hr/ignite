@@ -1,0 +1,26 @@
+{
+  IgniteBiTuple<K,V> next0=null;
+  while (keyIt.hasNext()) {
+    next0=null;
+    K key=keyIt.next();
+    CacheObject val;
+    try {
+      val=value(key);
+    }
+ catch (    IgniteCheckedException e) {
+      if (log.isDebugEnabled())       log.debug("Failed to peek value: " + e);
+      val=null;
+    }
+    if (dht != null && expiryPlc != null && expiryPlc.readyToFlush(100)) {
+      dht.sendTtlUpdateRequest(expiryPlc);
+      expiryPlc=cctx.cache().expiryPolicy(plc);
+    }
+    if (val != null) {
+      next0=F.t((K)cctx.unwrapBinaryIfNeeded(key,true),(V)cctx.unwrapBinaryIfNeeded(val,true));
+      if (checkPredicate(next0))       break;
+ else       next0=null;
+    }
+  }
+  next=next0 != null ? new IgniteBiTuple<>(next0.getKey(),next0.getValue()) : null;
+  if (next == null)   sendTtlUpdate();
+}
