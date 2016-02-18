@@ -3,7 +3,14 @@
     @Override public void run0(){
       for (      CacheEntryEvent<?,?> e : deps) {
         if (!(e.getKey() instanceof GridServiceDeploymentKey))         continue;
-        GridServiceDeployment dep=(GridServiceDeployment)e.getValue();
+        GridServiceDeployment dep;
+        try {
+          dep=(GridServiceDeployment)e.getValue();
+        }
+ catch (        IgniteException ex) {
+          if (X.hasCause(ex,ClassNotFoundException.class))           continue;
+ else           throw ex;
+        }
         if (dep != null) {
           svcName.set(dep.configuration().getName());
           long topVer=ctx.discovery().topologyVersion();

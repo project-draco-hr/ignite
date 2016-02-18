@@ -3,7 +3,14 @@
     @Override public void run0(){
       for (      CacheEntryEvent<?,?> e : assignCol) {
         if (!(e.getKey() instanceof GridServiceAssignmentsKey))         continue;
-        GridServiceAssignments assigns=(GridServiceAssignments)e.getValue();
+        GridServiceAssignments assigns;
+        try {
+          assigns=(GridServiceAssignments)e.getValue();
+        }
+ catch (        IgniteException ex) {
+          if (X.hasCause(ex,ClassNotFoundException.class))           continue;
+ else           throw ex;
+        }
         if (assigns != null) {
           svcName.set(assigns.name());
           Throwable t=null;
