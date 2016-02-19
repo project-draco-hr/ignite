@@ -19,6 +19,15 @@
   Map<String,String> appMasterEnv=props.toEnvs();
   setupAppMasterEnv(appMasterEnv,conf);
   amContainer.setEnvironment(appMasterEnv);
+  if (UserGroupInformation.isSecurityEnabled()) {
+    Credentials creds=new Credentials();
+    String tokRenewer=conf.get(YarnConfiguration.RM_PRINCIPAL);
+    if (tokRenewer == null || tokRenewer.length() == 0)     throw new IOException("Master Kerberos principal for the RM is not set.");
+    log.info("Found RM principal: " + tokRenewer);
+    final Token<?> tokens[]=fs.addDelegationTokens(tokRenewer,creds);
+    if (tokens != null)     log.info("File system delegation tokens: " + Arrays.toString(tokens));
+    amContainer.setTokens(IgniteYarnUtils.createTokenBuffer(creds));
+  }
   Resource capability=Records.newRecord(Resource.class);
   capability.setMemory(512);
   capability.setVirtualCores(1);
