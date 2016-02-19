@@ -1,0 +1,21 @@
+{
+  try {
+    binaries=true;
+    startGrids(2);
+    awaitPartitionMapExchange();
+    Ignite g0=grid(0);
+    IgniteDataStreamer<Integer,BinaryObject> dataLdr=g0.dataStreamer(null);
+    for (int i=0; i < 500; i++) {
+      BinaryObjectBuilder obj=g0.binary().builder("NoExistedClass");
+      obj.setField("id",i);
+      obj.setField("name",String.valueOf("name = " + i));
+      dataLdr.addData(i,obj.build());
+    }
+    dataLdr.close(false);
+    assertEquals(500,g0.cache(null).size(CachePeekMode.ALL));
+    assertEquals(500,grid(1).cache(null).size(CachePeekMode.ALL));
+  }
+  finally {
+    G.stopAll(true);
+  }
+}
