@@ -16,11 +16,11 @@
   ExpiryPolicy plc=opCtx != null ? opCtx.expiry() : null;
   GridCompoundFuture<Object,?> fut=new GridCompoundFuture<>();
   if (!F.isEmpty(oldNodes.nodes())) {
-    ComputeTaskInternalFuture oldNodesFut=ctx.kernalContext().closure().callAsync(BROADCAST,Arrays.asList(new LoadCacheClosure<>(ctx.name(),p,args,plc)),oldNodes.nodes());
+    ComputeTaskInternalFuture oldNodesFut=ctx.kernalContext().closure().callAsync(BROADCAST,Collections.singletonList(new LoadCacheClosure<>(ctx.name(),p,args,plc)),oldNodes.nodes());
     fut.add(oldNodesFut);
   }
   if (!F.isEmpty(newNodes.nodes())) {
-    ComputeTaskInternalFuture newNodesFut=ctx.kernalContext().closure().callAsync(BROADCAST,Arrays.asList(new LoadCacheJob<>(ctx.name(),ctx.affinity().affinityTopologyVersion(),p,args,plc)),newNodes.nodes());
+    ComputeTaskInternalFuture newNodesFut=ctx.kernalContext().closure().callAsync(BROADCAST,Collections.singletonList(new LoadCacheJob<>(ctx.name(),ctx.affinity().affinityTopologyVersion(),p,args,plc)),newNodes.nodes());
     fut.add(newNodesFut);
   }
   fut.markInitialized();
