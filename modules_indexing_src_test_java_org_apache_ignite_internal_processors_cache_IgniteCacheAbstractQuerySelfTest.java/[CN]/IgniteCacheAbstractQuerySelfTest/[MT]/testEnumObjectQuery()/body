@@ -1,0 +1,23 @@
+{
+  final IgniteCache<Long,EnumObject> cache=ignite().cache(null);
+  for (long i=0; i < 50; i++)   cache.put(i,new EnumObject(i,i % 2 == 0 ? EnumType.TYPE_A : EnumType.TYPE_B));
+  assertEnumQry("type = ?",EnumType.TYPE_A,EnumType.TYPE_A,cache,25);
+  assertEnumQry("type > ?",EnumType.TYPE_A,EnumType.TYPE_B,cache,25);
+  assertEnumQry("type < ?",EnumType.TYPE_B,EnumType.TYPE_A,cache,25);
+  assertEnumQry("type != ?",EnumType.TYPE_B,EnumType.TYPE_A,cache,25);
+  assertEmptyEnumQry("type = ?",null,cache);
+  assertEmptyEnumQry("type > ?",EnumType.TYPE_B,cache);
+  assertEmptyEnumQry("type < ?",EnumType.TYPE_A,cache);
+  cache.put(50L,new EnumObject(50,null));
+  assertNoArgEnumQry("type is null",null,cache,1);
+  assertAnyResTypeEnumQry("type is not null",cache,50);
+  IgniteBinary binary=ignite().binary();
+  if (binary != null) {
+    assertEnumQry("type = ?",binaryEnum(binary,EnumType.TYPE_A),EnumType.TYPE_A,cache,25);
+    assertEnumQry("type > ?",binaryEnum(binary,EnumType.TYPE_A),EnumType.TYPE_B,cache,25);
+    assertEnumQry("type < ?",binaryEnum(binary,EnumType.TYPE_B),EnumType.TYPE_A,cache,25);
+    assertEnumQry("type != ?",binaryEnum(binary,EnumType.TYPE_B),EnumType.TYPE_A,cache,25);
+    assertEmptyEnumQry("type > ?",binaryEnum(binary,EnumType.TYPE_B),cache);
+    assertEmptyEnumQry("type < ?",binaryEnum(binary,EnumType.TYPE_A),cache);
+  }
+}
