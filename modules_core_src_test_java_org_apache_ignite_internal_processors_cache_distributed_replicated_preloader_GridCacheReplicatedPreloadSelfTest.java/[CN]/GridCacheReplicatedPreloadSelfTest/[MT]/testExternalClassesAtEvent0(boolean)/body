@@ -1,0 +1,23 @@
+{
+  try {
+    useExtClassLoader=true;
+    cutromEvt=true;
+    if (p2p)     disableP2p=true;
+    final Class cls=(Class)getExternalClassLoader().loadClass("org.apache.ignite.tests.p2p.CacheDeploymentExternalizableTestValue");
+    final Class cls2=(Class)getExternalClassLoader().loadClass("org.apache.ignite.tests.p2p.GridEventConsumeFilter");
+    Ignite g1=startGrid(1);
+    startGrid(2);
+    latch=new CountDownLatch(3);
+    g1.events().localListen((IgnitePredicate)cls2.newInstance(),EVT_CACHE_OBJECT_PUT);
+    g1.events().localListen(new EventListener(),EVT_CACHE_OBJECT_PUT);
+    g1.events().remoteListen(null,(IgnitePredicate)cls2.newInstance(),EVT_CACHE_OBJECT_PUT);
+    g1.events().remoteListen(null,new EventListener(),EVT_CACHE_OBJECT_PUT);
+    g1.cache(null).put("1",cls.newInstance());
+    latch.await();
+  }
+  finally {
+    useExtClassLoader=false;
+    cutromEvt=false;
+    if (p2p)     disableP2p=false;
+  }
+}

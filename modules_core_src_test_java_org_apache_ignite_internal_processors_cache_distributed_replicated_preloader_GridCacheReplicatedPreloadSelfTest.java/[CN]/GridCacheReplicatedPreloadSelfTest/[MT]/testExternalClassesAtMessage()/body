@@ -1,0 +1,28 @@
+{
+  try {
+    useExtClassLoader=true;
+    disableP2p=true;
+    final Class cls=(Class)getExternalClassLoader().loadClass("org.apache.ignite.tests.p2p.CacheDeploymentExternalizableTestValue");
+    Ignite g1=startGrid(1);
+    startGrid(2);
+    IgniteMessaging rmtMsg=g1.message();
+    latch=new CountDownLatch(2);
+    rmtMsg.remoteListen("MyOrderedTopic",new MessageListener());
+    Object o=cls.newInstance();
+    o.toString();
+    rmtMsg.send("MyOrderedTopic",o);
+    rmtMsg.sendOrdered("MyOrderedTopic",o,0);
+    latch.await();
+    final Class cls2=(Class)getExternalClassLoader().loadClass("org.apache.ignite.tests.p2p.CacheDeploymentTestEnumValue");
+    Object topic=cls2.getEnumConstants()[0];
+    latch=new CountDownLatch(2);
+    rmtMsg.remoteListen(topic,new MessageListener());
+    rmtMsg.send(topic,topic);
+    rmtMsg.sendOrdered(topic,topic,0);
+    latch.await();
+  }
+  finally {
+    useExtClassLoader=false;
+    disableP2p=false;
+  }
+}
