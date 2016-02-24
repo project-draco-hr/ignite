@@ -1,0 +1,18 @@
+{
+  gate.enter();
+  try {
+    if (cctx.transactional())     return CU.outTx(new Callable<R>(){
+      @Override public R call() throws Exception {
+        return delegate.affinityCall(job);
+      }
+    }
+,cctx);
+    return delegate.affinityCall(job);
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+ finally {
+    gate.leave();
+  }
+}
