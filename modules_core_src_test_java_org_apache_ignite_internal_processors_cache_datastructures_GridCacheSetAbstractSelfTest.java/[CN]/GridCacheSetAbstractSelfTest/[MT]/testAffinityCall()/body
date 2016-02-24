@@ -1,0 +1,32 @@
+{
+  final CollectionConfiguration colCfg=collectionConfiguration();
+  colCfg.setCollocated(false);
+  colCfg.setCacheMode(CacheMode.PARTITIONED);
+  try (final IgniteSet<Integer> set1=grid(0).set("Set1",colCfg)){
+    GridTestUtils.assertThrows(log,new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        set1.affinityCall(new IgniteCallable<Object>(){
+          @Override public Object call(){
+            return null;
+          }
+        }
+);
+        return null;
+      }
+    }
+,IgniteException.class,"Failed to execute affinityCall() for non-collocated set: " + set1.name() + ". This operation is supported only for collocated sets.");
+  }
+   colCfg.setCollocated(true);
+  try (final IgniteSet<Integer> set2=grid(0).set("Set2",colCfg)){
+    set2.add(100);
+    Integer res=set2.affinityCall(new IgniteCallable<Integer>(){
+      @IgniteInstanceResource private IgniteEx ignite;
+      @Override public Integer call(){
+        assertTrue(ignite.cachex("datastructures_0").affinity().isPrimaryOrBackup(ignite.cluster().localNode(),"Set2"));
+        return set2.iterator().next();
+      }
+    }
+);
+    assertEquals(100,res.intValue());
+  }
+ }
