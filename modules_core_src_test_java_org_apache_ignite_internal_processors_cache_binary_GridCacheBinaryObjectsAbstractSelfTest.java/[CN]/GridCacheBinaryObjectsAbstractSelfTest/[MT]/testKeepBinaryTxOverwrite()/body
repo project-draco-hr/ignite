@@ -1,0 +1,14 @@
+{
+  if (atomicityMode() != TRANSACTIONAL)   return;
+  IgniteCache<Integer,TestObject> cache=ignite(0).cache(null);
+  cache.put(0,new TestObject(1));
+  for (  TransactionConcurrency conc : TransactionConcurrency.values()) {
+    for (    TransactionIsolation iso : TransactionIsolation.values()) {
+      try (Transaction tx=ignite(0).transactions().txStart(conc,iso)){
+        cache.withKeepBinary().get(0);
+        cache.invoke(0,new ObjectEntryProcessor());
+        tx.commit();
+      }
+     }
+  }
+}
