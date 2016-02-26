@@ -1,0 +1,12 @@
+{
+  marshFactory=new Callable<Marshaller>(){
+    @Override public Marshaller call() throws Exception {
+      return new BinaryMarshaller();
+    }
+  }
+;
+  Ignite ignite=startGrids(2);
+  BinaryObject bo=ignite.binary().builder("ProxyWrapper").setField("proxy",create()).build();
+  int val=ignite.compute(ignite.cluster().forRemotes()).call(new FieldTestCallable(bo));
+  assertEquals(42,val);
+}
