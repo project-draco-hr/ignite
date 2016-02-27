@@ -12,11 +12,24 @@
   }
  else {
     PreparedStatement stmt;
-    try {
-      stmt=prepareStatement(c,sqlQry,false);
-    }
- catch (    SQLException e) {
-      throw new CacheException("Failed to parse query: " + sqlQry,e);
+    boolean cachesCreated=false;
+    while (true) {
+      try {
+        stmt=prepareStatement(c,sqlQry,false);
+        break;
+      }
+ catch (      SQLException e) {
+        if (!cachesCreated && e.getErrorCode() == ErrorCode.SCHEMA_NOT_FOUND_1) {
+          try {
+            ctx.cache().createMissingCaches();
+          }
+ catch (          IgniteCheckedException e1) {
+            throw new CacheException("Failed to create missing caches.",e);
+          }
+          cachesCreated=true;
+        }
+ else         throw new CacheException("Failed to parse query: " + sqlQry,e);
+      }
     }
     try {
       try {
