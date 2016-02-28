@@ -1,0 +1,38 @@
+{
+  noInterceptor=false;
+  IgniteCache<TestKey,TestValue> cache=grid(0).createCache(cacheConfiguration());
+  try {
+    for (int i=0; i < ITER_CNT; i++)     cache.put(new TestKey(i,i),new TestValue(i));
+    interceptor.delegate(new CacheInterceptorAdapter<TestKey,TestValue>(){
+      @Override public TestValue onBeforePut(      Cache.Entry<TestKey,TestValue> entry,      TestValue newVal){
+        assertEquals(entry.getKey().key(),entry.getKey().field());
+        entry.getValue().val(WRONG_VALUE);
+        return super.onBeforePut(entry,newVal);
+      }
+      @Override public void onAfterPut(      Cache.Entry<TestKey,TestValue> entry){
+        assertEquals(entry.getKey().key(),entry.getKey().field());
+        entry.getValue().val(WRONG_VALUE);
+        super.onAfterPut(entry);
+      }
+    }
+);
+    for (int i=0; i < ITER_CNT; i++) {
+      TestKey key=new TestKey(i,i);
+      cache.invoke(key,new EntryProcessor<TestKey,TestValue,Object>(){
+        @Override public Object process(        MutableEntry<TestKey,TestValue> entry,        Object... arguments) throws EntryProcessorException {
+          TestValue val=entry.getValue();
+          assertEquals(entry.getKey().key(),val.val());
+          val.val(WRONG_VALUE);
+          return -1;
+        }
+      }
+);
+      CacheObject obj=((GridCacheAdapter)((IgniteCacheProxy)cache).delegate()).peekEx(key).peekVisibleValue();
+      if (storeValue(cache))       assertNotEquals(WRONG_VALUE,((TestValue)U.field(obj,"val")).val());
+ else       assertNotEquals(WRONG_VALUE,CU.<TestValue>value(obj,((IgniteCacheProxy)cache).context(),false).val());
+    }
+  }
+  finally {
+    if (cache != null)     cache.destroy();
+  }
+}

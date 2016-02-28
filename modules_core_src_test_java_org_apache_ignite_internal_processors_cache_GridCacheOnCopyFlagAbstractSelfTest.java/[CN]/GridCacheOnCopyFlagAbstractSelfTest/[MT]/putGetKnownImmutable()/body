@@ -1,0 +1,33 @@
+{
+  noInterceptor=true;
+  IgniteCache<String,Long> cache=grid(0).createCache(cacheConfiguration());
+  try {
+    Map<String,Long> map=new HashMap<>();
+    for (int i=0; i < ITER_CNT; i++) {
+      String key=String.valueOf(i);
+      Long val=Long.MAX_VALUE - i;
+      cache.put(key,val);
+      map.put(key,val);
+    }
+    GridCacheAdapter cache0=internalCache(cache);
+    GridCacheContext cctx=cache0.context();
+    for (    Map.Entry<String,Long> e : map.entrySet()) {
+      GridCacheEntryEx entry=cache0.peekEx(e.getKey());
+      assertNotNull("No entry for key: " + e.getKey(),entry);
+      String key0=entry.key().value(cctx.cacheObjectContext(),false);
+      assertSame(key0,e.getKey());
+      String key1=entry.key().value(cctx.cacheObjectContext(),true);
+      assertSame(key0,key1);
+      if (!storeValue(cache)) {
+        Long val0=entry.rawGet().value(cctx.cacheObjectContext(),false);
+        assertNotSame(val0,e.getValue());
+        Long val1=entry.rawGet().value(cctx.cacheObjectContext(),true);
+        assertNotSame(val0,val1);
+        assertNotSame(e.getValue(),cache.get(e.getKey()));
+      }
+    }
+  }
+  finally {
+    if (cache != null)     cache.destroy();
+  }
+}

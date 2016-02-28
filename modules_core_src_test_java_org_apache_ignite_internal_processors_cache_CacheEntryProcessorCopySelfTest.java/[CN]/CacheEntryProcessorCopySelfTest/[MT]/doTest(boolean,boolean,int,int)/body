@@ -1,0 +1,35 @@
+{
+  Ignite ignite=grid();
+  CacheConfiguration ccfg=defaultCacheConfiguration();
+  ccfg.setAtomicityMode(CacheAtomicityMode.ATOMIC);
+  ccfg.setCopyOnRead(cpOnRead);
+  ccfg.setNearConfiguration(null);
+  IgniteCache<Integer,Value> cache=null;
+  try {
+    cache=ignite.createCache(ccfg);
+    cache.put(0,new Value(OLD_VAL));
+    cache.get(0);
+    cnt.set(0);
+    cache.invoke(0,new CacheEntryProcessor<Integer,Value,Object>(){
+      @Override public Object process(      MutableEntry<Integer,Value> entry,      Object... args){
+        Value val=entry.getValue();
+        val.i=NEW_VAL;
+        if (mutate)         entry.setValue(val);
+        return null;
+      }
+    }
+);
+    CacheObject obj=((GridCacheAdapter)((IgniteCacheProxy)cache).delegate()).peekEx(0).peekVisibleValue();
+    int actCnt=cnt.get();
+    if (obj instanceof BinaryObject)     if (cpOnRead)     assertEquals(expVal,(int)((BinaryObject)obj).field("i"));
+ else     assertEquals(expVal,((Value)U.field(obj,"obj")).i);
+ else {
+      if (storeValue(cache))       assertEquals(expVal,U.<Value>field(obj,"val").i);
+ else       assertEquals(expVal,CU.<Value>value(obj,((IgniteCacheProxy)cache).context(),false).i);
+    }
+    assertEquals(expCnt,actCnt);
+  }
+  finally {
+    if (cache != null)     cache.destroy();
+  }
+}
