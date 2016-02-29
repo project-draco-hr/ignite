@@ -1,4 +1,28 @@
 {
   super.setUp(cfg);
   cache=cache();
+  if (args.printPartitionStatistics()) {
+    Map<ClusterNode,T2<List<Integer>,List<Integer>>> parts=new HashMap<>();
+    for (    ClusterNode node : ignite().cluster().nodes())     parts.put(node,new T2<List<Integer>,List<Integer>>(new ArrayList<Integer>(),new ArrayList<Integer>()));
+    U.sleep(5000);
+    Affinity<Object> aff=ignite().affinity(cache.getName());
+    for (int p=0; p < aff.partitions(); p++) {
+      Collection<ClusterNode> nodes=aff.mapPartitionToPrimaryAndBackups(p);
+      boolean primary=true;
+      for (      ClusterNode node : nodes) {
+        if (primary) {
+          parts.get(node).get1().add(p);
+          primary=false;
+        }
+ else         parts.get(node).get2().add(p);
+      }
+    }
+    BenchmarkUtils.println(cfg,"Partition stats. [cacheName: " + cache.getName() + ", topVer: "+ ignite().cluster().topologyVersion()+ "]");
+    BenchmarkUtils.println(cfg,"(Node id,  Number of Primary, Percent, Number of Backup, Percent, Total, Percent)");
+    for (    Map.Entry<ClusterNode,T2<List<Integer>,List<Integer>>> e : parts.entrySet()) {
+      List<Integer> primary=e.getValue().get1();
+      List<Integer> backup=e.getValue().get2();
+      BenchmarkUtils.println(cfg,e.getKey().id() + " " + primary.size()+ " "+ primary.size() * 1. / aff.partitions() + " " + backup.size() + " " + backup.size() * 1. / (aff.partitions() * args.backups() == 0 ? 1 : args.backups()) + (primary.size() + backup.size() * 1.) / (aff.partitions() * args.backups() + aff.partitions()));
+    }
+  }
 }
