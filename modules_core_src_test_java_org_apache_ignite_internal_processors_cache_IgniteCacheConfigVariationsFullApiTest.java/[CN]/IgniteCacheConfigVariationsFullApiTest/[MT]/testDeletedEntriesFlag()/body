@@ -1,0 +1,9 @@
+{
+  if (cacheMode() != LOCAL && cacheMode() != REPLICATED && memoryMode() != OFFHEAP_TIERED) {
+    final int cnt=3;
+    IgniteCache<String,Integer> cache=jcache();
+    for (int i=0; i < cnt; i++)     cache.put(String.valueOf(i),i);
+    for (int i=0; i < cnt; i++)     cache.remove(String.valueOf(i));
+    for (int g=0; g < gridCount(); g++)     executeOnLocalOrRemoteJvm(g,new CheckEntriesDeletedTask(cnt,cacheName()));
+  }
+}

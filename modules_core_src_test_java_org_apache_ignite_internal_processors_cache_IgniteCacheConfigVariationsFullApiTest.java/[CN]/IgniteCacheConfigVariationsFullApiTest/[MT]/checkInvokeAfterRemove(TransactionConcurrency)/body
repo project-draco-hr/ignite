@@ -1,0 +1,17 @@
+{
+  IgniteCache<Object,Object> cache=jcache();
+  Object key=key(1);
+  cache.put(key,value(4));
+  Transaction tx=txShouldBeUsed() ? ignite(0).transactions().txStart(concurrency,READ_COMMITTED) : null;
+  try {
+    cache.remove(key);
+    cache.invoke(key,INCR_PROCESSOR,dataMode);
+    cache.invoke(key,INCR_PROCESSOR,dataMode);
+    cache.invoke(key,INCR_PROCESSOR,dataMode);
+    if (tx != null)     tx.commit();
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
+  assertEquals(value(3),cache.get(key));
+}

@@ -1,0 +1,27 @@
+{
+  final Object val1=value(1);
+  final Object val2=value(2);
+  final Object val3=value(3);
+  IgniteCache<Object,Object> cache=jcache();
+  final Object key=primaryTestObjectKeysForCache(cache,1).get(0);
+  Transaction tx=txShouldBeUsed() ? ignite(0).transactions().txStart(concurrency,READ_COMMITTED) : null;
+  try {
+    if (startVal)     cache.put(key,val2);
+ else     assertEquals(null,cache.get(key));
+    Object expRes=startVal ? val2 : null;
+    assertEquals(expRes,cache.invoke(key,INCR_PROCESSOR,dataMode));
+    expRes=startVal ? val3 : val1;
+    assertEquals(expRes,cache.invoke(key,INCR_PROCESSOR,dataMode));
+    expRes=value(valueOf(expRes) + 1);
+    assertEquals(expRes,cache.invoke(key,INCR_PROCESSOR,dataMode));
+    if (tx != null)     tx.commit();
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
+  Object exp=value((startVal ? 2 : 0) + 3);
+  assertEquals(exp,cache.get(key));
+  for (int i=0; i < gridCount(); i++) {
+    if (ignite(i).affinity(cacheName()).isPrimaryOrBackup(grid(i).localNode(),key))     assertEquals(exp,peek(jcache(i),key));
+  }
+}

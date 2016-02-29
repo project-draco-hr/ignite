@@ -1,0 +1,20 @@
+{
+  IgniteCache<Object,Object> cache=jcache();
+  Object key=key(1);
+  Object val1=value(1);
+  Object val2=value(2);
+  if (!put)   cache.put(key,val1);
+  Transaction tx=txShouldBeUsed() ? ignite(0).transactions().txStart(concurrency,isolation) : null;
+  try {
+    if (put)     cache.put(key,val1);
+    cache.invoke(key,INCR_PROCESSOR,dataMode);
+    assertEquals(val2,cache.get(key));
+    if (tx != null) {
+      assertEquals(val2,cache.get(key));
+      tx.commit();
+    }
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
+}

@@ -1,0 +1,17 @@
+{
+  if (txShouldBeUsed() && storeEnabled()) {
+    IgniteCache<String,Integer> cache=grid(0).cache(cacheName());
+    IgniteCache<String,Integer> cacheSkipStore=cache.withSkipStore();
+    final int KEYS=250;
+    List<String> keys=new ArrayList<>(KEYS);
+    for (int i=0; i < KEYS; i++)     keys.add("key_" + i);
+    Map<String,Integer> data=new LinkedHashMap<>();
+    for (int i=0; i < keys.size(); i++)     data.put(keys.get(i),i);
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,OPTIMISTIC,READ_COMMITTED);
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,OPTIMISTIC,REPEATABLE_READ);
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,OPTIMISTIC,SERIALIZABLE);
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,PESSIMISTIC,READ_COMMITTED);
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,PESSIMISTIC,REPEATABLE_READ);
+    checkSkipStoreWithTransaction(cache,cacheSkipStore,data,keys,PESSIMISTIC,SERIALIZABLE);
+  }
+}

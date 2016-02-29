@@ -1,0 +1,14 @@
+{
+  IgniteCache<String,Integer> cache=jcache();
+  IgniteCache<String,Integer> cacheAsync=cache.withAsync();
+  cache.put("key1",1);
+  cache.put("key2",2);
+  cacheAsync.getAndPut("key1",10);
+  IgniteFuture<Integer> fut1=cacheAsync.future();
+  cacheAsync.getAndPut("key2",11);
+  IgniteFuture<Integer> fut2=cacheAsync.future();
+  assertEquals((Integer)1,fut1.get(5000));
+  assertEquals((Integer)2,fut2.get(5000));
+  assertEquals((Integer)10,cache.get("key1"));
+  assertEquals((Integer)11,cache.get("key2"));
+}

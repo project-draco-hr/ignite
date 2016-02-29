@@ -1,0 +1,12 @@
+{
+  for (int i=0; i < cnt; i++) {
+    String key=String.valueOf(i);
+    GridCacheContext<String,Integer> ctx=((IgniteKernal)ignite).<String,Integer>internalCache(cacheName).context();
+    GridCacheEntryEx entry=ctx.isNear() ? ctx.near().dht().peekEx(key) : ctx.cache().peekEx(key);
+    if (ignite.affinity(cacheName).mapKeyToPrimaryAndBackups(key).contains(((IgniteKernal)ignite).localNode())) {
+      assertNotNull(entry);
+      assertTrue(entry.deleted());
+    }
+ else     assertNull(entry);
+  }
+}

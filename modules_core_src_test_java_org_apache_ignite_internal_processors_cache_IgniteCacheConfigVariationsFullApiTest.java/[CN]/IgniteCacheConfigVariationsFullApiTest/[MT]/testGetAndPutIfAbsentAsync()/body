@@ -1,0 +1,42 @@
+{
+  Transaction tx=txShouldBeUsed() ? transactions().txStart() : null;
+  IgniteCache<String,Integer> cache=jcache();
+  IgniteCache<String,Integer> cacheAsync=cache.withAsync();
+  try {
+    cacheAsync.getAndPutIfAbsent("key",1);
+    IgniteFuture<Integer> fut1=cacheAsync.future();
+    assertNull(fut1.get());
+    assertEquals((Integer)1,cache.get("key"));
+    cacheAsync.getAndPutIfAbsent("key",2);
+    IgniteFuture<Integer> fut2=cacheAsync.future();
+    assertEquals((Integer)1,fut2.get());
+    assertEquals((Integer)1,cache.get("key"));
+    if (tx != null)     tx.commit();
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
+  if (!storeEnabled())   return;
+  cache.put("key2",1);
+  cache.localEvict(Collections.singleton("key2"));
+  if (!isLoadPreviousValue())   cache.get("key2");
+  cacheAsync.getAndPutIfAbsent("key2",3);
+  assertEquals((Integer)1,cacheAsync.<Integer>future().get());
+  if (storeEnabled() && isLoadPreviousValue() && !isMultiJvm()) {
+    putToStore("key3",3);
+    cacheAsync.getAndPutIfAbsent("key3",4);
+    assertEquals((Integer)3,cacheAsync.<Integer>future().get());
+  }
+  cache.localEvict(Collections.singleton("key2"));
+  if (!isLoadPreviousValue())   cache.get("key2");
+  tx=txShouldBeUsed() ? transactions().txStart() : null;
+  try {
+    cacheAsync.getAndPutIfAbsent("key2",3);
+    assertEquals(1,cacheAsync.future().get());
+    if (tx != null)     tx.commit();
+    assertEquals((Integer)1,cache.get("key2"));
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
+}

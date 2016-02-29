@@ -1,0 +1,39 @@
+{
+  IgniteCache cache=jcache();
+  final Object key1=key(1);
+  final Object key2=key(2);
+  final Object key3=key(3);
+  final Object val1=value(1);
+  final Object val2=value(2);
+  final Object val3=value(3);
+  cache.put(key2,val1);
+  cache.put(key3,val3);
+  Transaction tx=txShouldBeUsed() ? ignite(0).transactions().txStart(concurrency,isolation) : null;
+  try {
+    assertNull(cache.invoke(key1,incrProcessor,dataMode));
+    assertEquals(val1,cache.invoke(key2,incrProcessor,dataMode));
+    assertEquals(val3,cache.invoke(key3,rmvProseccor));
+    if (tx != null)     tx.commit();
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    throw e;
+  }
+ finally {
+    if (tx != null)     tx.close();
+  }
+  assertEquals(val1,cache.get(key1));
+  assertEquals(val2,cache.get(key2));
+  assertNull(cache.get(key3));
+  for (int i=0; i < gridCount(); i++)   assertNull("Failed for cache: " + i,jcache(i).localPeek(key3,ONHEAP));
+  cache.remove(key1);
+  cache.put(key2,val1);
+  cache.put(key3,val3);
+  assertNull(cache.invoke(key1,incrProcessor,dataMode));
+  assertEquals(val1,cache.invoke(key2,incrProcessor,dataMode));
+  assertEquals(val3,cache.invoke(key3,rmvProseccor));
+  assertEquals(val1,cache.get(key1));
+  assertEquals(val2,cache.get(key2));
+  assertNull(cache.get(key3));
+  for (int i=0; i < gridCount(); i++)   assertNull(jcache(i).localPeek(key3,ONHEAP));
+}

@@ -1,0 +1,29 @@
+{
+  final IgniteCache<String,Integer> cache=jcache();
+  final String key=primaryKeysForCache(1).get(0);
+  cache.put(key,1);
+  assertEquals((Integer)1,cache.get(key));
+  long ttl=500;
+  final ExpiryPolicy expiry=new TouchedExpiryPolicy(new Duration(MILLISECONDS,ttl));
+  grid(0).cache(cacheName()).withExpiryPolicy(expiry).put(key,1);
+  boolean wait=waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return cache.localPeek(key) == null;
+    }
+  }
+,ttl + 1000);
+  assertTrue("Failed to wait for entry expiration.",wait);
+  cache.localEvict(Collections.singleton(key));
+  assertNull(peek(cache,"key"));
+  cache.localPromote(Collections.singleton(key));
+  assertNull(cache.localPeek(key,ONHEAP));
+  assertTrue(cache.localSize() == 0);
+  if (storeEnabled()) {
+    load(cache,key,true);
+    Affinity<String> aff=ignite(0).affinity(cacheName());
+    for (int i=0; i < gridCount(); i++) {
+      if (aff.isPrimary(grid(i).cluster().localNode(),key))       assertEquals((Integer)1,peek(jcache(i),key));
+      if (aff.isBackup(grid(i).cluster().localNode(),key))       assertEquals((Integer)1,peek(jcache(i),key));
+    }
+  }
+}

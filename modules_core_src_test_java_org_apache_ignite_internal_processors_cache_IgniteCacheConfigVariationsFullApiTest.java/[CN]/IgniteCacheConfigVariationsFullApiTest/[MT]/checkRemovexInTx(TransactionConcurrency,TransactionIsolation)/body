@@ -1,0 +1,33 @@
+{
+  if (txShouldBeUsed()) {
+    final int cnt=10;
+    CU.inTx(ignite(0),jcache(),concurrency,isolation,new CIX1<IgniteCache<Object,Object>>(){
+      @Override public void applyx(      IgniteCache cache){
+        for (int i=0; i < cnt; i++)         cache.put("key" + i,i);
+      }
+    }
+);
+    CU.inTx(ignite(0),jcache(),concurrency,isolation,new CIX1<IgniteCache<Object,Object>>(){
+      @Override public void applyx(      IgniteCache<Object,Object> cache){
+        for (int i=0; i < cnt; i++)         assertEquals(new Integer(i),cache.get("key" + i));
+      }
+    }
+);
+    CU.inTx(ignite(0),jcache(),concurrency,isolation,new CIX1<IgniteCache<Object,Object>>(){
+      @Override public void applyx(      IgniteCache<Object,Object> cache){
+        for (int i=0; i < cnt; i++) {
+          boolean removed=cache.remove("key" + i);
+          boolean bug2590=cacheMode() == LOCAL && memoryMode() == OFFHEAP_TIERED && concurrency == OPTIMISTIC && isolation == REPEATABLE_READ;
+          if (!bug2590)           assertTrue(removed);
+        }
+      }
+    }
+);
+    CU.inTx(ignite(0),jcache(),concurrency,isolation,new CIX1<IgniteCache<Object,Object>>(){
+      @Override public void applyx(      IgniteCache<Object,Object> cache){
+        for (int i=0; i < cnt; i++)         assertNull(cache.get("key" + i));
+      }
+    }
+);
+  }
+}

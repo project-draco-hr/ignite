@@ -1,0 +1,15 @@
+{
+  for (int i=0; i < gridCount(); i++) {
+    info("Starting cache dinamically on grid: " + i);
+    IgniteEx grid=grid(i);
+    if (i != CLIENT_NODE_IDX && i != CLIENT_NEAR_ONLY_IDX) {
+      CacheConfiguration cc=testsCfg.configurationFactory().cacheConfiguration(grid.name());
+      cc.setName(cacheName());
+      grid.getOrCreateCache(cc);
+    }
+    if (testsCfg.withClients() && i == CLIENT_NEAR_ONLY_IDX)     grid(CLIENT_NEAR_ONLY_IDX).createNearCache(cacheName(),new NearCacheConfiguration());
+  }
+  awaitPartitionMapExchange();
+  for (int i=0; i < gridCount(); i++)   assertNotNull(jcache(i));
+  for (int i=0; i < gridCount(); i++)   assertEquals("Cache is not empty [idx=" + i + ", entrySet="+ jcache(i).localEntries()+ ']',0,jcache(i).localSize(CachePeekMode.ALL));
+}

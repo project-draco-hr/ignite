@@ -1,0 +1,62 @@
+{
+  if (dataMode != DataMode.EXTERNALIZABLE && gridCount() > 1)   return;
+  final Object key1=key(1);
+  final Object key2=key(2);
+  final Object key3=key(3);
+  final Object val1=value(1);
+  final Object val2=value(2);
+  final Object val3=value(3);
+  final Object val4=value(4);
+  final IgniteCache<Object,Object> cache=jcache();
+  cache.put(key2,val1);
+  cache.put(key3,val3);
+  if (txShouldBeUsed()) {
+    Map<Object,EntryProcessorResult<Object>> res;
+    try (Transaction tx=ignite(0).transactions().txStart(concurrency,isolation)){
+      res=cache.invokeAll(F.asSet(key1,key2,key3),INCR_PROCESSOR,dataMode);
+      tx.commit();
+    }
+     assertEquals(val1,cache.get(key1));
+    assertEquals(val2,cache.get(key2));
+    assertEquals(val4,cache.get(key3));
+    assertNull(res.get(key1));
+    assertEquals(val1,res.get(key2).get());
+    assertEquals(val3,res.get(key3).get());
+    assertEquals(2,res.size());
+    cache.remove(key1);
+    cache.put(key2,val1);
+    cache.put(key3,val3);
+  }
+  Map<Object,EntryProcessorResult<Object>> res=cache.invokeAll(F.asSet(key1,key2,key3),RMV_PROCESSOR);
+  for (int i=0; i < gridCount(); i++) {
+    assertNull(jcache(i).localPeek(key1,ONHEAP));
+    assertNull(jcache(i).localPeek(key2,ONHEAP));
+    assertNull(jcache(i).localPeek(key3,ONHEAP));
+  }
+  assertNull(res.get(key1));
+  assertEquals(val1,res.get(key2).get());
+  assertEquals(val3,res.get(key3).get());
+  assertEquals(2,res.size());
+  cache.remove(key1);
+  cache.put(key2,val1);
+  cache.put(key3,val3);
+  res=cache.invokeAll(F.asSet(key1,key2,key3),INCR_PROCESSOR,dataMode);
+  assertEquals(val1,cache.get(key1));
+  assertEquals(val2,cache.get(key2));
+  assertEquals(val4,cache.get(key3));
+  assertNull(res.get(key1));
+  assertEquals(val1,res.get(key2).get());
+  assertEquals(val3,res.get(key3).get());
+  assertEquals(2,res.size());
+  cache.remove(key1);
+  cache.put(key2,val1);
+  cache.put(key3,val3);
+  res=cache.invokeAll(F.asMap(key1,INCR_PROCESSOR,key2,INCR_PROCESSOR,key3,INCR_PROCESSOR),dataMode);
+  assertEquals(val1,cache.get(key1));
+  assertEquals(val2,cache.get(key2));
+  assertEquals(val4,cache.get(key3));
+  assertNull(res.get(key1));
+  assertEquals(val1,res.get(key2).get());
+  assertEquals(val3,res.get(key3).get());
+  assertEquals(2,res.size());
+}

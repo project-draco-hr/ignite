@@ -1,0 +1,13 @@
+{
+  if (txShouldBeUsed()) {
+    Ignite ignite=primaryIgnite("key");
+    IgniteCache<String,Integer> cache=ignite.cache(cacheName());
+    cache.put("key",1);
+    try (Transaction tx=ignite.transactions().txStart(concurrency,READ_COMMITTED)){
+      cache.remove("key");
+      assertNull(cache.get("key"));
+      assertNotNull(peek(cache,"key"));
+      tx.commit();
+    }
+   }
+}

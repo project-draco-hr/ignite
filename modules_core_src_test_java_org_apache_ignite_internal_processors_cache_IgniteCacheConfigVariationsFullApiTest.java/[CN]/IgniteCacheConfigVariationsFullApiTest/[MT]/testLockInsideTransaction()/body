@@ -1,0 +1,22 @@
+{
+  if (txEnabled()) {
+    GridTestUtils.assertThrows(log,new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        try (Transaction tx=ignite(0).transactions().txStart()){
+          jcache(0).lock("key").lock();
+        }
+         return null;
+      }
+    }
+,CacheException.class,"Explicit lock can't be acquired within a transaction.");
+    GridTestUtils.assertThrows(log,new Callable<Object>(){
+      @Override public Object call() throws Exception {
+        try (Transaction tx=ignite(0).transactions().txStart()){
+          jcache(0).lockAll(Arrays.asList("key1","key2")).lock();
+        }
+         return null;
+      }
+    }
+,CacheException.class,"Explicit lock can't be acquired within a transaction.");
+  }
+}

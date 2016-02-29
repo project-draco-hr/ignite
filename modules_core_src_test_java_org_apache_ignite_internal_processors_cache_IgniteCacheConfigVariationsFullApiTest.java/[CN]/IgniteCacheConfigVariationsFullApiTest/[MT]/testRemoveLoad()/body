@@ -1,0 +1,17 @@
+{
+  if (isMultiJvm())   fail("https://issues.apache.org/jira/browse/IGNITE-1088");
+  if (!storeEnabled())   return;
+  int cnt=10;
+  Set<String> keys=new HashSet<>();
+  for (int i=0; i < cnt; i++)   keys.add(String.valueOf(i));
+  jcache().removeAll(keys);
+  for (  String key : keys)   putToStore(key,Integer.parseInt(key));
+  for (int g=0; g < gridCount(); g++)   grid(g).cache(cacheName()).localLoadCache(null);
+  for (int g=0; g < gridCount(); g++) {
+    for (int i=0; i < cnt; i++) {
+      String key=String.valueOf(i);
+      if (grid(0).affinity(cacheName()).mapKeyToPrimaryAndBackups(key).contains(grid(g).localNode()))       assertEquals((Integer)i,peek(jcache(g),key));
+ else       assertNull(peek(jcache(g),key));
+    }
+  }
+}

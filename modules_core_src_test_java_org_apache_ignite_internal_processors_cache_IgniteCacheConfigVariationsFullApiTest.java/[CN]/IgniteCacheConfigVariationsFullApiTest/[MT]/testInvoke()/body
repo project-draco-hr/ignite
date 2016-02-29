@@ -1,0 +1,34 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      final Object k0=key(0);
+      final Object k1=key(1);
+      final Object val1=value(1);
+      final Object val2=value(2);
+      final Object val3=value(3);
+      final IgniteCache<Object,Object> cache=jcache();
+      assertNull(cache.invoke(k0,INCR_PROCESSOR,dataMode));
+      assertEquals(k1,cache.get(k0));
+      assertEquals(val1,cache.invoke(k0,INCR_PROCESSOR,dataMode));
+      assertEquals(val2,cache.get(k0));
+      cache.put(k1,val1);
+      assertEquals(val1,cache.invoke(k1,INCR_PROCESSOR,dataMode));
+      assertEquals(val2,cache.get(k1));
+      assertEquals(val2,cache.invoke(k1,INCR_PROCESSOR,dataMode));
+      assertEquals(val3,cache.get(k1));
+      RemoveAndReturnNullEntryProcessor c=new RemoveAndReturnNullEntryProcessor();
+      assertNull(cache.invoke(k1,c));
+      assertNull(cache.get(k1));
+      for (int i=0; i < gridCount(); i++)       assertNull(jcache(i).localPeek(k1,ONHEAP));
+      final EntryProcessor<Object,Object,Object> errProcessor=new FailedEntryProcessor();
+      GridTestUtils.assertThrows(log,new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          cache.invoke(k1,errProcessor);
+          return null;
+        }
+      }
+,EntryProcessorException.class,"Test entry processor exception.");
+    }
+  }
+);
+}

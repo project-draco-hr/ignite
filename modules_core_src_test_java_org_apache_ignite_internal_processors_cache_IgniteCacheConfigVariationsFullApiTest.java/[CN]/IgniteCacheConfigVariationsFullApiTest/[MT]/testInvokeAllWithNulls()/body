@@ -1,0 +1,42 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      final Object key1=key(1);
+      final IgniteCache<Object,Object> cache=jcache();
+      GridTestUtils.assertThrows(log,new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          cache.invokeAll((Set<Object>)null,INCR_PROCESSOR,dataMode);
+          return null;
+        }
+      }
+,NullPointerException.class,null);
+      GridTestUtils.assertThrows(log,new Callable<Void>(){
+        @Override public Void call() throws Exception {
+          cache.invokeAll(F.asSet(key1),null);
+          return null;
+        }
+      }
+,NullPointerException.class,null);
+{
+        final Set<Object> keys=new LinkedHashSet<>(2);
+        keys.add(key1);
+        keys.add(null);
+        GridTestUtils.assertThrows(log,new Callable<Void>(){
+          @Override public Void call() throws Exception {
+            cache.invokeAll(keys,INCR_PROCESSOR,dataMode);
+            return null;
+          }
+        }
+,NullPointerException.class,null);
+        GridTestUtils.assertThrows(log,new Callable<Void>(){
+          @Override public Void call() throws Exception {
+            cache.invokeAll(F.asSet(key1),null);
+            return null;
+          }
+        }
+,NullPointerException.class,null);
+      }
+    }
+  }
+);
+}

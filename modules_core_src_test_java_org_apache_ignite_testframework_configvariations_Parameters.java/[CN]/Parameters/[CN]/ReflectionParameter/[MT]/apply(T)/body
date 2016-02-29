@@ -1,0 +1,43 @@
+{
+  if (val == null)   return null;
+  try {
+    Object val0=val;
+    if (!isPrimitiveOrEnum(val))     val0=((Factory)val0).create();
+    Class<?> paramCls=paramClassesCache.get(new T2<Class,String>(cfg.getClass(),mtdName));
+    if (paramCls == null)     paramCls=val0.getClass();
+ else     if (!paramCls.isInstance(val0))     throw new IgniteException("Class parameter from cache does not match value argument class " + "[paramCls=" + paramCls + ", val="+ val0+ "]");
+    if (val0.getClass().equals(Boolean.class))     paramCls=Boolean.TYPE;
+ else     if (val0.getClass().equals(Byte.class))     paramCls=Byte.TYPE;
+ else     if (val0.getClass().equals(Short.class))     paramCls=Short.TYPE;
+ else     if (val0.getClass().equals(Character.class))     paramCls=Character.TYPE;
+ else     if (val0.getClass().equals(Integer.class))     paramCls=Integer.TYPE;
+ else     if (val0.getClass().equals(Long.class))     paramCls=Long.TYPE;
+ else     if (val0.getClass().equals(Float.class))     paramCls=Float.TYPE;
+ else     if (val0.getClass().equals(Double.class))     paramCls=Double.TYPE;
+    Method mtd;
+    Queue<Class> queue=new ArrayDeque<>();
+    boolean failed=false;
+    while (true) {
+      try {
+        mtd=cfg.getClass().getMethod(mtdName,paramCls);
+        if (failed)         paramClassesCache.put(new T2<Class,String>(cfg.getClass(),mtdName),paramCls);
+        break;
+      }
+ catch (      NoSuchMethodException e) {
+        failed=true;
+        U.warn(null,"Method not found [cfgCls=" + cfg.getClass() + ", mtdName="+ mtdName+ ", paramCls="+ paramCls+ "]");
+        Class<?>[] interfaces=paramCls.getInterfaces();
+        Class<?> superclass=paramCls.getSuperclass();
+        if (superclass != null)         queue.add(superclass);
+        if (!F.isEmpty(interfaces))         queue.addAll(Arrays.asList(interfaces));
+        if (queue.isEmpty())         throw new IgniteException("Method not found [cfgCls=" + cfg.getClass() + ", mtdName="+ mtdName+ ", paramCls="+ val0.getClass()+ "]",e);
+        paramCls=queue.remove();
+      }
+    }
+    mtd.invoke(cfg,val0);
+  }
+ catch (  InvocationTargetException|IllegalAccessException e) {
+    throw new IgniteException(e);
+  }
+  return null;
+}

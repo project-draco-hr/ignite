@@ -1,0 +1,30 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      final Object key1=key(1);
+      final Object key2=key(2);
+      final Object key3=key(3);
+      final Object val1=value(1);
+      final Object val2=value(2);
+      final Object val3=value(3);
+      IgniteCache<Object,Object> cache=jcache();
+      cache.put(key2,val1);
+      cache.put(key3,val3);
+      IgniteCache<Object,Object> cacheAsync=cache.withAsync();
+      assertNull(cacheAsync.invoke(key1,INCR_PROCESSOR,dataMode));
+      IgniteFuture<?> fut0=cacheAsync.future();
+      assertNull(cacheAsync.invoke(key2,INCR_PROCESSOR,dataMode));
+      IgniteFuture<?> fut1=cacheAsync.future();
+      assertNull(cacheAsync.invoke(key3,RMV_PROCESSOR));
+      IgniteFuture<?> fut2=cacheAsync.future();
+      fut0.get();
+      fut1.get();
+      fut2.get();
+      assertEquals(val1,cache.get(key1));
+      assertEquals(val2,cache.get(key2));
+      assertNull(cache.get(key3));
+      for (int i=0; i < gridCount(); i++)       assertNull(jcache(i).localPeek(key3,ONHEAP));
+    }
+  }
+);
+}

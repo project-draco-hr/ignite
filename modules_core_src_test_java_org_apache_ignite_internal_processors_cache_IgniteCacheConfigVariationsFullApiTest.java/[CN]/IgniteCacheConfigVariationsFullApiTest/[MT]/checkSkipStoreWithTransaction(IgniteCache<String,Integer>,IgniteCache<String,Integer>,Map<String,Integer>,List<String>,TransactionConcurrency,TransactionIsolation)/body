@@ -1,0 +1,149 @@
+{
+  info("Test tx skip store [concurrency=" + txConcurrency + ", isolation="+ txIsolation+ ']');
+  cache.removeAll(data.keySet());
+  checkEmpty(cache,cacheSkipStore);
+  IgniteTransactions txs=cache.unwrap(Ignite.class).transactions();
+  Integer val=-1;
+  try (Transaction tx=txs.txStart(txConcurrency,txIsolation)){
+    for (    String key : keys)     cacheSkipStore.put(key,val);
+    for (    String key : keys) {
+      assertEquals(val,cacheSkipStore.get(key));
+      assertEquals(val,cache.get(key));
+      assertFalse(map.containsKey(key));
+    }
+    tx.commit();
+  }
+   for (  String key : keys) {
+    assertEquals(val,cacheSkipStore.get(key));
+    assertEquals(val,cache.get(key));
+    assertFalse(map.containsKey(key));
+  }
+  assertEquals(0,map.size());
+  try (Transaction tx=txs.txStart(txConcurrency,txIsolation)){
+    cacheSkipStore.putAll(data);
+    tx.commit();
+  }
+   for (  String key : keys) {
+    val=data.get(key);
+    assertEquals(val,cacheSkipStore.get(key));
+    assertEquals(val,cache.get(key));
+    assertFalse(map.containsKey(key));
+  }
+  map.putAll(data);
+  try (Transaction tx=txs.txStart(txConcurrency,txIsolation)){
+    cacheSkipStore.removeAll(data.keySet());
+    tx.commit();
+  }
+   for (  String key : keys) {
+    assertNull(cacheSkipStore.get(key));
+    assertNotNull(cache.get(key));
+    assertTrue(map.containsKey(key));
+    cache.remove(key);
+  }
+  assertTrue(map.size() == 0);
+  try (Transaction tx=txs.txStart(txConcurrency,txIsolation)){
+    cache.putAll(data);
+    for (    String key : keys) {
+      assertNotNull(cacheSkipStore.get(key));
+      assertNotNull(cache.get(key));
+      assertFalse(map.containsKey(key));
+    }
+    cache.removeAll(data.keySet());
+    for (    String key : keys) {
+      assertNull(cacheSkipStore.get(key));
+      assertNull(cache.get(key));
+      assertFalse(map.containsKey(key));
+    }
+    tx.commit();
+  }
+   assertTrue(map.size() == 0);
+  try (Transaction tx=txs.txStart(txConcurrency,txIsolation)){
+    Map<String,Integer> subMap=new HashMap<>();
+    for (int i=0; i < keys.size() / 2; i++)     subMap.put(keys.get(i),i);
+    cacheSkipStore.putAll(subMap);
+    subMap.clear();
+    for (int i=keys.size() / 2; i < keys.size(); i++)     subMap.put(keys.get(i),i);
+    cache.putAll(subMap);
+    for (    String key : keys) {
+      assertNotNull(cacheSkipStore.get(key));
+      assertNotNull(cache.get(key));
+      assertFalse(map.containsKey(key));
+    }
+    tx.commit();
+  }
+   for (int i=0; i < keys.size() / 2; i++) {
+    String key=keys.get(i);
+    assertNotNull(cacheSkipStore.get(key));
+    assertNotNull(cache.get(key));
+    assertFalse(map.containsKey(key));
+  }
+  for (int i=keys.size() / 2; i < keys.size(); i++) {
+    String key=keys.get(i);
+    assertNotNull(cacheSkipStore.get(key));
+    assertNotNull(cache.get(key));
+    assertTrue(map.containsKey(key));
+  }
+  cache.removeAll(data.keySet());
+  for (  String key : keys) {
+    assertNull(cacheSkipStore.get(key));
+    assertNull(cache.get(key));
+    assertFalse(map.containsKey(key));
+  }
+  for (int i=0; i < keys.size(); i++)   putToStore(keys.get(i),i);
+  assertTrue(cacheSkipStore.size(ALL) == 0);
+  assertTrue(cache.size(ALL) == 0);
+  assertTrue(map.size() != 0);
+  try (Transaction tx=txs.txStart(txConcurrency,txIsolation)){
+    assertTrue(cacheSkipStore.getAll(data.keySet()).size() == 0);
+    for (    String key : keys) {
+      assertNull(cacheSkipStore.get(key));
+      if (txIsolation == READ_COMMITTED) {
+        assertNotNull(cache.get(key));
+        assertNotNull(cacheSkipStore.get(key));
+      }
+    }
+    tx.commit();
+  }
+   cache.removeAll(data.keySet());
+  val=-1;
+  try (Transaction tx=txs.txStart(txConcurrency,txIsolation)){
+    for (    String key : data.keySet()) {
+      map.put(key,0);
+      assertNull(cacheSkipStore.invoke(key,new SetValueProcessor(val)));
+    }
+    tx.commit();
+  }
+   for (  String key : data.keySet()) {
+    assertEquals(0,map.get(key));
+    assertEquals(val,cacheSkipStore.get(key));
+    assertEquals(val,cache.get(key));
+  }
+  cache.removeAll(data.keySet());
+  try (Transaction tx=txs.txStart(txConcurrency,txIsolation)){
+    for (    String key : data.keySet()) {
+      map.put(key,0);
+      assertTrue(cacheSkipStore.putIfAbsent(key,val));
+    }
+    tx.commit();
+  }
+   for (  String key : data.keySet()) {
+    assertEquals(0,map.get(key));
+    assertEquals(val,cacheSkipStore.get(key));
+    assertEquals(val,cache.get(key));
+  }
+  cache.removeAll(data.keySet());
+  try (Transaction tx=txs.txStart(txConcurrency,txIsolation)){
+    for (    String key : data.keySet()) {
+      map.put(key,0);
+      assertNull(cacheSkipStore.getAndPut(key,val));
+    }
+    tx.commit();
+  }
+   for (  String key : data.keySet()) {
+    assertEquals(0,map.get(key));
+    assertEquals(val,cacheSkipStore.get(key));
+    assertEquals(val,cache.get(key));
+  }
+  cache.removeAll(data.keySet());
+  checkEmpty(cache,cacheSkipStore);
+}

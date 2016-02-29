@@ -1,0 +1,24 @@
+{
+  IgniteEx ignite=grid(0);
+  boolean affNode=ignite.context().cache().internalCache(cacheName()).context().affinityNode();
+  if (!affNode) {
+    if (gridCount() < 2)     return;
+    ignite=grid(1);
+  }
+  IgniteCache<Integer,Integer> cache=ignite.cache(cacheName());
+  int key=0;
+  Collection<Integer> keys=new ArrayList<>();
+  for (int k=0; k < 2; k++) {
+    while (!ignite.affinity(cacheName()).isPrimary(ignite.localNode(),key))     key++;
+    keys.add(key);
+    key++;
+  }
+  info("Keys: " + keys);
+  for (  Integer k : keys)   cache.put(k,k);
+  cache.clear();
+  for (int g=0; g < gridCount(); g++) {
+    Ignite grid0=grid(g);
+    grid0.cache(cacheName()).removeAll();
+    assertTrue(grid0.cache(cacheName()).localSize() == 0);
+  }
+}
