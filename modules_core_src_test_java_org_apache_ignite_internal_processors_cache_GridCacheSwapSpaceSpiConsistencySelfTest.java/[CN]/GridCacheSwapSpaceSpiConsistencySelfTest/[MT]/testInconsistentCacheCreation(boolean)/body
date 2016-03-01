@@ -1,0 +1,13 @@
+{
+  startGrid(GRID_WITHOUT_SWAP_SPACE);
+  final Ignite ignite=startGrid(fromClient ? GRID_CLIENT : GRID_WITHOUT_SWAP_SPACE + "2");
+  final CacheConfiguration<Integer,String> cfg=new CacheConfiguration<>();
+  cfg.setSwapEnabled(true);
+  cfg.setName(CACHE_NAME);
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      return ignite.createCache(cfg);
+    }
+  }
+,CacheException.class,"Failed to start cache " + CACHE_NAME + " with swap enabled:");
+}
