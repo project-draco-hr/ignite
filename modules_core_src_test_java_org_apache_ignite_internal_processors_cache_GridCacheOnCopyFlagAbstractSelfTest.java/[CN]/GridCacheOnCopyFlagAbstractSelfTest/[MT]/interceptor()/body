@@ -16,8 +16,7 @@
 );
       cache.put(key,val);
       CacheObject obj=((GridCacheAdapter)((IgniteCacheProxy)cache).delegate()).peekEx(key).peekVisibleValue();
-      if (storeValue(cache))       assertEquals(i,((TestValue)U.field(obj,"val")).val());
- else       assertEquals(i,CU.<TestValue>value(obj,((IgniteCacheProxy)cache).context(),false).val());
+      assertEquals(i,getValue(obj,cache));
       final TestValue newTestVal=new TestValue(-i);
       interceptor.delegate(new CacheInterceptorAdapter<TestKey,TestValue>(){
         @Override public TestValue onBeforePut(        Cache.Entry<TestKey,TestValue> entry,        TestValue newVal){
@@ -37,8 +36,7 @@
 );
       cache.put(key,newTestVal);
       obj=((GridCacheAdapter)((IgniteCacheProxy)cache).delegate()).peekEx(key).peekVisibleValue();
-      if (storeValue(cache))       assertEquals(-i,((TestValue)U.field(obj,"val")).val());
- else       assertEquals(-i,CU.<TestValue>value(obj,((IgniteCacheProxy)cache).context(),false).val());
+      assertEquals(-i,getValue(obj,cache));
       interceptor.delegate(new CacheInterceptorAdapter<TestKey,TestValue>(){
         @Override public IgniteBiTuple onBeforeRemove(        Cache.Entry<TestKey,TestValue> entry){
           assertNotSame(key,entry.getKey());
