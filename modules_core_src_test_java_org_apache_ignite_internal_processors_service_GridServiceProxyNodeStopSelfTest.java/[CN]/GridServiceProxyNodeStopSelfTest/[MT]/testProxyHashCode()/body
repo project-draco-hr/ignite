@@ -1,0 +1,27 @@
+{
+  Ignite server=startGrid("server");
+  server.services().deployClusterSingleton("my-service",MyServiceFactory.create());
+  Ignition.setClientMode(true);
+  Ignite client=startGrid("client");
+  final MyService proxy=client.services().serviceProxy("my-service",MyService.class,false);
+  assertEquals("GridServiceProxy [name=my-service, sticky=false]",proxy.toString());
+  assertEquals(42,proxy.hello());
+  assertEquals(MyService.HASH,proxy.hashCode(null));
+  MyService proxy0=proxy;
+  assertTrue(proxy0.equals(proxy));
+  proxy0=client.services().serviceProxy("my-service",MyService.class,false);
+  assertFalse(proxy0.equals(proxy));
+  int hash=proxy.hashCode();
+  assertFalse(hash == MyService.HASH);
+  client.close();
+  GridTestUtils.assertThrows(log,new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      proxy.hello();
+      return null;
+    }
+  }
+,IllegalStateException.class,null);
+  int hash0=proxy.hashCode();
+  assertFalse(hash0 == MyService.HASH);
+  assertEquals(hash,hash0);
+}
