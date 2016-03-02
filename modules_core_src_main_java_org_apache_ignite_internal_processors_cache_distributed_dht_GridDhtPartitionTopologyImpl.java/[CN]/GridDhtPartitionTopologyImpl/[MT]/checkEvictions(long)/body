@@ -1,2 +1,40 @@
 {
+  boolean changed=false;
+  UUID locId=cctx.nodeId();
+  for (  GridDhtLocalPartition part : locParts.values()) {
+    GridDhtPartitionState state=part.state();
+    if (state.active()) {
+      int p=part.id();
+      List<ClusterNode> affNodes=cctx.affinity().nodes(p,topVer);
+      if (!affNodes.contains(cctx.localNode())) {
+        Collection<UUID> nodeIds=F.nodeIds(nodes(p,topVer,OWNING));
+        if (nodeIds.containsAll(F.nodeIds(affNodes))) {
+          part.rent(false);
+          updateLocal(part.id(),locId,part.state(),updateSeq);
+          changed=true;
+          if (log.isDebugEnabled())           log.debug("Evicted local partition (all affinity nodes are owners): " + part);
+        }
+ else {
+          int ownerCnt=nodeIds.size();
+          int affCnt=affNodes.size();
+          if (ownerCnt > affCnt) {
+            List<ClusterNode> sorted=new ArrayList<>(cctx.discovery().nodes(nodeIds));
+            Collections.sort(sorted,CU.nodeComparator(true));
+            int diff=sorted.size() - affCnt;
+            for (int i=0; i < diff; i++) {
+              ClusterNode n=sorted.get(i);
+              if (locId.equals(n.id())) {
+                part.rent(false);
+                updateLocal(part.id(),locId,part.state(),updateSeq);
+                changed=true;
+                if (log.isDebugEnabled())                 log.debug("Evicted local partition (this node is oldest non-affinity node): " + part);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return changed;
 }
