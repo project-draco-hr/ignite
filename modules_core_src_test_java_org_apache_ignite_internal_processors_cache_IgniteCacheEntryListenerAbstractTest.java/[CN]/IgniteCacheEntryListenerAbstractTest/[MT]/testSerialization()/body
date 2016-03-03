@@ -2,12 +2,15 @@
   if (cacheMode() == LOCAL)   return;
   AtomicBoolean serialized=new AtomicBoolean();
   NonSerializableListener lsnr=new NonSerializableListener(serialized);
-  jcache(0).registerCacheEntryListener(new MutableCacheEntryListenerConfiguration<>(FactoryBuilder.factoryOf(lsnr),null,true,false));
+  jcache(0).registerCacheEntryListener(new MutableCacheEntryListenerConfiguration<>(FactoryBuilder.factoryOf(lsnr),new SerializableFactory(),true,false));
   try {
     startGrid(gridCount());
+    jcache(0).put(1,1);
   }
   finally {
     stopGrid(gridCount());
   }
+  jcache(0).put(2,2);
+  assertFalse(IgniteCacheEntryListenerAbstractTest.serialized.get());
   assertFalse(serialized.get());
 }

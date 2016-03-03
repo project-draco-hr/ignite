@@ -1,0 +1,18 @@
+{
+  if ((val == null && oldVal == null || (val != null && !isAccepted((QueryTestValue)val)))) {
+    checkNoEvent(evtsQueues);
+    return;
+  }
+  for (  BlockingQueue<CacheEntryEvent<?,?>> evtsQueue : evtsQueues) {
+    CacheEntryEvent<?,?> evt=evtsQueue.poll(5,SECONDS);
+    assertNotNull("Failed to wait for event [key=" + key + ", val="+ val+ ", oldVal="+ oldVal+ ']',evt);
+    assertEquals(key,evt.getKey());
+    assertEquals(val,evt.getValue());
+    assertEquals(oldVal,evt.getOldValue());
+    long cntr=partCntrs.get(aff.partition(key));
+    CacheQueryEntryEvent qryEntryEvt=evt.unwrap(CacheQueryEntryEvent.class);
+    assertNotNull(cntr);
+    assertNotNull(qryEntryEvt);
+    assertEquals(cntr,qryEntryEvt.getPartitionUpdateCounter());
+  }
+}

@@ -1,0 +1,33 @@
+{
+  ignite(0).createCache(ccfg);
+  ThreadLocalRandom rnd=ThreadLocalRandom.current();
+  QueryCursor<?> cur=null;
+  final Class<Factory<CacheEntryEventFilter>> evtFilterFactory=(Class<Factory<CacheEntryEventFilter>>)getExternalClassLoader().loadClass("org.apache.ignite.tests.p2p.CacheDeploymentEntryEventFilterFactory");
+  final CountDownLatch latch=new CountDownLatch(10);
+  ContinuousQuery<Integer,Integer> qry=new ContinuousQuery<>();
+  TestLocalListener localLsnr=new TestLocalListener(){
+    @Override public void onEvent(    Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> evts) throws CacheEntryListenerException {
+      for (      CacheEntryEvent<? extends Integer,? extends Integer> evt : evts) {
+        latch.countDown();
+        log.info("Received event: " + evt);
+      }
+    }
+  }
+;
+  MutableCacheEntryListenerConfiguration<Integer,Integer> lsnrCfg=new MutableCacheEntryListenerConfiguration<>(new FactoryBuilder.SingletonFactory<>(localLsnr),(Factory<? extends CacheEntryEventFilter<? super Integer,? super Integer>>)(Object)evtFilterFactory.newInstance(),true,true);
+  qry.setLocalListener(localLsnr);
+  qry.setRemoteFilterFactory((Factory<? extends CacheEntryEventFilter<Integer,Integer>>)(Object)evtFilterFactory.newInstance());
+  IgniteCache<Integer,Integer> cache=null;
+  try {
+    if (isClient)     cache=grid(NODES - 1).cache(ccfg.getName());
+ else     cache=grid(rnd.nextInt(NODES - 1)).cache(ccfg.getName());
+    cur=cache.query(qry);
+    cache.registerCacheEntryListener(lsnrCfg);
+    for (int i=0; i < 10; i++)     cache.put(i,i);
+    assertTrue(latch.await(3,TimeUnit.SECONDS));
+  }
+  finally {
+    if (cur != null)     cur.close();
+    if (cache != null)     cache.deregisterCacheEntryListener(lsnrCfg);
+  }
+}

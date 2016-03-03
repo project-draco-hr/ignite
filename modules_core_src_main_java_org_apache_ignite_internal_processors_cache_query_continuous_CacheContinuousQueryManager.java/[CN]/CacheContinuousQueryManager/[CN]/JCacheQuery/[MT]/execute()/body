@@ -8,12 +8,26 @@
   types|=locLsnrImpl instanceof CacheEntryRemovedListener ? REMOVED_FLAG : 0;
   types|=locLsnrImpl instanceof CacheEntryExpiredListener ? EXPIRED_FLAG : 0;
   if (types == 0)   throw new IgniteCheckedException("Listener must implement one of CacheEntryListener sub-interfaces.");
-  CacheEntryUpdatedListener locLsnr=new JCacheQueryLocalListener(locLsnrImpl,log);
-  CacheEntryEventFilter fltr=null;
-  if (cfg.getCacheEntryEventFilterFactory() != null) {
-    fltr=(CacheEntryEventFilter)cfg.getCacheEntryEventFilterFactory().create();
-    if (!(fltr instanceof Serializable))     throw new IgniteCheckedException("Cache entry event filter must implement java.io.Serializable: " + fltr);
+  final byte types0=types;
+  final CacheEntryUpdatedListener locLsnr=new JCacheQueryLocalListener(locLsnrImpl,log);
+  routineId=executeQuery0(locLsnr,new IgniteClosure<Boolean,CacheContinuousQueryHandler>(){
+    @Override public CacheContinuousQueryHandler apply(    Boolean v2){
+      CacheContinuousQueryHandler hnd;
+      Factory<CacheEntryEventFilter> rmtFilterFactory=cfg.getCacheEntryEventFilterFactory();
+      v2=rmtFilterFactory != null && v2;
+      if (v2)       hnd=new CacheContinuousQueryHandlerV2(cctx.name(),TOPIC_CACHE.topic(topicPrefix,cctx.localNodeId(),seq.getAndIncrement()),locLsnr,rmtFilterFactory,cfg.isOldValueRequired(),cfg.isSynchronous(),false,false,types0);
+ else {
+        JCacheQueryRemoteFilter jCacheFilter;
+        CacheEntryEventFilter filter=null;
+        if (rmtFilterFactory != null) {
+          filter=rmtFilterFactory.create();
+          if (!(filter instanceof Serializable))           throw new IgniteException("Topology has nodes of the old versions. " + "In this case EntryEventFilter must implement java.io.Serializable " + "interface. Filter: "+ filter);
+        }
+        jCacheFilter=new JCacheQueryRemoteFilter(filter,types0);
+        hnd=new CacheContinuousQueryHandler(cctx.name(),TOPIC_CACHE.topic(topicPrefix,cctx.localNodeId(),seq.getAndIncrement()),locLsnr,jCacheFilter,cfg.isOldValueRequired(),cfg.isSynchronous(),false,false);
+      }
+      return hnd;
+    }
   }
-  CacheEntryEventSerializableFilter rmtFilter=new JCacheQueryRemoteFilter(fltr,types);
-  routineId=executeQuery0(locLsnr,rmtFilter,ContinuousQuery.DFLT_PAGE_SIZE,ContinuousQuery.DFLT_TIME_INTERVAL,ContinuousQuery.DFLT_AUTO_UNSUBSCRIBE,false,false,cfg.isOldValueRequired(),cfg.isSynchronous(),false,false,keepBinary,false);
+,ContinuousQuery.DFLT_PAGE_SIZE,ContinuousQuery.DFLT_TIME_INTERVAL,ContinuousQuery.DFLT_AUTO_UNSUBSCRIBE,false,false,false,keepBinary);
 }

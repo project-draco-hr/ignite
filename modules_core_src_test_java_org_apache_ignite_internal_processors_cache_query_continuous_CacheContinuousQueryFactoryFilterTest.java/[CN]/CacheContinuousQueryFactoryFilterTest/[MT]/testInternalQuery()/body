@@ -1,0 +1,25 @@
+{
+  CacheConfiguration<Object,Object> ccfg=cacheConfiguration(REPLICATED,1,ATOMIC,ONHEAP_TIERED,false);
+  final IgniteCache<Object,Object> cache=grid(0).getOrCreateCache(ccfg);
+  UUID uuid=null;
+  try {
+    for (int i=0; i < 10; i++)     cache.put(i,i);
+    final CountDownLatch latch=new CountDownLatch(5);
+    CacheEntryUpdatedListener lsnr=new CacheEntryUpdatedListener(){
+      @Override public void onUpdated(      Iterable iterable) throws CacheEntryListenerException {
+        for (        Object evt : iterable) {
+          latch.countDown();
+          log.info("Received event: " + evt);
+        }
+      }
+    }
+;
+    uuid=grid(0).context().cache().cache(cache.getName()).context().continuousQueries().executeInternalQuery(lsnr,new SerializableFilter(),false,true,true);
+    for (int i=10; i < 20; i++)     cache.put(i,i);
+    assertTrue(latch.await(3,SECONDS));
+  }
+  finally {
+    if (uuid != null)     grid(0).context().cache().cache(cache.getName()).context().continuousQueries().cancelInternalQuery(uuid);
+    cache.destroy();
+  }
+}

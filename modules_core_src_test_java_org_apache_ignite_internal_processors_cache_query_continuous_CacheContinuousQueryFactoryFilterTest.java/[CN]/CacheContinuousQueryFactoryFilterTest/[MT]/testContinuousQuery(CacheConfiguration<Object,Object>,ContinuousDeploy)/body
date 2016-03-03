@@ -1,0 +1,32 @@
+{
+  ignite(0).createCache(ccfg);
+  try {
+    long seed=System.currentTimeMillis();
+    Random rnd=new Random(seed);
+    log.info("Random seed: " + seed);
+    List<BlockingQueue<CacheEntryEvent<?,?>>> evtsQueues=new ArrayList<>();
+    Collection<QueryCursor<?>> curs=new ArrayList<>();
+    Collection<T2<Integer,MutableCacheEntryListenerConfiguration>> lsnrCfgs=new ArrayList<>();
+    if (deploy == CLIENT)     evtsQueues.add(registerListener(ccfg.getName(),NODES - 1,curs,lsnrCfgs,rnd.nextBoolean()));
+ else     if (deploy == SERVER)     evtsQueues.add(registerListener(ccfg.getName(),rnd.nextInt(NODES - 1),curs,lsnrCfgs,rnd.nextBoolean()));
+ else {
+      boolean isSync=rnd.nextBoolean();
+      for (int i=0; i < NODES - 1; i++)       evtsQueues.add(registerListener(ccfg.getName(),i,curs,lsnrCfgs,isSync));
+    }
+    ConcurrentMap<Object,Object> expData=new ConcurrentHashMap<>();
+    Map<Integer,Long> partCntr=new ConcurrentHashMap<>();
+    try {
+      for (int i=0; i < ITERATION_CNT; i++) {
+        if (i % 10 == 0)         log.info("Iteration: " + i);
+        for (int idx=0; idx < NODES; idx++)         randomUpdate(rnd,evtsQueues,expData,partCntr,grid(idx).cache(ccfg.getName()));
+      }
+    }
+  finally {
+      for (      QueryCursor<?> cur : curs)       cur.close();
+      for (      T2<Integer,MutableCacheEntryListenerConfiguration> e : lsnrCfgs)       grid(e.get1()).cache(ccfg.getName()).deregisterCacheEntryListener(e.get2());
+    }
+  }
+  finally {
+    ignite(0).destroyCache(ccfg.getName());
+  }
+}
