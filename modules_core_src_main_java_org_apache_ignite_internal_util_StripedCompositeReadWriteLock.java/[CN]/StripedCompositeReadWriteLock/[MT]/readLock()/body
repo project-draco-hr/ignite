@@ -1,4 +1,9 @@
 {
-  int idx=IDX.get() % locks.length;
-  return locks[idx].readLock();
+  int idx;
+  if (Thread.currentThread() instanceof IgniteThread) {
+    idx=((IgniteThread)Thread.currentThread()).groupIndex();
+    if (idx == IgniteThread.GRP_IDX_UNASSIGNED)     idx=IDX.get();
+  }
+ else   idx=IDX.get();
+  return locks[idx % locks.length].readLock();
 }
