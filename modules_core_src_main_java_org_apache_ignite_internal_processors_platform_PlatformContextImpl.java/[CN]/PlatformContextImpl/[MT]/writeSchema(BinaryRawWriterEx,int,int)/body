@@ -1,0 +1,16 @@
+{
+  BinarySchemaRegistry schemaReg=cacheObjProc.binaryContext().schemaRegistry(typeId);
+  BinarySchema schema=schemaReg.schema(schemaId);
+  if (schema == null) {
+    BinaryTypeImpl meta=(BinaryTypeImpl)cacheObjProc.metadata(typeId);
+    for (    BinarySchema typeSchema : meta.metadata().schemas()) {
+      if (schemaId == typeSchema.schemaId()) {
+        schema=typeSchema;
+        break;
+      }
+    }
+    if (schema != null)     schemaReg.addSchema(schemaId,schema);
+  }
+  int[] fieldIds=schema == null ? null : schema.fieldIds();
+  writer.writeIntArray(fieldIds);
+}
