@@ -1,0 +1,15 @@
+{
+  final IgniteDataStreamer<BinaryObject,BinaryObject> streamer=grid.dataStreamer(CACHE_NAME);
+  streamer.keepBinary(true);
+  final BinaryObjectBuilder builder=grid.binary().builder("custom_type");
+  BinaryObject entity=null;
+  for (int i=0; i < 1; i++) {
+    builder.setField("id",i);
+    entity=builder.build();
+    streamer.addData(entity,entity);
+  }
+  streamer.flush();
+  streamer.close();
+  streamer.future().get();
+  return entity;
+}
