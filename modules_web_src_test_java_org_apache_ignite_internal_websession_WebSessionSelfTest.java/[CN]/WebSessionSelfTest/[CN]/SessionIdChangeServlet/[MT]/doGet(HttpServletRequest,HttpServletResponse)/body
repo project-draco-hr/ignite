@@ -1,0 +1,27 @@
+{
+  HttpSession ses=req.getSession();
+  assertNotNull(ses);
+  if (req.getPathInfo().equals("/chngsesid")) {
+    ses.setAttribute("key1","val1");
+    X.println(">>>","Created session: " + ses.getId(),">>>");
+    res.getWriter().println(req.getSession().getId());
+    String newId=req.changeSessionId();
+    res.getWriter().println(newId);
+    res.getWriter().println(req.getSession().getId());
+    res.getWriter().flush();
+  }
+ else   if (req.getPathInfo().equals("/simple")) {
+    res.getWriter().println(req.getSession().getId());
+    res.getWriter().println(req.getSession().getAttribute("key1"));
+    res.getWriter().println(req.isRequestedSessionIdValid());
+    try {
+      req.getSession().invalidate();
+      res.getWriter().println("invalidated");
+    }
+ catch (    Exception e) {
+      res.getWriter().println("failed");
+    }
+    res.getWriter().flush();
+  }
+ else   throw new ServletException("Nonexisting path: " + req.getPathInfo());
+}

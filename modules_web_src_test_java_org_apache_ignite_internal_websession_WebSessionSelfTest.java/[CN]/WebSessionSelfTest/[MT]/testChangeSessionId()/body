@@ -1,0 +1,41 @@
+{
+  String newWebSesId;
+  Server srv=null;
+  try {
+    srv=startServer(TEST_JETTY_PORT,"/modules/core/src/test/config/websession/example-cache.xml",null,new SessionIdChangeServlet());
+    Ignite ignite=G.ignite();
+    URLConnection conn=new URL("http://localhost:" + TEST_JETTY_PORT + "/ignitetest/chngsesid").openConnection();
+    conn.connect();
+    try (BufferedReader rdr=new BufferedReader(new InputStreamReader(conn.getInputStream()))){
+      String oldId=rdr.readLine();
+      assertNotNull(oldId);
+      String newGenSesId=rdr.readLine();
+      assertNotNull(newGenSesId);
+      assertFalse(newGenSesId.equals(oldId));
+      newWebSesId=rdr.readLine();
+      assertNotNull(newWebSesId);
+      assertTrue(newGenSesId.equals(newWebSesId));
+      IgniteCache<String,HttpSession> cache=ignite.cache(getCacheName());
+      assertNotNull(cache);
+      Thread.sleep(1000);
+      HttpSession ses=cache.get(newWebSesId);
+      assertNotNull(ses);
+      assertEquals("val1",ses.getAttribute("key1"));
+    }
+     conn=new URL("http://localhost:" + TEST_JETTY_PORT + "/ignitetest/simple").openConnection();
+    conn.addRequestProperty("Cookie","JSESSIONID=" + newWebSesId);
+    conn.connect();
+    try (BufferedReader rdr=new BufferedReader(new InputStreamReader(conn.getInputStream()))){
+      String sesId=rdr.readLine();
+      assertTrue(newWebSesId.equals(sesId));
+      String attr=rdr.readLine();
+      assertEquals("val1",attr);
+      String reqSesValid=rdr.readLine();
+      assertEquals("true",reqSesValid);
+      assertEquals("invalidated",rdr.readLine());
+    }
+   }
+  finally {
+    stopServer(srv);
+  }
+}
