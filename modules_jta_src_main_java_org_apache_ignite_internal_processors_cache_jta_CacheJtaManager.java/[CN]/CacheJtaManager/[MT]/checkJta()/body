@@ -10,7 +10,7 @@
     }
   }
   if (jtaTm != null) {
-    GridCacheXAResource rsrc=xaRsrc.get();
+    CacheJtaResource rsrc=this.rsrc.get();
     if (rsrc == null || rsrc.isFinished()) {
       try {
         Transaction jtaTx=jtaTm.getTransaction();
@@ -20,9 +20,10 @@
             TransactionConfiguration tCfg=cctx.kernalContext().config().getTransactionConfiguration();
             tx=cctx.tm().newTx(false,false,null,tCfg.getDefaultTxConcurrency(),tCfg.getDefaultTxIsolation(),tCfg.getDefaultTxTimeout(),true,0);
           }
-          rsrc=new GridCacheXAResource(tx,cctx.kernalContext());
-          if (!jtaTx.enlistResource(rsrc))           throw new IgniteCheckedException("Failed to enlist XA resource to JTA user transaction.");
-          xaRsrc.set(rsrc);
+          rsrc=new CacheJtaResource(tx,cctx.kernalContext());
+          if (useJtaSync)           jtaTx.registerSynchronization(rsrc);
+ else           if (!jtaTx.enlistResource(rsrc))           throw new IgniteCheckedException("Failed to enlist XA resource to JTA user transaction.");
+          this.rsrc.set(rsrc);
         }
       }
  catch (      SystemException e) {

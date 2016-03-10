@@ -1,0 +1,24 @@
+{
+switch (status) {
+case Status.STATUS_COMMITTED:
+    if (log.isDebugEnabled())     log.debug("Synchronization.afterCompletion(STATUS_COMMITTED) [xid=" + cacheTx.xid() + "]");
+  try {
+    cacheTx.commit();
+  }
+ catch (  IgniteCheckedException e) {
+    throw new CacheException("Failed to commit cache transaction.",e);
+  }
+break;
+case Status.STATUS_ROLLEDBACK:
+if (log.isDebugEnabled()) log.debug("Synchronization.afterCompletion(STATUS_ROLLEDBACK) [xid=" + cacheTx.xid() + "]");
+try {
+cacheTx.rollback();
+}
+ catch (IgniteCheckedException e) {
+throw new CacheException("Failed to rollback cache transaction.",e);
+}
+break;
+default :
+throw new IllegalArgumentException("Unknown transaction status: " + status);
+}
+}
