@@ -3,7 +3,8 @@
     JobMapper mapper=new JobMapper(args.size());
     for (    T jobArg : args) {
       ComputeJob job=job(this.job,jobArg);
-      mapper.map(job,lb.getBalancedNode(job,null));
+      ClusterNode node=lb.getBalancedNode(job,null);
+      mapper.map(downgradeJobIfNeeded(job,node),node);
     }
     return mapper.map();
   }
