@@ -1,0 +1,13 @@
+{
+  Ignite ignite0=startGrid(0);
+  Ignite ignite1=startGrid(1);
+  CacheConfiguration ccfg=new CacheConfiguration();
+  ccfg.setNodeFilter(new CachePredicate(F.asList(ignite0.name())));
+  ignite1.createCache(ccfg);
+  assertNull(((IgniteKernal)ignite0).context().cache().internalCache(null));
+  ignite0.cache(null);
+  ignite0.cache(null).close();
+  ignite0.cache(null);
+  startGrid(2);
+  checkCache(ignite0,null,false,false);
+}
