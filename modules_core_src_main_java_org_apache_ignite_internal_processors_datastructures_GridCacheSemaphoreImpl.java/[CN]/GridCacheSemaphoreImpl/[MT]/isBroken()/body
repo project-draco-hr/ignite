@@ -1,3 +1,13 @@
 {
-  return sync.broken;
+  ctx.kernalContext().gateway().readLock();
+  try {
+    initializeSemaphore();
+    return sync.isBroken();
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+ finally {
+    ctx.kernalContext().gateway().readUnlock();
+  }
 }

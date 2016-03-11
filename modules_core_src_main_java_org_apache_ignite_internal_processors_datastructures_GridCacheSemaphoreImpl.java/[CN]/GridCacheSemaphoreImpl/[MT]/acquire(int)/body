@@ -1,14 +1,18 @@
 {
+  ctx.kernalContext().gateway().readLock();
   A.ensure(permits >= 0,"Number of permits must be non-negative.");
   try {
     initializeSemaphore();
-    if (isBroken())     Thread.currentThread().interrupt();
     sync.acquireSharedInterruptibly(permits);
+    if (isBroken())     throw new InterruptedException();
   }
  catch (  IgniteCheckedException e) {
     throw U.convertException(e);
   }
 catch (  InterruptedException e) {
     throw new IgniteInterruptedException(e);
+  }
+ finally {
+    ctx.kernalContext().gateway().readUnlock();
   }
 }

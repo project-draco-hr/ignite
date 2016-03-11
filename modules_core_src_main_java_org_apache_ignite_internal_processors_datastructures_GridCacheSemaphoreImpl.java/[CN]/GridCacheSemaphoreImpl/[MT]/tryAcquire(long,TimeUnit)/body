@@ -1,12 +1,18 @@
 {
+  ctx.kernalContext().gateway().readLock();
   try {
     initializeSemaphore();
-    return sync.tryAcquireSharedNanos(1,unit.toNanos(timeout));
+    boolean result=sync.tryAcquireSharedNanos(1,unit.toNanos(timeout));
+    if (isBroken())     throw new InterruptedException();
+    return result;
   }
  catch (  IgniteCheckedException e) {
     throw U.convertException(e);
   }
 catch (  InterruptedException e) {
     throw new IgniteInterruptedException(e);
+  }
+ finally {
+    ctx.kernalContext().gateway().readUnlock();
   }
 }

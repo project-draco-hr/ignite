@@ -1,13 +1,19 @@
 {
+  ctx.kernalContext().gateway().readLock();
   A.ensure(permits >= 0,"Number of permits must be non-negative.");
   try {
     initializeSemaphore();
-    return sync.tryAcquireSharedNanos(permits,unit.toNanos(timeout));
+    boolean result=sync.tryAcquireSharedNanos(permits,unit.toNanos(timeout));
+    if (isBroken())     throw new InterruptedException();
+    return result;
   }
  catch (  IgniteCheckedException e) {
     throw U.convertException(e);
   }
 catch (  InterruptedException e) {
     throw new IgniteInterruptedException(e);
+  }
+ finally {
+    ctx.kernalContext().gateway().readUnlock();
   }
 }

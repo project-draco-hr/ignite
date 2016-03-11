@@ -1,3 +1,13 @@
 {
-  return sync.failoverSafe;
+  ctx.kernalContext().gateway().readLock();
+  try {
+    initializeSemaphore();
+    return sync.failoverSafe;
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+ finally {
+    ctx.kernalContext().gateway().readUnlock();
+  }
 }
