@@ -1,19 +1,18 @@
 {
   if (busyLock.enterBusy()) {
     try {
-      IgfsFileInfo trashInfo=id2InfoPrj.get(TRASH_ID);
-      if (trashInfo != null) {
-        Map<String,IgfsListingEntry> listing=trashInfo.listing();
-        if (listing != null && !listing.isEmpty()) {
-          return F.viewReadOnly(listing.values(),new IgniteClosure<IgfsListingEntry,IgniteUuid>(){
-            @Override public IgniteUuid apply(            IgfsListingEntry e){
-              return e.fileId();
-            }
+      Collection<IgniteUuid> ids=new HashSet<>();
+      for (int i=0; i < IgfsUtils.TRASH_CONCURRENCY; i++) {
+        IgniteUuid trashId=IgfsUtils.trashId(i);
+        IgfsFileInfo trashInfo=id2InfoPrj.get(trashId);
+        if (trashInfo != null) {
+          Map<String,IgfsListingEntry> listing=trashInfo.listing();
+          if (listing != null && !listing.isEmpty()) {
+            for (            IgfsListingEntry entry : listing.values())             ids.add(entry.fileId());
           }
-);
         }
       }
-      return Collections.emptySet();
+      return ids;
     }
   finally {
       busyLock.leaveBusy();
