@@ -1,2 +1,26 @@
 {
+  validTxState(false);
+  if (busyLock.enterBusy()) {
+    try {
+      if (log.isDebugEnabled())       log.debug("Reserve file space [path=" + path + ", id="+ fileId+ ']');
+      IgniteInternalTx tx=startTx();
+      try {
+        IgfsFileInfo oldInfo=info(fileId);
+        if (oldInfo == null)         throw fsException("File has been deleted concurrently [path=" + path + ", id="+ fileId+ ']');
+        IgfsFileInfo newInfo=invokeAndGet(fileId,new FileReserveSpaceProcessor(space,affRange));
+        tx.commit();
+        return newInfo;
+      }
+ catch (      GridClosureException e) {
+        throw U.cast(e);
+      }
+ finally {
+        tx.close();
+      }
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to reseve file space because Grid is stopping [path=" + path + ", id="+ fileId+ ']');
 }

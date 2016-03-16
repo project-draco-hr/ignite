@@ -1,0 +1,20 @@
+{
+  if (busyLock.enterBusy()) {
+    try {
+      validTxState(false);
+      IgniteInternalTx tx=startTx();
+      try {
+        IgfsFileInfo info=updatePropertiesNonTx(fileId,props);
+        tx.commit();
+        return info;
+      }
+  finally {
+        tx.close();
+      }
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to update properties because Grid is stopping [fileId=" + fileId + ", props="+ props+ ']');
+}
