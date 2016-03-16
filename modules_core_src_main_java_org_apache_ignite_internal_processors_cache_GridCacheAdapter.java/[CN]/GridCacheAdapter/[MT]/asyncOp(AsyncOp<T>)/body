@@ -8,11 +8,12 @@
   if (log.isDebugEnabled())   log.debug("Performing async op: " + op);
   IgniteTxLocalAdapter tx=ctx.tm().threadLocalTx(ctx);
   CacheOperationContext opCtx=ctx.operationContextPerCall();
+  final TransactionConfiguration txCfg=CU.transactionConfiguration(ctx,ctx.kernalContext().config());
   if (tx == null || tx.implicit()) {
     boolean skipStore=ctx.skipStore();
     int retries=opCtx != null && opCtx.noRetries() ? 1 : MAX_RETRIES;
     if (retries == 1) {
-      tx=ctx.tm().newTx(true,op.single(),ctx.systemTx() ? ctx : null,OPTIMISTIC,READ_COMMITTED,ctx.kernalContext().config().getTransactionConfiguration().getDefaultTxTimeout(),!skipStore,0);
+      tx=ctx.tm().newTx(true,op.single(),ctx.systemTx() ? ctx : null,OPTIMISTIC,READ_COMMITTED,txCfg.getDefaultTxTimeout(),!skipStore,0);
       return asyncOp(tx,op,opCtx);
     }
  else {
