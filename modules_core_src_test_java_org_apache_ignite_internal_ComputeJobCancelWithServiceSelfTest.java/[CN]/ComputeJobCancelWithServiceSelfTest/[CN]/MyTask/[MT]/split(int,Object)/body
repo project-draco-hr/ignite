@@ -1,0 +1,19 @@
+{
+  return Collections.singletonList(new ComputeJobAdapter(){
+    @IgniteInstanceResource private Ignite ignite;
+    @Override public Object execute() throws IgniteException {
+      MyService svc=ignite.services().service("my-service");
+      while (!isCancelled()) {
+        try {
+          Thread.sleep(1000);
+          svc.hello();
+        }
+ catch (        InterruptedException e) {
+        }
+      }
+      assertTrue(isCancelled());
+      return svc.hello();
+    }
+  }
+);
+}

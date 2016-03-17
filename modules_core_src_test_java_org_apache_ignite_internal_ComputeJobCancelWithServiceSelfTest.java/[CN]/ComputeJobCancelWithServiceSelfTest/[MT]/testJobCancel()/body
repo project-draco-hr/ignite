@@ -1,0 +1,12 @@
+{
+  Ignite server=startGrid("server");
+  server.services().deployNodeSingleton("my-service",new MyService());
+  Ignition.setClientMode(true);
+  Ignite client=startGrid("client");
+  IgniteCompute compute=client.compute().withAsync();
+  compute.execute(new MyTask(),null);
+  ComputeTaskFuture<Integer> fut=compute.future();
+  Thread.sleep(3000);
+  server.close();
+  assertEquals(42,fut.get().intValue());
+}
