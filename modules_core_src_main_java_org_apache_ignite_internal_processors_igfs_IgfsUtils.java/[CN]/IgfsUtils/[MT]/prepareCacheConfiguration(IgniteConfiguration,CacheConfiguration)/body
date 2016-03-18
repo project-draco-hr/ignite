@@ -1,0 +1,18 @@
+{
+  FileSystemConfiguration[] igfsCfgs=cfg.getFileSystemConfiguration();
+  if (igfsCfgs != null) {
+    for (    FileSystemConfiguration igfsCfg : igfsCfgs) {
+      if (igfsCfg != null) {
+        if (F.eq(ccfg.getName(),igfsCfg.getMetaCacheName())) {
+          ccfg.setCopyOnRead(false);
+          if (igfsCfg.isColocateMetadata() && ccfg.getCacheMode() == CacheMode.REPLICATED && ccfg.getAffinityMapper() == null)           ccfg.setAffinityMapper(new IgfsColocatedMetadataAffinityKeyMapper());
+          return;
+        }
+        if (F.eq(ccfg.getName(),igfsCfg.getDataCacheName())) {
+          ccfg.setCopyOnRead(false);
+          return;
+        }
+      }
+    }
+  }
+}
