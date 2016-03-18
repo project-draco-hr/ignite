@@ -49,6 +49,23 @@ case RESUME_READ:
  else     req.onDone(false);
     break;
   }
+case DUMP_STATS:
+{
+  StringBuilder sb=new StringBuilder();
+  Set<SelectionKey> keys=selector.keys();
+  sb.append(U.nl()).append(">> Selector info [idx=").append(idx).append(", keysCnt=").append(keys.size()).append("]").append(U.nl());
+  for (  SelectionKey key : keys) {
+    GridSelectorNioSessionImpl ses=(GridSelectorNioSessionImpl)key.attachment();
+    sb.append("    Conn [").append("rmtAddr=").append(ses.remoteAddress()).append(", locAddr=").append(ses.localAddress()).append(", bytesRcvd=").append(ses.bytesReceived()).append(", bytesSent=").append(ses.bytesSent());
+    if (ses.recoveryDescriptor() != null) {
+      sb.append(", msgsSent=").append(ses.recoveryDescriptor().sent()).append(", msgsAckedByRmt=").append(ses.recoveryDescriptor().acked()).append(", msgsRcvd=").append(ses.recoveryDescriptor().received());
+    }
+ else     sb.append(", recoveryDesc=null");
+    sb.append("]").append(U.nl());
+  }
+  if (log.isInfoEnabled())   log.info(sb.toString());
+  req.onDone(true);
+}
 }
 }
 if (selector.select(2000) > 0) {
