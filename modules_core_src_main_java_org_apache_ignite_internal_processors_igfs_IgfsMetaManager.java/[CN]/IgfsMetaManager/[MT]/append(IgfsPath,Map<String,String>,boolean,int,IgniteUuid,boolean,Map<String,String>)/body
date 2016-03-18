@@ -1,0 +1,43 @@
+{
+  validTxState(false);
+  while (true) {
+    if (busyLock.enterBusy()) {
+      try {
+        IgfsPathIds pathIds=pathIds(path);
+        if (!pathIds.allExists() && !create)         throw new IgfsPathNotFoundException("Failed to append because file is not found: " + path);
+        Set<IgniteUuid> lockIds=new TreeSet<>(PATH_ID_SORTING_COMPARATOR);
+        pathIds.addExistingIds(lockIds);
+        pathIds.addSurrogateIds(lockIds);
+        IgniteInternalTx tx=startTx();
+        try {
+          Map<IgniteUuid,IgfsFileInfo> lockInfos=lockIds(lockIds);
+          if (!pathIds.verifyIntegrity(lockInfos))           continue;
+          if (pathIds.allExists()) {
+            IgfsFileInfo info=lockInfos.get(pathIds.lastId());
+            if (!info.isFile())             throw new IgfsPathIsDirectoryException("Failed to open file for write." + path);
+            if (info.lockId() != null)             throw new IgfsException("File is already opened for write: " + path);
+            info=invokeLock(info.id(),false);
+            IgniteBiTuple<IgfsFileInfo,IgniteUuid> t2=new T2<>(info,pathIds.lastParentId());
+            tx.commit();
+            IgfsUtils.sendEvents(igfsCtx.kernalContext(),path,EventType.EVT_IGFS_FILE_OPENED_WRITE);
+            return t2;
+          }
+ else {
+            IgfsPathsCreateResult res=createFile(pathIds,lockInfos,dirProps,fileProps,blockSize,affKey,evictExclude);
+            if (res == null)             continue;
+            tx.commit();
+            generateCreateEvents(res.createdPaths(),true);
+            return new T2<>(res.info(),res.parentId());
+          }
+        }
+  finally {
+          tx.close();
+        }
+      }
+  finally {
+        busyLock.leaveBusy();
+      }
+    }
+ else     throw new IllegalStateException("Failed to append for file because Grid is stopping:" + path);
+  }
+}

@@ -1,2 +1,46 @@
 {
+  if (busyLock.enterBusy()) {
+    try {
+      validTxState(false);
+      IgfsPathIds srcPathIds=pathIds(srcPath);
+      IgfsPathIds dstPathIds=pathIds(dstPath);
+      if (!srcPathIds.allExists())       throw new IgfsPathNotFoundException("Failed to perform move because source path is not " + "found: " + srcPath);
+      String dstName;
+      if (dstPathIds.lastExists())       dstName=srcPathIds.lastPart();
+ else {
+        if (dstPathIds.lastParentExists()) {
+          dstName=dstPathIds.lastPart();
+          dstPathIds=dstPathIds.parent();
+        }
+ else         throw new IgfsPathNotFoundException("Failed to perform move because destination path is not " + "found: " + dstPath.parent());
+      }
+      final Set<IgniteUuid> lockIds=new TreeSet<>(PATH_ID_SORTING_COMPARATOR);
+      srcPathIds.addExistingIds(lockIds);
+      dstPathIds.addExistingIds(lockIds);
+      IgniteInternalTx tx=startTx();
+      try {
+        final Map<IgniteUuid,IgfsFileInfo> lockInfos=lockIds(lockIds);
+        if (!srcPathIds.verifyIntegrity(lockInfos))         throw new IgfsPathNotFoundException("Failed to perform move because source directory " + "structure changed concurrently [src=" + srcPath + ", dst="+ dstPath+ ']');
+        if (!dstPathIds.verifyIntegrity(lockInfos))         throw new IgfsPathNotFoundException("Failed to perform move because destination directory " + "structure changed concurrently [src=" + srcPath + ", dst="+ dstPath+ ']');
+        IgfsFileInfo dstParentInfo=lockInfos.get(dstPathIds.lastId());
+        if (dstParentInfo.isFile())         throw new IgfsPathAlreadyExistsException("Failed to perform move because destination points " + "to existing file [src=" + srcPath + ", dst="+ dstPath+ ']');
+        if (dstParentInfo.hasChild(dstName))         throw new IgfsPathAlreadyExistsException("Failed to perform move because destination already " + "contains entry with the same name existing file [src=" + srcPath + ", dst="+ dstPath+ ']');
+        IgfsFileInfo srcParentInfo=lockInfos.get(srcPathIds.lastParentId());
+        IgfsFileInfo srcInfo=lockInfos.get(srcPathIds.lastId());
+        String srcName=srcPathIds.lastPart();
+        IgfsListingEntry srcEntry=srcParentInfo.listing().get(srcName);
+        transferEntry(srcEntry,srcParentInfo.id(),srcName,dstParentInfo.id(),dstName);
+        tx.commit();
+        IgfsPath newPath=new IgfsPath(dstPathIds.path(),dstName);
+        return IgfsFileInfo.builder(srcInfo).path(newPath).build();
+      }
+  finally {
+        tx.close();
+      }
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to perform move because Grid is stopping [srcPath=" + srcPath + ", dstPath="+ dstPath+ ']');
 }

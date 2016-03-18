@@ -1,0 +1,56 @@
+{
+  validTxState(false);
+  while (true) {
+    if (busyLock.enterBusy()) {
+      try {
+        IgfsPathIds pathIds=pathIds(path);
+        Set<IgniteUuid> lockIds=new TreeSet<>(PATH_ID_SORTING_COMPARATOR);
+        pathIds.addExistingIds(lockIds);
+        pathIds.addSurrogateIds(lockIds);
+        IgniteUuid overwriteId=IgniteUuid.randomUuid();
+        IgniteUuid trashId=IgfsUtils.randomTrashId();
+        if (overwrite) {
+          lockIds.add(overwriteId);
+          if (pathIds.allExists())           lockIds.add(trashId);
+        }
+        IgniteInternalTx tx=startTx();
+        try {
+          Map<IgniteUuid,IgfsFileInfo> lockInfos=lockIds(lockIds);
+          if (!pathIds.verifyIntegrity(lockInfos))           continue;
+          if (pathIds.allExists()) {
+            IgfsFileInfo oldInfo=lockInfos.get(pathIds.lastId());
+            if (!oldInfo.isFile())             throw new IgfsPathIsDirectoryException("Failed to create a file: " + path);
+            if (!overwrite)             throw new IgfsPathAlreadyExistsException("Failed to create a file: " + path);
+            if (oldInfo.lockId() != null)             throw new IgfsException("File is already opened for write: " + path);
+            IgniteUuid oldId=pathIds.lastId();
+            id2InfoPrj.invoke(trashId,new ListingAddProcessor(oldId.toString(),new IgfsListingEntry(oldId,true)));
+            String name=pathIds.lastPart();
+            IgniteUuid parentId=pathIds.lastParentId();
+            id2InfoPrj.invoke(parentId,new ListingReplaceProcessor(name,overwriteId));
+            long createTime=System.currentTimeMillis();
+            IgfsFileInfo newInfo=invokeAndGet(overwriteId,new FileCreateProcessor(createTime,fileProps,blockSize,affKey,createFileLockId(false),evictExclude));
+            invokeUpdatePath(oldId,path);
+            IgniteBiTuple<IgfsFileInfo,IgniteUuid> t2=new T2<>(newInfo,parentId);
+            tx.commit();
+            IgfsUtils.sendEvents(igfsCtx.kernalContext(),path,EventType.EVT_IGFS_FILE_OPENED_WRITE);
+            return t2;
+          }
+ else {
+            IgfsPathsCreateResult res=createFile(pathIds,lockInfos,dirProps,fileProps,blockSize,affKey,evictExclude);
+            if (res == null)             continue;
+            tx.commit();
+            generateCreateEvents(res.createdPaths(),true);
+            return new T2<>(res.info(),res.parentId());
+          }
+        }
+  finally {
+          tx.close();
+        }
+      }
+  finally {
+        busyLock.leaveBusy();
+      }
+    }
+ else     throw new IllegalStateException("Failed to mkdir because Grid is stopping. [path=" + path + ']');
+  }
+}
