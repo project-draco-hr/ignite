@@ -15,10 +15,10 @@
         }
         IgniteInternalTx tx=startTx();
         try {
-          Map<IgniteUuid,IgfsFileInfo> lockInfos=lockIds(lockIds);
+          Map<IgniteUuid,IgfsEntryInfo> lockInfos=lockIds(lockIds);
           if (!pathIds.verifyIntegrity(lockInfos))           continue;
           if (pathIds.allExists()) {
-            IgfsFileInfo oldInfo=lockInfos.get(pathIds.lastId());
+            IgfsEntryInfo oldInfo=lockInfos.get(pathIds.lastId());
             if (!oldInfo.isFile())             throw new IgfsPathIsDirectoryException("Failed to create a file: " + path);
             if (!overwrite)             throw new IgfsPathAlreadyExistsException("Failed to create a file: " + path);
             if (oldInfo.lockId() != null)             throw new IgfsException("File is already opened for write: " + path);
@@ -28,9 +28,9 @@
             IgniteUuid parentId=pathIds.lastParentId();
             id2InfoPrj.invoke(parentId,new ListingReplaceProcessor(name,overwriteId));
             long createTime=System.currentTimeMillis();
-            IgfsFileInfo newInfo=invokeAndGet(overwriteId,new FileCreateProcessor(createTime,fileProps,blockSize,affKey,createFileLockId(false),evictExclude));
+            IgfsEntryInfo newInfo=invokeAndGet(overwriteId,new FileCreateProcessor(createTime,fileProps,blockSize,affKey,createFileLockId(false),evictExclude));
             invokeUpdatePath(oldId,path);
-            IgniteBiTuple<IgfsFileInfo,IgniteUuid> t2=new T2<>(newInfo,parentId);
+            IgniteBiTuple<IgfsEntryInfo,IgniteUuid> t2=new T2<>(newInfo,parentId);
             tx.commit();
             IgfsUtils.sendEvents(igfsCtx.kernalContext(),path,EventType.EVT_IGFS_FILE_OPENED_WRITE);
             return t2;

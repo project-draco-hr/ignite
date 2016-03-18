@@ -1,12 +1,12 @@
 {
   int blockSize=BLOCK_SIZE;
   long t=System.currentTimeMillis();
-  IgfsFileInfo info=new IgfsFileInfo(blockSize,1024 * 1024,null,null,false,null,t,t);
+  IgfsEntryInfo info=IgfsUtils.createFile(IgniteUuid.randomUuid(),blockSize,1024 * 1024,null,null,false,null,t,t);
   IgniteUuid affKey=IgniteUuid.randomUuid();
   IgfsFileMap map=new IgfsFileMap();
   map.addRange(new IgfsFileAffinityRange(3 * BLOCK_SIZE,5 * BLOCK_SIZE - 1,affKey));
   map.addRange(new IgfsFileAffinityRange(13 * BLOCK_SIZE,17 * BLOCK_SIZE - 1,affKey));
-  info.fileMap(map);
+  info=info.fileMap(map);
   Collection<IgfsBlockLocation> affinity=mgr.affinity(info,0,info.length());
   checkAffinity(blockSize,info,affinity);
   affinity=mgr.affinity(info,3 * BLOCK_SIZE + BLOCK_SIZE / 2,info.length());

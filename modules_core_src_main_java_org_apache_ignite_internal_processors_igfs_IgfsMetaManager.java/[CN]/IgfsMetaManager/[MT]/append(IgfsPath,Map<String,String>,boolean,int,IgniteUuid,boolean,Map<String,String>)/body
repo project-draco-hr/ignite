@@ -10,14 +10,14 @@
         pathIds.addSurrogateIds(lockIds);
         IgniteInternalTx tx=startTx();
         try {
-          Map<IgniteUuid,IgfsFileInfo> lockInfos=lockIds(lockIds);
+          Map<IgniteUuid,IgfsEntryInfo> lockInfos=lockIds(lockIds);
           if (!pathIds.verifyIntegrity(lockInfos))           continue;
           if (pathIds.allExists()) {
-            IgfsFileInfo info=lockInfos.get(pathIds.lastId());
+            IgfsEntryInfo info=lockInfos.get(pathIds.lastId());
             if (!info.isFile())             throw new IgfsPathIsDirectoryException("Failed to open file for write." + path);
             if (info.lockId() != null)             throw new IgfsException("File is already opened for write: " + path);
             info=invokeLock(info.id(),false);
-            IgniteBiTuple<IgfsFileInfo,IgniteUuid> t2=new T2<>(info,pathIds.lastParentId());
+            IgniteBiTuple<IgfsEntryInfo,IgniteUuid> t2=new T2<>(info,pathIds.lastParentId());
             tx.commit();
             IgfsUtils.sendEvents(igfsCtx.kernalContext(),path,EventType.EVT_IGFS_FILE_OPENED_WRITE);
             return t2;

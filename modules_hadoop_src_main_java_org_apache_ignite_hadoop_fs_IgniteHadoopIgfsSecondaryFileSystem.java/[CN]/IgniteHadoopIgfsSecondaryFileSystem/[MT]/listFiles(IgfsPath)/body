@@ -3,9 +3,9 @@
     FileStatus[] statuses=fileSystemForUser().listStatus(convert(path));
     if (statuses == null)     throw new IgfsPathNotFoundException("Failed to list files (path not found): " + path);
     Collection<IgfsFile> res=new ArrayList<>(statuses.length);
-    for (    FileStatus status : statuses) {
-      IgfsFileInfo fsInfo=status.isDirectory() ? new IgfsFileInfo(true,properties(status),status.getAccessTime(),status.getModificationTime()) : new IgfsFileInfo((int)status.getBlockSize(),status.getLen(),null,null,false,properties(status),status.getAccessTime(),status.getModificationTime());
-      res.add(new IgfsFileImpl(new IgfsPath(path,status.getPath().getName()),fsInfo,1));
+    for (    FileStatus s : statuses) {
+      IgfsEntryInfo fsInfo=s.isDirectory() ? IgfsUtils.createDirectory(IgniteUuid.randomUuid(),null,properties(s),s.getAccessTime(),s.getModificationTime()) : IgfsUtils.createFile(IgniteUuid.randomUuid(),(int)s.getBlockSize(),s.getLen(),null,null,false,properties(s),s.getAccessTime(),s.getModificationTime());
+      res.add(new IgfsFileImpl(new IgfsPath(path,s.getPath().getName()),fsInfo,1));
     }
     return res;
   }

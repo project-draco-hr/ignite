@@ -1,9 +1,9 @@
 {
   try {
     while (!isCancelled()) {
-      IgniteBiTuple<GridFutureAdapter<Object>,IgfsFileInfo> req=delReqs.take();
+      IgniteBiTuple<GridFutureAdapter<Object>,IgfsEntryInfo> req=delReqs.take();
       GridFutureAdapter<Object> fut=req.get1();
-      IgfsFileInfo fileInfo=req.get2();
+      IgfsEntryInfo fileInfo=req.get2();
       if (fileInfo == stopInfo) {
         fut.onDone();
         break;
@@ -46,7 +46,7 @@ catch (      IgniteException e) {
   }
   finally {
     if (log.isDebugEnabled())     log.debug("Stopping asynchronous igfs file delete thread: " + name());
-    IgniteBiTuple<GridFutureAdapter<Object>,IgfsFileInfo> req=delReqs.poll();
+    IgniteBiTuple<GridFutureAdapter<Object>,IgfsEntryInfo> req=delReqs.poll();
     while (req != null) {
       req.get1().onCancelled();
       req=delReqs.poll();

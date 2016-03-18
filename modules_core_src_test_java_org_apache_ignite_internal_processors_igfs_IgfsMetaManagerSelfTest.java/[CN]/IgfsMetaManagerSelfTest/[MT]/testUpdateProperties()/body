@@ -5,11 +5,11 @@
   IgfsListingEntry dirEntry=mgr.directoryListing(ROOT_ID).get("dir");
   assertNotNull(dirEntry);
   assertTrue(dirEntry.isDirectory());
-  IgfsFileInfo dir=mgr.info(dirEntry.fileId());
+  IgfsEntryInfo dir=mgr.info(dirEntry.fileId());
   IgfsListingEntry fileEntry=mgr.directoryListing(ROOT_ID).get("file");
   assertNotNull(fileEntry);
   assertTrue(!fileEntry.isDirectory());
-  IgfsFileInfo file=mgr.info(fileEntry.fileId());
+  IgfsEntryInfo file=mgr.info(fileEntry.fileId());
   assertEquals(2,mgr.directoryListing(ROOT_ID).size());
   for (  IgniteBiTuple<IgniteUuid,String> tup : Arrays.asList(F.t(dir.id(),"dir"),F.t(file.id(),"file"))) {
     IgniteUuid fileId=tup.get1();
@@ -17,7 +17,7 @@
     for (    Map<String,String> props : Arrays.asList(null,Collections.<String,String>emptyMap()))     expectsUpdatePropertiesFail(fileId,props,AssertionError.class,"Expects not-empty file's properties");
     String key1=UUID.randomUUID().toString();
     String key2=UUID.randomUUID().toString();
-    IgfsFileInfo info=mgr.info(fileId);
+    IgfsEntryInfo info=mgr.info(fileId);
     assertNull("Unexpected stored properties: " + info,info.properties().get(key1));
     assertNull("Unexpected stored properties: " + info,info.properties().get(key2));
     info=mgr.updateProperties(fileId,F.asMap(key1,"1"));
