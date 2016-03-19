@@ -14,7 +14,7 @@
 switch (range.status()) {
 case RANGE_STATUS_INITIAL:
 {
-          updated=igfsCtx.meta().updateInfo(fileId,new RangeUpdateProcessor(range,RANGE_STATUS_MOVING));
+          updated=igfsCtx.meta().updateInfo(fileId,new IgfsMetaFileRangeUpdateProcessor(range,RANGE_STATUS_MOVING));
           if (updated == null) {
             igfsCtx.data().cleanBlocks(fileInfo,range,true);
             continue;
@@ -23,7 +23,7 @@ case RANGE_STATUS_INITIAL:
 case RANGE_STATUS_MOVING:
 {
         igfsCtx.data().spreadBlocks(fileInfo,range);
-        updated=igfsCtx.meta().updateInfo(fileId,new RangeUpdateProcessor(range,RANGE_STATUS_MOVED));
+        updated=igfsCtx.meta().updateInfo(fileId,new IgfsMetaFileRangeUpdateProcessor(range,RANGE_STATUS_MOVED));
         if (updated == null) {
           igfsCtx.data().cleanBlocks(fileInfo,range,true);
           continue;
@@ -32,7 +32,7 @@ case RANGE_STATUS_MOVING:
 case RANGE_STATUS_MOVED:
 {
       igfsCtx.data().cleanBlocks(fileInfo,range,false);
-      updated=igfsCtx.meta().updateInfo(fileId,new RangeDeleteProcessor(range));
+      updated=igfsCtx.meta().updateInfo(fileId,new IgfsMetaFileRangeDeleteProcessor(range));
       if (updated == null)       igfsCtx.data().cleanBlocks(fileInfo,range,true);
     }
 }

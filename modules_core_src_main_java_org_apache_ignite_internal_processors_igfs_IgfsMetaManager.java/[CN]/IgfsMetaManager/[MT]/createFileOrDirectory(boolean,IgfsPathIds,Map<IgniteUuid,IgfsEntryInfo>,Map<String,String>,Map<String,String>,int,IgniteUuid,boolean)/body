@@ -6,7 +6,7 @@
   IgniteUuid curId=pathIds.surrogateId(curIdx);
   IgniteUuid curParentId=lastExistingInfo.id();
   if (lastExistingInfo.hasChild(curPart))   return null;
-  id2InfoPrj.invoke(lastExistingInfo.id(),new ListingAddProcessor(curPart,new IgfsListingEntry(curId,dir || !pathIds.isLastIndex(curIdx))));
+  id2InfoPrj.invoke(lastExistingInfo.id(),new IgfsMetaDirectoryListingAddProcessor(curPart,new IgfsListingEntry(curId,dir || !pathIds.isLastIndex(curIdx))));
   IgfsPath lastCreatedPath=pathIds.lastExistingPath();
   List<IgfsPath> createdPaths=new ArrayList<>(pathIds.count() - curIdx);
   long createTime=System.currentTimeMillis();
@@ -14,7 +14,7 @@
     int nextIdx=curIdx + 1;
     String nextPart=pathIds.part(nextIdx);
     IgniteUuid nextId=pathIds.surrogateId(nextIdx);
-    id2InfoPrj.invoke(curId,new DirectoryCreateProcessor(createTime,dirProps,nextPart,new IgfsListingEntry(nextId,dir || !pathIds.isLastIndex(nextIdx))));
+    id2InfoPrj.invoke(curId,new IgfsMetaDirectoryCreateProcessor(createTime,dirProps,nextPart,new IgfsListingEntry(nextId,dir || !pathIds.isLastIndex(nextIdx))));
     lastCreatedPath=new IgfsPath(lastCreatedPath,curPart);
     createdPaths.add(lastCreatedPath);
     curIdx++;
@@ -23,8 +23,8 @@
     curId=nextId;
   }
   IgfsEntryInfo info;
-  if (dir)   info=invokeAndGet(curId,new DirectoryCreateProcessor(createTime,dirProps));
- else   info=invokeAndGet(curId,new FileCreateProcessor(createTime,fileProps,blockSize,affKey,createFileLockId(false),evictExclude));
+  if (dir)   info=invokeAndGet(curId,new IgfsMetaDirectoryCreateProcessor(createTime,dirProps));
+ else   info=invokeAndGet(curId,new IgfsMetaFileCreateProcessor(createTime,fileProps,blockSize,affKey,createFileLockId(false),evictExclude));
   createdPaths.add(pathIds.path());
   return new IgfsPathsCreateResult(createdPaths,info,curParentId);
 }

@@ -2,16 +2,12 @@
   if (busyLock.enterBusy()) {
     try {
       validTxState(false);
-      IgniteInternalTx tx=startTx();
-      try {
+      try (IgniteInternalTx tx=startTx()){
         Object prev=val != null ? metaCache.getAndPut(sampling,val) : metaCache.getAndRemove(sampling);
         tx.commit();
         return !F.eq(prev,val);
       }
-  finally {
-        tx.close();
-      }
-    }
+     }
   finally {
       busyLock.leaveBusy();
     }

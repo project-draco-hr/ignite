@@ -17,8 +17,7 @@
       final Set<IgniteUuid> lockIds=new TreeSet<>(PATH_ID_SORTING_COMPARATOR);
       srcPathIds.addExistingIds(lockIds);
       dstPathIds.addExistingIds(lockIds);
-      IgniteInternalTx tx=startTx();
-      try {
+      try (IgniteInternalTx tx=startTx()){
         final Map<IgniteUuid,IgfsEntryInfo> lockInfos=lockIds(lockIds);
         if (!srcPathIds.verifyIntegrity(lockInfos))         throw new IgfsPathNotFoundException("Failed to perform move because source directory " + "structure changed concurrently [src=" + srcPath + ", dst="+ dstPath+ ']');
         if (!dstPathIds.verifyIntegrity(lockInfos))         throw new IgfsPathNotFoundException("Failed to perform move because destination directory " + "structure changed concurrently [src=" + srcPath + ", dst="+ dstPath+ ']');
@@ -34,10 +33,7 @@
         IgfsPath newPath=new IgfsPath(dstPathIds.path(),dstName);
         return srcInfo.path(newPath);
       }
-  finally {
-        tx.close();
-      }
-    }
+     }
   finally {
       busyLock.leaveBusy();
     }

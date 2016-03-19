@@ -8,8 +8,7 @@
         Set<IgniteUuid> lockIds=new TreeSet<>(PATH_ID_SORTING_COMPARATOR);
         pathIds.addExistingIds(lockIds);
         pathIds.addSurrogateIds(lockIds);
-        IgniteInternalTx tx=startTx();
-        try {
+        try (IgniteInternalTx tx=startTx()){
           Map<IgniteUuid,IgfsEntryInfo> lockInfos=lockIds(lockIds);
           if (!pathIds.verifyIntegrity(lockInfos))           continue;
           if (pathIds.allExists()) {
@@ -30,10 +29,7 @@
             return new T2<>(res.info(),res.parentId());
           }
         }
-  finally {
-          tx.close();
-        }
-      }
+       }
   finally {
         busyLock.leaveBusy();
       }

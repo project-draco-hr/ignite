@@ -2,16 +2,12 @@
   if (busyLock.enterBusy()) {
     try {
       validTxState(false);
-      IgniteInternalTx tx=startTx();
-      try {
+      try (IgniteInternalTx tx=startTx()){
         IgfsEntryInfo info=updatePropertiesNonTx(fileId,props);
         tx.commit();
         return info;
       }
-  finally {
-        tx.close();
-      }
-    }
+     }
   finally {
       busyLock.leaveBusy();
     }

@@ -3,19 +3,15 @@
   if (busyLock.enterBusy()) {
     try {
       if (log.isDebugEnabled())       log.debug("Reserve file space [path=" + path + ", id="+ fileId+ ']');
-      IgniteInternalTx tx=startTx();
-      try {
+      try (IgniteInternalTx tx=startTx()){
         IgfsEntryInfo oldInfo=info(fileId);
         if (oldInfo == null)         throw fsException("File has been deleted concurrently [path=" + path + ", id="+ fileId+ ']');
-        IgfsEntryInfo newInfo=invokeAndGet(fileId,new FileReserveSpaceProcessor(space,affRange));
+        IgfsEntryInfo newInfo=invokeAndGet(fileId,new IgfsMetaFileReserveSpaceProcessor(space,affRange));
         tx.commit();
         return newInfo;
       }
  catch (      GridClosureException e) {
         throw U.cast(e);
-      }
- finally {
-        tx.close();
       }
     }
   finally {
