@@ -1,0 +1,32 @@
+{
+  String v=cache.get(key);
+  if (v != null)   return new IgniteFinishedFutureImpl<>("immediately");
+  final IgniteFuture<String> promise=new IgniteFutureImpl<>(new GridFutureAdapter<String>());
+  final CacheEntryListenerConfiguration<Integer,String> cfg=createCacheListener(key,promise,id);
+  promise.listen(new IgniteInClosure<IgniteFuture<String>>(){
+    @Override public void apply(    IgniteFuture<String> future){
+      GridTestUtils.runAsync(new Callable<Object>(){
+        @Override public Object call() throws Exception {
+          cache.deregisterCacheEntryListener(cfg);
+          return null;
+        }
+      }
+);
+    }
+  }
+);
+  cache.registerCacheEntryListener(cfg);
+  IgniteCache<Integer,String> asyncCache=cache.withAsync();
+  asyncCache.get(key);
+  asyncCache.<String>future().listen(new IgniteInClosure<IgniteFuture<String>>(){
+    @Override public void apply(    IgniteFuture<String> f){
+      String value=f.get();
+      if (value != null) {
+        log.info("Completed by get: " + id);
+        (((GridFutureAdapter)((IgniteFutureImpl)promise).internalFuture())).onDone("by get");
+      }
+    }
+  }
+);
+  return promise;
+}
