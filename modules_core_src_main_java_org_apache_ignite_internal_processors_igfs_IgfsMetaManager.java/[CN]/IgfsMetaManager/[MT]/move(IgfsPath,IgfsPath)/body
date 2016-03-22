@@ -15,12 +15,12 @@
  else         throw new IgfsPathNotFoundException("Failed to perform move because destination path is not " + "found: " + dstPath.parent());
       }
       final Set<IgniteUuid> lockIds=new TreeSet<>(PATH_ID_SORTING_COMPARATOR);
-      srcPathIds.addExistingIds(lockIds);
-      dstPathIds.addExistingIds(lockIds);
+      srcPathIds.addExistingIds(lockIds,relaxed);
+      dstPathIds.addExistingIds(lockIds,relaxed);
       try (IgniteInternalTx tx=startTx()){
         final Map<IgniteUuid,IgfsEntryInfo> lockInfos=lockIds(lockIds);
-        if (!srcPathIds.verifyIntegrity(lockInfos))         throw new IgfsPathNotFoundException("Failed to perform move because source directory " + "structure changed concurrently [src=" + srcPath + ", dst="+ dstPath+ ']');
-        if (!dstPathIds.verifyIntegrity(lockInfos))         throw new IgfsPathNotFoundException("Failed to perform move because destination directory " + "structure changed concurrently [src=" + srcPath + ", dst="+ dstPath+ ']');
+        if (!srcPathIds.verifyIntegrity(lockInfos,relaxed))         throw new IgfsPathNotFoundException("Failed to perform move because source directory " + "structure changed concurrently [src=" + srcPath + ", dst="+ dstPath+ ']');
+        if (!dstPathIds.verifyIntegrity(lockInfos,relaxed))         throw new IgfsPathNotFoundException("Failed to perform move because destination directory " + "structure changed concurrently [src=" + srcPath + ", dst="+ dstPath+ ']');
         IgfsEntryInfo dstParentInfo=lockInfos.get(dstPathIds.lastId());
         if (dstParentInfo.isFile())         throw new IgfsPathAlreadyExistsException("Failed to perform move because destination points " + "to existing file [src=" + srcPath + ", dst="+ dstPath+ ']');
         if (dstParentInfo.hasChild(dstName))         throw new IgfsPathAlreadyExistsException("Failed to perform move because destination already " + "contains entry with the same name existing file [src=" + srcPath + ", dst="+ dstPath+ ']');

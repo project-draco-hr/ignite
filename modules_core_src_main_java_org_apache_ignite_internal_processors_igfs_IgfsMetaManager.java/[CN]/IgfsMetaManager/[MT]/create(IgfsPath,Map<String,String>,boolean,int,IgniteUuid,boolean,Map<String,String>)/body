@@ -5,7 +5,7 @@
       try {
         IgfsPathIds pathIds=pathIds(path);
         Set<IgniteUuid> lockIds=new TreeSet<>(PATH_ID_SORTING_COMPARATOR);
-        pathIds.addExistingIds(lockIds);
+        pathIds.addExistingIds(lockIds,relaxed);
         pathIds.addSurrogateIds(lockIds);
         IgniteUuid overwriteId=IgniteUuid.randomUuid();
         IgniteUuid trashId=IgfsUtils.randomTrashId();
@@ -15,7 +15,7 @@
         }
         try (IgniteInternalTx tx=startTx()){
           Map<IgniteUuid,IgfsEntryInfo> lockInfos=lockIds(lockIds);
-          if (!pathIds.verifyIntegrity(lockInfos))           continue;
+          if (!pathIds.verifyIntegrity(lockInfos,relaxed))           continue;
           if (pathIds.allExists()) {
             IgfsEntryInfo oldInfo=lockInfos.get(pathIds.lastId());
             if (!oldInfo.isFile())             throw new IgfsPathIsDirectoryException("Failed to create a file: " + path);
