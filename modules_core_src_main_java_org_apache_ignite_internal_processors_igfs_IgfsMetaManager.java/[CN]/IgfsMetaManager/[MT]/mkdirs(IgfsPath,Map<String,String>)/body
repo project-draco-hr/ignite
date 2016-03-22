@@ -1,2 +1,30 @@
 {
+  validTxState(false);
+  while (true) {
+    if (busyLock.enterBusy()) {
+      try {
+        IgfsPathIds pathIds=pathIds(path);
+        Set<IgniteUuid> lockIds=new TreeSet<>(PATH_ID_SORTING_COMPARATOR);
+        pathIds.addExistingIds(lockIds,relaxed);
+        pathIds.addSurrogateIds(lockIds);
+        try (IgniteInternalTx tx=startTx()){
+          final Map<IgniteUuid,IgfsEntryInfo> lockInfos=lockIds(lockIds);
+          if (!pathIds.verifyIntegrity(lockInfos,relaxed))           continue;
+          if (pathIds.allExists()) {
+            if (lockInfos.get(pathIds.lastExistingId()).isDirectory())             return false;
+ else             throw new IgfsParentNotDirectoryException("Failed to create directory (parent " + "element is not a directory)");
+          }
+          IgfsPathsCreateResult res=createDirectory(pathIds,lockInfos,props);
+          if (res == null)           continue;
+          tx.commit();
+          generateCreateEvents(res.createdPaths(),false);
+          return true;
+        }
+       }
+  finally {
+        busyLock.leaveBusy();
+      }
+    }
+ else     throw new IllegalStateException("Failed to mkdir because Grid is stopping. [path=" + path + ']');
+  }
 }

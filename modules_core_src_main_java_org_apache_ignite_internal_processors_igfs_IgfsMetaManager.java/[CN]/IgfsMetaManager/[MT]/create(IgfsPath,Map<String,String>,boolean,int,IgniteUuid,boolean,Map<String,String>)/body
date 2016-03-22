@@ -5,7 +5,7 @@
       try {
         IgfsPathIds pathIds=pathIds(path);
         Set<IgniteUuid> lockIds=new TreeSet<>(PATH_ID_SORTING_COMPARATOR);
-        pathIds.addExistingIds(lockIds);
+        pathIds.addExistingIds(lockIds,relaxed);
         pathIds.addSurrogateIds(lockIds);
         IgniteUuid overwriteId=IgniteUuid.randomUuid();
         IgniteUuid trashId=IgfsUtils.randomTrashId();
@@ -15,7 +15,7 @@
         }
         try (IgniteInternalTx tx=startTx()){
           Map<IgniteUuid,IgfsEntryInfo> lockInfos=lockIds(lockIds);
-          if (!pathIds.verifyIntegrity(lockInfos))           continue;
+          if (!pathIds.verifyIntegrity(lockInfos,relaxed))           continue;
           if (pathIds.allExists()) {
             IgfsEntryInfo oldInfo=lockInfos.get(pathIds.lastId());
             if (!oldInfo.isFile())             throw new IgfsPathIsDirectoryException("Failed to create a file: " + path);
@@ -28,18 +28,16 @@
             id2InfoPrj.invoke(parentId,new IgfsMetaDirectoryListingReplaceProcessor(name,overwriteId));
             long createTime=System.currentTimeMillis();
             IgfsEntryInfo newInfo=invokeAndGet(overwriteId,new IgfsMetaFileCreateProcessor(createTime,fileProps,blockSize,affKey,createFileLockId(false),evictExclude));
-            invokeUpdatePath(oldId,path);
-            IgniteBiTuple<IgfsEntryInfo,IgniteUuid> t2=new T2<>(newInfo,parentId);
             tx.commit();
             IgfsUtils.sendEvents(igfsCtx.kernalContext(),path,EventType.EVT_IGFS_FILE_OPENED_WRITE);
-            return t2;
+            return newInfo;
           }
  else {
             IgfsPathsCreateResult res=createFile(pathIds,lockInfos,dirProps,fileProps,blockSize,affKey,evictExclude);
             if (res == null)             continue;
             tx.commit();
             generateCreateEvents(res.createdPaths(),true);
-            return new T2<>(res.info(),res.parentId());
+            return res.info();
           }
         }
        }

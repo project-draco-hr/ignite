@@ -1,0 +1,27 @@
+{
+  PartitionRecovery rec=rcvs.get(partId);
+  if (rec == null) {
+    Long partCntr=null;
+    AffinityTopologyVersion initTopVer0=initTopVer;
+    if (initTopVer0 != null) {
+      GridCacheContext<K,V> cctx=cacheContext(ctx);
+      GridCacheAffinityManager aff=cctx.affinity();
+      if (initUpdCntrsPerNode != null) {
+        for (        ClusterNode node : aff.nodes(partId,initTopVer)) {
+          Map<Integer,Long> map=initUpdCntrsPerNode.get(node.id());
+          if (map != null) {
+            partCntr=map.get(partId);
+            break;
+          }
+        }
+      }
+ else       if (initUpdCntrs != null) {
+        partCntr=initUpdCntrs.get(partId);
+      }
+    }
+    rec=new PartitionRecovery(ctx.log(getClass()),initTopVer0,partCntr);
+    PartitionRecovery oldRec=rcvs.putIfAbsent(partId,rec);
+    if (oldRec != null)     rec=oldRec;
+  }
+  return rec;
+}
