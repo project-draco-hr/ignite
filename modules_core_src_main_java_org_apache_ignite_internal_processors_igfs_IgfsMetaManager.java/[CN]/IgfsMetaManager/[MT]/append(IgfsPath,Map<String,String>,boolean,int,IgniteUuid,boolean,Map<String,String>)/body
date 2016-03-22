@@ -16,17 +16,16 @@
             if (!info.isFile())             throw new IgfsPathIsDirectoryException("Failed to open file for write." + path);
             if (info.lockId() != null)             throw new IgfsException("File is already opened for write: " + path);
             info=invokeLock(info.id(),false);
-            IgniteBiTuple<IgfsEntryInfo,IgniteUuid> t2=new T2<>(info,pathIds.lastParentId());
             tx.commit();
             IgfsUtils.sendEvents(igfsCtx.kernalContext(),path,EventType.EVT_IGFS_FILE_OPENED_WRITE);
-            return t2;
+            return info;
           }
  else {
             IgfsPathsCreateResult res=createFile(pathIds,lockInfos,dirProps,fileProps,blockSize,affKey,evictExclude);
             if (res == null)             continue;
             tx.commit();
             generateCreateEvents(res.createdPaths(),true);
-            return new T2<>(res.info(),res.parentId());
+            return res.info();
           }
         }
        }

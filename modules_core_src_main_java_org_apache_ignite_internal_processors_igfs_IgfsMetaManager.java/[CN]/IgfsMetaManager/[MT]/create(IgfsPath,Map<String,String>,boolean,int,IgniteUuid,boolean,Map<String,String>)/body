@@ -28,18 +28,16 @@
             id2InfoPrj.invoke(parentId,new IgfsMetaDirectoryListingReplaceProcessor(name,overwriteId));
             long createTime=System.currentTimeMillis();
             IgfsEntryInfo newInfo=invokeAndGet(overwriteId,new IgfsMetaFileCreateProcessor(createTime,fileProps,blockSize,affKey,createFileLockId(false),evictExclude));
-            invokeUpdatePath(oldId,path);
-            IgniteBiTuple<IgfsEntryInfo,IgniteUuid> t2=new T2<>(newInfo,parentId);
             tx.commit();
             IgfsUtils.sendEvents(igfsCtx.kernalContext(),path,EventType.EVT_IGFS_FILE_OPENED_WRITE);
-            return t2;
+            return newInfo;
           }
  else {
             IgfsPathsCreateResult res=createFile(pathIds,lockInfos,dirProps,fileProps,blockSize,affKey,evictExclude);
             if (res == null)             continue;
             tx.commit();
             generateCreateEvents(res.createdPaths(),true);
-            return new T2<>(res.info(),res.parentId());
+            return res.info();
           }
         }
        }
