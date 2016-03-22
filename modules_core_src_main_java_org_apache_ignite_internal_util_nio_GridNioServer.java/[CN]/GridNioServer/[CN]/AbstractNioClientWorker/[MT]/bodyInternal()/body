@@ -56,7 +56,9 @@ case DUMP_STATS:
   sb.append(U.nl()).append(">> Selector info [idx=").append(idx).append(", keysCnt=").append(keys.size()).append("]").append(U.nl());
   for (  SelectionKey key : keys) {
     GridSelectorNioSessionImpl ses=(GridSelectorNioSessionImpl)key.attachment();
-    sb.append("    Connection info [").append("rmtAddr=").append(ses.remoteAddress()).append(", locAddr=").append(ses.localAddress()).append(", bytesRcvd=").append(ses.bytesReceived()).append(", bytesSent=").append(ses.bytesSent());
+    MessageWriter writer=ses.meta(MSG_WRITER.ordinal());
+    MessageReader reader=ses.meta(GridDirectParser.READER_META_KEY);
+    sb.append("    Connection info [").append("rmtAddr=").append(ses.remoteAddress()).append(", locAddr=").append(ses.localAddress()).append(", msgWriter=").append(writer != null ? writer.toString() : "null").append(", msgReader=").append(reader != null ? reader.toString() : "null").append(", bytesRcvd=").append(ses.bytesReceived()).append(", bytesSent=").append(ses.bytesSent());
     GridNioRecoveryDescriptor desc=ses.recoveryDescriptor();
     if (desc != null) {
       sb.append(", msgsSent=").append(desc.sent()).append(", msgsAckedByRmt=").append(desc.acked()).append(", msgsRcvd=").append(desc.received()).append(", descIdHash=").append(System.identityHashCode(desc));
