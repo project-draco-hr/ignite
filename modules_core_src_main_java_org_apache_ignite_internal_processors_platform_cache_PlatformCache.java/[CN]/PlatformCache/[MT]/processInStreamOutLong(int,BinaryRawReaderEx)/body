@@ -57,6 +57,15 @@ return cache.remove(reader.readObjectDetached()) ? TRUE : FALSE;
 }
 case OP_IS_LOCAL_LOCKED:
 return cache.isLocalLocked(reader.readObjectDetached(),reader.readBoolean()) ? TRUE : FALSE;
+case OP_LOAD_ALL:
+{
+long futId=reader.readLong();
+boolean replaceExisting=reader.readBoolean();
+CompletionListenable fut=new CompletionListenable();
+PlatformFutureUtils.listen(platformCtx,fut,futId,PlatformFutureUtils.TYP_OBJ,null,this);
+cache.loadAll(PlatformUtils.readSet(reader),replaceExisting,fut);
+return TRUE;
+}
 default :
 return super.processInStreamOutLong(type,reader);
 }
