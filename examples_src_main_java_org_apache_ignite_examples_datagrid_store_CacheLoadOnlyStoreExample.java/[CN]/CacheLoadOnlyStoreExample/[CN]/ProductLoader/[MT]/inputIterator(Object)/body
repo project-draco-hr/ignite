@@ -1,0 +1,32 @@
+{
+  final Scanner scanner;
+  try {
+    File path=IgniteUtils.resolveIgnitePath(csvFileName);
+    if (path == null)     throw new CacheLoaderException("Failed to open the source file: " + csvFileName);
+    scanner=new Scanner(path);
+    scanner.useDelimiter("\\n");
+  }
+ catch (  FileNotFoundException e) {
+    throw new CacheLoaderException("Failed to open the source file " + csvFileName,e);
+  }
+  return new Iterator<String>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public boolean hasNext(){
+      if (!scanner.hasNext()) {
+        scanner.close();
+        return false;
+      }
+      return true;
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public String next(){
+      if (!hasNext())       throw new NoSuchElementException();
+      return scanner.next();
+    }
+  }
+;
+}
