@@ -10,18 +10,12 @@
   final UUID nodeId=node.id();
   if (!node.isLocal()) {
     final IgfsBlocksMessage msg=new IgfsBlocksMessage(fileId,batchId,blocks);
-    callIgfsLocalSafe(new GridPlainCallable<Object>(){
-      @Override @Nullable public Object call() throws Exception {
-        try {
-          igfsCtx.send(nodeId,topic,msg,SYSTEM_POOL);
-        }
- catch (        IgniteCheckedException e) {
-          completionFut.onError(nodeId,e);
-        }
-        return null;
-      }
+    try {
+      igfsCtx.send(nodeId,topic,msg,IGFS_POOL);
     }
-);
+ catch (    IgniteCheckedException e) {
+      completionFut.onError(nodeId,e);
+    }
   }
  else {
     callIgfsLocalSafe(new GridPlainCallable<Object>(){

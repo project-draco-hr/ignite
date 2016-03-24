@@ -1,0 +1,32 @@
+{
+  CacheConfiguration dataCcfg=new CacheConfiguration();
+  dataCcfg.setName(DATA_CACHE_NAME);
+  dataCcfg.setCacheMode(CacheMode.REPLICATED);
+  dataCcfg.setAtomicityMode(TRANSACTIONAL);
+  dataCcfg.setWriteSynchronizationMode(FULL_SYNC);
+  dataCcfg.setAffinityMapper(new DummyAffinityMapper(1));
+  dataCcfg.setMaxConcurrentAsyncOperations(1);
+  CacheConfiguration metaCcfg=new CacheConfiguration();
+  metaCcfg.setName(META_CACHE_NAME);
+  metaCcfg.setCacheMode(CacheMode.REPLICATED);
+  metaCcfg.setAtomicityMode(TRANSACTIONAL);
+  metaCcfg.setWriteSynchronizationMode(FULL_SYNC);
+  FileSystemConfiguration igfsCfg=new FileSystemConfiguration();
+  igfsCfg.setDefaultMode(IgfsMode.PRIMARY);
+  igfsCfg.setDataCacheName(DATA_CACHE_NAME);
+  igfsCfg.setMetaCacheName(META_CACHE_NAME);
+  igfsCfg.setFragmentizerEnabled(false);
+  igfsCfg.setBlockSize(1024);
+  IgniteConfiguration cfg=getConfiguration(name);
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(discoSpi);
+  cfg.setCacheConfiguration(dataCcfg,metaCcfg);
+  cfg.setFileSystemConfiguration(igfsCfg);
+  cfg.setLocalHost("127.0.0.1");
+  cfg.setConnectorConfiguration(null);
+  cfg.setSystemThreadPoolSize(2);
+  cfg.setRebalanceThreadPoolSize(1);
+  cfg.setPublicThreadPoolSize(1);
+  return cfg;
+}
