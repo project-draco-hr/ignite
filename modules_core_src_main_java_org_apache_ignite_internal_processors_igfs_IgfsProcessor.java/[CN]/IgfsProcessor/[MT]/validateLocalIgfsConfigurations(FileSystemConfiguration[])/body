@@ -13,9 +13,11 @@
     if (metaCacheCfg.getAtomicityMode() != TRANSACTIONAL)     throw new IgniteCheckedException("Meta cache should be transactional: " + cfg.getMetaCacheName());
     if (F.eq(cfg.getDataCacheName(),cfg.getMetaCacheName()))     throw new IgniteCheckedException("Cannot use same cache as both data and meta cache: " + cfg.getName());
     if (!(dataCacheCfg.getAffinityMapper() instanceof IgfsGroupDataBlocksKeyMapper))     throw new IgniteCheckedException("Invalid IGFS data cache configuration (key affinity mapper class should be " + IgfsGroupDataBlocksKeyMapper.class.getSimpleName() + "): "+ cfg);
-    if (cfg.getIpcEndpointConfiguration() != null) {
-      final int tcpPort=cfg.getIpcEndpointConfiguration().getPort();
+    IgfsIpcEndpointConfiguration ipcCfg=cfg.getIpcEndpointConfiguration();
+    if (ipcCfg != null) {
+      final int tcpPort=ipcCfg.getPort();
       if (!(tcpPort >= MIN_TCP_PORT && tcpPort <= MAX_TCP_PORT))       throw new IgniteCheckedException("IGFS endpoint TCP port is out of range [" + MIN_TCP_PORT + ".."+ MAX_TCP_PORT+ "]: "+ tcpPort);
+      if (ipcCfg.getThreadCount() <= 0)       throw new IgniteCheckedException("IGFS endpoint thread count must be positive: " + ipcCfg.getThreadCount());
     }
     long maxSpaceSize=cfg.getMaxSpaceSize();
     if (maxSpaceSize > 0) {

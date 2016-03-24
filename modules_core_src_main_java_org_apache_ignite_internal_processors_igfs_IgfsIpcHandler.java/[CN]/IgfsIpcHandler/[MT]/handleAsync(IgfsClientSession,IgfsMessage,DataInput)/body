@@ -9,18 +9,29 @@ case MAKE_DIRECTORIES:
 case LIST_FILES:
 case LIST_PATHS:
 {
-        IgfsMessage res=execute(ses,cmd,msg,in);
-        fut=res == null ? null : new GridFinishedFuture<>(res);
+        fut=executeSynchronously(ses,cmd,msg,in);
         break;
       }
 default :
 {
-      fut=ctx.closure().callLocalSafe(new GridPlainCallable<IgfsMessage>(){
-        @Override public IgfsMessage call() throws Exception {
-          return execute(ses,cmd,msg,null);
+      try {
+        final GridFutureAdapter<IgfsMessage> fut0=new GridFutureAdapter<>();
+        pool.execute(new Runnable(){
+          @Override public void run(){
+            try {
+              fut0.onDone(execute(ses,cmd,msg,in));
+            }
+ catch (            Exception e) {
+              fut0.onDone(e);
+            }
+          }
         }
+);
+        fut=fut0;
       }
-,GridClosurePolicy.IGFS_POOL);
+ catch (      RejectedExecutionException ignored) {
+        fut=executeSynchronously(ses,cmd,msg,in);
+      }
     }
 }
 return fut;
