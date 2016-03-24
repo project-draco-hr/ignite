@@ -1,0 +1,21 @@
+{
+  String oldFldTypeName=meta == null ? null : meta.fieldTypeName(name);
+  boolean nullFieldVal=false;
+  int newFldTypeId;
+  if (newVal instanceof BinaryValueWithType) {
+    newFldTypeId=((BinaryValueWithType)newVal).typeId();
+    if (((BinaryValueWithType)newVal).value() == null)     nullFieldVal=true;
+  }
+ else   newFldTypeId=BinaryUtils.typeByClass(newVal.getClass());
+  if (oldFldTypeName == null) {
+    if (fieldsMeta == null)     fieldsMeta=new HashMap<>();
+    fieldsMeta.put(name,newFldTypeId);
+  }
+ else   if (!nullFieldVal) {
+    String newFldTypeName=BinaryUtils.fieldTypeName(newFldTypeId);
+    if (!F.eq(newFldTypeName,oldFldTypeName)) {
+      throw new BinaryObjectException("Wrong value has been set [" + "typeName=" + (typeName == null ? meta.typeName() : typeName) + ", fieldName="+ name+ ", fieldType="+ oldFldTypeName+ ", assignedValueType="+ newFldTypeName+ ']');
+    }
+  }
+  return fieldsMeta;
+}
