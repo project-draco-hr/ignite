@@ -9,7 +9,9 @@
   }
   DataStreamerResponse res=new DataStreamerResponse(reqId,errBytes,forceLocDep);
   try {
-    ctx.io().send(nodeId,resTopic,res,PUBLIC_POOL);
+    Byte plc=GridIoManager.currentPolicy();
+    if (plc == null)     plc=PUBLIC_POOL;
+    ctx.io().send(nodeId,resTopic,res,plc);
   }
  catch (  IgniteCheckedException e) {
     if (ctx.discovery().alive(nodeId))     U.error(log,"Failed to respond to node [nodeId=" + nodeId + ", res="+ res+ ']',e);
