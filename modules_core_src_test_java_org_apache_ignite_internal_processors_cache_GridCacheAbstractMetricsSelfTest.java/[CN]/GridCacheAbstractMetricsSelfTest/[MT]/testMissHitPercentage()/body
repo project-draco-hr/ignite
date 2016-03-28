@@ -1,18 +1,18 @@
 {
   IgniteCache<Integer,Integer> cache0=grid(0).cache(null);
-  int keyCnt=keyCount();
+  final int keyCnt=keyCount();
   for (int i=0; i < keyCnt; i++) {
     cache0.getAndPut(i,i);
-    info("Puts: " + cache0.metrics().getCachePuts());
+    info("Puts: " + cache0.localMetrics().getCachePuts());
     for (int j=0; j < gridCount(); j++) {
       IgniteCache<Integer,Integer> cache=grid(j).cache(null);
-      long cacheWrites=cache.metrics().getCachePuts();
+      long cacheWrites=cache.localMetrics().getCachePuts();
       assertEquals("Wrong cache metrics [i=" + i + ", grid="+ j+ ']',i + 1,cacheWrites);
     }
     assertEquals("Wrong value for key: " + i,Integer.valueOf(i),cache0.get(i));
   }
   for (int i=0; i < gridCount(); i++) {
-    CacheMetrics m=grid(i).cache(null).metrics();
+    CacheMetrics m=grid(i).cache(null).localMetrics();
     assertEquals(m.getCacheHits() * 100f / m.getCacheGets(),m.getCacheHitPercentage(),0.1f);
     assertEquals(m.getCacheMisses() * 100f / m.getCacheGets(),m.getCacheMissPercentage(),0.1f);
   }

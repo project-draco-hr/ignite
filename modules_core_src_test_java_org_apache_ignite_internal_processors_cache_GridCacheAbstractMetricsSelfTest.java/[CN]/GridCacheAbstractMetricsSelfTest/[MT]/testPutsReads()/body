@@ -8,10 +8,10 @@
     boolean isPrimary=affinity(cache0).isPrimary(grid(0).localNode(),i);
     expReads+=expectedReadsPerPut(isPrimary);
     expMisses+=expectedMissesPerPut(isPrimary);
-    info("Puts: " + cache0.metrics().getCachePuts());
+    info("Puts: " + cache0.localMetrics().getCachePuts());
     for (int j=0; j < gridCount(); j++) {
       IgniteCache<Integer,Integer> cache=grid(j).cache(null);
-      int cacheWrites=(int)cache.metrics().getCachePuts();
+      int cacheWrites=(int)cache.localMetrics().getCachePuts();
       assertEquals("Wrong cache metrics [i=" + i + ", grid="+ j+ ']',i + 1,cacheWrites);
     }
     assertEquals("Wrong value for key: " + i,Integer.valueOf(i),cache0.get(i));
@@ -22,7 +22,7 @@
   int hits=0;
   int misses=0;
   for (int i=0; i < gridCount(); i++) {
-    CacheMetrics m=grid(i).cache(null).metrics();
+    CacheMetrics m=grid(i).cache(null).localMetrics();
     puts+=m.getCachePuts();
     reads+=m.getCacheGets();
     hits+=m.getCacheHits();
