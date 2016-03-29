@@ -2,6 +2,10 @@
   IgniteConfiguration iCfg=super.getConfiguration(gridName);
   ((TcpDiscoverySpi)iCfg.getDiscoverySpi()).setIpFinder(ipFinder);
   ((TcpDiscoverySpi)iCfg.getDiscoverySpi()).setForceServerMode(true);
+  TcpCommunicationSpi commSpi=new CountingCommunicationSpi();
+  commSpi.setLocalPort(GridTestUtils.getNextCommPort(getClass()));
+  commSpi.setTcpNoDelay(true);
+  iCfg.setCommunicationSpi(commSpi);
   if (getTestGridName(10).equals(gridName))   iCfg.setClientMode(true);
   CacheConfiguration<Integer,Integer> cachePCfg=new CacheConfiguration<>();
   cachePCfg.setName(CACHE_NAME_DHT_PARTITIONED);

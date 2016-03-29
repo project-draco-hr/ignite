@@ -1,0 +1,32 @@
+{
+  for (  Ignite g : G.allGrids()) {
+    IgniteKernal g0=(IgniteKernal)g;
+    for (    IgniteCacheProxy<?,?> c : g0.context().cache().jcaches()) {
+      CacheConfiguration cfg=c.context().config();
+      if (cfg.getCacheMode() != LOCAL && cfg.getRebalanceMode() != NONE) {
+        GridDhtCacheAdapter<?,?> dht=dht(c);
+        GridDhtPartitionTopology top=dht.topology();
+        List<GridDhtLocalPartition> locs=top.localPartitions();
+        for (        GridDhtLocalPartition loc : locs) {
+          assertTrue("Wrong partition state, should be OWNING [state=" + loc.state() + "]",loc.state() == GridDhtPartitionState.OWNING);
+          Collection<ClusterNode> affNodes=g0.affinity(cfg.getName()).mapPartitionToPrimaryAndBackups(loc.id());
+          assertTrue(affNodes.contains(g0.localNode()));
+        }
+        for (        Ignite remote : G.allGrids()) {
+          IgniteKernal remote0=(IgniteKernal)remote;
+          IgniteCacheProxy<?,?> remoteC=remote0.context().cache().jcache(cfg.getName());
+          GridDhtCacheAdapter<?,?> remoteDht=dht(remoteC);
+          GridDhtPartitionTopology remoteTop=remoteDht.topology();
+          GridDhtPartitionMap2 pMap=remoteTop.partitionMap(true).get(((IgniteKernal)g).getLocalNodeId());
+          assertEquals(pMap.size(),locs.size());
+          for (          Map.Entry entry : pMap.entrySet()) {
+            assertTrue("Wrong partition state, should be OWNING [state=" + entry.getValue() + "]",entry.getValue() == GridDhtPartitionState.OWNING);
+          }
+          for (          GridDhtLocalPartition loc : locs) {
+            assertTrue(pMap.containsKey(loc.id()));
+          }
+        }
+      }
+    }
+  }
+}
