@@ -1,0 +1,30 @@
+{
+  try {
+    List<OdbcColumnMeta> meta=new ArrayList<>();
+    String cacheName;
+    String tableName;
+    if (req.tableName().contains(".")) {
+      String[] parts=req.tableName().split("\\.");
+      cacheName=OdbcUtils.removeQuotationMarksIfNeeded(parts[0]);
+      tableName=parts[1];
+    }
+ else {
+      cacheName=OdbcUtils.removeQuotationMarksIfNeeded(req.cacheName());
+      tableName=req.tableName();
+    }
+    Collection<GridQueryTypeDescriptor> tablesMeta=ctx.query().types(cacheName);
+    for (    GridQueryTypeDescriptor table : tablesMeta) {
+      if (!matches(table.name(),tableName))       continue;
+      for (      Map.Entry<String,Class<?>> field : table.fields().entrySet()) {
+        if (!matches(field.getKey(),req.columnName()))         continue;
+        OdbcColumnMeta columnMeta=new OdbcColumnMeta(req.cacheName(),table.name(),field.getKey(),field.getValue());
+        if (!meta.contains(columnMeta))         meta.add(columnMeta);
+      }
+    }
+    OdbcQueryGetColumnsMetaResult res=new OdbcQueryGetColumnsMetaResult(meta);
+    return new OdbcResponse(res);
+  }
+ catch (  Exception e) {
+    return new OdbcResponse(OdbcResponse.STATUS_FAILED,e.getMessage());
+  }
+}
