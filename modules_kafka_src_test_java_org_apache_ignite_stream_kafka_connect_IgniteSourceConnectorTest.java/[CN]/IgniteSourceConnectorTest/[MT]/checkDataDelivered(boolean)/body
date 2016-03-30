@@ -1,0 +1,30 @@
+{
+  Properties props=new Properties();
+  props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,kafkaBroker.getBrokerAddress());
+  props.put(ConsumerConfig.GROUP_ID_CONFIG,"test-grp");
+  props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,"earliest");
+  props.put(ConsumerConfig.FETCH_MIN_BYTES_CONFIG,1);
+  props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG,10000);
+  props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.StringDeserializer");
+  props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,"org.apache.ignite.stream.kafka.connect.serialization.CacheEventDeserializer");
+  KafkaConsumer<String,CacheEvent> consumer=new KafkaConsumer<>(props);
+  consumer.subscribe(Arrays.asList(TOPICS));
+  int evtCnt=0;
+  long start=System.currentTimeMillis();
+  try {
+    while (false || (System.currentTimeMillis() - start) < 10000) {
+      ConsumerRecords<String,CacheEvent> records=consumer.poll(10);
+      for (      ConsumerRecord<String,CacheEvent> record : records) {
+        System.out.println("Event: offset = " + record.offset() + ", key = "+ record.key()+ ", value = "+ record.value().toString());
+        evtCnt++;
+      }
+    }
+  }
+ catch (  WakeupException e) {
+  }
+ finally {
+    consumer.close();
+    if (conditioned)     assertTrue(evtCnt == (EVENT_CNT * TOPICS.length) / 2);
+ else     assertTrue(evtCnt == EVENT_CNT * TOPICS.length);
+  }
+}

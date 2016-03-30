@@ -1,0 +1,17 @@
+{
+  ArrayList<SourceRecord> records=new ArrayList<>(evtBatchSize);
+  ArrayList<CacheEvent> evts=new ArrayList<>(evtBatchSize);
+  if (stopped)   return records;
+  try {
+    if (evtBuf.drainTo(evts,evtBatchSize) > 0) {
+      for (      CacheEvent evt : evts) {
+        for (        String topic : topics)         records.add(new SourceRecord(srcPartition,offset,topic,null,evt));
+      }
+      return records;
+    }
+  }
+ catch (  IgniteException e) {
+    log.error("Error when polling event queue!",e);
+  }
+  return null;
+}
