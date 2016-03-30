@@ -1,0 +1,20 @@
+{
+  OdbcConfiguration odbcCfg=ctx.config().getOdbcConfiguration();
+  if (odbcCfg != null) {
+    try {
+      Marshaller marsh=ctx.config().getMarshaller();
+      if (marsh != null && !(marsh instanceof BinaryMarshaller))       throw new IgniteCheckedException("ODBC can only be used with BinaryMarshaller (please set it " + "through IgniteConfiguration.setMarshaller())");
+      String hostStr=odbcCfg.getHost();
+      if (hostStr == null)       hostStr=ctx.config().getLocalHost();
+      InetAddress host=U.resolveLocalHost(hostStr);
+      int port=odbcCfg.getPort();
+      srv=GridNioServer.<byte[]>builder().address(host).port(port).listener(new OdbcNioListener(ctx,busyLock)).logger(log).selectorCount(odbcCfg.getSelectorCount()).gridName(ctx.gridName()).tcpNoDelay(odbcCfg.isNoDelay()).directBuffer(odbcCfg.isDirectBuffer()).byteOrder(ByteOrder.nativeOrder()).socketSendBufferSize(odbcCfg.getSendBufferSize()).socketReceiveBufferSize(odbcCfg.getReceiveBufferSize()).sendQueueLimit(odbcCfg.getSendQueueLimit()).filters(new GridNioCodecFilter(new OdbcBufferedParser(),log,false)).directMode(false).idleTimeout(odbcCfg.getIdleTimeout()).build();
+      srv.start();
+      ctx.ports().registerPort(port,IgnitePortProtocol.TCP,getClass());
+      log.info("ODBC processor has started on TCP port " + port);
+    }
+ catch (    Exception e) {
+      throw new IgniteCheckedException("Failed to start ODBC processor.",e);
+    }
+  }
+}

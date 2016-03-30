@@ -1,0 +1,14 @@
+{
+  try {
+    QueryCursor cur=qryCursors.get(req.queryId()).get1();
+    if (cur == null)     return new OdbcResponse(OdbcResponse.STATUS_FAILED,"Failed to find query with ID: " + req.queryId());
+    cur.close();
+    qryCursors.remove(req.queryId());
+    OdbcQueryCloseResult res=new OdbcQueryCloseResult(req.queryId());
+    return new OdbcResponse(res);
+  }
+ catch (  Exception e) {
+    qryCursors.remove(req.queryId());
+    return new OdbcResponse(OdbcResponse.STATUS_FAILED,e.getMessage());
+  }
+}
