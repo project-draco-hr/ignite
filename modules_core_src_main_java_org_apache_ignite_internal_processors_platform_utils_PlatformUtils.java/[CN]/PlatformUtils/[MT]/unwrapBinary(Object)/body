@@ -1,0 +1,17 @@
+{
+  if (o == null)   return null;
+  if (knownArray(o))   return o;
+  if (o instanceof Map.Entry) {
+    Map.Entry entry=(Map.Entry)o;
+    Object key=entry.getKey();
+    Object uKey=unwrapBinary(key);
+    Object val=entry.getValue();
+    Object uVal=unwrapBinary(val);
+    return (key != uKey || val != uVal) ? F.t(uKey,uVal) : o;
+  }
+ else   if (BinaryUtils.knownCollection(o))   return unwrapKnownCollection((Collection<Object>)o);
+ else   if (BinaryUtils.knownMap(o))   return unwrapBinariesIfNeeded((Map<Object,Object>)o);
+ else   if (o instanceof Object[])   return unwrapBinariesInArray((Object[])o);
+ else   if (o instanceof BinaryObject)   return ((BinaryObject)o).deserialize();
+  return o;
+}
