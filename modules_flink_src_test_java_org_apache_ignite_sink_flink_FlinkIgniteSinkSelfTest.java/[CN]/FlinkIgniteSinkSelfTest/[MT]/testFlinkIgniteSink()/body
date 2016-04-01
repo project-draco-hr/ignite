@@ -1,0 +1,38 @@
+{
+  StreamExecutionEnvironment env=StreamExecutionEnvironment.getExecutionEnvironment();
+  env.getConfig().disableSysoutLogging();
+  IgniteSink igniteSink=new IgniteSink(TEST_CACHE,GRID_CONF_FILE);
+  igniteSink.setAllowOverwrite(true);
+  igniteSink.setAutoFlushFrequency(10);
+  igniteSink.start();
+  CacheListener listener=subscribeToPutEvents();
+  DataStream<Map> stream=env.addSource(new SourceFunction<Map>(){
+    private boolean running=true;
+    @Override public void run(    SourceContext<Map> ctx) throws Exception {
+      Map testDataMap=new HashMap<>();
+      long cnt=0;
+      while (running && (cnt < DFLT_STREAMING_EVENT)) {
+        testDataMap.put(cnt,"ignite-" + cnt);
+        cnt++;
+      }
+      ctx.collect(testDataMap);
+    }
+    @Override public void cancel(){
+      running=false;
+    }
+  }
+).setParallelism(1);
+  assertEquals(0,ignite.cache(TEST_CACHE).size());
+  stream.addSink(igniteSink);
+  try {
+    env.execute();
+    CountDownLatch latch=listener.getLatch();
+    latch.await();
+    unsubscribeToPutEvents(listener);
+    assertEquals(DFLT_STREAMING_EVENT,ignite.getOrCreateCache(TEST_CACHE).size());
+    for (long i=0; i < DFLT_STREAMING_EVENT; i++)     assertEquals("ignite-" + i,ignite.getOrCreateCache(TEST_CACHE).get(i));
+  }
+  finally {
+    igniteSink.stop();
+  }
+}
