@@ -13,7 +13,13 @@
         if (!preloadFinished)         break;
       }
       if (!cctx.kernalContext().clientNode() && futQ.isEmpty() && preloadFinished)       timeout=cctx.gridConfig().getNetworkTimeout();
-      if (log.isDebugEnabled())       log.debug("Before waiting for exchange futures [futs" + F.view(exchFuts.values(),F.unfinishedFutures()) + ", worker="+ this+ ']');
+      if (log.isDebugEnabled()) {
+        Collection<IgniteInternalFuture> unfinished=new HashSet<>();
+        for (        GridDhtPartitionsExchangeFuture fut : exchFuts.values()) {
+          if (!fut.isDone())           unfinished.add(fut);
+        }
+        log.debug("Before waiting for exchange futures [futs" + unfinished + ", worker="+ this+ ']');
+      }
       exchFut=poll(futQ,timeout,this);
       if (exchFut == null)       continue;
       busy=true;
