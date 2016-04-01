@@ -1,0 +1,17 @@
+{
+  boolean statsEnabled=ctx.config().isStatisticsEnabled();
+  long start=statsEnabled ? System.nanoTime() : 0L;
+  A.notNull(key,"key",val,"val");
+  if (keyCheck)   validateCacheKey(key);
+  Boolean stored=syncOp(new SyncOp<Boolean>(true){
+    @Override public Boolean op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
+      return tx.putAsync(ctx,key,val,false,filter).get().success();
+    }
+    @Override public String toString(){
+      return "putx [key=" + key + ", val="+ val+ ", filter="+ filter+ ']';
+    }
+  }
+);
+  if (statsEnabled)   metrics0().addPutTimeNanos(System.nanoTime() - start);
+  return stored;
+}
