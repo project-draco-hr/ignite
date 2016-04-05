@@ -1,0 +1,36 @@
+{
+  try (QueryCursor<Cache.Entry<Integer,String>> qryCursor=cache.query(qry)){
+    Transaction tx=null;
+    if (isTransactional)     tx=cache.unwrap(Ignite.class).transactions().txStart();
+    try {
+      for (int key=0; key < 8; key++)       cache.put(key,Integer.toString(key));
+      Map<Integer,String> map=new HashMap<>(8);
+      for (int key=8; key < 16; key++)       map.put(key,Integer.toString(key));
+      cache.putAll(map);
+      if (isTransactional)       tx.commit();
+    }
+  finally {
+      if (isTransactional)       tx.close();
+    }
+    for (int key=0; key < 8; key++) {
+      cache.invoke(key,new EntryProcessor<Integer,String,Object>(){
+        @Override public Object process(        MutableEntry<Integer,String> entry,        Object... objects) throws EntryProcessorException {
+          entry.setValue(Integer.toString(entry.getKey() + 1));
+          return null;
+        }
+      }
+);
+    }
+    Map<Integer,EntryProcessor<Integer,String,Object>> invokeMap=new HashMap<>(8);
+    for (int key=8; key < 16; key++) {
+      invokeMap.put(key,new EntryProcessor<Integer,String,Object>(){
+        @Override public Object process(        MutableEntry<Integer,String> entry,        Object... objects) throws EntryProcessorException {
+          entry.setValue(Integer.toString(entry.getKey() - 1));
+          return null;
+        }
+      }
+);
+    }
+    cache.invokeAll(invokeMap);
+  }
+ }
