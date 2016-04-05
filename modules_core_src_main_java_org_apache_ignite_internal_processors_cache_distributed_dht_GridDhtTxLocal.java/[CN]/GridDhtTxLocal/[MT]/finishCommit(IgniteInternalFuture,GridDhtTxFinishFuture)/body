@@ -1,0 +1,26 @@
+{
+  boolean primarySync=syncMode() == PRIMARY_SYNC;
+  IgniteCheckedException err=null;
+  try {
+    if (prepFut != null)     prepFut.get();
+    if (finish(true)) {
+      if (primarySync)       sendFinishReply(true,null);
+      fut.finish();
+    }
+ else {
+      err=new IgniteCheckedException("Failed to commit transaction: " + CU.txString(this));
+      fut.onError(err);
+    }
+  }
+ catch (  IgniteTxOptimisticCheckedException e) {
+    if (log.isDebugEnabled())     log.debug("Failed to optimistically prepare transaction [tx=" + this + ", e="+ e+ ']');
+    err=e;
+    fut.onError(e);
+  }
+catch (  IgniteCheckedException e) {
+    U.error(log,"Failed to prepare transaction: " + this,e);
+    err=e;
+    fut.onError(e);
+  }
+  if (primarySync && err != null)   sendFinishReply(true,err);
+}

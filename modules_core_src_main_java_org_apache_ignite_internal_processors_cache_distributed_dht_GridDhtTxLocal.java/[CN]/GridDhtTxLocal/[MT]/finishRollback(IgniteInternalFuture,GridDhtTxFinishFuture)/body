@@ -1,0 +1,26 @@
+{
+  try {
+    if (prepFut != null)     prepFut.get();
+  }
+ catch (  IgniteCheckedException e) {
+    if (log.isDebugEnabled())     log.debug("Failed to prepare or rollback transaction [tx=" + this + ", e="+ e+ ']');
+  }
+  boolean primarySync=syncMode() == PRIMARY_SYNC;
+  IgniteCheckedException err=null;
+  try {
+    if (finish(false) || state() == UNKNOWN) {
+      if (primarySync)       sendFinishReply(false,null);
+      fut.finish();
+    }
+ else {
+      err=new IgniteCheckedException("Failed to rollback transaction: " + CU.txString(GridDhtTxLocal.this));
+      fut.onError(err);
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    U.error(log,"Failed to gracefully rollback transaction: " + CU.txString(GridDhtTxLocal.this),e);
+    err=e;
+    fut.onError(e);
+  }
+  if (primarySync && err != null)   sendFinishReply(false,err);
+}

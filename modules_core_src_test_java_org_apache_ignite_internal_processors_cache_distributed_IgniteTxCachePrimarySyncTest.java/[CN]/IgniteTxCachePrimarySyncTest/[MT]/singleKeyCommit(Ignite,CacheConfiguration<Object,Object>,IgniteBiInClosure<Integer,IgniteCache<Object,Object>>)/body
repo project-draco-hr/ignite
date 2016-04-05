@@ -1,0 +1,40 @@
+{
+  Ignite ignite=ignite(0);
+  assertNotSame(ignite,client);
+  TestRecordingCommunicationSpi commSpiClient=(TestRecordingCommunicationSpi)client.configuration().getCommunicationSpi();
+  TestRecordingCommunicationSpi commSpi0=(TestRecordingCommunicationSpi)ignite.configuration().getCommunicationSpi();
+  IgniteCache<Object,Object> cache=ignite.cache(ccfg.getName());
+  final Integer key=primaryKey(cache);
+  cache.remove(key);
+  waitKeyRemoved(ccfg.getName(),key);
+  IgniteCache<Object,Object> clientCache=client.cache(ccfg.getName());
+  commSpiClient.record(GridNearTxFinishRequest.class);
+  commSpi0.record(GridDhtTxFinishRequest.class);
+  commSpi0.blockMessages(new IgnitePredicateX<GridIoMessage>(){
+    @Override public boolean applyx(    GridIoMessage e) throws IgniteCheckedException {
+      return e.message() instanceof GridDhtTxFinishRequest;
+    }
+  }
+);
+  c.apply(key,clientCache);
+  assertEquals(key,cache.localPeek(key));
+  U.sleep(50);
+  boolean nearCache=((IgniteCacheProxy)clientCache).context().isNear();
+  for (int i=1; i < NODES; i++) {
+    Ignite node=ignite(i);
+    if (nearCache && node == client && !node.affinity(ccfg.getName()).isPrimaryOrBackup(node.cluster().localNode(),key))     assertEquals("Invalid value for node: " + i,key,ignite(i).cache(null).localPeek(key));
+ else     assertNull("Invalid value for node: " + i,ignite(i).cache(null).localPeek(key));
+  }
+  commSpi0.stopBlock(true);
+  waitKeyUpdated(ignite,ccfg.getBackups() + 1,ccfg.getName(),key);
+  List<Object> msgs=commSpiClient.recordedMessages(true);
+  assertEquals(1,msgs.size());
+  GridNearTxFinishRequest req=(GridNearTxFinishRequest)msgs.get(0);
+  assertEquals(PRIMARY_SYNC,req.syncMode());
+  msgs=commSpi0.recordedMessages(true);
+  assertEquals(ccfg.getBackups(),msgs.size());
+  clientCache.remove(key);
+  waitKeyRemoved(ccfg.getName(),key);
+  c.apply(key,clientCache);
+  waitKeyUpdated(ignite,ccfg.getBackups() + 1,ccfg.getName(),key);
+}

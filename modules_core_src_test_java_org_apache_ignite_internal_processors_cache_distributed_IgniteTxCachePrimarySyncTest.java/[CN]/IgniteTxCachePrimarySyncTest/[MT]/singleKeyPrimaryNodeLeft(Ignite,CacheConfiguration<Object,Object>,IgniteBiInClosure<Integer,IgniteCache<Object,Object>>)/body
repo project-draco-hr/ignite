@@ -1,0 +1,33 @@
+{
+  Ignite ignite=startGrid(NODES);
+  final TestRecordingCommunicationSpi commSpiClient=(TestRecordingCommunicationSpi)client.configuration().getCommunicationSpi();
+  IgniteCache<Object,Object> cache=ignite.cache(ccfg.getName());
+  final Integer key=primaryKey(cache);
+  cache.remove(key);
+  waitKeyRemoved(ccfg.getName(),key);
+  commSpiClient.blockMessages(GridNearTxFinishRequest.class,ignite.name());
+  final IgniteCache<Object,Object> clientCache=client.cache(ccfg.getName());
+  IgniteInternalFuture<?> fut=GridTestUtils.runAsync(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      c.apply(key,clientCache);
+      return null;
+    }
+  }
+);
+  boolean waitMsgSnd=GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return commSpiClient.hasBlockedMessages();
+    }
+  }
+,5000);
+  assertTrue(waitMsgSnd);
+  ignite.close();
+  commSpiClient.stopBlock(false);
+  fut.get();
+  awaitPartitionMapExchange();
+  waitKeyUpdated(client,ccfg.getBackups() + 1,ccfg.getName(),key);
+  clientCache.remove(key);
+  waitKeyRemoved(ccfg.getName(),key);
+  c.apply(key,clientCache);
+  waitKeyUpdated(client,ccfg.getBackups() + 1,ccfg.getName(),key);
+}

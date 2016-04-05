@@ -1,0 +1,121 @@
+{
+  IgniteTransactions txs=ignite.transactions();
+  IgniteCache<Object,Object> fullSync1=ignite.cache("fullSync1");
+  IgniteCache<Object,Object> fullSync2=ignite.cache("fullSync2");
+  IgniteCache<Object,Object> fullAsync1=ignite.cache("fullAsync1");
+  IgniteCache<Object,Object> fullAsync2=ignite.cache("fullAsync2");
+  IgniteCache<Object,Object> primarySync1=ignite.cache("primarySync1");
+  IgniteCache<Object,Object> primarySync2=ignite.cache("primarySync2");
+  for (int i=0; i < 3; i++) {
+    int key=0;
+    for (    TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+      for (      TransactionIsolation isolation : TransactionIsolation.values()) {
+        try (Transaction tx=txs.txStart(concurrency,isolation)){
+          fullSync1.put(key++,1);
+          checkSyncMode(tx,FULL_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          fullAsync1.put(key++,1);
+          checkSyncMode(tx,FULL_ASYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          primarySync1.put(key++,1);
+          checkSyncMode(tx,PRIMARY_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          for (int j=0; j < 100; j++)           fullSync1.put(key++,1);
+          checkSyncMode(tx,FULL_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          for (int j=0; j < 100; j++)           fullAsync1.put(key++,1);
+          checkSyncMode(tx,FULL_ASYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          for (int j=0; j < 100; j++)           primarySync1.put(key++,1);
+          checkSyncMode(tx,PRIMARY_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          fullSync1.put(key++,1);
+          fullSync2.put(key++,1);
+          checkSyncMode(tx,FULL_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          fullAsync1.put(key++,1);
+          fullAsync2.put(key++,1);
+          checkSyncMode(tx,FULL_ASYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          primarySync1.put(key++,1);
+          primarySync2.put(key++,1);
+          checkSyncMode(tx,PRIMARY_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          fullSync1.put(key++,1);
+          primarySync1.put(key++,1);
+          checkSyncMode(tx,FULL_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          primarySync1.put(key++,1);
+          fullSync1.put(key++,1);
+          checkSyncMode(tx,FULL_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          fullSync1.put(key++,1);
+          fullAsync1.put(key++,1);
+          checkSyncMode(tx,FULL_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          fullAsync1.put(key++,1);
+          fullSync1.put(key++,1);
+          checkSyncMode(tx,FULL_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          fullAsync1.put(key++,1);
+          primarySync1.put(key++,1);
+          checkSyncMode(tx,PRIMARY_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          fullAsync1.put(key++,1);
+          primarySync1.put(key++,1);
+          fullAsync2.put(key++,1);
+          checkSyncMode(tx,PRIMARY_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          primarySync1.put(key++,1);
+          fullAsync1.put(key++,1);
+          checkSyncMode(tx,PRIMARY_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          fullSync1.put(key++,1);
+          fullAsync1.put(key++,1);
+          primarySync1.put(key++,1);
+          checkSyncMode(tx,FULL_SYNC);
+          if (commit)           tx.commit();
+        }
+         try (Transaction tx=txs.txStart(concurrency,isolation)){
+          fullAsync1.put(key++,1);
+          primarySync1.put(key++,1);
+          fullSync1.put(key++,1);
+          checkSyncMode(tx,FULL_SYNC);
+          if (commit)           tx.commit();
+        }
+       }
+    }
+  }
+}

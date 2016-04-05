@@ -1,0 +1,19 @@
+{
+  Ignite ignite=ignite(0);
+  List<IgniteCache<Object,Object>> caches=new ArrayList<>();
+  try {
+    caches.add(createCache(ignite,cacheConfiguration("fullSync1",FULL_SYNC,1,false,false),true));
+    caches.add(createCache(ignite,cacheConfiguration("fullSync2",FULL_SYNC,1,false,false),true));
+    caches.add(createCache(ignite,cacheConfiguration("fullAsync1",FULL_ASYNC,1,false,false),true));
+    caches.add(createCache(ignite,cacheConfiguration("fullAsync2",FULL_ASYNC,1,false,false),true));
+    caches.add(createCache(ignite,cacheConfiguration("primarySync1",PRIMARY_SYNC,1,false,false),true));
+    caches.add(createCache(ignite,cacheConfiguration("primarySync2",PRIMARY_SYNC,1,false,false),true));
+    for (int i=0; i < NODES; i++) {
+      checkTxSyncMode(ignite(i),true);
+      checkTxSyncMode(ignite(i),false);
+    }
+  }
+  finally {
+    for (    IgniteCache<Object,Object> cache : caches)     ignite.destroyCache(cache.getName());
+  }
+}

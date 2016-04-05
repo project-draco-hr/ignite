@@ -1,0 +1,32 @@
+{
+  Ignite ignite=ignite(0);
+  IgniteCache<Object,Object> cache=ignite.createCache(ccfg);
+  try {
+    for (int i=0; i < SRVS; i++) {
+      Ignite node=ignite(i);
+      singleKeyCommitFromPrimary(node,ccfg,new IgniteBiInClosure<Integer,IgniteCache<Object,Object>>(){
+        @Override public void apply(        Integer key,        IgniteCache<Object,Object> cache){
+          cache.put(key,key);
+        }
+      }
+);
+      for (      final TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+        for (        final TransactionIsolation isolation : TransactionIsolation.values()) {
+          singleKeyCommitFromPrimary(node,ccfg,new IgniteBiInClosure<Integer,IgniteCache<Object,Object>>(){
+            @Override public void apply(            Integer key,            IgniteCache<Object,Object> cache){
+              Ignite ignite=cache.unwrap(Ignite.class);
+              try (Transaction tx=ignite.transactions().txStart(concurrency,isolation)){
+                cache.put(key,key);
+                tx.commit();
+              }
+             }
+          }
+);
+        }
+      }
+    }
+  }
+  finally {
+    ignite.destroyCache(cache.getName());
+  }
+}

@@ -1,0 +1,56 @@
+{
+  Ignite ignite=ignite(0);
+  IgniteCache<Object,Object> cache=ignite.createCache(ccfg);
+  try {
+    ignite(NODES - 1).createNearCache(ccfg.getName(),new NearCacheConfiguration<>());
+    for (int i=1; i < NODES; i++) {
+      Ignite node=ignite(i);
+      log.info("Test node: " + node.name());
+      checkWaitPrimaryResponse(node,ccfg,new IgniteBiInClosure<Integer,IgniteCache<Object,Object>>(){
+        @Override public void apply(        Integer key,        IgniteCache<Object,Object> cache){
+          cache.put(key,key);
+        }
+      }
+);
+      checkWaitPrimaryResponse(node,ccfg,new IgniteBiInClosure<Integer,IgniteCache<Object,Object>>(){
+        @Override public void apply(        Integer key,        IgniteCache<Object,Object> cache){
+          Map<Integer,Integer> map=new HashMap<>();
+          for (int i=0; i < 50; i++)           map.put(i,i);
+          map.put(key,key);
+          cache.putAll(map);
+        }
+      }
+);
+      for (      final TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+        for (        final TransactionIsolation isolation : TransactionIsolation.values()) {
+          checkWaitPrimaryResponse(node,ccfg,new IgniteBiInClosure<Integer,IgniteCache<Object,Object>>(){
+            @Override public void apply(            Integer key,            IgniteCache<Object,Object> cache){
+              Ignite ignite=cache.unwrap(Ignite.class);
+              try (Transaction tx=ignite.transactions().txStart(concurrency,isolation)){
+                cache.put(key,key);
+                tx.commit();
+              }
+             }
+          }
+);
+          checkWaitPrimaryResponse(node,ccfg,new IgniteBiInClosure<Integer,IgniteCache<Object,Object>>(){
+            @Override public void apply(            Integer key,            IgniteCache<Object,Object> cache){
+              Map<Integer,Integer> map=new HashMap<>();
+              for (int i=0; i < 50; i++)               map.put(i,i);
+              map.put(key,key);
+              Ignite ignite=cache.unwrap(Ignite.class);
+              try (Transaction tx=ignite.transactions().txStart(concurrency,isolation)){
+                cache.putAll(map);
+                tx.commit();
+              }
+             }
+          }
+);
+        }
+      }
+    }
+  }
+  finally {
+    ignite.destroyCache(cache.getName());
+  }
+}

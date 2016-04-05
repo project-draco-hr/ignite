@@ -1,0 +1,17 @@
+{
+  Affinity<Object> aff=ignite.affinity(cacheName);
+  final Collection<ClusterNode> nodes=aff.mapKeyToPrimaryAndBackups(key);
+  assertEquals(expNodes,nodes.size());
+  boolean wait=GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      for (      ClusterNode node : nodes) {
+        Ignite ignite=grid(node);
+        if (!key.equals(ignite.cache(cacheName).get(key)))         return false;
+      }
+      return true;
+    }
+  }
+,5000);
+  assertTrue(wait);
+  for (  Ignite ignite0 : G.allGrids())   assertEquals(key,ignite0.cache(cacheName).get(key));
+}

@@ -1,0 +1,33 @@
+{
+  Ignite ignite=ignite(0);
+  IgniteCache<Object,Object> cache=ignite.createCache(ccfg);
+  try {
+    for (int i=1; i < NODES; i++) {
+      Ignite node=ignite(i);
+      log.info("Test node: " + node.name());
+      checkOnePhaseMessages(node,ccfg,new IgniteBiInClosure<Integer,IgniteCache<Object,Object>>(){
+        @Override public void apply(        Integer key,        IgniteCache<Object,Object> cache){
+          cache.put(key,key);
+        }
+      }
+);
+      for (      final TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+        for (        final TransactionIsolation isolation : TransactionIsolation.values()) {
+          checkOnePhaseMessages(node,ccfg,new IgniteBiInClosure<Integer,IgniteCache<Object,Object>>(){
+            @Override public void apply(            Integer key,            IgniteCache<Object,Object> cache){
+              Ignite ignite=cache.unwrap(Ignite.class);
+              try (Transaction tx=ignite.transactions().txStart(concurrency,isolation)){
+                cache.put(key,key);
+                tx.commit();
+              }
+             }
+          }
+);
+        }
+      }
+    }
+  }
+  finally {
+    ignite.destroyCache(cache.getName());
+  }
+}

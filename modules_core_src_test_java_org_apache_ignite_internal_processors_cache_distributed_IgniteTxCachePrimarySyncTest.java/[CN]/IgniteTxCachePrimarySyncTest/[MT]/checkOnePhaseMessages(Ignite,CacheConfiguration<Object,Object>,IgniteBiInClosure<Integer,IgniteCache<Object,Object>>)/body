@@ -1,0 +1,23 @@
+{
+  Ignite ignite=ignite(0);
+  assertNotSame(ignite,client);
+  TestRecordingCommunicationSpi commSpiClient=(TestRecordingCommunicationSpi)client.configuration().getCommunicationSpi();
+  TestRecordingCommunicationSpi commSpi0=(TestRecordingCommunicationSpi)ignite.configuration().getCommunicationSpi();
+  IgniteCache<Object,Object> cache=ignite.cache(ccfg.getName());
+  final Integer key=primaryKey(cache);
+  cache.remove(key);
+  waitKeyRemoved(ccfg.getName(),key);
+  final IgniteCache<Object,Object> clientCache=client.cache(ccfg.getName());
+  commSpi0.record(GridNearTxFinishResponse.class,GridNearTxPrepareResponse.class);
+  commSpiClient.record(GridNearTxPrepareRequest.class,GridNearTxFinishRequest.class);
+  c.apply(key,clientCache);
+  List<Object> srvMsgs=commSpi0.recordedMessages(true);
+  assertEquals("Unexpected messages: " + srvMsgs,1,srvMsgs.size());
+  assertTrue("Unexpected message: " + srvMsgs.get(0),srvMsgs.get(0) instanceof GridNearTxPrepareResponse);
+  List<Object> clientMsgs=commSpiClient.recordedMessages(true);
+  assertEquals("Unexpected messages: " + clientMsgs,1,clientMsgs.size());
+  assertTrue("Unexpected message: " + clientMsgs.get(0),clientMsgs.get(0) instanceof GridNearTxPrepareRequest);
+  GridNearTxPrepareRequest req=(GridNearTxPrepareRequest)clientMsgs.get(0);
+  assertTrue(req.onePhaseCommit());
+  for (  Ignite ignite0 : G.allGrids())   assertEquals(key,ignite0.cache(cache.getName()).get(key));
+}

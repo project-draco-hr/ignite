@@ -1,0 +1,19 @@
+{
+synchronized (this) {
+    blockP=null;
+    blockCls.clear();
+    blockP=null;
+    if (sndMsgs) {
+      for (      T2<ClusterNode,GridIoMessage> msg : blockedMsgs) {
+        try {
+          ignite.log().info("Send blocked message [node=" + msg.get1().id() + ", msg="+ msg.get2().message()+ ']');
+          super.sendMessage(msg.get1(),msg.get2());
+        }
+ catch (        Throwable e) {
+          U.error(ignite.log(),"Failed to send blocked message: " + msg,e);
+        }
+      }
+    }
+    blockedMsgs.clear();
+  }
+}

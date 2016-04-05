@@ -1,0 +1,19 @@
+{
+  log.info("Check cache: " + cache.getName());
+  final int KEYS=50;
+  for (int iter=0; iter < 100; iter++) {
+    if (iter % 10 == 0)     log.info("Iteration: " + iter);
+    for (int i=0; i < KEYS; i++)     cache.remove(i);
+    Map<Integer,Integer> putBatch=new HashMap<>();
+    for (int i=0; i < KEYS; i++)     putBatch.put(i,iter);
+    if (txs != null) {
+      try (Transaction tx=txs.txStart(concurrency,isolation)){
+        cache.putAll(putBatch);
+        tx.commit();
+      }
+     }
+ else     cache.putAll(putBatch);
+    Map<Object,Object> vals=cache.getAll(putBatch.keySet());
+    for (int i=0; i < KEYS; i++)     assertEquals(iter,vals.get(i));
+  }
+}
