@@ -1,0 +1,53 @@
+{
+  ignite(0).createCache(ccfg);
+  try {
+    final Map<Integer,AtomicInteger> incMap=new LinkedHashMap<>();
+    final int KEYS=10;
+    for (int i=0; i < KEYS; i++)     incMap.put(i,new AtomicInteger());
+    final int NODES=SRVS + 1;
+    final int START_NODES=5;
+    final AtomicInteger nodeIdx=new AtomicInteger(NODES);
+    final IgniteInternalFuture<?> fut=GridTestUtils.runMultiThreadedAsync(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        int node=nodeIdx.getAndIncrement();
+        Ignite ignite=startGrid(node);
+        IgniteCache<Integer,Integer> cache=ignite.cache(null);
+        for (int i=0; i < 1000; i++)         incrementTx(ignite,cache,incMap);
+        return null;
+      }
+    }
+,START_NODES,"start-thread");
+    IgniteInternalFuture<?> txFut=updateFuture(NODES,incMap,fut);
+    fut.get();
+    txFut.get();
+    log.info("First updates: " + incMap);
+    checkCache(NODES + START_NODES,incMap);
+    if (ccfg.getBackups() > 0) {
+      for (int i=0; i < START_NODES; i++) {
+        final int stopIdx=NODES + i;
+        IgniteInternalFuture<?> stopFut=GridTestUtils.runAsync(new Callable<Void>(){
+          @Override public Void call() throws Exception {
+            U.sleep(500);
+            stopGrid(stopIdx);
+            return null;
+          }
+        }
+,"stop-thread");
+        txFut=updateFuture(NODES,incMap,stopFut);
+        stopFut.get();
+        txFut.get();
+        checkCache(NODES + START_NODES - (i + 1),incMap);
+        for (int n=0; n < SRVS; n++)         ignite(n).cache(null).rebalance().get();
+      }
+    }
+ else {
+      for (int i=0; i < START_NODES; i++)       stopGrid(NODES + i);
+      return;
+    }
+    log.info("Second updates: " + incMap);
+    checkCache(NODES,incMap);
+  }
+  finally {
+    ignite(0).destroyCache(ccfg.getName());
+  }
+}

@@ -13,7 +13,8 @@
     }
   }
   nodeVers.put(topVer,new IgnitePair<>(minVer,maxVer));
-  for (  AffinityTopologyVersion oldVer : nodeVers.headMap(new AffinityTopologyVersion(topVer.topologyVersion() - 10,0)).keySet())   nodeVers.remove(oldVer);
+  AffinityTopologyVersion histVer=new AffinityTopologyVersion(topVer.topologyVersion() - 10,0);
+  for (  AffinityTopologyVersion oldVer : nodeVers.headMap(histVer).keySet())   nodeVers.remove(oldVer);
   if (err == null) {
     while (true) {
       AffinityTopologyVersion readyVer=readyTopVer.get();
@@ -42,10 +43,11 @@
       if (exchFut.exchangeId().topologyVersion().compareTo(fut.exchangeId().topologyVersion()) < 0)       continue;
       skipped++;
       if (skipped == EXCH_FUT_CLEANUP_HISTORY_SIZE) {
-        for (        GridCacheContext cacheCtx : cctx.cacheContexts()) {
-          if (err == null) {
+        if (err == null) {
+          for (          GridCacheContext cacheCtx : cctx.cacheContexts()) {
             if (!cacheCtx.isLocal())             cacheCtx.affinity().cleanUpCache(fut.topologyVersion());
           }
+          cctx.affinity().cleanUpCache(fut.topologyVersion());
         }
       }
       if (skipped > 10)       fut.cleanUp();

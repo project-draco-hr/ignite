@@ -1,0 +1,18 @@
+{
+  Affinity<Object> aff=ignite.affinity(CACHE_NAME1);
+  for (int i=0; i < 10; i++) {
+    final int part=aff.partition(i);
+    final String srvcName="service-" + i;
+    final ClusterNode srvcNode=affinity.get(part).get(0);
+    boolean wait=GridTestUtils.waitForCondition(new PA(){
+      @Override public boolean apply(){
+        TestService srvc=grid(srvcNode).services().service(srvcName);
+        if (srvc == null)         return false;
+        assertEquals(srvcNode,srvc.serviceNode());
+        return true;
+      }
+    }
+,5000);
+    assertTrue(wait);
+  }
+}

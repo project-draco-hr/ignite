@@ -2,6 +2,10 @@
   cacheStartedLatch.countDown();
   GridCachePartitionExchangeManager<Object,Object> exch=context().exchange();
   exch.onKernalStop(cancel);
+  for (  GridCacheAdapter<?,?> cache : caches.values()) {
+    GridCacheAffinityManager aff=cache.context().affinity();
+    if (aff != null)     aff.cancelFutures();
+  }
   for (  String cacheName : stopSeq) {
     GridCacheAdapter<?,?> cache=caches.remove(maskNull(cacheName));
     if (cache != null) {

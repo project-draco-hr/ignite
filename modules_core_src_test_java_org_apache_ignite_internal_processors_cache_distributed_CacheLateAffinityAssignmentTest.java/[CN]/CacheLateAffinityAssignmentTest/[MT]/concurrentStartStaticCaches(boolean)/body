@@ -1,0 +1,42 @@
+{
+  cacheC=new IgniteClosure<String,CacheConfiguration[]>(){
+    @Override public CacheConfiguration[] apply(    String gridName){
+      int caches=getTestGridIndex(gridName) + 1;
+      CacheConfiguration[] ccfgs=new CacheConfiguration[caches];
+      for (int i=0; i < caches; i++) {
+        CacheConfiguration ccfg=cacheConfiguration();
+        ccfg.setName("cache-" + i);
+        ccfgs[i]=ccfg;
+      }
+      return ccfgs;
+    }
+  }
+;
+  if (withClients) {
+    clientC=new IgniteClosure<String,Boolean>(){
+      @Override public Boolean apply(      String gridName){
+        int idx=getTestGridIndex(gridName);
+        return idx % 3 == 2;
+      }
+    }
+;
+  }
+  int ITERATIONS=3;
+  int NODES=withClients ? 8 : 5;
+  for (int i=0; i < ITERATIONS; i++) {
+    log.info("Iteration: " + i);
+    startGridsMultiThreaded(NODES);
+    for (int t=0; t < NODES; t++)     calculateAffinity(t + 1,true,null);
+    if (withClients) {
+      skipCheckOrder=true;
+      checkAffinity(NODES,topVer(NODES,0),false);
+    }
+ else     checkAffinity(NODES,topVer(NODES,1),true);
+    if (i < ITERATIONS - 1) {
+      checkCaches();
+      awaitPartitionMapExchange();
+      stopAllGrids();
+      idealAff.clear();
+    }
+  }
+}

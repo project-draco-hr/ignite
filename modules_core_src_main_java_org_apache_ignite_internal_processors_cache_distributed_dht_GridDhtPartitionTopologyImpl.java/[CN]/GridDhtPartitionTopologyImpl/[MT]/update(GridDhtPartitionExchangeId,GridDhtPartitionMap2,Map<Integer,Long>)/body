@@ -45,8 +45,12 @@
         if (ids != null)         changed|=ids.remove(parts.nodeId());
       }
     }
-    changed|=checkEvictions(updateSeq);
-    updateRebalanceVersion();
+    AffinityTopologyVersion affVer=cctx.affinity().affinityTopologyVersion();
+    if (!affVer.equals(AffinityTopologyVersion.NONE) && affVer.compareTo(topVer) >= 0) {
+      List<List<ClusterNode>> aff=cctx.affinity().assignments(topVer);
+      changed|=checkEvictions(updateSeq,aff);
+      updateRebalanceVersion(aff);
+    }
     consistencyCheck();
     if (log.isDebugEnabled())     log.debug("Partition map after single update: " + fullMapString());
     return changed ? localPartitionMap() : null;

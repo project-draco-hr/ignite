@@ -1,0 +1,23 @@
+{
+  List<String> cachesWithoutNodes=null;
+  for (  String name : cctx.cache().cacheNames()) {
+    if (cctx.discovery().cacheAffinityNodes(name,topologyVersion()).isEmpty()) {
+      if (cachesWithoutNodes == null)       cachesWithoutNodes=new ArrayList<>();
+      cachesWithoutNodes.add(name);
+      if (cctx.gridEvents().isRecordable(EventType.EVT_CACHE_NODES_LEFT)) {
+        Event evt=new CacheEvent(name,cctx.localNode(),cctx.localNode(),"All server nodes have left the cluster.",EventType.EVT_CACHE_NODES_LEFT,0,false,null,null,null,null,false,null,false,null,null,null);
+        cctx.gridEvents().record(evt);
+      }
+    }
+  }
+  if (cachesWithoutNodes != null) {
+    StringBuilder sb=new StringBuilder("All server nodes for the following caches have left the cluster: ");
+    for (int i=0; i < cachesWithoutNodes.size(); i++) {
+      String cache=cachesWithoutNodes.get(i);
+      sb.append('\'').append(cache).append('\'');
+      if (i != cachesWithoutNodes.size() - 1)       sb.append(", ");
+    }
+    U.quietAndWarn(log,sb.toString());
+    U.quietAndWarn(log,"Must have server nodes for caches to operate.");
+  }
+}

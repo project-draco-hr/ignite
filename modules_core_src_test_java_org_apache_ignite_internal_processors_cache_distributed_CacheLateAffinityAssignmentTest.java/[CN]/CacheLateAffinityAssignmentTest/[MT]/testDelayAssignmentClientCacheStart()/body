@@ -1,0 +1,19 @@
+{
+  Ignite ignite0=startServer(0,1);
+  TestRecordingCommunicationSpi spi=(TestRecordingCommunicationSpi)ignite0.configuration().getCommunicationSpi();
+  blockSupplySend(spi,CACHE_NAME1);
+  startServer(1,2);
+  startServer(2,3);
+  cacheC=new IgniteClosure<String,CacheConfiguration[]>(){
+    @Override public CacheConfiguration[] apply(    String nodeName){
+      return null;
+    }
+  }
+;
+  Ignite client=startClient(3,4);
+  checkAffinity(4,topVer(4,0),false);
+  assertNotNull(client.cache(CACHE_NAME1));
+  checkAffinity(4,topVer(4,1),false);
+  spi.stopBlock();
+  checkAffinity(4,topVer(4,2),true);
+}

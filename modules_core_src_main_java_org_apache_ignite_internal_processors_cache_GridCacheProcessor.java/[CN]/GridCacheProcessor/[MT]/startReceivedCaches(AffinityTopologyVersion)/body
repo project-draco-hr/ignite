@@ -1,0 +1,17 @@
+{
+  List<DynamicCacheDescriptor> started=null;
+  for (  DynamicCacheDescriptor desc : registeredCaches.values()) {
+    if (!desc.started() && desc.staticallyConfigured() && !desc.locallyConfigured()) {
+      if (desc.receivedFrom() != null) {
+        AffinityTopologyVersion startVer=desc.receivedFromStartVersion();
+        if (startVer == null || startVer.compareTo(topVer) > 0)         continue;
+      }
+      if (desc.onStart()) {
+        if (started == null)         started=new ArrayList<>();
+        started.add(desc);
+        prepareCacheStart(desc.cacheConfiguration(),null,desc.cacheType(),false,null,desc.deploymentId(),topVer);
+      }
+    }
+  }
+  return started;
+}

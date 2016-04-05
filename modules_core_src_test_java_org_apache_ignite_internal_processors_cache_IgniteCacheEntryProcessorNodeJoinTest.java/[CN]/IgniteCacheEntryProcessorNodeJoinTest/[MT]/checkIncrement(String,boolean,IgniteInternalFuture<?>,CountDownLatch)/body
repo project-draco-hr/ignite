@@ -1,0 +1,34 @@
+{
+  int increments=0;
+  for (int k=0; k < INCREMENTS || (fut != null && !fut.isDone()); k++) {
+    increments++;
+    if (invokeAll) {
+      IgniteCache<String,Set<String>> cache=ignite(0).cache(cacheName);
+      Map<String,Processor> procs=new LinkedHashMap<>();
+      for (int i=0; i < KEYS; i++) {
+        String key="set-" + i;
+        String val="value-" + k;
+        procs.put(key,new Processor(val));
+      }
+      Map<String,EntryProcessorResult<Integer>> resMap=cache.invokeAll(procs);
+      for (      String key : procs.keySet()) {
+        EntryProcessorResult<Integer> res=resMap.get(key);
+        assertNotNull(res);
+        assertEquals(k + 1,(Object)res.get());
+      }
+    }
+ else {
+      IgniteCache<String,Set<String>> cache=ignite(0).cache(cacheName);
+      for (int i=0; i < KEYS; i++) {
+        String key="set-" + i;
+        String val="value-" + k;
+        Integer valsCnt=cache.invoke(key,new Processor(val));
+        Integer exp=k + 1;
+        if (!exp.equals(valsCnt))         log.info("Unexpected return value [valsCnt=" + valsCnt + ", exp="+ exp+ ", cacheVal="+ cache.get(key)+ ']');
+        assertEquals(exp,valsCnt);
+      }
+    }
+    if (latch != null && k == 0)     latch.countDown();
+  }
+  return increments;
+}

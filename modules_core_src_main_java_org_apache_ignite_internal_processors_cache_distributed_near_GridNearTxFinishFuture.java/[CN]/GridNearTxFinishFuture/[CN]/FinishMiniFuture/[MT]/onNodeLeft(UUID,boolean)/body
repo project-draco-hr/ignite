@@ -1,0 +1,46 @@
+{
+  if (nodeId.equals(m.node().id())) {
+    if (log.isDebugEnabled())     log.debug("Remote node left grid while sending or waiting for reply: " + this);
+    if (isSync()) {
+      Map<UUID,Collection<UUID>> txNodes=tx.transactionNodes();
+      if (txNodes != null) {
+        Collection<UUID> backups=txNodes.get(nodeId);
+        if (!F.isEmpty(backups)) {
+          final CheckRemoteTxMiniFuture mini=new CheckRemoteTxMiniFuture(new HashSet<>(backups));
+          add(mini);
+          GridDhtTxFinishRequest req=checkCommittedRequest(mini.futureId());
+          req.waitRemoteTransactions(true);
+          for (          UUID backupId : backups) {
+            ClusterNode backup=cctx.discovery().node(backupId);
+            if (backup != null && WAIT_REMOTE_TXS_SINCE.compareTo(backup.version()) <= 0) {
+              if (backup.isLocal()) {
+                IgniteInternalFuture<?> fut=cctx.tm().remoteTxFinishFuture(tx.nearXidVersion());
+                fut.listen(new CI1<IgniteInternalFuture<?>>(){
+                  @Override public void apply(                  IgniteInternalFuture<?> fut){
+                    mini.onDhtFinishResponse(cctx.localNodeId(),true);
+                  }
+                }
+);
+              }
+ else {
+                try {
+                  cctx.io().send(backup,req,tx.ioPolicy());
+                }
+ catch (                ClusterTopologyCheckedException e) {
+                  mini.onNodeLeft(backupId,discoThread);
+                }
+catch (                IgniteCheckedException e) {
+                  mini.onDone(e);
+                }
+              }
+            }
+ else             mini.onDhtFinishResponse(backupId,true);
+          }
+        }
+      }
+    }
+    onDone(tx);
+    return true;
+  }
+  return false;
+}

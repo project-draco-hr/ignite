@@ -1,0 +1,16 @@
+{
+  CacheAffinityChangeMessage msg=null;
+synchronized (mux) {
+    if (waitInfo == null || !waitInfo.topVer.equals(topVer))     return;
+    if (waitInfo.waitCaches.isEmpty()) {
+      msg=affinityChangeMessage(waitInfo);
+      waitInfo=null;
+    }
+  }
+  try {
+    if (msg != null)     cctx.discovery().sendCustomEvent(msg);
+  }
+ catch (  IgniteCheckedException e) {
+    U.error(log,"Failed to send affinity change message.",e);
+  }
+}

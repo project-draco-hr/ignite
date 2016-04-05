@@ -12,18 +12,15 @@
     }
   }
 );
-  cctx.io().addHandler(cctx.cacheId(),GridDhtAffinityAssignmentRequest.class,new MessageHandler<GridDhtAffinityAssignmentRequest>(){
-    @Override protected void onMessage(    ClusterNode node,    GridDhtAffinityAssignmentRequest msg){
-      processAffinityAssignmentRequest(node,msg);
+  if (!cctx.kernalContext().clientNode()) {
+    cctx.io().addHandler(cctx.cacheId(),GridDhtAffinityAssignmentRequest.class,new MessageHandler<GridDhtAffinityAssignmentRequest>(){
+      @Override protected void onMessage(      ClusterNode node,      GridDhtAffinityAssignmentRequest msg){
+        processAffinityAssignmentRequest(node,msg);
+      }
     }
-  }
 );
-  cctx.io().addHandler(cctx.cacheId(),GridDhtAffinityAssignmentResponse.class,new MessageHandler<GridDhtAffinityAssignmentResponse>(){
-    @Override protected void onMessage(    ClusterNode node,    GridDhtAffinityAssignmentResponse msg){
-      processAffinityAssignmentResponse(node,msg);
-    }
   }
-);
+  cctx.shared().affinity().onCacheCreated(cctx);
   supplier=new GridDhtPartitionSupplier(cctx);
   demander=new GridDhtPartitionDemander(cctx,demandLock);
   demander.rebalanceFuture().listen(new CI1<IgniteInternalFuture<Boolean>>(){

@@ -1,5 +1,11 @@
 {
   AffinityTopologyVersion res=topVer;
-  if (res.equals(AffinityTopologyVersion.NONE))   return cctx.exchange().topologyVersion();
+  if (res.equals(AffinityTopologyVersion.NONE)) {
+    if (system()) {
+      AffinityTopologyVersion topVer=cctx.tm().lockedTopologyVersion(Thread.currentThread().getId(),this);
+      if (topVer != null)       return topVer;
+    }
+    return cctx.exchange().topologyVersion();
+  }
   return res;
 }

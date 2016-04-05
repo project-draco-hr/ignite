@@ -3,9 +3,9 @@
   final long start=statsEnabled ? System.nanoTime() : 0L;
   if (F.isEmpty(keys))   return new GridFinishedFuture<Object>();
   if (keyCheck)   validateCacheKeys(keys);
-  IgniteInternalFuture<Object> fut=asyncOp(new AsyncInOp(keys){
-    @Override public IgniteInternalFuture<?> inOp(    IgniteTxLocalAdapter tx){
-      return tx.removeAllAsync(ctx,keys,false,null,false).chain(RET2NULL);
+  IgniteInternalFuture<Object> fut=asyncOp(new AsyncOp(keys){
+    @Override public IgniteInternalFuture<?> op(    IgniteTxLocalAdapter tx,    AffinityTopologyVersion readyTopVer){
+      return tx.removeAllAsync(ctx,readyTopVer,keys,false,null,false).chain(RET2NULL);
     }
     @Override public String toString(){
       return "removeAllAsync [keys=" + keys + ']';

@@ -1,0 +1,23 @@
+{
+  if (X.hasCause(e,ClusterTopologyCheckedException.class) || X.hasCause(e,ClusterTopologyException.class)) {
+    if (tx.onePhaseCommit()) {
+      tx.markForBackupCheck();
+      onComplete(discoThread);
+      return;
+    }
+  }
+  if (ERR_UPD.compareAndSet(this,null,e)) {
+    boolean marked=tx.setRollbackOnly();
+    if (e instanceof IgniteTxRollbackCheckedException) {
+      if (marked) {
+        try {
+          tx.rollback();
+        }
+ catch (        IgniteCheckedException ex) {
+          U.error(log,"Failed to automatically rollback transaction: " + tx,ex);
+        }
+      }
+    }
+    onComplete(discoThread);
+  }
+}

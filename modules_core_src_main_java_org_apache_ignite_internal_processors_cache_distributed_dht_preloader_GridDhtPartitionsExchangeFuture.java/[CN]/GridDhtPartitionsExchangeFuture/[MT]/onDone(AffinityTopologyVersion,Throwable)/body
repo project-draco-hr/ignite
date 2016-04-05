@@ -1,19 +1,38 @@
 {
-  Map<Integer,Boolean> m=null;
-  for (  GridCacheContext cacheCtx : cctx.cacheContexts()) {
-    if (cacheCtx.config().getTopologyValidator() != null && !CU.isSystemCache(cacheCtx.name())) {
-      if (m == null)       m=new HashMap<>();
-      m.put(cacheCtx.cacheId(),cacheCtx.config().getTopologyValidator().validate(discoEvt.topologyNodes()));
+  boolean realExchange=!dummy && !forcePreload;
+  if (err == null && realExchange) {
+    for (    GridCacheContext cacheCtx : cctx.cacheContexts()) {
+      if (cacheCtx.isLocal())       continue;
+      try {
+        if (centralizedAff)         cacheCtx.topology().initPartitions(this);
+      }
+ catch (      IgniteInterruptedCheckedException e) {
+        U.error(log,"Failed to initialize partitions.",e);
+      }
+      GridCacheContext drCacheCtx=cacheCtx.isNear() ? cacheCtx.near().dht().context() : cacheCtx;
+      if (drCacheCtx.isDrEnabled()) {
+        try {
+          drCacheCtx.dr().onExchange(topologyVersion(),exchId.isLeft());
+        }
+ catch (        IgniteCheckedException e) {
+          U.error(log,"Failed to notify DR: " + e,e);
+        }
+      }
     }
+    Map<Integer,Boolean> m=null;
+    for (    GridCacheContext cacheCtx : cctx.cacheContexts()) {
+      if (cacheCtx.config().getTopologyValidator() != null && !CU.isSystemCache(cacheCtx.name())) {
+        if (m == null)         m=new HashMap<>();
+        m.put(cacheCtx.cacheId(),cacheCtx.config().getTopologyValidator().validate(discoEvt.topologyNodes()));
+      }
+    }
+    cacheValidRes=m != null ? m : Collections.<Integer,Boolean>emptyMap();
   }
-  cacheValidRes=m != null ? m : Collections.<Integer,Boolean>emptyMap();
   cctx.cache().onExchangeDone(exchId.topologyVersion(),reqs,err);
   cctx.exchange().onExchangeDone(this,err);
-  if (super.onDone(res,err) && !dummy && !forcePreload) {
+  if (super.onDone(res,err) && realExchange) {
     if (log.isDebugEnabled())     log.debug("Completed partition exchange [localNode=" + cctx.localNodeId() + ", exchange= "+ this+ "duration="+ duration()+ ", durationFromInit="+ (U.currentTimeMillis() - initTs)+ ']');
     initFut.onDone(err == null);
-    GridTimeoutObject timeoutObj=this.timeoutObj;
-    if (timeoutObj != null)     cctx.kernalContext().timeout().removeTimeoutObject(timeoutObj);
     if (exchId.isLeft()) {
       for (      GridCacheContext cacheCtx : cctx.cacheContexts())       cacheCtx.config().getAffinity().removeNode(exchId.nodeId());
     }

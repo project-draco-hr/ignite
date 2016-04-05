@@ -1,0 +1,39 @@
+{
+  IgniteInternalFuture<?> partReleaseFut=cctx.partitionReleaseFuture(topologyVersion());
+  this.partReleaseFut=partReleaseFut;
+  if (exchId.isLeft())   cctx.mvcc().removeExplicitNodeLocks(exchId.nodeId(),exchId.topologyVersion());
+  if (log.isDebugEnabled())   log.debug("Before waiting for partition release future: " + this);
+  int dumpedObjects=0;
+  while (true) {
+    try {
+      partReleaseFut.get(2 * cctx.gridConfig().getNetworkTimeout(),TimeUnit.MILLISECONDS);
+      break;
+    }
+ catch (    IgniteFutureTimeoutCheckedException ignored) {
+      if (dumpedObjects < DUMP_PENDING_OBJECTS_THRESHOLD) {
+        dumpPendingObjects();
+        dumpedObjects++;
+      }
+    }
+  }
+  if (log.isDebugEnabled())   log.debug("After waiting for partition release future: " + this);
+  IgniteInternalFuture<?> locksFut=cctx.mvcc().finishLocks(exchId.topologyVersion());
+  dumpedObjects=0;
+  while (true) {
+    try {
+      locksFut.get(2 * cctx.gridConfig().getNetworkTimeout(),TimeUnit.MILLISECONDS);
+      break;
+    }
+ catch (    IgniteFutureTimeoutCheckedException ignored) {
+      if (dumpedObjects < DUMP_PENDING_OBJECTS_THRESHOLD) {
+        U.warn(log,"Failed to wait for locks release future. " + "Dumping pending objects that might be the cause: " + cctx.localNodeId());
+        U.warn(log,"Locked keys:");
+        for (        IgniteTxKey key : cctx.mvcc().lockedKeys())         U.warn(log,"Locked key: " + key);
+        for (        IgniteTxKey key : cctx.mvcc().nearLockedKeys())         U.warn(log,"Locked near key: " + key);
+        Map<IgniteTxKey,Collection<GridCacheMvccCandidate>> locks=cctx.mvcc().unfinishedLocks(exchId.topologyVersion());
+        for (        Map.Entry<IgniteTxKey,Collection<GridCacheMvccCandidate>> e : locks.entrySet())         U.warn(log,"Awaited locked entry [key=" + e.getKey() + ", mvcc="+ e.getValue()+ ']');
+        dumpedObjects++;
+      }
+    }
+  }
+}

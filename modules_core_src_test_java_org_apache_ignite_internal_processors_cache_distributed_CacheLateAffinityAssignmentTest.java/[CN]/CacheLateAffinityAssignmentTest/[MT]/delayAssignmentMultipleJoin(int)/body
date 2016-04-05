@@ -1,0 +1,18 @@
+{
+  Ignite ignite0=startServer(0,1);
+  TestRecordingCommunicationSpi spi=(TestRecordingCommunicationSpi)ignite0.configuration().getCommunicationSpi();
+  blockSupplySend(spi,CACHE_NAME1);
+  int majorVer=1;
+  for (int i=0; i < joinCnt; i++) {
+    majorVer++;
+    startServer(i + 1,majorVer);
+    checkAffinity(majorVer,topVer(majorVer,0),false);
+  }
+  List<IgniteInternalFuture<?>> futs=affFutures(majorVer,topVer(majorVer,1));
+  U.sleep(1000);
+  for (  IgniteInternalFuture<?> fut : futs)   assertFalse(fut.isDone());
+  spi.stopBlock();
+  checkAffinity(majorVer,topVer(majorVer,1),true);
+  for (  IgniteInternalFuture<?> fut : futs)   assertTrue(fut.isDone());
+  awaitPartitionMapExchange();
+}

@@ -10,37 +10,31 @@
       IgniteInternalFuture<T> f=new GridEmbeddedFuture(fut,new IgniteOutClosure<IgniteInternalFuture>(){
         @Override public IgniteInternalFuture<T> apply(){
           if (ctx.kernalContext().isStopping())           return new GridFinishedFuture<>(new IgniteCheckedException("Operation has been cancelled (node is stopping)."));
-          ctx.operationContextPerCall(opCtx);
-          try {
-            return op.op(tx0).chain(new CX1<IgniteInternalFuture<T>,T>(){
-              @Override public T applyx(              IgniteInternalFuture<T> tFut) throws IgniteCheckedException {
-                try {
-                  return tFut.get();
-                }
- catch (                IgniteTxRollbackCheckedException e) {
-                  throw e;
-                }
-catch (                IgniteCheckedException e1) {
-                  tx0.rollbackAsync();
-                  throw e1;
-                }
+          return op.op(tx0,opCtx).chain(new CX1<IgniteInternalFuture<T>,T>(){
+            @Override public T applyx(            IgniteInternalFuture<T> tFut) throws IgniteCheckedException {
+              try {
+                return tFut.get();
+              }
+ catch (              IgniteTxRollbackCheckedException e) {
+                throw e;
+              }
+catch (              IgniteCheckedException e1) {
+                tx0.rollbackAsync();
+                throw e1;
+              }
  finally {
-                  ctx.shared().txContextReset();
-                }
+                ctx.shared().txContextReset();
               }
             }
+          }
 );
-          }
-  finally {
-            ctx.operationContextPerCall(null);
-          }
         }
       }
 );
       saveFuture(holder,f);
       return f;
     }
-    final IgniteInternalFuture<T> f=op.op(tx).chain(new CX1<IgniteInternalFuture<T>,T>(){
+    final IgniteInternalFuture<T> f=op.op(tx,opCtx).chain(new CX1<IgniteInternalFuture<T>,T>(){
       @Override public T applyx(      IgniteInternalFuture<T> tFut) throws IgniteCheckedException {
         try {
           return tFut.get();

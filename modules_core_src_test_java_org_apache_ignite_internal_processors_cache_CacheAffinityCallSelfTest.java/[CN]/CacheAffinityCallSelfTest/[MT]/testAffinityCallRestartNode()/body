@@ -1,10 +1,10 @@
 {
-  startGridsMultiThreaded(SERVERS_COUNT);
+  startGridsMultiThreaded(SRVS);
   final int ITERS=5;
   for (int i=0; i < ITERS; i++) {
     log.info("Iteration: " + i);
     Integer key=primaryKey(grid(0).cache(CACHE_NAME));
-    long topVer=grid(0).cluster().topologyVersion();
+    AffinityTopologyVersion topVer=grid(0).context().discovery().topologyVersionEx();
     IgniteInternalFuture<Object> fut=GridTestUtils.runAsync(new Callable<Object>(){
       @Override public Object call() throws Exception {
         U.sleep(500);
@@ -12,8 +12,8 @@
         return null;
       }
     }
-);
-    while (!fut.isDone())     grid(1).compute().affinityCall(CACHE_NAME,key,new CheckCallable(key,topVer,topVer + 1));
+,"stop-thread");
+    while (!fut.isDone())     grid(1).compute().affinityCall(CACHE_NAME,key,new CheckCallable(key,topVer));
     fut.get();
     if (i < ITERS - 1)     startGrid(0);
   }

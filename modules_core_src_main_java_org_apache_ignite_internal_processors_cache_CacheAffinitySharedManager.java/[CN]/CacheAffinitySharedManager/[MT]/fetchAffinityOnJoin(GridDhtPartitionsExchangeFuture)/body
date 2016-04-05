@@ -1,0 +1,22 @@
+{
+  AffinityTopologyVersion topVer=fut.topologyVersion();
+  List<GridDhtAssignmentFetchFuture> fetchFuts=new ArrayList<>();
+  for (  GridCacheContext cacheCtx : cctx.cacheContexts()) {
+    if (cacheCtx.isLocal())     continue;
+    DynamicCacheDescriptor cacheDesc=registeredCaches.get(cacheCtx.cacheId());
+    if (cctx.localNodeId().equals(cacheDesc.receivedFrom())) {
+      List<List<ClusterNode>> assignment=cacheCtx.affinity().affinityCache().calculate(fut.topologyVersion(),fut.discoveryEvent());
+      cacheCtx.affinity().affinityCache().initialize(fut.topologyVersion(),assignment);
+    }
+ else {
+      GridDhtAssignmentFetchFuture fetchFut=new GridDhtAssignmentFetchFuture(cctx,cacheCtx.name(),topVer);
+      fetchFut.init();
+      fetchFuts.add(fetchFut);
+    }
+  }
+  for (int i=0; i < fetchFuts.size(); i++) {
+    GridDhtAssignmentFetchFuture fetchFut=fetchFuts.get(i);
+    Integer cacheId=fetchFut.key().get1();
+    fetchAffinity(fut,cctx.cacheContext(cacheId).affinity().affinityCache(),fetchFut);
+  }
+}

@@ -1,0 +1,18 @@
+{
+  Ignite ignite0=startServer(0,1);
+  startServer(1,2);
+  startServer(2,3);
+  checkAffinity(3,topVer(3,1),true);
+  checkOrderCounters(3,topVer(3,1));
+  startClient(3,4);
+  checkAffinity(4,topVer(4,0),true);
+  TestTcpDiscoverySpi discoSpi=(TestTcpDiscoverySpi)ignite0.configuration().getDiscoverySpi();
+  discoSpi.blockCustomEvent();
+  stopGrid(1);
+  List<IgniteInternalFuture<?>> futs=affFutures(3,topVer(5,0));
+  U.sleep(1000);
+  for (  IgniteInternalFuture<?> fut : futs)   assertFalse(fut.isDone());
+  discoSpi.stopBlock();
+  checkAffinity(3,topVer(5,0),false);
+  checkOrderCounters(3,topVer(5,0));
+}

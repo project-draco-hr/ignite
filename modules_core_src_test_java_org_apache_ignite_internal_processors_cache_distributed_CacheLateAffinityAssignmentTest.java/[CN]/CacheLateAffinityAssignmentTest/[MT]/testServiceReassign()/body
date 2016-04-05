@@ -1,0 +1,15 @@
+{
+  skipCheckOrder=true;
+  Ignite ignite0=startServer(0,1);
+  IgniteServices svcs=ignite0.services();
+  for (int i=0; i < 10; i++)   svcs.deployKeyAffinitySingleton("service-" + i,new TestServiceImpl(i),CACHE_NAME1,i);
+  startServer(1,2);
+  startServer(2,3);
+  Map<String,List<List<ClusterNode>>> assignments=checkAffinity(3,topVer(3,1),true);
+  checkServicesDeploy(ignite(0),assignments.get(CACHE_NAME1));
+  stopGrid(0);
+  boolean primaryChanged=calculateAffinity(4,false,assignments);
+  assignments=checkAffinity(2,topVer(4,0),!primaryChanged);
+  if (primaryChanged)   checkAffinity(2,topVer(4,1),true);
+  checkServicesDeploy(ignite(1),assignments.get(CACHE_NAME1));
+}

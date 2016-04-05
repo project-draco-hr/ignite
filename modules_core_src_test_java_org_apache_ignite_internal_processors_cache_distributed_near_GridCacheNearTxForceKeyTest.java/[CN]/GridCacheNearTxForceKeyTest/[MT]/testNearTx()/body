@@ -2,7 +2,8 @@
   Ignite ignite0=startGrid(0);
   IgniteCache<Integer,Integer> cache=ignite0.cache(null);
   Ignite ignite1=startGrid(1);
-  final Integer key=primaryKey(ignite1.cache(null));
+  final Integer key=ignite0.configuration().getMarshaller() instanceof OptimizedMarshaller ? 2 : 7;
   assertNull(cache.getAndPut(key,key));
+  awaitPartitionMapExchange();
   assertTrue(ignite0.affinity(null).isPrimary(ignite1.cluster().localNode(),key));
 }

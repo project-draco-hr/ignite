@@ -1,3 +1,9 @@
 {
-  return BinaryPrimitives.readInt(ptr,start + GridBinaryMarshaller.TYPE_ID_POS);
+  int typeId=BinaryPrimitives.readInt(ptr,start + GridBinaryMarshaller.TYPE_ID_POS);
+  if (typeId == GridBinaryMarshaller.UNREGISTERED_TYPE_ID) {
+    int off=start + GridBinaryMarshaller.DFLT_HDR_LEN;
+    String clsName=BinaryUtils.doReadClassName(new BinaryOffheapInputStream(off,size));
+    typeId=ctx.typeId(clsName);
+  }
+  return typeId;
 }

@@ -1,0 +1,20 @@
+{
+  try {
+    addActiveCache(cacheCtx);
+    final boolean hasFilters=!F.isEmptyOrNulls(filter) && !F.isAlwaysTrue(filter);
+    final boolean needVal=singleRmv || retval || hasFilters;
+    final boolean needReadVer=needVal && (serializable() && optimistic());
+    if (entryProcessor != null)     transform=true;
+    GridCacheVersion drVer=dataCenterId != null ? cctx.versions().next(dataCenterId) : null;
+    boolean loadMissed=enlistWriteEntry(cacheCtx,entryTopVer,cacheKey,val,entryProcessor,invokeArgs,expiryPlc,retval,lockOnly,filter,drVer,-1L,-1L,ret,null,skipStore,singleRmv,hasFilters,needVal,needReadVer,keepBinary);
+    if (loadMissed) {
+      AffinityTopologyVersion topVer=topologyVersionSnapshot();
+      if (topVer == null)       topVer=entryTopVer;
+      return loadMissing(cacheCtx,topVer != null ? topVer : topologyVersion(),Collections.singleton(cacheKey),filter,ret,needReadVer,singleRmv,hasFilters,skipStore,retval,keepBinary);
+    }
+    return new GridFinishedFuture<>();
+  }
+ catch (  IgniteCheckedException e) {
+    return new GridFinishedFuture<>(e);
+  }
+}

@@ -6,7 +6,7 @@ synchronized (this) {
       ClusterNode node=availableNodes.poll();
       try {
         if (log0.isDebugEnabled())         log0.debug("Sending affinity fetch request to remote node [locNodeId=" + ctx.localNodeId() + ", node="+ node+ ']');
-        ctx.io().send(node,new GridDhtAffinityAssignmentRequest(ctx.cacheId(),topVer),AFFINITY_POOL);
+        ctx.io().send(node,new GridDhtAffinityAssignmentRequest(key.get1(),key.get2()),AFFINITY_POOL);
         if (ctx.discovery().node(node.id()) == null) {
           U.warn(log0,"Failed to request affinity assignment from remote node (node left grid, will " + "continue to another node): " + node);
           continue;
@@ -23,5 +23,5 @@ catch (      IgniteCheckedException e) {
     }
     complete=pendingNode == null;
   }
-  if (complete)   onDone((List<List<ClusterNode>>)null);
+  if (complete)   onDone((GridDhtAffinityAssignmentResponse)null);
 }

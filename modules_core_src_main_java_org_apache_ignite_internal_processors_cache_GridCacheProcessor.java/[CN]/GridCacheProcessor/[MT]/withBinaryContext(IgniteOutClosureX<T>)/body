@@ -1,0 +1,14 @@
+{
+  IgniteCacheObjectProcessor objProc=ctx.cacheObjects();
+  BinaryContext oldCtx=null;
+  if (objProc instanceof CacheObjectBinaryProcessorImpl) {
+    GridBinaryMarshaller binMarsh=((CacheObjectBinaryProcessorImpl)objProc).marshaller();
+    oldCtx=binMarsh == null ? null : binMarsh.pushContext();
+  }
+  try {
+    return c.applyx();
+  }
+  finally {
+    if (objProc instanceof CacheObjectBinaryProcessorImpl)     GridBinaryMarshaller.popContext(oldCtx);
+  }
+}

@@ -1,30 +1,24 @@
 {
   if (val == null)   return null;
-  IgniteCacheObjectProcessor objProc=ctx.cacheObjects();
-  BinaryContext oldCtx=null;
-  if (objProc instanceof CacheObjectBinaryProcessorImpl) {
-    GridBinaryMarshaller binMarsh=((CacheObjectBinaryProcessorImpl)objProc).marshaller();
-    oldCtx=binMarsh == null ? null : binMarsh.pushContext();
-  }
-  try {
-    if (val.getCacheStoreFactory() != null) {
+  return withBinaryContext(new IgniteOutClosureX<CacheConfiguration>(){
+    @Override public CacheConfiguration applyx() throws IgniteCheckedException {
+      if (val.getCacheStoreFactory() != null) {
+        try {
+          ClassLoader ldr=ctx.config().getClassLoader();
+          if (ldr == null)           ldr=val.getCacheStoreFactory().getClass().getClassLoader();
+          marshaller.unmarshal(marshaller.marshal(val.getCacheStoreFactory()),U.resolveClassLoader(ldr,ctx.config()));
+        }
+ catch (        IgniteCheckedException e) {
+          throw new IgniteCheckedException("Failed to validate cache configuration. " + "Cache store factory is not serializable. Cache name: " + U.maskName(val.getName()),e);
+        }
+      }
       try {
-        ClassLoader ldr=ctx.config().getClassLoader();
-        if (ldr == null)         ldr=val.getCacheStoreFactory().getClass().getClassLoader();
-        marshaller.unmarshal(marshaller.marshal(val.getCacheStoreFactory()),U.resolveClassLoader(ldr,ctx.config()));
+        return marshaller.unmarshal(marshaller.marshal(val),U.resolveClassLoader(ctx.config()));
       }
  catch (      IgniteCheckedException e) {
-        throw new IgniteCheckedException("Failed to validate cache configuration. " + "Cache store factory is not serializable. Cache name: " + U.maskName(val.getName()),e);
+        throw new IgniteCheckedException("Failed to validate cache configuration " + "(make sure all objects in cache configuration are serializable): " + U.maskName(val.getName()),e);
       }
     }
-    try {
-      return marshaller.unmarshal(marshaller.marshal(val),U.resolveClassLoader(ctx.config()));
-    }
- catch (    IgniteCheckedException e) {
-      throw new IgniteCheckedException("Failed to validate cache configuration " + "(make sure all objects in cache configuration are serializable): " + U.maskName(val.getName()),e);
-    }
   }
-  finally {
-    if (objProc instanceof CacheObjectBinaryProcessorImpl)     GridBinaryMarshaller.popContext(oldCtx);
-  }
+);
 }

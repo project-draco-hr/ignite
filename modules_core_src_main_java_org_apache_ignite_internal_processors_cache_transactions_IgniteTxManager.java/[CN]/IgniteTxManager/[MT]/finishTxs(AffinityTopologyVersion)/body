@@ -9,14 +9,7 @@
   }
 );
   for (  IgniteInternalTx tx : txs()) {
-    if (tx.concurrency() == PESSIMISTIC) {
-      if (tx.topologyVersion().compareTo(AffinityTopologyVersion.ZERO) > 0 && tx.topologyVersion().compareTo(topVer) < 0)       res.add(tx.finishFuture());
-    }
- else     if (tx.concurrency() == OPTIMISTIC) {
-      TransactionState state=tx.state();
-      AffinityTopologyVersion txTopVer=tx.topologyVersion();
-      if ((state != ACTIVE && state != COMMITTED && state != ROLLED_BACK && state != UNKNOWN) && txTopVer.compareTo(AffinityTopologyVersion.ZERO) > 0 && txTopVer.compareTo(topVer) < 0)       res.add(tx.finishFuture());
-    }
+    if (needWaitTransaction(tx,topVer))     res.add(tx.finishFuture());
   }
   res.markInitialized();
   return res;

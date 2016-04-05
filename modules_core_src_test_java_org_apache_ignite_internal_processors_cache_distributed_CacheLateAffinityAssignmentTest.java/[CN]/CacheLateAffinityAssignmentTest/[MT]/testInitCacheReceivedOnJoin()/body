@@ -1,0 +1,30 @@
+{
+  cacheC=new IgniteClosure<String,CacheConfiguration[]>(){
+    @Override public CacheConfiguration[] apply(    String s){
+      return null;
+    }
+  }
+;
+  startServer(0,1);
+  startServer(1,2);
+  checkAffinity(2,topVer(2,1),true);
+  cacheC=new IgniteClosure<String,CacheConfiguration[]>(){
+    @Override public CacheConfiguration[] apply(    String s){
+      return new CacheConfiguration[]{cacheConfiguration()};
+    }
+  }
+;
+  startServer(2,3);
+  checkAffinity(3,topVer(3,0),false);
+  checkAffinity(3,topVer(3,1),true);
+  cacheC=new IgniteClosure<String,CacheConfiguration[]>(){
+    @Override public CacheConfiguration[] apply(    String s){
+      CacheConfiguration ccfg=cacheConfiguration();
+      ccfg.setName(CACHE_NAME2);
+      return new CacheConfiguration[]{ccfg};
+    }
+  }
+;
+  startClient(3,4);
+  checkAffinity(4,topVer(4,0),true);
+}

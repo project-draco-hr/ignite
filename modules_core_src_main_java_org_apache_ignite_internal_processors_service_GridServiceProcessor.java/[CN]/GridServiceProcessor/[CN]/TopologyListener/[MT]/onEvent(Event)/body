@@ -1,9 +1,17 @@
 {
   if (!busyLock.enterBusy())   return;
   try {
+    final AffinityTopologyVersion topVer;
+    if (evt instanceof DiscoveryCustomEvent) {
+      DiscoveryCustomMessage msg=((DiscoveryCustomEvent)evt).customMessage();
+      topVer=((DiscoveryCustomEvent)evt).affinityTopologyVersion();
+      if (msg instanceof CacheAffinityChangeMessage) {
+        if (!((CacheAffinityChangeMessage)msg).exchangeNeeded())         return;
+      }
+    }
+ else     topVer=new AffinityTopologyVersion(((DiscoveryEvent)evt).topologyVersion(),0);
     depExe.submit(new BusyRunnable(){
       @Override public void run0(){
-        AffinityTopologyVersion topVer=new AffinityTopologyVersion(((DiscoveryEvent)evt).topologyVersion());
         ClusterNode oldest=CU.oldestAliveCacheServerNode(cache.context().shared(),topVer);
         if (oldest != null && oldest.isLocal()) {
           final Collection<GridServiceDeployment> retries=new ConcurrentLinkedQueue<>();
@@ -17,7 +25,7 @@
               try {
                 svcName.set(dep.configuration().getName());
                 ctx.cache().internalCache(UTILITY_CACHE_NAME).context().affinity().affinityReadyFuture(topVer).get();
-                reassign(dep,topVer.topologyVersion());
+                reassign(dep,topVer);
               }
  catch (              IgniteCheckedException ex) {
                 if (!(e instanceof ClusterTopologyCheckedException))                 LT.error(log,ex,"Failed to do service reassignment (will retry): " + dep.configuration().getName());
@@ -28,7 +36,7 @@
   finally {
             if (ctx.deploy().enabled())             ctx.cache().context().deploy().ignoreOwnership(false);
           }
-          if (!retries.isEmpty())           onReassignmentFailed(topVer.topologyVersion(),retries);
+          if (!retries.isEmpty())           onReassignmentFailed(topVer,retries);
         }
         for (        Cache.Entry<Object,Object> e : cache.entrySetx(CU.cachePrimary(ctx.grid().affinity(cache.name()),ctx.grid().localNode()))) {
           if (!(e.getKey() instanceof GridServiceAssignmentsKey))           continue;

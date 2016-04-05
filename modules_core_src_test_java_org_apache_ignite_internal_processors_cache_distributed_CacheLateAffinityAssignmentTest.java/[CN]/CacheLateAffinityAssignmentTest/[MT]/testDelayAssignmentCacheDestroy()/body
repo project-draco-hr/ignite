@@ -1,0 +1,15 @@
+{
+  Ignite ignite0=startServer(0,1);
+  CacheConfiguration ccfg=cacheConfiguration();
+  ccfg.setName(CACHE_NAME2);
+  ignite0.createCache(ccfg);
+  TestRecordingCommunicationSpi spi=(TestRecordingCommunicationSpi)ignite0.configuration().getCommunicationSpi();
+  blockSupplySend(spi,CACHE_NAME2);
+  startServer(1,2);
+  startServer(2,3);
+  checkAffinity(3,topVer(3,0),false);
+  ignite0.destroyCache(CACHE_NAME2);
+  checkAffinity(3,topVer(3,1),false);
+  checkAffinity(3,topVer(3,2),true);
+  spi.stopBlock();
+}

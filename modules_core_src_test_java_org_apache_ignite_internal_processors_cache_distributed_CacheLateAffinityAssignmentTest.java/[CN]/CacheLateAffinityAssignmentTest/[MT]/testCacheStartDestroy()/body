@@ -1,0 +1,16 @@
+{
+  startGridsMultiThreaded(3,false);
+  for (int i=0; i < 3; i++)   calculateAffinity(i + 1);
+  checkAffinity(3,topVer(3,1),true);
+  Ignite client=startClient(3,4);
+  checkAffinity(4,topVer(4,0),true);
+  CacheConfiguration ccfg=cacheConfiguration();
+  ccfg.setName(CACHE_NAME2);
+  ignite(0).createCache(ccfg);
+  calculateAffinity(4);
+  checkAffinity(4,topVer(4,1),true);
+  client.cache(CACHE_NAME2);
+  checkAffinity(4,topVer(4,2),true);
+  client.destroyCache(CACHE_NAME2);
+  checkAffinity(4,topVer(4,2),true);
+}

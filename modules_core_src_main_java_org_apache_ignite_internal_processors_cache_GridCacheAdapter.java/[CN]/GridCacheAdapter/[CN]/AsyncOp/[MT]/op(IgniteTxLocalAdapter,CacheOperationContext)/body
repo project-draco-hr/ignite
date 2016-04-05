@@ -1,0 +1,8 @@
+{
+  AffinityTopologyVersion txTopVer=tx.topologyVersionSnapshot();
+  if (txTopVer != null)   return op(tx,(AffinityTopologyVersion)null);
+  final AffinityTopologyVersion topVer=ctx.shared().exchange().topologyVersion();
+  IgniteInternalFuture<?> topFut=ctx.shared().exchange().affinityReadyFuture(topVer);
+  if (topFut == null || topFut.isDone())   return op(tx,topVer);
+ else   return waitTopologyFuture(topFut,topVer,tx,opCtx);
+}

@@ -1,0 +1,23 @@
+{
+  AffinityTopologyVersion topVer=fut.topologyVersion();
+  if (!crd) {
+    for (    GridCacheContext cacheCtx : cctx.cacheContexts()) {
+      if (cacheCtx.isLocal())       continue;
+      boolean latePrimary=cacheCtx.rebalanceEnabled();
+      initAffinityOnNodeJoin(fut,cacheCtx.affinity().affinityCache(),null,latePrimary);
+    }
+    return null;
+  }
+ else {
+    final WaitRebalanceInfo waitRebalanceInfo=new WaitRebalanceInfo(topVer);
+    forAllRegisteredCaches(new IgniteInClosureX<DynamicCacheDescriptor>(){
+      @Override public void applyx(      DynamicCacheDescriptor cacheDesc) throws IgniteCheckedException {
+        CacheHolder cache=cache(fut,cacheDesc);
+        boolean latePrimary=cache.rebalanceEnabled;
+        initAffinityOnNodeJoin(fut,cache.affinity(),waitRebalanceInfo,latePrimary);
+      }
+    }
+);
+    return waitRebalanceInfo;
+  }
+}

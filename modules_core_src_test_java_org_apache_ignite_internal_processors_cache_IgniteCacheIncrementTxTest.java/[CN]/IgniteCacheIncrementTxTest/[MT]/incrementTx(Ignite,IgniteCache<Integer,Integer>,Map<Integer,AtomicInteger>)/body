@@ -1,0 +1,24 @@
+{
+  ThreadLocalRandom rnd=ThreadLocalRandom.current();
+  boolean singleKey=rnd.nextBoolean();
+  List<Integer> keys=new ArrayList<>(incMap.size());
+  try {
+    try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+      for (      Integer key : incMap.keySet()) {
+        if (singleKey || rnd.nextBoolean()) {
+          Integer val=cache.get(key);
+          if (val == null)           val=1;
+ else           val=val + 1;
+          cache.put(key,val);
+          keys.add(key);
+        }
+        if (singleKey)         break;
+      }
+      tx.commit();
+      for (      Integer key : keys)       incMap.get(key).incrementAndGet();
+    }
+   }
+ catch (  Exception e) {
+    log.info("Tx failed: " + e);
+  }
+}

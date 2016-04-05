@@ -4,7 +4,7 @@
   A.notNull(key,"key",oldVal,"oldVal",newVal,"newVal");
   if (keyCheck)   validateCacheKey(key);
   IgniteInternalFuture<Boolean> fut=asyncOp(new AsyncOp<Boolean>(){
-    @Override public IgniteInternalFuture<Boolean> op(    IgniteTxLocalAdapter tx){
+    @Override public IgniteInternalFuture<Boolean> op(    IgniteTxLocalAdapter tx,    AffinityTopologyVersion readyTopVer){
       if (ctx.deploymentEnabled()) {
         try {
           ctx.deploy().registerClass(oldVal);
@@ -13,7 +13,7 @@
           return new GridFinishedFuture<>(e);
         }
       }
-      return tx.putAsync(ctx,key,newVal,false,ctx.equalsVal(oldVal)).chain((IgniteClosure<IgniteInternalFuture<GridCacheReturn>,Boolean>)RET2FLAG);
+      return tx.putAsync(ctx,readyTopVer,key,newVal,false,ctx.equalsVal(oldVal)).chain((IgniteClosure<IgniteInternalFuture<GridCacheReturn>,Boolean>)RET2FLAG);
     }
     @Override public String toString(){
       return "replaceAsync [key=" + key + ", oldVal="+ oldVal+ ", newVal="+ newVal+ ']';

@@ -1,0 +1,31 @@
+{
+  cacheC=new IgniteClosure<String,CacheConfiguration[]>(){
+    @Override public CacheConfiguration[] apply(    String gridName){
+      if (gridName.equals(getTestGridName(1)) || gridName.equals(getTestGridName(2)))       return null;
+      return new CacheConfiguration[]{cacheConfiguration()};
+    }
+  }
+;
+  cacheNodeFilter=new CacheNodeFilter(F.asList(getTestGridName(1),getTestGridName(2)));
+  startServer(0,1);
+  startServer(1,2);
+  startServer(2,3);
+  startServer(3,4);
+  for (int i=0; i < 4; i++) {
+    TestRecordingCommunicationSpi spi=(TestRecordingCommunicationSpi)ignite(i).configuration().getCommunicationSpi();
+    spi.blockMessages(GridDhtPartitionsSingleMessage.class,ignite(0).name());
+    spi.blockMessages(GridDhtPartitionsSingleMessage.class,ignite(1).name());
+  }
+  stopGrid(0);
+  stopGrid(1);
+  calculateAffinity(5);
+  calculateAffinity(6);
+  checkAffinity(2,topVer(6,0),true);
+  assertNull(((IgniteKernal)ignite(2)).context().cache().internalCache(CACHE_NAME1));
+  assertNotNull(((IgniteKernal)ignite(3)).context().cache().internalCache(CACHE_NAME1));
+  assertNotNull(ignite(2).cache(CACHE_NAME1));
+  checkAffinity(2,topVer(6,0),true);
+  startServer(4,7);
+  checkAffinity(3,topVer(7,0),false);
+  checkAffinity(3,topVer(7,1),true);
+}

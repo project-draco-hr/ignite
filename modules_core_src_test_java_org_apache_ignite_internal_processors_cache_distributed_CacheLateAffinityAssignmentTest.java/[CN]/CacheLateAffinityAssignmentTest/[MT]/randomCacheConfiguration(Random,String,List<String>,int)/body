@@ -1,0 +1,18 @@
+{
+  CacheConfiguration ccfg=cacheConfiguration();
+  ccfg.setAtomicityMode(rnd.nextBoolean() ? TRANSACTIONAL : ATOMIC);
+  ccfg.setBackups(rnd.nextInt(10));
+  ccfg.setRebalanceMode(rnd.nextBoolean() ? SYNC : ASYNC);
+  ccfg.setAffinity(affinityFunction(rnd.nextInt(2048) + 10));
+  ccfg.setStartSize(128);
+  if (rnd.nextBoolean()) {
+    Set<String> exclude=new HashSet<>();
+    for (int i=0; i < 10; i++) {
+      if (i % 2 == 0 && srvs.size() > 0)       exclude.add(srvs.get(rnd.nextInt(srvs.size())));
+ else       exclude.add("server-" + (srvIdx + rnd.nextInt(10)));
+    }
+    ccfg.setNodeFilter(new CacheNodeFilter(exclude));
+  }
+  ccfg.setName(name);
+  return ccfg;
+}

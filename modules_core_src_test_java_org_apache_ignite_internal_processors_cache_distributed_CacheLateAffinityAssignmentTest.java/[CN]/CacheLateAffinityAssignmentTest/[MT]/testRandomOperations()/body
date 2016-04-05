@@ -1,0 +1,134 @@
+{
+  forceSrvMode=true;
+  final int MAX_SRVS=10;
+  final int MAX_CLIENTS=10;
+  final int MAX_CACHES=15;
+  List<String> srvs=new ArrayList<>();
+  List<String> clients=new ArrayList<>();
+  int srvIdx=0;
+  int clientIdx=0;
+  int cacheIdx=0;
+  List<String> caches=new ArrayList<>();
+  long seed=System.currentTimeMillis();
+  Random rnd=new Random(seed);
+  log.info("Random seed: " + seed);
+  long topVer=0;
+  for (int i=0; i < 100; i++) {
+    int op=i == 0 ? 0 : rnd.nextInt(7);
+    log.info("Iteration [iter=" + i + ", op="+ op+ ']');
+switch (op) {
+case 0:
+{
+        if (srvs.size() < MAX_SRVS) {
+          srvIdx++;
+          String srvName="server-" + srvIdx;
+          log.info("Start server: " + srvName);
+          if (rnd.nextBoolean()) {
+            cacheIdx++;
+            String cacheName="join-cache-" + cacheIdx;
+            log.info("Cache for joining node: " + cacheName);
+            cacheClosure(rnd,caches,cacheName,srvs,srvIdx);
+          }
+ else           cacheClosure(rnd,caches,null,srvs,srvIdx);
+          startNode(srvName,++topVer,false);
+          srvs.add(srvName);
+        }
+ else         log.info("Skip start server.");
+        break;
+      }
+case 1:
+{
+      if (srvs.size() > 1) {
+        String srvName=srvs.get(rnd.nextInt(srvs.size()));
+        log.info("Stop server: " + srvName);
+        stopNode(srvName,++topVer);
+        srvs.remove(srvName);
+      }
+ else       log.info("Skip stop server.");
+      break;
+    }
+case 2:
+{
+    if (clients.size() < MAX_CLIENTS) {
+      clientIdx++;
+      String clientName="client-" + clientIdx;
+      log.info("Start client: " + clientName);
+      if (rnd.nextBoolean()) {
+        cacheIdx++;
+        String cacheName="join-cache-" + cacheIdx;
+        log.info("Cache for joining node: " + cacheName);
+        cacheClosure(rnd,caches,cacheName,srvs,srvIdx);
+      }
+ else       cacheClosure(rnd,caches,null,srvs,srvIdx);
+      startNode(clientName,++topVer,true);
+      clients.add(clientName);
+    }
+ else     log.info("Skip start client.");
+    break;
+  }
+case 3:
+{
+  if (clients.size() > 1) {
+    String clientName=clients.get(rnd.nextInt(clients.size()));
+    log.info("Stop client: " + clientName);
+    stopNode(clientName,++topVer);
+    clients.remove(clientName);
+  }
+ else   log.info("Skip stop client.");
+  break;
+}
+case 4:
+{
+if (caches.size() > 0) {
+  String cacheName=caches.get(rnd.nextInt(caches.size()));
+  Ignite node=randomNode(rnd,srvs,clients);
+  log.info("Destroy cache [cache=" + cacheName + ", node="+ node.name()+ ']');
+  node.destroyCache(cacheName);
+  caches.remove(cacheName);
+}
+ else log.info("Skip destroy cache.");
+break;
+}
+case 5:
+{
+if (caches.size() < MAX_CACHES) {
+cacheIdx++;
+String cacheName="cache-" + cacheIdx;
+Ignite node=randomNode(rnd,srvs,clients);
+log.info("Create cache [cache=" + cacheName + ", node="+ node.name()+ ']');
+node.createCache(randomCacheConfiguration(rnd,cacheName,srvs,srvIdx));
+calculateAffinity(topVer);
+caches.add(cacheName);
+}
+ else log.info("Skip create cache.");
+break;
+}
+case 6:
+{
+if (caches.size() > 0) {
+for (int j=0; j < 3; j++) {
+String cacheName=caches.get(rnd.nextInt(caches.size()));
+for (int k=0; k < 3; k++) {
+  Ignite node=randomNode(rnd,srvs,clients);
+  log.info("Get/closes cache [cache=" + cacheName + ", node="+ node.name()+ ']');
+  node.cache(cacheName).close();
+}
+}
+}
+ else log.info("Skip get/close cache.");
+break;
+}
+default :
+fail();
+}
+IgniteKernal node=(IgniteKernal)grid(srvs.get(0));
+checkAffinity(srvs.size() + clients.size(),node.context().cache().context().exchange().readyAffinityVersion(),false);
+}
+srvIdx++;
+String srvName="server-" + srvIdx;
+log.info("Start server: " + srvName);
+cacheClosure(rnd,caches,null,srvs,srvIdx);
+startNode(srvName,++topVer,false);
+srvs.add(srvName);
+checkAffinity(srvs.size() + clients.size(),topVer(topVer,1),true);
+}

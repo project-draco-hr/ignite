@@ -11,21 +11,24 @@
         GridDhtPartitionTopology top=null;
         if (cacheCtx == null)         top=clientTops.get(cacheId);
  else         if (!cacheCtx.isLocal())         top=cacheCtx.topology();
-        if (top != null)         updated|=top.update(null,entry.getValue(),null) != null;
+        if (top != null) {
+          updated|=top.update(null,entry.getValue(),null) != null;
+          cctx.affinity().checkRebalanceState(top,cacheId);
+        }
       }
       if (updated)       scheduleResendPartitions();
     }
  else {
       if (msg.client()) {
-        final GridDhtPartitionsExchangeFuture exchFut=exchangeFuture(msg.exchangeId(),null,null);
+        final GridDhtPartitionsExchangeFuture exchFut=exchangeFuture(msg.exchangeId(),null,null,null);
         exchFut.listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>(){
           @Override public void apply(          IgniteInternalFuture<AffinityTopologyVersion> fut){
-            exchFut.onReceive(node.id(),msg);
+            exchFut.onReceive(node,msg);
           }
         }
 );
       }
- else       exchangeFuture(msg.exchangeId(),null,null).onReceive(node.id(),msg);
+ else       exchangeFuture(msg.exchangeId(),null,null,null).onReceive(node,msg);
     }
   }
   finally {

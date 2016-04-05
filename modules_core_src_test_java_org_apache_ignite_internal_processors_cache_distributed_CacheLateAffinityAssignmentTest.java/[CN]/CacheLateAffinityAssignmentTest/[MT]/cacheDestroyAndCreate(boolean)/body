@@ -1,0 +1,31 @@
+{
+  if (!cacheOnCrd)   cacheNodeFilter=new CacheNodeFilter(Collections.singletonList(getTestGridName(0)));
+  startServer(0,1);
+  startServer(1,2);
+  startServer(2,3);
+  checkAffinity(3,topVer(3,1),true);
+  startClient(3,4);
+  checkAffinity(4,topVer(4,0),true);
+  CacheConfiguration ccfg=cacheConfiguration();
+  ccfg.setName(CACHE_NAME2);
+  ignite(1).createCache(ccfg);
+  calculateAffinity(4);
+  checkAffinity(4,topVer(4,1),true);
+  ignite(1).destroyCache(CACHE_NAME2);
+  idealAff.get(4L).remove(CU.cacheId(CACHE_NAME2));
+  ccfg=cacheConfiguration();
+  ccfg.setName(CACHE_NAME2);
+  ccfg.setAffinity(affinityFunction(10));
+  ignite(1).createCache(ccfg);
+  calculateAffinity(4);
+  checkAffinity(4,topVer(4,3),true);
+  checkCaches();
+  ignite(1).destroyCache(CACHE_NAME2);
+  idealAff.get(4L).remove(CU.cacheId(CACHE_NAME2));
+  ccfg=cacheConfiguration();
+  ccfg.setName(CACHE_NAME2);
+  ccfg.setAffinity(affinityFunction(20));
+  ignite(1).createCache(ccfg);
+  calculateAffinity(4);
+  checkAffinity(4,topVer(4,5),true);
+}

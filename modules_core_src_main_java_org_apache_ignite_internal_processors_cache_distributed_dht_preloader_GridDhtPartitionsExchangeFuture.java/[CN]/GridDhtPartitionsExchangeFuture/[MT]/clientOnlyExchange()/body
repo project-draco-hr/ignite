@@ -1,0 +1,32 @@
+{
+  clientOnlyExchange=true;
+  if (crd != null) {
+    if (crd.isLocal()) {
+      for (      GridCacheContext cacheCtx : cctx.cacheContexts()) {
+        boolean updateTop=!cacheCtx.isLocal() && exchId.topologyVersion().equals(cacheCtx.startTopologyVersion());
+        if (updateTop) {
+          for (          GridClientPartitionTopology top : cctx.exchange().clientTopologies()) {
+            if (top.cacheId() == cacheCtx.cacheId()) {
+              cacheCtx.topology().update(exchId,top.partitionMap(true),top.updateCounters());
+              break;
+            }
+          }
+        }
+      }
+    }
+ else {
+      if (!centralizedAff)       sendLocalPartitions(crd,exchId);
+      initDone();
+      return;
+    }
+  }
+ else {
+    if (centralizedAff) {
+      for (      GridCacheContext cacheCtx : cctx.cacheContexts()) {
+        GridAffinityAssignmentCache aff=cacheCtx.affinity().affinityCache();
+        aff.initialize(topologyVersion(),aff.idealAssignment());
+      }
+    }
+  }
+  onDone(topologyVersion());
+}

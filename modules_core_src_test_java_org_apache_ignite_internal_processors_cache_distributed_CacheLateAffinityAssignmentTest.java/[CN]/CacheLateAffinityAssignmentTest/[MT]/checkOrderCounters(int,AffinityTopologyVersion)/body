@@ -1,0 +1,15 @@
+{
+  List<Ignite> nodes=G.allGrids();
+  Long order=null;
+  for (  Ignite node : nodes) {
+    IgniteKernal node0=(IgniteKernal)node;
+    if (node0.configuration().isClientMode())     continue;
+    IgniteInternalFuture<?> fut=node0.context().cache().context().exchange().affinityReadyFuture(topVer);
+    if (fut != null)     fut.get();
+    AtomicLong orderCntr=GridTestUtils.getFieldValue(node0.context().cache().context().versions(),"order");
+    log.info("Order [node=" + node0.name() + ", order="+ orderCntr.get()+ ']');
+    if (order == null)     order=orderCntr.get();
+ else     assertEquals(order,(Long)orderCntr.get());
+  }
+  assertEquals(expNodes,nodes.size());
+}

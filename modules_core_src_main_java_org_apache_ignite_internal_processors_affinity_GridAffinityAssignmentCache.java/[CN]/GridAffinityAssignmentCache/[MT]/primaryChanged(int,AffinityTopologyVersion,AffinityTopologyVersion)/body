@@ -1,0 +1,14 @@
+{
+  GridAffinityAssignment aff=affCache.get(startVer);
+  if (aff == null)   return false;
+  List<ClusterNode> nodes=aff.get(part);
+  if (nodes.isEmpty())   return true;
+  ClusterNode primary=nodes.get(0);
+  for (  GridAffinityAssignment assignment : affCache.tailMap(startVer,false).values()) {
+    List<ClusterNode> nodes0=assignment.assignment().get(part);
+    if (nodes0.isEmpty())     return true;
+    if (!nodes0.get(0).equals(primary))     return true;
+    if (assignment.topologyVersion().equals(endVer))     return false;
+  }
+  return true;
+}

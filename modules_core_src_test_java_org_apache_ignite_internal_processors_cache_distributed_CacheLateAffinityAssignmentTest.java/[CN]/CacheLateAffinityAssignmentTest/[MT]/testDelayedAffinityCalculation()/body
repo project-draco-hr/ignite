@@ -1,0 +1,23 @@
+{
+  Ignite ignite0=startServer(0,1);
+  checkAffinity(1,topVer(1,0),true);
+  GridCacheContext cctx=((IgniteKernal)ignite0).context().cache().internalCache(CACHE_NAME1).context();
+  AffinityFunction func=cctx.config().getAffinity();
+  AffinityFunctionContext ctx=new GridAffinityFunctionContextImpl(new ArrayList<>(ignite0.cluster().nodes()),null,null,topVer(1,0),cctx.config().getBackups());
+  List<List<ClusterNode>> calcAff1_0=func.assignPartitions(ctx);
+  startServer(1,2);
+  ctx=new GridAffinityFunctionContextImpl(new ArrayList<>(ignite0.cluster().nodes()),calcAff1_0,null,topVer(1,0),cctx.config().getBackups());
+  List<List<ClusterNode>> calcAff2_0=func.assignPartitions(ctx);
+  checkAffinity(2,topVer(2,0),false);
+  List<List<ClusterNode>> aff2_0=affinity(ignite0,topVer(2,0),CACHE_NAME1);
+  for (int p=0; p < calcAff1_0.size(); p++) {
+    List<ClusterNode> a1=calcAff1_0.get(p);
+    List<ClusterNode> a2=calcAff2_0.get(p);
+    List<ClusterNode> a=aff2_0.get(p);
+    assertEquals(a1.get(0),a.get(0));
+    if (!a1.get(0).equals(a2.get(0)))     assertTrue(a.contains(a2.get(0)));
+  }
+  checkAffinity(2,topVer(2,1),true);
+  List<List<ClusterNode>> aff2_1=affinity(ignite0,topVer(2,1),CACHE_NAME1);
+  assertEquals(calcAff2_0,aff2_1);
+}

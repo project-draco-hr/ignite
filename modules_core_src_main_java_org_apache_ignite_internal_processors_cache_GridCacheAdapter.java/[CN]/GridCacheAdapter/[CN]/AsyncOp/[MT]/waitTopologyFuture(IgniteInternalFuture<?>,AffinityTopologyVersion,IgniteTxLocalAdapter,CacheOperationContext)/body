@@ -1,0 +1,27 @@
+{
+  final GridFutureAdapter fut0=new GridFutureAdapter();
+  topFut.listen(new CI1<IgniteInternalFuture<?>>(){
+    @Override public void apply(    IgniteInternalFuture<?> topFut){
+      try {
+        topFut.get();
+        IgniteInternalFuture<?> opFut=runOp(tx,topVer,opCtx);
+        opFut.listen(new CI1<IgniteInternalFuture<?>>(){
+          @Override public void apply(          IgniteInternalFuture<?> opFut){
+            try {
+              fut0.onDone(opFut.get());
+            }
+ catch (            IgniteCheckedException e) {
+              fut0.onDone(e);
+            }
+          }
+        }
+);
+      }
+ catch (      IgniteCheckedException e) {
+        fut0.onDone(e);
+      }
+    }
+  }
+);
+  return fut0;
+}

@@ -1,0 +1,15 @@
+{
+  AffinityTopologyVersion lockedTopVer=cctx.shared().lockedTopologyVersion(null);
+  if (lockedTopVer != null) {
+    canRemap=false;
+    map(keys,Collections.<ClusterNode,LinkedHashMap<KeyCacheObject,Boolean>>emptyMap(),lockedTopVer);
+  }
+ else {
+    AffinityTopologyVersion mapTopVer=topVer;
+    if (mapTopVer == null) {
+      mapTopVer=tx == null ? (canRemap ? cctx.affinity().affinityTopologyVersion() : cctx.shared().exchange().readyAffinityVersion()) : tx.topologyVersion();
+    }
+    map(keys,Collections.<ClusterNode,LinkedHashMap<KeyCacheObject,Boolean>>emptyMap(),mapTopVer);
+  }
+  markInitialized();
+}

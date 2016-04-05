@@ -8,6 +8,7 @@
   IgniteEx ignite0=startGrid(0);
   IgniteEx ignite1=startGrid(1);
   IgniteEx ignite2=startGrid(2);
+  awaitPartitionMapExchange();
   client=true;
   final Ignite ignite3=startGrid(3);
   assertTrue(ignite3.configuration().isClientMode());
@@ -35,7 +36,9 @@
 );
   client=false;
   IgniteEx ignite4=startGrid(4);
-  AffinityTopologyVersion topVer2=new AffinityTopologyVersion(5,0);
+  int minorVer=ignite4.configuration().isLateAffinityAssignment() ? 1 : 0;
+  AffinityTopologyVersion topVer2=new AffinityTopologyVersion(5,minorVer);
+  ignite0.context().cache().context().exchange().affinityReadyFuture(topVer2).get();
   assertEquals(topVer2,ignite0.context().cache().internalCache(null).context().topology().topologyVersion());
   GridCacheAffinityManager aff=ignite0.context().cache().internalCache(null).context().affinity();
   List<ClusterNode> nodes1=aff.nodes(key1,topVer1);

@@ -1,0 +1,14 @@
+{
+  Ignite ignite0=startServer(0,1);
+  Ignite ignite1=startServer(1,2);
+  checkAffinity(2,topVer(2,1),true);
+  TestRecordingCommunicationSpi spi0=(TestRecordingCommunicationSpi)ignite0.configuration().getCommunicationSpi();
+  TestRecordingCommunicationSpi spi1=(TestRecordingCommunicationSpi)ignite1.configuration().getCommunicationSpi();
+  blockSupplySend(spi0,CACHE_NAME1);
+  blockSupplySend(spi1,CACHE_NAME1);
+  startServer(2,3);
+  stopNode(0,4);
+  checkAffinity(2,topVer(4,0),false);
+  spi1.stopBlock();
+  checkAffinity(2,topVer(4,1),true);
+}
