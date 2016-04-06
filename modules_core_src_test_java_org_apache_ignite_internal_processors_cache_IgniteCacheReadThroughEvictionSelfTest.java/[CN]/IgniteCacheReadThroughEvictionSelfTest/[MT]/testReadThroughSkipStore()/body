@@ -1,0 +1,16 @@
+{
+  Ignite ig=ignite(GRID_CNT - 1);
+  CacheConfiguration<Object,Object> cc=cacheConfiguration();
+  final IgniteCache<Object,Object> cache=ig.getOrCreateCache(cc);
+  try {
+    for (int i=0; i < 1000; i++) {
+      cache.put(i,i);
+      cache.withSkipStore().remove(i);
+    }
+    waitEmpty();
+    for (int i=0; i < 1000; i++)     assertEquals(i,cache.get(i));
+  }
+  finally {
+    ig.destroyCache(null);
+  }
+}
