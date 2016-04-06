@@ -1,0 +1,31 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(disco);
+  cfg.setCacheConfiguration(cacheConfiguration(gridName));
+  cfg.setMarshaller(new BinaryMarshaller());
+  cfg.setClassLoader(getExternalClassLoader());
+  if (customBinaryConf) {
+    BinaryTypeConfiguration btcfg=new BinaryTypeConfiguration();
+    btcfg.setTypeName("org.apache.ignite.tests.p2p.CacheDeploymentTestValue3");
+    btcfg.setSerializer(new BinarySerializer(){
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public void writeBinary(      Object obj,      BinaryWriter writer) throws BinaryObjectException {
+      }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public void readBinary(      Object obj,      BinaryReader reader) throws BinaryObjectException {
+        deserialized=true;
+      }
+    }
+);
+    BinaryConfiguration bcfg=new BinaryConfiguration();
+    bcfg.setTypeConfigurations(Collections.singletonList(btcfg));
+    cfg.setBinaryConfiguration(bcfg);
+  }
+  return cfg;
+}
