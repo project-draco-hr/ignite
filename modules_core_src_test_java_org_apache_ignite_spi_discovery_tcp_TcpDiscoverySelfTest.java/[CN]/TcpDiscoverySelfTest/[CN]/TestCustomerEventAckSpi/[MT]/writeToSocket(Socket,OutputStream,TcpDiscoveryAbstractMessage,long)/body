@@ -1,0 +1,25 @@
+{
+  if (stopBeforeSndAck) {
+    if (msg instanceof TcpDiscoveryCustomEventMessage) {
+      try {
+        DiscoveryCustomMessage custMsg=GridTestUtils.getFieldValue(((TcpDiscoveryCustomEventMessage)msg).message(marsh,U.gridClassLoader()),"delegate");
+        if (custMsg instanceof StartRoutineAckDiscoveryMessage) {
+          log.info("Skip message send and stop node: " + msg);
+          sock.close();
+          GridTestUtils.runAsync(new Callable<Object>(){
+            @Override public Object call() throws Exception {
+              ignite.close();
+              return null;
+            }
+          }
+,"stop-node");
+          return;
+        }
+      }
+ catch (      Throwable e) {
+        fail("Unexpected error: " + e);
+      }
+    }
+  }
+  super.writeToSocket(sock,out,msg,timeout);
+}
