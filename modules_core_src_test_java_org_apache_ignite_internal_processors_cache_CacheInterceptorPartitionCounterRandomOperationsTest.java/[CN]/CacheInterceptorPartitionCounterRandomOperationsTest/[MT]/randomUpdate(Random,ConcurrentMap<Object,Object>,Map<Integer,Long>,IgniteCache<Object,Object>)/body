@@ -1,0 +1,145 @@
+{
+  Object key=new TestKey(rnd.nextInt(KEYS));
+  Object newVal=value(rnd);
+  Object oldVal=expData.get(key);
+  int op=rnd.nextInt(11);
+  Ignite ignite=cache.unwrap(Ignite.class);
+  Transaction tx=null;
+  if (cache.getConfiguration(CacheConfiguration.class).getAtomicityMode() == TRANSACTIONAL && rnd.nextBoolean())   tx=ignite.transactions().txStart(txRandomConcurrency(rnd),txRandomIsolation(rnd));
+  try {
+switch (op) {
+case 0:
+{
+        cache.put(key,newVal);
+        if (tx != null)         tx.commit();
+        updatePartitionCounter(cache,key,partCntr);
+        waitAndCheckEvent(cache,partCntr,affinity(cache),key,newVal,oldVal,false);
+        expData.put(key,newVal);
+        break;
+      }
+case 1:
+{
+      cache.getAndPut(key,newVal);
+      if (tx != null)       tx.commit();
+      updatePartitionCounter(cache,key,partCntr);
+      waitAndCheckEvent(cache,partCntr,affinity(cache),key,newVal,oldVal,false);
+      expData.put(key,newVal);
+      break;
+    }
+case 2:
+{
+    cache.remove(key);
+    if (tx != null)     tx.commit();
+    updatePartitionCounter(cache,key,partCntr);
+    waitAndCheckEvent(cache,partCntr,affinity(cache),key,null,oldVal,true);
+    expData.remove(key);
+    break;
+  }
+case 3:
+{
+  cache.getAndRemove(key);
+  if (tx != null)   tx.commit();
+  updatePartitionCounter(cache,key,partCntr);
+  waitAndCheckEvent(cache,partCntr,affinity(cache),key,null,oldVal,true);
+  expData.remove(key);
+  break;
+}
+case 4:
+{
+cache.invoke(key,new EntrySetValueProcessor(newVal,rnd.nextBoolean()));
+if (tx != null) tx.commit();
+updatePartitionCounter(cache,key,partCntr);
+waitAndCheckEvent(cache,partCntr,affinity(cache),key,newVal,oldVal,false);
+expData.put(key,newVal);
+break;
+}
+case 5:
+{
+cache.invoke(key,new EntrySetValueProcessor(null,rnd.nextBoolean()));
+if (tx != null) tx.commit();
+updatePartitionCounter(cache,key,partCntr);
+waitAndCheckEvent(cache,partCntr,affinity(cache),key,null,oldVal,true);
+expData.remove(key);
+break;
+}
+case 6:
+{
+cache.putIfAbsent(key,newVal);
+if (tx != null) tx.commit();
+if (oldVal == null) {
+updatePartitionCounter(cache,key,partCntr);
+waitAndCheckEvent(cache,partCntr,affinity(cache),key,newVal,null,false);
+expData.put(key,newVal);
+}
+ else checkNoEvent(getInterceptorQueues(cache,key,false));
+break;
+}
+case 7:
+{
+cache.getAndPutIfAbsent(key,newVal);
+if (tx != null) tx.commit();
+if (oldVal == null) {
+updatePartitionCounter(cache,key,partCntr);
+waitAndCheckEvent(cache,partCntr,affinity(cache),key,newVal,null,false);
+expData.put(key,newVal);
+}
+ else checkNoEvent(getInterceptorQueues(cache,key,false));
+break;
+}
+case 8:
+{
+cache.replace(key,newVal);
+if (tx != null) tx.commit();
+if (oldVal != null) {
+updatePartitionCounter(cache,key,partCntr);
+waitAndCheckEvent(cache,partCntr,affinity(cache),key,newVal,oldVal,false);
+expData.put(key,newVal);
+}
+ else checkNoEvent(getInterceptorQueues(cache,key,false));
+break;
+}
+case 9:
+{
+cache.getAndReplace(key,newVal);
+if (tx != null) tx.commit();
+if (oldVal != null) {
+updatePartitionCounter(cache,key,partCntr);
+waitAndCheckEvent(cache,partCntr,affinity(cache),key,newVal,oldVal,false);
+expData.put(key,newVal);
+}
+ else checkNoEvent(getInterceptorQueues(cache,key,false));
+break;
+}
+case 10:
+{
+if (oldVal != null) {
+Object replaceVal=value(rnd);
+boolean success=replaceVal.equals(oldVal);
+if (success) {
+cache.replace(key,replaceVal,newVal);
+if (tx != null) tx.commit();
+updatePartitionCounter(cache,key,partCntr);
+waitAndCheckEvent(cache,partCntr,affinity(cache),key,newVal,oldVal,false);
+expData.put(key,newVal);
+}
+ else {
+cache.replace(key,replaceVal,newVal);
+if (tx != null) tx.commit();
+checkNoEvent(getInterceptorQueues(cache,key,false));
+}
+}
+ else {
+cache.replace(key,value(rnd),newVal);
+if (tx != null) tx.commit();
+checkNoEvent(getInterceptorQueues(cache,key,false));
+}
+break;
+}
+default :
+fail("Op:" + op);
+}
+}
+  finally {
+if (tx != null) tx.close();
+}
+}

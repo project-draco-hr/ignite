@@ -1,0 +1,15 @@
+{
+  BlockingQueue<Cache.Entry<TestKey,TestValue>> evtsQueue=rmv ? afterRmvEvts : afterPutEvts;
+  if (val == null && oldVal == null) {
+    checkNoEvent(evtsQueue);
+    return;
+  }
+  Cache.Entry<TestKey,TestValue> entry=evtsQueue.poll(5,SECONDS);
+  assertNotNull("Failed to wait for event [key=" + key + ", val="+ val+ ", oldVal="+ oldVal+ ']',entry);
+  assertEquals(key,entry.getKey());
+  assertEquals(rmv ? oldVal : val,entry.getValue());
+  CacheInterceptorEntry interceptorEntry=entry.unwrap(CacheInterceptorEntry.class);
+  assertNotNull(interceptorEntry);
+  assertEquals(0,interceptorEntry.getPartitionUpdateCounter());
+  assertNull(evtsQueue.peek());
+}

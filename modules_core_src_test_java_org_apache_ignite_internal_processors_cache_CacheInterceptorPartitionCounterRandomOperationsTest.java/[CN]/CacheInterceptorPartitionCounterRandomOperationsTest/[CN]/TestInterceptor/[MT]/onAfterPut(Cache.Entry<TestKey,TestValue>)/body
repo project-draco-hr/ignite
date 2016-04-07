@@ -1,0 +1,12 @@
+{
+  e.getKey();
+  e.getValue();
+  UUID id=e.unwrap(Ignite.class).cluster().localNode().id();
+  BlockingQueue<Cache.Entry<TestKey,TestValue>> ents=afterPutEvts.get(id);
+  if (ents == null) {
+    ents=new BlockingArrayQueue<>();
+    BlockingQueue<Cache.Entry<TestKey,TestValue>> oldVal=afterPutEvts.putIfAbsent(id,ents);
+    ents=oldVal == null ? ents : oldVal;
+  }
+  ents.add(e);
+}
