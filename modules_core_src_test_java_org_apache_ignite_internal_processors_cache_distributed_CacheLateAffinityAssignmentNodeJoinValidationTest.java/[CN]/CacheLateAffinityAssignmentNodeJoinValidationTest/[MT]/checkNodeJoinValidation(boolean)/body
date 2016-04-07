@@ -1,0 +1,28 @@
+{
+  lateAff=firstEnabled;
+  Ignite ignite=startGrid(0);
+  assertFalse(ignite.configuration().isClientMode());
+  lateAff=!firstEnabled;
+  try {
+    startGrid(1);
+    fail();
+  }
+ catch (  Exception e) {
+    checkError(e);
+  }
+  client=true;
+  try {
+    startGrid(1);
+    fail();
+  }
+ catch (  Exception e) {
+    checkError(e);
+  }
+  assertEquals(1,ignite.cluster().nodes().size());
+  lateAff=firstEnabled;
+  client=false;
+  startGrid(1);
+  client=true;
+  Ignite client=startGrid(2);
+  assertTrue(client.configuration().isClientMode());
+}
