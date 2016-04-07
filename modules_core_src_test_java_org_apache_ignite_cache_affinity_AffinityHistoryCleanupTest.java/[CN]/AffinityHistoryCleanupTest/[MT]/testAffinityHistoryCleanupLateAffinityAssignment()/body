@@ -1,0 +1,32 @@
+{
+  lateAffAssignment=true;
+  String histProp=System.getProperty(IgniteSystemProperties.IGNITE_AFFINITY_HISTORY_SIZE);
+  try {
+    System.setProperty(IgniteSystemProperties.IGNITE_AFFINITY_HISTORY_SIZE,"5");
+    Ignite ignite=startGrid(0);
+    checkHistory(ignite,F.asList(topVer(1,0)),1);
+    startGrid(1);
+    checkHistory(ignite,F.asList(topVer(1,0),topVer(2,0),topVer(2,1)),3);
+    startGrid(2);
+    checkHistory(ignite,F.asList(topVer(1,0),topVer(2,0),topVer(2,1),topVer(3,0),topVer(3,1)),5);
+    startGrid(3);
+    checkHistory(ignite,F.asList(topVer(2,1),topVer(3,0),topVer(3,1),topVer(4,0),topVer(4,1)),5);
+    client=true;
+    startGrid(4);
+    stopGrid(4);
+    checkHistory(ignite,F.asList(topVer(2,1),topVer(3,0),topVer(3,1),topVer(4,0),topVer(4,1),topVer(5,0),topVer(6,0)),5);
+    startGrid(4);
+    stopGrid(4);
+    checkHistory(ignite,F.asList(topVer(2,1),topVer(3,0),topVer(3,1),topVer(4,0),topVer(4,1),topVer(5,0),topVer(6,0),topVer(7,0),topVer(8,0)),5);
+    startGrid(4);
+    stopGrid(4);
+    checkHistory(ignite,F.asList(topVer(5,0),topVer(6,0),topVer(7,0),topVer(8,0),topVer(9,0),topVer(10,0)),0);
+    client=false;
+    startGrid(4);
+    checkHistory(ignite,F.asList(topVer(5,0),topVer(6,0),topVer(7,0),topVer(8,0),topVer(9,0),topVer(10,0),topVer(11,0),topVer(11,1)),2);
+  }
+  finally {
+    if (histProp != null)     System.setProperty(IgniteSystemProperties.IGNITE_AFFINITY_HISTORY_SIZE,histProp);
+ else     System.clearProperty(IgniteSystemProperties.IGNITE_AFFINITY_HISTORY_SIZE);
+  }
+}

@@ -1,0 +1,20 @@
+{
+  int fullSize=fullHistSize.incrementAndGet();
+  int size;
+  if (aff.clientEventChange())   size=histSize.get();
+ else   size=histSize.incrementAndGet();
+  int rmvCnt=size - MAX_HIST_SIZE;
+  if (rmvCnt <= 0) {
+    if (fullSize > MAX_HIST_SIZE * 2)     rmvCnt=MAX_HIST_SIZE;
+  }
+  if (rmvCnt > 0) {
+    Iterator<GridAffinityAssignment> it=affCache.values().iterator();
+    while (it.hasNext() && rmvCnt > 0) {
+      GridAffinityAssignment aff0=it.next();
+      it.remove();
+      rmvCnt--;
+      if (!aff0.clientEventChange())       histSize.decrementAndGet();
+      fullHistSize.decrementAndGet();
+    }
+  }
+}
