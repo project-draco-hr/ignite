@@ -1,0 +1,27 @@
+{
+  if (atomicityMode() != TRANSACTIONAL)   return;
+  IgniteCache<Integer,TestObject> c=jcache(0);
+  IgniteCache<Integer,TestObject> cAsync=c.withAsync();
+  IgniteCache<Integer,BinaryObject> kbCache=keepBinaryCache();
+  IgniteCache<Integer,BinaryObject> kbCacheAsync=kbCache.withAsync();
+  for (int i=0; i < ENTRY_CNT; i++)   c.put(i,new TestObject(i));
+  for (int i=0; i < ENTRY_CNT; i++) {
+    try (Transaction tx=grid(0).transactions().txStart(concurrency,isolation)){
+      cAsync.get(i);
+      TestObject obj=(TestObject)cAsync.future().get();
+      assertEquals(i,obj.val);
+      tx.commit();
+    }
+   }
+  for (int i=0; i < ENTRY_CNT; i++) {
+    try (Transaction tx=grid(0).transactions().txStart(concurrency,isolation)){
+      kbCacheAsync.get(i);
+      BinaryObject val=(BinaryObject)kbCacheAsync.future().get();
+      assertFalse("Key=" + i,val instanceof BinaryObjectOffheapImpl);
+      assertEquals(i,(int)val.field("val"));
+      kbCacheAsync.put(i,val);
+      kbCacheAsync.future().get();
+      tx.commit();
+    }
+   }
+}

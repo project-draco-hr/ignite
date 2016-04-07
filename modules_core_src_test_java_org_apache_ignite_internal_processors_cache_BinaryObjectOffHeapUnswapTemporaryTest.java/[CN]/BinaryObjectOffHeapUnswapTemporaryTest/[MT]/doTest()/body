@@ -1,0 +1,112 @@
+{
+  final IgniteCache<Integer,BinaryObject> cache=jcache(0).withKeepBinary();
+  for (int key=0; key < CNT; key++)   jcache(0).put(key,new TestObject(key));
+  for (int key=CNT; key < 2 * CNT; key++) {
+    BinaryObjectBuilder builder=ignite(0).binary().builder("SomeType");
+    builder.setField("field1",key);
+    builder.setField("field2","name_" + key);
+    cache.put(key,builder.build());
+  }
+  Set<Integer> keys=new LinkedHashSet<>();
+  for (int i=0; i < 2 * CNT; i++)   keys.add(i);
+  check(new IgniteInClosure<Integer>(){
+    @Override public void apply(    Integer key){
+      assertFalse(cache.get(key) instanceof BinaryObjectOffheapImpl);
+    }
+  }
+);
+  check(new IgniteInClosure<Integer>(){
+    @Override public void apply(    Integer key){
+      assertFalse(cache.getEntry(key).getValue() instanceof BinaryObjectOffheapImpl);
+    }
+  }
+);
+  check(new IgniteInClosure<Integer>(){
+    @Override public void apply(    Integer key){
+      assertFalse(cache.getAndPut(key,cache.get(key)) instanceof BinaryObjectOffheapImpl);
+    }
+  }
+);
+  check(new IgniteInClosure<Integer>(){
+    @Override public void apply(    Integer key){
+      assertFalse(cache.getAndReplace(key,cache.get(key)) instanceof BinaryObjectOffheapImpl);
+    }
+  }
+);
+  check(new IgniteInClosure<Integer>(){
+    @Override public void apply(    Integer key){
+      assertFalse(cache.getAndPutIfAbsent(key,cache.get(key)) instanceof BinaryObjectOffheapImpl);
+    }
+  }
+);
+  check(new IgniteInClosure<Integer>(){
+    @Override public void apply(    Integer key){
+      assertFalse(cache.localPeek(key) instanceof BinaryObjectOffheapImpl);
+    }
+  }
+);
+  check(new IgniteInClosure<Integer>(){
+    @Override public void apply(    Integer key){
+      assertFalse(cache.getAndRemove(key) instanceof BinaryObjectOffheapImpl);
+    }
+  }
+);
+  check(new IgniteInClosure<Integer>(){
+    @Override public void apply(    Integer key){
+      assertFalse(cache.invoke(key,PROC) instanceof BinaryObjectOffheapImpl);
+    }
+  }
+);
+  Map<Integer,BinaryObject> res=cache.getAll(keys);
+  for (  BinaryObject val : res.values())   assertFalse(val instanceof BinaryObjectOffheapImpl);
+  if (atomicityMode == TRANSACTIONAL) {
+    for (    TransactionIsolation isolation : TransactionIsolation.values()) {
+      for (      TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+        try (Transaction tx=ignite(0).transactions().txStart(concurrency,isolation)){
+          res=cache.getAll(keys);
+          for (          BinaryObject val : res.values())           assertFalse(val instanceof BinaryObjectOffheapImpl);
+          tx.commit();
+        }
+       }
+    }
+  }
+  res=cache.getAllOutTx(keys);
+  for (  BinaryObject val : res.values())   assertFalse(val instanceof BinaryObjectOffheapImpl);
+  if (atomicityMode == TRANSACTIONAL) {
+    for (    TransactionIsolation isolation : TransactionIsolation.values()) {
+      for (      TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+        try (Transaction tx=ignite(0).transactions().txStart(concurrency,isolation)){
+          res=cache.getAllOutTx(keys);
+          for (          BinaryObject val : res.values())           assertFalse(val instanceof BinaryObjectOffheapImpl);
+          tx.commit();
+        }
+       }
+    }
+  }
+  res=cache.invokeAll(keys,PROC);
+  for (  BinaryObject val : res.values())   assertFalse(val instanceof BinaryObjectOffheapImpl);
+  if (atomicityMode == TRANSACTIONAL) {
+    for (    TransactionIsolation isolation : TransactionIsolation.values()) {
+      for (      TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+        try (Transaction tx=ignite(0).transactions().txStart(concurrency,isolation)){
+          res=cache.invokeAll(keys,PROC);
+          for (          BinaryObject val : res.values())           assertFalse(val instanceof BinaryObjectOffheapImpl);
+          tx.commit();
+        }
+       }
+    }
+  }
+  Collection<CacheEntry<Integer,BinaryObject>> entries=cache.getEntries(keys);
+  for (  CacheEntry<Integer,BinaryObject> e : entries)   assertFalse(e.getValue() instanceof BinaryObjectOffheapImpl);
+  if (atomicityMode == TRANSACTIONAL) {
+    for (    TransactionIsolation isolation : TransactionIsolation.values()) {
+      for (      TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+        try (Transaction tx=ignite(0).transactions().txStart(concurrency,isolation)){
+          entries=cache.getEntries(keys);
+          for (          CacheEntry<Integer,BinaryObject> e : entries)           assertFalse(e.getValue() instanceof BinaryObjectOffheapImpl);
+          tx.commit();
+        }
+       }
+    }
+  }
+}

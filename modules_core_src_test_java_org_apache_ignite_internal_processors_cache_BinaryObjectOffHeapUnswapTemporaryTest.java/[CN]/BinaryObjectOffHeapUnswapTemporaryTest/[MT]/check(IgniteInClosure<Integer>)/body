@@ -1,0 +1,15 @@
+{
+  for (int key=0; key < 2 * CNT; key++) {
+    checkOp.apply(key);
+    if (atomicityMode == TRANSACTIONAL) {
+      for (      TransactionIsolation isolation : TransactionIsolation.values()) {
+        for (        TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+          try (Transaction tx=ignite(0).transactions().txStart(concurrency,isolation)){
+            checkOp.apply(key);
+            tx.commit();
+          }
+         }
+      }
+    }
+  }
+}

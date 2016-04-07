@@ -1,0 +1,31 @@
+{
+  if (atomicityMode() != TRANSACTIONAL)   return;
+  IgniteCache<Integer,TestObject> c=jcache(0);
+  IgniteCache<Integer,BinaryObject> kpc=keepBinaryCache();
+  for (int i=0; i < ENTRY_CNT; i++)   c.put(i,new TestObject(i));
+  for (int i=0; i < ENTRY_CNT; ) {
+    Set<Integer> keys=new HashSet<>();
+    for (int j=0; j < 10; j++)     keys.add(i++);
+    try (Transaction tx=grid(0).transactions().txStart(concurrency,isolation)){
+      Map<Integer,TestObject> objs=c.getAll(keys);
+      assertEquals(10,objs.size());
+      for (      Map.Entry<Integer,TestObject> e : objs.entrySet())       assertEquals(e.getKey().intValue(),e.getValue().val);
+      tx.commit();
+    }
+   }
+  for (int i=0; i < ENTRY_CNT; ) {
+    Set<Integer> keys=new HashSet<>();
+    for (int j=0; j < 10; j++)     keys.add(i++);
+    try (Transaction tx=grid(0).transactions().txStart(concurrency,isolation)){
+      Map<Integer,BinaryObject> objs=kpc.getAll(keys);
+      assertEquals(10,objs.size());
+      for (      Map.Entry<Integer,BinaryObject> e : objs.entrySet()) {
+        BinaryObject val=e.getValue();
+        assertEquals(new Integer(e.getKey().intValue()),val.field("val"));
+        kpc.put(e.getKey(),val);
+        assertFalse("Key=" + i,val instanceof BinaryObjectOffheapImpl);
+      }
+      tx.commit();
+    }
+   }
+}
