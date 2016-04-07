@@ -1,0 +1,17 @@
+{
+  waitFor(writeLock);
+  boolean fail=false;
+  if (skipNodeAdded && (msg instanceof TcpDiscoveryNodeAddedMessage || msg instanceof TcpDiscoveryNodeAddFinishedMessage)) {
+    log.info("Skip message: " + msg);
+    return;
+  }
+  if (msg instanceof TcpDiscoveryNodeAddedMessage)   fail=failNodeAdded.getAndDecrement() > 0;
+ else   if (msg instanceof TcpDiscoveryNodeAddFinishedMessage)   fail=failNodeAddFinished.getAndDecrement() > 0;
+ else   if (msg instanceof TcpDiscoveryClientReconnectMessage)   fail=failClientReconnect.getAndDecrement() > 0;
+  if (fail) {
+    log.info("Close socket on message write [msg=" + msg + "]");
+    sock.close();
+  }
+  super.writeToSocket(sock,out,msg,timeout);
+  if (afterWrite != null)   afterWrite.apply(msg,sock);
+}
