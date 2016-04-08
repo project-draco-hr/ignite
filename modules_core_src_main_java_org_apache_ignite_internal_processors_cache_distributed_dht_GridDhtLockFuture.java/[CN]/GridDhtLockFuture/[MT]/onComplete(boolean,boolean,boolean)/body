@@ -1,0 +1,22 @@
+{
+  if (log.isDebugEnabled())   log.debug("Received onComplete(..) callback [success=" + success + ", fut="+ this+ ']');
+  if (!success && !stopping && unlock)   undoLocks(true);
+  boolean set=false;
+  if (tx != null) {
+    cctx.tm().txContext(tx);
+    set=cctx.tm().setTxTopologyHint(tx.topologyVersionSnapshot());
+  }
+  try {
+    if (err == null && !stopping)     loadMissingFromStore();
+  }
+  finally {
+    if (set)     cctx.tm().setTxTopologyHint(null);
+  }
+  if (super.onDone(success,err)) {
+    if (log.isDebugEnabled())     log.debug("Completing future: " + this);
+    cctx.mvcc().removeMvccFuture(this);
+    if (timeoutObj != null)     cctx.time().removeTimeoutObject(timeoutObj);
+    return true;
+  }
+  return false;
+}

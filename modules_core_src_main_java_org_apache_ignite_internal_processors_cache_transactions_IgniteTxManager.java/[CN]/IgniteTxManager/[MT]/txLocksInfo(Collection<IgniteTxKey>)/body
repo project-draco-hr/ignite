@@ -1,0 +1,40 @@
+{
+  TxLocksResponse res=new TxLocksResponse();
+  Collection<IgniteInternalTx> txs=activeTransactions();
+  for (  IgniteInternalTx tx : txs) {
+    boolean nearTxLoc=tx instanceof GridNearTxLocal;
+    if (!(nearTxLoc || tx instanceof GridDhtTxLocal) || !hasKeys(tx,txKeys))     continue;
+    Collection<IgniteTxEntry> txEntries=tx.allEntries();
+    Set<KeyCacheObject> requestedKeys=null;
+    if (nearTxLoc) {
+      GridDhtColocatedLockFuture fut=colocatedLockFuture(tx);
+      if (fut != null)       requestedKeys=fut.requestedKeys();
+    }
+    for (    IgniteTxEntry txEntry : txEntries) {
+      IgniteTxKey txKey=txEntry.txKey();
+      if (res.txLocks(txKey) == null) {
+        GridCacheMapEntry e=(GridCacheMapEntry)txEntry.cached();
+        List<GridCacheMvccCandidate> locs=e.mvccAllLocal();
+        if (locs != null) {
+          boolean owner=false;
+          for (          GridCacheMvccCandidate loc : locs) {
+            if (!owner && loc.owner() && loc.tx())             owner=true;
+            if (!owner)             break;
+            if (loc.tx()) {
+              UUID nearNodeId=loc.otherNodeId();
+              GridCacheVersion txId=loc.otherVersion();
+              TxLock txLock=new TxLock(txId == null ? loc.version() : txId,nearNodeId == null ? loc.nodeId() : nearNodeId,loc.threadId(),loc.owner() ? TxLock.OWNERSHIP_OWNER : TxLock.OWNERSHIP_CANDIDATE);
+              res.addTxLock(txKey,txLock);
+            }
+          }
+        }
+ else         if (nearTxLoc && requestedKeys != null && requestedKeys.contains(txKey.key())) {
+          TxLock txLock=new TxLock(tx.nearXidVersion(),tx.nodeId(),tx.threadId(),TxLock.OWNERSHIP_REQUESTED);
+          res.addTxLock(txKey,txLock);
+        }
+ else         res.addKey(txKey);
+      }
+    }
+  }
+  return res;
+}

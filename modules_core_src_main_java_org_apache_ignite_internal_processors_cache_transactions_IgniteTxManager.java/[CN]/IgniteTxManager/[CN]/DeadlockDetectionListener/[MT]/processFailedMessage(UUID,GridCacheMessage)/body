@@ -1,0 +1,30 @@
+{
+switch (msg.directType()) {
+case -24:
+{
+      TxLocksRequest req=(TxLocksRequest)msg;
+      TxLocksResponse res=new TxLocksResponse();
+      res.futureId(req.futureId());
+      try {
+        cctx.gridIO().send(nodeId,TOPIC_TX,res,SYSTEM_POOL);
+      }
+ catch (      IgniteCheckedException e) {
+        U.error(log,"Failed to send response to node (is node still alive?) [nodeId=" + nodeId + ", res="+ res+ ']',e);
+      }
+    }
+  break;
+case -23:
+{
+  TxLocksResponse res=(TxLocksResponse)msg;
+  TxDeadlockFuture fut=future(res.futureId());
+  if (fut == null) {
+    if (log.isDebugEnabled())     log.debug("Failed to find future for response [sender=" + nodeId + ", res="+ res+ ']');
+    return;
+  }
+  fut.onResult(nodeId,res);
+}
+break;
+default :
+throw new IgniteCheckedException("Failed to process message. Unsupported direct type [msg=" + msg + ']',msg.classError());
+}
+}

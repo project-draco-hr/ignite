@@ -1,0 +1,40 @@
+{
+  try {
+    final int txCnt=2;
+    final CyclicBarrier barrier=new CyclicBarrier(2);
+    final AtomicInteger threadCnt=new AtomicInteger();
+    final AtomicBoolean deadlock=new AtomicBoolean();
+    final AtomicBoolean timeout=new AtomicBoolean();
+    TestCommunicationSpi.failCls=failCls;
+    IgniteInternalFuture<Long> fut=GridTestUtils.runMultiThreadedAsync(new Runnable(){
+      @Override public void run(){
+        int num=threadCnt.getAndIncrement();
+        Ignite ignite=ignite(num);
+        IgniteCache<Object,Integer> cache=ignite.cache(CACHE);
+        try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ,num == 0 ? 500 : 1500,0)){
+          int key1=primaryKey(ignite((num + 1) % txCnt).cache(CACHE));
+          log.info(">>> Performs put [node=" + ((IgniteKernal)ignite).localNode() + ", tx="+ tx+ ", key="+ key1+ ']');
+          cache.put(new TestKey(key1),1);
+          barrier.await();
+          int key2=primaryKey(cache);
+          log.info(">>> Performs put [node=" + ((IgniteKernal)ignite).localNode() + ", tx="+ tx+ ", key="+ key2+ ']');
+          cache.put(new TestKey(key2),2);
+          tx.commit();
+        }
+ catch (        Exception e) {
+          timeout.compareAndSet(false,hasCause(e,TransactionTimeoutException.class));
+          deadlock.compareAndSet(false,hasCause(e,TransactionDeadlockException.class));
+        }
+      }
+    }
+,2,"tx-thread");
+    fut.get();
+    assertFalse(deadlock.get());
+    assertTrue(timeout.get());
+    checkDetectionFuts();
+  }
+  finally {
+    TestCommunicationSpi.failCls=null;
+    TestKey.failSer=false;
+  }
+}

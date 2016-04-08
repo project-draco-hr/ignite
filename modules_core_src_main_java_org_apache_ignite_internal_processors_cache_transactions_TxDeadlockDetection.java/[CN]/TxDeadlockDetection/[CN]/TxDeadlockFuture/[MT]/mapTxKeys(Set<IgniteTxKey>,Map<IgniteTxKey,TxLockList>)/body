@@ -1,0 +1,39 @@
+{
+  for (  Map.Entry<IgniteTxKey,TxLockList> e : txLocks.entrySet()) {
+    List<TxLock> locks=e.getValue().txLocks();
+    for (int i=0; i < locks.size(); i++) {
+      TxLock txLock=locks.get(i);
+      UUID nearNodeId=txLock.nearNodeId();
+      IgniteTxKey txKey=e.getKey();
+      if (processedKeys.contains(txKey) && processedNodes.contains(nearNodeId))       continue;
+      if (txLock.requested()) {
+        UUID nodeId=primary(txKey);
+        preferredNodes.add(nodeId);
+        Set<IgniteTxKey> mappedKeys=pendingKeys.get(nodeId);
+        if (mappedKeys == null)         pendingKeys.put(nodeId,mappedKeys=new HashSet<>());
+        mappedKeys.add(txKey);
+      }
+ else {
+        if (txLock.owner()) {
+          if (!preferredNodes.contains(nearNodeId))           nodesQueue.addFirst(nearNodeId);
+        }
+ else         nodesQueue.addLast(nearNodeId);
+        Set<IgniteTxKey> mappedKeys=pendingKeys.get(nearNodeId);
+        if (mappedKeys == null)         pendingKeys.put(nearNodeId,mappedKeys=new HashSet<>());
+        mappedKeys.add(txKey);
+      }
+    }
+  }
+  for (  UUID nodeId : preferredNodes)   nodesQueue.addFirst(nodeId);
+  preferredNodes.clear();
+  if (txKeys != null) {
+    for (    IgniteTxKey txKey : txKeys) {
+      UUID nodeId=primary(txKey);
+      if (processedKeys.contains(txKey) && processedNodes.contains(nodeId))       continue;
+      nodesQueue.addLast(nodeId);
+      Set<IgniteTxKey> mappedKeys=pendingKeys.get(nodeId);
+      if (mappedKeys == null)       pendingKeys.put(nodeId,mappedKeys=new HashSet<>());
+      mappedKeys.add(txKey);
+    }
+  }
+}

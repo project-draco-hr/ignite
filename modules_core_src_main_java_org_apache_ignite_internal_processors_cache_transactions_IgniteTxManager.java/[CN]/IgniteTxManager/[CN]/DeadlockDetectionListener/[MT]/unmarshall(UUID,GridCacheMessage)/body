@@ -1,0 +1,18 @@
+{
+  if (cctx.localNodeId().equals(nodeId))   return;
+  try {
+    cacheMsg.finishUnmarshal(cctx,cctx.deploy().globalLoader());
+  }
+ catch (  IgniteCheckedException e) {
+    cacheMsg.onClassError(e);
+  }
+catch (  BinaryObjectException e) {
+    cacheMsg.onClassError(new IgniteCheckedException(e));
+  }
+catch (  Error e) {
+    if (cacheMsg.ignoreClassErrors() && X.hasCause(e,NoClassDefFoundError.class,UnsupportedClassVersionError.class)) {
+      cacheMsg.onClassError(new IgniteCheckedException("Failed to load class during unmarshalling: " + e,e));
+    }
+ else     throw e;
+  }
+}

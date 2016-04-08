@@ -1,0 +1,26 @@
+{
+  Map<IgniteTxKey,TxLockList> txLocks=res.txLocks();
+  if (txLocks == null || txLocks.isEmpty())   return;
+  for (  Map.Entry<IgniteTxKey,TxLockList> e : txLocks.entrySet()) {
+    IgniteTxKey txKey=e.getKey();
+    TxLockList lockList=e.getValue();
+    if (lockList != null && !lockList.isEmpty()) {
+      for (      TxLock lock : lockList.txLocks()) {
+        if (lock.owner() || lock.candiate()) {
+          if (txs.get(lock.txId()) == null)           txs.put(lock.txId(),new T2<>(lock.nearNodeId(),lock.threadId()));
+        }
+        if (lock.owner()) {
+          GridCacheVersion txId=lock.txId();
+          Set<IgniteTxKey> keys=txLockedKeys.get(txId);
+          if (keys == null)           txLockedKeys.put(txId,keys=new HashSet<>());
+          keys.add(txKey);
+        }
+ else         if (lock.candiate()) {
+          Set<GridCacheVersion> txs=txRequestedKeys.get(txKey);
+          if (txs == null)           txRequestedKeys.put(txKey,txs=new HashSet<>());
+          txs.add(lock.txId());
+        }
+      }
+    }
+  }
+}

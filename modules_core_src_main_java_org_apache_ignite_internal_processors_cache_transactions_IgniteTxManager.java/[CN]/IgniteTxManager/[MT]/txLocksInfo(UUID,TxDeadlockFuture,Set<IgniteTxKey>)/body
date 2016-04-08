@@ -1,0 +1,26 @@
+{
+  ClusterNode node=cctx.node(nodeId);
+  if (node == null) {
+    if (log.isDebugEnabled())     log.debug("Failed to finish deadlock detection, node left: " + nodeId);
+    fut.onDone();
+    return;
+  }
+  if (supportsDeadlockDetection(node)) {
+    TxLocksRequest req=new TxLocksRequest(fut.futureId(),txKeys);
+    try {
+      if (!cctx.localNodeId().equals(nodeId))       req.prepareMarshal(cctx);
+      cctx.gridIO().send(node,TOPIC_TX,req,SYSTEM_POOL);
+    }
+ catch (    IgniteCheckedException e) {
+      if (e instanceof ClusterTopologyCheckedException) {
+        if (log.isDebugEnabled())         log.debug("Failed to finish deadlock detection, node left: " + nodeId);
+      }
+ else       U.warn(log,"Failed to finish deadlock detection: " + e,e);
+      fut.onDone();
+    }
+  }
+ else {
+    if (log.isDebugEnabled())     log.debug("Failed to finish deadlock detection, node does not support deadlock detection: " + node);
+    fut.onDone();
+  }
+}

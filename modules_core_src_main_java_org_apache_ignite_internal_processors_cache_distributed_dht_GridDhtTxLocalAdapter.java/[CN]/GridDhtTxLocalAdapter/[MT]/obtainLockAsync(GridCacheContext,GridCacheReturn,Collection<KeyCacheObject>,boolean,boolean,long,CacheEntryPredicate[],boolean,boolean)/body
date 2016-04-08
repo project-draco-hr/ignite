@@ -2,7 +2,9 @@
   if (log.isDebugEnabled())   log.debug("Before acquiring transaction lock on keys [keys=" + passedKeys + ']');
   if (passedKeys.isEmpty())   return new GridFinishedFuture<>(ret);
   GridDhtTransactionalCacheAdapter<?,?> dhtCache=cacheCtx.isNear() ? cacheCtx.nearTx().dht() : cacheCtx.dhtTx();
-  IgniteInternalFuture<Boolean> fut=dhtCache.lockAllAsyncInternal(passedKeys,lockTimeout(),this,isInvalidate(),read,needRetVal,isolation,accessTtl,CU.empty0(),skipStore,keepBinary);
+  long timeout=remainingTime();
+  if (timeout == -1)   return new GridFinishedFuture<>(timeoutException());
+  IgniteInternalFuture<Boolean> fut=dhtCache.lockAllAsyncInternal(passedKeys,timeout,this,isInvalidate(),read,needRetVal,isolation,accessTtl,CU.empty0(),skipStore,keepBinary);
   return new GridEmbeddedFuture<>(fut,new PLC1<GridCacheReturn>(ret){
     @Override protected GridCacheReturn postLock(    GridCacheReturn ret) throws IgniteCheckedException {
       if (log.isDebugEnabled())       log.debug("Acquired transaction lock on keys: " + passedKeys);

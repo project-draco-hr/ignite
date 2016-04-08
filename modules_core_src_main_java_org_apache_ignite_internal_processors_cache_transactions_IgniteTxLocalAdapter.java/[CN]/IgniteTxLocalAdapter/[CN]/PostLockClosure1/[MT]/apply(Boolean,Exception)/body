@@ -1,5 +1,6 @@
 {
-  if (e != null) {
+  TransactionDeadlockException deadlockErr=X.cause(e,TransactionDeadlockException.class);
+  if (e != null && deadlockErr == null) {
     setRollbackOnly();
     if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteInternalFuture<IgniteInternalTx>,T>(){
       @Override public T apply(      IgniteInternalFuture<IgniteInternalTx> f){
@@ -9,9 +10,9 @@
 );
     throw new GridClosureException(e);
   }
-  if (!locked) {
+  if (deadlockErr != null || !locked) {
     setRollbackOnly();
-    final GridClosureException ex=new GridClosureException(new IgniteTxTimeoutCheckedException("Failed to " + "acquire lock within provided timeout for transaction [timeout=" + timeout() + ", tx="+ this+ ']'));
+    final GridClosureException ex=new GridClosureException(new IgniteTxTimeoutCheckedException("Failed to acquire lock within provided timeout " + "for transaction [timeout=" + timeout() + ", tx="+ this+ ']',deadlockErr));
     if (commit && commitAfterLock())     return rollbackAsync().chain(new C1<IgniteInternalFuture<IgniteInternalTx>,T>(){
       @Override public T apply(      IgniteInternalFuture<IgniteInternalTx> f){
         throw ex;

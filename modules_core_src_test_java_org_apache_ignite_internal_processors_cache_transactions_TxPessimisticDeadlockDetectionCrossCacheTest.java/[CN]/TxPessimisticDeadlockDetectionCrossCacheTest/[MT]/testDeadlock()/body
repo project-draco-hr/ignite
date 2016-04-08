@@ -1,0 +1,37 @@
+{
+  final CyclicBarrier barrier=new CyclicBarrier(2);
+  final AtomicInteger threadCnt=new AtomicInteger();
+  final AtomicBoolean deadlock=new AtomicBoolean();
+  IgniteInternalFuture<Long> fut=GridTestUtils.runMultiThreadedAsync(new Runnable(){
+    @Override public void run(){
+      int threadNum=threadCnt.getAndIncrement();
+      Ignite ignite=ignite(0);
+      IgniteCache<Integer,Integer> cache1=ignite.cache("cache" + (threadNum == 0 ? 0 : 1));
+      IgniteCache<Integer,Integer> cache2=ignite.cache("cache" + (threadNum == 0 ? 1 : 0));
+      try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ,500,0)){
+        int key1=primaryKey(cache1);
+        log.info(">>> Performs put [node=" + ((IgniteKernal)ignite).localNode() + ", tx="+ tx+ ", key="+ key1+ ", cache="+ cache1.getName()+ ']');
+        cache1.put(key1,0);
+        barrier.await();
+        int key2=primaryKey(cache2);
+        log.info(">>> Performs put [node=" + ((IgniteKernal)ignite).localNode() + ", tx="+ tx+ ", key="+ key2+ ", cache="+ cache2.getName()+ ']');
+        cache2.put(key2,1);
+        tx.commit();
+      }
+ catch (      Throwable e) {
+        if (hasCause(e,TransactionTimeoutException.class) && hasCause(e,TransactionDeadlockException.class)) {
+          if (deadlock.compareAndSet(false,true))           U.error(log,"At least one stack trace should contain " + TransactionDeadlockException.class.getSimpleName(),e);
+        }
+      }
+    }
+  }
+,2,"tx-thread");
+  fut.get();
+  assertTrue(deadlock.get());
+  for (int i=0; i < NODES_CNT; i++) {
+    Ignite ignite=ignite(i);
+    IgniteTxManager txMgr=((IgniteKernal)ignite).context().cache().context().tm();
+    ConcurrentMap<Long,TxDeadlockDetection.TxDeadlockFuture> futs=GridTestUtils.getFieldValue(txMgr,IgniteTxManager.class,"deadlockDetectFuts");
+    assertTrue(futs.isEmpty());
+  }
+}

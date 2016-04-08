@@ -1,0 +1,14 @@
+{
+  mapTxKeys(keys,txLocks);
+  UUID nodeId=nodesQueue.pollFirst();
+  boolean set=compareAndSet(null,nodeId);
+  assert set;
+  if (nodeId == null || itersCnt++ >= DEADLOCK_MAX_ITERS || timedOut)   onDone();
+ else {
+    final Set<IgniteTxKey> txKeys=pendingKeys.get(nodeId);
+    processedKeys.addAll(txKeys);
+    processedNodes.add(nodeId);
+    pendingKeys.remove(nodeId);
+    cctx.tm().txLocksInfo(nodeId,this,txKeys);
+  }
+}

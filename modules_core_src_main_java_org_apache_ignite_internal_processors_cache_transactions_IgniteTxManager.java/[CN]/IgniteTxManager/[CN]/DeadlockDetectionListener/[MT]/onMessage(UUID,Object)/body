@@ -1,0 +1,36 @@
+{
+  GridCacheMessage cacheMsg=(GridCacheMessage)msg;
+  unmarshall(nodeId,cacheMsg);
+  if (cacheMsg.classError() != null) {
+    try {
+      processFailedMessage(nodeId,cacheMsg);
+    }
+ catch (    Throwable e) {
+      U.error(log,"Failed to process message [senderId=" + nodeId + ", messageType="+ cacheMsg.getClass()+ ']',e);
+      if (e instanceof Error)       throw (Error)e;
+    }
+  }
+ else {
+    if (log.isDebugEnabled())     log.debug("Message received [locNodeId=" + cctx.localNodeId() + ", rmtNodeId="+ nodeId+ ", msg="+ msg+ ']');
+    if (msg instanceof TxLocksRequest) {
+      TxLocksRequest req=(TxLocksRequest)msg;
+      TxLocksResponse res=txLocksInfo(req.txKeys());
+      res.futureId(req.futureId());
+      try {
+        if (!cctx.localNodeId().equals(nodeId))         res.prepareMarshal(cctx);
+        cctx.gridIO().send(nodeId,TOPIC_TX,res,SYSTEM_POOL);
+      }
+ catch (      IgniteCheckedException e) {
+        U.error(log,"Failed to send response to node [node=" + nodeId + ", res="+ res+ ']',e);
+      }
+    }
+ else     if (msg instanceof TxLocksResponse) {
+      TxLocksResponse res=(TxLocksResponse)msg;
+      long futId=res.futureId();
+      TxDeadlockFuture fut=future(futId);
+      if (fut != null)       fut.onResult(nodeId,res);
+ else       U.warn(log,"Unexpected response received " + res);
+    }
+ else     throw new IllegalArgumentException("Unknown message [msg=" + msg + ']');
+  }
+}

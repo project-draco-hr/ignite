@@ -1,0 +1,23 @@
+{
+  reader.setBuffer(buf);
+  if (!reader.beforeMessageRead())   return false;
+switch (reader.state()) {
+case 0:
+    nearNodeId=reader.readUuid("nearNodeId");
+  if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 1:
+ownership=reader.readByte("ownership");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 2:
+threadId=reader.readLong("threadId");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 3:
+txId=reader.readMessage("txId");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+}
+return reader.afterMessageRead(TxLock.class);
+}
