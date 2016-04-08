@@ -1,0 +1,32 @@
+{
+  for (int i=0; i < 5; i++) {
+    U.resolveWorkDirectory("marshaller",true);
+    log.info("Iteration: " + i);
+    final int NODES=3;
+    startGridsMultiThreaded(NODES);
+    client=true;
+    startGrid(NODES);
+    client=false;
+    final IgniteInternalFuture fut=GridTestUtils.runAsync(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        for (int i=0; i < 3; i++) {
+          startGrid(NODES + 1);
+          U.sleep(1000);
+          stopGrid(NODES + 1);
+        }
+        return null;
+      }
+    }
+);
+    GridTestUtils.runMultiThreaded(new IgniteInClosure<Integer>(){
+      @Override public void apply(      Integer integer){
+        Ignite ignite=ignite(integer % 4);
+        while (!fut.isDone()) {
+          for (int i=0; i < 10; i++)           ignite.compute().broadcast(job(i));
+        }
+      }
+    }
+,(NODES + 1) * 5,"test");
+    stopAllGrids();
+  }
+}
