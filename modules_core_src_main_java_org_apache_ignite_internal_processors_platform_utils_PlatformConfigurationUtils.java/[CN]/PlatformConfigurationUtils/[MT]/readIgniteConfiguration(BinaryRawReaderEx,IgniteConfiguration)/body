@@ -11,10 +11,33 @@
   cfg.setNetworkTimeout(in.readLong());
   cfg.setWorkDirectory(in.readString());
   cfg.setLocalHost(in.readString());
+  cfg.setDaemon(in.readBoolean());
   readCacheConfigurations(in,cfg);
   readDiscoveryConfiguration(in,cfg);
   if (in.readBoolean()) {
     if (cfg.getBinaryConfiguration() == null)     cfg.setBinaryConfiguration(new BinaryConfiguration());
     cfg.getBinaryConfiguration().setCompactFooter(in.readBoolean());
+  }
+  int attrCnt=in.readInt();
+  if (attrCnt > 0) {
+    Map<String,Object> attrs=new HashMap<>(attrCnt);
+    for (int i=0; i < attrCnt; i++)     attrs.put(in.readString(),in.readObject());
+    cfg.setUserAttributes(attrs);
+  }
+  if (in.readBoolean()) {
+    AtomicConfiguration atomic=new AtomicConfiguration();
+    atomic.setAtomicSequenceReserveSize(in.readInt());
+    atomic.setBackups(in.readInt());
+    atomic.setCacheMode(CacheMode.fromOrdinal(in.readInt()));
+    cfg.setAtomicConfiguration(atomic);
+  }
+  if (in.readBoolean()) {
+    TransactionConfiguration tx=new TransactionConfiguration();
+    tx.setPessimisticTxLogSize(in.readInt());
+    tx.setDefaultTxConcurrency(TransactionConcurrency.fromOrdinal(in.readInt()));
+    tx.setDefaultTxIsolation(TransactionIsolation.fromOrdinal(in.readInt()));
+    tx.setDefaultTxTimeout(in.readLong());
+    tx.setPessimisticTxLogLinger(in.readInt());
+    cfg.setTransactionConfiguration(tx);
   }
 }
