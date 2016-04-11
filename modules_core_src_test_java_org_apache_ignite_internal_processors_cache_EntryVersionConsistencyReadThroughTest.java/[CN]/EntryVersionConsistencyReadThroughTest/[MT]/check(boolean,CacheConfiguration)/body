@@ -1,0 +1,42 @@
+{
+  grid(0).getOrCreateCache(cc);
+  try {
+    final int cnt=100;
+    for (int i=0; i < NODES_CNT; i++) {
+      final int iter=i;
+      final Set<String> keys=new LinkedHashSet<String>(){
+{
+          for (int i=0; i < cnt; i++)           add("key-" + iter + "-"+ i);
+        }
+      }
+;
+      IgniteEx grid=grid(i);
+      final IgniteCache<String,Integer> cache=grid.cache(null);
+      if (single)       for (      String key : keys)       cache.invoke(key,new DummyEntryProcessor());
+ else       cache.invokeAll(keys,new DummyEntryProcessor());
+      for (      String key : keys) {
+        Collection<ClusterNode> nodes=grid.affinity(null).mapKeyToPrimaryAndBackups(key);
+        List<IgniteEx> grids=grids(nodes);
+        GridCacheVersion ver0=null;
+        Object val0=null;
+        for (        IgniteEx g : grids) {
+          GridCacheAdapter<Object,Object> cx=g.context().cache().internalCache();
+          GridCacheEntryEx e=cx.peekEx(key);
+          assertNotNull("Failed to find entry on primary/backup node.",e);
+          GridCacheVersion ver=e.version();
+          Object val=e.rawGet().value(cx.context().cacheObjectContext(),true);
+          if (ver0 == null) {
+            ver0=ver;
+            val0=val;
+          }
+          assertEquals("Invalid version for key: " + key,ver0,ver);
+          assertNotNull("No value for key: " + key,val);
+          assertEquals("Invalid value for key: " + key,val0,val);
+        }
+      }
+    }
+  }
+  finally {
+    grid(0).destroyCache(null);
+  }
+}
