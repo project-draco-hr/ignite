@@ -1,0 +1,21 @@
+{
+  try {
+    IgfsPath inDir=new IgfsPath(PATH_INPUT);
+    igfs.mkdirs(inDir);
+    IgfsPath inFile=new IgfsPath(inDir,HadoopWordCount2.class.getSimpleName() + "-input");
+    generateTestFile(inFile.toString(),"red",red,"blue",blue,"green",green,"yellow",yellow);
+    boolean useNewMapper=(useNewBits & 1) == 0;
+    boolean useNewCombiner=(useNewBits & 2) == 0;
+    boolean useNewReducer=(useNewBits & 4) == 0;
+    for (int i=0; i < 12; i++) {
+      int bits=1 << i;
+      System.out.println("############################ Simulator kind = " + simulatorKind + ", Stage bits = "+ bits);
+      HadoopErrorSimulator sim=HadoopErrorSimulator.create(simulatorKind,bits);
+      doTestWithErrorSimulator(sim,inFile,useNewMapper,useNewCombiner,useNewReducer);
+    }
+  }
+ catch (  Throwable t) {
+    t.printStackTrace();
+    fail("Unexpected throwable: " + t);
+  }
+}
