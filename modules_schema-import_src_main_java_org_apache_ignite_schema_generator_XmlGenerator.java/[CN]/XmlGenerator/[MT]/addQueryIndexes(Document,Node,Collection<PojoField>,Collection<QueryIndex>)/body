@@ -1,0 +1,30 @@
+{
+  if (!idxs.isEmpty()) {
+    boolean firstIdx=true;
+    Element list=null;
+    for (    QueryIndex idx : idxs) {
+      Set<Map.Entry<String,Boolean>> dbIdxFlds=idx.getFields().entrySet();
+      int sz=dbIdxFlds.size();
+      List<T2<String,Boolean>> idxFlds=new ArrayList<>(sz);
+      for (      Map.Entry<String,Boolean> idxFld : dbIdxFlds) {
+        PojoField field=GeneratorUtils.findFieldByName(fields,idxFld.getKey());
+        if (field != null)         idxFlds.add(new T2<>(field.javaName(),idxFld.getValue()));
+ else         break;
+      }
+      if (idxFlds.size() == sz) {
+        if (firstIdx) {
+          Element prop=addProperty(doc,parent,"indexes",null);
+          list=addElement(doc,prop,"list");
+          firstIdx=false;
+        }
+        Element idxBean=addBean(doc,list,QueryIndex.class);
+        addProperty(doc,idxBean,"name",idx.getName());
+        Element idxType=addProperty(doc,idxBean,"indexType",null);
+        addElement(doc,idxType,"util:constant","static-field","org.apache.ignite.cache.QueryIndexType." + idx.getIndexType());
+        Element flds=addProperty(doc,idxBean,"fields",null);
+        Element fldsMap=addElement(doc,flds,"map");
+        for (        T2<String,Boolean> fld : idxFlds)         addElement(doc,fldsMap,"entry","key",fld.getKey(),"value",fld.getValue().toString());
+      }
+    }
+  }
+}
