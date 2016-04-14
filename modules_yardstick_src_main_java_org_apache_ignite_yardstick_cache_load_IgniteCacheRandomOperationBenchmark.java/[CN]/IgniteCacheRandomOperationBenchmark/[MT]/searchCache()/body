@@ -1,0 +1,56 @@
+{
+  availableCaches=new ArrayList<>(ignite().cacheNames().size());
+  txCaches=new ArrayList<>();
+  affCaches=new ArrayList<>();
+  keysCacheClasses=new HashMap<>();
+  valuesCacheClasses=new HashMap<>();
+  replaceEntryProc=new BenchmarkReplaceValueEntryProcessor(null);
+  removeEntryProc=new BenchmarkRemoveEntryProcessor();
+  for (  String cacheName : ignite().cacheNames()) {
+    IgniteCache<Object,Object> cache=ignite().cache(cacheName);
+    CacheConfiguration configuration=cache.getConfiguration(CacheConfiguration.class);
+    if (isClassDefinedInConfig(configuration)) {
+      if (configuration.getMemoryMode() == CacheMemoryMode.OFFHEAP_TIERED) {
+        throw new IgniteException("Off-heap mode is unsupported by the load test due to bugs IGNITE-2982" + " and IGNITE-2997");
+      }
+      ArrayList<Class> keys=new ArrayList<>();
+      ArrayList<Class> values=new ArrayList<>();
+      if (configuration.getQueryEntities() != null) {
+        Collection<QueryEntity> entries=configuration.getQueryEntities();
+        for (        QueryEntity queryEntity : entries) {
+          if (queryEntity.getKeyType() != null) {
+            Class keyClass=getClass().forName(queryEntity.getKeyType());
+            if (ModelUtil.canCreateInstance(keyClass))             keys.add(keyClass);
+ else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + queryEntity.getKeyType() + ']');
+          }
+          if (queryEntity.getValueType() != null) {
+            Class valueClass=getClass().forName(queryEntity.getValueType());
+            if (ModelUtil.canCreateInstance(valueClass))             values.add(valueClass);
+ else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + queryEntity.getKeyType() + ']');
+          }
+        }
+      }
+      if (configuration.getTypeMetadata() != null) {
+        Collection<CacheTypeMetadata> entries=configuration.getTypeMetadata();
+        for (        CacheTypeMetadata cacheTypeMetadata : entries) {
+          if (cacheTypeMetadata.getKeyType() != null) {
+            Class keyClass=getClass().forName(cacheTypeMetadata.getKeyType());
+            if (ModelUtil.canCreateInstance(keyClass))             keys.add(keyClass);
+ else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + cacheTypeMetadata.getKeyType() + ']');
+          }
+          if (cacheTypeMetadata.getValueType() != null) {
+            Class valueClass=getClass().forName(cacheTypeMetadata.getValueType());
+            if (ModelUtil.canCreateInstance(valueClass))             values.add(valueClass);
+ else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + cacheTypeMetadata.getKeyType() + ']');
+          }
+        }
+      }
+      if (keys.size() == 0 || values.size() == 0)       continue;
+      keysCacheClasses.put(cacheName,keys.toArray(new Class[]{}));
+      valuesCacheClasses.put(cacheName,values.toArray(new Class[]{}));
+    }
+    if (configuration.getCacheMode() != CacheMode.LOCAL)     affCaches.add(cache);
+    if (configuration.getAtomicityMode() == CacheAtomicityMode.TRANSACTIONAL)     txCaches.add(cache);
+    availableCaches.add(cache);
+  }
+}

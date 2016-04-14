@@ -1,0 +1,25 @@
+{
+  Affinity affinity=ignite().affinity(cacheName);
+  List<Integer> randmPartitions=new ArrayList<>(10);
+  if (affinity.partitions() <= SCAN_QUERY_PARTITIN_AMOUNT)   for (int i=0; i < affinity.partitions(); i++)   randmPartitions.add(i);
+ else {
+    for (int i=0; i < SCAN_QUERY_PARTITIN_AMOUNT; i++) {
+      int partitionNumber;
+      do       partitionNumber=nextRandom(affinity.partitions());
+ while (randmPartitions.contains(partitionNumber));
+      randmPartitions.add(partitionNumber);
+    }
+  }
+  Collections.sort(randmPartitions);
+  Map<Integer,ClusterNode> partPerNodes=affinity.mapPartitionsToNodes(randmPartitions);
+  Map<UUID,List<Integer>> nodesToPart=new HashMap<>();
+  for (  Map.Entry<Integer,ClusterNode> entry : partPerNodes.entrySet()) {
+    List<Integer> nodeParts=nodesToPart.get(entry.getValue().id());
+    if (nodeParts == null) {
+      nodeParts=new ArrayList<>();
+      nodesToPart.put(entry.getValue().id(),nodeParts);
+    }
+    nodeParts.add(entry.getKey());
+  }
+  return nodesToPart;
+}
