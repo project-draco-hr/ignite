@@ -6,6 +6,7 @@
   valuesCacheClasses=new HashMap<>();
   replaceEntryProc=new BenchmarkReplaceValueEntryProcessor(null);
   rmvEntryProc=new BenchmarkRemoveEntryProcessor();
+  cacheSqlDescriptors=new HashMap<>();
   for (  String cacheName : ignite().cacheNames()) {
     IgniteCache<Object,Object> cache=ignite().cache(cacheName);
     CacheConfiguration configuration=cache.getConfiguration(CacheConfiguration.class);
@@ -27,6 +28,7 @@
             Class valCls=getClass().forName(queryEntity.getValueType());
             if (ModelUtil.canCreateInstance(valCls))             values.add(valCls);
  else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + queryEntity.getKeyType() + ']');
+            cofigureCacheSqlDescriptor(cacheName,queryEntity,valCls);
           }
         }
       }
@@ -49,6 +51,7 @@
       keysCacheClasses.put(cacheName,keys.toArray(new Class[]{}));
       valuesCacheClasses.put(cacheName,values.toArray(new Class[]{}));
     }
+ else     keysCacheClasses.put(cacheName,new Class[]{randomKeyClass(cacheName)});
     if (configuration.getCacheMode() != CacheMode.LOCAL)     affCaches.add(cache);
     if (configuration.getAtomicityMode() == CacheAtomicityMode.TRANSACTIONAL)     txCaches.add(cache);
     availableCaches.add(cache);
