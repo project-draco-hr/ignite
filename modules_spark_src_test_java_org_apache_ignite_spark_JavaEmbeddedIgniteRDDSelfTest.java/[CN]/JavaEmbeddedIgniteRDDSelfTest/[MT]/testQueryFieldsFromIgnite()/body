@@ -1,0 +1,29 @@
+{
+  JavaSparkContext sc=createContext();
+  JavaIgniteContext<String,Entity> ic=null;
+  try {
+    ic=new JavaIgniteContext<>(sc,new IgniteConfigProvider(),false);
+    JavaIgniteRDD<String,Entity> cache=ic.fromCache(PARTITIONED_CACHE_NAME);
+    cache.savePairs(sc.parallelize(F.range(0,1001),GRID_CNT).mapToPair(INT_TO_ENTITY_F));
+    DataFrame df=cache.sql("select id, name, salary from Entity where name = ? and salary = ?","name50",5000);
+    df.printSchema();
+    Row[] res=df.collect();
+    assertEquals("Invalid result length",1,res.length);
+    assertEquals("Invalid result",50,res[0].get(0));
+    assertEquals("Invalid result","name50",res[0].get(1));
+    assertEquals("Invalid result",5000,res[0].get(2));
+    Column exp=new Column("NAME").equalTo("name50").and(new Column("SALARY").equalTo(5000));
+    DataFrame df0=cache.sql("select id, name, salary from Entity").where(exp);
+    df.printSchema();
+    Row[] res0=df0.collect();
+    assertEquals("Invalid result length",1,res0.length);
+    assertEquals("Invalid result",50,res0[0].get(0));
+    assertEquals("Invalid result","name50",res0[0].get(1));
+    assertEquals("Invalid result",5000,res0[0].get(2));
+    assertEquals("Invalid count",500,cache.sql("select id from Entity where id > 500").count());
+  }
+  finally {
+    if (ic != null)     ic.close(true);
+    sc.stop();
+  }
+}

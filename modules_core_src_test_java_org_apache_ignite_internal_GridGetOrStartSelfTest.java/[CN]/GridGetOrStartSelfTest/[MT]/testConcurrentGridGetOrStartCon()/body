@@ -1,0 +1,24 @@
+{
+  final IgniteConfiguration cfg=getConfiguration(null);
+  final AtomicReference<Ignite> ref=new AtomicReference<>();
+  try {
+    GridTestUtils.runMultiThreaded(new Runnable(){
+      @Override public void run(){
+        try {
+          Ignite ignite=Ignition.getOrStart(cfg);
+          boolean set=ref.compareAndSet(null,ignite);
+          if (!set)           assertEquals(ref.get(),ignite);
+        }
+ catch (        IgniteException e) {
+          throw new RuntimeException("Ignite error",e);
+        }
+      }
+    }
+,CONCURRENCY,"GridCreatorThread");
+  }
+ catch (  Exception ignored) {
+    fail("Exception is not expected");
+  }
+  G.stopAll(true);
+  assertTrue(G.allGrids().isEmpty());
+}

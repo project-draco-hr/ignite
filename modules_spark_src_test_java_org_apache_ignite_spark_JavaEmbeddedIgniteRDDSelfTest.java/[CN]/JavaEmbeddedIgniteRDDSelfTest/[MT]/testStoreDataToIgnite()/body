@@ -1,0 +1,19 @@
+{
+  JavaSparkContext sc=createContext();
+  JavaIgniteContext<String,String> ic=null;
+  try {
+    ic=new JavaIgniteContext<>(sc,new IgniteConfigProvider(),false);
+    ic.fromCache(PARTITIONED_CACHE_NAME).savePairs(sc.parallelize(F.range(0,KEYS_CNT),GRID_CNT).mapToPair(TO_PAIR_F));
+    Ignite ignite=ic.ignite();
+    IgniteCache<String,String> cache=ignite.cache(PARTITIONED_CACHE_NAME);
+    for (int i=0; i < KEYS_CNT; i++) {
+      String val=cache.get(String.valueOf(i));
+      assertNotNull("Value was not put to cache for key: " + i,val);
+      assertEquals("Invalid value stored for key: " + i,"val" + i,val);
+    }
+  }
+  finally {
+    if (ic != null)     ic.close(true);
+    sc.stop();
+  }
+}
