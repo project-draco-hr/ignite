@@ -1,0 +1,20 @@
+{
+  if (cctx.localNodeId().equals(nodeId)) {
+    cache.updateAllAsyncInternal(nodeId,req,new CI2<GridNearAtomicUpdateRequest,GridNearAtomicUpdateResponse>(){
+      @Override public void apply(      GridNearAtomicUpdateRequest req,      GridNearAtomicUpdateResponse res){
+        onResult(res.nodeId(),res,false);
+      }
+    }
+);
+  }
+ else {
+    try {
+      if (log.isDebugEnabled())       log.debug("Sending near atomic update request [nodeId=" + req.nodeId() + ", req="+ req+ ']');
+      cctx.io().send(req.nodeId(),req,cctx.ioPolicy());
+      if (syncMode == FULL_ASYNC)       onDone(new GridCacheReturn(cctx,true,true,null,true));
+    }
+ catch (    IgniteCheckedException e) {
+      onSendError(req,e);
+    }
+  }
+}

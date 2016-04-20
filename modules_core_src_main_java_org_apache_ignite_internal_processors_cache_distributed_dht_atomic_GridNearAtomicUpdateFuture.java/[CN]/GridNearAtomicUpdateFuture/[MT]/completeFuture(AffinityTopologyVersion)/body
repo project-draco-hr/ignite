@@ -1,6 +1,13 @@
 {
-  if (waitForPartitionExchange()) {
-    GridFutureAdapter<Void> fut=completeFuture0(topVer);
+  if (fastMap) {
+    GridFutureAdapter<Void> fut;
+synchronized (mux) {
+      if (this.topVer != AffinityTopologyVersion.ZERO && this.topVer.compareTo(topVer) < 0) {
+        if (topCompleteFut == null)         topCompleteFut=new GridFutureAdapter<>();
+        fut=topCompleteFut;
+      }
+ else       fut=null;
+    }
     if (fut != null && isDone()) {
       fut.onDone();
       return null;

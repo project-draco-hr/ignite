@@ -1,0 +1,12 @@
+{
+  if (key == null)   throw new NullPointerException("Null key.");
+  Object val=this.val;
+  if (val == null && op != GridCacheOperation.DELETE)   throw new NullPointerException("Null value.");
+  KeyCacheObject cacheKey=cctx.toCacheKeyObject(key);
+  if (op != TRANSFORM)   val=cctx.toCacheObject(val);
+  ClusterNode primary=cctx.affinity().primary(cacheKey,topVer);
+  if (primary == null)   throw new ClusterTopologyServerNotFoundException("Failed to map keys for cache (all partition nodes " + "left the grid).");
+  GridNearAtomicUpdateRequest req=new GridNearAtomicUpdateRequest(cctx.cacheId(),primary.id(),futVer,false,updVer,topVer,topLocked,syncMode,op,retval,expiryPlc,invokeArgs,filter,subjId,taskNameHash,skipStore,keepBinary,cctx.kernalContext().clientNode(),cctx.deploymentEnabled(),1);
+  req.addUpdateEntry(cacheKey,val,CU.TTL_NOT_CHANGED,CU.EXPIRE_TIME_CALCULATE,null,true);
+  return req;
+}

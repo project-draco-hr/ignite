@@ -1,0 +1,14 @@
+{
+  GridNearAtomicUpdateResponse res=null;
+synchronized (mux) {
+    GridNearAtomicUpdateRequest req=this.req != null && this.req.nodeId().equals(nodeId) ? this.req : null;
+    if (req != null && req.response() == null) {
+      res=new GridNearAtomicUpdateResponse(cctx.cacheId(),nodeId,req.futureVersion(),cctx.deploymentEnabled());
+      ClusterTopologyCheckedException e=new ClusterTopologyCheckedException("Primary node left grid " + "before response is received: " + nodeId);
+      e.retryReadyFuture(cctx.shared().nextAffinityReadyFuture(req.topologyVersion()));
+      res.addFailedKeys(req.keys(),e);
+    }
+  }
+  if (res != null)   onResult(nodeId,res,true);
+  return false;
+}
