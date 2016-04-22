@@ -9,8 +9,9 @@
   final String outFolder=outFolderTf.getText();
   final String pkg=pkgTf.getText();
   final File destFolder=new File(outFolder);
-  final boolean constructor=pojoConstructorCh.isSelected();
   final boolean includeKeys=pojoIncludeKeysCh.isSelected();
+  final boolean constructor=pojoConstructorCh.isSelected();
+  final boolean generateAliases=generateAliasesCh.isSelected();
   final boolean singleXml=xmlSingleFileCh.isSelected();
   Runnable task=new Task<Void>(){
     /** 
@@ -49,11 +50,11 @@
         }
       }
       for (      PojoDescriptor pojo : all) {
-        if (!singleXml)         XmlGenerator.generate(pkg,pojo,includeKeys,new File(destFolder,pojo.table() + ".xml"),askOverwrite);
+        if (!singleXml)         XmlGenerator.generate(pkg,pojo,includeKeys,generateAliases,new File(destFolder,pojo.table() + ".xml"),askOverwrite);
         CodeGenerator.pojos(pojo,outFolder,pkg,constructor,includeKeys,askOverwrite);
       }
-      if (singleXml)       XmlGenerator.generate(pkg,all,includeKeys,new File(outFolder,"ignite-type-metadata.xml"),askOverwrite);
-      CodeGenerator.snippet(all,pkg,includeKeys,outFolder,askOverwrite);
+      if (singleXml)       XmlGenerator.generate(pkg,all,includeKeys,generateAliases,new File(outFolder,"ignite-type-metadata.xml"),askOverwrite);
+      CodeGenerator.snippet(all,pkg,includeKeys,generateAliases,outFolder,askOverwrite);
       perceptualDelay(started);
       return null;
     }
@@ -132,7 +133,7 @@
       while (idx < part1.length && idx < part2.length) {
         String p1=part1[idx];
         String p2=part2[idx];
-        int cmp=p1.matches("\\d+") && p2.matches("\\d+") ? new Integer(p1).compareTo(new Integer(p2)) : part1[idx].compareTo(part2[idx]);
+        int cmp=p1.matches("\\d+") && p2.matches("\\d+") ? Integer.valueOf(p1).compareTo(Integer.valueOf(p2)) : part1[idx].compareTo(part2[idx]);
         if (cmp != 0)         return cmp;
         idx+=1;
       }
@@ -142,7 +143,7 @@
         String[] parts=left ? part1 : part2;
         while (idx < parts.length) {
           String p=parts[idx];
-          int cmp=p.matches("\\d+") ? new Integer(p).compareTo(0) : 1;
+          int cmp=p.matches("\\d+") ? Integer.valueOf(p).compareTo(0) : 1;
           if (cmp != 0)           return left ? cmp : -cmp;
           idx+=1;
         }
