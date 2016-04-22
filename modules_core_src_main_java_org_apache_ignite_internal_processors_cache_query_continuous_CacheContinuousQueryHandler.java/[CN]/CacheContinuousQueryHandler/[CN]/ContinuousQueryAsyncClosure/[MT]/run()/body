@@ -1,0 +1,26 @@
+{
+  final boolean notify=filter(evt,primary);
+  if (!primary())   return;
+  if (fut == null) {
+    onEntryUpdate(evt,notify,nodeId.equals(ctx.localNodeId()),recordIgniteEvt);
+    return;
+  }
+  if (fut.isDone()) {
+    if (fut.error() != null)     evt.entry().markFiltered();
+    onEntryUpdate(evt,notify,nodeId.equals(ctx.localNodeId()),recordIgniteEvt);
+  }
+ else {
+    fut.listen(new CI1<IgniteInternalFuture<?>>(){
+      @Override public void apply(      IgniteInternalFuture<?> f){
+        if (f.error() != null)         evt.entry().markFiltered();
+        ctx.asyncCallbackPool().execute(new Runnable(){
+          @Override public void run(){
+            onEntryUpdate(evt,notify,nodeId.equals(ctx.localNodeId()),recordIgniteEvt);
+          }
+        }
+,evt.entry().partition());
+      }
+    }
+);
+  }
+}

@@ -1,0 +1,22 @@
+{
+  for (  CacheEntryEvent<? extends QueryTestKey,? extends QueryTestValue> e : evts) {
+    if (e.getKey().compareTo(new QueryTestKey(KEYS)) < 0) {
+      rcvsEvts.add(new T2<>(e.getKey(),e.getValue()));
+      cntr.incrementAndGet();
+      if (cache != null) {
+        if (ThreadLocalRandom.current().nextBoolean()) {
+          Set<QueryTestKey> keys=new LinkedHashSet<>();
+          for (int key=KEYS; key < KEYS + KEYS_FROM_CALLBACK; key++)           keys.add(new QueryTestKey(key));
+          cache.invokeAll(keys,new IncrementTestEntryProcessor());
+        }
+ else {
+          for (int key=KEYS; key < KEYS + KEYS_FROM_CALLBACK; key++)           cache.invoke(new QueryTestKey(key),new IncrementTestEntryProcessor());
+        }
+      }
+    }
+ else {
+      evtsFromCb.add(new T2<>(e.getKey(),e.getValue()));
+      cbCntr.incrementAndGet();
+    }
+  }
+}

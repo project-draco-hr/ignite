@@ -4,14 +4,8 @@
     IgniteCacheAbstractBenchmark drv0=(IgniteCacheAbstractBenchmark)drv;
     if (drv0.cache() != null) {
       ContinuousQuery<Integer,Integer> qry=new ContinuousQuery<>();
-      qry.setLocalListener(new CacheEntryUpdatedListener<Integer,Integer>(){
-        @Override public void onUpdated(        Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> events) throws CacheEntryListenerException {
-          int size=0;
-          for (          CacheEntryEvent<? extends Integer,? extends Integer> e : events)           ++size;
-          cnt.addAndGet(size);
-        }
-      }
-);
+      final AtomicLong cnt=new AtomicLong();
+      qry.setLocalListener(localListener(cnt));
       qryCur=drv0.cache().query(qry);
       buildingService=Executors.newSingleThreadExecutor();
       buildingService.submit(new Runnable(){

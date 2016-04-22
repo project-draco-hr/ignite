@@ -1,0 +1,17 @@
+{
+  CacheEntryEvent<QueryTestKey,QueryTestValue> evt;
+  int cnt=0;
+  Map<QueryTestKey,Integer> vals=new HashMap<>();
+  while ((evt=queue.poll(100,TimeUnit.MILLISECONDS)) != null) {
+    assertNotNull(evt);
+    assertNotNull(evt.getKey());
+    Integer preVal=vals.get(evt.getKey());
+    if (preVal == null)     assertEquals(new QueryTestValue(0),evt.getValue());
+ else {
+      if (!new QueryTestValue(preVal + 1).equals(evt.getValue()))       assertEquals("Key event: " + evt.getKey(),new QueryTestValue(preVal + 1),evt.getValue());
+    }
+    vals.put(evt.getKey(),evt.getValue().val1);
+    ++cnt;
+  }
+  assertEquals(expCnt,cnt);
+}

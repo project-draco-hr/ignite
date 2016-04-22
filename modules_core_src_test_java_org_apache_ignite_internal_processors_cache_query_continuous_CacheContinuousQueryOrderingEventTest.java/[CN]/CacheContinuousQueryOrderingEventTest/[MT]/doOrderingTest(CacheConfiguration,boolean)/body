@@ -1,0 +1,77 @@
+{
+  ignite(0).createCache(ccfg);
+  List<QueryCursor<?>> qries=new ArrayList<>();
+  try {
+    List<BlockingQueue<CacheEntryEvent<QueryTestKey,QueryTestValue>>> rcvdEvts=new ArrayList<>(LISTENER_CNT * NODES);
+    final AtomicInteger qryCntr=new AtomicInteger(0);
+    final int threadCnt=20;
+    for (int idx=0; idx < NODES; idx++) {
+      for (int i=0; i < LISTENER_CNT; i++) {
+        BlockingQueue<CacheEntryEvent<QueryTestKey,QueryTestValue>> queue=new ArrayBlockingQueue<>(ITERATION_CNT * threadCnt);
+        ContinuousQuery qry=new ContinuousQuery();
+        if (async) {
+          qry.setLocalListener(new TestCacheAsyncEventListener(queue,qryCntr));
+          qry.setRemoteFilterFactory(FactoryBuilder.factoryOf(new CacheTestRemoteFilterAsync(ccfg.getName())));
+        }
+ else {
+          qry.setLocalListener(new TestCacheEventListener(queue,qryCntr));
+          qry.setRemoteFilterFactory(FactoryBuilder.factoryOf(new CacheTestRemoteFilter(ccfg.getName())));
+        }
+        rcvdEvts.add(queue);
+        IgniteCache<Object,Object> cache=grid(idx).cache(ccfg.getName());
+        QueryCursor qryCursor=cache.query(qry);
+        qries.add(qryCursor);
+      }
+    }
+    IgniteInternalFuture<Long> f=GridTestUtils.runMultiThreadedAsync(new Runnable(){
+      @Override public void run(){
+        ThreadLocalRandom rnd=ThreadLocalRandom.current();
+        for (int i=0; i < ITERATION_CNT; i++) {
+          IgniteCache<QueryTestKey,QueryTestValue> cache=grid(rnd.nextInt(NODES)).cache(ccfg.getName());
+          QueryTestKey key=new QueryTestKey(rnd.nextInt(KEYS));
+          boolean startTx=cache.getConfiguration(CacheConfiguration.class).getAtomicityMode() == TRANSACTIONAL && rnd.nextBoolean();
+          Transaction tx=null;
+          if (startTx)           tx=cache.unwrap(Ignite.class).transactions().txStart();
+          try {
+            if ((cache.get(key) == null) || rnd.nextBoolean()) {
+              cache.invoke(key,new CacheEntryProcessor<QueryTestKey,QueryTestValue,Object>(){
+                @Override public Object process(                MutableEntry<QueryTestKey,QueryTestValue> entry,                Object... arguments) throws EntryProcessorException {
+                  if (entry.exists())                   entry.setValue(new QueryTestValue(entry.getValue().val1 + 1));
+ else                   entry.setValue(new QueryTestValue(0));
+                  return null;
+                }
+              }
+);
+            }
+ else {
+              QueryTestValue val;
+              QueryTestValue newVal;
+              do {
+                val=cache.get(key);
+                newVal=val == null ? new QueryTestValue(0) : new QueryTestValue(val.val1 + 1);
+              }
+ while (!cache.replace(key,val,newVal));
+            }
+          }
+  finally {
+            if (tx != null)             tx.commit();
+          }
+        }
+      }
+    }
+,threadCnt,"put-thread");
+    f.get(15,TimeUnit.SECONDS);
+    GridTestUtils.waitForCondition(new PA(){
+      @Override public boolean apply(){
+        return qryCntr.get() >= ITERATION_CNT * threadCnt * LISTENER_CNT* NODES;
+      }
+    }
+,1000L);
+    for (    BlockingQueue<CacheEntryEvent<QueryTestKey,QueryTestValue>> queue : rcvdEvts)     checkEvents(queue,ITERATION_CNT * threadCnt);
+    assertFalse("Ordering invocations of filter broken.",fail);
+  }
+  finally {
+    for (    QueryCursor<?> qry : qries)     qry.close();
+    ignite(0).destroyCache(ccfg.getName());
+  }
+}

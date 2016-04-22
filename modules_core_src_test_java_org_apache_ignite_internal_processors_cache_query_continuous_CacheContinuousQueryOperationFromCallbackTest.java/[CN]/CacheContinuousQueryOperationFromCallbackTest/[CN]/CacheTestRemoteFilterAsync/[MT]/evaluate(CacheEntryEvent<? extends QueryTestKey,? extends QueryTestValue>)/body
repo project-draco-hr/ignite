@@ -1,0 +1,15 @@
+{
+  if (e.getKey().compareTo(new QueryTestKey(KEYS)) < 0) {
+    IgniteCache<QueryTestKey,QueryTestValue> cache=ignite.cache(cacheName);
+    if (ThreadLocalRandom.current().nextBoolean()) {
+      Set<QueryTestKey> keys=new LinkedHashSet<>();
+      for (int key=KEYS; key < KEYS + KEYS_FROM_CALLBACK; key++)       keys.add(new QueryTestKey(key));
+      cache.invokeAll(keys,new IncrementTestEntryProcessor());
+    }
+ else {
+      for (int key=KEYS; key < KEYS + KEYS_FROM_CALLBACK; key++)       cache.invoke(new QueryTestKey(key),new IncrementTestEntryProcessor());
+    }
+    filterCbCntr.incrementAndGet();
+  }
+  return true;
+}

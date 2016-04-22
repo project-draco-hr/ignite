@@ -1,0 +1,90 @@
+{
+  ignite(0).createCache(ccfg);
+  ThreadLocalRandom rnd=ThreadLocalRandom.current();
+  try {
+    for (int i=0; i < ITERATION_CNT; i++) {
+      log.info("Start iteration: " + i);
+      int nodeIdx=i % NODES;
+      final IgniteCache cache=grid(nodeIdx).cache(ccfg.getName());
+      final QueryTestKey key=NODES - 1 != nodeIdx ? affinityKey(cache) : new QueryTestKey(1);
+      final QueryTestValue val0=new QueryTestValue(1);
+      final QueryTestValue newVal=new QueryTestValue(2);
+      final CountDownLatch latch=new CountDownLatch(1);
+      final CountDownLatch evtFromLsnrLatch=new CountDownLatch(1);
+      IgniteBiInClosure<Ignite,CacheEntryEvent<? extends QueryTestKey,? extends QueryTestValue>> fltrClsr=new IgniteBiInClosure<Ignite,CacheEntryEvent<? extends QueryTestKey,? extends QueryTestValue>>(){
+        @Override public void apply(        Ignite ignite,        CacheEntryEvent<? extends QueryTestKey,? extends QueryTestValue> e){
+          if (asyncFltr) {
+            assertFalse("Failed: " + Thread.currentThread().getName(),Thread.currentThread().getName().contains("sys-"));
+            assertTrue("Failed: " + Thread.currentThread().getName(),Thread.currentThread().getName().contains("callback-"));
+          }
+        }
+      }
+;
+      IgniteBiInClosure<Ignite,CacheEntryEvent<? extends QueryTestKey,? extends QueryTestValue>> lsnrClsr=new IgniteBiInClosure<Ignite,CacheEntryEvent<? extends QueryTestKey,? extends QueryTestValue>>(){
+        @Override public void apply(        Ignite ignite,        CacheEntryEvent<? extends QueryTestKey,? extends QueryTestValue> e){
+          IgniteCache<Object,Object> cache0=ignite.cache(cache.getName());
+          QueryTestValue val=e.getValue();
+          if (val == null)           return;
+ else           if (val.equals(newVal)) {
+            evtFromLsnrLatch.countDown();
+            return;
+          }
+ else           if (!val.equals(val0))           return;
+          Transaction tx=null;
+          try {
+            if (cache0.getConfiguration(CacheConfiguration.class).getAtomicityMode() == TRANSACTIONAL)             tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ);
+            assertEquals(val,val0);
+            cache0.put(key,newVal);
+            if (tx != null)             tx.commit();
+            latch.countDown();
+          }
+ catch (          Exception exp) {
+            log.error("Failed: ",exp);
+            throw new IgniteException(exp);
+          }
+ finally {
+            if (tx != null)             tx.close();
+          }
+        }
+      }
+;
+      QueryCursor qry=null;
+      MutableCacheEntryListenerConfiguration<QueryTestKey,QueryTestValue> lsnrCfg=null;
+      CacheInvokeListener locLsnr=asyncLsnr ? new CacheInvokeListenerAsync(lsnrClsr) : new CacheInvokeListener(lsnrClsr);
+      CacheEntryEventSerializableFilter<QueryTestKey,QueryTestValue> rmtFltr=asyncFltr ? new CacheTestRemoteFilterAsync(fltrClsr) : new CacheTestRemoteFilter(fltrClsr);
+      if (jcacheApi) {
+        lsnrCfg=new MutableCacheEntryListenerConfiguration<>(FactoryBuilder.factoryOf(locLsnr),FactoryBuilder.factoryOf(rmtFltr),true,false);
+        cache.registerCacheEntryListener(lsnrCfg);
+      }
+ else {
+        ContinuousQuery<QueryTestKey,QueryTestValue> conQry=new ContinuousQuery<>();
+        conQry.setLocalListener(locLsnr);
+        conQry.setRemoteFilterFactory(FactoryBuilder.factoryOf(rmtFltr));
+        qry=cache.query(conQry);
+      }
+      try {
+        if (rnd.nextBoolean())         cache.put(key,val0);
+ else {
+          cache.invoke(key,new CacheEntryProcessor(){
+            @Override public Object process(            MutableEntry entry,            Object... arguments) throws EntryProcessorException {
+              entry.setValue(val0);
+              return null;
+            }
+          }
+);
+        }
+        assertTrue("Failed to waiting event.",U.await(latch,3,SECONDS));
+        assertEquals(cache.get(key),new QueryTestValue(2));
+        assertTrue("Failed to waiting event from listener.",U.await(latch,3,SECONDS));
+      }
+  finally {
+        if (qry != null)         qry.close();
+        if (lsnrCfg != null)         cache.deregisterCacheEntryListener(lsnrCfg);
+      }
+      log.info("Iteration finished: " + i);
+    }
+  }
+  finally {
+    ignite(0).destroyCache(ccfg.getName());
+  }
+}

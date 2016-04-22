@@ -1,0 +1,16 @@
+{
+  CacheContinuousQueryEntry entry=evt.entry();
+  boolean notify=!entry.isFiltered();
+  try {
+    if (notify && getEventFilter() != null)     notify=getEventFilter().evaluate(evt);
+  }
+ catch (  Exception e) {
+    U.error(log,"CacheEntryEventFilter failed: " + e);
+  }
+  if (!notify)   entry.markFiltered();
+  if (!primary && !internal && entry.updateCounter() != -1L) {
+    entry.markBackup();
+    backupQueue.add(entry);
+  }
+  return notify;
+}
