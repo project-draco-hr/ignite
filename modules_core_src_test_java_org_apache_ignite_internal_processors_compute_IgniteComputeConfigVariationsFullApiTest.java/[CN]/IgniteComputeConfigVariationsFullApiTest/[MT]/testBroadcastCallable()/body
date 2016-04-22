@@ -1,0 +1,16 @@
+{
+  runTest(callableFactories,new ComputeTest(){
+    @Override public void test(    Factory factory,    Ignite ignite) throws Exception {
+      EchoCallable job=(EchoCallable)factory.create();
+      job.setArg(null);
+      final Collection<Object> resultsAllNull=ignite.compute().broadcast(job);
+      assertEquals("Result's size mismatch: job must be run on all server nodes",gridCount() - clientsCount(),resultsAllNull.size());
+      for (      Object o : resultsAllNull)       assertNull("All results must be null",o);
+      job.setArg(value(0));
+      Collection<Object> resultsNotNull=ignite.compute().broadcast(job);
+      checkResultsClassCount(gridCount() - clientsCount(),resultsNotNull,value(0).getClass());
+      for (      Object o : resultsNotNull)       assertEquals("Invalid broadcast results",value(0),o);
+    }
+  }
+);
+}

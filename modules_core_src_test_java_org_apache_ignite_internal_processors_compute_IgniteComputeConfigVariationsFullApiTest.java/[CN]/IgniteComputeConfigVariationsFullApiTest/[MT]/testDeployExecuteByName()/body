@@ -1,0 +1,19 @@
+{
+  runTest(jobFactories,new ComputeTest(){
+    @Override public void test(    Factory factory,    Ignite ignite) throws Exception {
+      final int[] i={-1};
+      final IgniteCompute comp=ignite.compute();
+      comp.localDeployTask(TestTask.class,TestTask.class.getClassLoader());
+      List<Object> results=ignite.compute().execute(TestTask.class.getName(),new T2<>((Factory<ComputeJobAdapter>)factory,(Factory<Object>)new Factory<Object>(){
+        @Override public Object create(){
+          return value(i[0]++);
+        }
+      }
+));
+      checkResultsClassCount(MAX_JOB_COUNT - 1,results,value(0).getClass());
+      assertCollectionsEquals("Results value mismatch",createGoldenResults(),results);
+      comp.undeployTask(TestTask.class.getName());
+    }
+  }
+);
+}

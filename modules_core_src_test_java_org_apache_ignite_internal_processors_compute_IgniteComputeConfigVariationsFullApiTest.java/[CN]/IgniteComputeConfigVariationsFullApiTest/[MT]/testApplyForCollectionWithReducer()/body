@@ -1,0 +1,25 @@
+{
+  runTest(closureFactories,new ComputeTest(){
+    @Override public void test(    Factory factory,    Ignite ignite) throws Exception {
+      Collection<Object> params=new ArrayList<>(MAX_JOB_COUNT);
+      for (int i=0; i < MAX_JOB_COUNT; ++i) {
+        params.add(value(i - 1));
+      }
+      boolean res=ignite.compute().apply((IgniteClosure<Object,Object>)factory.create(),params,new IgniteReducer<Object,Boolean>(){
+        private Collection<Object> results=new ArrayList<>(MAX_JOB_COUNT);
+        @Override public boolean collect(        @Nullable Object o){
+          results.add(o);
+          return true;
+        }
+        @Override public Boolean reduce(){
+          checkResultsClassCount(MAX_JOB_COUNT - 1,results,value(0).getClass());
+          assertCollectionsEquals("Results value mismatch",createGoldenResults(),results);
+          return true;
+        }
+      }
+);
+      assertTrue(res);
+    }
+  }
+);
+}

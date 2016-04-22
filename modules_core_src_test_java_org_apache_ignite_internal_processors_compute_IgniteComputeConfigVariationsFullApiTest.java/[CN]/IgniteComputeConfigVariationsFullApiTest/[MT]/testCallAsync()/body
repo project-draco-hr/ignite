@@ -1,0 +1,19 @@
+{
+  runTest(callableFactories,new ComputeTest(){
+    @Override public void test(    Factory factory,    Ignite ignite) throws Exception {
+      final IgniteCompute comp=ignite.compute().withAsync();
+      Collection<ComputeTaskFuture<Object>> futures=new ArrayList<>(MAX_JOB_COUNT);
+      for (int i=0; i < MAX_JOB_COUNT; ++i) {
+        EchoCallable job=(EchoCallable)factory.create();
+        job.setArg(value(i - 1));
+        comp.call(job);
+        futures.add(comp.future());
+      }
+      Collection<Object> results=new ArrayList<>(MAX_JOB_COUNT);
+      for (      ComputeTaskFuture<Object> future : futures)       results.add(future.get());
+      checkResultsClassCount(MAX_JOB_COUNT - 1,results,value(0).getClass());
+      assertCollectionsEquals("Results value mismatch",createGoldenResults(),results);
+    }
+  }
+);
+}

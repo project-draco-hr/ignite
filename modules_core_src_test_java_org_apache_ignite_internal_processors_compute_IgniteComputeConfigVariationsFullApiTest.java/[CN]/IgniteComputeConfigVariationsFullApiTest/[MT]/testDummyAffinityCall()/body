@@ -1,0 +1,17 @@
+{
+  runTest(callableFactories,new ComputeTest(){
+    @Override public void test(    Factory factory,    Ignite ignite) throws Exception {
+      ignite.getOrCreateCache(CACHE_NAME);
+      final IgniteCompute comp=ignite.compute();
+      Collection<Object> results=new ArrayList<>(MAX_JOB_COUNT);
+      for (int i=0; i < MAX_JOB_COUNT; ++i) {
+        EchoCallable job=(EchoCallable)factory.create();
+        job.setArg(value(i - 1));
+        results.add(comp.affinityCall("test",key(0),job));
+      }
+      checkResultsClassCount(MAX_JOB_COUNT - 1,results,value(0).getClass());
+      assertCollectionsEquals("Results value mismatch",createGoldenResults(),results);
+    }
+  }
+);
+}

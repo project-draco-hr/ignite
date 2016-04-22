@@ -1,0 +1,16 @@
+{
+  runTest(jobFactories,new ComputeTest(){
+    @Override public void test(    Factory factory,    Ignite ignite) throws Exception {
+      final int[] i={-1};
+      List<Object> results=ignite.compute().execute(TestTask.class,new T2<>((Factory<ComputeJobAdapter>)factory,(Factory<Object>)new Factory<Object>(){
+        @Override public Object create(){
+          return value(i[0]++);
+        }
+      }
+));
+      checkResultsClassCount(MAX_JOB_COUNT - 1,results,value(0).getClass());
+      assertCollectionsEquals("Results value mismatch",createGoldenResults(),results);
+    }
+  }
+);
+}

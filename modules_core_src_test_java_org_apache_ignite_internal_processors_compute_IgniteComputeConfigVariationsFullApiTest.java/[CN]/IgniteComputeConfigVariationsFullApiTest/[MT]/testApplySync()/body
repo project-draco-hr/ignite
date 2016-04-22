@@ -1,0 +1,13 @@
+{
+  runTest(closureFactories,new ComputeTest(){
+    @Override public void test(    Factory factory,    Ignite ignite) throws Exception {
+      Collection<Object> results=new ArrayList<>(MAX_JOB_COUNT);
+      for (int i=0; i < MAX_JOB_COUNT; ++i) {
+        results.add(ignite.compute().apply((IgniteClosure<Object,Object>)factory.create(),value(i - 1)));
+      }
+      checkResultsClassCount(MAX_JOB_COUNT - 1,results,value(0).getClass());
+      assertCollectionsEquals("Results value mismatch",createGoldenResults(),results);
+    }
+  }
+);
+}
