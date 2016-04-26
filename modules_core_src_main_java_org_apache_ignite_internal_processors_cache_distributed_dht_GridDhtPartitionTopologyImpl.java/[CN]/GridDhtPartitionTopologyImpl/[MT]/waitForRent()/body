@@ -1,15 +1,37 @@
 {
   boolean changed=false;
-  for (Iterator<GridDhtLocalPartition> it=locParts.values().iterator(); it.hasNext(); ) {
-    GridDhtLocalPartition p=it.next();
-    GridDhtPartitionState state=p.state();
+  GridDhtLocalPartition[] locPartsCopy=new GridDhtLocalPartition[locParts.length];
+  lock.readLock().lock();
+  try {
+    for (int i=0; i < locParts.length; i++)     locPartsCopy[i]=locParts[i];
+  }
+  finally {
+    lock.readLock().unlock();
+  }
+  GridDhtLocalPartition part;
+  for (int i=0; i < locPartsCopy.length; i++) {
+    part=locPartsCopy[i];
+    if (part == null)     continue;
+    GridDhtPartitionState state=part.state();
     if (state == RENTING || state == EVICTED) {
-      if (log.isDebugEnabled())       log.debug("Waiting for renting partition: " + p);
-      p.rent(true).get();
-      if (log.isDebugEnabled())       log.debug("Finished waiting for renting partition: " + p);
-      it.remove();
-      changed=true;
+      if (log.isDebugEnabled())       log.debug("Waiting for renting partition: " + part);
+      part.rent(true).get();
+      if (log.isDebugEnabled())       log.debug("Finished waiting for renting partition: " + part);
     }
+  }
+  lock.writeLock().lock();
+  try {
+    for (int i=0; i < locParts.length; i++) {
+      part=locParts[i];
+      if (part == null)       continue;
+      if (part.state() == EVICTED) {
+        locParts[i]=null;
+        changed=true;
+      }
+    }
+  }
+  finally {
+    lock.writeLock().unlock();
   }
   return changed;
 }

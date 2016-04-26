@@ -1,7 +1,13 @@
 {
+  Map<Integer,GridDhtPartitionState> map=new HashMap<>();
   lock.readLock().lock();
   try {
-    return new GridDhtPartitionMap2(cctx.nodeId(),updateSeq.get(),topVer,F.viewReadOnly(locParts,CU.part2state()),true);
+    for (int i=0; i < locParts.length; i++) {
+      GridDhtLocalPartition part=locParts[i];
+      if (part == null)       continue;
+      map.put(i,part.state());
+    }
+    return new GridDhtPartitionMap2(cctx.nodeId(),updateSeq.get(),topVer,Collections.unmodifiableMap(map),true);
   }
   finally {
     lock.readLock().unlock();
