@@ -1,0 +1,43 @@
+{
+  IgniteTransactions txs=ignite.transactions();
+  IgniteCache cache=ignite.cache(null);
+  for (  boolean commit : new boolean[]{true,false}) {
+    for (    TransactionConcurrency c : TransactionConcurrency.values()) {
+      for (      TransactionIsolation isolation : TransactionIsolation.values()) {
+        try (Transaction tx=txs.txStart(c,isolation)){
+          checkFastTxFinish(tx,commit);
+        }
+       }
+    }
+    for (int i=0; i < 100; i++) {
+      try (Transaction tx=txs.txStart(OPTIMISTIC,REPEATABLE_READ)){
+        cache.get(i);
+        checkFastTxFinish(tx,commit);
+      }
+       try (Transaction tx=txs.txStart(OPTIMISTIC,READ_COMMITTED)){
+        cache.get(i);
+        checkFastTxFinish(tx,commit);
+      }
+     }
+    for (int i=0; i < 100; i++) {
+      try (Transaction tx=txs.txStart(OPTIMISTIC,SERIALIZABLE)){
+        cache.get(i);
+        checkNormalTxFinish(tx,commit);
+      }
+       try (Transaction tx=txs.txStart(PESSIMISTIC,REPEATABLE_READ)){
+        cache.get(i);
+        checkNormalTxFinish(tx,commit);
+      }
+     }
+    for (int i=0; i < 100; i++) {
+      for (      TransactionConcurrency c : TransactionConcurrency.values()) {
+        for (        TransactionIsolation isolation : TransactionIsolation.values()) {
+          try (Transaction tx=txs.txStart(c,isolation)){
+            cache.put(i,i);
+            checkNormalTxFinish(tx,commit);
+          }
+         }
+      }
+    }
+  }
+}

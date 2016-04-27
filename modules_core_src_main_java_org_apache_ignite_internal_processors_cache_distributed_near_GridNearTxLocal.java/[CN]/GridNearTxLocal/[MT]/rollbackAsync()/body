@@ -1,5 +1,13 @@
 {
   if (log.isDebugEnabled())   log.debug("Rolling back near tx: " + this);
+  if (fastFinish()) {
+    state(PREPARING);
+    state(PREPARED);
+    state(ROLLING_BACK);
+    cctx.tm().fastFinishTx(this,false);
+    state(ROLLED_BACK);
+    return new GridFinishedFuture<>((IgniteInternalTx)this);
+  }
   GridNearTxFinishFuture fut=rollbackFut;
   if (fut != null)   return fut;
   if (!ROLLBACK_FUT_UPD.compareAndSet(this,null,fut=new GridNearTxFinishFuture<>(cctx,this,false)))   return rollbackFut;

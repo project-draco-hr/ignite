@@ -1,5 +1,13 @@
 {
   if (log.isDebugEnabled())   log.debug("Committing near local tx: " + this);
+  if (fastFinish()) {
+    state(PREPARING);
+    state(PREPARED);
+    state(COMMITTING);
+    cctx.tm().fastFinishTx(this,true);
+    state(COMMITTED);
+    return new GridFinishedFuture<>((IgniteInternalTx)this);
+  }
   prepareAsync();
   GridNearTxFinishFuture fut=commitFut;
   if (fut == null && !COMMIT_FUT_UPD.compareAndSet(this,null,fut=new GridNearTxFinishFuture<>(cctx,this,true)))   return commitFut;
