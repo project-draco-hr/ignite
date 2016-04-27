@@ -1,0 +1,28 @@
+{
+  utilityPool.execute(new Runnable(){
+    @Override public void run(){
+      if (spiState == DISCONNECTED) {
+        if (log.isDebugEnabled())         log.debug("Ignoring ping request, SPI is already disconnected: " + msg);
+        return;
+      }
+      final ClientMessageWorker worker=clientMsgWorkers.get(msg.creatorNodeId());
+      if (worker == null) {
+        if (log.isDebugEnabled())         log.debug("Ping request from dead client node, will be skipped: " + msg.creatorNodeId());
+      }
+ else {
+        boolean res;
+        try {
+          res=pingNode(msg.nodeToPing());
+        }
+ catch (        IgniteSpiException e) {
+          log.error("Failed to ping node [nodeToPing=" + msg.nodeToPing() + ']',e);
+          res=false;
+        }
+        TcpDiscoveryClientPingResponse pingRes=new TcpDiscoveryClientPingResponse(getLocalNodeId(),msg.nodeToPing(),res);
+        pingRes.verify(getLocalNodeId());
+        worker.addMessage(pingRes);
+      }
+    }
+  }
+);
+}

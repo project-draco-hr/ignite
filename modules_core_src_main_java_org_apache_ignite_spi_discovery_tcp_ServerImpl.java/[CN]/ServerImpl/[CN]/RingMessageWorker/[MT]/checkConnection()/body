@@ -1,0 +1,15 @@
+{
+  Boolean hasRemoteSrvNodes=null;
+  if (spi.failureDetectionTimeoutEnabled() && !failureThresholdReached && U.currentTimeMillis() - locNode.lastExchangeTime() >= connCheckThreshold && spiStateCopy() == CONNECTED && (hasRemoteSrvNodes=ring.hasRemoteServerNodes())) {
+    log.info("Local node seems to be disconnected from topology (failure detection timeout " + "is reached) [failureDetectionTimeout=" + spi.failureDetectionTimeout() + ", connCheckFreq="+ connCheckFreq+ ']');
+    failureThresholdReached=true;
+    lastTimeConnCheckMsgSent=0;
+  }
+  long elapsed=(lastTimeConnCheckMsgSent + connCheckFreq) - U.currentTimeMillis();
+  if (elapsed > 0)   return;
+  if (hasRemoteSrvNodes == null)   hasRemoteSrvNodes=ring.hasRemoteServerNodes();
+  if (hasRemoteSrvNodes) {
+    sendMessageAcrossRing(new TcpDiscoveryConnectionCheckMessage(locNode));
+    lastTimeConnCheckMsgSent=U.currentTimeMillis();
+  }
+}
