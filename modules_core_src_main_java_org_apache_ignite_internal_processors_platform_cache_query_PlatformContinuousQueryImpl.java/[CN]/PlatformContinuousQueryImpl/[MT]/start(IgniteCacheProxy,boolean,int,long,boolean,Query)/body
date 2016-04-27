@@ -1,2 +1,43 @@
 {
+  lock.writeLock().lock();
+  try {
+    try {
+      ContinuousQuery qry=new ContinuousQuery();
+      qry.setLocalListener(this);
+      qry.setRemoteFilter(this);
+      qry.setPageSize(bufSize);
+      qry.setTimeInterval(timeInterval);
+      qry.setAutoUnsubscribe(autoUnsubscribe);
+      qry.setInitialQuery(initialQry);
+      cursor=cache.query(qry.setLocal(loc));
+      if (initialQry != null)       initialQryCur=new PlatformQueryCursor(platformCtx,new QueryCursorEx<Cache.Entry>(){
+        @Override public Iterator<Cache.Entry> iterator(){
+          return cursor.iterator();
+        }
+        @Override public List<Cache.Entry> getAll(){
+          return cursor.getAll();
+        }
+        @Override public void close(){
+        }
+        @Override public void getAll(        Consumer<Cache.Entry> clo) throws IgniteCheckedException {
+          for (          Cache.Entry t : this)           clo.consume(t);
+        }
+        @Override public List<GridQueryFieldMetadata> fieldsMeta(){
+          return null;
+        }
+      }
+,initialQry.getPageSize() > 0 ? initialQry.getPageSize() : Query.DFLT_PAGE_SIZE);
+    }
+ catch (    Exception e) {
+      try {
+        close0();
+      }
+ catch (      Exception ignored) {
+      }
+      throw PlatformUtils.unwrapQueryException(e);
+    }
+  }
+  finally {
+    lock.writeLock().unlock();
+  }
 }

@@ -1,0 +1,24 @@
+{
+  if (props != null) {
+    for (    Map.Entry<String,Object> prop : props.entrySet()) {
+      String fieldName=prop.getKey();
+      if (fieldName == null)       throw new IgniteException("Java object/factory field name cannot be null: " + clsName);
+      Field field=U.findField(obj.getClass(),fieldName);
+      if (field == null)       throw new IgniteException("Java object/factory class field is not found [" + "className=" + clsName + ", fieldName="+ fieldName+ ']');
+      try {
+        field.set(obj,prop.getValue());
+      }
+ catch (      Exception e) {
+        throw new IgniteException("Failed to set Java object/factory field [className=" + clsName + ", fieldName="+ fieldName+ ", fieldValue="+ prop.getValue()+ ']',e);
+      }
+    }
+  }
+  if (ctx != null) {
+    try {
+      ctx.resource().injectGeneric(obj);
+    }
+ catch (    IgniteCheckedException e) {
+      throw new IgniteException("Failed to inject resources to Java factory: " + clsName,e);
+    }
+  }
+}

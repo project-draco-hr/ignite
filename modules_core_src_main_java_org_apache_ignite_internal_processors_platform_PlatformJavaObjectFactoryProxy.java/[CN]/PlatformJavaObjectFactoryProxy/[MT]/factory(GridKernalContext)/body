@@ -1,0 +1,19 @@
+{
+  Object res;
+switch (factoryTyp) {
+case TYP_DEFAULT:
+    res=new PlatformDefaultJavaObjectFactory();
+  break;
+case TYP_USER:
+res=PlatformUtils.createJavaObject(clsName);
+break;
+default :
+throw new IgniteException("Unsupported Java object factory type: " + factoryTyp);
+}
+if (res instanceof PlatformJavaObjectFactoryEx) ((PlatformJavaObjectFactoryEx)res).initialize(payload,props);
+ else {
+PlatformUtils.initializeJavaObject(res,clsName,props,ctx);
+if (!(res instanceof PlatformJavaObjectFactory)) res=new PlatformJavaObjectSingletonFactory<>(res);
+}
+return (PlatformJavaObjectFactory)res;
+}
