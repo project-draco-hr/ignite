@@ -7,10 +7,11 @@
     if (NO == choice || NO_TO_ALL == choice)     return;
   }
   Collection<String> src=new ArrayList<>(256);
-  header(src,pkg,"java.sql.*;java.util.*;" + "org.apache.ignite.cache.*;org.apache.ignite.cache.store.jdbc.*;" + "org.apache.ignite.configuration.*","CacheConfig","CacheConfig");
+  header(src,pkg,"CacheConfig","CacheConfig","java.sql.*","java.util.*","","org.apache.ignite.cache.*","org.apache.ignite.cache.store.jdbc.*","org.apache.ignite.configuration.*");
   for (  PojoDescriptor pojo : pojos) {
     String tbl=pojo.table();
     String valClsName=pojo.valueClassName();
+    Collection<PojoField> fields=pojo.valueFields(true);
     add1(src,"/**");
     add1(src," * Create JDBC type for " + tbl + ".");
     add1(src," *");
@@ -53,18 +54,18 @@
     add2(src,"// Query fields for " + tbl + ".");
     add2(src,"LinkedHashMap<String, String> fields = new LinkedHashMap<>();");
     add0(src,"");
-    for (    PojoField field : pojo.fields())     add2(src,"fields.put(\"" + field.javaName() + "\", \""+ GeneratorUtils.boxPrimitiveType(field.javaTypeName())+ "\");");
+    for (    PojoField field : fields)     add2(src,"fields.put(\"" + field.javaName() + "\", \""+ GeneratorUtils.boxPrimitiveType(field.javaTypeName())+ "\");");
     add0(src,"");
     add2(src,"qryEntity.setFields(fields);");
     add0(src,"");
     if (generateAliases) {
       Collection<PojoField> aliases=new ArrayList<>();
-      for (      PojoField field : pojo.fields()) {
+      for (      PojoField field : fields) {
         if (!field.javaName().equalsIgnoreCase(field.dbName()))         aliases.add(field);
       }
       if (!aliases.isEmpty()) {
         add2(src,"// Aliases for fields.");
-        add2(src,"LinkedHashMap<String, String> aliases = new LinkedHashMap<>();");
+        add2(src,"Map<String, String> aliases = new HashMap<>();");
         add0(src,"");
         for (        PojoField alias : aliases)         add2(src,"aliases.put(\"" + alias.javaName() + "\", \""+ alias.dbName()+ "\");");
         add0(src,"");
@@ -81,7 +82,7 @@
         int sz=dbIdxFlds.size();
         List<T2<String,Boolean>> idxFlds=new ArrayList<>(sz);
         for (        Map.Entry<String,Boolean> idxFld : dbIdxFlds) {
-          PojoField field=GeneratorUtils.findFieldByName(pojo.valueFields(true),idxFld.getKey());
+          PojoField field=GeneratorUtils.findFieldByName(fields,idxFld.getKey());
           if (field != null)           idxFlds.add(new T2<>(field.javaName(),idxFld.getValue()));
  else           break;
         }
