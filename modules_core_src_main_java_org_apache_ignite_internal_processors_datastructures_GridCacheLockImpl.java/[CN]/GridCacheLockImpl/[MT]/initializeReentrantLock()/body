@@ -1,0 +1,28 @@
+{
+  if (initGuard.compareAndSet(false,true)) {
+    try {
+      sync=CU.outTx(retryTopologySafe(new Callable<Sync>(){
+        @Override public Sync call() throws Exception {
+          try (IgniteInternalTx tx=CU.txStartInternal(ctx,lockView,PESSIMISTIC,REPEATABLE_READ)){
+            GridCacheLockState val=lockView.get(key);
+            if (val == null) {
+              if (log.isDebugEnabled())               log.debug("Failed to find reentrant lock with given name: " + name);
+              return null;
+            }
+            tx.rollback();
+            return new Sync(val);
+          }
+         }
+      }
+),ctx);
+      if (log.isDebugEnabled())       log.debug("Initialized internal sync structure: " + sync);
+    }
+  finally {
+      initLatch.countDown();
+    }
+  }
+ else {
+    U.await(initLatch);
+    if (sync == null)     throw new IgniteCheckedException("Internal reentrant lock has not been properly initialized.");
+  }
+}

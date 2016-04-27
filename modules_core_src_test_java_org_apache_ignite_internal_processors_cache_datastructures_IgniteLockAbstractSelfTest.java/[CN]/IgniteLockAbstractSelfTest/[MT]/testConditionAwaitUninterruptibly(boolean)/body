@@ -1,0 +1,44 @@
+{
+  final IgniteLock lock0=grid(0).reentrantLock("lock",true,fair,true);
+  assertEquals(0,lock0.getHoldCount());
+  assertFalse(lock0.hasQueuedThreads());
+  final int totalThreads=2;
+  final Set<Thread> startedThreads=new GridConcurrentHashSet<>();
+  IgniteInternalFuture<?> fut=multithreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      assertFalse(lock0.isHeldByCurrentThread());
+      startedThreads.add(Thread.currentThread());
+      boolean isInterrupted=false;
+      lock0.lock();
+      IgniteCondition cond=lock0.getOrCreateCondition("cond");
+      try {
+        cond.awaitUninterruptibly();
+      }
+ catch (      IgniteInterruptedException e) {
+        isInterrupted=true;
+      }
+ finally {
+        assertFalse(isInterrupted);
+        assertTrue(lock0.isLocked());
+        assertTrue(lock0.isHeldByCurrentThread());
+        assertTrue(Thread.interrupted());
+        if (lock0.isHeldByCurrentThread())         lock0.unlock();
+      }
+      return null;
+    }
+  }
+,totalThreads);
+  while (startedThreads.size() != totalThreads) {
+    Thread.sleep(500);
+  }
+  lock0.lock();
+  for (  Thread t : startedThreads) {
+    t.interrupt();
+    lock0.getOrCreateCondition("cond").signal();
+  }
+  lock0.unlock();
+  fut.get();
+  assertFalse(lock0.isLocked());
+  for (  Thread t : startedThreads)   assertFalse(lock0.hasQueuedThread(t));
+  lock0.close();
+}

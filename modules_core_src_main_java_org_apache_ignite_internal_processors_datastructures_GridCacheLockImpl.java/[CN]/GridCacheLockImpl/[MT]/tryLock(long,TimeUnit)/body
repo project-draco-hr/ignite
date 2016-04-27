@@ -1,0 +1,19 @@
+{
+  ctx.kernalContext().gateway().readLock();
+  try {
+    initializeReentrantLock();
+    boolean result=sync.tryAcquireNanos(1,unit.toNanos(timeout));
+    sync.validate(true);
+    return result;
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+catch (  InterruptedException e) {
+    if (sync.fair)     sync.synchronizeQueue(true,Thread.currentThread());
+    throw new IgniteInterruptedException(e);
+  }
+ finally {
+    ctx.kernalContext().gateway().readUnlock();
+  }
+}

@@ -1,0 +1,18 @@
+{
+  if (sync == null)   return;
+  updateLock.lock();
+  try {
+    if (!val.isChanged())     return;
+    boolean local=sync.isLockedLocally(val.getId());
+    boolean incomingSignals=sync.checkIncomingSignals(val);
+    sync.setPermits(val.get());
+    sync.setCurrentOwnerNode(val.getId());
+    sync.setCurrentOwnerThread(val.getThreadId());
+    if ((incomingSignals || sync.getPermits() == 0) && !local) {
+      sync.release(0);
+    }
+  }
+  finally {
+    updateLock.unlock();
+  }
+}

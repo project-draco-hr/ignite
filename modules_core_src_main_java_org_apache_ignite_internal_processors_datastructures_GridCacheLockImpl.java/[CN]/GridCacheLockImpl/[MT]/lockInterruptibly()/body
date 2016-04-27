@@ -1,0 +1,18 @@
+{
+  ctx.kernalContext().gateway().readLock();
+  try {
+    initializeReentrantLock();
+    sync.acquireInterruptibly(1);
+    sync.validate(true);
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+catch (  InterruptedException e) {
+    if (sync.fair)     sync.synchronizeQueue(true,Thread.currentThread());
+    throw new IgniteInterruptedException(e);
+  }
+ finally {
+    ctx.kernalContext().gateway().readUnlock();
+  }
+}

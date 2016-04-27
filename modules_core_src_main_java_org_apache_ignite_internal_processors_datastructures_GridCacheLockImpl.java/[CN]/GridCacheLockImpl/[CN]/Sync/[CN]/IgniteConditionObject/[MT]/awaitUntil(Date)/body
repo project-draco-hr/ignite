@@ -1,0 +1,16 @@
+{
+  ctx.kernalContext().gateway().readLock();
+  try {
+    if (!isHeldExclusively())     throw new IllegalMonitorStateException();
+    lastCondition=name;
+    boolean result=object.awaitUntil(deadline);
+    sync.validate(true);
+    return result;
+  }
+ catch (  InterruptedException e) {
+    throw new IgniteInterruptedException(e);
+  }
+ finally {
+    ctx.kernalContext().gateway().readUnlock();
+  }
+}

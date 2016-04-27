@@ -1,0 +1,55 @@
+{
+  final AtomicBoolean interrupted=new AtomicBoolean(false);
+  try {
+    return CU.outTx(retryTopologySafe(new Callable<Boolean>(){
+      @Override public Boolean call() throws Exception {
+        try (IgniteInternalTx tx=CU.txStartInternal(ctx,lockView,PESSIMISTIC,REPEATABLE_READ)){
+          GridCacheLockState val=lockView.get(key);
+          if (val == null)           throw new IgniteCheckedException("Failed to find reentrant lock with given name: " + name);
+          LinkedList<UUID> nodes=val.getNodes();
+          if (!cancelled) {
+            nodes.add(thisNode);
+            val.setChanged(false);
+            lockView.put(key,val);
+            tx.commit();
+            sync.waitingThreads.add(thread.getId());
+            return true;
+          }
+ else {
+            if (sync.waitingThreads.contains(thread.getId())) {
+              val.setChanged(nodes.lastIndexOf(thisNode) == 0);
+              nodes.removeLastOccurrence(thisNode);
+              lockView.put(key,val);
+              tx.commit();
+              sync.waitingThreads.remove(thread.getId());
+              return true;
+            }
+          }
+          return false;
+        }
+ catch (        Exception e) {
+          if (interruptAll) {
+            log.info("Node is stopped (or lock is broken in non-failover safe mode)," + " aborting transaction.");
+            sync.release(0);
+            return false;
+          }
+ else {
+            if (Thread.interrupted() || X.hasCause(e,InterruptedException.class)) {
+              interrupted.set(true);
+              throw new TransactionRollbackException("Thread got interrupted " + "while synchronizing the global queue, retrying. ");
+            }
+            U.error(log,"Failed to synchronize global lock queue: " + this,e);
+          }
+          throw e;
+        }
+      }
+    }
+),ctx);
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+ finally {
+    if (interrupted.get())     Thread.currentThread().interrupt();
+  }
+}

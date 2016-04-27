@@ -1,0 +1,37 @@
+{
+  System.out.println("Producer started. ");
+  IgniteLock lock=Ignition.ignite().reentrantLock(reentrantLockName,true,false,true);
+  IgniteCondition notFull=lock.getOrCreateCondition(NOT_FULL);
+  IgniteCondition notEmpty=lock.getOrCreateCondition(NOT_EMPTY);
+  IgniteCondition done=lock.getOrCreateCondition(SYNC_NAME);
+  IgniteCache<String,Integer> cache=Ignition.ignite().cache(CACHE_NAME);
+  for (int i=0; i < OPS_COUNT; i++) {
+    try {
+      lock.lock();
+      int val=cache.get(QUEUE_ID);
+      while (val >= 100) {
+        System.out.println("Queue is full. Producer [nodeId=" + Ignition.ignite().cluster().localNode().id() + " paused.");
+        notFull.await();
+        val=cache.get(QUEUE_ID);
+      }
+      val++;
+      System.out.println("Producer [nodeId=" + Ignition.ignite().cluster().localNode().id() + ", available="+ val+ ']');
+      cache.put(QUEUE_ID,val);
+      notEmpty.signalAll();
+    }
+  finally {
+      lock.unlock();
+    }
+  }
+  System.out.println("Producer finished [nodeId=" + Ignition.ignite().cluster().localNode().id() + ']');
+  try {
+    lock.lock();
+    int count=cache.get(SYNC_NAME);
+    count--;
+    cache.put(SYNC_NAME,count);
+    done.signal();
+  }
+  finally {
+    lock.unlock();
+  }
+}

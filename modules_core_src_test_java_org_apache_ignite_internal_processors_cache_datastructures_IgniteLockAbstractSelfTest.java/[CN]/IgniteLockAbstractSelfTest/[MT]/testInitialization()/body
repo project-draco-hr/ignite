@@ -1,0 +1,141 @@
+{
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    assertEquals("lock",lock.name());
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    info("Lock created: " + lock);
+    assertTrue(lock.isFailoverSafe());
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    assertTrue(lock.isFair());
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    assertFalse(lock.isBroken());
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    assertNotNull(lock.getOrCreateCondition("condition"));
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    assertEquals(0,lock.getHoldCount());
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    assertFalse(lock.isHeldByCurrentThread());
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    assertFalse(lock.isLocked());
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    assertFalse(lock.hasQueuedThreads());
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    assertFalse(lock.hasQueuedThread(Thread.currentThread()));
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    try {
+      IgniteCondition cond=grid(0).reentrantLock("lock2",true,true,true).getOrCreateCondition("cond");
+      lock.hasWaiters(cond);
+      fail("Condition not associated with this lock passed as argument.");
+    }
+ catch (    IllegalArgumentException e) {
+      info("IllegalArgumentException thrown as it should be.");
+    }
+    try {
+      IgniteCondition cond=lock.getOrCreateCondition("condition");
+      lock.hasWaiters(cond);
+      fail("This method should throw exception when lock is not held.");
+    }
+ catch (    IllegalMonitorStateException e) {
+      info("IllegalMonitorStateException thrown as it should be.");
+    }
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    try {
+      IgniteCondition cond=grid(0).reentrantLock("lock2",true,true,true).getOrCreateCondition("cond");
+      lock.getWaitQueueLength(cond);
+      fail("Condition not associated with this lock passed as argument.");
+    }
+ catch (    IllegalArgumentException e) {
+      info("IllegalArgumentException thrown as it should be.");
+    }
+    try {
+      IgniteCondition cond=lock.getOrCreateCondition("condition");
+      lock.getWaitQueueLength(cond);
+      fail("This method should throw exception when lock is not held.");
+    }
+ catch (    IllegalMonitorStateException e) {
+      info("IllegalMonitorStateException thrown as it should be.");
+    }
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    lock.lock();
+    lock.unlock();
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    lock.lockInterruptibly();
+    lock.unlock();
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    boolean success=lock.tryLock();
+    assertTrue(success);
+    lock.unlock();
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    boolean success=lock.tryLock(1,MILLISECONDS);
+    assertTrue(success);
+    lock.unlock();
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    try {
+      lock.unlock();
+      fail("This method should throw exception when lock is not held.");
+    }
+ catch (    IllegalMonitorStateException e) {
+      info("IllegalMonitorStateException thrown as it should be.");
+    }
+    lock.close();
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    assertFalse(lock.removed());
+    lock.close();
+    assertTrue(lock.removed());
+  }
+{
+    IgniteLock lock=grid(0).reentrantLock("lock",true,true,true);
+    lock.close();
+    assertTrue(lock.removed());
+  }
+}

@@ -1,0 +1,14 @@
+{
+  try {
+    IgniteBiTuple<GridKernalContext,String> t=stash.get();
+    IgniteSemaphore sem=IgnitionEx.localIgnite().context().dataStructures().semaphore(t.get2(),0,false,false);
+    if (sem == null)     throw new IllegalStateException("Semaphore was not found on deserialization: " + t.get2());
+    return sem;
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.withCause(new InvalidObjectException(e.getMessage()),e);
+  }
+ finally {
+    stash.remove();
+  }
+}

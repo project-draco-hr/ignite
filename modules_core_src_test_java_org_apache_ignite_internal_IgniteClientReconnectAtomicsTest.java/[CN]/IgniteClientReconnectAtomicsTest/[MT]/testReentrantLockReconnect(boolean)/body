@@ -1,0 +1,30 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  Ignite srv=clientRouter(client);
+  IgniteLock clientLock=client.reentrantLock("lock1",true,fair,true);
+  assertEquals(false,clientLock.isLocked());
+  final IgniteLock srvLock=srv.reentrantLock("lock1",true,fair,true);
+  assertEquals(false,srvLock.isLocked());
+  reconnectClientNode(client,srv,new Runnable(){
+    @Override public void run(){
+      srvLock.lock();
+    }
+  }
+);
+  assertTrue(srvLock.isLocked());
+  assertTrue(clientLock.isLocked());
+  assertEquals(1,srvLock.getHoldCount());
+  srvLock.lock();
+  assertTrue(srvLock.isLocked());
+  assertTrue(clientLock.isLocked());
+  assertEquals(2,srvLock.getHoldCount());
+  srvLock.unlock();
+  assertTrue(srvLock.isLocked());
+  assertTrue(clientLock.isLocked());
+  assertEquals(1,srvLock.getHoldCount());
+  srvLock.unlock();
+  assertFalse(srvLock.isLocked());
+  assertFalse(clientLock.isLocked());
+  assertEquals(0,srvLock.getHoldCount());
+}

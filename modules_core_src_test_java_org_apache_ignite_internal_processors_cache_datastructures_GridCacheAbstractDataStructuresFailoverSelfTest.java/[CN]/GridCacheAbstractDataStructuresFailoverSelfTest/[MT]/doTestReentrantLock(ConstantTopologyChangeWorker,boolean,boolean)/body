@@ -1,0 +1,46 @@
+{
+  try (IgniteLock lock=grid(0).reentrantLock(STRUCTURE_NAME,failoverSafe,fair,true)){
+    IgniteInternalFuture<?> fut=topWorker.startChangingTopology(new IgniteClosure<Ignite,Object>(){
+      @Override public Object apply(      Ignite ignite){
+        final IgniteLock l=ignite.reentrantLock(STRUCTURE_NAME,failoverSafe,fair,false);
+        final AtomicBoolean done=new AtomicBoolean(false);
+        IgniteInternalFuture<?> fut=GridTestUtils.runAsync(new Callable<Void>(){
+          @Override public Void call() throws Exception {
+            try {
+              l.lock();
+            }
+  finally {
+              done.set(true);
+            }
+            return null;
+          }
+        }
+);
+        while (!l.hasQueuedThreads() && !done.get()) {
+        }
+        return null;
+      }
+    }
+);
+    while (!fut.isDone()) {
+      while (true) {
+        try {
+          lock.lock();
+        }
+ catch (        IgniteException e) {
+          if (failoverSafe)           throw e;
+        }
+ finally {
+          if (!lock.isBroken() || failoverSafe) {
+            assertTrue(lock.isHeldByCurrentThread());
+            lock.unlock();
+            assertFalse(lock.isHeldByCurrentThread());
+          }
+          break;
+        }
+      }
+    }
+    fut.get();
+    for (    Ignite g : G.allGrids())     assertFalse(g.reentrantLock(STRUCTURE_NAME,failoverSafe,fair,false).isHeldByCurrentThread());
+  }
+ }

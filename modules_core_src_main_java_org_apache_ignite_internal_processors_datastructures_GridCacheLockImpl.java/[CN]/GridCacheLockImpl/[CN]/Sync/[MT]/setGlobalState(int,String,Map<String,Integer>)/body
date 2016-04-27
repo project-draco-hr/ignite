@@ -1,0 +1,73 @@
+{
+  try {
+    return CU.outTx(retryTopologySafe(new Callable<Boolean>(){
+      @Override public Boolean call() throws Exception {
+        try (IgniteInternalTx tx=CU.txStartInternal(ctx,lockView,PESSIMISTIC,REPEATABLE_READ)){
+          GridCacheLockState val=lockView.get(key);
+          if (val == null)           throw new IgniteCheckedException("Failed to find reentrant lock with given name: " + name);
+          val.set(newVal);
+          if (newVal == 0) {
+            val.setId(null);
+            val.setThreadId(LOCK_FREE);
+          }
+          val.setChanged(true);
+          if (val.isFair() && newVal == 0) {
+            UUID removedNode=val.getNodes().removeFirst();
+            assert(thisNode.equals(removedNode));
+          }
+          Map<String,LinkedList<UUID>> condMap=val.getConditionMap();
+          Map<UUID,LinkedList<String>> signalMap=new HashMap<>();
+          if (!outgoingSignals.isEmpty()) {
+            for (            String condition : outgoingSignals.keySet()) {
+              int cnt=outgoingSignals.get(condition);
+              List<UUID> list=condMap.get(condition);
+              if (list != null && !list.isEmpty()) {
+                if (cnt == 0) {
+                  cnt=list.size();
+                }
+                for (int i=0; i < cnt; i++) {
+                  if (list.isEmpty())                   break;
+                  UUID uuid=list.remove(0);
+                  if (ctx.discovery().node(uuid) == null) {
+                    cnt++;
+                    continue;
+                  }
+                  LinkedList<String> queue=signalMap.get(uuid);
+                  if (queue == null) {
+                    queue=new LinkedList<>();
+                    signalMap.put(uuid,queue);
+                  }
+                  queue.add(condition);
+                }
+              }
+            }
+          }
+          val.setSignals(signalMap);
+          if (lastCondition != null) {
+            LinkedList<UUID> queue;
+            if (!condMap.containsKey(lastCondition))             queue=new LinkedList<>();
+ else             queue=condMap.get(lastCondition);
+            queue.add(thisNode);
+            condMap.put(lastCondition,queue);
+          }
+          val.setConditionMap(condMap);
+          lockView.put(key,val);
+          tx.commit();
+          return true;
+        }
+ catch (        Exception e) {
+          if (interruptAll) {
+            log.info("Node is stopped (or lock is broken in non-failover safe mode)," + " aborting transaction.");
+            return true;
+          }
+ else           U.error(log,"Failed to release: " + this,e);
+          throw e;
+        }
+      }
+    }
+),ctx);
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+}

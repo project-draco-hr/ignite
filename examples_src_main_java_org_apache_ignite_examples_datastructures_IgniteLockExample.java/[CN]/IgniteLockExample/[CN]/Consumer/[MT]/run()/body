@@ -1,0 +1,38 @@
+{
+  System.out.println("Consumer started. ");
+  Ignite g=Ignition.ignite();
+  IgniteLock lock=g.reentrantLock(reentrantLockName,true,false,true);
+  IgniteCondition notFull=lock.getOrCreateCondition(NOT_FULL);
+  IgniteCondition notEmpty=lock.getOrCreateCondition(NOT_EMPTY);
+  IgniteCondition done=lock.getOrCreateCondition(SYNC_NAME);
+  IgniteCache<String,Integer> cache=g.cache(CACHE_NAME);
+  for (int i=0; i < OPS_COUNT; i++) {
+    try {
+      lock.lock();
+      int val=cache.get(QUEUE_ID);
+      while (val <= 0) {
+        System.out.println("Queue is empty. Consumer [nodeId=" + Ignition.ignite().cluster().localNode().id() + " paused.");
+        notEmpty.await();
+        val=cache.get(QUEUE_ID);
+      }
+      val--;
+      System.out.println("Consumer [nodeId=" + Ignition.ignite().cluster().localNode().id() + ", available="+ val+ ']');
+      cache.put(QUEUE_ID,val);
+      notFull.signalAll();
+    }
+  finally {
+      lock.unlock();
+    }
+  }
+  System.out.println("Consumer finished [nodeId=" + Ignition.ignite().cluster().localNode().id() + ']');
+  try {
+    lock.lock();
+    int count=cache.get(SYNC_NAME);
+    count--;
+    cache.put(SYNC_NAME,count);
+    done.signal();
+  }
+  finally {
+    lock.unlock();
+  }
+}

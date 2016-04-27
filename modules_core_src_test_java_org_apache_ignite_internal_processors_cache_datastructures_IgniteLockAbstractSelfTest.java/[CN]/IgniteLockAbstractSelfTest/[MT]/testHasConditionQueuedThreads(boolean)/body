@@ -1,0 +1,58 @@
+{
+  final IgniteLock lock0=grid(0).reentrantLock("lock",true,fair,true);
+  assertEquals(0,lock0.getHoldCount());
+  assertFalse(lock0.hasQueuedThreads());
+  final int totalThreads=5;
+  final Set<Thread> startedThreads=new GridConcurrentHashSet<>();
+  final Set<Thread> finishedThreads=new GridConcurrentHashSet<>();
+  IgniteInternalFuture<?> fut=multithreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      assertFalse(lock0.isHeldByCurrentThread());
+      IgniteCondition cond=lock0.getOrCreateCondition("cond");
+      lock0.lock();
+      startedThreads.add(Thread.currentThread());
+      do {
+        cond.await();
+        Thread.sleep(1000);
+      }
+ while (startedThreads.size() != totalThreads);
+      try {
+        info("Acquired in separate thread. Number of threads waiting on condition: " + lock0.getWaitQueueLength(cond));
+        assertTrue(lock0.isHeldByCurrentThread());
+        assertFalse(lock0.hasQueuedThread(Thread.currentThread()));
+        finishedThreads.add(Thread.currentThread());
+        if (startedThreads.size() != finishedThreads.size()) {
+          assertTrue(lock0.hasWaiters(cond));
+        }
+        for (        Thread t : startedThreads) {
+          if (!finishedThreads.contains(t))           assertTrue(lock0.hasWaiters(cond));
+        }
+        assertTrue(lock0.getWaitQueueLength(cond) == (startedThreads.size() - finishedThreads.size()));
+      }
+  finally {
+        cond.signal();
+        lock0.unlock();
+        assertFalse(lock0.isHeldByCurrentThread());
+      }
+      return null;
+    }
+  }
+,totalThreads);
+  IgniteCondition cond=lock0.getOrCreateCondition("cond");
+  lock0.lock();
+  try {
+    while (lock0.getWaitQueueLength(cond) != totalThreads) {
+      lock0.unlock();
+      Thread.sleep(1000);
+      lock0.lock();
+    }
+    cond.signal();
+  }
+  finally {
+    lock0.unlock();
+  }
+  fut.get();
+  assertFalse(lock0.hasQueuedThreads());
+  for (  Thread t : startedThreads)   assertFalse(lock0.hasQueuedThread(t));
+  lock0.close();
+}

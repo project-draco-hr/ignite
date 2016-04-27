@@ -1,0 +1,40 @@
+{
+  client=true;
+  Ignite client=startGrid(gridCount());
+  Ignite server=grid(0);
+  IgniteLock srvLock=server.reentrantLock("lock",true,fair,true);
+  IgniteSemaphore semaphore=server.semaphore("sync",0,true,true);
+  IgniteCompute compute=client.compute().withAsync();
+  compute.apply(new IgniteClosure<Ignite,Object>(){
+    @Override public Object apply(    Ignite ignite){
+      final IgniteLock l=ignite.reentrantLock("lock",true,fair,true);
+      l.lock();
+      assertTrue(l.isHeldByCurrentThread());
+      l.unlock();
+      assertFalse(l.isHeldByCurrentThread());
+      ignite.semaphore("sync",0,true,true).release();
+      boolean isExceptionThrown=false;
+      try {
+        Thread.sleep(1000);
+        l.lock();
+        fail("Exception must be thrown.");
+      }
+ catch (      InterruptedException e) {
+        fail("Interrupted exception not expected here.");
+      }
+catch (      IgniteException e) {
+        isExceptionThrown=true;
+      }
+ finally {
+        assertTrue(isExceptionThrown);
+        assertFalse(l.isHeldByCurrentThread());
+      }
+      return null;
+    }
+  }
+,client);
+  semaphore.acquire();
+  for (int i=0; i < gridCount(); i++)   stopGrid(i);
+  compute.future().get();
+  client.close();
+}

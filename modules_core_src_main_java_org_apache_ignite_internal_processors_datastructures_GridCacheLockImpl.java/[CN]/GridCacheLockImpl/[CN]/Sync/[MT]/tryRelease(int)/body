@@ -1,0 +1,17 @@
+{
+  if (releases == 0)   return true;
+  if (interruptAll)   return true;
+  int c=getState() - releases;
+  if (!isHeldExclusively()) {
+    log.error("Lock.unlock() is called in illegal state [callerNodeId=" + thisNode + ", ownerNodeId="+ currentOwnerNode+ ", callerThreadId="+ Thread.currentThread().getId()+ ", ownerThreadId="+ currentOwnerThreadId+ ", lockState="+ getState()+ "]");
+    throw new IllegalMonitorStateException();
+  }
+  boolean free=false;
+  if (c == 0) {
+    free=true;
+    setGlobalState(0,processAwait(),processSignal());
+    while (isHeldExclusively() && !interruptAll)     Thread.yield();
+  }
+ else   setState(c);
+  return free;
+}

@@ -1,0 +1,61 @@
+{
+  if (gridCount() == 1)   return;
+  final long opsCount=10000;
+  final double tolerance=0.05;
+  final String OPS_COUNTER="ops_counter";
+  final int threadCount=gridCount();
+  final AtomicLong threadCounter=new AtomicLong(0);
+  Ignite ignite=startGrid(gridCount());
+  IgniteLock l=ignite.reentrantLock("lock",true,true,true);
+  ignite.getOrCreateCache(OPS_COUNTER).put(OPS_COUNTER,(long)0);
+  final Map<Integer,Long> counts=new ConcurrentHashMap<>();
+  IgniteInternalFuture<?> fut=multithreadedAsync(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      final int localNodeId=(int)threadCounter.getAndIncrement();
+      final Ignite grid=grid(localNodeId);
+      IgniteClosure<Ignite,Long> closure=new IgniteClosure<Ignite,Long>(){
+        @Override public Long apply(        Ignite ignite){
+          IgniteLock l=ignite.reentrantLock("lock",true,true,true);
+          long localCount=0;
+          IgniteCountDownLatch latch=ignite.countDownLatch("latch",threadCount,false,true);
+          latch.countDown();
+          latch.await();
+          while (true) {
+            l.lock();
+            try {
+              long opsCounter=(long)ignite.getOrCreateCache(OPS_COUNTER).get(OPS_COUNTER);
+              if (opsCounter == opsCount)               break;
+              ignite.getOrCreateCache(OPS_COUNTER).put(OPS_COUNTER,++opsCounter);
+              localCount++;
+              if (localCount > 1000) {
+                assertTrue(localCount < (1 + tolerance) * opsCounter / threadCount);
+                assertTrue(localCount > (1 - tolerance) * opsCounter / threadCount);
+              }
+              if (localCount % 100 == 0) {
+                info("Node [id=" + ignite.cluster().localNode().id() + "] acquired "+ localCount+ " times. "+ "Total ops count: "+ opsCounter+ "/"+ opsCount+ "]");
+              }
+            }
+  finally {
+              l.unlock();
+            }
+          }
+          return localCount;
+        }
+      }
+;
+      long localCount=closure.apply(grid);
+      counts.put(localNodeId,localCount);
+      return null;
+    }
+  }
+,threadCount);
+  fut.get();
+  long totalSum=0;
+  for (int i=0; i < gridCount(); i++) {
+    totalSum+=counts.get(i);
+    info("Node " + grid(i).localNode().id() + " acquired the lock "+ counts.get(i)+ " times. ");
+  }
+  assertEquals(totalSum,opsCount);
+  l.close();
+  ignite.close();
+}

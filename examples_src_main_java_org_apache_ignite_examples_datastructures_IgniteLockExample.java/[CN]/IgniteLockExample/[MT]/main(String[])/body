@@ -1,0 +1,30 @@
+{
+  try (Ignite ignite=Ignition.start("examples/config/example-ignite.xml")){
+    System.out.println();
+    System.out.println(">>> Cache atomic reentrant lock example started.");
+    final String reentrantLockName=UUID.randomUUID().toString();
+    IgniteLock lock=ignite.reentrantLock(reentrantLockName,true,false,true);
+    IgniteCache<String,Integer> cache=ignite.getOrCreateCache(CACHE_NAME);
+    cache.put(QUEUE_ID,0);
+    cache.put(SYNC_NAME,NUM_PRODUCERS + NUM_CONSUMERS);
+    for (int i=0; i < NUM_CONSUMERS; i++)     ignite.compute().withAsync().run(new Consumer(reentrantLockName));
+    for (int i=0; i < NUM_PRODUCERS; i++)     ignite.compute().withAsync().run(new Producer(reentrantLockName));
+    System.out.println("Master node is waiting for all other nodes to finish...");
+    try {
+      lock.lock();
+      IgniteCondition notDone=lock.getOrCreateCondition(SYNC_NAME);
+      int count=cache.get(SYNC_NAME);
+      while (count > 0) {
+        notDone.await();
+        count=cache.get(SYNC_NAME);
+      }
+    }
+  finally {
+      lock.unlock();
+    }
+  }
+   System.out.flush();
+  System.out.println();
+  System.out.println("Finished reentrant lock example...");
+  System.out.println("Check all nodes for output (this node is also part of the cluster).");
+}

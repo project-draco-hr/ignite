@@ -1,0 +1,48 @@
+{
+  try {
+    return CU.outTx(retryTopologySafe(new Callable<Boolean>(){
+      @Override public Boolean call() throws Exception {
+        try (IgniteInternalTx tx=CU.txStartInternal(ctx,lockView,PESSIMISTIC,REPEATABLE_READ)){
+          GridCacheLockState val=lockView.get(key);
+          if (val == null)           throw new IgniteCheckedException("Failed to find reentrant lock with given name: " + name);
+          final long newThreadID=newThread.getId();
+          LinkedList<UUID> nodes=val.getNodes();
+          if (!(bargingProhibited && hasPredecessor(nodes))) {
+            if (val.get() == expVal || ctx.discovery().node(val.getId()) == null) {
+              val.set(newVal);
+              val.setId(thisNode);
+              val.setThreadId(newThreadID);
+              val.setSignals(null);
+              if (val.isFair() && (nodes.isEmpty() || !bargingProhibited))               nodes.addFirst(thisNode);
+              val.setNodes(nodes);
+              val.setChanged(true);
+              lockView.put(key,val);
+              tx.commit();
+              return true;
+            }
+          }
+          return false;
+        }
+ catch (        Exception e) {
+          if (interruptAll) {
+            log.info("Node is stopped (or lock is broken in non-failover safe mode)," + " aborting transaction.");
+            return true;
+          }
+ else {
+            if (Thread.currentThread().isInterrupted()) {
+              log.info("Thread is interrupted while attempting to acquire lock.");
+              sync.release(0);
+              return false;
+            }
+            U.error(log,"Failed to compare and set: " + this,e);
+          }
+          throw e;
+        }
+      }
+    }
+),ctx);
+  }
+ catch (  IgniteCheckedException e) {
+    throw U.convertException(e);
+  }
+}

@@ -1,0 +1,16 @@
+{
+  if (state.getSignals() == null)   return false;
+  LinkedList<String> signals=state.getSignals().get(thisNode);
+  if (signals == null || signals.isEmpty())   return false;
+  UUID tempUUID=getOwnerNode();
+  Thread tempThread=getExclusiveOwnerThread();
+  long tempThreadID=currentOwnerThreadId;
+  setCurrentOwnerNode(thisNode);
+  setExclusiveOwnerThread(Thread.currentThread());
+  currentOwnerThreadId=Thread.currentThread().getId();
+  for (  String signal : signals)   conditionMap.get(signal).signal();
+  setCurrentOwnerNode(tempUUID);
+  setExclusiveOwnerThread(tempThread);
+  currentOwnerThreadId=tempThreadID;
+  return true;
+}
