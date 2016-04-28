@@ -1,0 +1,19 @@
+{
+  Some some=new Some(0,"prop");
+  String p="NotStringSystemPropertyTest";
+  System.getProperties().put(p,p);
+  System.getProperties().put(some,"prop");
+  System.getProperties().put("prop",new Some(0,"prop"));
+  try {
+    Ignite ignite=startGridsMultiThreaded(2);
+    assertNull(ignite.configuration().getIncludeProperties());
+    assertEquals(p,ignite.cluster().localNode().attribute(p));
+    checkTopology(2);
+  }
+  finally {
+    System.getProperties().remove(some);
+    System.getProperties().remove("prop");
+    System.getProperties().remove(p);
+    stopAllGrids();
+  }
+}
