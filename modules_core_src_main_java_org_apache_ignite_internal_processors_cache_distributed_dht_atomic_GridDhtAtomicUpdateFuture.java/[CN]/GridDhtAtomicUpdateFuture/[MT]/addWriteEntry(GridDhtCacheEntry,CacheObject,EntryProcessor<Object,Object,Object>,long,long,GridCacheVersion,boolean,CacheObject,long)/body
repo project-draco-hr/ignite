@@ -1,10 +1,11 @@
 {
   AffinityTopologyVersion topVer=updateReq.topologyVersion();
-  Collection<ClusterNode> dhtNodes=cctx.dht().topology().nodes(entry.partition(),topVer);
+  List<ClusterNode> dhtNodes=cctx.dht().topology().nodes(entry.partition(),topVer);
   if (log.isDebugEnabled())   log.debug("Mapping entry to DHT nodes [nodes=" + U.nodeIds(dhtNodes) + ", entry="+ entry+ ']');
   CacheWriteSynchronizationMode syncMode=updateReq.writeSynchronizationMode();
   keys.add(entry.key());
-  for (  ClusterNode node : dhtNodes) {
+  for (int i=0; i < dhtNodes.size(); i++) {
+    ClusterNode node=dhtNodes.get(i);
     UUID nodeId=node.id();
     if (!nodeId.equals(cctx.localNodeId())) {
       GridDhtAtomicUpdateRequest updateReq=mappings.get(nodeId);
