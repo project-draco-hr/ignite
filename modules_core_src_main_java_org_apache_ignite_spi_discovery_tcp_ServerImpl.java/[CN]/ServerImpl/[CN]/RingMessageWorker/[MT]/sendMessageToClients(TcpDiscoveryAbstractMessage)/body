@@ -1,18 +1,33 @@
 {
   if (redirectToClients(msg)) {
-    byte[] marshalledMsg=null;
+    byte[] msgBytes=null;
     for (    ClientMessageWorker clientMsgWorker : clientMsgWorkers.values()) {
-      TcpDiscoveryAbstractMessage msgClone;
-      try {
-        if (marshalledMsg == null)         marshalledMsg=spi.marsh.marshal(msg);
-        msgClone=spi.marsh.unmarshal(marshalledMsg,U.resolveClassLoader(spi.ignite().configuration()));
+      if (msgBytes == null) {
+        try {
+          msgBytes=spi.marsh.marshal(msg);
+        }
+ catch (        IgniteCheckedException e) {
+          U.error(log,"Failed to marshal message: " + msg,e);
+          break;
+        }
       }
- catch (      IgniteCheckedException e) {
-        U.error(log,"Failed to marshal message: " + msg,e);
-        msgClone=msg;
+      TcpDiscoveryAbstractMessage msg0=msg;
+      byte[] msgBytes0=msgBytes;
+      if (msg instanceof TcpDiscoveryNodeAddedMessage) {
+        TcpDiscoveryNodeAddedMessage nodeAddedMsg=(TcpDiscoveryNodeAddedMessage)msg;
+        TcpDiscoveryNode node=nodeAddedMsg.node();
+        if (clientMsgWorker.clientNodeId.equals(node.id())) {
+          try {
+            msg0=spi.marsh.unmarshal(msgBytes,U.resolveClassLoader(spi.ignite().configuration()));
+            prepareNodeAddedMessage(msg0,clientMsgWorker.clientNodeId,null,null,null);
+            msgBytes0=null;
+          }
+ catch (          IgniteCheckedException e) {
+            U.error(log,"Failed to create message copy: " + msg,e);
+          }
+        }
       }
-      prepareNodeAddedMessage(msgClone,clientMsgWorker.clientNodeId,null,null,null);
-      clientMsgWorker.addMessage(msgClone);
+      clientMsgWorker.addMessage(msg0,msgBytes0);
     }
   }
 }
