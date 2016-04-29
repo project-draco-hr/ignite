@@ -1,0 +1,15 @@
+{
+  runInAllDataModes(new ServiceTestRunnable(false,new DeployClosure(){
+    @Override public void run(    IgniteServices services,    String svcName,    TestService svc){
+      services.deployClusterSingleton(svcName,(Service)svc);
+      ServiceConfiguration cfg=new ServiceConfiguration();
+      cfg.setName(svcName);
+      cfg.setService((Service)svc);
+      cfg.setTotalCount(1);
+      cfg.setMaxPerNodeCount(1);
+      cfg.setNodeFilter(services.clusterGroup().predicate());
+      services.deploy(cfg);
+    }
+  }
+));
+}

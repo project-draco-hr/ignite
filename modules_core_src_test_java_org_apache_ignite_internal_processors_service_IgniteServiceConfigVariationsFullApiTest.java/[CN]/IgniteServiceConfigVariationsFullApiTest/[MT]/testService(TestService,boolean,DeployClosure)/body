@@ -1,0 +1,18 @@
+{
+  IgniteEx ignite=testedGrid();
+  IgniteServices services=ignite.services();
+  Object expected=value(++cntr);
+  svc.setValue(expected);
+  deployC.run(services,SERVICE_NAME,svc);
+  assertEquals(expected,svc.getValue());
+  TestService proxy=services.serviceProxy(SERVICE_NAME,TestService.class,sticky);
+  assertEquals(expected,proxy.getValue());
+  expected=value(++cntr);
+  proxy.setValue(expected);
+  int r=1000;
+  while (r-- > 0)   assertEquals(expected,proxy.getValue());
+  assertEquals("Expected 1 deployed service",1,services.serviceDescriptors().size());
+  boolean tmp=ThreadLocalRandom.current().nextBoolean();
+  if (tmp)   services.cancelAll();
+ else   services.cancel(SERVICE_NAME);
+}
