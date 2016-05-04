@@ -2,8 +2,11 @@
   if (hasLocalNode(prj)) {
     ServiceContextImpl ctx=serviceContext(name);
     if (ctx != null) {
-      if (!svcItf.isAssignableFrom(ctx.service().getClass()))       throw new IgniteException("Service does not implement specified interface [svcItf=" + svcItf.getName() + ", svcCls="+ ctx.service().getClass().getName()+ ']');
-      return (T)ctx.service();
+      Service svc=ctx.service();
+      if (svc != null) {
+        if (!svcItf.isAssignableFrom(svc.getClass()))         throw new IgniteException("Service does not implement specified interface [svcItf=" + svcItf.getName() + ", svcCls="+ svc.getClass().getName()+ ']');
+        return (T)svc;
+      }
     }
   }
   return new GridServiceProxy<>(prj,name,svcItf,sticky,ctx).proxy();

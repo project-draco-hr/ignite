@@ -11,7 +11,10 @@
         if (node == null)         throw new IgniteException("Failed to find deployed service: " + name);
         if (node.isLocal()) {
           ServiceContextImpl svcCtx=ctx.service().serviceContext(name);
-          if (svcCtx != null)           return mtd.invoke(svcCtx.service(),args);
+          if (svcCtx != null) {
+            Service svc=svcCtx.service();
+            if (svc != null)             return mtd.invoke(svc,args);
+          }
         }
  else {
           return ctx.closure().callAsyncNoFailover(GridClosureCallMode.BROADCAST,new ServiceProxyCallable(mtd.getName(),name,mtd.getParameterTypes(),args),Collections.singleton(node),false).get();

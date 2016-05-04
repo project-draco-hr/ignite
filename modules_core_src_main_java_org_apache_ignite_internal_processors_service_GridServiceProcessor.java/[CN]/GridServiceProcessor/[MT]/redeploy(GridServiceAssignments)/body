@@ -2,12 +2,12 @@
   String svcName=assigns.name();
   Integer assignCnt=assigns.assigns().get(ctx.localNodeId());
   if (assignCnt == null)   assignCnt=0;
-  Service svc=assigns.service();
   Collection<ServiceContextImpl> ctxs;
 synchronized (locSvcs) {
     ctxs=locSvcs.get(svcName);
     if (ctxs == null)     locSvcs.put(svcName,ctxs=new ArrayList<>());
   }
+  Collection<ServiceContextImpl> toInit=new ArrayList<>();
 synchronized (ctxs) {
     if (ctxs.size() > assignCnt) {
       int cancelCnt=ctxs.size() - assignCnt;
@@ -16,48 +16,54 @@ synchronized (ctxs) {
  else     if (ctxs.size() < assignCnt) {
       int createCnt=assignCnt - ctxs.size();
       for (int i=0; i < createCnt; i++) {
-        final Service cp=copyAndInject(svc);
-        final ExecutorService exe=Executors.newSingleThreadExecutor(threadFactory);
-        final ServiceContextImpl svcCtx=new ServiceContextImpl(assigns.name(),UUID.randomUUID(),assigns.cacheName(),assigns.affinityKey(),cp,exe);
+        ServiceContextImpl svcCtx=new ServiceContextImpl(assigns.name(),UUID.randomUUID(),assigns.cacheName(),assigns.affinityKey(),Executors.newSingleThreadExecutor(threadFactory));
         ctxs.add(svcCtx);
-        try {
-          cp.init(svcCtx);
-        }
- catch (        Throwable e) {
-          log.error("Failed to initialize service (service will not be deployed): " + assigns.name(),e);
-          ctxs.remove(svcCtx);
-          if (e instanceof Error)           throw (Error)e;
-          if (e instanceof RuntimeException)           throw (RuntimeException)e;
-          return;
-        }
-        if (log.isInfoEnabled())         log.info("Starting service instance [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']');
-        exe.submit(new Runnable(){
-          @Override public void run(){
-            try {
-              cp.execute(svcCtx);
-            }
- catch (            InterruptedException|IgniteInterruptedCheckedException ignore) {
-              if (log.isDebugEnabled())               log.debug("Service thread was interrupted [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']');
-            }
-catch (            IgniteException e) {
-              if (e.hasCause(InterruptedException.class) || e.hasCause(IgniteInterruptedCheckedException.class)) {
-                if (log.isDebugEnabled())                 log.debug("Service thread was interrupted [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']');
-              }
- else {
-                U.error(log,"Service execution stopped with error [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']',e);
-              }
-            }
-catch (            Throwable e) {
-              log.error("Service execution stopped with error [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']',e);
-              if (e instanceof Error)               throw (Error)e;
-            }
- finally {
-              exe.shutdownNow();
-            }
-          }
-        }
-);
+        toInit.add(svcCtx);
       }
     }
+  }
+  for (  final ServiceContextImpl svcCtx : toInit) {
+    final Service svc=copyAndInject(assigns.service());
+    try {
+      svc.init(svcCtx);
+      svcCtx.service(svc);
+    }
+ catch (    Throwable e) {
+      log.error("Failed to initialize service (service will not be deployed): " + assigns.name(),e);
+synchronized (ctxs) {
+        ctxs.removeAll(toInit);
+      }
+      if (e instanceof Error)       throw (Error)e;
+      if (e instanceof RuntimeException)       throw (RuntimeException)e;
+      return;
+    }
+    if (log.isInfoEnabled())     log.info("Starting service instance [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']');
+    final ExecutorService exe=svcCtx.executor();
+    exe.submit(new Runnable(){
+      @Override public void run(){
+        try {
+          svc.execute(svcCtx);
+        }
+ catch (        InterruptedException|IgniteInterruptedCheckedException ignore) {
+          if (log.isDebugEnabled())           log.debug("Service thread was interrupted [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']');
+        }
+catch (        IgniteException e) {
+          if (e.hasCause(InterruptedException.class) || e.hasCause(IgniteInterruptedCheckedException.class)) {
+            if (log.isDebugEnabled())             log.debug("Service thread was interrupted [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']');
+          }
+ else {
+            U.error(log,"Service execution stopped with error [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']',e);
+          }
+        }
+catch (        Throwable e) {
+          log.error("Service execution stopped with error [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']',e);
+          if (e instanceof Error)           throw (Error)e;
+        }
+ finally {
+          exe.shutdownNow();
+        }
+      }
+    }
+);
   }
 }

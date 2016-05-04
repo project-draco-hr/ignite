@@ -2,19 +2,22 @@
   for (Iterator<ServiceContextImpl> it=ctxs.iterator(); it.hasNext(); ) {
     ServiceContextImpl svcCtx=it.next();
     svcCtx.setCancelled(true);
-    try {
-      svcCtx.service().cancel(svcCtx);
-    }
- catch (    Throwable e) {
-      log.error("Failed to cancel service (ignoring) [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']',e);
-      if (e instanceof Error)       throw e;
-    }
- finally {
+    Service svc=svcCtx.service();
+    if (svc != null) {
       try {
-        ctx.resource().cleanup(svcCtx.service());
+        svc.cancel(svcCtx);
       }
- catch (      IgniteCheckedException e) {
-        log.error("Failed to clean up service (will ignore): " + svcCtx.name(),e);
+ catch (      Throwable e) {
+        log.error("Failed to cancel service (ignoring) [name=" + svcCtx.name() + ", execId="+ svcCtx.executionId()+ ']',e);
+        if (e instanceof Error)         throw e;
+      }
+ finally {
+        try {
+          ctx.resource().cleanup(svc);
+        }
+ catch (        IgniteCheckedException e) {
+          U.error(log,"Failed to clean up service (will ignore): " + svcCtx.name(),e);
+        }
       }
     }
     svcCtx.executor().shutdownNow();
