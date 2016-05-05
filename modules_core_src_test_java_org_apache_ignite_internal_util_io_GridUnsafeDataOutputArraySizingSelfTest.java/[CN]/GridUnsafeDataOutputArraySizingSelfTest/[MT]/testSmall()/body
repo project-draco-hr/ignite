@@ -1,23 +1,8 @@
 {
-  GridUnsafeDataOutput out=new GridUnsafeDataOutput(512);
-  for (int i=0; i < 11; i++) {
-    Thread.sleep(100);
-    writeSmall(out);
-  }
-  assertEquals(256,out.internalArray().length);
-  for (int i=0; i < 11; i++) {
-    Thread.sleep(100);
-    writeSmall(out);
-  }
-  assertEquals(128,out.internalArray().length);
-  for (int i=0; i < 11; i++) {
-    Thread.sleep(100);
-    writeSmall(out);
-  }
-  assertEquals(64,out.internalArray().length);
-  for (int i=0; i < 11; i++) {
-    Thread.sleep(100);
-    writeSmall(out);
-  }
-  assertEquals(64,out.internalArray().length);
+  final GridUnsafeDataOutput out=new GridUnsafeDataOutput(512);
+  assertTrue(GridTestUtils.waitForCondition(new WriteAndCheckPredicate(out,SMALL,256),WAIT_BUFFER_TIMEOUT));
+  assertTrue(GridTestUtils.waitForCondition(new WriteAndCheckPredicate(out,SMALL,128),WAIT_BUFFER_TIMEOUT));
+  assertTrue(GridTestUtils.waitForCondition(new WriteAndCheckPredicate(out,SMALL,64),WAIT_BUFFER_TIMEOUT));
+  assertFalse(GridTestUtils.waitForCondition(new WriteAndCheckPredicate(out,SMALL,32),WAIT_BUFFER_TIMEOUT));
+  assertTrue(GridTestUtils.waitForCondition(new WriteAndCheckPredicate(out,SMALL,64),WAIT_BUFFER_TIMEOUT));
 }
