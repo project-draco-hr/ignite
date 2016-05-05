@@ -7,7 +7,13 @@
 );
   ClusterGroup newNodes=ctx.kernalContext().grid().cluster().forCacheNodes(ctx.name()).forPredicate(new IgnitePredicate<ClusterNode>(){
     @Override public boolean apply(    ClusterNode node){
-      return node.version().compareToIgnoreTimestamp(LOAD_CACHE_JOB_SINCE) >= 0;
+      return node.version().compareToIgnoreTimestamp(LOAD_CACHE_JOB_SINCE) >= 0 && node.version().compareToIgnoreTimestamp(LOAD_CACHE_JOB_V2_SINCE) < 0;
+    }
+  }
+);
+  ClusterGroup newNodesV2=ctx.kernalContext().grid().cluster().forCacheNodes(ctx.name()).forPredicate(new IgnitePredicate<ClusterNode>(){
+    @Override public boolean apply(    ClusterNode node){
+      return node.version().compareToIgnoreTimestamp(LOAD_CACHE_JOB_V2_SINCE) >= 0;
     }
   }
 );
@@ -22,6 +28,11 @@
   if (!F.isEmpty(newNodes.nodes())) {
     ComputeTaskInternalFuture newNodesFut=ctx.kernalContext().closure().callAsync(BROADCAST,Collections.singletonList(new LoadCacheJob<>(ctx.name(),ctx.affinity().affinityTopologyVersion(),p,args,plc)),newNodes.nodes());
     fut.add(newNodesFut);
+  }
+  if (!F.isEmpty(newNodesV2.nodes())) {
+    final boolean keepBinary=opCtx != null && opCtx.isKeepBinary();
+    ComputeTaskInternalFuture newNodesV2Fut=ctx.kernalContext().closure().callAsync(BROADCAST,Collections.singletonList(new LoadCacheJobV2<>(ctx.name(),ctx.affinity().affinityTopologyVersion(),p,args,plc,keepBinary)),newNodesV2.nodes());
+    fut.add(newNodesV2Fut);
   }
   fut.markInitialized();
   return fut;
