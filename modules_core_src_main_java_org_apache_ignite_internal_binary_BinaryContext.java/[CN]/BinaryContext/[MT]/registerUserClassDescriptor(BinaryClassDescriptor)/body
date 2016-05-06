@@ -1,0 +1,16 @@
+{
+  boolean registered;
+  try {
+    registered=marshCtx.registerClass(desc.typeId(),desc.describedClass());
+  }
+ catch (  IgniteCheckedException e) {
+    throw new BinaryObjectException("Failed to register class.",e);
+  }
+  if (registered) {
+    BinarySerializer serializer=desc.initialSerializer();
+    if (serializer == null)     serializer=serializerForClass(desc.describedClass());
+    desc=new BinaryClassDescriptor(this,desc.describedClass(),true,desc.typeId(),desc.typeName(),desc.affFieldKeyName(),desc.mapper(),serializer,true,true);
+    descByCls.put(desc.describedClass(),desc);
+  }
+  return desc;
+}

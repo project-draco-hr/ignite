@@ -1,0 +1,31 @@
+{
+  try {
+    customBinaryConf=true;
+    Ignite i1=startGrid(1);
+    Ignite i2=startGrid(2);
+    IgniteCache<Integer,Object> cache1=i1.cache(null);
+    IgniteCache<Integer,Object> cache2=i2.cache(null);
+    ClassLoader ldr=useWrappingLoader ? ((WrappingClassLoader)i1.configuration().getClassLoader()).getParent() : i1.configuration().getClassLoader();
+    Object v1=ldr.loadClass("org.apache.ignite.tests.p2p.CacheDeploymentTestValue").newInstance();
+    Object v2=ldr.loadClass("org.apache.ignite.tests.p2p.CacheDeploymentTestValue2").newInstance();
+    cache1.put(1,v1);
+    cache1.put(2,v2);
+    cache1.put(3,new TestValue1(123));
+    cache1.put(4,new TestValue2(123));
+    deserialized=false;
+    cache2.get(1);
+    assertTrue(deserialized);
+    deserialized=false;
+    cache2.get(2);
+    assertFalse(deserialized);
+    deserialized=false;
+    cache2.get(3);
+    assertTrue(deserialized);
+    deserialized=false;
+    cache2.get(4);
+    assertFalse(deserialized);
+  }
+  finally {
+    customBinaryConf=false;
+  }
+}
