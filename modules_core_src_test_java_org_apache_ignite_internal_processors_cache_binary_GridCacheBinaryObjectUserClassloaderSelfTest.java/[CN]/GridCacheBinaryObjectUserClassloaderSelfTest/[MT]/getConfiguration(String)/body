@@ -1,0 +1,38 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi disco=new TcpDiscoverySpi();
+  disco.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(disco);
+  cfg.setCacheConfiguration(cacheConfiguration(gridName));
+  cfg.setMarshaller(new BinaryMarshaller());
+  cfg.setClassLoader(useWrappingLoader ? new WrappingClassLoader(getExternalClassLoader()) : getExternalClassLoader());
+  if (customBinaryConf) {
+    BinarySerializer bs=new BinarySerializer(){
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public void writeBinary(      Object obj,      BinaryWriter writer) throws BinaryObjectException {
+      }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public void readBinary(      Object obj,      BinaryReader reader) throws BinaryObjectException {
+        deserialized=true;
+      }
+    }
+;
+    BinaryTypeConfiguration btcfg1=new BinaryTypeConfiguration();
+    btcfg1.setTypeName("org.apache.ignite.tests.p2p.CacheDeploymentTestValue");
+    btcfg1.setSerializer(bs);
+    BinaryTypeConfiguration btcfg2=new BinaryTypeConfiguration();
+    btcfg2.setTypeName("org.apache.ignite.internal.processors.cache.binary." + "GridCacheBinaryObjectUserClassloaderSelfTest$TestValue1");
+    btcfg2.setSerializer(bs);
+    BinaryConfiguration bcfg=new BinaryConfiguration();
+    Set<BinaryTypeConfiguration> set=new HashSet<>();
+    set.add(btcfg1);
+    set.add(btcfg2);
+    bcfg.setTypeConfigurations(set);
+    cfg.setBinaryConfiguration(bcfg);
+  }
+  return cfg;
+}
