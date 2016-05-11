@@ -4,12 +4,9 @@
   if (!ctx.store().configured())   return new GridFinishedFuture<>();
   CacheOperationContext opCtx=ctx.operationContextPerCall();
   ExpiryPolicy plc=opCtx != null ? opCtx.expiry() : null;
+  final boolean keepBinary=opCtx != null && opCtx.isKeepBinary();
   if (replaceExisting) {
-    if (ctx.store().isLocal()) {
-      Collection<ClusterNode> nodes=ctx.grid().cluster().forDataNodes(name()).nodes();
-      if (nodes.isEmpty())       return new GridFinishedFuture<>();
-      return ctx.closures().callAsyncNoFailover(BROADCAST,new LoadKeysCallable<>(ctx.name(),keys,true,plc),nodes,true);
-    }
+    if (ctx.store().isLocal())     return runLoadKeysCallable(keys,plc,keepBinary,true);
  else {
       return ctx.closures().callLocalSafe(new Callable<Void>(){
         @Override public Void call() throws Exception {
@@ -20,9 +17,5 @@
 );
     }
   }
- else {
-    Collection<ClusterNode> nodes=ctx.grid().cluster().forDataNodes(name()).nodes();
-    if (nodes.isEmpty())     return new GridFinishedFuture<>();
-    return ctx.closures().callAsyncNoFailover(BROADCAST,new LoadKeysCallable<>(ctx.name(),keys,false,plc),nodes,true);
-  }
+ else   return runLoadKeysCallable(keys,plc,keepBinary,false);
 }

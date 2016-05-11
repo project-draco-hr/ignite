@@ -1,0 +1,16 @@
+{
+  Collection<ClusterNode> nodes=ctx.grid().cluster().forDataNodes(name()).nodes();
+  if (nodes.isEmpty())   return new GridFinishedFuture<>();
+  Collection<ClusterNode> oldNodes=ctx.grid().cluster().forDataNodes(name()).forPredicate(new IgnitePredicate<ClusterNode>(){
+    @Override public boolean apply(    ClusterNode node){
+      return node.version().compareToIgnoreTimestamp(LOAD_CACHE_JOB_V2_SINCE) < 0;
+    }
+  }
+).nodes();
+  if (oldNodes.isEmpty()) {
+    return ctx.closures().callAsyncNoFailover(BROADCAST,new LoadKeysCallableV2<>(ctx.name(),keys,update,plc,keepBinary),nodes,true);
+  }
+ else {
+    return ctx.closures().callAsyncNoFailover(BROADCAST,new LoadKeysCallable<>(ctx.name(),keys,update,plc),nodes,true);
+  }
+}
