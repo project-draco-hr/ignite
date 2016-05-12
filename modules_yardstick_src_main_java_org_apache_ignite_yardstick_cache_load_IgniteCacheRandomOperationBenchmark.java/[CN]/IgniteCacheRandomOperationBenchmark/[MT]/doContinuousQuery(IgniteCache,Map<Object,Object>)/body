@@ -1,0 +1,16 @@
+{
+  List<QueryCursor> cursors=(ArrayList<QueryCursor>)map.get(cache.getName());
+  if (cursors == null) {
+    cursors=new ArrayList<>(CONTINUOUS_QUERY_PER_CACHE);
+    map.put(cache.getName(),cursors);
+  }
+  if (cursors.size() == CONTINUOUS_QUERY_PER_CACHE) {
+    QueryCursor cursor=cursors.get(nextRandom(cursors.size()));
+    cursor.close();
+    cursors.remove(cursor);
+  }
+  ContinuousQuery qry=new ContinuousQuery();
+  qry.setLocalListener(new ContinuousQueryUpdater());
+  qry.setRemoteFilterFactory(FactoryBuilder.factoryOf(new ContinuousQueryFilter()));
+  cursors.add(cache.query(qry));
+}

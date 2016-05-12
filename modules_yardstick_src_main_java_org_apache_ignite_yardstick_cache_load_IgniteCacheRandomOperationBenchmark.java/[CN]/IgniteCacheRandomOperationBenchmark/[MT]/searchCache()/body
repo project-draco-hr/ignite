@@ -7,10 +7,12 @@
   replaceEntryProc=new BenchmarkReplaceValueEntryProcessor(null);
   rmvEntryProc=new BenchmarkRemoveEntryProcessor();
   cacheSqlDescriptors=new HashMap<>();
+  operationStatistics=new HashMap<>();
   loadQueries();
   loadAllowedOperations();
   for (  String cacheName : ignite().cacheNames()) {
     IgniteCache<Object,Object> cache=ignite().cache(cacheName);
+    for (    Operation op : Operation.values())     operationStatistics.put(op + "_" + cacheName,new AtomicLong(0));
     CacheConfiguration configuration=cache.getConfiguration(CacheConfiguration.class);
     if (isClassDefinedInConfig(configuration)) {
       if (configuration.getMemoryMode() == CacheMemoryMode.OFFHEAP_TIERED) {
@@ -22,12 +24,12 @@
         Collection<QueryEntity> entries=configuration.getQueryEntities();
         for (        QueryEntity queryEntity : entries) {
           if (queryEntity.getKeyType() != null) {
-            Class keyCls=getClass().forName(queryEntity.getKeyType());
+            Class keyCls=Class.forName(queryEntity.getKeyType());
             if (ModelUtil.canCreateInstance(keyCls))             keys.add(keyCls);
  else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + queryEntity.getKeyType() + ']');
           }
           if (queryEntity.getValueType() != null) {
-            Class valCls=getClass().forName(queryEntity.getValueType());
+            Class valCls=Class.forName(queryEntity.getValueType());
             if (ModelUtil.canCreateInstance(valCls))             values.add(valCls);
  else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + queryEntity.getKeyType() + ']');
             cofigureCacheSqlDescriptor(cacheName,queryEntity,valCls);
@@ -38,18 +40,18 @@
         Collection<CacheTypeMetadata> entries=configuration.getTypeMetadata();
         for (        CacheTypeMetadata cacheTypeMetadata : entries) {
           if (cacheTypeMetadata.getKeyType() != null) {
-            Class keyCls=getClass().forName(cacheTypeMetadata.getKeyType());
+            Class keyCls=Class.forName(cacheTypeMetadata.getKeyType());
             if (ModelUtil.canCreateInstance(keyCls))             keys.add(keyCls);
  else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + cacheTypeMetadata.getKeyType() + ']');
           }
           if (cacheTypeMetadata.getValueType() != null) {
-            Class valCls=getClass().forName(cacheTypeMetadata.getValueType());
+            Class valCls=Class.forName(cacheTypeMetadata.getValueType());
             if (ModelUtil.canCreateInstance(valCls))             values.add(valCls);
  else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + cacheTypeMetadata.getKeyType() + ']');
           }
         }
       }
-      if (keys.size() == 0 || values.size() == 0)       continue;
+      if (keys.isEmpty() || values.isEmpty())       continue;
       keysCacheClasses.put(cacheName,keys.toArray(new Class[]{}));
       valuesCacheClasses.put(cacheName,values.toArray(new Class[]{}));
     }
