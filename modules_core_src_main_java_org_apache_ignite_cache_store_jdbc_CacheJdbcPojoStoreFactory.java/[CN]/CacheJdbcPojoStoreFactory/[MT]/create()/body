@@ -7,19 +7,18 @@
   store.setParallelLoadCacheMinimumThreshold(parallelLoadCacheMinThreshold);
   store.setTypes(types);
   if (dataSrc != null)   store.setDataSource(dataSrc);
- else {
-    if (dataSrcBean != null) {
-      if (appCtx == null)       throw new IgniteException("Spring application context resource is not injected.");
-      IgniteSpringHelper spring;
-      try {
-        spring=IgniteComponentType.SPRING.create(false);
-        DataSource data=spring.loadBeanFromAppContext(appCtx,dataSrcBean);
-        store.setDataSource(data);
-      }
- catch (      Exception e) {
-        throw new IgniteException("Failed to load bean in application context [beanName=" + dataSrcBean + ", igniteConfig="+ appCtx+ ']',e);
-      }
+ else   if (dataSrcBean != null) {
+    if (appCtx == null)     throw new IgniteException("Spring application context resource is not injected.");
+    IgniteSpringHelper spring;
+    try {
+      spring=IgniteComponentType.SPRING.create(false);
+      DataSource data=spring.loadBeanFromAppContext(appCtx,dataSrcBean);
+      store.setDataSource(data);
+    }
+ catch (    Exception e) {
+      throw new IgniteException("Failed to load bean in application context [beanName=" + dataSrcBean + ", igniteConfig="+ appCtx+ ']',e);
     }
   }
+ else   if (dataSrcFactory != null)   store.setDataSource(dataSrcFactory.create());
   return store;
 }

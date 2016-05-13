@@ -1,5 +1,5 @@
 {
-  IgniteCache<PersonKey,Person> c1=grid().cache(null);
+  IgniteCache<Object,Person> c1=grid().cache(CACHE_NAME);
   Connection conn=getConnection();
   try {
     PreparedStatement stmt=conn.prepareStatement("SELECT ID, ORG_ID, BIRTHDAY, NAME FROM PERSON WHERE ID = ?");
@@ -7,9 +7,10 @@
     ResultSet rs=stmt.executeQuery();
     assertFalse("Unexpected non empty result set",rs.next());
     U.closeQuiet(rs);
-    PersonKey key=new PersonKey(-1);
     Date testDate=Date.valueOf("2001-05-05");
-    c1.put(key,new Person(-1,-2,testDate,"Person-to-test-put-insert",999));
+    Person val=new Person(-1,-2,testDate,"Person-to-test-put-insert",999);
+    Object key=builtinKeys ? Integer.valueOf(-1) : new PersonKey(-1);
+    c1.put(key,val);
     rs=stmt.executeQuery();
     assertTrue("Unexpected empty result set",rs.next());
     assertEquals(-1,rs.getInt(1));
