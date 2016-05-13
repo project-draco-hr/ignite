@@ -1,0 +1,52 @@
+{
+  if (getCacheMode() == REPLICATED)   return;
+  near=true;
+  try {
+    for (int i=1; i <= 3; i++)     startGrid(i);
+    awaitPartitionMapExchange();
+    Ignite ignite=grid(1);
+    int k=0;
+    for (int i=1; i <= 3; i++) {
+      int kP=-1;
+      int kB=-1;
+      int kN=-1;
+      while (kP == -1 || kB == -1 || kN == -1) {
+        if (ignite.affinity(BACKUP_CACHE_1).isPrimary(grid(1).cluster().localNode(),k))         kP=k;
+        if (ignite.affinity(BACKUP_CACHE_1).isBackup(grid(1).cluster().localNode(),k) && ignite.affinity(BACKUP_CACHE_1).isPrimary(grid(2).cluster().localNode(),k))         kB=k;
+        if (!ignite.affinity(BACKUP_CACHE_1).isPrimaryOrBackup(grid(1).cluster().localNode(),k) && ignite.affinity(BACKUP_CACHE_1).isPrimary(grid(3).cluster().localNode(),k))         kN=k;
+        k++;
+      }
+      assertTrue(kP != kB && kB != kN && kN != kP);
+      Map<Integer,Integer> m=new HashMap<>(3);
+      m.put(kP,kP);
+      m.put(kB,kB);
+      m.put(kN,kN);
+      try (Transaction tx=grid(i).transactions().txStart()){
+        grid(i).cache(BACKUP_CACHE_1).putAll(m);
+        tx.commit();
+      }
+       boolean locStoreBackups=!IgniteSystemProperties.getBoolean(IGNITE_LOCAL_STORE_KEEPS_PRIMARY_ONLY);
+      checkLocalStore(grid(1),LOCAL_STORE_1,BACKUP_CACHE_1,m.keySet(),locStoreBackups);
+      checkLocalStore(grid(2),LOCAL_STORE_2,BACKUP_CACHE_1,m.keySet(),locStoreBackups);
+      checkLocalStore(grid(3),LOCAL_STORE_3,BACKUP_CACHE_1,m.keySet(),locStoreBackups);
+    }
+    grid(1).cache(BACKUP_CACHE_1).removeAll();
+    Random rn=new Random();
+    for (int i=1; i <= 3; i++) {
+      try (Transaction tx=grid(i).transactions().txStart()){
+        Map<Integer,Integer> m=new HashMap<>(3);
+        for (int j=0; j < 50; j++) {
+          m.put(rn.nextInt(1000),1000);
+        }
+        grid(i).cache(BACKUP_CACHE_1).withSkipStore().putAll(m);
+        tx.commit();
+      }
+       assertTrue(LOCAL_STORE_1.map.isEmpty());
+      assertTrue(LOCAL_STORE_2.map.isEmpty());
+      assertTrue(LOCAL_STORE_3.map.isEmpty());
+    }
+  }
+  finally {
+    near=false;
+  }
+}

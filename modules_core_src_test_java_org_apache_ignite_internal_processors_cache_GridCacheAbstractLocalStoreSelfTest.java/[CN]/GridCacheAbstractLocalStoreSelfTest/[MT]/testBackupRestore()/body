@@ -1,0 +1,55 @@
+{
+  Ignite ignite1=startGrid(1);
+  Ignite ignite2=startGrid(2);
+  String name=BACKUP_CACHE_2;
+  int key1=-1;
+  int key2=-1;
+  for (int i=0; i < KEYS; i++) {
+    if (ignite1.affinity(name).isPrimary(ignite1.cluster().localNode(),i)) {
+      key1=i;
+      break;
+    }
+  }
+  for (int i=0; i < KEYS; i++) {
+    if (!ignite1.affinity(name).isPrimary(ignite1.cluster().localNode(),i)) {
+      key2=i;
+      break;
+    }
+  }
+  assertTrue(key1 >= 0);
+  assertTrue(key2 >= 0);
+  assertNotSame(key1,key2);
+  assertEquals(0,ignite1.cache(name).size());
+  assertEquals(0,LOCAL_STORE_1.map.size());
+  assertEquals(0,LOCAL_STORE_2.map.size());
+  try (Transaction tx=ignite1.transactions().txStart()){
+    ignite1.cache(name).put(key1,key1);
+    ignite1.cache(name).put(key2,key2);
+    Map<Integer,Integer> m=new HashMap<>();
+    for (int i=KEYS; i < KEYS + 100; i++)     m.put(i,i);
+    ignite1.cache(name).putAll(m);
+    tx.commit();
+  }
+   assertEquals(102,LOCAL_STORE_1.map.size());
+  assertEquals(102,LOCAL_STORE_2.map.size());
+  stopGrid(1);
+  assertEquals(1,G.allGrids().size());
+  assertEquals(key1,ignite2.cache(name).get(key1));
+  assertEquals(key2,ignite2.cache(name).get(key2));
+  for (int i=KEYS; i < KEYS + 100; i++)   assertEquals(i,ignite2.cache(name).get(i));
+  assertEquals(102,ignite2.cache(name).size());
+  assertEquals(102,LOCAL_STORE_1.map.size());
+  assertEquals(102,LOCAL_STORE_2.map.size());
+  stopGrid(2);
+  assertEquals(0,G.allGrids().size());
+  assertEquals(102,LOCAL_STORE_1.map.size());
+  assertEquals(102,LOCAL_STORE_2.map.size());
+  ignite2=startGrid(2);
+  assertEquals(1,G.allGrids().size());
+  assertEquals(key1,ignite2.cache(name).get(key1));
+  assertEquals(key2,ignite2.cache(name).get(key2));
+  for (int i=KEYS; i < KEYS + 100; i++)   assertEquals(i,ignite2.cache(name).get(i));
+  assertEquals(102,ignite2.cache(name).size());
+  assertEquals(102,LOCAL_STORE_1.map.size());
+  assertEquals(102,LOCAL_STORE_2.map.size());
+}
