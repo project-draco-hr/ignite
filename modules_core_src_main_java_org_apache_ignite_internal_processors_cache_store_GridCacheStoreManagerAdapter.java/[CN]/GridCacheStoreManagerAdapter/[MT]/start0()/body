@@ -23,4 +23,13 @@
     sesLsnrs=cctx.shared().storeSessionListeners();
     globalSesLsnrs=true;
   }
+  if (isLocal()) {
+    for (    ClusterNode node : cctx.kernalContext().cluster().get().forRemotes().nodes()) {
+      if (LOCAL_STORE_KEEPS_PRIMARY_AND_BACKUPS_SINCE.compareTo(node.version()) > 0 && !IgniteSystemProperties.getBoolean(IGNITE_LOCAL_STORE_KEEPS_PRIMARY_ONLY)) {
+        IgniteProductVersion v=LOCAL_STORE_KEEPS_PRIMARY_AND_BACKUPS_SINCE;
+        log.warning("Since Ignite " + v.major() + "."+ v.minor()+ "."+ v.maintenance()+ " Local Store keeps primary and backup partitions. "+ "To keep primary partitions only please set system property "+ IGNITE_LOCAL_STORE_KEEPS_PRIMARY_ONLY+ " to 'true'.");
+        break;
+      }
+    }
+  }
 }

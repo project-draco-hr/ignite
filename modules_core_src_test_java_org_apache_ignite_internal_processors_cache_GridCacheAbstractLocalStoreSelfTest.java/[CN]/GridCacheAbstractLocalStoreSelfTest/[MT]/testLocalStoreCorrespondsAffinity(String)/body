@@ -1,0 +1,39 @@
+{
+  near=true;
+  try {
+    for (int i=1; i <= 6; i++)     startGrid(i);
+    assertTrue(((IgniteCacheProxy)grid(1).cache(name)).context().isNear() || getCacheMode() == REPLICATED);
+    awaitPartitionMapExchange();
+    Random rn=new Random();
+    for (int i=1; i <= 6; i++)     assertEquals(0,grid(i).cache(name).localSize(CachePeekMode.NEAR));
+    for (int i=0; i < KEYS; i++) {
+      Ignite ignite=grid(rn.nextInt(6) + 1);
+      try (Transaction tx=ignite.transactions().txStart()){
+        ignite.cache(name).put(i,i);
+        for (int j=0; j < 5; j++)         ignite.cache(name).get(rn.nextInt(KEYS));
+        Map<Integer,Integer> m=new HashMap<>(5);
+        for (int j=0; j < 5; j++) {
+          Integer key=rn.nextInt(KEYS);
+          m.put(key,key);
+        }
+        ignite.cache(name).putAll(m);
+        tx.commit();
+      }
+     }
+    for (int i=1; i <= 6; i++) {
+      assertTrue(grid(i).cache(name).localSize(CachePeekMode.NEAR) > 0 || getCacheMode() == REPLICATED);
+    }
+    checkLocalStore(grid(1),LOCAL_STORE_1,name);
+    checkLocalStore(grid(2),LOCAL_STORE_2,name);
+    checkLocalStore(grid(3),LOCAL_STORE_3,name);
+    checkLocalStore(grid(4),LOCAL_STORE_4,name);
+    checkLocalStore(grid(5),LOCAL_STORE_5,name);
+    checkLocalStore(grid(6),LOCAL_STORE_6,name);
+    int fullStoreSize=LOCAL_STORE_1.map.size() + LOCAL_STORE_2.map.size() + LOCAL_STORE_3.map.size()+ LOCAL_STORE_4.map.size()+ LOCAL_STORE_5.map.size()+ LOCAL_STORE_6.map.size();
+    CacheConfiguration ccfg=grid(1).cache(name).getConfiguration(CacheConfiguration.class);
+    assertEquals(getCacheMode() == REPLICATED ? KEYS * 6 : ccfg.getBackups() * KEYS + KEYS,fullStoreSize);
+  }
+  finally {
+    near=false;
+  }
+}

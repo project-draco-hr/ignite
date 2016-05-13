@@ -1,17 +1,40 @@
 {
   Ignite ignite1=startGrid(1);
-  IgniteCache<Object,Object> cache=ignite1.cache(BACKUP_CACHE);
+  IgniteCache<Object,Object> cache=ignite1.cache(BACKUP_CACHE_2);
   for (int i=0; i < KEYS; i++)   cache.put(i,i);
-  for (int i=0; i < KEYS; i++)   assertEquals(LOCAL_STORE_1.load(i).get1().intValue(),i);
-  Ignite ignite2=startGrid(2);
+  for (int i=0; i < KEYS; i++) {
+    assertEquals(LOCAL_STORE_1.load(i).get1().intValue(),i);
+    assertNull(LOCAL_STORE_2.load(i));
+    assertNull(LOCAL_STORE_3.load(i));
+  }
+  startGrid(2);
   assertEquals(2,Ignition.allGrids().size());
-  checkLocalStoreForBackup(ignite2,LOCAL_STORE_2);
-  Ignite ignite3=startGrid(3);
+  for (int i=0; i < KEYS; i++) {
+    assertEquals(LOCAL_STORE_1.load(i).get1().intValue(),i);
+    assertEquals(LOCAL_STORE_2.load(i).get1().intValue(),i);
+    assertNull(LOCAL_STORE_3.load(i));
+  }
+  startGrid(3);
   assertEquals(Ignition.allGrids().size(),3);
   for (int i=0; i < KEYS; i++)   cache.put(i,i * 3);
-  checkLocalStoreForBackup(ignite2,LOCAL_STORE_2);
-  checkLocalStoreForBackup(ignite3,LOCAL_STORE_3);
+  for (int i=0; i < KEYS; i++) {
+    assertEquals(LOCAL_STORE_1.load(i).get1().intValue(),i * 3);
+    assertEquals(LOCAL_STORE_2.load(i).get1().intValue(),i * 3);
+    assertEquals(LOCAL_STORE_3.load(i).get1().intValue(),i * 3);
+  }
   stopGrid(3,true);
+  for (int i=0; i < KEYS; i++)   cache.put(i,i * 7);
   assertEquals(Ignition.allGrids().size(),2);
-  checkLocalStoreForBackup(ignite2,LOCAL_STORE_2);
+  for (int i=0; i < KEYS; i++) {
+    assertEquals(LOCAL_STORE_1.load(i).get1().intValue(),i * 7);
+    assertEquals(LOCAL_STORE_2.load(i).get1().intValue(),i * 7);
+    assertEquals(LOCAL_STORE_3.load(i).get1().intValue(),i * 3);
+  }
+  startGrid(3);
+  assertEquals(Ignition.allGrids().size(),3);
+  for (int i=0; i < KEYS; i++) {
+    assertEquals(LOCAL_STORE_1.load(i).get1().intValue(),i * 7);
+    assertEquals(LOCAL_STORE_2.load(i).get1().intValue(),i * 7);
+    assertEquals(LOCAL_STORE_3.load(i).get1().intValue(),i * 7);
+  }
 }
