@@ -1,2 +1,28 @@
 {
+  Ignite ig=testedGrid();
+  CacheConfiguration<Object,Object> cc=variationConfig("expireConfig");
+  cc.setExpiryPolicyFactory(new ExpirePolicyFactory());
+  IgniteCache<Object,Object> cache=ig.createCache(cc);
+  try {
+    for (int i=0; i < KEYS; i++)     cache.put(key(i),value(i));
+    U.sleep(TIMEOUT);
+    waitEmpty(cc.getName());
+    for (int i=0; i < KEYS; i++) {
+      assertEquals(value(i),cache.get(key(i)));
+      cache.get(key(i));
+    }
+    U.sleep(TIMEOUT);
+    waitEmpty(cc.getName());
+    for (int i=0; i < KEYS; i++)     assertEquals(value(i),cache.get(key(i)));
+    for (int i=0; i < KEYS; i++) {
+      assertEquals(value(i),cache.get(key(i)));
+      cache.put(key(i),value(i));
+    }
+    U.sleep(TIMEOUT);
+    waitEmpty(cc.getName());
+    for (int i=0; i < KEYS; i++)     assertEquals(value(i),cache.get(key(i)));
+  }
+  finally {
+    destroyCacheSafe(ig,cc.getName());
+  }
 }

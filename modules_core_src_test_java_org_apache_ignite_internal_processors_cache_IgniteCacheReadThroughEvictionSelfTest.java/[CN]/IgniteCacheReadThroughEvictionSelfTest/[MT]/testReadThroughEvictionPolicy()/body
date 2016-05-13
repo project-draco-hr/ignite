@@ -1,21 +1,23 @@
 {
-  Ignite ig=ignite(GRID_CNT - 1);
-  CacheConfiguration<Object,Object> cc=cacheConfiguration();
+  Ignite ig=testedGrid();
+  CacheConfiguration<Object,Object> cc=variationConfig("eviction");
   cc.setEvictionPolicy(new FifoEvictionPolicy(1));
-  final IgniteCache<Object,Object> cache=ig.getOrCreateCache(cc);
+  if (cc.getMemoryMode() == CacheMemoryMode.OFFHEAP_TIERED)   cc.setOffHeapMaxMemory(2 * 1024);
+  final IgniteCache<Object,Object> cache=ig.createCache(cc);
   try {
-    for (int i=0; i < 1000; i++)     cache.put(i,i);
+    for (int i=0; i < KEYS; i++)     cache.put(key(i),value(i));
     assertTrue(GridTestUtils.waitForCondition(new PA(){
       @Override public boolean apply(){
-        int size=cache.size();
-        System.out.println("Cache size: " + size);
-        return size <= GRID_CNT;
+        int size=cache.size(CachePeekMode.ONHEAP);
+        int offheapSize=cache.size(CachePeekMode.OFFHEAP);
+        System.out.println("Cache [onHeap=" + size + ", offHeap="+ offheapSize+ ']');
+        return size <= testsCfg.gridCount() && offheapSize < KEYS;
       }
     }
 ,getTestTimeout()));
-    for (int i=0; i < 1000; i++)     assertEquals(i,cache.get(i));
+    for (int i=0; i < KEYS; i++)     assertEquals(value(i),cache.get(key(i)));
   }
   finally {
-    ig.destroyCache(null);
+    destroyCacheSafe(ig,cc.getName());
   }
 }

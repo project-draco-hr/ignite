@@ -1,0 +1,15 @@
+{
+  boolean success=GridTestUtils.waitForCondition(new PA(){
+    @Override public boolean apply(){
+      for (      Ignite g : G.allGrids()) {
+        GridCacheAdapter<Object,Object> cache=((IgniteEx)g).context().cache().internalCache(name);
+        if (cache == null)         return true;
+        if (!cache.isEmpty())         return false;
+        if (cache.context().offheap().entriesCount(null) > 0)         return false;
+      }
+      return true;
+    }
+  }
+,getTestTimeout());
+  assertTrue("Failed to wait for the cache to be empty",success);
+}
