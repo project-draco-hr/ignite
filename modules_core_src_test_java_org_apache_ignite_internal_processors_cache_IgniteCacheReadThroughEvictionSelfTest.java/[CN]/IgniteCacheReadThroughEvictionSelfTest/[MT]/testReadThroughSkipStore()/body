@@ -1,16 +1,16 @@
 {
-  Ignite ig=ignite(GRID_CNT - 1);
-  CacheConfiguration<Object,Object> cc=cacheConfiguration();
-  final IgniteCache<Object,Object> cache=ig.getOrCreateCache(cc);
+  Ignite ig=testedGrid();
+  CacheConfiguration<Object,Object> cc=variationConfig("skipStore");
+  final IgniteCache<Object,Object> cache=ig.createCache(cc);
   try {
-    for (int i=0; i < 1000; i++) {
-      cache.put(i,i);
-      cache.withSkipStore().remove(i);
+    for (int i=0; i < KEYS; i++) {
+      cache.put(key(i),value(i));
+      cache.withSkipStore().remove(key(i));
     }
-    waitEmpty();
-    for (int i=0; i < 1000; i++)     assertEquals(i,cache.get(i));
+    waitEmpty(cc.getName());
+    for (int i=0; i < KEYS; i++)     assertEquals(value(i),cache.get(key(i)));
   }
   finally {
-    ig.destroyCache(null);
+    destroyCacheSafe(ig,cc.getName());
   }
 }
