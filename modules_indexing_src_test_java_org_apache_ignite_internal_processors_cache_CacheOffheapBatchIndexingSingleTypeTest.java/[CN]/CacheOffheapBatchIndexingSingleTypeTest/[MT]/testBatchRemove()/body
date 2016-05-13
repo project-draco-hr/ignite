@@ -1,0 +1,28 @@
+{
+  Ignite ignite=grid(0);
+  CacheConfiguration<Object,Object> ccfg=cacheConfiguration(1,new Class<?>[]{Integer.class,CacheOffheapBatchIndexingBaseTest.Organization.class});
+  final IgniteCache<Object,Object> cache=ignite.createCache(ccfg);
+  try {
+    int iterations=50;
+    while (iterations-- >= 0) {
+      int total=1000;
+      for (int id=0; id < total; id++)       cache.put(id,new CacheOffheapBatchIndexingBaseTest.Organization(id,"Organization " + id));
+      cache.invoke(0,new CacheEntryProcessor<Object,Object,Object>(){
+        @Override public Object process(        MutableEntry<Object,Object> entry,        Object... args){
+          entry.remove();
+          return null;
+        }
+      }
+);
+      QueryCursor<List<?>> q=cache.query(new SqlFieldsQuery("select _key,_val from Organization where id=0"));
+      assertEquals(0,q.getAll().size());
+      q=cache.query(new SqlFieldsQuery("select _key,_val from Organization where id=1"));
+      assertEquals(1,q.getAll().size());
+      assertEquals(total - 1,cache.size());
+      cache.removeAll();
+    }
+  }
+  finally {
+    cache.destroy();
+  }
+}
