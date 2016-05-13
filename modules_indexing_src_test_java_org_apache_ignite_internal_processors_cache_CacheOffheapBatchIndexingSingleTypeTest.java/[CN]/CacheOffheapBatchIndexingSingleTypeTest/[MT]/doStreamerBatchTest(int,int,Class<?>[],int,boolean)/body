@@ -1,0 +1,21 @@
+{
+  Ignite ignite=grid(0);
+  final IgniteCache<Object,Object> cache=ignite.createCache(cacheConfiguration(onHeapRowCacheSize,entityClasses));
+  try {
+    if (preloadInStreamer)     preload(cache.getName());
+    while (iterations-- >= 0) {
+      Map<Integer,Organization> putMap1=new TreeMap<>();
+      for (int i=0; i < entitiesCnt; i++)       putMap1.put(i,new Organization(i,String.valueOf(i)));
+      cache.putAll(putMap1);
+      Map<Integer,Organization> putMap2=new TreeMap<>();
+      for (int i=entitiesCnt / 2; i < entitiesCnt * 3 / 2; i++) {
+        cache.remove(i);
+        putMap2.put(i,new Organization(i,String.valueOf(i)));
+      }
+      cache.putAll(putMap2);
+    }
+  }
+  finally {
+    cache.destroy();
+  }
+}
