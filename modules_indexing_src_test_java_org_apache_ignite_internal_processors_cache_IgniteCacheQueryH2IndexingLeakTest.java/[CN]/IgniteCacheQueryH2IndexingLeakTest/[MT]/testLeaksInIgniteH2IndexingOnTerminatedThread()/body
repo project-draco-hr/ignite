@@ -1,0 +1,35 @@
+{
+  final IgniteCache<Integer,Integer> c=grid(0).cache(null);
+  for (int i=0; i < ITERATIONS; ++i) {
+    info("Iteration #" + i);
+    final AtomicBoolean stop=new AtomicBoolean();
+    IgniteInternalFuture<?> fut=multithreadedAsync(new CAX(){
+      @Override public void applyx() throws IgniteCheckedException {
+        while (!stop.get()) {
+          c.query(new SqlQuery(Integer.class,"_val >= 0")).getAll();
+          c.query(new SqlQuery(Integer.class,"_val >= 1")).getAll();
+        }
+      }
+    }
+,THREAD_COUNT);
+    final GridQueryProcessor qryProc=grid(0).context().query();
+    try {
+      assertTrue(GridTestUtils.waitForCondition(new GridAbsPredicate(){
+        @Override public boolean apply(){
+          return getStatementCacheSize(qryProc) == THREAD_COUNT;
+        }
+      }
+,STMT_CACHE_CLEANUP_TIMEOUT));
+    }
+  finally {
+      stop.set(true);
+    }
+    fut.get();
+    assertTrue(GridTestUtils.waitForCondition(new GridAbsPredicate(){
+      @Override public boolean apply(){
+        return getStatementCacheSize(qryProc) == 0;
+      }
+    }
+,STMT_CACHE_CLEANUP_TIMEOUT * 2));
+  }
+}
