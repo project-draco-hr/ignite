@@ -1,0 +1,25 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      try {
+        IgniteCache<Object,Object> cache=jcache();
+        ClusterNode locNode=testedGrid().cluster().localNode();
+        Affinity<Object> affinity=testedGrid().affinity(cacheName());
+        Map<Object,Object> map=new HashMap<>();
+        for (int i=0; i < CNT; i++) {
+          Object key=key(i);
+          Object val=value(i);
+          cache.put(key,val);
+          if (!isClientMode() && (cacheMode() == REPLICATED || affinity.isPrimary(locNode,key)))           map.put(key,val);
+        }
+        registerEventListeners(map);
+        QueryCursor<Cache.Entry<Object,Object>> q=cache.query(new ScanQuery<>().setLocal(true));
+        checkQueryResults(map,q);
+      }
+  finally {
+        stopListeners();
+      }
+    }
+  }
+);
+}

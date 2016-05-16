@@ -1,0 +1,43 @@
+{
+  final IgniteBiPredicate<K,V> keyValFilter=qry.scanFilter();
+  try {
+    injectResources(keyValFilter);
+    final ExpiryPolicy plc=cctx.expiry();
+    final AffinityTopologyVersion topVer=cctx.affinity().affinityTopologyVersion();
+    final boolean backups=qry.includeBackups() || cctx.isReplicated();
+    final GridIterator<IgniteBiTuple<K,V>> heapIt=onheapIterator(qry,topVer,keyValFilter,backups,plc,locNode);
+    final GridIterator<IgniteBiTuple<K,V>> it;
+    if (cctx.isSwapOrOffheapEnabled()) {
+      List<GridIterator<IgniteBiTuple<K,V>>> iters=new ArrayList<>(3);
+      iters.add(heapIt);
+      if (cctx.isOffHeapEnabled())       iters.add(offheapIterator(qry,topVer,backups,plc,locNode));
+      if (cctx.swap().swapEnabled())       iters.add(swapIterator(qry,topVer,backups,plc,locNode));
+      it=new CompoundIterator<>(iters);
+    }
+ else     it=heapIt;
+    return new GridCloseableIteratorAdapter<IgniteBiTuple<K,V>>(){
+      @Override protected boolean onHasNext(){
+        return it.hasNext();
+      }
+      @Override protected IgniteBiTuple<K,V> onNext(){
+        return it.next();
+      }
+      @Override protected void onRemove(){
+        it.remove();
+      }
+      @Override protected void onClose() throws IgniteCheckedException {
+        try {
+          if (heapIt instanceof IgniteSpiCloseableIterator)           ((IgniteSpiCloseableIterator)heapIt).close();
+        }
+  finally {
+          closeScanFilter(keyValFilter);
+        }
+      }
+    }
+;
+  }
+ catch (  IgniteCheckedException|RuntimeException e) {
+    closeScanFilter(keyValFilter);
+    throw e;
+  }
+}

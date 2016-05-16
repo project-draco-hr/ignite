@@ -1,29 +1,2 @@
 {
-  Collection<ClusterNode> nodes;
-  try {
-    nodes=nodes();
-  }
- catch (  IgniteCheckedException e) {
-    return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),e);
-  }
-  cctx.checkSecurity(SecurityPermission.CACHE_READ);
-  if (nodes.isEmpty() && (type != SCAN || part == null))   return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),new ClusterGroupEmptyCheckedException());
-  if (log.isDebugEnabled())   log.debug("Executing query [query=" + this + ", nodes="+ nodes+ ']');
-  if (cctx.deploymentEnabled()) {
-    try {
-      cctx.deploy().registerClasses(filter,rmtReducer,rmtTransform);
-      cctx.deploy().registerClasses(args);
-    }
- catch (    IgniteCheckedException e) {
-      return new GridCacheQueryErrorFuture<>(cctx.kernalContext(),e);
-    }
-  }
-  if (subjId == null)   subjId=cctx.localNodeId();
-  taskHash=cctx.kernalContext().job().currentTaskNameHash();
-  final GridCacheQueryBean bean=new GridCacheQueryBean(this,(IgniteReducer<Object,Object>)rmtReducer,(IgniteClosure<Object,Object>)rmtTransform,args);
-  final GridCacheQueryManager qryMgr=cctx.queries();
-  boolean loc=nodes.size() == 1 && F.first(nodes).id().equals(cctx.localNodeId());
-  if (type == SQL_FIELDS || type == SPI)   return (CacheQueryFuture<R>)(loc ? qryMgr.queryFieldsLocal(bean) : qryMgr.queryFieldsDistributed(bean,nodes));
- else   if (type == SCAN && part != null && !cctx.isLocal())   return new CacheQueryFallbackFuture<>(part,bean,qryMgr,cctx);
- else   return (CacheQueryFuture<R>)(loc ? qryMgr.queryLocal(bean) : qryMgr.queryDistributed(bean,nodes));
 }

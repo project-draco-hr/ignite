@@ -16,8 +16,19 @@
       expiryPlc=cctx.cache().expiryPolicy(plc);
     }
     if (val != null) {
-      next0=F.t((K)cctx.unwrapBinaryIfNeeded(key,true),(V)cctx.unwrapBinaryIfNeeded(val,true));
-      if (checkPredicate(next0))       break;
+      boolean keepBinary0=!locNode || keepBinary;
+      next0=F.t((K)cctx.unwrapBinaryIfNeeded(key,keepBinary0),(V)cctx.unwrapBinaryIfNeeded(val,keepBinary0));
+      boolean passPred=true;
+      if (keyValFilter != null) {
+        Object key0=next0.getKey();
+        Object val0=next0.getValue();
+        if (keepBinary0 && !keepBinary) {
+          key0=(K)cctx.unwrapBinaryIfNeeded(key0,keepBinary);
+          val0=(V)cctx.unwrapBinaryIfNeeded(val0,keepBinary);
+        }
+        passPred=keyValFilter.apply((K)key0,(V)val0);
+      }
+      if (passPred)       break;
  else       next0=null;
     }
   }

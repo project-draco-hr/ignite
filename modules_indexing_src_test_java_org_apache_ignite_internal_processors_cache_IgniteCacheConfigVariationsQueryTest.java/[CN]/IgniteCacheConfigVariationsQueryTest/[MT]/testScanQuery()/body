@@ -1,0 +1,23 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      try {
+        IgniteCache<Object,Object> cache=jcache();
+        Map<Object,Object> map=new HashMap<Object,Object>(){
+{
+            for (int i=0; i < CNT; i++)             put(key(i),value(i));
+          }
+        }
+;
+        registerEventListeners(map);
+        for (        Map.Entry<Object,Object> e : map.entrySet())         cache.put(e.getKey(),e.getValue());
+        QueryCursor<Cache.Entry<Object,Object>> qry=cache.query(new ScanQuery());
+        checkQueryResults(map,qry);
+      }
+  finally {
+        stopListeners();
+      }
+    }
+  }
+);
+}

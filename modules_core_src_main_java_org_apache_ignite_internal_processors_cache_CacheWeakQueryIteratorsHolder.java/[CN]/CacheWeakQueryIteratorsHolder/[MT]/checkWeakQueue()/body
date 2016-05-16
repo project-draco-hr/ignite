@@ -1,11 +1,11 @@
 {
-  for (Reference<? extends WeakQueryFutureIterator> itRef=refQueue.poll(); itRef != null; itRef=refQueue.poll()) {
+  for (Reference itRef=refQueue.poll(); itRef != null; itRef=refQueue.poll()) {
     try {
-      WeakReference<WeakQueryFutureIterator> weakRef=(WeakReference<WeakQueryFutureIterator>)itRef;
-      CacheQueryFuture<?> fut=futs.remove(weakRef);
-      if (fut != null)       fut.cancel();
+      WeakReference weakRef=(WeakReference)itRef;
+      AutoCloseable rsrc=refs.remove(weakRef);
+      if (rsrc != null)       rsrc.close();
     }
- catch (    IgniteCheckedException e) {
+ catch (    Exception e) {
       U.error(log,"Failed to close iterator.",e);
     }
   }

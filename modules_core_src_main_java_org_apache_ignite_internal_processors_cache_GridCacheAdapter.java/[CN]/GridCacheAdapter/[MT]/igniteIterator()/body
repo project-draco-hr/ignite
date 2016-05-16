@@ -2,8 +2,8 @@
   GridCacheContext ctx0=ctx.isNear() ? ctx.near().dht().context() : ctx;
   final CacheOperationContext opCtx=ctx.operationContextPerCall();
   if (!ctx0.isSwapOrOffheapEnabled() && ctx0.kernalContext().discovery().size() == 1)   return localIteratorHonorExpirePolicy(opCtx);
-  CacheQueryFuture<Map.Entry<K,V>> fut=ctx0.queries().createScanQuery(null,null,ctx.keepBinary()).keepAll(false).execute();
-  return ctx.itHolder().iterator(fut,new CacheIteratorConverter<Cache.Entry<K,V>,Map.Entry<K,V>>(){
+  final GridCloseableIterator<Map.Entry<K,V>> iter=ctx0.queries().createScanQuery(null,null,ctx.keepBinary()).keepAll(false).executeScanQuery();
+  return ctx.itHolder().iterator(iter,new CacheIteratorConverter<Cache.Entry<K,V>,Map.Entry<K,V>>(){
     @Override protected Cache.Entry<K,V> convert(    Map.Entry<K,V> e){
       return new CacheEntryImpl<>(e.getKey(),e.getValue());
     }

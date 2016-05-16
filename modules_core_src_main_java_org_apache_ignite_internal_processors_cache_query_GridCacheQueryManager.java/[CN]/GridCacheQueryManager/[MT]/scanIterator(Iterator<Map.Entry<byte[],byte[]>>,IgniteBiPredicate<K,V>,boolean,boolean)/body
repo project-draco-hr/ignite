@@ -1,0 +1,37 @@
+{
+  if (it == null)   return new GridEmptyCloseableIterator<>();
+  return new GridIteratorAdapter<IgniteBiTuple<K,V>>(){
+    private IgniteBiTuple<K,V> next;
+{
+      advance();
+    }
+    @Override public boolean hasNextX(){
+      return next != null;
+    }
+    @Override public IgniteBiTuple<K,V> nextX(){
+      if (next == null)       throw new NoSuchElementException();
+      IgniteBiTuple<K,V> next0=next;
+      advance();
+      return next0;
+    }
+    @Override public void removeX(){
+      throw new UnsupportedOperationException();
+    }
+    private void advance(){
+      next=null;
+      while (it.hasNext()) {
+        final LazySwapEntry e=new LazySwapEntry(it.next());
+        K key=e.key();
+        V val=e.value();
+        if (filter != null || locNode) {
+          key=(K)cctx.unwrapBinaryIfNeeded(key,keepBinary);
+          val=(V)cctx.unwrapBinaryIfNeeded(val,keepBinary);
+        }
+        if (filter != null && !filter.apply(key,val))         continue;
+        next=new IgniteBiTuple<>(key,val);
+        break;
+      }
+    }
+  }
+;
+}

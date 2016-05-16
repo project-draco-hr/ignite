@@ -1,0 +1,55 @@
+{
+  this.expMap=expMap != null ? expMap : Collections.emptyMap();
+  Set<ClusterNode> affNodes=new HashSet<>();
+  if (cacheMode() != REPLICATED) {
+    Affinity<Object> aff=testedGrid().affinity(cacheName());
+    for (    Object key : this.expMap.keySet())     affNodes.add(aff.mapKeyToNode(key));
+  }
+  int execEvtCnt=cacheMode() == REPLICATED || (cacheMode() == PARTITIONED && affNodes.isEmpty()) ? 1 : affNodes.size();
+  evtMap=new ConcurrentHashMap<>();
+  readEvtLatch=new CountDownLatch(this.expMap.size());
+  execEvtLatch=new CountDownLatch(execEvtCnt);
+  objReadLsnrs=new IgnitePredicate[gridCount()];
+  qryExecLsnrs=new IgnitePredicate[gridCount()];
+  for (int i=0; i < gridCount(); i++) {
+    IgnitePredicate<Event> pred=new IgnitePredicate<Event>(){
+      @Override public boolean apply(      Event evt){
+        assertTrue("Event: " + evt,evt instanceof CacheQueryReadEvent);
+        CacheQueryReadEvent<Object,Object> qe=(CacheQueryReadEvent<Object,Object>)evt;
+        assertEquals(SCAN.name(),qe.queryType());
+        assertEquals(cacheName(),qe.cacheName());
+        assertNull(qe.className());
+        assertNull(qe.clause());
+        assertEquals(filterExp,qe.scanQueryFilter() != null);
+        assertNull(qe.continuousQueryFilter());
+        assertNull(qe.arguments());
+        evtMap.put(qe.key(),qe.value());
+        assertFalse(readEvtLatch.getCount() == 0);
+        readEvtLatch.countDown();
+        return true;
+      }
+    }
+;
+    grid(i).events().localListen(pred,EVT_CACHE_QUERY_OBJECT_READ);
+    objReadLsnrs[i]=pred;
+    IgnitePredicate<Event> execPred=new IgnitePredicate<Event>(){
+      @Override public boolean apply(      Event evt){
+        assertTrue("Event: " + evt,evt instanceof CacheQueryExecutedEvent);
+        CacheQueryExecutedEvent qe=(CacheQueryExecutedEvent)evt;
+        assertEquals(SCAN.name(),qe.queryType());
+        assertEquals(cacheName(),qe.cacheName());
+        assertNull(qe.className());
+        assertNull(qe.clause());
+        assertEquals(filterExp,qe.scanQueryFilter() != null);
+        assertNull(qe.continuousQueryFilter());
+        assertNull(qe.arguments());
+        assertFalse("Too many events.",execEvtLatch.getCount() == 0);
+        execEvtLatch.countDown();
+        return true;
+      }
+    }
+;
+    grid(i).events().localListen(execPred,EVT_CACHE_QUERY_EXECUTED);
+    qryExecLsnrs[i]=execPred;
+  }
+}

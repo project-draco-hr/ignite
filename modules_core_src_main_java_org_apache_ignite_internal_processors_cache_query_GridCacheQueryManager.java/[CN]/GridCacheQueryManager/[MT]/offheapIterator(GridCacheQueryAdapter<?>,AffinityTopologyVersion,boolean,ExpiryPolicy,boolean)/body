@@ -1,0 +1,14 @@
+{
+  IgniteBiPredicate<K,V> filter=qry.scanFilter();
+  if (expPlc != null) {
+    return scanExpiryIterator(cctx.swap().rawOffHeapIterator(qry.partition(),true,backups),topVer,filter,expPlc,qry.keepBinary(),locNode);
+  }
+  if (cctx.offheapTiered() && filter != null) {
+    OffheapIteratorClosure c=new OffheapIteratorClosure(filter,qry.keepBinary(),locNode);
+    return cctx.swap().rawOffHeapIterator(c,qry.partition(),true,backups);
+  }
+ else {
+    Iterator<Map.Entry<byte[],byte[]>> it=cctx.swap().rawOffHeapIterator(qry.partition(),true,backups);
+    return scanIterator(it,filter,qry.keepBinary(),locNode);
+  }
+}
