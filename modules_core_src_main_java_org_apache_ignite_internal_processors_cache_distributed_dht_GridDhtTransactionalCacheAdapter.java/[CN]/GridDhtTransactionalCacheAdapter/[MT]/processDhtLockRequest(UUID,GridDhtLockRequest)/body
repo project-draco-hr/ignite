@@ -1,9 +1,33 @@
 {
   IgniteInternalFuture<Object> keyFut=F.isEmpty(req.keys()) ? null : ctx.dht().dhtPreloader().request(req.keys(),req.topologyVersion());
-  if (keyFut == null || keyFut.isDone())   processDhtLockRequest0(nodeId,req);
+  if (keyFut == null || keyFut.isDone()) {
+    if (keyFut != null) {
+      try {
+        keyFut.get();
+      }
+ catch (      NodeStoppingException e) {
+        return;
+      }
+catch (      IgniteCheckedException e) {
+        onForceKeysError(nodeId,req,e);
+        return;
+      }
+    }
+    processDhtLockRequest0(nodeId,req);
+  }
  else {
     keyFut.listen(new CI1<IgniteInternalFuture<Object>>(){
-      @Override public void apply(      IgniteInternalFuture<Object> t){
+      @Override public void apply(      IgniteInternalFuture<Object> fut){
+        try {
+          fut.get();
+        }
+ catch (        NodeStoppingException e) {
+          return;
+        }
+catch (        IgniteCheckedException e) {
+          onForceKeysError(nodeId,req,e);
+          return;
+        }
         processDhtLockRequest0(nodeId,req);
       }
     }

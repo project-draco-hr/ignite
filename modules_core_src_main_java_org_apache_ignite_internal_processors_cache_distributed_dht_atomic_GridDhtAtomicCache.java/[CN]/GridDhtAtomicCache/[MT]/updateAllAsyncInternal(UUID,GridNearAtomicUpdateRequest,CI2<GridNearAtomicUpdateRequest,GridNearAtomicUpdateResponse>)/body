@@ -1,9 +1,31 @@
 {
   IgniteInternalFuture<Object> forceFut=preldr.request(req.keys(),req.topologyVersion());
-  if (forceFut == null || forceFut.isDone())   updateAllAsyncInternal0(nodeId,req,completionCb);
+  if (forceFut == null || forceFut.isDone()) {
+    try {
+      if (forceFut != null)       forceFut.get();
+    }
+ catch (    NodeStoppingException e) {
+      return;
+    }
+catch (    IgniteCheckedException e) {
+      onForceKeysError(nodeId,req,completionCb,e);
+      return;
+    }
+    updateAllAsyncInternal0(nodeId,req,completionCb);
+  }
  else {
     forceFut.listen(new CI1<IgniteInternalFuture<Object>>(){
-      @Override public void apply(      IgniteInternalFuture<Object> t){
+      @Override public void apply(      IgniteInternalFuture<Object> fut){
+        try {
+          fut.get();
+        }
+ catch (        NodeStoppingException e) {
+          return;
+        }
+catch (        IgniteCheckedException e) {
+          onForceKeysError(nodeId,req,completionCb,e);
+          return;
+        }
         updateAllAsyncInternal0(nodeId,req,completionCb);
       }
     }
