@@ -1,0 +1,35 @@
+{
+  CacheConfiguration<K,V> ccfg=cacheConfiguration(EMPLOYEE_CACHE_NAME);
+  ccfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
+  ccfg.setBackups(1);
+  Collection<QueryEntity> qryEntities=new ArrayList<>();
+  QueryEntity type=new QueryEntity();
+  qryEntities.add(type);
+  type.setKeyType(Integer.class.getName());
+  type.setValueType(Employee.class.getName());
+  LinkedHashMap<String,String> qryFlds=new LinkedHashMap<>();
+  qryFlds.put("id","java.lang.Integer");
+  qryFlds.put("departmentId","java.lang.Integer");
+  qryFlds.put("managerId","java.lang.Integer");
+  qryFlds.put("firstName","java.lang.String");
+  qryFlds.put("lastName","java.lang.String");
+  qryFlds.put("email","java.lang.String");
+  qryFlds.put("phoneNumber","java.lang.String");
+  qryFlds.put("hireDate","java.sql.Date");
+  qryFlds.put("job","java.lang.String");
+  qryFlds.put("salary","java.lang.Double");
+  type.setFields(qryFlds);
+  Collection<QueryIndex> indexes=new ArrayList<>();
+  QueryIndex idx=new QueryIndex();
+  idx.setName("EMP_NAMES");
+  idx.setIndexType(QueryIndexType.SORTED);
+  LinkedHashMap<String,Boolean> indFlds=new LinkedHashMap<>();
+  indFlds.put("firstName",Boolean.FALSE);
+  indFlds.put("lastName",Boolean.FALSE);
+  idx.setFields(indFlds);
+  indexes.add(idx);
+  indexes.add(new QueryIndex("salary",QueryIndexType.SORTED,false,"EMP_SALARY"));
+  type.setIndexes(indexes);
+  ccfg.setQueryEntities(qryEntities);
+  return ccfg;
+}

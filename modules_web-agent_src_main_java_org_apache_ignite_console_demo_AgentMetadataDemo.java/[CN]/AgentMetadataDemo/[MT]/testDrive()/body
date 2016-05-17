@@ -1,0 +1,24 @@
+{
+  if (initLatch.compareAndSet(false,true)) {
+    log.info("DEMO: Prepare in-memory H2 database...");
+    try {
+      Connection conn=DriverManager.getConnection("jdbc:h2:mem:demo-db;DB_CLOSE_DELAY=-1","sa","");
+      File sqlScript=resolvePath("demo/db-init.sql");
+      RunScript.execute(conn,new FileReader(sqlScript));
+      log.info("DEMO: Sample tables created.");
+      conn.close();
+      Server.createTcpServer("-tcpDaemon").start();
+      log.info("DEMO: TcpServer stared.");
+      log.info("DEMO: JDBC URL for test drive metadata load: jdbc:h2:mem:demo-db");
+    }
+ catch (    SQLException e) {
+      log.error("DEMO: Failed to start test drive for metadata!",e);
+      throw e;
+    }
+catch (    FileNotFoundException|NullPointerException e) {
+      log.error("DEMO: Failed to find demo database init script file: demo/db-init.sql");
+      throw new SQLException("Failed to start demo for metadata",e);
+    }
+  }
+  return DriverManager.getConnection("jdbc:h2:mem:demo-db;DB_CLOSE_DELAY=-1","sa","");
+}
