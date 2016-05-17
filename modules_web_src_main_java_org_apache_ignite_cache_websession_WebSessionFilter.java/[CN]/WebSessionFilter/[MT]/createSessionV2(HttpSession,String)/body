@@ -1,0 +1,18 @@
+{
+  if (log.isDebugEnabled())   log.debug("Session created: " + sesId);
+  WebSessionV2 cached=new WebSessionV2(sesId,ses,true,ctx,null,marshaller);
+  final WebSessionEntity marshaledEntity=cached.marshalAttributes();
+  for (int i=0; i < retries; i++) {
+    try {
+      final IgniteCache<String,WebSessionEntity> cache0=cacheWithExpiryPolicy(cached.getMaxInactiveInterval(),binaryCache);
+      final WebSessionEntity old=cache0.getAndPutIfAbsent(sesId,marshaledEntity);
+      if (old != null)       cached=new WebSessionV2(sesId,null,false,ctx,old,marshaller);
+ else       cached=new WebSessionV2(sesId,null,false,ctx,marshaledEntity,marshaller);
+      break;
+    }
+ catch (    CacheException|IgniteException|IllegalStateException e) {
+      handleCreateSessionException(sesId,i,e);
+    }
+  }
+  return cached;
+}

@@ -4,14 +4,8 @@
   if (log.isDebugEnabled())   log.debug("Session created: " + sesId);
   for (int i=0; i < retries; i++) {
     try {
-      IgniteCache<String,WebSession> cache0;
-      if (cached.getMaxInactiveInterval() > 0) {
-        long ttl=cached.getMaxInactiveInterval() * 1000;
-        ExpiryPolicy plc=new ModifiedExpiryPolicy(new Duration(MILLISECONDS,ttl));
-        cache0=cache.withExpiryPolicy(plc);
-      }
- else       cache0=cache;
-      WebSession old=cache0.getAndPutIfAbsent(sesId,cached);
+      final IgniteCache<String,WebSession> cache0=cacheWithExpiryPolicy(cached.getMaxInactiveInterval(),cache);
+      final WebSession old=cache0.getAndPutIfAbsent(sesId,cached);
       if (old != null) {
         cached=old;
         if (cached.isNew())         cached=new WebSession(cached.getId(),cached,false);
@@ -19,12 +13,7 @@
       break;
     }
  catch (    CacheException|IgniteException|IllegalStateException e) {
-      if (log.isDebugEnabled())       log.debug(e.getMessage());
-      if (i == retries - 1)       throw new IgniteException("Failed to save session: " + sesId,e);
- else {
-        if (log.isDebugEnabled())         log.debug("Failed to save session (will retry): " + sesId);
-        handleCacheOperationException(e);
-      }
+      handleCreateSessionException(sesId,i,e);
     }
   }
   return cached;

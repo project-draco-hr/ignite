@@ -15,12 +15,23 @@
       newWebSesId=rdr.readLine();
       assertNotNull(newWebSesId);
       assertTrue(newGenSesId.equals(newWebSesId));
-      IgniteCache<String,HttpSession> cache=ignite.cache(getCacheName());
-      assertNotNull(cache);
-      Thread.sleep(1000);
-      HttpSession ses=cache.get(newWebSesId);
-      assertNotNull(ses);
-      assertEquals("val1",ses.getAttribute("key1"));
+      if (!keepBinary()) {
+        IgniteCache<String,HttpSession> cache=ignite.cache(getCacheName());
+        assertNotNull(cache);
+        Thread.sleep(1000);
+        HttpSession ses=cache.get(newWebSesId);
+        assertNotNull(ses);
+        assertEquals("val1",ses.getAttribute("key1"));
+      }
+ else {
+        IgniteCache<String,WebSessionEntity> cache=ignite.cache(getCacheName());
+        assertNotNull(cache);
+        Thread.sleep(1000);
+        WebSessionEntity ses=cache.get(newWebSesId);
+        assertNotNull(ses);
+        final Marshaller marshaller=ignite.configuration().getMarshaller();
+        assertEquals("val1",marshaller.<String>unmarshal(ses.attributes().get("key1"),getClass().getClassLoader()));
+      }
     }
      conn=new URL("http://localhost:" + TEST_JETTY_PORT + "/ignitetest/simple").openConnection();
     conn.addRequestProperty("Cookie","JSESSIONID=" + newWebSesId);
