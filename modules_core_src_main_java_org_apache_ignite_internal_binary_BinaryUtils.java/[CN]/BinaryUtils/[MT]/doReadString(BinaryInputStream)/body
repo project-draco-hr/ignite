@@ -1,8 +1,18 @@
 {
-  if (!in.hasArray())   return new String(doReadByteArray(in),UTF_8);
+  if (!in.hasArray()) {
+    byte[] arr=doReadByteArray(in);
+    if (USE_STR_SERIALIZATION_VER_2)     return utf8BytesToStr(arr,0,arr.length);
+ else     return new String(arr,UTF_8);
+  }
   int strLen=in.readInt();
   int pos=in.position();
-  String res=new String(in.array(),pos,strLen,UTF_8);
+  String res;
+  if (USE_STR_SERIALIZATION_VER_2) {
+    res=utf8BytesToStr(in.array(),pos,strLen);
+  }
+ else {
+    res=new String(in.array(),pos,strLen,UTF_8);
+  }
   in.position(pos + strLen);
   return res;
 }
