@@ -1,10 +1,15 @@
 {
   IgniteConfiguration cfg=super.getConfiguration(gridName);
+  boolean client=gridName != null && gridName.startsWith("client");
   cfg.setClientMode(client);
   CacheConfiguration cc=new CacheConfiguration();
   cc.setName(CACHE_NAME);
   cc.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
+  cc.setCacheMode(cacheMode);
+  cc.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_SYNC);
+  cc.setBackups(1);
   cc.setCacheStoreFactory(factory);
+  if (factory instanceof Factory3)   cc.setReadThrough(true);
   if (client && nearEnabled)   cc.setNearConfiguration(new NearCacheConfiguration());
   cfg.setCacheConfiguration(cc);
   TcpDiscoverySpi disco=new TcpDiscoverySpi();
