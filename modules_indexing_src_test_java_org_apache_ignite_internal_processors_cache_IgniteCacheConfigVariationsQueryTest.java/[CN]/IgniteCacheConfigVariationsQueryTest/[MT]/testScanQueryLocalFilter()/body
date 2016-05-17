@@ -1,0 +1,32 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      try {
+        IgniteCache<Object,Object> cache=jcache();
+        ClusterNode locNode=testedGrid().cluster().localNode();
+        Map<Object,Object> map=new HashMap<>();
+        IgniteBiPredicate<Object,Object> filter=new IgniteBiPredicate<Object,Object>(){
+          @Override public boolean apply(          Object k,          Object v){
+            assertNotNull(k);
+            assertNotNull(v);
+            return valueOf(k) >= 20 && valueOf(v) < 40;
+          }
+        }
+;
+        for (int i=0; i < CNT; i++) {
+          Object key=key(i);
+          Object val=value(i);
+          cache.put(key,val);
+          if (!isClientMode() && (cacheMode() == REPLICATED || testedGrid().affinity(cacheName()).isPrimary(locNode,key)) && filter.apply(key,val))           map.put(key,val);
+        }
+        registerEventListeners(map,true);
+        QueryCursor<Cache.Entry<Object,Object>> q=cache.query(new ScanQuery<>(filter).setLocal(true));
+        checkQueryResults(map,q);
+      }
+  finally {
+        stopListeners();
+      }
+    }
+  }
+);
+}

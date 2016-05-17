@@ -1,0 +1,39 @@
+{
+  if (bean == null)   return new JSONObject(true);
+  final JSONObject ret=new JSONObject();
+  Collection<Method> methods;
+  Class<?> cls=bean.getClass();
+  rwLock.readLock().lock();
+  try {
+    methods=clsCache.get(cls);
+  }
+  finally {
+    rwLock.readLock().unlock();
+  }
+  if (methods == null) {
+    Method[] publicMtds=cls.getMethods();
+    methods=new ArrayList<>(publicMtds.length);
+    for (    Method mtd : publicMtds) {
+      Class retType=mtd.getReturnType();
+      if (mtd.getParameterTypes().length != 0 || retType == void.class || retType == cls || exclMtds.contains(mtd.getName()) || (retType == VisorCache.class && mtd.getName().equals("history")))       continue;
+      mtd.setAccessible(true);
+      methods.add(mtd);
+    }
+    rwLock.writeLock().lock();
+    try {
+      clsCache.put(cls,methods);
+    }
+  finally {
+      rwLock.writeLock().unlock();
+    }
+  }
+  for (  Method mtd : methods) {
+    try {
+      ret.element(mtd.getName(),mtd.invoke(bean),jsonCfg);
+    }
+ catch (    Exception e) {
+      U.error(log,"Failed to read object property [type= " + cls.getName() + ", property="+ mtd.getName()+ "]",e);
+    }
+  }
+  return ret;
+}

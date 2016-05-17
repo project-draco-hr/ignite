@@ -1,0 +1,20 @@
+{
+  final ClusterNode node=nodes.poll();
+  if (node.isLocal()) {
+    try {
+      GridCloseableIterator it=qryMgr.scanQueryLocal(qry,true);
+      tuple=new T2(it,null);
+    }
+ catch (    IgniteClientDisconnectedCheckedException e) {
+      throw CU.convertToCacheException(e);
+    }
+catch (    IgniteCheckedException e) {
+      retryIfPossible(e);
+    }
+  }
+ else {
+    final GridCacheQueryBean bean=new GridCacheQueryBean(qry,null,null,null);
+    GridCacheQueryFutureAdapter fut=(GridCacheQueryFutureAdapter)qryMgr.queryDistributed(bean,Collections.singleton(node));
+    tuple=new T2(null,fut);
+  }
+}

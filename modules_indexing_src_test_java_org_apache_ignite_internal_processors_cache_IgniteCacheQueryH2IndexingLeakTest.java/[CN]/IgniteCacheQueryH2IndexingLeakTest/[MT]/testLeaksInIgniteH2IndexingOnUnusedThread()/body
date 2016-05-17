@@ -1,0 +1,23 @@
+{
+  final IgniteCache<Integer,Integer> c=grid(0).cache(null);
+  final CountDownLatch latch=new CountDownLatch(1);
+  for (int i=0; i < ITERATIONS; ++i) {
+    info("Iteration #" + i);
+    IgniteInternalFuture<?> fut=multithreadedAsync(new CAX(){
+      @Override public void applyx() throws IgniteCheckedException {
+        c.query(new SqlQuery(Integer.class,"_val >= 0")).getAll();
+        U.await(latch);
+      }
+    }
+,THREAD_COUNT);
+    Thread.sleep(STMT_CACHE_CLEANUP_TIMEOUT);
+    assertTrue(GridTestUtils.waitForCondition(new GridAbsPredicate(){
+      @Override public boolean apply(){
+        return getStatementCacheSize(grid(0).context().query()) == 0;
+      }
+    }
+,STMT_CACHE_CLEANUP_TIMEOUT * 2));
+    latch.countDown();
+    fut.get();
+  }
+}

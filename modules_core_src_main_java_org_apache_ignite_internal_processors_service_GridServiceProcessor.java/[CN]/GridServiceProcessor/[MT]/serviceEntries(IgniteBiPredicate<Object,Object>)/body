@@ -1,20 +1,26 @@
 {
-  if (!cache.context().affinityNode()) {
-    ClusterNode oldestSrvNode=CU.oldestAliveCacheServerNode(cache.context().shared(),AffinityTopologyVersion.NONE);
-    if (oldestSrvNode == null)     return new GridEmptyIterator<>();
-    GridCacheQueryManager qryMgr=cache.context().queries();
-    CacheQuery<Map.Entry<Object,Object>> qry=qryMgr.createScanQuery(p,null,false);
-    qry.keepAll(false);
-    qry.projection(ctx.cluster().get().forNode(oldestSrvNode));
-    return cache.context().itHolder().iterator(qry.execute(),new CacheIteratorConverter<Object,Map.Entry<Object,Object>>(){
-      @Override protected Object convert(      Map.Entry<Object,Object> e){
-        return new CacheEntryImpl<>(e.getKey(),e.getValue());
+  try {
+    if (!cache.context().affinityNode()) {
+      ClusterNode oldestSrvNode=CU.oldestAliveCacheServerNode(cache.context().shared(),AffinityTopologyVersion.NONE);
+      if (oldestSrvNode == null)       return new GridEmptyIterator<>();
+      GridCacheQueryManager qryMgr=cache.context().queries();
+      CacheQuery<Map.Entry<Object,Object>> qry=qryMgr.createScanQuery(p,null,false);
+      qry.keepAll(false);
+      qry.projection(ctx.cluster().get().forNode(oldestSrvNode));
+      GridCloseableIterator<Map.Entry<Object,Object>> iter=qry.executeScanQuery();
+      return cache.context().itHolder().iterator(iter,new CacheIteratorConverter<Cache.Entry<Object,Object>,Map.Entry<Object,Object>>(){
+        @Override protected Cache.Entry<Object,Object> convert(        Map.Entry<Object,Object> e){
+          return new CacheEntryImpl<>(e.getKey(),e.getValue());
+        }
+        @Override protected void remove(        Cache.Entry<Object,Object> item){
+          throw new UnsupportedOperationException();
+        }
       }
-      @Override protected void remove(      Object item){
-        throw new UnsupportedOperationException();
-      }
-    }
 );
+    }
+ else     return cache.entrySetx().iterator();
   }
- else   return cache.entrySetx().iterator();
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
 }

@@ -1,0 +1,41 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      IgniteCache<Object,Object> cache=jcache();
+      Affinity<Object> affinity=testedGrid().affinity(cacheName());
+      Map<Integer,Map<Object,Object>> partMap=new HashMap<>();
+      IgniteBiPredicate<Object,Object> filter=new IgniteBiPredicate<Object,Object>(){
+        @Override public boolean apply(        Object k,        Object v){
+          assertNotNull(k);
+          assertNotNull(v);
+          return valueOf(k) >= 20 && valueOf(v) < 40;
+        }
+      }
+;
+      for (int i=0; i < CNT; i++) {
+        Object key=key(i);
+        Object val=value(i);
+        cache.put(key,val);
+        if (filter.apply(key,val)) {
+          int part=affinity.partition(key);
+          Map<Object,Object> map=partMap.get(part);
+          if (map == null)           partMap.put(part,map=new HashMap<>());
+          map.put(key,val);
+        }
+      }
+      for (int part=0; part < affinity.partitions(); part++) {
+        try {
+          Map<Object,Object> expMap=partMap.get(part);
+          expMap=expMap == null ? Collections.emptyMap() : expMap;
+          registerEventListeners(expMap,true);
+          QueryCursor<Cache.Entry<Object,Object>> q=cache.query(new ScanQuery<>(part,filter));
+          checkQueryResults(expMap,q);
+        }
+  finally {
+          stopListeners();
+        }
+      }
+    }
+  }
+);
+}

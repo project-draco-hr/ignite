@@ -3,8 +3,11 @@
   K key=(K)cctx.unwrapBinaryIfNeeded(e.key(),keepBinary);
   V val=(V)cctx.unwrapBinaryIfNeeded(e.value(),keepBinary);
   if (!filter.apply(key,val))   return null;
-  if (key instanceof CacheObject)   ((CacheObject)key).prepareMarshal(cctx.cacheObjectContext());
-  val=(V)cctx.unwrapTemporary(e.value());
-  if (val instanceof CacheObject)   ((CacheObject)val).prepareMarshal(cctx.cacheObjectContext());
-  return new IgniteBiTuple<>(e.key(),val);
+  if (locNode)   return new IgniteBiTuple<>(key,val);
+ else {
+    if (key instanceof CacheObject)     ((CacheObject)key).prepareMarshal(cctx.cacheObjectContext());
+    val=(V)cctx.unwrapTemporary(e.value());
+    if (val instanceof CacheObject)     ((CacheObject)val).prepareMarshal(cctx.cacheObjectContext());
+    return new IgniteBiTuple<>(key,val);
+  }
 }

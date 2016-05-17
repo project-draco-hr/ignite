@@ -7,8 +7,8 @@
   }
   ClusterProperties clusterProps=ClusterProperties.from(args.length >= 1 ? args[0] : null);
   String baseUrl=String.format("http://%s:%d",clusterProps.httpServerHost(),clusterProps.httpServerPort());
-  JettyServer httpServer=new JettyServer();
-  httpServer.start(new InetSocketAddress(clusterProps.httpServerHost(),clusterProps.httpServerPort()),new ResourceHandler(clusterProps.userLibs(),clusterProps.igniteCfg(),clusterProps.igniteWorkDir()));
+  JettyServer httpSrv=new JettyServer();
+  httpSrv.start(new InetSocketAddress(clusterProps.httpServerHost(),clusterProps.httpServerPort()),new ResourceHandler(clusterProps.userLibs(),clusterProps.igniteCfg(),clusterProps.igniteWorkDir()));
   ResourceProvider provider=new ResourceProvider();
   IgniteProvider igniteProvider=new IgniteProvider(clusterProps.igniteWorkDir());
   provider.init(clusterProps,igniteProvider,baseUrl);
@@ -24,16 +24,16 @@
       log.log(Level.SEVERE,"Expecting authentication secret in the environment");
       System.exit(1);
     }
-    Protos.Credential credential=Protos.Credential.newBuilder().setPrincipal(System.getenv("DEFAULT_PRINCIPAL")).setSecret(ByteString.copyFrom(System.getenv("DEFAULT_SECRET").getBytes())).build();
+    Protos.Credential cred=Protos.Credential.newBuilder().setPrincipal(System.getenv("DEFAULT_PRINCIPAL")).setSecret(ByteString.copyFrom(System.getenv("DEFAULT_SECRET").getBytes())).build();
     frameworkBuilder.setPrincipal(System.getenv("DEFAULT_PRINCIPAL"));
-    driver=new MesosSchedulerDriver(scheduler,frameworkBuilder.build(),clusterProps.masterUrl(),credential);
+    driver=new MesosSchedulerDriver(scheduler,frameworkBuilder.build(),clusterProps.masterUrl(),cred);
   }
  else {
     frameworkBuilder.setPrincipal("ignite-framework-java");
     driver=new MesosSchedulerDriver(scheduler,frameworkBuilder.build(),clusterProps.masterUrl());
   }
   int status=driver.run() == Protos.Status.DRIVER_STOPPED ? 0 : 1;
-  httpServer.stop();
+  httpSrv.stop();
   driver.stop();
   System.exit(status);
 }

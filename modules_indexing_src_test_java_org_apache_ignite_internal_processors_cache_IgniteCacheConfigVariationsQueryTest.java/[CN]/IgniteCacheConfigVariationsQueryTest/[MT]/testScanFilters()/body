@@ -1,0 +1,31 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      try {
+        IgniteCache<Object,Object> cache=jcache();
+        IgniteBiPredicate<Object,Object> p=new IgniteBiPredicate<Object,Object>(){
+          @Override public boolean apply(          Object k,          Object v){
+            assertNotNull(k);
+            assertNotNull(v);
+            return valueOf(k) >= 20 && valueOf(v) < 40;
+          }
+        }
+;
+        Map<Object,Object> exp=new HashMap<>();
+        for (int i=0; i < CNT; i++) {
+          Object key=key(i);
+          Object val=value(i);
+          cache.put(key,val);
+          if (p.apply(key,val))           exp.put(key,val);
+        }
+        registerEventListeners(exp,true);
+        QueryCursor<Cache.Entry<Object,Object>> q=cache.query(new ScanQuery<>(p));
+        checkQueryResults(exp,q);
+      }
+  finally {
+        stopListeners();
+      }
+    }
+  }
+);
+}
