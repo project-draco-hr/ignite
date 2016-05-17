@@ -1,0 +1,46 @@
+{
+  int c, charArrCnt=0, total=off + len;
+  int c2, c3;
+  char[] res=new char[len];
+  while (off < total) {
+    c=(int)arr[off] & 0xff;
+    if (c > 127)     break;
+    off++;
+    res[charArrCnt++]=(char)c;
+  }
+  while (off < total) {
+    c=(int)arr[off] & 0xff;
+switch (c >> 4) {
+case 0:
+case 1:
+case 2:
+case 3:
+case 4:
+case 5:
+case 6:
+case 7:
+      off++;
+    res[charArrCnt++]=(char)c;
+  break;
+case 12:
+case 13:
+off+=2;
+if (off > total) throw new BinaryObjectException("Malformed input: partial character at end");
+c2=(int)arr[off - 1];
+if ((c2 & 0xC0) != 0x80) throw new BinaryObjectException("Malformed input around byte: " + off);
+res[charArrCnt++]=(char)(((c & 0x1F) << 6) | (c2 & 0x3F));
+break;
+case 14:
+off+=3;
+if (off > total) throw new BinaryObjectException("Malformed input: partial character at end");
+c2=(int)arr[off - 2];
+c3=(int)arr[off - 1];
+if (((c2 & 0xC0) != 0x80) || ((c3 & 0xC0) != 0x80)) throw new BinaryObjectException("Malformed input around byte: " + (off - 1));
+res[charArrCnt++]=(char)(((c & 0x0F) << 12) | ((c2 & 0x3F) << 6) | ((c3 & 0x3F) << 0));
+break;
+default :
+throw new BinaryObjectException("Malformed input around byte: " + off);
+}
+}
+return len == charArrCnt ? new String(res) : new String(res,0,charArrCnt);
+}
