@@ -1,0 +1,40 @@
+{
+  ses.execute(new BatchLoaderAssistant(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public String operationName(){
+      return "loadCache";
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public Statement getStatement(){
+      return new SimpleStatement(qry);
+    }
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void process(    Row row){
+      K key;
+      V val;
+      try {
+        key=(K)ctrl.buildKeyObject(row);
+      }
+ catch (      Throwable e) {
+        log.error("Failed to build Ignite key object from provided Cassandra row",e);
+        throw new IgniteException("Failed to build Ignite key object from provided Cassandra row",e);
+      }
+      try {
+        val=(V)ctrl.buildValueObject(row);
+      }
+ catch (      Throwable e) {
+        log.error("Failed to build Ignite value object from provided Cassandra row",e);
+        throw new IgniteException("Failed to build Ignite value object from provided Cassandra row",e);
+      }
+      clo.apply(key,val);
+    }
+  }
+);
+  return null;
+}

@@ -1,0 +1,67 @@
+{
+  Document doc;
+  try {
+    DocumentBuilderFactory factory=DocumentBuilderFactory.newInstance();
+    DocumentBuilder builder=factory.newDocumentBuilder();
+    doc=builder.parse(new InputSource(new StringReader(settings)));
+  }
+ catch (  Throwable e) {
+    throw new IllegalArgumentException("Failed to parse persistence settings:" + SystemHelper.LINE_SEPARATOR + settings,e);
+  }
+  Element root=doc.getDocumentElement();
+  if (!PERSISTENCE_NODE.equals(root.getNodeName())) {
+    throw new IllegalArgumentException("Incorrect persistence settings specified. " + "Root XML element should be 'persistence'");
+  }
+  if (!root.hasAttribute(KEYSPACE_ATTR)) {
+    throw new IllegalArgumentException("Incorrect persistence settings '" + KEYSPACE_ATTR + "' attribute should be specified");
+  }
+  if (!root.hasAttribute(TABLE_ATTR)) {
+    throw new IllegalArgumentException("Incorrect persistence settings '" + TABLE_ATTR + "' attribute should be specified");
+  }
+  keyspace=root.getAttribute(KEYSPACE_ATTR).trim();
+  tbl=root.getAttribute(TABLE_ATTR).trim();
+  if (root.hasAttribute(TTL_ATTR))   ttl=extractIntAttribute(root,TTL_ATTR);
+  if (!root.hasChildNodes()) {
+    throw new IllegalArgumentException("Incorrect Cassandra persistence settings specification, " + "there are no key and value persistence settings specified");
+  }
+  NodeList children=root.getChildNodes();
+  int cnt=children.getLength();
+  for (int i=0; i < cnt; i++) {
+    Node node=children.item(i);
+    if (node.getNodeType() != Node.ELEMENT_NODE)     continue;
+    Element el=(Element)node;
+    String nodeName=el.getNodeName();
+    if (nodeName.equals(TABLE_OPTIONS_NODE)) {
+      tblOptions=el.getTextContent();
+      tblOptions=tblOptions.replace("\n"," ").replace("\r","").replace("\t"," ");
+    }
+ else     if (nodeName.equals(KEYSPACE_OPTIONS_NODE)) {
+      keyspaceOptions=el.getTextContent();
+      keyspaceOptions=keyspaceOptions.replace("\n"," ").replace("\r","").replace("\t"," ");
+    }
+ else     if (nodeName.equals(KEY_PERSISTENCE_NODE))     keyPersistenceSettings=new KeyPersistenceSettings(el);
+ else     if (nodeName.equals(VALUE_PERSISTENCE_NODE))     valPersistenceSettings=new ValuePersistenceSettings(el);
+  }
+  if (keyPersistenceSettings == null) {
+    throw new IllegalArgumentException("Incorrect Cassandra persistence settings specification, " + "there are no key persistence settings specified");
+  }
+  if (valPersistenceSettings == null) {
+    throw new IllegalArgumentException("Incorrect Cassandra persistence settings specification, " + "there are no value persistence settings specified");
+  }
+  List<PojoField> keyFields=keyPersistenceSettings.getFields();
+  List<PojoField> valFields=valPersistenceSettings.getFields();
+  if (PersistenceStrategy.POJO.equals(keyPersistenceSettings.getStrategy()) && (keyFields == null || keyFields.isEmpty())) {
+    throw new IllegalArgumentException("Incorrect Cassandra persistence settings specification, " + "there are no key fields found");
+  }
+  if (PersistenceStrategy.POJO.equals(valPersistenceSettings.getStrategy()) && (valFields == null || valFields.isEmpty())) {
+    throw new IllegalArgumentException("Incorrect Cassandra persistence settings specification, " + "there are no value fields found");
+  }
+  if (keyFields == null || keyFields.isEmpty() || valFields == null || valFields.isEmpty())   return;
+  for (  PojoField keyField : keyFields) {
+    for (    PojoField valField : valFields) {
+      if (keyField.getColumn().equals(valField.getColumn())) {
+        throw new IllegalArgumentException("Incorrect Cassandra persistence settings specification, " + "key column '" + keyField.getColumn() + "' also specified as a value column");
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  if (keys == null || keys.isEmpty())   return;
+  CassandraSession ses=getCassandraSession();
+  try {
+    ses.execute(new GenericBatchExecutionAssistant<Void,Object>(){
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public String getStatement(){
+        return controller.getDeleteStatement();
+      }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public BoundStatement bindStatement(      PreparedStatement statement,      Object key){
+        return controller.bindKey(statement,key);
+      }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public KeyValuePersistenceSettings getPersistenceSettings(){
+        return controller.getPersistenceSettings();
+      }
+      @Override public String operationName(){
+        return "BULK_DELETE";
+      }
+    }
+,keys);
+  }
+  finally {
+    closeCassandraSession(ses);
+  }
+}

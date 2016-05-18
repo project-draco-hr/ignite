@@ -1,0 +1,30 @@
+{
+  if (key == null)   return;
+  CassandraSession ses=getCassandraSession();
+  try {
+    ses.execute(new ExecutionAssistant<Void>(){
+      @Override public boolean tableExistenceRequired(){
+        return false;
+      }
+      @Override public String getStatement(){
+        return controller.getDeleteStatement();
+      }
+      @Override public BoundStatement bindStatement(      PreparedStatement statement){
+        return controller.bindKey(statement,key);
+      }
+      @Override public KeyValuePersistenceSettings getPersistenceSettings(){
+        return controller.getPersistenceSettings();
+      }
+      @Override public String operationName(){
+        return "DELETE";
+      }
+      @Override public Void process(      Row row){
+        return null;
+      }
+    }
+);
+  }
+  finally {
+    closeCassandraSession(ses);
+  }
+}

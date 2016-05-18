@@ -1,0 +1,37 @@
+{
+  int attempt=0;
+  String errorMsg="Failed to execute Cassandra " + assistant.operationName() + " operation";
+  Throwable error=new IgniteException(errorMsg);
+  RandomSleeper sleeper=newSleeper();
+  incrementSessionRefs();
+  try {
+    while (attempt < CQL_EXECUTION_ATTEMPTS_COUNT) {
+      if (attempt != 0)       log.warning("Trying " + (attempt + 1) + " attempt to load Ignite cache");
+      Statement statement=tuneStatementExecutionOptions(assistant.getStatement());
+      try {
+        ResultSetFuture fut=session().executeAsync(statement);
+        ResultSet resSet=fut.getUninterruptibly();
+        if (resSet == null || !resSet.iterator().hasNext())         return;
+        for (        Row row : resSet)         assistant.process(row);
+        return;
+      }
+ catch (      Throwable e) {
+        error=e;
+        if (CassandraHelper.isTableAbsenceError(e))         return;
+ else         if (CassandraHelper.isHostsAvailabilityError(e))         handleHostsAvailabilityError(e,attempt,errorMsg);
+ else         if (CassandraHelper.isPreparedStatementClusterError(e))         handlePreparedStatementClusterError(e);
+ else         throw new IgniteException(errorMsg,e);
+      }
+      sleeper.sleep();
+      attempt++;
+    }
+  }
+ catch (  Throwable e) {
+    error=e;
+  }
+ finally {
+    decrementSessionRefs();
+  }
+  log.error(errorMsg,error);
+  throw new IgniteException(errorMsg,error);
+}

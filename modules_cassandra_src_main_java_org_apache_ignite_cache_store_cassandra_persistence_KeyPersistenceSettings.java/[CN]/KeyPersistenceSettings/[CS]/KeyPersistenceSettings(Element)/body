@@ -1,0 +1,19 @@
+{
+  super(el);
+  if (!PersistenceStrategy.POJO.equals(getStrategy()))   return;
+  NodeList keyElem=el.getElementsByTagName(PARTITION_KEY_ELEMENT);
+  Element partKeysNode=keyElem != null ? (Element)keyElem.item(0) : null;
+  Element clusterKeysNode=el.getElementsByTagName(CLUSTER_KEY_ELEMENT) != null ? (Element)el.getElementsByTagName(CLUSTER_KEY_ELEMENT).item(0) : null;
+  if (partKeysNode == null && clusterKeysNode != null) {
+    throw new IllegalArgumentException("It's not allowed to specify cluster key fields mapping, but " + "doesn't specify partition key mappings");
+  }
+  partKeyFields=detectFields(partKeysNode,getPartitionKeyDescriptors());
+  if (partKeyFields == null || partKeyFields.isEmpty()) {
+    throw new IllegalStateException("Failed to initialize partition key fields for class '" + getJavaClass().getName() + "'");
+  }
+  clusterKeyFields=detectFields(clusterKeysNode,getClusterKeyDescriptors(partKeyFields));
+  fields=new LinkedList<>();
+  fields.addAll(partKeyFields);
+  fields.addAll(clusterKeyFields);
+  checkDuplicates(fields);
+}

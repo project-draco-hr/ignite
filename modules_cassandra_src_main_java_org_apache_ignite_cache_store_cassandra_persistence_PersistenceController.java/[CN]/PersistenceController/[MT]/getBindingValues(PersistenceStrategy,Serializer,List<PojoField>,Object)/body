@@ -1,0 +1,18 @@
+{
+  if (PersistenceStrategy.PRIMITIVE.equals(stgy)) {
+    if (PropertyMappingHelper.getCassandraType(obj.getClass()) == null || obj.getClass().equals(ByteBuffer.class) || obj instanceof byte[]) {
+      throw new IllegalArgumentException("Couldn't deserialize instance of class '" + obj.getClass().getName() + "' using PRIMITIVE strategy. Please use BLOB strategy for this case.");
+    }
+    return new Object[]{obj};
+  }
+  if (PersistenceStrategy.BLOB.equals(stgy))   return new Object[]{serializer.serialize(obj)};
+  Object[] values=new Object[fields.size()];
+  int i=0;
+  for (  PojoField field : fields) {
+    Object val=field.getValueFromObject(obj,serializer);
+    if (val instanceof byte[])     val=ByteBuffer.wrap((byte[])val);
+    values[i]=val;
+    i++;
+  }
+  return values;
+}

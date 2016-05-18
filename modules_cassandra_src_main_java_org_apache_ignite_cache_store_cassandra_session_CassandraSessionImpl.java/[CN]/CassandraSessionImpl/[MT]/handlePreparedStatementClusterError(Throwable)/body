@@ -1,0 +1,17 @@
+{
+  int hndNum=prepStatementHandlersCnt.incrementAndGet();
+  try {
+synchronized (prepStatementHandlersCnt) {
+      if (hndNum != 0) {
+        log.warning("Prepared statement cluster error detected, another thread already fixed the problem",e);
+        return;
+      }
+      log.warning("Prepared statement cluster error detected, refreshing Cassandra session",e);
+      refresh();
+      log.warning("Cassandra session refreshed");
+    }
+  }
+  finally {
+    if (hndNum == 0)     prepStatementHandlersCnt.set(-1);
+  }
+}

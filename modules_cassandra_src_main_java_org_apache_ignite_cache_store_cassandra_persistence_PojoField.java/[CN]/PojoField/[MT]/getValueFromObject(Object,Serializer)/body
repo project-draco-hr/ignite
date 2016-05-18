@@ -1,0 +1,15 @@
+{
+  try {
+    Object val=propDesc().getReadMethod().invoke(obj);
+    if (val == null)     return null;
+    DataType.Name cassandraType=PropertyMappingHelper.getCassandraType(val.getClass());
+    if (cassandraType != null)     return val;
+    if (serializer == null) {
+      throw new IllegalStateException("Can't serialize value from object '" + val.getClass().getName() + "' field '"+ name+ "', cause there is no BLOB serializer specified");
+    }
+    return serializer.serialize(val);
+  }
+ catch (  Throwable e) {
+    throw new IgniteException("Failed to get value of the field '" + name + "' from the instance "+ " of '"+ obj.getClass().toString()+ "' class",e);
+  }
+}

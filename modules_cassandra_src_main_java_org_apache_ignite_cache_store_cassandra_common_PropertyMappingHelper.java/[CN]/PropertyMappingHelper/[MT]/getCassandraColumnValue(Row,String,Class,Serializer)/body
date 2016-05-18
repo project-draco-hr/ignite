@@ -1,0 +1,24 @@
+{
+  if (String.class.equals(clazz))   return row.getString(col);
+  if (Integer.class.equals(clazz) || int.class.equals(clazz))   return row.getInt(col);
+  if (Short.class.equals(clazz) || short.class.equals(clazz))   return (short)row.getInt(col);
+  if (Long.class.equals(clazz) || long.class.equals(clazz))   return row.getLong(col);
+  if (Double.class.equals(clazz) || double.class.equals(clazz))   return row.getDouble(col);
+  if (Boolean.class.equals(clazz) || boolean.class.equals(clazz))   return row.getBool(col);
+  if (Float.class.equals(clazz) || float.class.equals(clazz))   return row.getFloat(col);
+  if (ByteBuffer.class.equals(clazz))   return row.getBytes(col);
+  if (PropertyMappingHelper.BYTES_ARRAY_CLASS.equals(clazz)) {
+    ByteBuffer buf=row.getBytes(col);
+    return buf == null ? null : buf.array();
+  }
+  if (BigDecimal.class.equals(clazz))   return row.getDecimal(col);
+  if (InetAddress.class.equals(clazz))   return row.getInet(col);
+  if (Date.class.equals(clazz))   return row.getTimestamp(col);
+  if (UUID.class.equals(clazz))   return row.getUUID(col);
+  if (BigInteger.class.equals(clazz))   return row.getVarint(col);
+  if (serializer == null) {
+    throw new IllegalStateException("Can't deserialize value from '" + col + "' Cassandra column, "+ "cause there is no BLOB serializer specified");
+  }
+  ByteBuffer buf=row.getBytes(col);
+  return buf == null ? null : serializer.deserialize(buf);
+}
