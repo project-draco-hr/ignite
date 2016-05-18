@@ -1,0 +1,26 @@
+{
+  try {
+    while (true) {
+      try {
+        Thread.sleep(SLEEP_TIMEOUT);
+      }
+ catch (      InterruptedException ignored) {
+        return;
+      }
+      List<Map.Entry<CassandraSessionImpl,SessionWrapper>> expiredSessions=new LinkedList<>();
+      int sessionsCnt;
+synchronized (sessions) {
+        sessionsCnt=sessions.size();
+        for (        Map.Entry<CassandraSessionImpl,SessionWrapper> entry : sessions.entrySet()) {
+          if (entry.getValue().expired())           expiredSessions.add(entry);
+        }
+        for (        Map.Entry<CassandraSessionImpl,SessionWrapper> entry : expiredSessions)         sessions.remove(entry.getKey());
+      }
+      for (      Map.Entry<CassandraSessionImpl,SessionWrapper> entry : expiredSessions)       entry.getValue().release();
+      if (sessionsCnt == expiredSessions.size())       return;
+    }
+  }
+  finally {
+    release();
+  }
+}

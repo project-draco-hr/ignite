@@ -1,0 +1,18 @@
+{
+  try {
+    LOGGER.info("Cassandra load tests execution started");
+    LoadTestDriver driver=new CassandraDirectPersistenceLoadTest();
+    driver.runTest("WRITE",WriteWorker.class,WriteWorker.LOGGER_NAME);
+    driver.runTest("BULK_WRITE",BulkWriteWorker.class,BulkWriteWorker.LOGGER_NAME);
+    driver.runTest("READ",ReadWorker.class,ReadWorker.LOGGER_NAME);
+    driver.runTest("BULK_READ",BulkReadWorker.class,BulkReadWorker.LOGGER_NAME);
+    LOGGER.info("Cassandra load tests execution completed");
+  }
+ catch (  Throwable e) {
+    LOGGER.error("Cassandra load tests execution failed",e);
+    throw new RuntimeException("Cassandra load tests execution failed",e);
+  }
+ finally {
+    CassandraHelper.releaseCassandraResources();
+  }
+}

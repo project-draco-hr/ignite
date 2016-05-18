@@ -1,0 +1,53 @@
+{
+  if (el == null)   throw new IllegalArgumentException("DOM element representing key/value persistence object can't be null");
+  if (!el.hasAttribute(STRATEGY_ATTR)) {
+    throw new IllegalArgumentException("DOM element representing key/value persistence object should have '" + STRATEGY_ATTR + "' attribute");
+  }
+  try {
+    stgy=PersistenceStrategy.valueOf(el.getAttribute(STRATEGY_ATTR).trim().toUpperCase());
+  }
+ catch (  IllegalArgumentException e) {
+    throw new IllegalArgumentException("Incorrect persistence strategy specified: " + el.getAttribute(STRATEGY_ATTR));
+  }
+  if (!el.hasAttribute(CLASS_ATTR) && !PersistenceStrategy.BLOB.equals(stgy)) {
+    throw new IllegalArgumentException("DOM element representing key/value persistence object should have '" + CLASS_ATTR + "' attribute or have BLOB persistence strategy");
+  }
+  try {
+    javaCls=el.hasAttribute(CLASS_ATTR) ? getClassInstance(el.getAttribute(CLASS_ATTR).trim()) : null;
+  }
+ catch (  Throwable e) {
+    throw new IllegalArgumentException("Incorrect java class specified '" + el.getAttribute(CLASS_ATTR) + "' "+ "for Cassandra persistence",e);
+  }
+  if (!PersistenceStrategy.BLOB.equals(stgy) && (ByteBuffer.class.equals(javaCls) || byte[].class.equals(javaCls))) {
+    throw new IllegalArgumentException("Java class '" + el.getAttribute(CLASS_ATTR) + "' "+ "specified could only be persisted using BLOB persistence strategy");
+  }
+  if (PersistenceStrategy.PRIMITIVE.equals(stgy) && PropertyMappingHelper.getCassandraType(javaCls) == null) {
+    throw new IllegalArgumentException("Current implementation doesn't support persisting '" + javaCls.getName() + "' object using PRIMITIVE strategy");
+  }
+  if (PersistenceStrategy.POJO.equals(stgy)) {
+    if (javaCls == null)     throw new IllegalStateException("Object java class should be specified for POJO persistence strategy");
+    try {
+      javaCls.getConstructor();
+    }
+ catch (    Throwable e) {
+      throw new IllegalArgumentException("Java class '" + javaCls.getName() + "' couldn't be used as POJO "+ "cause it doesn't have no arguments constructor",e);
+    }
+  }
+  if (el.hasAttribute(COLUMN_ATTR)) {
+    if (!PersistenceStrategy.BLOB.equals(stgy) && !PersistenceStrategy.PRIMITIVE.equals(stgy)) {
+      throw new IllegalArgumentException("Incorrect configuration of Cassandra key/value persistence settings, " + "'" + COLUMN_ATTR + "' attribute is only applicable for PRIMITIVE or BLOB strategy");
+    }
+    col=el.getAttribute(COLUMN_ATTR).trim();
+  }
+  if (el.hasAttribute(SERIALIZER_ATTR)) {
+    if (!PersistenceStrategy.BLOB.equals(stgy) && !PersistenceStrategy.POJO.equals(stgy)) {
+      throw new IllegalArgumentException("Incorrect configuration of Cassandra key/value persistence settings, " + "'" + SERIALIZER_ATTR + "' attribute is only applicable for BLOB and POJO strategies");
+    }
+    Object obj=newObjectInstance(el.getAttribute(SERIALIZER_ATTR).trim());
+    if (!(obj instanceof Serializer)) {
+      throw new IllegalArgumentException("Incorrect configuration of Cassandra key/value persistence settings, " + "serializer class '" + el.getAttribute(SERIALIZER_ATTR) + "' doesn't implement '"+ Serializer.class.getName()+ "' interface");
+    }
+    serializer=(Serializer)obj;
+  }
+  if ((PersistenceStrategy.BLOB.equals(stgy) || PersistenceStrategy.PRIMITIVE.equals(stgy)) && col == null)   col=defaultColumnName();
+}

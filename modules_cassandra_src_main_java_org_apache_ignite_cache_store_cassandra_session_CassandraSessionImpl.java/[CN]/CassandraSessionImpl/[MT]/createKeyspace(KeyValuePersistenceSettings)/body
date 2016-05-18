@@ -1,0 +1,27 @@
+{
+  int attempt=0;
+  Throwable error=null;
+  String errorMsg="Failed to create Cassandra keyspace '" + settings.getKeyspace() + "'";
+  while (attempt < CQL_EXECUTION_ATTEMPTS_COUNT) {
+    try {
+      log.info("-----------------------------------------------------------------------");
+      log.info("Creating Cassandra keyspace '" + settings.getKeyspace() + "'");
+      log.info("-----------------------------------------------------------------------\n\n" + settings.getKeyspaceDDLStatement() + "\n");
+      log.info("-----------------------------------------------------------------------");
+      session().execute(settings.getKeyspaceDDLStatement());
+      log.info("Cassandra keyspace '" + settings.getKeyspace() + "' was successfully created");
+      return;
+    }
+ catch (    AlreadyExistsException ignored) {
+      log.info("Cassandra keyspace '" + settings.getKeyspace() + "' already exist");
+      return;
+    }
+catch (    Throwable e) {
+      if (!CassandraHelper.isHostsAvailabilityError(e))       throw new IgniteException(errorMsg,e);
+      handleHostsAvailabilityError(e,attempt,errorMsg);
+      error=e;
+    }
+    attempt++;
+  }
+  throw new IgniteException(errorMsg,error);
+}

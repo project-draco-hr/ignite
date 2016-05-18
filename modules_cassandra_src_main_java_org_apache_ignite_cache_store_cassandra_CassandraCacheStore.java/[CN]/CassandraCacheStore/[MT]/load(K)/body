@@ -1,0 +1,30 @@
+{
+  if (key == null)   return null;
+  CassandraSession ses=getCassandraSession();
+  try {
+    return ses.execute(new ExecutionAssistant<V>(){
+      @Override public boolean tableExistenceRequired(){
+        return false;
+      }
+      @Override public String getStatement(){
+        return controller.getLoadStatement(false);
+      }
+      @Override public BoundStatement bindStatement(      PreparedStatement statement){
+        return controller.bindKey(statement,key);
+      }
+      @Override public KeyValuePersistenceSettings getPersistenceSettings(){
+        return controller.getPersistenceSettings();
+      }
+      @Override public String operationName(){
+        return "READ";
+      }
+      @Override public V process(      Row row){
+        return row == null ? null : (V)controller.buildValueObject(row);
+      }
+    }
+);
+  }
+  finally {
+    closeCassandraSession(ses);
+  }
+}

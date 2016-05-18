@@ -1,0 +1,25 @@
+{
+  if (points == null || points.length == 0)   return;
+  for (  String point : points) {
+    if (point.contains(":")) {
+      if (contactPointsWithPorts == null)       contactPointsWithPorts=new LinkedList<>();
+      String[] chunks=point.split(":");
+      try {
+        contactPointsWithPorts.add(InetSocketAddress.createUnresolved(chunks[0].trim(),Integer.parseInt(chunks[1].trim())));
+      }
+ catch (      Throwable e) {
+        throw new IllegalArgumentException("Incorrect contact point '" + point + "' specified for Cassandra cache storage",e);
+      }
+    }
+ else {
+      if (contactPoints == null)       contactPoints=new LinkedList<>();
+      try {
+        contactPoints.add(InetAddress.getByName(point));
+      }
+ catch (      Throwable e) {
+        throw new IllegalArgumentException("Incorrect contact point '" + point + "' specified for Cassandra cache storage",e);
+      }
+    }
+  }
+  invalidate();
+}

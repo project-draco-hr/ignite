@@ -1,0 +1,31 @@
+{
+  if (settings.getIndexDDLStatements() == null || settings.getIndexDDLStatements().isEmpty())   return;
+  int attempt=0;
+  Throwable error=null;
+  String errorMsg="Failed to create indexes for Cassandra table " + settings.getTableFullName();
+  while (attempt < CQL_EXECUTION_ATTEMPTS_COUNT) {
+    try {
+      log.info("Creating indexes for Cassandra table '" + settings.getTableFullName() + "'");
+      for (      String statement : settings.getIndexDDLStatements()) {
+        try {
+          session().execute(statement);
+        }
+ catch (        AlreadyExistsException ignored) {
+        }
+catch (        Throwable e) {
+          if (!(e instanceof InvalidQueryException) || !e.getMessage().equals("Index already exists"))           throw new IgniteException(errorMsg,e);
+        }
+      }
+      log.info("Indexes for Cassandra table '" + settings.getTableFullName() + "' were successfully created");
+      return;
+    }
+ catch (    Throwable e) {
+      if (CassandraHelper.isHostsAvailabilityError(e))       handleHostsAvailabilityError(e,attempt,errorMsg);
+ else       if (CassandraHelper.isTableAbsenceError(e))       createTable(settings);
+ else       throw new IgniteException(errorMsg,e);
+      error=e;
+    }
+    attempt++;
+  }
+  throw new IgniteException(errorMsg,error);
+}

@@ -1,0 +1,22 @@
+{
+  List<PojoField> list=new LinkedList<>();
+  if (el == null && (descriptors == null || descriptors.isEmpty()))   return list;
+  if (el == null) {
+    for (    PropertyDescriptor descriptor : descriptors)     list.add(new PojoKeyField(descriptor));
+    return list;
+  }
+  NodeList nodes=el.getElementsByTagName(FIELD_ELEMENT);
+  int cnt=nodes == null ? 0 : nodes.getLength();
+  if (cnt == 0) {
+    throw new IllegalArgumentException("Incorrect configuration of Cassandra key persistence settings, " + "no cluster key fields specified inside '" + PARTITION_KEY_ELEMENT + "/"+ CLUSTER_KEY_ELEMENT+ "' element");
+  }
+  for (int i=0; i < cnt; i++) {
+    PojoKeyField field=new PojoKeyField((Element)nodes.item(i),getJavaClass());
+    PropertyDescriptor desc=findPropertyDescriptor(descriptors,field.getName());
+    if (desc == null) {
+      throw new IllegalArgumentException("Specified POJO field '" + field.getName() + "' doesn't exist in '"+ getJavaClass().getName()+ "' class");
+    }
+    list.add(field);
+  }
+  return list;
+}

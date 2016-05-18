@@ -1,0 +1,11 @@
+{
+  String qry="";
+  if (statement instanceof BoundStatement)   qry=((BoundStatement)statement).preparedStatement().getQueryString().trim().toLowerCase();
+ else   if (statement instanceof PreparedStatement)   qry=((PreparedStatement)statement).getQueryString().trim().toLowerCase();
+  boolean readStatement=qry.startsWith("select");
+  boolean writeStatement=statement instanceof Batch || statement instanceof BatchStatement || qry.startsWith("insert")|| qry.startsWith("delete")|| qry.startsWith("update");
+  if (readStatement && readConsistency != null)   statement.setConsistencyLevel(readConsistency);
+  if (writeStatement && writeConsistency != null)   statement.setConsistencyLevel(writeConsistency);
+  if (fetchSize != null)   statement.setFetchSize(fetchSize);
+  return statement;
+}

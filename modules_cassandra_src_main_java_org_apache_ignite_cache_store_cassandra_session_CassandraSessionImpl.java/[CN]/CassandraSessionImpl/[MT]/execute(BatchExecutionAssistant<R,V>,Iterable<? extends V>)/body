@@ -1,0 +1,98 @@
+{
+  if (data == null || !data.iterator().hasNext())   return assistant.processedData();
+  int attempt=0;
+  String errorMsg="Failed to execute Cassandra " + assistant.operationName() + " operation";
+  Throwable error=new IgniteException(errorMsg);
+  RandomSleeper sleeper=newSleeper();
+  int dataSize=0;
+  incrementSessionRefs();
+  try {
+    while (attempt < CQL_EXECUTION_ATTEMPTS_COUNT) {
+      if (attempt != 0) {
+        log.warning("Trying " + (attempt + 1) + " attempt to execute Cassandra batch "+ assistant.operationName()+ " operation to process rest "+ (dataSize - assistant.processedCount())+ " of "+ dataSize+ " elements");
+      }
+      Throwable unknownEx=null;
+      Throwable tblAbsenceEx=null;
+      Throwable hostsAvailEx=null;
+      Throwable prepStatEx=null;
+      List<Cache.Entry<Integer,ResultSetFuture>> futResults=new LinkedList<>();
+      PreparedStatement preparedSt=prepareStatement(assistant.getStatement(),assistant.getPersistenceSettings(),assistant.tableExistenceRequired());
+      if (preparedSt == null)       return null;
+      int seqNum=0;
+      for (      V obj : data) {
+        if (!assistant.alreadyProcessed(seqNum)) {
+          try {
+            Statement statement=tuneStatementExecutionOptions(assistant.bindStatement(preparedSt,obj));
+            ResultSetFuture fut=session().executeAsync(statement);
+            futResults.add(new CacheEntryImpl<>(seqNum,fut));
+          }
+ catch (          Throwable e) {
+            if (CassandraHelper.isTableAbsenceError(e)) {
+              if (!assistant.tableExistenceRequired())               return assistant.processedData();
+              tblAbsenceEx=e;
+              handleTableAbsenceError(assistant.getPersistenceSettings());
+            }
+ else             if (CassandraHelper.isHostsAvailabilityError(e)) {
+              hostsAvailEx=e;
+              if (hostsAvailEx == null)               handleHostsAvailabilityError(e,attempt,errorMsg);
+            }
+ else             if (CassandraHelper.isPreparedStatementClusterError(e)) {
+              prepStatEx=e;
+              handlePreparedStatementClusterError(e);
+            }
+ else             unknownEx=e;
+          }
+        }
+        seqNum++;
+      }
+      dataSize=seqNum;
+      if (unknownEx != null)       throw new IgniteException(errorMsg,unknownEx);
+      if (tblAbsenceEx != null)       error=tblAbsenceEx;
+ else       if (hostsAvailEx != null)       error=hostsAvailEx;
+ else       if (prepStatEx != null)       error=prepStatEx;
+      unknownEx=null;
+      tblAbsenceEx=null;
+      hostsAvailEx=null;
+      prepStatEx=null;
+      for (      Cache.Entry<Integer,ResultSetFuture> futureResult : futResults) {
+        try {
+          ResultSet resSet=futureResult.getValue().getUninterruptibly();
+          Row row=resSet != null && resSet.iterator().hasNext() ? resSet.iterator().next() : null;
+          if (row != null)           assistant.process(row,futureResult.getKey());
+        }
+ catch (        Throwable e) {
+          if (CassandraHelper.isTableAbsenceError(e))           tblAbsenceEx=e;
+ else           if (CassandraHelper.isHostsAvailabilityError(e))           hostsAvailEx=e;
+ else           if (CassandraHelper.isPreparedStatementClusterError(e))           prepStatEx=e;
+ else           unknownEx=e;
+        }
+      }
+      if (unknownEx != null)       throw new IgniteException(errorMsg,unknownEx);
+      if (tblAbsenceEx == null && hostsAvailEx == null && prepStatEx == null)       return assistant.processedData();
+      if (tblAbsenceEx != null) {
+        if (!assistant.tableExistenceRequired())         return assistant.processedData();
+        error=tblAbsenceEx;
+        handleTableAbsenceError(assistant.getPersistenceSettings());
+      }
+      if (hostsAvailEx != null) {
+        error=hostsAvailEx;
+        handleHostsAvailabilityError(hostsAvailEx,attempt,errorMsg);
+      }
+      if (prepStatEx != null) {
+        error=prepStatEx;
+        handlePreparedStatementClusterError(prepStatEx);
+      }
+      sleeper.sleep();
+      attempt++;
+    }
+  }
+ catch (  Throwable e) {
+    error=e;
+  }
+ finally {
+    decrementSessionRefs();
+  }
+  errorMsg="Failed to process " + (dataSize - assistant.processedCount()) + " of "+ dataSize+ " elements, during "+ assistant.operationName()+ " operation with Cassandra";
+  log.error(errorMsg,error);
+  throw new IgniteException(errorMsg,error);
+}
