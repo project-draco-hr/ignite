@@ -1,0 +1,12 @@
+{
+  int messages=MSGS;
+  LATCH=new CountDownLatch(grp.nodes().size() * messages);
+  UUID opId=registerListener(grp);
+  try {
+    for (int i=0; i < messages; i++)     sendMessage(ignite,grp,value(i));
+    assertTrue(LATCH.await(10,TimeUnit.SECONDS));
+  }
+  finally {
+    ignite.message().stopRemoteListen(opId);
+  }
+}

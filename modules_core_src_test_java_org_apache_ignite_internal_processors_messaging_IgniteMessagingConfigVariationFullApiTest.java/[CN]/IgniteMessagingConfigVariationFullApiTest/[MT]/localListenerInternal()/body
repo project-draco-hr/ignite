@@ -1,0 +1,15 @@
+{
+  int messages=MSGS;
+  Ignite ignite=grid(SERVER_NODE_IDX);
+  LATCH=new CountDownLatch(messages);
+  ClusterGroup grp=grid(SERVER_NODE_IDX).cluster().forLocal();
+  MessageListener c=new MessageListener();
+  try {
+    ignite.message(grp).localListen("localListenerTopic",c);
+    for (int i=0; i < messages; i++)     ignite.message(grp).send("localListenerTopic",value(i));
+    assertTrue(LATCH.await(10,TimeUnit.SECONDS));
+  }
+  finally {
+    ignite.message().stopLocalListen("localListenerTopic",c);
+  }
+}
