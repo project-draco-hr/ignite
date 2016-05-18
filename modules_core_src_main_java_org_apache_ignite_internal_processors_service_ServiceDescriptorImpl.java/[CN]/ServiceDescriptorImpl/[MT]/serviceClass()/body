@@ -1,3 +1,13 @@
 {
-  return dep.configuration().getService().getClass();
+  ServiceConfiguration cfg=dep.configuration();
+  if (cfg instanceof LazyServiceConfiguration) {
+    String clsName=((LazyServiceConfiguration)cfg).serviceClassName();
+    try {
+      return (Class<? extends Service>)Class.forName(clsName);
+    }
+ catch (    ClassNotFoundException e) {
+      throw new IgniteException("Failed to find service class: " + clsName,e);
+    }
+  }
+ else   return dep.configuration().getService().getClass();
 }

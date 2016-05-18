@@ -1,6 +1,20 @@
 {
   A.notNull(cfg,"cfg");
+  ServicesCompatibilityState state=markCompatibilityStateAsUsed();
   validate(cfg);
+  if (!state.srvcCompatibility) {
+    Marshaller marsh=ctx.config().getMarshaller();
+    LazyServiceConfiguration cfg0;
+    try {
+      byte[] srvcBytes=marsh.marshal(cfg.getService());
+      cfg0=new LazyServiceConfiguration(cfg,srvcBytes);
+    }
+ catch (    IgniteCheckedException e) {
+      U.error(log,"Failed to marshal service with configured marshaller [srvc=" + cfg.getService() + ", marsh="+ marsh+ "]",e);
+      return new GridFinishedFuture<>(e);
+    }
+    cfg=cfg0;
+  }
   GridServiceDeploymentFuture fut=new GridServiceDeploymentFuture(cfg);
   GridServiceDeploymentFuture old=depFuts.putIfAbsent(cfg.getName(),fut);
   if (old != null) {

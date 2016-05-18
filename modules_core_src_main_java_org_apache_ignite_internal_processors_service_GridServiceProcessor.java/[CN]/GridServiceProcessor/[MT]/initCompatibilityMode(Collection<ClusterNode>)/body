@@ -1,0 +1,18 @@
+{
+  boolean mode;
+  if (srvcCompatibilitySysProp == null) {
+    boolean clusterHasOldNode=false;
+    for (    ClusterNode n : nodes) {
+      if (n.version().compareToIgnoreTimestamp(LAZY_SERVICES_CFG_SINCE) < 0) {
+        clusterHasOldNode=true;
+        break;
+      }
+    }
+    mode=clusterHasOldNode;
+  }
+ else   mode=srvcCompatibilitySysProp;
+  while (true) {
+    ServicesCompatibilityState state=compatibilityState.get();
+    if (compatibilityState.compareAndSet(state,new ServicesCompatibilityState(mode,state.used)))     return;
+  }
+}

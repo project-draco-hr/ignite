@@ -23,13 +23,14 @@ synchronized (ctxs) {
     }
   }
   for (  final ServiceContextImpl svcCtx : toInit) {
-    final Service svc=copyAndInject(assigns.service());
+    final Service svc;
     try {
+      svc=copyAndInject(assigns.configuration());
       svc.init(svcCtx);
       svcCtx.service(svc);
     }
  catch (    Throwable e) {
-      log.error("Failed to initialize service (service will not be deployed): " + assigns.name(),e);
+      U.error(log,"Failed to initialize service (service will not be deployed): " + assigns.name(),e);
 synchronized (ctxs) {
         ctxs.removeAll(toInit);
       }
