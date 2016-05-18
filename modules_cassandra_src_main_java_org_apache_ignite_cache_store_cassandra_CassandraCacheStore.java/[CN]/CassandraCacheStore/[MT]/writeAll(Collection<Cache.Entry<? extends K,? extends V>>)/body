@@ -1,0 +1,42 @@
+{
+  if (entries == null || entries.isEmpty())   return;
+  CassandraSession ses=getCassandraSession();
+  try {
+    ses.execute(new GenericBatchExecutionAssistant<Void,Cache.Entry<? extends K,? extends V>>(){
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public String getStatement(){
+        return controller.getWriteStatement();
+      }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public BoundStatement bindStatement(      PreparedStatement statement,      Cache.Entry<? extends K,? extends V> entry){
+        return controller.bindKeyValue(statement,entry.getKey(),entry.getValue());
+      }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public KeyValuePersistenceSettings getPersistenceSettings(){
+        return controller.getPersistenceSettings();
+      }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public String operationName(){
+        return "BULK_WRITE";
+      }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public boolean tableExistenceRequired(){
+        return true;
+      }
+    }
+,entries);
+  }
+  finally {
+    closeCassandraSession(ses);
+  }
+}

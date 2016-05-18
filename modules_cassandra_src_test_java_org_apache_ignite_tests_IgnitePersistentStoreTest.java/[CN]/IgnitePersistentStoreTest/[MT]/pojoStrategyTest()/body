@@ -1,0 +1,55 @@
+{
+  Ignition.stopAll(true);
+  LOGGER.info("Running POJO strategy write tests");
+  Map<Long,Person> personMap1=TestsHelper.generateLongsPersonsMap();
+  Map<PersonId,Person> personMap2=TestsHelper.generatePersonIdsPersonsMap();
+  try (Ignite ignite=Ignition.start("org/apache/ignite/tests/persistence/pojo/ignite-config.xml")){
+    IgniteCache<Long,Person> personCache1=ignite.getOrCreateCache(new CacheConfiguration<Long,Person>("cache1"));
+    IgniteCache<PersonId,Person> personCache2=ignite.getOrCreateCache(new CacheConfiguration<PersonId,Person>("cache2"));
+    IgniteCache<PersonId,Person> personCache3=ignite.getOrCreateCache(new CacheConfiguration<PersonId,Person>("cache3"));
+    LOGGER.info("Running single operation write tests");
+    personCache1.put(1L,TestsHelper.generateRandomPerson());
+    personCache2.put(TestsHelper.generateRandomPersonId(),TestsHelper.generateRandomPerson());
+    personCache3.put(TestsHelper.generateRandomPersonId(),TestsHelper.generateRandomPerson());
+    LOGGER.info("Single operation write tests passed");
+    LOGGER.info("Running bulk operation write tests");
+    personCache1.putAll(personMap1);
+    personCache2.putAll(personMap2);
+    personCache3.putAll(personMap2);
+    LOGGER.info("Bulk operation write tests passed");
+  }
+   LOGGER.info("POJO strategy write tests passed");
+  Ignition.stopAll(true);
+  try (Ignite ignite=Ignition.start("org/apache/ignite/tests/persistence/pojo/ignite-config.xml")){
+    LOGGER.info("Running POJO strategy read tests");
+    IgniteCache<Long,Person> personCache1=ignite.getOrCreateCache(new CacheConfiguration<Long,Person>("cache1"));
+    IgniteCache<PersonId,Person> personCache2=ignite.getOrCreateCache(new CacheConfiguration<PersonId,Person>("cache2"));
+    IgniteCache<PersonId,Person> personCache3=ignite.getOrCreateCache(new CacheConfiguration<PersonId,Person>("cache3"));
+    LOGGER.info("Running single operation read tests");
+    Person person=personCache1.get(1L);
+    if (!person.equalsPrimitiveFields(personMap1.get(1L)))     throw new RuntimeException("Person value was incorrectly deserialized from Cassandra");
+    PersonId id=personMap2.keySet().iterator().next();
+    person=personCache2.get(id);
+    if (!person.equalsPrimitiveFields(personMap2.get(id)))     throw new RuntimeException("Person value was incorrectly deserialized from Cassandra");
+    person=personCache3.get(id);
+    if (!person.equals(personMap2.get(id)))     throw new RuntimeException("Person value was incorrectly deserialized from Cassandra");
+    LOGGER.info("Single operation read tests passed");
+    LOGGER.info("Running bulk operation read tests");
+    Map<Long,Person> persons1=personCache1.getAll(personMap1.keySet());
+    if (!TestsHelper.checkPersonMapsEqual(persons1,personMap1,true))     throw new RuntimeException("Persons values batch was incorrectly deserialized from Cassandra");
+    Map<PersonId,Person> persons2=personCache2.getAll(personMap2.keySet());
+    if (!TestsHelper.checkPersonMapsEqual(persons2,personMap2,true))     throw new RuntimeException("Person values batch was incorrectly deserialized from Cassandra");
+    Map<PersonId,Person> persons3=personCache3.getAll(personMap2.keySet());
+    if (!TestsHelper.checkPersonMapsEqual(persons3,personMap2,false))     throw new RuntimeException("Person values batch was incorrectly deserialized from Cassandra");
+    LOGGER.info("Bulk operation read tests passed");
+    LOGGER.info("POJO strategy read tests passed");
+    LOGGER.info("Running POJO strategy delete tests");
+    personCache1.remove(1L);
+    personCache1.removeAll(personMap1.keySet());
+    personCache2.remove(id);
+    personCache2.removeAll(personMap2.keySet());
+    personCache3.remove(id);
+    personCache3.removeAll(personMap2.keySet());
+    LOGGER.info("POJO strategy delete tests passed");
+  }
+ }

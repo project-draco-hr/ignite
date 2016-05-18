@@ -1,0 +1,21 @@
+{
+  Collection<SessionWrapper> wrappers;
+synchronized (sessions) {
+    try {
+      if (sessions.size() == 0)       return;
+      wrappers=new LinkedList<>();
+      for (      SessionWrapper wrapper : sessions.values())       wrappers.add(wrapper);
+      sessions.clear();
+    }
+  finally {
+      if (!(Thread.currentThread() instanceof SessionMonitor) && monitorSingleton != null) {
+        try {
+          monitorSingleton.interrupt();
+        }
+ catch (        Throwable ignored) {
+        }
+      }
+    }
+  }
+  for (  SessionWrapper wrapper : wrappers)   wrapper.release();
+}

@@ -1,0 +1,44 @@
+{
+  Ignition.stopAll(true);
+  Map<Long,Long> longMap=TestsHelper.generateLongsMap();
+  Map<String,String> strMap=TestsHelper.generateStringsMap();
+  LOGGER.info("Running PRIMITIVE strategy write tests");
+  try (Ignite ignite=Ignition.start("org/apache/ignite/tests/persistence/primitive/ignite-config.xml")){
+    IgniteCache<Long,Long> longCache=ignite.getOrCreateCache(new CacheConfiguration<Long,Long>("cache1"));
+    IgniteCache<String,String> strCache=ignite.getOrCreateCache(new CacheConfiguration<String,String>("cache2"));
+    LOGGER.info("Running single operation write tests");
+    longCache.put(1L,1L);
+    strCache.put("1","1");
+    LOGGER.info("Single operation write tests passed");
+    LOGGER.info("Running bulk operation write tests");
+    longCache.putAll(longMap);
+    strCache.putAll(strMap);
+    LOGGER.info("Bulk operation write tests passed");
+  }
+   LOGGER.info("PRIMITIVE strategy write tests passed");
+  Ignition.stopAll(true);
+  try (Ignite ignite=Ignition.start("org/apache/ignite/tests/persistence/primitive/ignite-config.xml")){
+    LOGGER.info("Running PRIMITIVE strategy read tests");
+    IgniteCache<Long,Long> longCache=ignite.getOrCreateCache(new CacheConfiguration<Long,Long>("cache1"));
+    IgniteCache<String,String> strCache=ignite.getOrCreateCache(new CacheConfiguration<String,String>("cache2"));
+    LOGGER.info("Running single operation read tests");
+    Long longVal=longCache.get(1L);
+    if (!longVal.equals(longMap.get(1L)))     throw new RuntimeException("Long value was incorrectly deserialized from Cassandra");
+    String strVal=strCache.get("1");
+    if (!strVal.equals(strMap.get("1")))     throw new RuntimeException("String value was incorrectly deserialized from Cassandra");
+    LOGGER.info("Single operation read tests passed");
+    LOGGER.info("Running bulk operation read tests");
+    Map<Long,Long> longMap1=longCache.getAll(longMap.keySet());
+    if (!TestsHelper.checkMapsEqual(longMap,longMap1))     throw new RuntimeException("Long values batch was incorrectly deserialized from Cassandra");
+    Map<String,String> strMap1=strCache.getAll(strMap.keySet());
+    if (!TestsHelper.checkMapsEqual(strMap,strMap1))     throw new RuntimeException("String values batch was incorrectly deserialized from Cassandra");
+    LOGGER.info("Bulk operation read tests passed");
+    LOGGER.info("PRIMITIVE strategy read tests passed");
+    LOGGER.info("Running PRIMITIVE strategy delete tests");
+    longCache.remove(1L);
+    longCache.removeAll(longMap.keySet());
+    strCache.remove("1");
+    strCache.removeAll(strMap.keySet());
+    LOGGER.info("PRIMITIVE strategy delete tests passed");
+  }
+ }

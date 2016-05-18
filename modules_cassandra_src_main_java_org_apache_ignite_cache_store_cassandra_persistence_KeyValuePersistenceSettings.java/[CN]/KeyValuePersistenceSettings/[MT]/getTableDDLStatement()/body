@@ -1,0 +1,14 @@
+{
+  String colsDDL=keyPersistenceSettings.getTableColumnsDDL() + ",\n" + valPersistenceSettings.getTableColumnsDDL();
+  String primaryKeyDDL=keyPersistenceSettings.getPrimaryKeyDDL();
+  String clusteringDDL=keyPersistenceSettings.getClusteringDDL();
+  String optionsDDL=tblOptions != null && !tblOptions.trim().isEmpty() ? tblOptions.trim() : "";
+  if (clusteringDDL != null && !clusteringDDL.isEmpty())   optionsDDL=optionsDDL.isEmpty() ? clusteringDDL : optionsDDL + " and " + clusteringDDL;
+  if (!optionsDDL.trim().isEmpty())   optionsDDL=optionsDDL.trim().toLowerCase().startsWith("with") ? optionsDDL.trim() : "with " + optionsDDL.trim();
+  StringBuilder builder=new StringBuilder();
+  builder.append("create table if not exists ").append(keyspace).append(".").append(tbl);
+  builder.append("\n(\n").append(colsDDL).append(",\n").append(primaryKeyDDL).append("\n)");
+  if (!optionsDDL.isEmpty())   builder.append(" \n").append(optionsDDL);
+  String tblDDL=builder.toString().trim().replaceAll(" +"," ");
+  return tblDDL.endsWith(";") ? tblDDL : tblDDL + ";";
+}

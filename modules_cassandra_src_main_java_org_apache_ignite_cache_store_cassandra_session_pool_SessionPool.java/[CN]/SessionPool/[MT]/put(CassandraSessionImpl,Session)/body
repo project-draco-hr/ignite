@@ -1,0 +1,14 @@
+{
+  if (cassandraSes == null || driverSes == null)   return;
+  SessionWrapper old;
+synchronized (sessions) {
+    old=sessions.put(cassandraSes,new SessionWrapper(driverSes));
+    if (monitorSingleton == null || State.TERMINATED.equals(monitorSingleton.getState())) {
+      monitorSingleton=new SessionMonitor();
+      monitorSingleton.setDaemon(true);
+      monitorSingleton.setName("Cassandra-sessions-pool");
+      monitorSingleton.start();
+    }
+  }
+  if (old != null)   old.release();
+}

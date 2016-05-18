@@ -1,0 +1,46 @@
+{
+  int attempt=0;
+  Throwable error=null;
+  String errorMsg="Failed to execute Cassandra CQL statement: " + assistant.getStatement();
+  RandomSleeper sleeper=newSleeper();
+  incrementSessionRefs();
+  try {
+    while (attempt < CQL_EXECUTION_ATTEMPTS_COUNT) {
+      error=null;
+      if (attempt != 0) {
+        log.warning("Trying " + (attempt + 1) + " attempt to execute Cassandra CQL statement: "+ assistant.getStatement());
+      }
+      try {
+        PreparedStatement preparedSt=prepareStatement(assistant.getStatement(),assistant.getPersistenceSettings(),assistant.tableExistenceRequired());
+        if (preparedSt == null)         return null;
+        Statement statement=tuneStatementExecutionOptions(assistant.bindStatement(preparedSt));
+        ResultSet res=session().execute(statement);
+        Row row=res == null || !res.iterator().hasNext() ? null : res.iterator().next();
+        return row == null ? null : assistant.process(row);
+      }
+ catch (      Throwable e) {
+        error=e;
+        if (CassandraHelper.isTableAbsenceError(e)) {
+          if (!assistant.tableExistenceRequired()) {
+            log.warning(errorMsg,e);
+            return null;
+          }
+          handleTableAbsenceError(assistant.getPersistenceSettings());
+        }
+ else         if (CassandraHelper.isHostsAvailabilityError(e))         handleHostsAvailabilityError(e,attempt,errorMsg);
+ else         if (CassandraHelper.isPreparedStatementClusterError(e))         handlePreparedStatementClusterError(e);
+ else         throw new IgniteException(errorMsg,e);
+      }
+      sleeper.sleep();
+      attempt++;
+    }
+  }
+ catch (  Throwable e) {
+    error=e;
+  }
+ finally {
+    decrementSessionRefs();
+  }
+  log.error(errorMsg,error);
+  throw new IgniteException(errorMsg,error);
+}

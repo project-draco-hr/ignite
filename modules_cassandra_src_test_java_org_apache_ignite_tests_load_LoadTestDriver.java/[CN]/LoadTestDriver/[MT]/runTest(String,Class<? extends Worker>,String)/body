@@ -1,0 +1,63 @@
+{
+  logger().info("Running " + testName + " test");
+  Object cfg=null;
+  int attempt;
+  logger().info("Setting up load tests driver");
+  for (attempt=0; attempt < NUMBER_OF_SETUP_ATTEMPTS; attempt++) {
+    try {
+      cfg=setup(logName);
+      break;
+    }
+ catch (    Throwable e) {
+      logger().error((attempt + 1) + " attempt to setup load test '" + testName+ "' failed",e);
+    }
+    if (attempt + 1 != NUMBER_OF_SETUP_ATTEMPTS) {
+      logger().info("Sleeping for " + SETUP_ATTEMPT_TIMEOUT + " seconds before trying next attempt "+ "to setup '"+ testName+ "' load test");
+      try {
+        Thread.sleep(SETUP_ATTEMPT_TIMEOUT);
+      }
+ catch (      InterruptedException ignored) {
+      }
+    }
+  }
+  if (cfg == null && attempt == NUMBER_OF_SETUP_ATTEMPTS) {
+    throw new RuntimeException("All " + NUMBER_OF_SETUP_ATTEMPTS + " attempts to setup load test '"+ testName+ "' have failed");
+  }
+  long hostUniqePrefix=getHostUniquePrefix();
+  logger().info("Load tests driver setup successfully completed");
+  try {
+    List<Worker> workers=new LinkedList<>();
+    long startPosition=0;
+    logger().info("Starting workers");
+    for (int i=0; i < TestsHelper.getLoadTestsThreadsCount(); i++) {
+      Worker worker=createWorker(clazz,cfg,hostUniqePrefix + startPosition,hostUniqePrefix + startPosition + 100000000);
+      workers.add(worker);
+      worker.setName(testName + "-worker-" + i);
+      worker.start();
+      startPosition+=100000001;
+    }
+    logger().info("Workers started");
+    logger().info("Waiting for workers to complete");
+    List<String> failedWorkers=new LinkedList<>();
+    for (    Worker worker : workers) {
+      boolean failed=false;
+      try {
+        worker.join();
+      }
+ catch (      Throwable e) {
+        logger().error("Worker " + worker.getName() + " waiting interrupted",e);
+        failed=true;
+      }
+      if (failed || worker.isFailed()) {
+        failedWorkers.add(worker.getName());
+        logger().info("Worker " + worker.getName() + " execution failed");
+      }
+ else       logger().info("Worker " + worker.getName() + " successfully completed");
+    }
+    printTestResultsHeader(testName,failedWorkers);
+    printTestResultsStatistics(testName,workers);
+  }
+  finally {
+    tearDown(cfg);
+  }
+}

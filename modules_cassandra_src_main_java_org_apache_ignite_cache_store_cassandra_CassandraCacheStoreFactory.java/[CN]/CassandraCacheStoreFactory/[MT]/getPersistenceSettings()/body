@@ -1,0 +1,14 @@
+{
+  if (persistenceSettings != null)   return persistenceSettings;
+  if (persistenceSettingsBean == null) {
+    throw new IllegalStateException("Either persistence settings bean or persistence settings itself " + "should be specified");
+  }
+  if (appCtx == null) {
+    throw new IllegalStateException("Failed to get Cassandra persistence settings cause Spring application " + "context wasn't injected into CassandraCacheStoreFactory");
+  }
+  Object obj=loadSpringContextBean(appCtx,persistenceSettingsBean);
+  if (!(obj instanceof KeyValuePersistenceSettings)) {
+    throw new IllegalStateException("Incorrect persistence settings bean '" + persistenceSettingsBean + "' specified");
+  }
+  return persistenceSettings=(KeyValuePersistenceSettings)obj;
+}

@@ -1,0 +1,44 @@
+{
+  Ignition.stopAll(true);
+  Map<Long,Long> longMap=TestsHelper.generateLongsMap();
+  Map<Long,Person> personMap=TestsHelper.generateLongsPersonsMap();
+  LOGGER.info("Running BLOB strategy write tests");
+  try (Ignite ignite=Ignition.start("org/apache/ignite/tests/persistence/blob/ignite-config.xml")){
+    IgniteCache<Long,Long> longCache=ignite.getOrCreateCache(new CacheConfiguration<Long,Long>("cache1"));
+    IgniteCache<Long,Person> personCache=ignite.getOrCreateCache(new CacheConfiguration<Long,Person>("cache2"));
+    LOGGER.info("Running single operation write tests");
+    longCache.put(1L,1L);
+    personCache.put(1L,TestsHelper.generateRandomPerson());
+    LOGGER.info("Single operation write tests passed");
+    LOGGER.info("Running bulk operation write tests");
+    longCache.putAll(longMap);
+    personCache.putAll(personMap);
+    LOGGER.info("Bulk operation write tests passed");
+  }
+   LOGGER.info("BLOB strategy write tests passed");
+  Ignition.stopAll(true);
+  try (Ignite ignite=Ignition.start("org/apache/ignite/tests/persistence/blob/ignite-config.xml")){
+    LOGGER.info("Running BLOB strategy read tests");
+    IgniteCache<Long,Long> longCache=ignite.getOrCreateCache(new CacheConfiguration<Long,Long>("cache1"));
+    IgniteCache<Long,Person> personCache=ignite.getOrCreateCache(new CacheConfiguration<Long,Person>("cache2"));
+    LOGGER.info("Running single operation read tests");
+    Long longVal=longCache.get(1L);
+    if (!longVal.equals(longMap.get(1L)))     throw new RuntimeException("Long value was incorrectly deserialized from Cassandra");
+    Person person=personCache.get(1L);
+    if (!person.equals(personMap.get(1L)))     throw new RuntimeException("Person value was incorrectly deserialized from Cassandra");
+    LOGGER.info("Single operation read tests passed");
+    LOGGER.info("Running bulk operation read tests");
+    Map<Long,Long> longMap1=longCache.getAll(longMap.keySet());
+    if (!TestsHelper.checkMapsEqual(longMap,longMap1))     throw new RuntimeException("Long values batch was incorrectly deserialized from Cassandra");
+    Map<Long,Person> personMap1=personCache.getAll(personMap.keySet());
+    if (!TestsHelper.checkPersonMapsEqual(personMap,personMap1,false))     throw new RuntimeException("Person values batch was incorrectly deserialized from Cassandra");
+    LOGGER.info("Bulk operation read tests passed");
+    LOGGER.info("BLOB strategy read tests passed");
+    LOGGER.info("Running BLOB strategy delete tests");
+    longCache.remove(1L);
+    longCache.removeAll(longMap.keySet());
+    personCache.remove(1L);
+    personCache.removeAll(personMap.keySet());
+    LOGGER.info("BLOB strategy delete tests passed");
+  }
+ }

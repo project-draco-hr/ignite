@@ -1,0 +1,33 @@
+{
+  if (ses != null)   return ses;
+  Cluster.Builder builder=Cluster.builder();
+  if (user != null)   builder=builder.withCredentials(user,pwd);
+  if (port != null)   builder=builder.withPort(port);
+  if (contactPoints != null)   builder=builder.addContactPoints(contactPoints);
+  if (contactPointsWithPorts != null)   builder=builder.addContactPointsWithPorts(contactPointsWithPorts);
+  if (maxSchemaAgreementWaitSeconds != null)   builder=builder.withMaxSchemaAgreementWaitSeconds(maxSchemaAgreementWaitSeconds);
+  if (protoVer != null)   builder=builder.withProtocolVersion(ProtocolVersion.fromInt(protoVer));
+  if (compression != null) {
+    try {
+      builder=builder.withCompression(ProtocolOptions.Compression.valueOf(compression.trim().toLowerCase()));
+    }
+ catch (    IllegalArgumentException e) {
+      throw new IgniteException("Incorrect compression option '" + compression + "' specified for Cassandra connection",e);
+    }
+  }
+  if (useSSL != null && useSSL)   builder=builder.withSSL();
+  if (sslOptions != null)   builder=builder.withSSL(sslOptions);
+  if (collectMetrix != null && !collectMetrix)   builder=builder.withoutMetrics();
+  if (jmxReporting != null && !jmxReporting)   builder=builder.withoutJMXReporting();
+  if (creds != null)   builder=builder.withCredentials(creds.getUser(),creds.getPassword());
+  if (loadBalancingPlc != null)   builder=builder.withLoadBalancingPolicy(loadBalancingPlc);
+  if (reconnectionPlc != null)   builder=builder.withReconnectionPolicy(reconnectionPlc);
+  if (retryPlc != null)   builder=builder.withRetryPolicy(retryPlc);
+  if (addrTranslator != null)   builder=builder.withAddressTranslator(addrTranslator);
+  if (speculativeExecutionPlc != null)   builder=builder.withSpeculativeExecutionPolicy(speculativeExecutionPlc);
+  if (authProvider != null)   builder=builder.withAuthProvider(authProvider);
+  if (poolingOptions != null)   builder=builder.withPoolingOptions(poolingOptions);
+  if (sockOptions != null)   builder=builder.withSocketOptions(sockOptions);
+  if (nettyOptions != null)   builder=builder.withNettyOptions(nettyOptions);
+  return ses=new CassandraSessionImpl(builder,fetchSize,readConsistency,writeConsistency,log);
+}

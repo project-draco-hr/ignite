@@ -1,0 +1,31 @@
+{
+  int attempt=0;
+  Throwable error=null;
+  String errorMsg="Failed to create Cassandra table '" + settings.getTableFullName() + "'";
+  while (attempt < CQL_EXECUTION_ATTEMPTS_COUNT) {
+    try {
+      log.info("-----------------------------------------------------------------------");
+      log.info("Creating Cassandra table '" + settings.getTableFullName() + "'");
+      log.info("-----------------------------------------------------------------------\n\n" + settings.getTableDDLStatement() + "\n");
+      log.info("-----------------------------------------------------------------------");
+      session().execute(settings.getTableDDLStatement());
+      log.info("Cassandra table '" + settings.getTableFullName() + "' was successfully created");
+      return;
+    }
+ catch (    AlreadyExistsException ignored) {
+      log.info("Cassandra table '" + settings.getTableFullName() + "' already exist");
+      return;
+    }
+catch (    Throwable e) {
+      if (!CassandraHelper.isHostsAvailabilityError(e) && !CassandraHelper.isKeyspaceAbsenceError(e))       throw new IgniteException(errorMsg,e);
+      if (CassandraHelper.isKeyspaceAbsenceError(e)) {
+        log.warning("Failed to create Cassandra table '" + settings.getTableFullName() + "' cause appropriate keyspace doesn't exist",e);
+        createKeyspace(settings);
+      }
+ else       if (CassandraHelper.isHostsAvailabilityError(e))       handleHostsAvailabilityError(e,attempt,errorMsg);
+      error=e;
+    }
+    attempt++;
+  }
+  throw new IgniteException(errorMsg,error);
+}

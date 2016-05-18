@@ -1,0 +1,49 @@
+{
+  testStartTime=System.currentTimeMillis();
+  log.info("Test execution started");
+  if (warmup)   log.info("Warm up period started");
+  warmupStartTime=warmup ? testStartTime : 0;
+  startTime=!warmup ? testStartTime : 0;
+  statReportedTime=testStartTime;
+  long cntr=startPosition;
+  Object key=TestsHelper.generateLoadTestsKey(cntr);
+  Object val=TestsHelper.generateLoadTestsValue(cntr);
+  List<CacheEntryImpl> batchList=new ArrayList<>(TestsHelper.getBulkOperationSize());
+  Map batchMap=new HashMap(TestsHelper.getBulkOperationSize());
+  int execTime=TestsHelper.getLoadTestsWarmupPeriod() + TestsHelper.getLoadTestsExecutionTime();
+  try {
+    while (true) {
+      if (System.currentTimeMillis() - testStartTime > execTime)       break;
+      if (warmup && System.currentTimeMillis() - testStartTime > TestsHelper.getLoadTestsWarmupPeriod()) {
+        warmupFinishTime=System.currentTimeMillis();
+        startTime=warmupFinishTime;
+        statReportedTime=warmupFinishTime;
+        warmup=false;
+        log.info("Warm up period completed");
+      }
+      if (!batchMode()) {
+        if (cacheStore != null)         doWork(new CacheEntryImpl(key,val));
+ else         doWork(key,val);
+      }
+ else       if (batchList.size() == TestsHelper.getBulkOperationSize() || batchMap.size() == TestsHelper.getBulkOperationSize()) {
+        if (cacheStore != null)         doWork(batchList);
+ else         doWork(batchMap);
+        batchMap.clear();
+        batchList.clear();
+      }
+      if (cntr == endPosition)       cntr=startPosition;
+ else       cntr++;
+      key=TestsHelper.generateLoadTestsKey(cntr);
+      val=TestsHelper.generateLoadTestsValue(cntr);
+      if (batchMode()) {
+        if (cacheStore != null)         batchList.add(new CacheEntryImpl(key,val));
+ else         batchMap.put(key,val);
+      }
+      reportStatistics();
+    }
+  }
+  finally {
+    warmupFinishTime=warmupFinishTime != 0 ? warmupFinishTime : System.currentTimeMillis();
+    finishTime=System.currentTimeMillis();
+  }
+}

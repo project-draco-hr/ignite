@@ -1,0 +1,15 @@
+{
+  if (desc.getReadMethod() == null) {
+    throw new IllegalArgumentException("Field '" + desc.getName() + "' of the class instance '"+ desc.getPropertyType().getName()+ "' doesn't provide getter method");
+  }
+  if (desc.getWriteMethod() == null) {
+    throw new IllegalArgumentException("Field '" + desc.getName() + "' of POJO object instance of the class '"+ desc.getPropertyType().getName()+ "' doesn't provide write method");
+  }
+  if (!desc.getReadMethod().isAccessible())   desc.getReadMethod().setAccessible(true);
+  if (!desc.getWriteMethod().isAccessible())   desc.getWriteMethod().setAccessible(true);
+  DataType.Name cassandraType=PropertyMappingHelper.getCassandraType(desc.getPropertyType());
+  cassandraType=cassandraType == null ? DataType.Name.BLOB : cassandraType;
+  this.javaCls=desc.getReadMethod().getDeclaringClass();
+  this.desc=desc;
+  this.colDDL=col + " " + cassandraType.toString();
+}

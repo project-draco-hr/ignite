@@ -1,0 +1,14 @@
+{
+  if (ses != null)   return ses;
+  ses=SessionPool.get(this);
+  if (ses != null)   return ses;
+synchronized (sesStatements) {
+    sesStatements.clear();
+  }
+  try {
+    return ses=builder.build().connect();
+  }
+ catch (  Throwable e) {
+    throw new IgniteException("Failed to establish session with Cassandra database",e);
+  }
+}

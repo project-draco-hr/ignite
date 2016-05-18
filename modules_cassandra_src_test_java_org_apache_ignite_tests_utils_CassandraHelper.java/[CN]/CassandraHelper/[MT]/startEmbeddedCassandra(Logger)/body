@@ -1,0 +1,15 @@
+{
+  ClassLoader clsLdr=CassandraHelper.class.getClassLoader();
+  URL url=clsLdr.getResource(EMBEDDED_CASSANDRA_YAML);
+  embeddedCassandraBean=new CassandraLifeCycleBean();
+  embeddedCassandraBean.setCassandraConfigFile(url.getFile());
+  try {
+    Field logField=CassandraLifeCycleBean.class.getDeclaredField("log");
+    logField.setAccessible(true);
+    logField.set(embeddedCassandraBean,new Log4JLogger(log));
+  }
+ catch (  Throwable e) {
+    throw new RuntimeException("Failed to initialize logger for CassandraLifeCycleBean",e);
+  }
+  embeddedCassandraBean.onLifecycleEvent(LifecycleEventType.BEFORE_NODE_START);
+}
