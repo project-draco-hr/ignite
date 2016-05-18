@@ -1,0 +1,44 @@
+{
+  if (initLatch.compareAndSet(false,true)) {
+    log.info("DEMO: Starting embedded nodes for demo...");
+    System.setProperty(IGNITE_ATOMIC_CACHE_DELETE_HISTORY_SIZE,"1");
+    System.setProperty(IGNITE_JETTY_PORT,"60800");
+    System.setProperty(IGNITE_NO_ASCII,"true");
+    try {
+      IgniteEx ignite=(IgniteEx)Ignition.start(igniteConfiguration(0,false));
+      final AtomicInteger cnt=new AtomicInteger(0);
+      final ScheduledExecutorService execSrv=Executors.newSingleThreadScheduledExecutor();
+      execSrv.scheduleAtFixedRate(new Runnable(){
+        @Override public void run(){
+          int idx=cnt.incrementAndGet();
+          try {
+            Ignition.start(igniteConfiguration(idx,idx == NODE_CNT));
+          }
+ catch (          Throwable e) {
+            log.error("DEMO: Failed to start embedded node: " + e.getMessage());
+          }
+ finally {
+            if (idx == NODE_CNT)             execSrv.shutdown();
+          }
+        }
+      }
+,10,10,TimeUnit.SECONDS);
+      if (log.isDebugEnabled())       log.debug("DEMO: Started embedded nodes with indexed enabled caches...");
+      Collection<String> jettyAddrs=ignite.localNode().attribute(ATTR_REST_JETTY_ADDRS);
+      String host=jettyAddrs == null ? null : jettyAddrs.iterator().next();
+      Integer port=ignite.localNode().attribute(ATTR_REST_JETTY_PORT);
+      if (F.isEmpty(host) || port == null) {
+        log.error("DEMO: Failed to start embedded node with rest!");
+        return false;
+      }
+      acfg.demoNodeUri(String.format("http://%s:%d",host,port));
+      log.info("DEMO: Embedded nodes for sql test-drive successfully started");
+      startLoad(ignite,20);
+    }
+ catch (    Exception e) {
+      log.error("DEMO: Failed to start embedded node for sql test-drive!",e);
+      return false;
+    }
+  }
+  return true;
+}

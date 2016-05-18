@@ -1,0 +1,22 @@
+{
+  IgniteConfiguration cfg=new IgniteConfiguration();
+  cfg.setGridName((client ? "demo-server-" : "demo-client-") + gridIdx);
+  cfg.setLocalHost("127.0.0.1");
+  cfg.setIncludeEventTypes(EVTS_DISCOVERY);
+  TcpDiscoveryVmIpFinder ipFinder=new TcpDiscoveryVmIpFinder();
+  ipFinder.setAddresses(Collections.singletonList("127.0.0.1:60900.." + (60900 + NODE_CNT - 1)));
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setLocalPort(60900);
+  discoSpi.setIpFinder(ipFinder);
+  cfg.setDiscoverySpi(discoSpi);
+  TcpCommunicationSpi commSpi=new TcpCommunicationSpi();
+  commSpi.setSharedMemoryPort(-1);
+  commSpi.setLocalPort(60800);
+  cfg.setCommunicationSpi(commSpi);
+  cfg.setGridLogger(new Log4JLogger(log));
+  cfg.setMetricsLogFrequency(0);
+  cfg.getConnectorConfiguration().setPort(60700);
+  if (client)   cfg.setClientMode(true);
+ else   cfg.setCacheConfiguration(cacheCountry(),cacheDepartment(),cacheEmployee(),cacheParking(),cacheCar());
+  return cfg;
+}

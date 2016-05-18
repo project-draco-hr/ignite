@@ -1,0 +1,47 @@
+{
+  final long diff=new java.util.Date().getTime();
+  populateCacheEmployee(ignite,diff);
+  populateCacheCar(ignite);
+  ScheduledExecutorService cachePool=newScheduledThreadPool(2,"demo-sql-load-cache-tasks");
+  cachePool.scheduleWithFixedDelay(new Runnable(){
+    @Override public void run(){
+      try {
+        IgniteCache<Integer,Employee> cacheEmployee=ignite.cache(EMPLOYEE_CACHE_NAME);
+        if (cacheEmployee == null)         return;
+        try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+          for (int i=0, n=1; i < cnt; i++, n++) {
+            Integer id=rnd.nextInt(EMPL_CNT);
+            Integer depId=rnd.nextInt(DEP_CNT);
+            double r=rnd.nextDouble();
+            cacheEmployee.put(id,new Employee(id,depId,depId,"First name employee #" + n,"Last name employee #" + n,"Email employee #" + n,"Phone number employee #" + n,new java.sql.Date((long)(r * diff)),"Job employee #" + n,500 + round(r * 2000,2)));
+            if (rnd.nextBoolean())             cacheEmployee.remove(rnd.nextInt(EMPL_CNT));
+            cacheEmployee.get(rnd.nextInt(EMPL_CNT));
+          }
+          if (rnd.nextInt(100) > 20)           tx.commit();
+        }
+       }
+ catch (      Throwable e) {
+        if (!e.getMessage().contains("cache is stopped"))         ignite.log().error("Cache write task execution error",e);
+      }
+    }
+  }
+,10,3,TimeUnit.SECONDS);
+  cachePool.scheduleWithFixedDelay(new Runnable(){
+    @Override public void run(){
+      try {
+        IgniteCache<Integer,Car> cache=ignite.cache(CAR_CACHE_NAME);
+        if (cache != null)         for (int i=0; i < cnt; i++) {
+          Integer carId=rnd.nextInt(CAR_CNT);
+          cache.put(carId,new Car(carId,rnd.nextInt(PARK_CNT),"Car #" + (i + 1)));
+          if (rnd.nextBoolean())           cache.remove(rnd.nextInt(CAR_CNT));
+        }
+      }
+ catch (      IllegalStateException ignored) {
+      }
+catch (      Throwable e) {
+        if (!e.getMessage().contains("cache is stopped"))         ignite.log().error("Cache write task execution error",e);
+      }
+    }
+  }
+,10,3,TimeUnit.SECONDS);
+}

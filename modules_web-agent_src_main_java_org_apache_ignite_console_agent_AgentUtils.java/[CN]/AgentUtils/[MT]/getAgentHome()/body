@@ -1,0 +1,17 @@
+{
+  try {
+    ProtectionDomain domain=AgentLauncher.class.getProtectionDomain();
+    if (domain == null || domain.getCodeSource() == null || domain.getCodeSource().getLocation() == null) {
+      log.warn("Failed to resolve agent jar location!");
+      return null;
+    }
+    URI classesUri=domain.getCodeSource().getLocation().toURI();
+    boolean win=System.getProperty("os.name").toLowerCase().contains("win");
+    if (win && classesUri.getAuthority() != null)     classesUri=new URI(classesUri.toString().replace("file://","file:/"));
+    return new File(classesUri).getParentFile();
+  }
+ catch (  URISyntaxException|SecurityException ignored) {
+    log.warn("Failed to resolve agent jar location!");
+    return null;
+  }
+}

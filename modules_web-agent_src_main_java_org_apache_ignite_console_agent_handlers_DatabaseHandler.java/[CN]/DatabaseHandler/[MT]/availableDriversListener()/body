@@ -1,0 +1,40 @@
+{
+  return new AbstractHandler(){
+    @Override public Object execute(    Map<String,Object> args) throws Exception {
+      if (driversFolder == null) {
+        log.info("JDBC drivers folder not specified, returning empty list");
+        return Collections.emptyList();
+      }
+      if (log.isDebugEnabled())       log.debug("Collecting JDBC drivers in folder: " + driversFolder.getPath());
+      File[] list=driversFolder.listFiles(new FilenameFilter(){
+        @Override public boolean accept(        File dir,        String name){
+          return name.endsWith(".jar");
+        }
+      }
+);
+      if (list == null) {
+        log.info("JDBC drivers folder has no files, returning empty list");
+        return Collections.emptyList();
+      }
+      List<JdbcDriver> res=new ArrayList<>();
+      for (      File file : list) {
+        try {
+          boolean win=System.getProperty("os.name").contains("win");
+          URL url=new URL("jar",null,"file:" + (win ? "/" : "") + file.getPath()+ "!/META-INF/services/java.sql.Driver");
+          try (BufferedReader reader=new BufferedReader(new InputStreamReader(url.openStream()))){
+            String jdbcDriverCls=reader.readLine();
+            res.add(new JdbcDriver(file.getName(),jdbcDriverCls));
+            if (log.isDebugEnabled())             log.debug("Found: [driver=" + file + ", class="+ jdbcDriverCls+ "]");
+          }
+         }
+ catch (        IOException e) {
+          res.add(new JdbcDriver(file.getName(),null));
+          log.info("Found: [driver=" + file + "]");
+          log.info("Failed to detect driver class: " + e.getMessage());
+        }
+      }
+      return res;
+    }
+  }
+;
+}
