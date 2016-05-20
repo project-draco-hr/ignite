@@ -1,13 +1,11 @@
 {
-  fail("IGNITE-3009");
   JavaSparkContext sc=createContext();
   JavaIgniteContext<String,Entity> ic=null;
   try {
     ic=new JavaIgniteContext<>(sc,new IgniteConfigProvider(),false);
     JavaIgniteRDD<String,Entity> cache=ic.fromCache(PARTITIONED_CACHE_NAME);
     int cnt=1001;
-    List<Integer> numbers=F.range(0,cnt);
-    cache.savePairs(sc.parallelize(numbers,GRID_CNT).mapToPair(INT_TO_ENTITY_F));
+    cache.savePairs(sc.parallelize(F.range(0,cnt),GRID_CNT).mapToPair(INT_TO_ENTITY_F),true);
     List<Entity> res=cache.objectSql("Entity","name = ? and salary = ?","name50",5000).map(STR_ENTITY_PAIR_TO_ENTITY_F).collect();
     assertEquals("Invalid result length",1,res.size());
     assertEquals("Invalid result",50,res.get(0).id());
