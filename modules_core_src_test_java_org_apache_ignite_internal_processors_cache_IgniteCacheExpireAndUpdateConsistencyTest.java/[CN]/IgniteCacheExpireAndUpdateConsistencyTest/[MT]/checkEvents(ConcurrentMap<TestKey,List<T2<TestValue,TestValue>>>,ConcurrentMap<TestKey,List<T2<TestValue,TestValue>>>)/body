@@ -1,0 +1,24 @@
+{
+  for (  final TestKey key : updates.keySet()) {
+    final List<T2<TestValue,TestValue>> keyUpdates=updates.get(key);
+    assert(!F.isEmpty(keyUpdates));
+    GridTestUtils.waitForCondition(new PA(){
+      @Override public boolean apply(){
+        List<T2<TestValue,TestValue>> keyEvts=evts.get(key);
+        if (keyEvts == null)         return false;
+synchronized (keyEvts) {
+          return keyEvts.size() == keyUpdates.size();
+        }
+      }
+    }
+,5000);
+    List<T2<TestValue,TestValue>> keyEvts=evts.get(key);
+    assertNotNull(keyEvts);
+    for (int i=0; i < keyUpdates.size(); i++) {
+      T2<TestValue,TestValue> update=keyUpdates.get(i);
+      T2<TestValue,TestValue> evt=keyEvts.get(i);
+      assertEquals(update.get1(),evt.get1());
+      assertEquals(update.get2(),evt.get2());
+    }
+  }
+}

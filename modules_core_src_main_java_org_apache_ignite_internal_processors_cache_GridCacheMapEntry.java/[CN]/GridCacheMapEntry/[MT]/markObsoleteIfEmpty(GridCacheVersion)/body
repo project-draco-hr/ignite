@@ -1,25 +1,41 @@
 {
   boolean obsolete=false;
   boolean deferred=false;
+  GridCacheVersion ver0=null;
   try {
 synchronized (this) {
       if (obsoleteVersionExtras() != null)       return false;
-      if (!hasValueUnlocked() || checkExpired()) {
-        if (ver == null)         ver=nextVersion();
+      if (hasValueUnlocked()) {
+        long expireTime=expireTimeExtras();
+        if (expireTime > 0 && (expireTime - U.currentTimeMillis() <= 0)) {
+          if (onExpired(rawGetOrUnmarshal(false),obsoleteVer)) {
+            if (cctx.deferredDelete()) {
+              deferred=true;
+              ver0=ver;
+            }
+ else             obsolete=true;
+          }
+        }
+      }
+ else {
         if (cctx.deferredDelete() && !isStartVersion() && !detached()&& !isInternal()) {
           if (!deletedUnlocked()) {
             update(null,0L,0L,ver,true);
             deletedUnlocked(true);
             deferred=true;
+            ver0=ver;
           }
         }
- else         obsolete=markObsolete0(ver,true,null);
+ else {
+          if (obsoleteVer == null)           obsoleteVer=nextVersion();
+          obsolete=markObsolete0(obsoleteVer,true,null);
+        }
       }
     }
   }
   finally {
     if (obsolete)     onMarkedObsolete();
-    if (deferred)     cctx.onDeferredDelete(this,ver);
+    if (deferred)     cctx.onDeferredDelete(this,ver0);
   }
   return obsolete;
 }
