@@ -1,0 +1,54 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      final IgniteCache cache=jcache().withKeepBinary();
+      final Set keys=new LinkedHashSet(){
+{
+          for (int i=0; i < CNT; i++)           add(key(i));
+        }
+      }
+;
+      runInAllTxModes(new TestRunnable(){
+        @Override public void run() throws Exception {
+          for (          Object val : cache.getAll(keys).values())           assertNull(val);
+        }
+      }
+);
+      runInAllTxModes(new TestRunnable(){
+        @Override public void run() throws Exception {
+          Collection<CacheEntry> entries=cache.<CacheEntry>getEntries(keys);
+          for (          CacheEntry e : entries)           assertNull(e.getValue());
+        }
+      }
+);
+      runInAllTxModes(new TestRunnable(){
+        @Override public void run() throws Exception {
+          Map keyValMap=new LinkedHashMap(){
+{
+              for (              Object key : keys) {
+                Object val=value(valueOf(key));
+                put(key,val);
+              }
+            }
+          }
+;
+          cache.putAll(keyValMap);
+          Set<Map.Entry<BinaryObject,BinaryObject>> set=cache.getAll(keys).entrySet();
+          for (          Map.Entry<BinaryObject,BinaryObject> e : set) {
+            Object expVal=value(valueOf(e.getKey().deserialize()));
+            assertEquals(expVal,e.getValue().deserialize());
+          }
+          Collection<CacheEntry<BinaryObject,BinaryObject>> entries=cache.getEntries(keys);
+          for (          CacheEntry<BinaryObject,BinaryObject> e : entries) {
+            assertTrue(e.getKey() instanceof BinaryObject);
+            Object expVal=value(valueOf(e.getKey().deserialize()));
+            assertEquals(expVal,e.getValue().deserialize());
+          }
+          cache.removeAll(keys);
+        }
+      }
+);
+    }
+  }
+,PLANE_OBJECT,SERIALIZABLE);
+}

@@ -1,0 +1,61 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      final IgniteCache cache=jcache().withKeepBinary().withAsync();
+      final Set keys=new LinkedHashSet(){
+{
+          for (int i=0; i < CNT; i++)           add(key(i));
+        }
+      }
+;
+      runInAllTxModes(new TestRunnable(){
+        @Override public void run() throws Exception {
+          cache.getAll(keys);
+          Map res=(Map)cache.future().get();
+          for (          Object val : res.values())           assertNull(val);
+        }
+      }
+);
+      runInAllTxModes(new TestRunnable(){
+        @Override public void run() throws Exception {
+          cache.<CacheEntry>getEntries(keys);
+          Collection<CacheEntry> entries=(Collection<CacheEntry>)cache.future().get();
+          for (          CacheEntry e : entries)           assertNull(e.getValue());
+        }
+      }
+);
+      runInAllTxModes(new TestRunnable(){
+        @Override public void run() throws Exception {
+          Map keyValMap=new LinkedHashMap(){
+{
+              for (              Object key : keys) {
+                Object val=value(valueOf(key));
+                put(key,val);
+              }
+            }
+          }
+;
+          cache.putAll(keyValMap);
+          cache.future().get();
+          cache.getAll(keys);
+          Set<Map.Entry<BinaryObject,BinaryObject>> set=((Map)cache.future().get()).entrySet();
+          for (          Map.Entry<BinaryObject,BinaryObject> e : set) {
+            Object expVal=value(valueOf(e.getKey().deserialize()));
+            assertEquals(expVal,e.getValue().deserialize());
+          }
+          cache.getEntries(keys);
+          Collection<CacheEntry<BinaryObject,BinaryObject>> entries=(Collection<CacheEntry<BinaryObject,BinaryObject>>)cache.future().get();
+          for (          CacheEntry<BinaryObject,BinaryObject> e : entries) {
+            assertTrue(e.getKey() instanceof BinaryObject);
+            Object expVal=value(valueOf(e.getKey().deserialize()));
+            assertEquals(expVal,e.getValue().deserialize());
+          }
+          cache.removeAll(keys);
+          cache.future().get();
+        }
+      }
+);
+    }
+  }
+,PLANE_OBJECT,SERIALIZABLE);
+}

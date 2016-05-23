@@ -1,0 +1,44 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      final IgniteCache cache=jcache().withKeepBinary();
+      final Set keys=new LinkedHashSet(){
+{
+          for (int i=0; i < CNT; i++)           add(key(i));
+        }
+      }
+;
+      runInAllTxModes(new TestRunnable(){
+        @Override public void run() throws Exception {
+          for (          Object key : keys)           cache.remove(key);
+        }
+      }
+);
+      runInAllTxModes(new TestRunnable(){
+        @Override public void run() throws Exception {
+          for (          Object key : keys) {
+            assertNull(cache.get(key));
+            assertNull(cache.getEntry(key));
+          }
+        }
+      }
+);
+      for (      final Object key : keys) {
+        runInAllTxModes(new TestRunnable(){
+          @Override public void run() throws Exception {
+            Object val=value(valueOf(key));
+            cache.put(key,val);
+            BinaryObject retVal=(BinaryObject)cache.get(key);
+            assertEquals(val,retVal.deserialize());
+            CacheEntry<BinaryObject,BinaryObject> entry=cache.getEntry(key);
+            assertTrue(entry.getKey() instanceof BinaryObject);
+            assertEquals(val,entry.getValue().deserialize());
+            assertTrue(cache.remove(key));
+          }
+        }
+);
+      }
+    }
+  }
+,PLANE_OBJECT,SERIALIZABLE);
+}

@@ -1,0 +1,58 @@
+{
+  if (!txShouldBeUsed())   return;
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      final IgniteCache cache=jcache().withKeepBinary();
+      final Set keys=new LinkedHashSet(){
+{
+          for (int i=0; i < CNT; i++)           add(key(i));
+        }
+      }
+;
+      try (Transaction tx=testedGrid().transactions().txStart(conc,isol)){
+        Map<Object,EntryProcessorResult<Object>> resMap=cache.invokeAll(keys,NOOP_ENTRY_PROC);
+        for (        Map.Entry<Object,EntryProcessorResult<Object>> e : resMap.entrySet()) {
+          assertTrue("Key:" + e.getKey(),e.getKey() instanceof BinaryObject);
+          assertNull(e.getValue().get());
+        }
+        tx.commit();
+      }
+       Map<Object,EntryProcessorResult<Object>> resMap;
+      try (Transaction tx=testedGrid().transactions().txStart(conc,isol)){
+        resMap=cache.invokeAll(keys,INC_ENTRY_PROC_BINARY_OBJ,dataMode);
+        tx.commit();
+      }
+       checkInvokeAllResult(cache,resMap,null,value(0),true);
+      try (Transaction tx=testedGrid().transactions().txStart(conc,isol)){
+        resMap=cache.invokeAll(keys,INC_ENTRY_PROC_BINARY_OBJ,dataMode);
+        tx.commit();
+      }
+       checkInvokeAllResult(cache,resMap,value(0),value(1),true);
+      try (Transaction tx=testedGrid().transactions().txStart(conc,isol)){
+        cache.removeAll(keys);
+        tx.commit();
+      }
+       interceptorBinaryObjExp=atomicityMode() == TRANSACTIONAL;
+      try {
+        try (Transaction tx=testedGrid().transactions().txStart(conc,isol)){
+          resMap=cache.invokeAll(keys,INC_ENTRY_PROC_USER_OBJ,dataMode);
+          tx.commit();
+        }
+         checkInvokeAllResult(cache,resMap,null,value(0),false);
+        try (Transaction tx=testedGrid().transactions().txStart(conc,isol)){
+          resMap=cache.invokeAll(keys,INC_ENTRY_PROC_USER_OBJ,dataMode);
+          tx.commit();
+        }
+         checkInvokeAllResult(cache,resMap,value(0),value(1),false);
+        try (Transaction tx=testedGrid().transactions().txStart(conc,isol)){
+          cache.removeAll(keys);
+          tx.commit();
+        }
+       }
+  finally {
+        interceptorBinaryObjExp=true;
+      }
+    }
+  }
+,PLANE_OBJECT,SERIALIZABLE);
+}

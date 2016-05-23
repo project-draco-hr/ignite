@@ -1,0 +1,34 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      final IgniteCache cache=jcache().withKeepBinary();
+      Set keys=new LinkedHashSet(){
+{
+          for (int i=0; i < CNT; i++)           add(key(i));
+        }
+      }
+;
+      Map<Object,EntryProcessorResult<Object>> resMap=cache.invokeAll(keys,NOOP_ENTRY_PROC);
+      for (      Map.Entry<Object,EntryProcessorResult<Object>> e : resMap.entrySet()) {
+        assertTrue("Key:" + e.getKey(),e.getKey() instanceof BinaryObject);
+        assertNull(e.getValue().get());
+      }
+      resMap=cache.invokeAll(keys,INC_ENTRY_PROC_BINARY_OBJ,dataMode);
+      checkInvokeAllResult(cache,resMap,null,value(0),true);
+      resMap=cache.invokeAll(keys,INC_ENTRY_PROC_BINARY_OBJ,dataMode);
+      checkInvokeAllResult(cache,resMap,value(0),value(1),true);
+      cache.removeAll(keys);
+      interceptorBinaryObjExp=atomicityMode() == TRANSACTIONAL;
+      try {
+        resMap=cache.invokeAll(keys,INC_ENTRY_PROC_USER_OBJ,dataMode);
+        checkInvokeAllResult(cache,resMap,null,value(0),false);
+        resMap=cache.invokeAll(keys,INC_ENTRY_PROC_USER_OBJ,dataMode);
+        checkInvokeAllResult(cache,resMap,value(0),value(1),false);
+      }
+  finally {
+        interceptorBinaryObjExp=true;
+      }
+    }
+  }
+,PLANE_OBJECT,SERIALIZABLE);
+}
