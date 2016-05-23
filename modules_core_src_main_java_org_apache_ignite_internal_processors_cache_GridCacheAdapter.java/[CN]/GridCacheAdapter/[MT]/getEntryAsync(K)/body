@@ -2,16 +2,18 @@
   A.notNull(key,"key");
   final boolean statsEnabled=ctx.config().isStatisticsEnabled();
   final long start=statsEnabled ? System.nanoTime() : 0L;
-  final K key0=ctx.keepBinary() ? (K)ctx.toCacheKeyObject(key) : key;
-  IgniteInternalFuture<T2<V,GridCacheVersion>> fut=(IgniteInternalFuture<T2<V,GridCacheVersion>>)getAsync(key0,!ctx.keepBinary(),true);
+  final boolean keepBinary=ctx.keepBinary();
+  final K key0=keepBinary ? (K)ctx.toCacheKeyObject(key) : key;
+  IgniteInternalFuture<T2<V,GridCacheVersion>> fut=(IgniteInternalFuture<T2<V,GridCacheVersion>>)getAsync(key0,!keepBinary,true);
   final boolean intercept=ctx.config().getInterceptor() != null;
   IgniteInternalFuture<CacheEntry<K,V>> fr=fut.chain(new CX1<IgniteInternalFuture<T2<V,GridCacheVersion>>,CacheEntry<K,V>>(){
     @Override public CacheEntry<K,V> applyx(    IgniteInternalFuture<T2<V,GridCacheVersion>> f) throws IgniteCheckedException {
       T2<V,GridCacheVersion> t=f.get();
-      CacheEntry val=t != null ? new CacheEntryImplEx<>(ctx.keepBinary() ? (K)ctx.unwrapBinaryIfNeeded(key0,true,false) : key0,t.get1(),t.get2()) : null;
+      K key=keepBinary ? (K)ctx.unwrapBinaryIfNeeded(key0,true,false) : key0;
+      CacheEntry val=t != null ? new CacheEntryImplEx<>(key,t.get1(),t.get2()) : null;
       if (intercept) {
-        V val0=(V)ctx.config().getInterceptor().onGet(key0,t != null ? val.getValue() : null);
-        return val0 != null ? new CacheEntryImplEx(key0,val0,t != null ? t.get2() : null) : null;
+        V val0=(V)ctx.config().getInterceptor().onGet(key,t != null ? val.getValue() : null);
+        return val0 != null ? new CacheEntryImplEx(key,val0,t != null ? t.get2() : null) : null;
       }
  else       return val;
     }

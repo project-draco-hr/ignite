@@ -2,9 +2,12 @@
   A.notNull(key,"key");
   final boolean statsEnabled=ctx.config().isStatisticsEnabled();
   final long start=statsEnabled ? System.nanoTime() : 0L;
-  IgniteInternalFuture<V> fut=getAsync(key,!ctx.keepBinary(),false);
+  final boolean keepBinary=ctx.keepBinary();
+  final K key0=keepBinary ? (K)ctx.toCacheKeyObject(key) : key;
+  IgniteInternalFuture<V> fut=getAsync(key,!keepBinary,false);
   if (ctx.config().getInterceptor() != null)   fut=fut.chain(new CX1<IgniteInternalFuture<V>,V>(){
     @Override public V applyx(    IgniteInternalFuture<V> f) throws IgniteCheckedException {
+      K key=keepBinary ? (K)ctx.unwrapBinaryIfNeeded(key0,true,false) : key0;
       return (V)ctx.config().getInterceptor().onGet(key,f.get());
     }
   }

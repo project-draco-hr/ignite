@@ -3,10 +3,15 @@
   long start=statsEnabled ? System.nanoTime() : 0L;
   A.notNull(key,"key");
   if (keyCheck)   validateCacheKey(key);
+  final boolean keepBinary=ctx.keepBinary();
   V prevVal=syncOp(new SyncOp<V>(true){
     @Override public V op(    IgniteTxLocalAdapter tx) throws IgniteCheckedException {
-      V ret=tx.removeAllAsync(ctx,null,Collections.singletonList(key),true,null,false).get().value();
-      if (ctx.config().getInterceptor() != null)       return (V)ctx.config().getInterceptor().onBeforeRemove(new CacheEntryImpl(key,ret)).get2();
+      K key0=keepBinary ? (K)ctx.toCacheKeyObject(key) : key;
+      V ret=tx.removeAllAsync(ctx,null,Collections.singletonList(key0),true,null,false).get().value();
+      if (ctx.config().getInterceptor() != null) {
+        K key=keepBinary ? (K)ctx.unwrapBinaryIfNeeded(key0,true,false) : key0;
+        return (V)ctx.config().getInterceptor().onBeforeRemove(new CacheEntryImpl(key,ret)).get2();
+      }
       return ret;
     }
     @Override public String toString(){
