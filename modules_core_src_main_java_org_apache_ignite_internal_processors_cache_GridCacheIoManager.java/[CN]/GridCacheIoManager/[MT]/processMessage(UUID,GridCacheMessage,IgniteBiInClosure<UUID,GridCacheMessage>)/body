@@ -10,6 +10,13 @@
  finally {
     cctx.tm().resetContext();
     cctx.mvcc().contextReset();
-    CU.unwindEvicts(cctx);
+    if (msg instanceof IgniteTxStateAware) {
+      IgniteTxState txState=((IgniteTxStateAware)msg).txState();
+      if (txState != null)       txState.unwindEvicts(cctx);
+    }
+ else {
+      GridCacheContext ctx=cctx.cacheContext(msg.cacheId());
+      if (ctx != null)       CU.unwindEvicts(ctx);
+    }
   }
 }
