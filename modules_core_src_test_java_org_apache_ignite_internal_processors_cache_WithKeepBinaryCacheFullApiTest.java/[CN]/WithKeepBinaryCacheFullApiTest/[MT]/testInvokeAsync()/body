@@ -1,0 +1,54 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      final IgniteCache cache=jcache().withKeepBinary().withAsync();
+      Set keys=new LinkedHashSet(){
+{
+          for (int i=0; i < CNT; i++)           add(key(i));
+        }
+      }
+;
+      for (      final Object key : keys) {
+        cache.invoke(key,NOOP_ENTRY_PROC);
+        Object res=cache.future().get();
+        assertNull(res);
+        cache.get(key);
+        assertNull(cache.future().get());
+      }
+      for (      final Object key : keys) {
+        cache.invoke(key,INC_ENTRY_PROC_BINARY_OBJ,dataMode);
+        Object res=cache.future().get();
+        assertNull(res);
+        cache.get(key);
+        assertEquals(value(0),deserializeBinary(cache.future().get()));
+        cache.invoke(key,INC_ENTRY_PROC_BINARY_OBJ,dataMode);
+        res=cache.future().get();
+        assertEquals(value(0),deserializeBinary(res));
+        cache.get(key);
+        assertEquals(value(1),deserializeBinary(cache.future().get()));
+        cache.remove(key);
+        assertTrue((Boolean)cache.future().get());
+      }
+      interceptorBinaryObjExp=atomicityMode() == TRANSACTIONAL;
+      try {
+        for (        final Object key : keys) {
+          cache.invoke(key,INC_ENTRY_PROC_USER_OBJ,dataMode);
+          Object res=cache.future().get();
+          assertNull(res);
+          cache.get(key);
+          assertEquals(value(0),deserializeBinary(cache.future().get()));
+          cache.invoke(key,INC_ENTRY_PROC_USER_OBJ,dataMode);
+          res=cache.future().get();
+          cache.get(key);
+          assertEquals(value(1),deserializeBinary(cache.future().get()));
+          cache.remove(key);
+          assertTrue((Boolean)cache.future().get());
+        }
+      }
+  finally {
+        interceptorBinaryObjExp=true;
+      }
+    }
+  }
+,PLANE_OBJECT,SERIALIZABLE);
+}

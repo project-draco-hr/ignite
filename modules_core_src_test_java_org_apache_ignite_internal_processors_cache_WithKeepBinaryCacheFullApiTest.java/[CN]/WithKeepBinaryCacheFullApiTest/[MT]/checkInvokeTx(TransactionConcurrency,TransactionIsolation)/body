@@ -1,0 +1,65 @@
+{
+  runInAllDataModes(new TestRunnable(){
+    @Override public void run() throws Exception {
+      final IgniteCache cache=jcache().withKeepBinary();
+      Set keys=new LinkedHashSet(){
+{
+          for (int i=0; i < CNT; i++)           add(key(i));
+        }
+      }
+;
+      try (Transaction tx=testedGrid().transactions().txStart(conc,isolation)){
+        for (        final Object key : keys) {
+          Object res=cache.invoke(key,NOOP_ENTRY_PROC);
+          assertNull(res);
+          assertNull(cache.get(key));
+        }
+        tx.commit();
+      }
+       for (      final Object key : keys) {
+        Object res;
+        try (Transaction tx=testedGrid().transactions().txStart(conc,isolation)){
+          res=cache.invoke(key,INC_ENTRY_PROC_BINARY_OBJ,dataMode);
+          tx.commit();
+        }
+         assertNull(res);
+        assertEquals(value(0),deserializeBinary(cache.get(key)));
+        try (Transaction tx=testedGrid().transactions().txStart(conc,isolation)){
+          res=cache.invoke(key,INC_ENTRY_PROC_BINARY_OBJ,dataMode);
+          tx.commit();
+        }
+         assertEquals(value(0),deserializeBinary(res));
+        assertEquals(value(1),deserializeBinary(cache.get(key)));
+        try (Transaction tx=testedGrid().transactions().txStart(conc,isolation)){
+          assertTrue(cache.remove(key));
+          tx.commit();
+        }
+       }
+      interceptorBinaryObjExp=atomicityMode() == TRANSACTIONAL;
+      try {
+        for (        final Object key : keys) {
+          Object res;
+          try (Transaction tx=testedGrid().transactions().txStart(conc,isolation)){
+            res=cache.invoke(key,INC_ENTRY_PROC_USER_OBJ,dataMode);
+            tx.commit();
+          }
+           assertNull(res);
+          assertEquals(value(0),deserializeBinary(cache.get(key)));
+          try (Transaction tx=testedGrid().transactions().txStart(conc,isolation)){
+            res=cache.invoke(key,INC_ENTRY_PROC_USER_OBJ,dataMode);
+            tx.commit();
+          }
+           assertEquals(value(1),deserializeBinary(cache.get(key)));
+          try (Transaction tx=testedGrid().transactions().txStart(conc,isolation)){
+            assertTrue(cache.remove(key));
+            tx.commit();
+          }
+         }
+      }
+  finally {
+        interceptorBinaryObjExp=true;
+      }
+    }
+  }
+,PLANE_OBJECT,SERIALIZABLE);
+}
