@@ -1,0 +1,39 @@
+{
+  ignite(0).createCache(ccfg);
+  try {
+    List<ConcurrentMap<TestKey,List<T2<TestValue,TestValue>>>> nodesEvts=new ArrayList<>();
+    for (int i=0; i < NODES; i++) {
+      Ignite ignite=ignite(i);
+      IgniteCache<TestKey,TestValue> cache=ignite.cache(ccfg.getName());
+      ContinuousQuery<TestKey,TestValue> qry=new ContinuousQuery<>();
+      final ConcurrentMap<TestKey,List<T2<TestValue,TestValue>>> allEvts=new ConcurrentHashMap<>();
+      qry.setLocalListener(new CacheEntryUpdatedListener<TestKey,TestValue>(){
+        @Override public void onUpdated(        Iterable<CacheEntryEvent<? extends TestKey,? extends TestValue>> evts){
+          for (          CacheEntryEvent<? extends TestKey,? extends TestValue> e : evts) {
+            List<T2<TestValue,TestValue>> keyEvts=allEvts.get(e.getKey());
+            if (keyEvts == null) {
+              List<T2<TestValue,TestValue>> old=allEvts.putIfAbsent(e.getKey(),keyEvts=new ArrayList<>());
+              assertNull(old);
+            }
+synchronized (keyEvts) {
+              keyEvts.add(new T2<>(e.getValue(),e.getOldValue()));
+            }
+          }
+        }
+      }
+);
+      cache.query(qry);
+      nodesEvts.add(allEvts);
+    }
+    final AtomicInteger keyVal=new AtomicInteger();
+    for (int i=0; i < NODES; i++) {
+      Ignite ignite=ignite(i);
+      log.info("Test with node: " + ignite.name());
+      updateAndEventConsistencyTest(ignite,ccfg.getName(),keyVal,nodesEvts,false);
+      if (ccfg.getAtomicityMode() == TRANSACTIONAL)       updateAndEventConsistencyTest(ignite,ccfg.getName(),keyVal,nodesEvts,true);
+    }
+  }
+  finally {
+    ignite(0).destroyCache(ccfg.getName());
+  }
+}

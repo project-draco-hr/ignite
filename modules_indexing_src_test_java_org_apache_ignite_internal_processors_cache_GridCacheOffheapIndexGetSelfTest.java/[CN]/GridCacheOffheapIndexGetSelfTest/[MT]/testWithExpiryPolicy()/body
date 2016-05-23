@@ -1,0 +1,13 @@
+{
+  IgniteCache<Long,Long> cache=grid(0).cache(null);
+  cache=cache.withExpiryPolicy(new TestExiryPolicy());
+  for (long i=0; i < 100; i++)   cache.put(i,i);
+  for (long i=0; i < 100; i++)   assertEquals((Long)i,cache.get(i));
+  SqlQuery<Long,Long> qry=new SqlQuery<>(Long.class,"_val >= 90");
+  List<Cache.Entry<Long,Long>> res=cache.query(qry).getAll();
+  assertEquals(10,res.size());
+  for (  Cache.Entry<Long,Long> e : res) {
+    assertNotNull(e.getKey());
+    assertNotNull(e.getValue());
+  }
+}
