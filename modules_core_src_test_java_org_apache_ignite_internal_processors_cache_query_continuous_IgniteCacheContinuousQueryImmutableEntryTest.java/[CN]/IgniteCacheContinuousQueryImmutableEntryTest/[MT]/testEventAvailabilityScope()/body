@@ -1,0 +1,24 @@
+{
+  startGrids(GRID_COUNT);
+  final CacheEventListener lsnr=new CacheEventListener();
+  ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+  qry.setLocalListener(lsnr);
+  qry.setRemoteFilterFactory(new FilterFactory());
+  Object keys[]=new Object[GRID_COUNT];
+  for (int i=0; i < GRID_COUNT; ++i) {
+    keys[i]=primaryKey(grid(i).cache(null));
+    grid(0).cache(null).put(keys[i],-1);
+  }
+  try (QueryCursor<?> cur=grid(0).cache(null).query(qry)){
+    for (int i=0; i < KEYS_COUNT; i++) {
+      log.info("Put key: " + i);
+      grid(i % GRID_COUNT).cache(null).put(keys[i % GRID_COUNT],i);
+    }
+  }
+   assertTrue("There are not filtered events",!events.isEmpty());
+  for (  CacheEntryEvent<?,?> event : events) {
+    assertNotNull("Key is null",event.getKey());
+    assertNotNull("Value is null",event.getValue());
+    assertNotNull("Old value is null",event.getOldValue());
+  }
+}
