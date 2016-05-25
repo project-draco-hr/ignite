@@ -16,8 +16,11 @@ synchronized (this) {
       GridCacheVersion nextVer=cctx.versions().nextForLoad(ver);
       if (wasNew && !isNew())       return ret;
       if (startVer.equals(ver)) {
-        releaseSwap();
         CacheObject old=rawGetOrUnmarshalUnlocked(false);
+        if (log.isTraceEnabled()) {
+          log.trace("innerReload releaseSwap [key=" + key + ", entry="+ System.identityHashCode(this)+ ", old="+ old+ ", ptr="+ offHeapPointer()+ ']');
+        }
+        releaseSwap();
         long expTime=CU.toExpireTime(ttl);
         ret=cctx.kernalContext().cacheObjects().prepareForCache(ret,cctx);
         if (ret != null) {
