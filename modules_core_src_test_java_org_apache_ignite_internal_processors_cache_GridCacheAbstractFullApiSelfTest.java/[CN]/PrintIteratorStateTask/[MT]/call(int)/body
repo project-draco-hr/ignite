@@ -2,6 +2,11 @@
   GridCacheContext<String,Integer> ctx=((IgniteKernal)ignite).<String,Integer>internalCache().context();
   GridCacheQueryManager queries=ctx.queries();
   ConcurrentMap<UUID,Map<Long,GridFutureAdapter<?>>> map=GridTestUtils.getFieldValue(queries,GridCacheQueryManager.class,"qryIters");
-  for (  Map<Long,GridFutureAdapter<?>> map1 : map.values())   assertTrue("Iterators not removed for grid " + idx,map1.isEmpty());
+  for (  Map<Long,GridFutureAdapter<?>> map1 : map.values()) {
+    if (!map1.isEmpty()) {
+      log.warning("Iterators leak detected at grid: " + idx);
+      for (      Map.Entry<Long,GridFutureAdapter<?>> entry : map1.entrySet())       log.warning(entry.getKey() + "; " + entry.getValue());
+    }
+  }
   return null;
 }
