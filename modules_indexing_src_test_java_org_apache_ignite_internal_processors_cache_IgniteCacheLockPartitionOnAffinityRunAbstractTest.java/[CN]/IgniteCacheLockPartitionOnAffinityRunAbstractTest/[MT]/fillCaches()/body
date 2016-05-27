@@ -1,0 +1,20 @@
+{
+  grid(0).createCache(Organization.class.getSimpleName());
+  grid(0).createCache(Person.class.getSimpleName());
+  createCacheWithAffinity(OTHER_CACHE_NAME);
+  awaitPartitionMapExchange();
+  orgIds=new ArrayList<>(ORGS_COUNT_PER_NODE * RESTARTED_NODE_CNT);
+  for (int i=GRID_CNT - RESTARTED_NODE_CNT; i < GRID_CNT; ++i)   orgIds.addAll(primaryKeys(grid(i).cache(Organization.class.getSimpleName()),ORGS_COUNT_PER_NODE));
+  try (IgniteDataStreamer<Integer,Organization> orgStreamer=grid(0).dataStreamer(Organization.class.getSimpleName());IgniteDataStreamer<Person.Key,Person> persStreamer=grid(0).dataStreamer(Person.class.getSimpleName())){
+    int persId=0;
+    for (    int orgId : orgIds) {
+      Organization org=new Organization(orgId);
+      orgStreamer.addData(orgId,org);
+      for (int persCnt=0; persCnt < PERS_AT_ORG_CNT; ++persCnt, ++persId) {
+        Person pers=new Person(persId,orgId);
+        persStreamer.addData(pers.createKey(),pers);
+      }
+    }
+  }
+   awaitPartitionMapExchange();
+}

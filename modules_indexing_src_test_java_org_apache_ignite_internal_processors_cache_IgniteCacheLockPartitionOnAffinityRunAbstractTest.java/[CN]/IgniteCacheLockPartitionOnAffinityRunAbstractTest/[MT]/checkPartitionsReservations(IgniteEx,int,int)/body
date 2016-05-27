@@ -1,0 +1,15 @@
+{
+  int part=ignite.affinity(Organization.class.getSimpleName()).partition(orgId);
+  final GridDhtLocalPartition pPers=ignite.context().cache().internalCache(Person.class.getSimpleName()).context().topology().localPartition(part,AffinityTopologyVersion.NONE,false);
+  assertNotNull(pPers);
+  final GridDhtLocalPartition pOrgs=ignite.context().cache().internalCache(Organization.class.getSimpleName()).context().topology().localPartition(part,AffinityTopologyVersion.NONE,false);
+  assertNotNull(pOrgs);
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return expReservations == pOrgs.reservations() && expReservations == pPers.reservations();
+    }
+  }
+,1000L);
+  assertEquals("Unexpected reservations count",expReservations,pOrgs.reservations());
+  assertEquals("Unexpected reservations count",expReservations,pPers.reservations());
+}

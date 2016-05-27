@@ -1,13 +1,3 @@
 {
-  if (!swapEnabled || (!primary && !backup))   return new GridEmptyCloseableIterator<>();
-  checkIteratorQueue();
-  if (primary && backup)   return swapMgr.rawIterator(spaceName);
-  AffinityTopologyVersion ver=cctx.affinity().affinityTopologyVersion();
-  Set<Integer> parts=primary ? cctx.affinity().primaryPartitions(cctx.localNodeId(),ver) : cctx.affinity().backupPartitions(cctx.localNodeId(),ver);
-  return new CloseablePartitionsIterator<Map.Entry<byte[],byte[]>,Map.Entry<byte[],byte[]>>(parts){
-    @Override protected GridCloseableIterator<Map.Entry<byte[],byte[]>> partitionIterator(    int part) throws IgniteCheckedException {
-      return swapMgr.rawIterator(spaceName,part);
-    }
-  }
-;
+  return rawSwapIterator(primary,backup,cctx.affinity().affinityTopologyVersion());
 }

@@ -1,0 +1,38 @@
+{
+  final PersonsCountGetter personsCntGetter=new PersonsCountGetter(){
+    @Override public int getPersonsCount(    IgniteEx ignite,    IgniteLogger log,    int orgId) throws Exception {
+      return getPersonsCountMultipleCache(ignite,log,orgId);
+    }
+  }
+;
+  beginNodesRestart();
+  IgniteInternalFuture<Long> affFut=null;
+  try {
+    final AtomicInteger threadNum=new AtomicInteger(0);
+    affFut=GridTestUtils.runMultiThreadedAsync(new Runnable(){
+      @Override public void run(){
+        if (threadNum.getAndIncrement() % 2 == 0) {
+          while (System.currentTimeMillis() < endTime) {
+            for (            final int orgId : orgIds) {
+              if (System.currentTimeMillis() >= endTime)               break;
+              grid(0).compute().affinityRun(Arrays.asList(Organization.class.getSimpleName(),Person.class.getSimpleName()),new Integer(orgId),new TestAffinityRun(personsCntGetter,orgId));
+            }
+          }
+        }
+ else {
+          while (System.currentTimeMillis() < endTime) {
+            for (            final int orgId : orgIds) {
+              if (System.currentTimeMillis() >= endTime)               break;
+              int personsCnt=grid(0).compute().affinityCall(Arrays.asList(Organization.class.getSimpleName(),Person.class.getSimpleName()),new Integer(orgId),new TestAffinityCall(personsCntGetter,orgId));
+              assertEquals(PERS_AT_ORG_CNT,personsCnt);
+            }
+          }
+        }
+      }
+    }
+,AFFINITY_THREADS_CNT,"affinity-run");
+  }
+  finally {
+    if (affFut != null)     affFut.get();
+  }
+}

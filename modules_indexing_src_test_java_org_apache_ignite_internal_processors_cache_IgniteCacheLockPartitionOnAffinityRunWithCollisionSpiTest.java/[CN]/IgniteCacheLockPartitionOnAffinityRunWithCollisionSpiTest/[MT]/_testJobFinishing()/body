@@ -1,0 +1,32 @@
+{
+  final AtomicInteger jobNum=new AtomicInteger(0);
+  cancelAllJobs=true;
+  IgniteInternalFuture<Long> affFut=null;
+  try {
+    affFut=GridTestUtils.runMultiThreadedAsync(new Runnable(){
+      @Override public void run(){
+        while (System.currentTimeMillis() < endTime) {
+          int n=0;
+          try {
+            for (            final int orgId : orgIds) {
+              if (System.currentTimeMillis() >= endTime)               break;
+              n=jobNum.getAndIncrement();
+              log.info("+++ Job submitted " + n);
+              grid(0).compute().affinityRun(Arrays.asList(Organization.class.getSimpleName(),Person.class.getSimpleName()),new Integer(orgId),new TestRun(n));
+            }
+          }
+ catch (          Exception e) {
+            log.info("+++ Job failed " + n + " "+ e.toString());
+          }
+        }
+      }
+    }
+,AFFINITY_THREADS_CNT,"affinity-run");
+  }
+  finally {
+    if (affFut != null)     affFut.get();
+    stopRestartThread.set(true);
+    cancelAllJobs=false;
+    awaitPartitionMapExchange();
+  }
+}
