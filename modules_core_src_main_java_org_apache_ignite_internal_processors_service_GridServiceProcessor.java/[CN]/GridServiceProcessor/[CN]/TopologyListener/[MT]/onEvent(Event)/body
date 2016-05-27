@@ -18,9 +18,14 @@
           if (ctx.deploy().enabled())           ctx.cache().context().deploy().ignoreOwnership(true);
           try {
             Iterator<Cache.Entry<Object,Object>> it=serviceEntries(ServiceDeploymentPredicate.INSTANCE);
+            boolean firstTime=true;
             while (it.hasNext()) {
               Cache.Entry<Object,Object> e=it.next();
               if (!(e.getKey() instanceof GridServiceDeploymentKey))               continue;
+              if (firstTime) {
+                markCompatibilityStateAsUsed();
+                firstTime=false;
+              }
               GridServiceDeployment dep=(GridServiceDeployment)e.getValue();
               try {
                 svcName.set(dep.configuration().getName());

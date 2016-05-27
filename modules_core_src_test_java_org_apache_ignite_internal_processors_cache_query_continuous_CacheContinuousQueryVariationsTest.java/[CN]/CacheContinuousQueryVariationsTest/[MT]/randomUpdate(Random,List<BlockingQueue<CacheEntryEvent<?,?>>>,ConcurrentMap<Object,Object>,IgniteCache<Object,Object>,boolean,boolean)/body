@@ -1,0 +1,134 @@
+{
+  Object key=key(rnd.nextInt(KEYS));
+  Object newVal=value(rnd.nextInt());
+  Object oldVal=expData.get(key);
+  int op=rnd.nextInt(11);
+  Ignite ignite=cache.unwrap(Ignite.class);
+  Transaction tx=null;
+  if (cache.getConfiguration(CacheConfiguration.class).getAtomicityMode() == TRANSACTIONAL && rnd.nextBoolean())   tx=ignite.transactions().txStart(txRandomConcurrency(rnd),txRandomIsolation(rnd));
+  try {
+switch (op) {
+case 0:
+{
+        cache.put(key,newVal);
+        if (tx != null)         tx.commit();
+        waitAndCheckEvent(evtsQueues,key,newVal,oldVal,keepBinary,withFilter);
+        expData.put(key,newVal);
+        break;
+      }
+case 1:
+{
+      cache.getAndPut(key,newVal);
+      if (tx != null)       tx.commit();
+      waitAndCheckEvent(evtsQueues,key,newVal,oldVal,keepBinary,withFilter);
+      expData.put(key,newVal);
+      break;
+    }
+case 2:
+{
+    cache.remove(key);
+    if (tx != null)     tx.commit();
+    waitAndCheckEvent(evtsQueues,key,null,oldVal,keepBinary,withFilter);
+    expData.remove(key);
+    break;
+  }
+case 3:
+{
+  cache.getAndRemove(key);
+  if (tx != null)   tx.commit();
+  waitAndCheckEvent(evtsQueues,key,null,oldVal,keepBinary,withFilter);
+  expData.remove(key);
+  break;
+}
+case 4:
+{
+cache.invoke(key,new EntrySetValueProcessor(newVal,rnd.nextBoolean()));
+if (tx != null) tx.commit();
+waitAndCheckEvent(evtsQueues,key,newVal,oldVal,keepBinary,withFilter);
+expData.put(key,newVal);
+break;
+}
+case 5:
+{
+cache.invoke(key,new EntrySetValueProcessor(null,rnd.nextBoolean()));
+if (tx != null) tx.commit();
+waitAndCheckEvent(evtsQueues,key,null,oldVal,keepBinary,withFilter);
+expData.remove(key);
+break;
+}
+case 6:
+{
+cache.putIfAbsent(key,newVal);
+if (tx != null) tx.commit();
+if (oldVal == null) {
+waitAndCheckEvent(evtsQueues,key,newVal,null,keepBinary,withFilter);
+expData.put(key,newVal);
+}
+ else checkNoEvent(evtsQueues);
+break;
+}
+case 7:
+{
+cache.getAndPutIfAbsent(key,newVal);
+if (tx != null) tx.commit();
+if (oldVal == null) {
+waitAndCheckEvent(evtsQueues,key,newVal,null,keepBinary,withFilter);
+expData.put(key,newVal);
+}
+ else checkNoEvent(evtsQueues);
+break;
+}
+case 8:
+{
+cache.replace(key,newVal);
+if (tx != null) tx.commit();
+if (oldVal != null) {
+waitAndCheckEvent(evtsQueues,key,newVal,oldVal,keepBinary,withFilter);
+expData.put(key,newVal);
+}
+ else checkNoEvent(evtsQueues);
+break;
+}
+case 9:
+{
+cache.getAndReplace(key,newVal);
+if (tx != null) tx.commit();
+if (oldVal != null) {
+waitAndCheckEvent(evtsQueues,key,newVal,oldVal,keepBinary,withFilter);
+expData.put(key,newVal);
+}
+ else checkNoEvent(evtsQueues);
+break;
+}
+case 10:
+{
+if (oldVal != null) {
+Object replaceVal=value(rnd.nextInt(VALS));
+boolean success=replaceVal.equals(oldVal);
+if (success) {
+cache.replace(key,replaceVal,newVal);
+if (tx != null) tx.commit();
+waitAndCheckEvent(evtsQueues,key,newVal,oldVal,keepBinary,withFilter);
+expData.put(key,newVal);
+}
+ else {
+cache.replace(key,replaceVal,newVal);
+if (tx != null) tx.commit();
+checkNoEvent(evtsQueues);
+}
+}
+ else {
+cache.replace(key,value(rnd.nextInt(VALS)),newVal);
+if (tx != null) tx.commit();
+checkNoEvent(evtsQueues);
+}
+break;
+}
+default :
+fail("Op:" + op);
+}
+}
+  finally {
+if (tx != null) tx.close();
+}
+}

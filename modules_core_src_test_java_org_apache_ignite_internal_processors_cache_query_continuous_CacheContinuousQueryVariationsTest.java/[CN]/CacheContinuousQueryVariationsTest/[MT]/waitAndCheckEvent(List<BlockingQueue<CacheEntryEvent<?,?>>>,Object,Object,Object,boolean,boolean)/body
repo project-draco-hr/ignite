@@ -1,0 +1,21 @@
+{
+  if (val == null && oldVal == null || (withFilter && val != null && !isAccepted(val,false,dataMode))) {
+    checkNoEvent(evtsQueues);
+    return;
+  }
+  for (  BlockingQueue<CacheEntryEvent<?,?>> evtsQueue : evtsQueues) {
+    CacheEntryEvent<?,?> evt=evtsQueue.poll(5,SECONDS);
+    assertNotNull("Failed to wait for event [key=" + key + ", val="+ val+ ", oldVal="+ oldVal+ ']',evt);
+    Object actKey=evt.getKey();
+    Object actVal=evt.getValue();
+    Object actOldVal=evt.getOldValue();
+    if (keepBinary) {
+      actKey=checkAndGetObject(actKey);
+      actVal=checkAndGetObject(actVal);
+      actOldVal=checkAndGetObject(actOldVal);
+    }
+    assertEquals(key,actKey);
+    assertEquals(val,actVal);
+    assertEquals(oldVal,actOldVal);
+  }
+}

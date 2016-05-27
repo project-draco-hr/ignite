@@ -1,0 +1,22 @@
+{
+  Marshaller m=ctx.config().getMarshaller();
+  if (cfg instanceof LazyServiceConfiguration) {
+    byte[] bytes=((LazyServiceConfiguration)cfg).serviceBytes();
+    Service srvc=m.unmarshal(bytes,U.resolveClassLoader(null,ctx.config()));
+    ctx.resource().inject(srvc);
+    return srvc;
+  }
+ else {
+    Service svc=cfg.getService();
+    try {
+      byte[] bytes=m.marshal(svc);
+      Service cp=m.unmarshal(bytes,U.resolveClassLoader(svc.getClass().getClassLoader(),ctx.config()));
+      ctx.resource().inject(cp);
+      return cp;
+    }
+ catch (    IgniteCheckedException e) {
+      U.error(log,"Failed to copy service (will reuse same instance): " + svc.getClass(),e);
+      return svc;
+    }
+  }
+}
