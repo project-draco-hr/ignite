@@ -1,9 +1,15 @@
 {
   startUnderlying();
   prepareConfiguration();
+  KerberosUserNameMapper mapper1=new KerberosUserNameMapper();
+  mapper1.setRealm("TEST.COM");
+  TestUserNameMapper mapper2=new TestUserNameMapper();
+  ChainedUserNameMapper mapper=new ChainedUserNameMapper();
+  mapper.setMappers(mapper1,mapper2);
   CachingHadoopFileSystemFactory factory=new CachingHadoopFileSystemFactory();
   factory.setUri(secondaryUri);
   factory.setConfigPaths(secondaryConfFullPath);
+  factory.setUserNameMapper(mapper);
   IgniteHadoopIgfsSecondaryFileSystem second=new IgniteHadoopIgfsSecondaryFileSystem();
   second.setFileSystemFactory(factory);
   igfsSecondary=new HadoopFileSystemUniversalFileSystemAdapter(factory);
