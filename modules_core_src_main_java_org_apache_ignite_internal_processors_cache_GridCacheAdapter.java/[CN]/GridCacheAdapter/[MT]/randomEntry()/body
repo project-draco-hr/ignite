@@ -3,7 +3,7 @@
   if (ctx.offheapTiered()) {
     Iterator<Cache.Entry<K,V>> it;
     try {
-      it=ctx.swap().offheapIterator(true,true,ctx.affinity().affinityTopologyVersion());
+      it=ctx.swap().offheapIterator(true,true,ctx.affinity().affinityTopologyVersion(),ctx.keepBinary());
     }
  catch (    IgniteCheckedException e) {
       throw CU.convertToCacheException(e);
@@ -11,5 +11,5 @@
     return it.hasNext() ? it.next() : null;
   }
  else   entry=map.randomEntry();
-  return entry == null || entry.obsolete() ? null : entry.<K,V>wrapLazyValue();
+  return entry == null || entry.obsolete() ? null : entry.<K,V>wrapLazyValue(ctx.keepBinary());
 }

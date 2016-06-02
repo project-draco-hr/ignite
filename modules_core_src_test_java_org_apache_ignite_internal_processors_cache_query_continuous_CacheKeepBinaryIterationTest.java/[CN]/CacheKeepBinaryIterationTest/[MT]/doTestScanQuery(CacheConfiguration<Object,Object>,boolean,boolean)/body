@@ -1,0 +1,36 @@
+{
+  IgniteCache<Object,Object> cache=grid(0).createCache(ccfg);
+  assertTrue(cache.size() == 0);
+  try {
+    for (int i=0; i < KEYS; i++)     if (primitives)     cache.put(i,i);
+ else     cache.put(new QueryTestKey(i),new QueryTestValue(i));
+    for (int i=0; i < getServerNodeCount(); i++) {
+      IgniteCache<Object,Object> cache0=grid(i).cache(ccfg.getName());
+      if (keepBinary)       cache0=cache0.withKeepBinary();
+      ScanQuery<Object,Object> qry=new ScanQuery<>();
+      qry.setLocal(true);
+      int size=0;
+      try (QueryCursor<Cache.Entry<Object,Object>> cur=cache0.query(qry)){
+        for (        Cache.Entry<Object,Object> e : cur) {
+          Object key=e.getKey();
+          Object val=e.getValue();
+          if (!primitives) {
+            assertTrue("Got unexpected object: " + key.getClass() + ", keepBinary: "+ keepBinary,keepBinary == key instanceof BinaryObject);
+            assertTrue("Got unexpected object: " + val.getClass() + ", keepBinary: "+ keepBinary,keepBinary == val instanceof BinaryObject);
+          }
+ else {
+            assertTrue("Got unexpected object: " + key.getClass() + ", keepBinary: "+ keepBinary,key instanceof Integer);
+            assertTrue("Got unexpected object: " + val.getClass() + ", keepBinary: "+ keepBinary,val instanceof Integer);
+          }
+          ++size;
+        }
+      }
+       assertTrue(size > 0);
+    }
+  }
+  finally {
+    cache.removeAll();
+    if (ccfg.getEvictionPolicy() != null)     U.sleep(1000);
+    grid(0).destroyCache(ccfg.getName());
+  }
+}
