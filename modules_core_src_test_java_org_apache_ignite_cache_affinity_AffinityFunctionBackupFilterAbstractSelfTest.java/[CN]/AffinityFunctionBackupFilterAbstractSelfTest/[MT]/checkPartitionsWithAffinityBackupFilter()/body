@@ -1,0 +1,13 @@
+{
+  AffinityFunction aff=cacheConfiguration(grid(0).configuration(),null).getAffinity();
+  int partCnt=aff.partitions();
+  IgniteCache<Object,Object> cache=grid(0).cache(null);
+  for (int i=0; i < partCnt; i++) {
+    Collection<ClusterNode> nodes=affinity(cache).mapKeyToPrimaryAndBackups(i);
+    assertEquals(backups + 1,nodes.size());
+    Map<String,Integer> stat=getAttributeStatistic(nodes);
+    assertEquals(stat.get(FIRST_NODE_GROUP),new Integer(2));
+    assertEquals(stat.get("B"),new Integer(1));
+    assertEquals(stat.get("C"),new Integer(1));
+  }
+}
