@@ -1,8 +1,12 @@
 {
   A.notNull(path,"path");
+  if (accessTime == -1 && modificationTime == -1)   return;
+  if (meta.isClient()) {
+    meta.runClientTask(new IgfsClientSetTimesCallable(cfg.getName(),path,accessTime,modificationTime));
+    return;
+  }
   safeOp(new Callable<Void>(){
     @Override public Void call() throws Exception {
-      if (accessTime == -1 && modificationTime == -1)       return null;
       FileDescriptor desc=getFileDescriptor(path);
       if (desc == null) {
         checkConflictWithPrimary(path);
