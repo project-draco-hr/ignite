@@ -1,6 +1,18 @@
 {
   try {
-    formatAsync().get();
+    IgniteUuid id=meta.format();
+    if (id == null)     return;
+    while (true) {
+      if (enterBusy()) {
+        try {
+          if (!meta.exists(id))           return;
+        }
+  finally {
+          busyLock.leaveBusy();
+        }
+      }
+      U.sleep(10);
+    }
   }
  catch (  Exception e) {
     throw IgfsUtils.toIgfsException(e);

@@ -1,20 +1,13 @@
 {
   if (dataCachePrj.igfsDataSpaceUsed() >= dataCachePrj.igfsDataSpaceMax()) {
-    try {
-      igfs.awaitDeletesAsync().get(trashPurgeTimeout);
-    }
- catch (    IgniteFutureTimeoutCheckedException ignore) {
-    }
-    if (dataCachePrj.igfsDataSpaceUsed() >= dataCachePrj.igfsDataSpaceMax()) {
-      final WriteCompletionFuture completionFut=pendingWrites.get(fileId);
-      if (completionFut == null) {
-        if (log.isDebugEnabled())         log.debug("Missing completion future for file write request (most likely exception occurred " + "which will be thrown upon stream close) [fileId=" + fileId + ']');
-        return;
-      }
-      IgfsOutOfSpaceException e=new IgfsOutOfSpaceException("Failed to write data block " + "(IGFS maximum data size exceeded) [used=" + dataCachePrj.igfsDataSpaceUsed() + ", allowed="+ dataCachePrj.igfsDataSpaceMax()+ ']');
-      completionFut.onDone(new IgniteCheckedException("Failed to write data (not enough space on node): " + igfsCtx.kernalContext().localNodeId(),e));
+    final WriteCompletionFuture completionFut=pendingWrites.get(fileId);
+    if (completionFut == null) {
+      if (log.isDebugEnabled())       log.debug("Missing completion future for file write request (most likely exception occurred " + "which will be thrown upon stream close) [fileId=" + fileId + ']');
       return;
     }
+    IgfsOutOfSpaceException e=new IgfsOutOfSpaceException("Failed to write data block " + "(IGFS maximum data size exceeded) [used=" + dataCachePrj.igfsDataSpaceUsed() + ", allowed="+ dataCachePrj.igfsDataSpaceMax()+ ']');
+    completionFut.onDone(new IgniteCheckedException("Failed to write data (not enough space on node): " + igfsCtx.kernalContext().localNodeId(),e));
+    return;
   }
   if (colocatedKey.affinityKey() == null) {
     dataCachePrj.invoke(colocatedKey,new UpdateProcessor(startOff,data));
