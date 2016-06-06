@@ -2,7 +2,7 @@
   for (  Map.Entry<UUID,Collection<UUID>> entry : txNodes.entrySet()) {
     UUID nodeId=entry.getKey();
     if (!nodes.containsKey(nodeId) && nodeId.equals(cctx.localNodeId()))     continue;
-    if (nodeId.equals(failedNodeId)) {
+    if (failedNodeIds.contains(nodeId)) {
       for (      UUID id : entry.getValue()) {
         if (txNodes.containsKey(id) || id.equals(cctx.localNodeId()))         continue;
         MiniFuture fut=new MiniFuture(id);
@@ -12,7 +12,7 @@
           cctx.io().send(id,req,tx.ioPolicy());
         }
  catch (        ClusterTopologyCheckedException ignored) {
-          fut.onNodeLeft();
+          fut.onNodeLeft(id);
         }
 catch (        IgniteCheckedException e) {
           fut.onError(e);
@@ -28,7 +28,7 @@ catch (        IgniteCheckedException e) {
         cctx.io().send(nodeId,req,tx.ioPolicy());
       }
  catch (      ClusterTopologyCheckedException ignored) {
-        fut.onNodeLeft();
+        fut.onNodeLeft(nodeId);
       }
 catch (      IgniteCheckedException e) {
         fut.onError(e);

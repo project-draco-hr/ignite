@@ -1,4 +1,10 @@
 {
   U.warn(log,"Failed to wait for partition release future [topVer=" + topologyVersion() + ", node="+ cctx.localNodeId()+ "]. Dumping pending objects that might be the cause: ");
-  cctx.exchange().dumpDebugInfo(topologyVersion());
+  try {
+    cctx.exchange().dumpDebugInfo(topologyVersion());
+  }
+ catch (  Exception e) {
+    U.error(log,"Failed to dump debug information: " + e,e);
+  }
+  if (IgniteSystemProperties.getBoolean(IGNITE_THREAD_DUMP_ON_EXCHANGE_TIMEOUT,false))   U.dumpThreads(log);
 }

@@ -1,7 +1,11 @@
 {
   if (log.isDebugEnabled())   log.debug("Transaction node left grid (will ignore) [fut=" + this + ']');
   if (nearTxCheck) {
-    cctx.tm().commitIfPrepared(tx);
+    if (tx.state() == PREPARED) {
+      Set<UUID> failedNodeIds0=new HashSet<>(failedNodeIds);
+      failedNodeIds0.add(nodeId);
+      cctx.tm().commitIfPrepared(tx,failedNodeIds0);
+    }
     onDone(new ClusterTopologyCheckedException("Transaction node left grid (will ignore)."));
   }
  else   onDone(true);
