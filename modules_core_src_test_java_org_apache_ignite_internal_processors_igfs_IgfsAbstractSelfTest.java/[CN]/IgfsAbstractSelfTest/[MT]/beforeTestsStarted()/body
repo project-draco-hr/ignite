@@ -1,10 +1,19 @@
 {
   igfsSecondaryFileSystem=createSecondaryFileSystemStack();
-  TcpDiscoveryIpFinder ipFinder=new TcpDiscoveryVmIpFinder(true);
   nodes=new Ignite[nodeCount()];
   for (int i=0; i < nodes.length; i++) {
     String nodeName=i == 0 ? "ignite" : "ignite" + i;
     nodes[i]=startGridWithIgfs(nodeName,"igfs",mode,igfsSecondaryFileSystem,PRIMARY_REST_CFG,ipFinder);
   }
   igfs=(IgfsImpl)nodes[0].fileSystem("igfs");
+  if (client()) {
+    Ignition.setClientMode(true);
+    try {
+      Ignite ignite=startGridWithIgfs("ignite-client","igfs",mode,igfsSecondaryFileSystem,PRIMARY_REST_CFG,primaryIpFinder);
+      igfs=(IgfsImpl)ignite.fileSystem("igfs");
+    }
+  finally {
+      Ignition.setClientMode(false);
+    }
+  }
 }
