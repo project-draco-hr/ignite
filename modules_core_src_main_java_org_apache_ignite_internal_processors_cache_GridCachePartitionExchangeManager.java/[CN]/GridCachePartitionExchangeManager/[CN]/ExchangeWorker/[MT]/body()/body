@@ -31,7 +31,26 @@
         if (!exchFut.dummy() && !exchFut.forcePreload()) {
           lastInitializedFut=exchFut;
           exchFut.init();
-          exchFut.get();
+          int dumpedObjects=0;
+          while (true) {
+            try {
+              exchFut.get(2 * cctx.gridConfig().getNetworkTimeout(),TimeUnit.MILLISECONDS);
+              break;
+            }
+ catch (            IgniteFutureTimeoutCheckedException ignored) {
+              U.warn(log,"Failed to wait for partition map exchange [" + "topVer=" + exchFut.topologyVersion() + ", node="+ cctx.localNodeId()+ "]. "+ "Dumping pending objects that might be the cause: ");
+              if (dumpedObjects < GridDhtPartitionsExchangeFuture.DUMP_PENDING_OBJECTS_THRESHOLD) {
+                try {
+                  dumpDebugInfo(exchFut.topologyVersion());
+                }
+ catch (                Exception e) {
+                  U.error(log,"Failed to dump debug information: " + e,e);
+                }
+                if (IgniteSystemProperties.getBoolean(IGNITE_THREAD_DUMP_ON_EXCHANGE_TIMEOUT,false))                 U.dumpThreads(log);
+                dumpedObjects++;
+              }
+            }
+          }
           if (log.isDebugEnabled())           log.debug("After waiting for exchange future [exchFut=" + exchFut + ", worker="+ this+ ']');
           if (exchFut.exchangeId().nodeId().equals(cctx.localNodeId()))           lastRefresh.compareAndSet(-1,U.currentTimeMillis());
           boolean changed=false;

@@ -1,0 +1,27 @@
+{
+  A.notNull(b,"b");
+  if ((off < 0) || (off > b.length) || (len < 0)|| ((off + len) > b.length)|| ((off + len) < 0)) {
+    throw new IndexOutOfBoundsException("Invalid bounds [data.length=" + b.length + ", offset="+ off+ ", length="+ len+ ']');
+  }
+synchronized (mux) {
+    checkClosed(null,0);
+    if (len == 0)     return;
+    long startTime=System.nanoTime();
+    if (buf == null) {
+      if (len >= bufSize) {
+        ByteBuffer tmpBuf=ByteBuffer.wrap(b,off,len);
+        send(tmpBuf,tmpBuf.remaining());
+      }
+ else {
+        buf=allocateNewBuffer();
+        buf.put(b,off,len);
+      }
+    }
+ else {
+      if (buf.remaining() < len)       buf=ByteBuffer.allocate(buf.position() + len).put((ByteBuffer)buf.flip());
+      buf.put(b,off,len);
+      sendBufferIfFull();
+    }
+    time+=System.nanoTime() - startTime;
+  }
+}
