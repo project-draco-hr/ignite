@@ -1,0 +1,42 @@
+{
+synchronized (mux) {
+    if (closed)     return;
+    closed=true;
+    IOException err=null;
+    boolean flushSuccess=false;
+    try {
+      sendBufferIfNotEmpty();
+      flushRemainder();
+      igfsCtx.data().writeClose(fileInfo.id(),true);
+      flushSuccess=true;
+    }
+ catch (    Exception e) {
+      err=new IOException("Failed to flush data during stream close [path=" + path + ", fileInfo="+ fileInfo+ ']',e);
+    }
+    try {
+      if (flushSuccess && space > 0)       igfsCtx.meta().unlock(fileInfo.id(),fileInfo.lockId(),System.currentTimeMillis(),true,space,streamRange);
+ else       igfsCtx.meta().unlock(fileInfo.id(),fileInfo.lockId(),System.currentTimeMillis());
+    }
+ catch (    Exception e) {
+      if (err == null)       err=new IOException("File to release file lock: " + path,e);
+ else       err.addSuppressed(e);
+    }
+    if (batch != null) {
+      batch.finish();
+      if (mode == DUAL_SYNC) {
+        try {
+          batch.await();
+        }
+ catch (        IgniteCheckedException e) {
+          if (err == null)           err=new IOException("Failed to close secondary file system stream [path=" + path + ", fileInfo="+ fileInfo+ ']',e);
+ else           err.addSuppressed(e);
+        }
+      }
+    }
+    if (err != null)     throw err;
+    igfsCtx.igfs().localMetrics().addWrittenBytesTime(bytes,time);
+    igfsCtx.igfs().localMetrics().decrementFilesOpenedForWrite();
+    GridEventStorageManager evts=igfsCtx.kernalContext().event();
+    if (evts.isRecordable(EVT_IGFS_FILE_CLOSED_WRITE))     evts.record(new IgfsEvent(path,igfsCtx.kernalContext().discovery().localNode(),EVT_IGFS_FILE_CLOSED_WRITE,bytes));
+  }
+}

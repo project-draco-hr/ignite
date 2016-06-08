@@ -1,0 +1,22 @@
+{
+  validTxState(false);
+  if (busyLock.enterBusy()) {
+    try {
+      if (log.isDebugEnabled())       log.debug("Reserve file space: " + fileId);
+      try (IgniteInternalTx tx=startTx()){
+        IgfsEntryInfo oldInfo=info(fileId);
+        if (oldInfo == null)         throw fsException("File has been deleted concurrently: " + fileId);
+        IgfsEntryInfo newInfo=invokeAndGet(fileId,new IgfsMetaFileReserveSpaceProcessor(space,affRange));
+        tx.commit();
+        return newInfo;
+      }
+ catch (      GridClosureException e) {
+        throw U.cast(e);
+      }
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to reserve file space because Grid is stopping:" + fileId);
+}

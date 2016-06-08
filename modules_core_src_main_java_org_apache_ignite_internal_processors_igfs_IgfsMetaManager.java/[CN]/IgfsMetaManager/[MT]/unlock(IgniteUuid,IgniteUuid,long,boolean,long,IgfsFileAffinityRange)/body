@@ -1,0 +1,30 @@
+{
+  validTxState(false);
+  if (busyLock.enterBusy()) {
+    try {
+      if (lockId == null)       return;
+      final boolean interrupted=Thread.interrupted();
+      try {
+        IgfsUtils.doInTransactionWithRetries(id2InfoPrj,new IgniteOutClosureX<Void>(){
+          @Override public Void applyx() throws IgniteCheckedException {
+            validTxState(true);
+            IgfsEntryInfo oldInfo=info(fileId);
+            if (oldInfo == null)             throw fsException(new IgfsPathNotFoundException("Failed to unlock file (file not " + "found): " + fileId));
+            if (!F.eq(lockId,oldInfo.lockId()))             throw new IgniteCheckedException("Failed to unlock file (inconsistent file lock ID) " + "[fileId=" + fileId + ", lockId="+ lockId+ ", actualLockId="+ oldInfo.lockId()+ ']');
+            id2InfoPrj.invoke(fileId,new IgfsMetaFileUnlockProcessor(modificationTime,updateSpace,space,affRange));
+            return null;
+          }
+        }
+);
+      }
+  finally {
+        validTxState(false);
+        if (interrupted)         Thread.currentThread().interrupt();
+      }
+    }
+  finally {
+      busyLock.leaveBusy();
+    }
+  }
+ else   throw new IllegalStateException("Failed to unlock file system entry because Grid is stopping: " + fileId);
+}
