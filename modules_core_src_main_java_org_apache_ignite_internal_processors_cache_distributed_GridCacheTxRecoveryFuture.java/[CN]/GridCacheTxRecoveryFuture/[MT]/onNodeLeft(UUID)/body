@@ -1,7 +1,16 @@
 {
-  for (  IgniteInternalFuture<?> fut : futures())   if (isMini(fut)) {
-    MiniFuture f=(MiniFuture)fut;
-    if (f.nodeId().equals(nodeId))     f.onNodeLeft();
+  for (  IgniteInternalFuture<?> fut : futures()) {
+    if (isMini(fut)) {
+      final MiniFuture f=(MiniFuture)fut;
+      if (f.nodeId().equals(nodeId)) {
+        cctx.kernalContext().closure().runLocalSafe(new Runnable(){
+          @Override public void run(){
+            f.onNodeLeft(nodeId);
+          }
+        }
+);
+      }
+    }
   }
   return true;
 }

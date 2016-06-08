@@ -3,18 +3,18 @@
   this.cctx=cctx;
   this.tx=tx;
   this.txNodes=txNodes;
-  this.failedNodeId=failedNodeId;
+  this.failedNodeIds=failedNodeIds;
   if (log == null)   log=U.logger(cctx.kernalContext(),logRef,GridCacheTxRecoveryFuture.class);
   nodes=new GridLeanMap<>();
   UUID locNodeId=cctx.localNodeId();
   for (  Map.Entry<UUID,Collection<UUID>> e : tx.transactionNodes().entrySet()) {
-    if (!locNodeId.equals(e.getKey()) && !failedNodeId.equals(e.getKey()) && !nodes.containsKey(e.getKey())) {
+    if (!locNodeId.equals(e.getKey()) && !failedNodeIds.contains(e.getKey()) && !nodes.containsKey(e.getKey())) {
       ClusterNode node=cctx.discovery().node(e.getKey());
       if (node != null)       nodes.put(node.id(),node);
  else       if (log.isDebugEnabled())       log.debug("Transaction node left (will ignore) " + e.getKey());
     }
     for (    UUID nodeId : e.getValue()) {
-      if (!locNodeId.equals(nodeId) && !failedNodeId.equals(nodeId) && !nodes.containsKey(nodeId)) {
+      if (!locNodeId.equals(nodeId) && !failedNodeIds.contains(nodeId) && !nodes.containsKey(nodeId)) {
         ClusterNode node=cctx.discovery().node(nodeId);
         if (node != null)         nodes.put(node.id(),node);
  else         if (log.isDebugEnabled())         log.debug("Transaction node left (will ignore) " + e.getKey());
@@ -22,5 +22,5 @@
     }
   }
   UUID nearNodeId=tx.eventNodeId();
-  nearTxCheck=!failedNodeId.equals(nearNodeId) && cctx.discovery().alive(nearNodeId);
+  nearTxCheck=!failedNodeIds.contains(nearNodeId) && cctx.discovery().alive(nearNodeId);
 }
