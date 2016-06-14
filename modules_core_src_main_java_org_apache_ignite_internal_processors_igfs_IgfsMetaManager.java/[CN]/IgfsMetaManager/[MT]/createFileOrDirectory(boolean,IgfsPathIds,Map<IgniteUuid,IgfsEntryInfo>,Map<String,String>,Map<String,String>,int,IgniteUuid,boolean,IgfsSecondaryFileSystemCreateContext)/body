@@ -1,0 +1,88 @@
+{
+  int lastExistingIdx=pathIds.lastExistingIndex();
+  IgfsEntryInfo lastExistingInfo=lockInfos.get(pathIds.lastExistingId());
+  int curIdx=lastExistingIdx + 1;
+  String curPart=pathIds.part(curIdx);
+  IgniteUuid curId=pathIds.surrogateId(curIdx);
+  if (lastExistingInfo.hasChild(curPart))   return null;
+  Map<IgniteUuid,EntryProcessor> procMap=new HashMap<>();
+  procMap.put(lastExistingInfo.id(),new IgfsMetaDirectoryListingAddProcessor(curPart,new IgfsListingEntry(curId,dir || !pathIds.isLastIndex(curIdx))));
+  IgfsPath lastCreatedPath=pathIds.lastExistingPath();
+  List<IgfsPath> createdPaths=new ArrayList<>(pathIds.count() - curIdx);
+  long curTime=System.currentTimeMillis();
+  while (curIdx < pathIds.count() - 1) {
+    lastCreatedPath=new IgfsPath(lastCreatedPath,curPart);
+    int nextIdx=curIdx + 1;
+    String nextPart=pathIds.part(nextIdx);
+    IgniteUuid nextId=pathIds.surrogateId(nextIdx);
+    long accessTime;
+    long modificationTime;
+    Map<String,String> props;
+    if (secondaryCtx != null) {
+      IgfsFile secondaryInfo=secondaryCtx.fileSystem().info(lastCreatedPath);
+      if (secondaryInfo == null)       throw new IgfsException("Failed to perform operation because secondary file system path was " + "modified concurrnetly: " + lastCreatedPath);
+ else       if (secondaryInfo.isFile())       throw new IgfsException("Failed to perform operation because secondary file system entity is " + "not directory: " + lastCreatedPath);
+      accessTime=secondaryInfo.accessTime();
+      modificationTime=secondaryInfo.modificationTime();
+      props=secondaryInfo.properties();
+    }
+ else {
+      accessTime=curTime;
+      modificationTime=curTime;
+      props=dirProps;
+    }
+    procMap.put(curId,new IgfsMetaDirectoryCreateProcessor(accessTime,modificationTime,props,nextPart,new IgfsListingEntry(nextId,dir || !pathIds.isLastIndex(nextIdx))));
+    createdPaths.add(lastCreatedPath);
+    curIdx++;
+    curPart=nextPart;
+    curId=nextId;
+  }
+  if (dir) {
+    long accessTime;
+    long modificationTime;
+    Map<String,String> props;
+    if (secondaryCtx != null) {
+      IgfsFile secondaryInfo=secondaryCtx.fileSystem().info(pathIds.path());
+      if (secondaryInfo == null)       throw new IgfsException("Failed to perform operation because secondary file system path was " + "modified concurrnetly: " + pathIds.path());
+ else       if (secondaryInfo.isFile())       throw new IgfsException("Failed to perform operation because secondary file system entity is " + "not directory: " + lastCreatedPath);
+      accessTime=secondaryInfo.accessTime();
+      modificationTime=secondaryInfo.modificationTime();
+      props=secondaryInfo.properties();
+    }
+ else {
+      accessTime=curTime;
+      modificationTime=curTime;
+      props=dirProps;
+    }
+    procMap.put(curId,new IgfsMetaDirectoryCreateProcessor(accessTime,modificationTime,props));
+  }
+ else {
+    long newAccessTime;
+    long newModificationTime;
+    Map<String,String> newProps;
+    long newLen;
+    int newBlockSize;
+    if (secondaryCtx != null) {
+      IgfsFile secondaryFile=secondaryCtx.info();
+      if (secondaryFile == null)       throw fsException("Failed to open output stream to the file created in " + "the secondary file system because it no longer exists: " + pathIds.path());
+ else       if (secondaryFile.isDirectory())       throw fsException("Failed to open output stream to the file created in " + "the secondary file system because the path points to a directory: " + pathIds.path());
+      newAccessTime=secondaryFile.accessTime();
+      newModificationTime=secondaryFile.modificationTime();
+      newProps=secondaryFile.properties();
+      newLen=secondaryFile.length();
+      newBlockSize=secondaryFile.blockSize();
+    }
+ else {
+      newAccessTime=curTime;
+      newModificationTime=curTime;
+      newProps=fileProps;
+      newLen=0L;
+      newBlockSize=blockSize;
+    }
+    procMap.put(curId,new IgfsMetaFileCreateProcessor(newAccessTime,newModificationTime,newProps,newBlockSize,affKey,createFileLockId(false),evictExclude,newLen));
+  }
+  createdPaths.add(pathIds.path());
+  Map<Object,EntryProcessorResult> invokeRes=((IgniteInternalCache)id2InfoPrj).invokeAll(procMap);
+  IgfsEntryInfo info=(IgfsEntryInfo)invokeRes.get(curId).get();
+  return new IgfsPathsCreateResult(createdPaths,info);
+}

@@ -1,0 +1,84 @@
+{
+  validTxState(false);
+  while (true) {
+    if (busyLock.enterBusy()) {
+      OutputStream secondaryOut=null;
+      try {
+        IgfsPathIds pathIds=pathIds(path);
+        Set<IgniteUuid> lockIds=new TreeSet<>(PATH_ID_SORTING_COMPARATOR);
+        pathIds.addExistingIds(lockIds,relaxed);
+        pathIds.addSurrogateIds(lockIds);
+        IgniteUuid overwriteId=IgniteUuid.randomUuid();
+        IgniteUuid trashId=IgfsUtils.randomTrashId();
+        if (overwrite) {
+          lockIds.add(overwriteId);
+          if (pathIds.allExists())           lockIds.add(trashId);
+        }
+        try (IgniteInternalTx tx=startTx()){
+          Map<IgniteUuid,IgfsEntryInfo> lockInfos=lockIds(lockIds);
+          if (secondaryCtx != null && isRetryForSecondary(pathIds,lockInfos))           continue;
+          if (!pathIds.verifyIntegrity(lockInfos,relaxed))           continue;
+          if (pathIds.allExists()) {
+            IgfsEntryInfo oldInfo=lockInfos.get(pathIds.lastId());
+            if (!oldInfo.isFile())             throw new IgfsPathIsDirectoryException("Failed to create a file: " + path);
+            if (!overwrite)             throw new IgfsPathAlreadyExistsException("Failed to create a file: " + path);
+            if (oldInfo.lockId() != null)             throw new IgfsException("File is already opened for write: " + path);
+            IgniteUuid oldId=pathIds.lastId();
+            id2InfoPrj.invoke(trashId,new IgfsMetaDirectoryListingAddProcessor(IgfsUtils.composeNameForTrash(path,oldId),new IgfsListingEntry(oldInfo)));
+            String name=pathIds.lastPart();
+            IgniteUuid parentId=pathIds.lastParentId();
+            id2InfoPrj.invoke(parentId,new IgfsMetaDirectoryListingReplaceProcessor(name,overwriteId));
+            IgniteUuid newLockId=createFileLockId(false);
+            long newAccessTime;
+            long newModificationTime;
+            Map<String,String> newProps;
+            long newLen;
+            int newBlockSize;
+            if (secondaryCtx != null) {
+              secondaryOut=secondaryCtx.create();
+              IgfsFile secondaryFile=secondaryCtx.info();
+              if (secondaryFile == null)               throw fsException("Failed to open output stream to the file created in " + "the secondary file system because it no longer exists: " + path);
+ else               if (secondaryFile.isDirectory())               throw fsException("Failed to open output stream to the file created in " + "the secondary file system because the path points to a directory: " + path);
+              newAccessTime=secondaryFile.accessTime();
+              newModificationTime=secondaryFile.modificationTime();
+              newProps=secondaryFile.properties();
+              newLen=secondaryFile.length();
+              newBlockSize=secondaryFile.blockSize();
+            }
+ else {
+              newAccessTime=System.currentTimeMillis();
+              newModificationTime=newAccessTime;
+              newProps=fileProps;
+              newLen=0L;
+              newBlockSize=blockSize;
+            }
+            IgfsEntryInfo newInfo=invokeAndGet(overwriteId,new IgfsMetaFileCreateProcessor(newAccessTime,newModificationTime,newProps,newBlockSize,affKey,newLockId,evictExclude,newLen));
+            tx.commit();
+            IgfsUtils.sendEvents(igfsCtx.kernalContext(),path,EventType.EVT_IGFS_FILE_OPENED_WRITE);
+            return new IgfsCreateResult(newInfo,secondaryOut);
+          }
+ else {
+            if (secondaryCtx != null)             secondaryOut=secondaryCtx.create();
+            IgfsPathsCreateResult res=createFile(pathIds,lockInfos,dirProps,fileProps,blockSize,affKey,evictExclude,secondaryCtx);
+            if (res == null)             continue;
+            tx.commit();
+            generateCreateEvents(res.createdPaths(),true);
+            return new IgfsCreateResult(res.info(),secondaryOut);
+          }
+        }
+       }
+ catch (      IgniteException|IgniteCheckedException e) {
+        U.closeQuiet(secondaryOut);
+        throw e;
+      }
+catch (      Exception e) {
+        U.closeQuiet(secondaryOut);
+        throw new IgniteCheckedException("Create failed due to unexpected exception: " + path,e);
+      }
+ finally {
+        busyLock.leaveBusy();
+      }
+    }
+ else     throw new IllegalStateException("Failed to mkdir because Grid is stopping. [path=" + path + ']');
+  }
+}

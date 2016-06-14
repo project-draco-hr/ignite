@@ -1,5 +1,13 @@
 {
   validTxState(true);
-  id2InfoPrj.invoke(srcId,new IgfsMetaDirectoryListingRemoveProcessor(srcName,entry.fileId()));
-  id2InfoPrj.invoke(destId,new IgfsMetaDirectoryListingAddProcessor(destName,entry));
+  if (F.eq(srcId,destId)) {
+    id2InfoPrj.invoke(srcId,new IgfsMetaDirectoryListingRemoveProcessor(srcName,entry.fileId()));
+    id2InfoPrj.invoke(destId,new IgfsMetaDirectoryListingAddProcessor(destName,entry));
+  }
+ else {
+    Map<IgniteUuid,EntryProcessor<IgniteUuid,IgfsEntryInfo,Void>> procMap=new HashMap<>();
+    procMap.put(srcId,new IgfsMetaDirectoryListingRemoveProcessor(srcName,entry.fileId()));
+    procMap.put(destId,new IgfsMetaDirectoryListingAddProcessor(destName,entry));
+    id2InfoPrj.invokeAll(procMap);
+  }
 }
