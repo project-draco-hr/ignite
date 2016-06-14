@@ -1,0 +1,13 @@
+{
+  putDataInStore(Collections.singletonMap(key,key),cache.getName());
+  Transaction tx=isolation != null ? cache.unwrap(Ignite.class).transactions().txStart(concurrency,isolation) : null;
+  try {
+    Object ret=cache.invoke(key,new TestEntryProcessor());
+    assertEquals(key,ret);
+    if (tx != null)     tx.commit();
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
+  checkValue(cache.getName(),key,(Integer)key + 1);
+}

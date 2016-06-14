@@ -1,0 +1,20 @@
+{
+  Map<Object,Object> data=U.newHashMap(keys.size());
+  for (  Object key : keys)   data.put(key,key);
+  putDataInStore(data,cache.getName());
+  Transaction tx=isolation != null ? cache.unwrap(Ignite.class).transactions().txStart(concurrency,isolation) : null;
+  try {
+    Map<Object,EntryProcessorResult<Object>> ret=cache.invokeAll(keys,new TestEntryProcessor());
+    assertEquals(ret.size(),keys.size());
+    for (    Object key : keys) {
+      EntryProcessorResult<Object> res=ret.get(key);
+      assertNotNull(res);
+      assertEquals(key,res.get());
+    }
+    if (tx != null)     tx.commit();
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
+  for (  Object key : keys)   checkValue(cache.getName(),key,(Integer)key + 1);
+}
