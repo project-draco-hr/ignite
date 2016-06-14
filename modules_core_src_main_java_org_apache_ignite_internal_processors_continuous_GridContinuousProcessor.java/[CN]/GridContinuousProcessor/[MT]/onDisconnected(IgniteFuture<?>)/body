@@ -1,6 +1,15 @@
 {
   cancelFutures(new IgniteClientDisconnectedCheckedException(reconnectFut,"Client node disconnected."));
-  for (  UUID rmtId : rmtInfos.keySet())   unregisterRemote(rmtId);
+  if (log.isDebugEnabled()) {
+    log.debug("onDisconnected [rmtInfos=" + rmtInfos + ", locInfos="+ locInfos+ ", clientInfos="+ clientInfos+ ']');
+  }
+  for (  Map.Entry<UUID,RemoteRoutineInfo> e : rmtInfos.entrySet()) {
+    RemoteRoutineInfo info=e.getValue();
+    if (!ctx.localNodeId().equals(info.nodeId) || info.autoUnsubscribe)     unregisterRemote(e.getKey());
+  }
   rmtInfos.clear();
   clientInfos.clear();
+  if (log.isDebugEnabled()) {
+    log.debug("after onDisconnected [rmtInfos=" + rmtInfos + ", locInfos="+ locInfos+ ", clientInfos="+ clientInfos+ ']');
+  }
 }
