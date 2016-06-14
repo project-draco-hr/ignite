@@ -1,0 +1,50 @@
+{
+  storeMap.clear();
+  Ignite ignite0=ignite(0);
+  ignite0.createCache(ccfg);
+  try {
+    int key=0;
+    for (    Ignite node : G.allGrids()) {
+      log.info("Test for node: " + node.name());
+      final IgniteCache<Object,Object> cache=node.cache(ccfg.getName());
+      for (int i=0; i < 50; i++) {
+        final int k=key++;
+        checkReadThrough(cache,new IgniteRunnable(){
+          @Override public void run(){
+            cache.invoke(k,new TestEntryProcessor());
+          }
+        }
+,null,null,1);
+      }
+      for (int i=0; i < 50; i++) {
+        final int k=key++;
+        checkReadThrough(cache,new IgniteRunnable(){
+          @Override public void run(){
+            cache.put(k,k);
+          }
+        }
+,null,null,0);
+      }
+      if (ccfg.getAtomicityMode() == TRANSACTIONAL) {
+        for (        TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+          for (          TransactionIsolation isolation : values()) {
+            log.info("Test tx [concurrency=" + concurrency + ", isolation="+ isolation+ ']');
+            for (int i=0; i < 50; i++) {
+              final int k=key++;
+              checkReadThrough(cache,new IgniteRunnable(){
+                @Override public void run(){
+                  cache.invoke(k,new TestEntryProcessor());
+                }
+              }
+,concurrency,isolation,2);
+            }
+          }
+        }
+      }
+    }
+    ignite0.cache(ccfg.getName()).removeAll();
+  }
+  finally {
+    ignite0.destroyCache(ccfg.getName());
+  }
+}

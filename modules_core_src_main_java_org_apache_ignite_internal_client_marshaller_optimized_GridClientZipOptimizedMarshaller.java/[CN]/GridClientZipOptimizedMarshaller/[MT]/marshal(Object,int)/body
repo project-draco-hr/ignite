@@ -1,0 +1,17 @@
+{
+  try {
+    if (!(obj instanceof GridClientMessage))     throw new IOException("Message serialization of given type is not supported: " + obj.getClass().getName());
+    byte[] marshBytes=opMarsh.marshal(obj);
+    boolean zip=marshBytes.length > 512;
+    byte[] bytes=zip ? zipBytes(marshBytes) : marshBytes;
+    ByteBuffer buf=ByteBuffer.allocate(off + bytes.length + 1);
+    buf.position(off);
+    buf.put((byte)(zip ? 1 : 0));
+    buf.put(bytes);
+    buf.flip();
+    return buf;
+  }
+ catch (  IgniteCheckedException e) {
+    throw new IOException(e);
+  }
+}

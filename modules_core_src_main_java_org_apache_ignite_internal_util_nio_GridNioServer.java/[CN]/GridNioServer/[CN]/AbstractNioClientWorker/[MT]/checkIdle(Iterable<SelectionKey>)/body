@@ -4,13 +4,14 @@
     GridSelectorNioSessionImpl ses=(GridSelectorNioSessionImpl)key.attachment();
     try {
       long writeTimeout0=writeTimeout;
-      if (key.isValid() && (key.interestOps() & SelectionKey.OP_WRITE) != 0 && now - ses.lastSendTime() > writeTimeout0) {
+      boolean opWrite=key.isValid() && (key.interestOps() & SelectionKey.OP_WRITE) != 0;
+      if (opWrite && now - ses.lastSendTime() > writeTimeout0) {
         filterChain.onSessionWriteTimeout(ses);
         ses.bytesSent(0);
         continue;
       }
       long idleTimeout0=idleTimeout;
-      if (now - ses.lastReceiveTime() > idleTimeout0 && now - ses.lastSendScheduleTime() > idleTimeout0) {
+      if (!opWrite && now - ses.lastReceiveTime() > idleTimeout0 && now - ses.lastSendScheduleTime() > idleTimeout0) {
         filterChain.onSessionIdleTimeout(ses);
         ses.resetSendScheduleTime();
         ses.bytesReceived(0);
