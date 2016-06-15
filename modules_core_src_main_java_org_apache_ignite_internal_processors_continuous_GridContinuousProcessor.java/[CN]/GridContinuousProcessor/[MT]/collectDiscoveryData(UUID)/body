@@ -1,10 +1,18 @@
 {
+  if (log.isDebugEnabled()) {
+    log.debug("collectDiscoveryData [node=" + nodeId + ", loc="+ ctx.localNodeId()+ ", locInfos="+ locInfos+ ", clientInfos="+ clientInfos+ ']');
+  }
   if (!nodeId.equals(ctx.localNodeId()) || !locInfos.isEmpty()) {
     Map<UUID,Map<UUID,LocalRoutineInfo>> clientInfos0=U.newHashMap(clientInfos.size());
     for (    Map.Entry<UUID,Map<UUID,LocalRoutineInfo>> e : clientInfos.entrySet()) {
-      Map<UUID,LocalRoutineInfo> copy=U.newHashMap(e.getValue().size());
-      for (      Map.Entry<UUID,LocalRoutineInfo> e0 : e.getValue().entrySet())       copy.put(e0.getKey(),e0.getValue());
-      clientInfos0.put(e.getKey(),copy);
+      Map<UUID,LocalRoutineInfo> cp=U.newHashMap(e.getValue().size());
+      for (      Map.Entry<UUID,LocalRoutineInfo> e0 : e.getValue().entrySet())       cp.put(e0.getKey(),e0.getValue());
+      clientInfos0.put(e.getKey(),cp);
+    }
+    if (nodeId.equals(ctx.localNodeId()) && ctx.discovery().localNode().isClient()) {
+      Map<UUID,LocalRoutineInfo> infos=new HashMap<>();
+      for (      Map.Entry<UUID,LocalRoutineInfo> e : locInfos.entrySet())       infos.put(e.getKey(),e.getValue());
+      clientInfos0.put(ctx.localNodeId(),infos);
     }
     DiscoveryData data=new DiscoveryData(ctx.localNodeId(),clientInfos0);
     for (    Map.Entry<UUID,LocalRoutineInfo> e : locInfos.entrySet()) {

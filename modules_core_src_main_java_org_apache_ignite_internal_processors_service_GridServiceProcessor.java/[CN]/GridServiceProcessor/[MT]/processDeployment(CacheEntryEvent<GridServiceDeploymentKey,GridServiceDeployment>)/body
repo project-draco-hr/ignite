@@ -1,0 +1,42 @@
+{
+  GridServiceDeployment dep;
+  try {
+    dep=e.getValue();
+  }
+ catch (  IgniteException ex) {
+    if (X.hasCause(ex,ClassNotFoundException.class))     return;
+ else     throw ex;
+  }
+  if (dep != null) {
+    svcName.set(dep.configuration().getName());
+    AffinityTopologyVersion topVer=ctx.discovery().topologyVersionEx();
+    ClusterNode oldest=U.oldest(ctx.discovery().nodes(topVer),null);
+    if (oldest.isLocal())     onDeployment(dep,topVer);
+  }
+ else {
+    String name=e.getKey().name();
+    svcName.set(name);
+    Collection<ServiceContextImpl> ctxs;
+synchronized (locSvcs) {
+      ctxs=locSvcs.remove(name);
+    }
+    if (ctxs != null) {
+synchronized (ctxs) {
+        cancel(ctxs,ctxs.size());
+      }
+    }
+    GridFutureAdapter<?> fut=depFuts.remove(name);
+    if (fut != null)     fut.onDone();
+    fut=undepFuts.remove(name);
+    if (fut != null)     fut.onDone();
+    GridServiceAssignmentsKey key=new GridServiceAssignmentsKey(name);
+    if (cache.cache().affinity().isPrimary(ctx.discovery().localNode(),key)) {
+      try {
+        cache.getAndRemove(key);
+      }
+ catch (      IgniteCheckedException ex) {
+        U.error(log,"Failed to remove assignments for undeployed service: " + name,ex);
+      }
+    }
+  }
+}
