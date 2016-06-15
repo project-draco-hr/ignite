@@ -1,0 +1,13 @@
+{
+  IgniteCountDownLatch latch1=createLatch1();
+  IgniteCountDownLatch latch2=createLatch2();
+  IgniteCache<Object,Object> cache=igniteInstance.cache("testCache");
+  for (  ClusterNode node : igniteInstance.cluster().forServers().nodes()) {
+    Integer val=(Integer)cache.get(String.valueOf(node.id()));
+    assertEquals(val,(Integer)iteration);
+  }
+  latch1.countDown();
+  assertTrue(latch1.await(10000));
+  cache.put(getUID(),(iteration + 1));
+  latch2.countDown();
+}
