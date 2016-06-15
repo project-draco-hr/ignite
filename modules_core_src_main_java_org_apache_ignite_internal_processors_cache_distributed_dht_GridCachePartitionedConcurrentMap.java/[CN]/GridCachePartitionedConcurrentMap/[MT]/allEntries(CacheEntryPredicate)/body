@@ -1,9 +1,12 @@
 {
   return new Iterable<GridCacheMapEntry>(){
     @Override public Iterator<GridCacheMapEntry> iterator(){
-      List<Iterator<GridCacheMapEntry>> iterators=new ArrayList<>();
-      for (      GridDhtLocalPartition partition : ctx.topology().localPartitions())       iterators.add(partition.allEntries(filter).iterator());
-      return F.flatIterators(iterators);
+      return new PartitionedIterator<GridCacheMapEntry>(){
+        @Override protected Iterator<GridCacheMapEntry> iterator(        GridDhtLocalPartition part){
+          return part.allEntries(filter).iterator();
+        }
+      }
+;
     }
   }
 ;
