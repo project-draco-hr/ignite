@@ -1,0 +1,26 @@
+{
+  Ignite client=grid(serverCount());
+  assertTrue(client.cluster().localNode().isClient());
+  IgniteCache<Object,Object> clientCache=client.getOrCreateCache(new CacheConfiguration<>());
+  CacheEventListener lsnr=new CacheEventListener();
+  ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+  qry.setAutoUnsubscribe(true);
+  qry.setLocalListener(lsnr);
+  QueryCursor<?> cur=clientCache.query(qry);
+  continuousQueryReconnect(client,clientCache,lsnr);
+  try (Ignite newSrv=startGrid(serverCount() + 1)){
+    awaitPartitionMapExchange();
+    lsnr.latch=new CountDownLatch(10);
+    IgniteCache<Object,Object> newSrvCache=newSrv.cache(null);
+    for (    Integer key : primaryKeys(newSrvCache,10))     newSrvCache.put(key,key);
+    assertTrue(lsnr.latch.await(5000,MILLISECONDS));
+  }
+   cur.close();
+  try (Ignite newSrv=startGrid(serverCount() + 1)){
+    awaitPartitionMapExchange();
+    lsnr.latch=new CountDownLatch(5);
+    IgniteCache<Object,Object> newSrvCache=newSrv.cache(null);
+    for (    Integer key : primaryKeys(newSrvCache,5))     newSrvCache.put(key,key);
+    assertFalse(lsnr.latch.await(3000,MILLISECONDS));
+  }
+ }

@@ -1,0 +1,14 @@
+{
+  IgniteCache<Integer,Person> p=ignite(0).createCache(cacheConfig("P",true,Integer.class,Person.class));
+  IgniteCache<Integer,Department> d=ignite(0).createCache(cacheConfig("D",true,Integer.class,Department.class));
+  IgniteCache<Integer,Org> o=ignite(0).createCache(cacheConfig("O",true,Integer.class,Org.class));
+  try {
+    info("Plan: " + p.query(new SqlFieldsQuery("explain select P.Person.*,dep.*,org.* " + "from P.Person inner join D.Department dep ON dep.id=P.Person.depId " + "left join O.Org org ON org.id=dep.orgId")).getAll());
+    assertEquals(0,p.query(new SqlFieldsQuery("select P.Person.*,dep.*,org.* " + "from P.Person inner join D.Department dep ON dep.id=P.Person.depId " + "left join O.Org org ON org.id=dep.orgId")).getAll().size());
+  }
+  finally {
+    p.destroy();
+    d.destroy();
+    o.destroy();
+  }
+}

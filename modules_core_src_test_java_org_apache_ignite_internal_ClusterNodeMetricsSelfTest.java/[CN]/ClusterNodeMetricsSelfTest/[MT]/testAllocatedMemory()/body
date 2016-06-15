@@ -1,0 +1,20 @@
+{
+  Ignite ignite=grid();
+  final IgniteCache onHeapCache=ignite.getOrCreateCache(ON_HEAP_TIERED_NAME);
+  final IgniteCache offHeapCache=ignite.getOrCreateCache(OFF_HEAP_VALUE_NAME);
+  long prevTieredOffHeapSize=onHeapCache.metrics().getOffHeapAllocatedSize();
+  long prevValuesOffHeapSize=offHeapCache.metrics().getOffHeapAllocatedSize();
+  assertEquals(0,prevTieredOffHeapSize);
+  assertEquals(0,prevValuesOffHeapSize);
+  long prevClusterNonHeapMemoryUsed=ignite.cluster().metrics().getNonHeapMemoryUsed();
+  fillCache(onHeapCache);
+  assertTrue(onHeapCache.metrics().getOffHeapAllocatedSize() > (MAX_VALS_AMOUNT - 5) * VAL_SIZE + prevTieredOffHeapSize);
+  assertEquals(0,offHeapCache.metrics().getOffHeapAllocatedSize());
+  assertTrue(prevClusterNonHeapMemoryUsed < ignite.cluster().metrics().getNonHeapMemoryUsed());
+  prevClusterNonHeapMemoryUsed=ignite.cluster().metrics().getNonHeapMemoryUsed();
+  prevTieredOffHeapSize=onHeapCache.metrics().getOffHeapAllocatedSize();
+  fillCache(offHeapCache);
+  assertTrue(offHeapCache.metrics().getOffHeapAllocatedSize() > (MAX_VALS_AMOUNT - 5) * VAL_SIZE);
+  assertEquals(prevTieredOffHeapSize,onHeapCache.metrics().getOffHeapAllocatedSize());
+  assertTrue((MAX_VALS_AMOUNT - 5) * VAL_SIZE + prevClusterNonHeapMemoryUsed < ignite.cluster().metrics().getNonHeapMemoryUsed());
+}
