@@ -58,8 +58,15 @@
             return new IgfsCreateResult(newInfo,secondaryOut);
           }
  else {
-            if (secondaryCtx != null)             secondaryOut=secondaryCtx.create();
-            IgfsPathsCreateResult res=createFile(pathIds,lockInfos,dirProps,fileProps,blockSize,affKey,evictExclude,secondaryCtx);
+            T1<OutputStream> secondaryOutHolder=null;
+            if (secondaryCtx != null)             secondaryOutHolder=new T1<>();
+            IgfsPathsCreateResult res;
+            try {
+              res=createFile(pathIds,lockInfos,dirProps,fileProps,blockSize,affKey,evictExclude,secondaryCtx,secondaryOutHolder);
+            }
+  finally {
+              if (secondaryOutHolder != null)               secondaryOut=secondaryOutHolder.get();
+            }
             if (res == null)             continue;
             tx.commit();
             generateCreateEvents(res.createdPaths(),true);
