@@ -7,6 +7,7 @@
     A.notNullOrEmpty(zkConnectionString,String.format("ZooKeeper URL (or system property %s) cannot be null " + "or empty if a CuratorFramework object is not provided explicitly",PROP_ZK_CONNECTION_STRING));
     curator=CuratorFrameworkFactory.newClient(zkConnectionString,retryPolicy);
   }
-  if (curator.getState() != CuratorFrameworkState.STARTED)   curator.start();
+  if (curator.getState() == CuratorFrameworkState.LATENT)   curator.start();
+  A.ensure(curator.getState() == CuratorFrameworkState.STARTED,"CuratorFramework can't be started.");
   discovery=ServiceDiscoveryBuilder.builder(IgniteInstanceDetails.class).client(curator).basePath(basePath).serializer(new JsonInstanceSerializer<>(IgniteInstanceDetails.class)).build();
 }

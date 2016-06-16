@@ -1,0 +1,14 @@
+{
+  Ignite ignite=grid(0);
+  ClusterGroup srvsGrp=ignite.cluster().forServers();
+  int numOfSrvs=srvsGrp.nodes().size();
+  ignite.destroyCache("testCache");
+  IgniteCache<Object,Object> cache=ignite.createCache("testCache");
+  for (  ClusterNode node : srvsGrp.nodes())   cache.put(String.valueOf(node.id()),0);
+  for (int i=0; i < 500; i++) {
+    IgniteCountDownLatch latch1=createLatch1(ignite,numOfSrvs);
+    IgniteCountDownLatch latch2=createLatch2(ignite,numOfSrvs);
+    ignite.compute(srvsGrp).broadcast(new IgniteRunnableJob(latch1,latch2,i));
+    assertTrue(latch2.await(10000));
+  }
+}

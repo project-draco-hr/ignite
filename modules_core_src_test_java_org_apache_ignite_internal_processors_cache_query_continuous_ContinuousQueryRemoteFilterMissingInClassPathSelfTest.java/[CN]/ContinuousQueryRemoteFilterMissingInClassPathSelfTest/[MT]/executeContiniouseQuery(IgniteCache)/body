@@ -1,0 +1,13 @@
+{
+  ContinuousQuery<Integer,String> qry=new ContinuousQuery<>();
+  qry.setLocalListener(new CacheEntryUpdatedListener<Integer,String>(){
+    @Override public void onUpdated(    Iterable<CacheEntryEvent<? extends Integer,? extends String>> events) throws CacheEntryListenerException {
+      for (      CacheEntryEvent<? extends Integer,? extends String> event : events)       System.out.println("Key = " + event.getKey() + ", Value = "+ event.getValue());
+    }
+  }
+);
+  final Class<CacheEntryEventSerializableFilter> remoteFilterClass=(Class<CacheEntryEventSerializableFilter>)ldr.loadClass("org.apache.ignite.tests.p2p.CacheDeploymentCacheEntryEventSerializableFilter");
+  qry.setRemoteFilterFactory(new ClassFilterFactory(remoteFilterClass));
+  cache.query(qry);
+  for (int i=0; i < 100; i++)   cache.put(i,"Message " + i);
+}
