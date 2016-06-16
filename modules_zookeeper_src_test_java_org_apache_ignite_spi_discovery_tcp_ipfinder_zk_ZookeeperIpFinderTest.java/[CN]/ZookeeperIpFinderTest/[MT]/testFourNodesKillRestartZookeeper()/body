@@ -12,18 +12,15 @@
   zkCurator.blockUntilConnected();
   assertEquals(4,zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size());
   stopAllGrids();
-  boolean wait=GridTestUtils.waitForCondition(new GridAbsPredicate(){
+  assertTrue(GridTestUtils.waitForCondition(new GridAbsPredicate(){
     @Override public boolean apply(){
       try {
-        return zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size() == 0;
+        return 0 == zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size();
       }
  catch (      Exception e) {
-        fail("Unexpected error: ");
-        return true;
+        return false;
       }
     }
   }
-,2 * 60000);
-  assertTrue(wait);
-  assertEquals(0,zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size());
+,20000));
 }
