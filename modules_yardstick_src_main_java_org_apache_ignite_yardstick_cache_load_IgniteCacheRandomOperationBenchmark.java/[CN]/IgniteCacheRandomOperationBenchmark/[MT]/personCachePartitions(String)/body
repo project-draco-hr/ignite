@@ -1,17 +1,17 @@
 {
-  Affinity affinity=ignite().affinity(cacheName);
-  List<Integer> randmPartitions=new ArrayList<>(10);
-  if (affinity.partitions() <= SCAN_QUERY_PARTITION_AMOUNT)   for (int i=0; i < affinity.partitions(); i++)   randmPartitions.add(i);
+  Affinity<Object> affinity=ignite().affinity(cacheName);
+  List<Integer> rndParts=new ArrayList<>(10);
+  if (affinity.partitions() <= SCAN_QUERY_PARTITION_AMOUNT)   for (int i=0; i < affinity.partitions(); i++)   rndParts.add(i);
  else {
     for (int i=0; i < SCAN_QUERY_PARTITION_AMOUNT; i++) {
       int partNum;
       do       partNum=nextRandom(affinity.partitions());
- while (randmPartitions.contains(partNum));
-      randmPartitions.add(partNum);
+ while (rndParts.contains(partNum));
+      rndParts.add(partNum);
     }
   }
-  Collections.sort(randmPartitions);
-  Map<Integer,ClusterNode> partPerNodes=affinity.mapPartitionsToNodes(randmPartitions);
+  Collections.sort(rndParts);
+  Map<Integer,ClusterNode> partPerNodes=affinity.mapPartitionsToNodes(rndParts);
   Map<UUID,List<Integer>> nodesToPart=new HashMap<>();
   for (  Map.Entry<Integer,ClusterNode> entry : partPerNodes.entrySet()) {
     List<Integer> nodeParts=nodesToPart.get(entry.getValue().id());
