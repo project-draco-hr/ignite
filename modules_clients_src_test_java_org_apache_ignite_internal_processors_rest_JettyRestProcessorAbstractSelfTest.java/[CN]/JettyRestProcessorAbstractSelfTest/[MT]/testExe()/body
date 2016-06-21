@@ -1,29 +1,21 @@
 {
   String ret=content(F.asMap("cmd",GridRestCommand.EXE.key()));
-  assertNotNull(ret);
-  assertTrue(!ret.isEmpty());
   info("Exe command result: " + ret);
-  jsonEquals(ret,pattern("null",false));
+  assertResponseContainsError(ret);
   ret=content(F.asMap("cmd",GridRestCommand.EXE.key(),"name","UNKNOWN_TASK"));
-  assertNotNull(ret);
-  assertTrue(!ret.isEmpty());
   info("Exe command result: " + ret);
-  jsonEquals(ret,pattern("null",false));
+  assertResponseContainsError(ret);
   grid(0).compute().localDeployTask(TestTask1.class,TestTask1.class.getClassLoader());
   grid(0).compute().localDeployTask(TestTask2.class,TestTask2.class.getClassLoader());
   ret=content(F.asMap("cmd",GridRestCommand.EXE.key(),"name",TestTask1.class.getName()));
-  assertNotNull(ret);
-  assertTrue(!ret.isEmpty());
   info("Exe command result: " + ret);
-  jsonEquals(ret,pattern("\\{.+\\}",true));
+  JsonNode res=jsonTaskResult(ret);
+  assertTrue(res.isNull());
   ret=content(F.asMap("cmd",GridRestCommand.EXE.key(),"name",TestTask2.class.getName()));
-  assertNotNull(ret);
-  assertTrue(!ret.isEmpty());
   info("Exe command result: " + ret);
-  jsonEquals(ret,pattern("\\{.+" + TestTask2.RES + ".+\\}",true));
+  res=jsonTaskResult(ret);
+  assertEquals(TestTask2.RES,res.asText());
   ret=content(F.asMap("cmd",GridRestCommand.RESULT.key()));
-  assertNotNull(ret);
-  assertTrue(!ret.isEmpty());
   info("Exe command result: " + ret);
-  jsonEquals(ret,pattern("null",false));
+  assertResponseContainsError(ret);
 }

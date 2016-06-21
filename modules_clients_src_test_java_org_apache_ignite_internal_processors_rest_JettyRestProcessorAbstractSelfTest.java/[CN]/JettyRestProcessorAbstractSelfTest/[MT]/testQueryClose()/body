@@ -5,20 +5,15 @@
   params.put("type","Person");
   params.put("pageSize","1");
   params.put("cacheName","person");
-  params.put("qry",URLEncoder.encode(qry));
+  params.put("qry",URLEncoder.encode(qry,CHARSET));
   params.put("arg1","1000");
   params.put("arg2","2000");
   String ret=content(params);
-  assertNotNull(ret);
-  assertTrue(!ret.isEmpty());
-  JSONObject json=JSONObject.fromObject(ret);
-  List items=(List)((Map)json.get("response")).get("items");
-  assertEquals(1,items.size());
+  JsonNode res=jsonResponse(ret);
+  assertEquals(1,res.get("items").size());
   assertTrue(queryCursorFound());
-  Integer qryId=(Integer)((Map)json.get("response")).get("queryId");
-  assertNotNull(qryId);
-  ret=content(F.asMap("cmd",GridRestCommand.CLOSE_SQL_QUERY.key(),"cacheName","person","qryId",String.valueOf(qryId)));
-  assertNotNull(ret);
-  assertTrue(!ret.isEmpty());
+  assertFalse(res.get("queryId").isNull());
+  String qryId=res.get("queryId").asText();
+  content(F.asMap("cmd",GridRestCommand.CLOSE_SQL_QUERY.key(),"cacheName","person","qryId",qryId));
   assertFalse(queryCursorFound());
 }
