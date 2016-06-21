@@ -1,17 +1,16 @@
 {
   String ret=content(F.asMap("cmd",GridRestCommand.NODE.key(),"attr","true","mtr","true","id",grid(0).localNode().id().toString()));
-  assertNotNull(ret);
-  assertTrue(!ret.isEmpty());
   info("Topology command result: " + ret);
-  jsonEquals(ret,pattern("\\{.+\\}",true));
+  JsonNode res=jsonResponse(ret);
+  assertTrue(res.get("attributes").isObject());
+  assertTrue(res.get("metrics").isObject());
   ret=content(F.asMap("cmd",GridRestCommand.NODE.key(),"attr","false","mtr","false","ip",LOC_HOST));
-  assertNotNull(ret);
-  assertTrue(!ret.isEmpty());
   info("Topology command result: " + ret);
-  jsonEquals(ret,pattern("\\{.+\\}",true));
+  res=jsonResponse(ret);
+  assertTrue(res.get("attributes").isNull());
+  assertTrue(res.get("metrics").isNull());
   ret=content(F.asMap("cmd",GridRestCommand.NODE.key(),"attr","false","mtr","false","ip",LOC_HOST,"id",UUID.randomUUID().toString()));
-  assertNotNull(ret);
-  assertTrue(!ret.isEmpty());
   info("Topology command result: " + ret);
-  jsonEquals(ret,pattern("null",true));
+  res=jsonResponse(ret);
+  assertTrue(res.isNull());
 }

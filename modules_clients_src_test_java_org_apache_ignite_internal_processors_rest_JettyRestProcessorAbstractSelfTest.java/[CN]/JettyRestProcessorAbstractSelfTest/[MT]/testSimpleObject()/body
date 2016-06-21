@@ -1,0 +1,14 @@
+{
+  SimplePerson p=new SimplePerson(1,"Test",java.sql.Date.valueOf("1977-01-26"),1000.55,39,"CIO",25);
+  jcache().put("simplePersonKey",p);
+  String ret=content(F.asMap("cmd",GridRestCommand.CACHE_GET.key(),"key","simplePersonKey"));
+  info("Get command result: " + ret);
+  JsonNode res=jsonCacheOperationResponse(ret,false);
+  assertEquals(res.get("id").asInt(),p.id);
+  assertEquals(res.get("name").asText(),p.name);
+  assertEquals(res.get("birthday").asText(),p.birthday.toString());
+  assertEquals(res.get("salary").asDouble(),p.salary);
+  assertNull(res.get("age"));
+  assertNull(res.get("post"));
+  assertNull(res.get("bonus"));
+}

@@ -1,5 +1,14 @@
 {
-  JSON json=JSONSerializer.toJSON(arg);
-  List list=json.isArray() ? JSONArray.toList((JSONArray)json,String.class,new JsonConfig()) : null;
-  return delegate.split(gridSize,list);
+  try {
+    JsonNode json=JSON_MAPPER.readTree(arg);
+    List<String> list=null;
+    if (json.isArray()) {
+      list=new ArrayList<>();
+      for (      JsonNode child : json)       list.add(child.asText());
+    }
+    return delegate.split(gridSize,list);
+  }
+ catch (  IOException e) {
+    throw new IgniteException(e);
+  }
 }

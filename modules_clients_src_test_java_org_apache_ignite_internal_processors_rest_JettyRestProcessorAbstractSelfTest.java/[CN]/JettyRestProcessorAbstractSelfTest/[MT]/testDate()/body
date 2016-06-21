@@ -1,0 +1,18 @@
+{
+  java.util.Date utilDate=new java.util.Date();
+  DateFormat formatter=DateFormat.getDateTimeInstance(DateFormat.DEFAULT,DateFormat.DEFAULT,Locale.US);
+  String date=formatter.format(utilDate);
+  jcache().put("utilDateKey",utilDate);
+  String ret=content(F.asMap("cmd",GridRestCommand.CACHE_GET.key(),"key","utilDateKey"));
+  info("Get command result: " + ret);
+  assertCacheOperation(ret,date);
+  java.sql.Date sqlDate=new java.sql.Date(utilDate.getTime());
+  jcache().put("sqlDateKey",sqlDate);
+  ret=content(F.asMap("cmd",GridRestCommand.CACHE_GET.key(),"key","sqlDateKey"));
+  info("Get SQL result: " + ret);
+  assertCacheOperation(ret,sqlDate.toString());
+  jcache().put("timestampKey",new java.sql.Timestamp(utilDate.getTime()));
+  ret=content(F.asMap("cmd",GridRestCommand.CACHE_GET.key(),"key","timestampKey"));
+  info("Get timestamp: " + ret);
+  assertCacheOperation(ret,date);
+}
