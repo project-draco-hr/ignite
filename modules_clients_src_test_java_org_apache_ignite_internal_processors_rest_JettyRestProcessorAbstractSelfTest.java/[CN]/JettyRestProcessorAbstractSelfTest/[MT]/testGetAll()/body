@@ -1,9 +1,9 @@
 {
-  jcache().put("getKey1","getVal1");
-  jcache().put("getKey2","getVal2");
+  final Map<String,String> entries=F.asMap("getKey1","getVal1","getKey2","getVal2");
+  jcache().putAll(entries);
   String ret=content(F.asMap("cmd",GridRestCommand.CACHE_GET_ALL.key(),"k1","getKey1","k2","getKey2"));
-  assertNotNull(ret);
-  assertTrue(!ret.isEmpty());
   info("Get all command result: " + ret);
-  jsonEquals(ret,cacheBulkPattern("\\{\\\"getKey[12]\\\":\\\"getVal[12]\\\"\\,\\\"getKey[12]\\\":\\\"getVal[12]\\\"\\}",true));
+  JsonNode res=jsonCacheOperationResponse(ret,true);
+  assertTrue(res.isObject());
+  assertTrue(entries.equals(JSON_MAPPER.treeToValue(res,Map.class)));
 }

@@ -1,0 +1,20 @@
+{
+  SB sb=new SB(TEST_URL);
+  for (  Map.Entry<String,String> e : params.entrySet())   sb.a(e.getKey()).a('=').a(e.getValue()).a('&');
+  String qry=sb.toString();
+  try {
+    URL url=new URL(qry);
+    URLConnection conn=url.openConnection();
+    conn.setRequestProperty("Accept-Charset",CHARSET);
+    InputStream in=conn.getInputStream();
+    StringBuilder buf=new StringBuilder(256);
+    try (LineNumberReader rdr=new LineNumberReader(new InputStreamReader(in,"UTF-8"))){
+      for (String line=rdr.readLine(); line != null; line=rdr.readLine())       buf.append(line);
+    }
+     return buf.toString();
+  }
+ catch (  IOException e) {
+    error("Failed to send HTTP request: " + TEST_URL + "?"+ qry,e);
+    throw e;
+  }
+}
