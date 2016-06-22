@@ -1,0 +1,16 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi discoSpi=new TcpDiscoverySpi();
+  discoSpi.setIpFinder(IP_FINDER);
+  cfg.setDiscoverySpi(discoSpi);
+  cfg.setAddressResolver(new AddressResolver(){
+    @Override public Collection<InetSocketAddress> getExternalAddresses(    InetSocketAddress addr) throws IgniteCheckedException {
+      Set<InetSocketAddress> set=new HashSet<>();
+      set.add(addr);
+      set.add(gridName.contains("0") ? addr0 : addr1);
+      return set;
+    }
+  }
+);
+  return cfg;
+}
