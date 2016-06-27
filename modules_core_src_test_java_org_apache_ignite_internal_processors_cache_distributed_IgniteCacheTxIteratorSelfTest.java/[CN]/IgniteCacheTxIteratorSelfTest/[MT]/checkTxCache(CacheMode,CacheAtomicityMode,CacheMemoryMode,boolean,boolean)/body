@@ -1,0 +1,28 @@
+{
+  final Ignite ignite=grid(0);
+  final CacheConfiguration<String,TestClass> ccfg=cacheConfiguration(mode,atomMode,memMode,nearEnabled,useEvicPlc);
+  final IgniteCache<String,TestClass> cache=ignite.createCache(ccfg);
+  info("Checking cache [mode=" + mode + ", atomMode="+ atomMode+ ", memMode="+ memMode+ ", near="+ nearEnabled+ ']');
+  try {
+    for (int i=0; i < 30; i++) {
+      final TestClass val=new TestClass("data");
+      final String key="key-" + i;
+      cache.put(key,val);
+      assertEquals(i + 1,cache.size());
+      for (      TransactionIsolation iso : TransactionIsolation.values()) {
+        for (        TransactionConcurrency con : TransactionConcurrency.values()) {
+          try (Transaction transaction=ignite.transactions().txStart(con,iso)){
+            assertEquals(val,cache.get(key));
+            transaction.commit();
+          }
+           int cnt=iterateOverKeys(cache);
+          assertEquals("Failed [con=" + con + ", iso="+ iso+ ']',i + 1,cnt);
+          assertEquals("Failed [con=" + con + ", iso="+ iso+ ']',i + 1,cache.size());
+        }
+      }
+    }
+  }
+  finally {
+    grid(0).destroyCache(CACHE_NAME);
+  }
+}

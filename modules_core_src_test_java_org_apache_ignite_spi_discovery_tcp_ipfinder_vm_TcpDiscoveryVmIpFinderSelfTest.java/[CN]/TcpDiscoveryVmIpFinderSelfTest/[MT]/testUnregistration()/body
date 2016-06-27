@@ -1,0 +1,31 @@
+{
+  Ignition.start(config("server1",false,false));
+  int srvSize=IP_FINDER.getRegisteredAddresses().size();
+  Ignition.start(config("server2",false,false));
+  Ignition.start(config("client1",true,false));
+  assertEquals(2 * srvSize,IP_FINDER.getRegisteredAddresses().size());
+  Ignition.start(config("client2",true,false));
+  Ignition.start(config("client3",true,false));
+  assertEquals(2 * srvSize,IP_FINDER.getRegisteredAddresses().size());
+  Ignition.start(config("client4",true,true));
+  assertEquals(3 * srvSize,IP_FINDER.getRegisteredAddresses().size());
+  Ignition.stop("client1",true);
+  Ignition.stop("client2",true);
+  assertEquals(3 * srvSize,IP_FINDER.getRegisteredAddresses().size());
+  Ignition.stop("client4",true);
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return 2 == G.allGrids().size();
+    }
+  }
+,10000);
+  Ignition.stop("server1",true);
+  Ignition.stop("server2",true);
+  GridTestUtils.waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return 0 == G.allGrids().size();
+    }
+  }
+,10000);
+  assertTrue(3 * srvSize >= IP_FINDER.getRegisteredAddresses().size());
+}

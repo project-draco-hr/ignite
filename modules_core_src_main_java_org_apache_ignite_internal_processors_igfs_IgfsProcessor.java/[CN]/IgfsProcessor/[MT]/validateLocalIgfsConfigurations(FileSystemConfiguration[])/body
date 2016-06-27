@@ -19,14 +19,6 @@
       if (!(tcpPort >= MIN_TCP_PORT && tcpPort <= MAX_TCP_PORT))       throw new IgniteCheckedException("IGFS endpoint TCP port is out of range [" + MIN_TCP_PORT + ".."+ MAX_TCP_PORT+ "]: "+ tcpPort);
       if (ipcCfg.getThreadCount() <= 0)       throw new IgniteCheckedException("IGFS endpoint thread count must be positive: " + ipcCfg.getThreadCount());
     }
-    long maxSpaceSize=cfg.getMaxSpaceSize();
-    if (maxSpaceSize > 0) {
-      long maxHeapSize=Runtime.getRuntime().maxMemory();
-      long offHeapSize=dataCacheCfg.getOffHeapMaxMemory();
-      if (offHeapSize < 0 && maxSpaceSize > maxHeapSize)       throw new IgniteCheckedException("Maximum IGFS space size cannot be greater that size of available heap " + "memory [maxHeapSize=" + maxHeapSize + ", maxIgfsSpaceSize="+ maxSpaceSize+ ']');
- else       if (offHeapSize > 0 && maxSpaceSize > maxHeapSize + offHeapSize)       throw new IgniteCheckedException("Maximum IGFS space size cannot be greater than size of available heap " + "memory and offheap storage [maxHeapSize=" + maxHeapSize + ", offHeapSize="+ offHeapSize+ ", maxIgfsSpaceSize="+ maxSpaceSize+ ']');
-    }
-    if (cfg.getMaxSpaceSize() == 0 && dataCacheCfg.getMemoryMode() == OFFHEAP_VALUES)     U.warn(log,"IGFS max space size is not specified but data cache values are stored off-heap (max " + "space will be limited to 80% of max JVM heap size): " + cfg.getName());
     boolean secondary=cfg.getDefaultMode() == PROXY;
     if (cfg.getPathModes() != null) {
       for (      Map.Entry<String,IgfsMode> mode : cfg.getPathModes().entrySet()) {
