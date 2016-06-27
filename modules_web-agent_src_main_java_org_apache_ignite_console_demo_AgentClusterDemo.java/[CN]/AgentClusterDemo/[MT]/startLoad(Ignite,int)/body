@@ -6,9 +6,21 @@
   cachePool.scheduleWithFixedDelay(new Runnable(){
     @Override public void run(){
       try {
+        for (        String cacheName : ignite.cacheNames()) {
+          if (!DEMO_CACHES.contains(cacheName)) {
+            IgniteCache<Integer,String> otherCache=ignite.cache(cacheName);
+            if (otherCache != null) {
+              for (int i=0, n=1; i < cnt; i++, n++) {
+                Integer key=rnd.nextInt(1000);
+                String val=otherCache.get(key);
+                if (val == null)                 otherCache.put(key,"other-" + key);
+ else                 if (rnd.nextInt(100) < 30)                 otherCache.remove(key);
+              }
+            }
+          }
+        }
         IgniteCache<Integer,Employee> cacheEmployee=ignite.cache(EMPLOYEE_CACHE_NAME);
-        if (cacheEmployee == null)         return;
-        try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
+        if (cacheEmployee != null)         try (Transaction tx=ignite.transactions().txStart(PESSIMISTIC,REPEATABLE_READ)){
           for (int i=0, n=1; i < cnt; i++, n++) {
             Integer id=rnd.nextInt(EMPL_CNT);
             Integer depId=rnd.nextInt(DEP_CNT);
