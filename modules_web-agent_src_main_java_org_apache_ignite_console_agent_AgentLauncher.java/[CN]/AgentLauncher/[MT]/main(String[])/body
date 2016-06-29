@@ -31,7 +31,7 @@
   System.out.println("Agent configuration:");
   System.out.println(cfg);
   System.out.println();
-  if (cfg.token() == null) {
+  if (cfg.tokens() == null) {
     String webHost;
     try {
       webHost=new URI(cfg.serverUri()).getHost();
@@ -42,8 +42,8 @@
     }
     System.out.println("Security token is required to establish connection to the web console.");
     System.out.println(String.format("It is available on the Profile page: https://%s/profile",webHost));
-    System.out.print("Enter security token: ");
-    cfg.token(System.console().readLine().trim());
+    System.out.print("Enter security tokens separated by comma: ");
+    cfg.tokens(Arrays.asList(System.console().readLine().trim().split(",")));
   }
   final RestHandler restHnd=new RestHandler(cfg);
   try {
@@ -70,7 +70,7 @@
           log.info("Connection established.");
           JSONObject authMsg=new JSONObject();
           try {
-            authMsg.put("token",cfg.token());
+            authMsg.put("tokens",cfg.tokens());
             String clsName=AgentLauncher.class.getSimpleName() + ".class";
             String clsPath=AgentLauncher.class.getResource(clsName).toString();
             if (clsPath.startsWith("jar")) {
@@ -83,7 +83,7 @@
             client.emit("agent:auth",authMsg,new Ack(){
               @Override public void call(              Object... args){
                 if (args != null && args.length > 0) {
-                  onDisconnect.call("Authentication failed: " + args[0]);
+                  onDisconnect.call(args);
                   System.exit(1);
                 }
                 log.info("Authentication success.");
@@ -100,7 +100,12 @@
 ;
       DatabaseHandler dbHnd=new DatabaseHandler(cfg);
       final CountDownLatch latch=new CountDownLatch(1);
-      client.on(EVENT_CONNECTING,onConnecting).on(EVENT_CONNECT,onConnect).on(EVENT_CONNECT_ERROR,onError).on(EVENT_RECONNECTING,onConnecting).on(EVENT_NODE_REST,restHnd).on(EVENT_SCHEMA_IMPORT_DRIVERS,dbHnd.availableDriversListener()).on(EVENT_SCHEMA_IMPORT_SCHEMAS,dbHnd.schemasListener()).on(EVENT_SCHEMA_IMPORT_METADATA,dbHnd.metadataListener()).on(EVENT_ERROR,onError).on(EVENT_DISCONNECT,onDisconnect).on(EVENT_AGENT_CLOSE,new Emitter.Listener(){
+      client.on(EVENT_CONNECTING,onConnecting).on(EVENT_CONNECT,onConnect).on(EVENT_CONNECT_ERROR,onError).on(EVENT_RECONNECTING,onConnecting).on(EVENT_NODE_REST,restHnd).on(EVENT_SCHEMA_IMPORT_DRIVERS,dbHnd.availableDriversListener()).on(EVENT_SCHEMA_IMPORT_SCHEMAS,dbHnd.schemasListener()).on(EVENT_SCHEMA_IMPORT_METADATA,dbHnd.metadataListener()).on(EVENT_ERROR,onError).on(EVENT_DISCONNECT,onDisconnect).on(EVENT_AGENT_WARNING,new Emitter.Listener(){
+        @Override public void call(        Object... args){
+          log.warn(args[0]);
+        }
+      }
+).on(EVENT_AGENT_CLOSE,new Emitter.Listener(){
         @Override public void call(        Object... args){
           onDisconnect.call(args);
           client.off();
