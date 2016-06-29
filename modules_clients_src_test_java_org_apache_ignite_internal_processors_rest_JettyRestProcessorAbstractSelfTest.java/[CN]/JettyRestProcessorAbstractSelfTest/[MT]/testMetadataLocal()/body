@@ -1,7 +1,11 @@
 {
   IgniteCacheProxy<?,?> cache=F.first(grid(0).context().cache().publicCaches());
   assertNotNull("Should have configured public cache!",cache);
-  Collection<GridCacheSqlMetadata> meta=cache.context().queries().sqlMetadata();
-  testMetadata(meta);
-  testMetadataForVoidCacheName(meta);
+  Collection<GridCacheSqlMetadata> metas=cache.context().queries().sqlMetadata();
+  String ret=content(F.asMap("cmd",GridRestCommand.CACHE_METADATA.key()));
+  info("Cache metadata: " + ret);
+  testMetadata(metas,ret);
+  ret=content(F.asMap("cmd",GridRestCommand.CACHE_METADATA.key(),"cacheName","person"));
+  info("Cache metadata with cacheName parameter: " + ret);
+  testMetadata(metas,ret);
 }
