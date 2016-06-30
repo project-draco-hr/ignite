@@ -1,0 +1,13 @@
+{
+  startGrids(3);
+  ServiceConfiguration svcCfg=new ServiceConfiguration();
+  svcCfg.setName("DummyService");
+  svcCfg.setTotalCount(10);
+  svcCfg.setMaxPerNodeCount(1);
+  svcCfg.setService(new DummyService());
+  ignite(0).services().deploy(svcCfg);
+  for (int i=0; i < 3; i++)   assertEquals(42,serviceProxy(ignite(i)).foo());
+  for (int i=0; i < 3; i++)   startGrid(i + 3);
+  for (int i=0; i < 3; i++)   stopGrid(i);
+  for (int i=0; i < 3; i++)   assertEquals(42,serviceProxy(ignite(i + 3)).foo());
+}
