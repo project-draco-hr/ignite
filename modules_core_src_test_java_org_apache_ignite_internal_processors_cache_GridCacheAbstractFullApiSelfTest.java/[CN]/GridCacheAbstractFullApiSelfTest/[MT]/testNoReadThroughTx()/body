@@ -1,15 +1,14 @@
 {
-  if (isMultiJvm())   fail("https://issues.apache.org/jira/browse/IGNITE-1088");
   String key="writeThroughKey";
   IgniteCache<String,Integer> cache=jcache(0);
-  resetStore();
+  storeStgy.resetStore();
   cache.put(key,1);
-  putToStore(key,2);
+  storeStgy.putToStore(key,2);
   try (final Transaction transaction=grid(0).transactions().txStart()){
     Integer old=cache.get(key);
     assertEquals((Integer)1,old);
     cache.put(key,2);
     transaction.commit();
   }
-   assertEquals(0,reads.get());
+   assertEquals(0,storeStgy.getReads());
 }

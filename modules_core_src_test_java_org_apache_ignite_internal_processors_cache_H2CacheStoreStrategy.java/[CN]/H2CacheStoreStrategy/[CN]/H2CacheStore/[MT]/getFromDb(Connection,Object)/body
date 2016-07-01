@@ -1,0 +1,14 @@
+{
+  PreparedStatement stmt=null;
+  ResultSet rs=null;
+  try {
+    stmt=conn.prepareStatement("select v from CACHE where k = ?");
+    stmt.setBinaryStream(1,new ByteArrayInputStream(H2CacheStore.serialize(key)));
+    rs=stmt.executeQuery();
+    return rs.next() ? H2CacheStore.deserialize(rs.getBytes(1)) : null;
+  }
+  finally {
+    U.closeQuiet(rs);
+    U.closeQuiet(stmt);
+  }
+}
