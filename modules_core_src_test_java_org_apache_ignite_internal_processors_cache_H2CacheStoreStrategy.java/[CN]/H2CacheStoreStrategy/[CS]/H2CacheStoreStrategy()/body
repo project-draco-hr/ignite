@@ -1,0 +1,14 @@
+{
+  try {
+    Server.createTcpServer().start();
+    dataSrc=H2CacheStoreSessionListenerFactory.createDataSource();
+    try (Connection conn=connection()){
+      RunScript.execute(conn,new StringReader(CREATE_CACHE_TABLE));
+      RunScript.execute(conn,new StringReader(CREATE_STATS_TABLES));
+      RunScript.execute(conn,new StringReader(POPULATE_STATS_TABLE));
+    }
+   }
+ catch (  SQLException e) {
+    throw new IgniteCheckedException(e);
+  }
+}

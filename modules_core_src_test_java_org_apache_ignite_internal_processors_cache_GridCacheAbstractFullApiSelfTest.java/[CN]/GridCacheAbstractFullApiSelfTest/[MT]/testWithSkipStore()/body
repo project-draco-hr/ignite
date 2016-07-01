@@ -1,9 +1,8 @@
 {
-  if (isMultiJvm())   fail("https://issues.apache.org/jira/browse/IGNITE-1088");
   IgniteCache<String,Integer> cache=grid(0).cache(null);
   IgniteCache<String,Integer> cacheSkipStore=cache.withSkipStore();
   List<String> keys=primaryKeysForCache(cache,10);
-  for (int i=0; i < keys.size(); ++i)   putToStore(keys.get(i),i);
+  for (int i=0; i < keys.size(); ++i)   storeStgy.putToStore(keys.get(i),i);
   assertFalse(cacheSkipStore.iterator().hasNext());
   for (  String key : keys) {
     assertNull(cacheSkipStore.get(key));
@@ -23,49 +22,49 @@
     String key=keys.get(i);
     assertNotNull(cacheSkipStore.get(key));
     assertNotNull(cache.get(key));
-    assertEquals(i,map.get(key));
+    assertEquals(i,storeStgy.getFromStore(key));
   }
   for (int i=0; i < keys.size(); ++i) {
     String key=keys.get(i);
     Integer val1=-1;
     cacheSkipStore.put(key,val1);
-    assertEquals(i,map.get(key));
+    assertEquals(i,storeStgy.getFromStore(key));
     assertEquals(val1,cacheSkipStore.get(key));
     Integer val2=-2;
     assertEquals(val1,cacheSkipStore.invoke(key,new SetValueProcessor(val2)));
-    assertEquals(i,map.get(key));
+    assertEquals(i,storeStgy.getFromStore(key));
     assertEquals(val2,cacheSkipStore.get(key));
   }
   for (  String key : keys) {
     cacheSkipStore.remove(key);
     assertNull(cacheSkipStore.get(key));
     assertNotNull(cache.get(key));
-    assertTrue(map.containsKey(key));
+    assertTrue(storeStgy.isInStore(key));
   }
   for (  String key : keys) {
     cache.remove(key);
     assertNull(cacheSkipStore.get(key));
     assertNull(cache.get(key));
-    assertFalse(map.containsKey(key));
-    map.put(key,0);
+    assertFalse(storeStgy.isInStore(key));
+    storeStgy.putToStore(key,0);
     Integer val=-1;
     assertNull(cacheSkipStore.invoke(key,new SetValueProcessor(val)));
-    assertEquals(0,map.get(key));
+    assertEquals(0,storeStgy.getFromStore(key));
     assertEquals(val,cacheSkipStore.get(key));
     cache.remove(key);
-    map.put(key,0);
+    storeStgy.putToStore(key,0);
     assertTrue(cacheSkipStore.putIfAbsent(key,val));
     assertEquals(val,cacheSkipStore.get(key));
-    assertEquals(0,map.get(key));
+    assertEquals(0,storeStgy.getFromStore(key));
     cache.remove(key);
-    map.put(key,0);
+    storeStgy.putToStore(key,0);
     assertNull(cacheSkipStore.getAndPut(key,val));
     assertEquals(val,cacheSkipStore.get(key));
-    assertEquals(0,map.get(key));
+    assertEquals(0,storeStgy.getFromStore(key));
     cache.remove(key);
   }
   assertFalse(cacheSkipStore.iterator().hasNext());
-  assertTrue(map.size() == 0);
+  assertTrue(storeStgy.getStoreSize() == 0);
   assertTrue(cache.size(ALL) == 0);
   Map<String,Integer> data=new LinkedHashMap<>();
   for (int i=0; i < keys.size(); i++)   data.put(keys.get(i),i);
@@ -73,55 +72,55 @@
   for (  String key : keys) {
     assertNotNull(cacheSkipStore.get(key));
     assertNotNull(cache.get(key));
-    assertFalse(map.containsKey(key));
+    assertFalse(storeStgy.isInStore(key));
   }
   cache.putAll(data);
   for (  String key : keys) {
     assertNotNull(cacheSkipStore.get(key));
     assertNotNull(cache.get(key));
-    assertTrue(map.containsKey(key));
+    assertTrue(storeStgy.isInStore(key));
   }
   cacheSkipStore.removeAll(data.keySet());
   for (  String key : keys) {
     assertNull(cacheSkipStore.get(key));
     assertNotNull(cache.get(key));
-    assertTrue(map.containsKey(key));
+    assertTrue(storeStgy.isInStore(key));
   }
   cacheSkipStore.putAll(data);
   for (  String key : keys) {
     assertNotNull(cacheSkipStore.get(key));
     assertNotNull(cache.get(key));
-    assertTrue(map.containsKey(key));
+    assertTrue(storeStgy.isInStore(key));
   }
   cacheSkipStore.removeAll(data.keySet());
   for (  String key : keys) {
     assertNull(cacheSkipStore.get(key));
     assertNotNull(cache.get(key));
-    assertTrue(map.containsKey(key));
+    assertTrue(storeStgy.isInStore(key));
   }
   cache.removeAll(data.keySet());
   for (  String key : keys) {
     assertNull(cacheSkipStore.get(key));
     assertNull(cache.get(key));
-    assertFalse(map.containsKey(key));
+    assertFalse(storeStgy.isInStore(key));
   }
-  assertTrue(map.size() == 0);
+  assertTrue(storeStgy.getStoreSize() == 0);
   String newKey="New key";
-  assertFalse(map.containsKey(newKey));
+  assertFalse(storeStgy.isInStore(newKey));
   cacheSkipStore.put(newKey,1);
-  assertFalse(map.containsKey(newKey));
+  assertFalse(storeStgy.isInStore(newKey));
   cache.put(newKey,1);
-  assertTrue(map.containsKey(newKey));
+  assertTrue(storeStgy.isInStore(newKey));
   Iterator<Cache.Entry<String,Integer>> it=cacheSkipStore.iterator();
   assertTrue(it.hasNext());
   Cache.Entry<String,Integer> entry=it.next();
   String rmvKey=entry.getKey();
-  assertTrue(map.containsKey(rmvKey));
+  assertTrue(storeStgy.isInStore(rmvKey));
   it.remove();
   assertNull(cacheSkipStore.get(rmvKey));
-  assertTrue(map.containsKey(rmvKey));
+  assertTrue(storeStgy.isInStore(rmvKey));
   assertTrue(cache.size(ALL) == 0);
   assertTrue(cacheSkipStore.size(ALL) == 0);
   cache.remove(rmvKey);
-  assertTrue(map.size() == 0);
+  assertTrue(storeStgy.getStoreSize() == 0);
 }

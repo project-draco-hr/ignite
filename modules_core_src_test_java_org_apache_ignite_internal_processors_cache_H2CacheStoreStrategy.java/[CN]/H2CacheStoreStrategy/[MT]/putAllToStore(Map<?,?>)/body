@@ -1,0 +1,21 @@
+{
+  Connection conn=null;
+  PreparedStatement stmt=null;
+  try {
+    conn=connection();
+    stmt=conn.prepareStatement(H2CacheStore.MERGE);
+    for (    Map.Entry<?,?> e : data.entrySet()) {
+      stmt.setBinaryStream(1,new ByteArrayInputStream(H2CacheStore.serialize(e.getKey())));
+      stmt.setBinaryStream(2,new ByteArrayInputStream(H2CacheStore.serialize(e.getValue())));
+      stmt.addBatch();
+    }
+    stmt.executeBatch();
+  }
+ catch (  SQLException e) {
+    throw new IgniteException(e);
+  }
+ finally {
+    U.closeQuiet(stmt);
+    U.closeQuiet(conn);
+  }
+}

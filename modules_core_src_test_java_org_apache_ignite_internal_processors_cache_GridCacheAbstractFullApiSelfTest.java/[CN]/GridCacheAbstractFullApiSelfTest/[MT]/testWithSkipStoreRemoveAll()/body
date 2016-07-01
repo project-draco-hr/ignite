@@ -1,5 +1,4 @@
 {
-  if (isMultiJvm())   fail("https://issues.apache.org/jira/browse/IGNITE-1088");
   if (atomicityMode() == TRANSACTIONAL || (atomicityMode() == ATOMIC && nearEnabled()))   return;
   IgniteCache<String,Integer> cache=grid(0).cache(null);
   IgniteCache<String,Integer> cacheSkipStore=cache.withSkipStore();
@@ -9,18 +8,18 @@
   for (  String key : data.keySet()) {
     assertNotNull(cacheSkipStore.get(key));
     assertNotNull(cache.get(key));
-    assertTrue(map.containsKey(key));
+    assertTrue(storeStgy.isInStore(key));
   }
   cacheSkipStore.removeAll();
   for (  String key : data.keySet()) {
     assertNull(cacheSkipStore.get(key));
     assertNotNull(cache.get(key));
-    assertTrue(map.containsKey(key));
+    assertTrue(storeStgy.isInStore(key));
   }
   cache.removeAll();
   for (  String key : data.keySet()) {
     assertNull(cacheSkipStore.get(key));
     assertNull(cache.get(key));
-    assertFalse(map.containsKey(key));
+    assertFalse(storeStgy.isInStore(key));
   }
 }

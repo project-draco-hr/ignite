@@ -1,7 +1,6 @@
 {
-  if (isMultiJvm())   fail("https://issues.apache.org/jira/browse/IGNITE-1088");
   String key="writeThroughKey";
-  map.remove(key);
+  storeStgy.removeFromStore(key);
   try (final Transaction transaction=grid(0).transactions().txStart()){
     IgniteCache<String,Integer> cache=jcache(0);
     Integer old=cache.withSkipStore().get(key);
@@ -9,5 +8,5 @@
     cache.put(key,2);
     transaction.commit();
   }
-   assertEquals(2,map.get(key));
+   assertEquals(2,storeStgy.getFromStore(key));
 }
