@@ -1,2 +1,124 @@
 {
+  int ttl=1000;
+  final ExpiryPolicy expiry=new TouchedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS,ttl));
+  final IgniteCache<String,Integer> c=jcache();
+  final String key=primaryKeysForCache(fullCache(),1).get(0);
+  c.put(key,1);
+  info("Finished first put.");
+{
+    IgnitePair<Long> entryTtl=entryTtl(fullCache(),key);
+    assertEquals((Integer)1,c.get(key));
+    assertNotNull(entryTtl.get1());
+    assertNotNull(entryTtl.get2());
+    assertEquals(0,(long)entryTtl.get1());
+    assertEquals(0,(long)entryTtl.get2());
+  }
+  long startTime=System.currentTimeMillis();
+  int fullIdx=nearIdx == 0 ? 1 : 0;
+  Transaction tx=inTx ? grid(fullIdx).transactions().txStart() : null;
+  try {
+    jcache(fullIdx).withExpiryPolicy(expiry).put(key,1);
+    if (tx != null)     tx.commit();
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
+  long[] expireTimes=new long[gridCount()];
+  for (int i=0; i < gridCount(); i++) {
+    info("Checking grid: " + grid(i).localNode().id());
+    IgnitePair<Long> entryTtl=null;
+    if (grid(i).affinity(null).isPrimaryOrBackup(grid(i).localNode(),key))     entryTtl=entryTtl(jcache(i),key);
+ else     if (i == nearIdx)     entryTtl=nearEntryTtl(jcache(i),key);
+    if (entryTtl != null) {
+      assertNotNull(entryTtl.get1());
+      assertNotNull(entryTtl.get2());
+      assertEquals(ttl,(long)entryTtl.get1());
+      assertTrue(entryTtl.get2() > startTime);
+      expireTimes[i]=entryTtl.get2();
+    }
+  }
+  U.sleep(100);
+  tx=inTx ? grid(fullIdx).transactions().txStart() : null;
+  try {
+    jcache(fullIdx).withExpiryPolicy(expiry).put(key,2);
+    if (tx != null)     tx.commit();
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
+  for (int i=0; i < gridCount(); i++) {
+    IgnitePair<Long> entryTtl=null;
+    if (grid(i).affinity(null).isPrimaryOrBackup(grid(i).localNode(),key))     entryTtl=entryTtl(jcache(i),key);
+ else     if (i == nearIdx)     entryTtl=nearEntryTtl(jcache(i),key);
+    if (entryTtl != null) {
+      assertNotNull(entryTtl.get1());
+      assertNotNull(entryTtl.get2());
+      assertEquals(ttl,(long)entryTtl.get1());
+      assertTrue(entryTtl.get2() > startTime);
+      expireTimes[i]=entryTtl.get2();
+    }
+  }
+  U.sleep(100);
+  tx=inTx ? grid(fullIdx).transactions().txStart() : null;
+  try {
+    jcache(fullIdx).put(key,4);
+  }
+  finally {
+    if (tx != null)     tx.commit();
+  }
+  for (int i=0; i < gridCount(); i++) {
+    IgnitePair<Long> entryTtl=null;
+    if (grid(i).affinity(null).isPrimaryOrBackup(grid(i).localNode(),key))     entryTtl=entryTtl(jcache(i),key);
+ else     if (i == nearIdx)     entryTtl=nearEntryTtl(jcache(i),key);
+    if (entryTtl != null) {
+      assertNotNull(entryTtl.get1());
+      assertNotNull(entryTtl.get2());
+      assertEquals(ttl,(long)entryTtl.get1());
+      assertEquals(expireTimes[i],(long)entryTtl.get2());
+    }
+  }
+  storeStgy.removeFromStore(key);
+  assertTrue(GridTestUtils.waitForCondition(new GridAbsPredicateX(){
+    @SuppressWarnings("unchecked") @Override public boolean applyx() throws IgniteCheckedException {
+      try {
+        Integer val=c.get(key);
+        if (val != null) {
+          info("Value is in cache [key=" + key + ", val="+ val+ ']');
+          return false;
+        }
+        if (!internalCache(c).context().deferredDelete()) {
+          GridCacheEntryEx e0=internalCache(c).peekEx(key);
+          return e0 == null || (e0.rawGet() == null && e0.valueBytes() == null);
+        }
+ else         return true;
+      }
+ catch (      GridCacheEntryRemovedException e) {
+        return true;
+      }
+    }
+  }
+,Math.min(ttl * 10,getTestTimeout())));
+{
+    IgnitePair<Long> entryTtl=entryTtl(fullCache(),key);
+    assertNotNull(entryTtl.get1());
+    assertNotNull(entryTtl.get2());
+    assertEquals(0,(long)entryTtl.get1());
+    assertEquals(0,(long)entryTtl.get2());
+  }
+  tx=inTx ? transactions().txStart() : null;
+  try {
+    c.put(key,10);
+    if (tx != null)     tx.commit();
+  }
+  finally {
+    if (tx != null)     tx.close();
+  }
+  U.sleep(2000);
+{
+    IgnitePair<Long> entryTtl=entryTtl(fullCache(),key);
+    assertNotNull(entryTtl.get1());
+    assertNotNull(entryTtl.get2());
+    assertEquals(0,(long)entryTtl.get1());
+    assertEquals(0,(long)entryTtl.get2());
+  }
 }
