@@ -1,0 +1,22 @@
+{
+  srvcCfg=serviceConfiguration();
+  Ignite node1=startGrid(1);
+  assertEquals(42,serviceProxy(node1).foo());
+  srvcCfg=serviceConfiguration();
+  Ignite node2=startGrid(2);
+  node1.close();
+  waitForService(node2);
+  assertEquals(42,serviceProxy(node2).foo());
+  srvcCfg=serviceConfiguration();
+  Ignite node3=startGrid(3);
+  assertEquals(42,serviceProxy(node3).foo());
+  srvcCfg=serviceConfiguration();
+  node1=startGrid(1);
+  assertEquals(42,serviceProxy(node1).foo());
+  assertEquals(42,serviceProxy(node2).foo());
+  assertEquals(42,serviceProxy(node3).foo());
+  node2.close();
+  waitForService(node1);
+  assertEquals(42,serviceProxy(node1).foo());
+  assertEquals(42,serviceProxy(node3).foo());
+}
