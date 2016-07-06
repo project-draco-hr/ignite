@@ -23,35 +23,48 @@
       if (configuration.getQueryEntities() != null) {
         Collection<QueryEntity> entries=configuration.getQueryEntities();
         for (        QueryEntity queryEntity : entries) {
-          if (queryEntity.getKeyType() != null) {
-            Class keyCls=Class.forName(queryEntity.getKeyType());
-            if (ModelUtil.canCreateInstance(keyCls))             keys.add(keyCls);
- else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + queryEntity.getKeyType() + ']');
+          try {
+            if (queryEntity.getKeyType() != null) {
+              Class keyCls=Class.forName(queryEntity.getKeyType());
+              if (ModelUtil.canCreateInstance(keyCls))               keys.add(keyCls);
+ else               throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + queryEntity.getKeyType() + ']');
+            }
+            if (queryEntity.getValueType() != null) {
+              Class valCls=Class.forName(queryEntity.getValueType());
+              if (ModelUtil.canCreateInstance(valCls))               values.add(valCls);
+ else               throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + queryEntity.getKeyType() + ']');
+              cofigureCacheSqlDescriptor(cacheName,queryEntity,valCls);
+            }
           }
-          if (queryEntity.getValueType() != null) {
-            Class valCls=Class.forName(queryEntity.getValueType());
-            if (ModelUtil.canCreateInstance(valCls))             values.add(valCls);
- else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + queryEntity.getKeyType() + ']');
-            cofigureCacheSqlDescriptor(cacheName,queryEntity,valCls);
+ catch (          ClassNotFoundException e) {
+            BenchmarkUtils.println(e.getMessage());
+            BenchmarkUtils.println("This can be a BinaryObject. Ignoring exception.");
+            if (!cacheSqlDescriptors.containsKey(cacheName))             cacheSqlDescriptors.put(cacheName,new ArrayList<SqlCacheDescriptor>());
           }
         }
       }
       if (configuration.getTypeMetadata() != null) {
         Collection<CacheTypeMetadata> entries=configuration.getTypeMetadata();
         for (        CacheTypeMetadata cacheTypeMetadata : entries) {
-          if (cacheTypeMetadata.getKeyType() != null) {
-            Class keyCls=Class.forName(cacheTypeMetadata.getKeyType());
-            if (ModelUtil.canCreateInstance(keyCls))             keys.add(keyCls);
- else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + cacheTypeMetadata.getKeyType() + ']');
+          try {
+            if (cacheTypeMetadata.getKeyType() != null) {
+              Class keyCls=Class.forName(cacheTypeMetadata.getKeyType());
+              if (ModelUtil.canCreateInstance(keyCls))               keys.add(keyCls);
+ else               throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + cacheTypeMetadata.getKeyType() + ']');
+            }
+            if (cacheTypeMetadata.getValueType() != null) {
+              Class valCls=Class.forName(cacheTypeMetadata.getValueType());
+              if (ModelUtil.canCreateInstance(valCls))               values.add(valCls);
+ else               throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + cacheTypeMetadata.getKeyType() + ']');
+            }
           }
-          if (cacheTypeMetadata.getValueType() != null) {
-            Class valCls=Class.forName(cacheTypeMetadata.getValueType());
-            if (ModelUtil.canCreateInstance(valCls))             values.add(valCls);
- else             throw new IgniteException("Class is unknown for the load test. Make sure you " + "specified its full name [clsName=" + cacheTypeMetadata.getKeyType() + ']');
+ catch (          ClassNotFoundException e) {
+            BenchmarkUtils.println(e.getMessage());
+            BenchmarkUtils.println("This can be a BinaryObject. Ignoring exception.");
+            if (!cacheSqlDescriptors.containsKey(cacheName))             cacheSqlDescriptors.put(cacheName,new ArrayList<SqlCacheDescriptor>());
           }
         }
       }
-      if (keys.isEmpty() || values.isEmpty())       continue;
       keysCacheClasses.put(cacheName,keys.toArray(new Class[]{}));
       valuesCacheClasses.put(cacheName,values.toArray(new Class[]{}));
     }
