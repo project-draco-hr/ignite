@@ -7,12 +7,14 @@
   }
   if (c == null)   c=clsHandlers.get(new ListenerKey(cacheMsg.cacheId(),cacheMsg.getClass()));
   if (c == null) {
+    IgniteLogger log=cacheMsg.messageLogger(cctx);
+    StringBuilder msg0=new StringBuilder("Received message without registered handler (will ignore) [");
+    appendMessageInfo(cacheMsg,nodeId,msg0);
+    msg0.append(", locTopVer=").append(cctx.exchange().readyAffinityVersion()).append(", msgTopVer=").append(cacheMsg.topologyVersion()).append(", cacheDesc=").append(cctx.cache().cacheDescriptor(cacheMsg.cacheId())).append(']');
     if (cctx.kernalContext().isStopping()) {
-      if (log.isDebugEnabled())       log.debug("Received message without registered handler (will ignore) [msg=" + cacheMsg + ", nodeId="+ nodeId+ ']');
+      if (log.isDebugEnabled())       log.debug(msg0.toString());
     }
- else {
-      U.warn(log,"Received message without registered handler (will ignore) [msg=" + cacheMsg + ", nodeId="+ nodeId+ ", locTopVer="+ cctx.exchange().readyAffinityVersion()+ ", msgTopVer="+ cacheMsg.topologyVersion()+ ", cacheDesc="+ cctx.cache().cacheDescriptor(cacheMsg.cacheId())+ ']');
-    }
+ else     U.warn(log,msg0.toString());
     return;
   }
   onMessage0(nodeId,cacheMsg,c);

@@ -1,0 +1,24 @@
+{
+  String hadoopHome=systemOrEnv(PREFIX,systemOrEnv(HOME,EMPTY_STR));
+  String commonHome=systemOrEnv(COMMON_HOME,EMPTY_STR);
+  String hdfsHome=systemOrEnv(HDFS_HOME,EMPTY_STR);
+  String mapredHome=systemOrEnv(MAPRED_HOME,EMPTY_STR);
+  if (!isEmpty(commonHome) || !isEmpty(hdfsHome) || !isEmpty(mapredHome)) {
+    HadoopLocations res=new HadoopLocations(hadoopHome,commonHome,hdfsHome,mapredHome);
+    if (res.valid())     return res;
+ else     throw new IOException("Failed to resolve Hadoop classpath because some environment variables are " + "either undefined or point to nonexistent directories [" + "[env=" + COMMON_HOME + ", value="+ commonHome+ ", exists="+ res.commonExists()+ "], "+ "[env="+ HDFS_HOME+ ", value="+ hdfsHome+ ", exists="+ res.hdfsExists()+ "], "+ "[env="+ MAPRED_HOME+ ", value="+ mapredHome+ ", exists="+ res.mapredExists()+ "]]");
+  }
+ else   if (!isEmpty(hadoopHome)) {
+    if (!exists(hadoopHome))     throw new IOException("Failed to resolve Hadoop classpath because " + HOME + " environment "+ "variable points to nonexistent directory: "+ hadoopHome);
+    HadoopLocations res=new HadoopLocations(hadoopHome,hadoopHome + "/share/hadoop/common",hadoopHome + "/share/hadoop/hdfs",hadoopHome + "/share/hadoop/mapreduce");
+    if (res.valid())     return res;
+    res=new HadoopLocations(hadoopHome,hadoopHome,hadoopHome + "/../hadoop-hdfs",hadoopHome + "/../hadoop-mapreduce");
+    if (res.valid())     return res;
+    res=new HadoopLocations(hadoopHome,hadoopHome,hadoopHome + "/../hadoop-hdfs-client",hadoopHome + "/../hadoop-mapreduce-client");
+    if (res.valid())     return res;
+    throw new IOException("Failed to resolve Hadoop classpath because " + HOME + " environment variable "+ "is either invalid or points to non-standard Hadoop distribution: "+ hadoopHome);
+  }
+ else {
+    throw new IOException("Failed to resolve Hadoop classpath (please define " + HOME + " environment "+ "variable and point it to your Hadoop distribution).");
+  }
+}

@@ -2,15 +2,19 @@
   if (!mappings.isEmpty()) {
     for (    GridDhtAtomicUpdateRequest req : mappings.values()) {
       try {
-        if (log.isDebugEnabled())         log.debug("Sending DHT atomic update request [nodeId=" + req.nodeId() + ", req="+ req+ ']');
         cctx.io().send(req.nodeId(),req,cctx.ioPolicy());
+        if (msgLog.isDebugEnabled()) {
+          msgLog.debug("DTH update fut, sent request [futId=" + futVer + ", writeVer="+ writeVer+ ", node="+ req.nodeId()+ ']');
+        }
       }
  catch (      ClusterTopologyCheckedException ignored) {
-        U.warn(log,"Failed to send update request to backup node because it left grid: " + req.nodeId());
+        if (msgLog.isDebugEnabled()) {
+          msgLog.debug("DTH update fut, failed to send request, node left [futId=" + futVer + ", writeVer="+ writeVer+ ", node="+ req.nodeId()+ ']');
+        }
         registerResponse(req.nodeId());
       }
 catch (      IgniteCheckedException e) {
-        U.error(log,"Failed to send update request to backup node (did node leave the grid?): " + req.nodeId(),e);
+        U.error(msgLog,"Failed to send request [futId=" + futVer + ", writeVer="+ writeVer+ ", node="+ req.nodeId()+ ']');
         registerResponse(req.nodeId());
       }
     }

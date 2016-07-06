@@ -1,0 +1,56 @@
+{
+  try {
+    GridDhtPartitionsExchangeFuture lastFut=lastInitializedFut;
+    if (lastFut != null && !lastFut.isDone())     return;
+    long curTime=U.currentTimeMillis();
+    boolean found=false;
+    IgniteTxManager tm=cctx.tm();
+    if (tm != null) {
+      for (      IgniteInternalTx tx : tm.activeTransactions()) {
+        if (curTime - tx.startTime() > timeout) {
+          found=true;
+          if (longRunningOpsDumpCnt < GridDhtPartitionsExchangeFuture.DUMP_PENDING_OBJECTS_THRESHOLD) {
+            U.warn(log,"Found long running transaction [startTime=" + formatTime(tx.startTime()) + ", curTime="+ formatTime(curTime)+ ", tx="+ tx+ ']');
+          }
+ else           break;
+        }
+      }
+    }
+    GridCacheMvccManager mvcc=cctx.mvcc();
+    if (mvcc != null) {
+      for (      GridCacheFuture<?> fut : mvcc.activeFutures()) {
+        if (curTime - fut.startTime() > timeout) {
+          found=true;
+          if (longRunningOpsDumpCnt < GridDhtPartitionsExchangeFuture.DUMP_PENDING_OBJECTS_THRESHOLD) {
+            U.warn(log,"Found long running cache future [startTime=" + formatTime(fut.startTime()) + ", curTime="+ formatTime(curTime)+ ", fut="+ fut+ ']');
+          }
+ else           break;
+        }
+      }
+      for (      GridCacheFuture<?> fut : mvcc.atomicFutures()) {
+        if (curTime - fut.startTime() > timeout) {
+          found=true;
+          if (longRunningOpsDumpCnt < GridDhtPartitionsExchangeFuture.DUMP_PENDING_OBJECTS_THRESHOLD) {
+            U.warn(log,"Found long running cache future [startTime=" + formatTime(fut.startTime()) + ", curTime="+ formatTime(curTime)+ ", fut="+ fut+ ']');
+          }
+ else           break;
+        }
+      }
+    }
+    if (found) {
+      if (longRunningOpsDumpCnt < GridDhtPartitionsExchangeFuture.DUMP_PENDING_OBJECTS_THRESHOLD) {
+        longRunningOpsDumpCnt++;
+        if (IgniteSystemProperties.getBoolean(IGNITE_THREAD_DUMP_ON_EXCHANGE_TIMEOUT,false)) {
+          U.warn(log,"Found long running cache operations, dump threads.");
+          U.dumpThreads(log);
+        }
+        U.warn(log,"Found long running cache operations, dump IO statistics.");
+        cctx.gridIO().dumpStats();
+      }
+    }
+ else     longRunningOpsDumpCnt=0;
+  }
+ catch (  Exception e) {
+    U.error(log,"Failed to dump debug information: " + e,e);
+  }
+}

@@ -2,10 +2,20 @@
   Throwable err=res.error();
   if (err != null && !(err instanceof GridCacheLockTimeoutException) && !ctx.kernalContext().isStopping())   U.error(log,"Failed to acquire lock for request: " + req,err);
   try {
-    if (!nearNode.id().equals(ctx.nodeId()) && !X.hasCause(err,GridDistributedLockCancelledException.class))     ctx.io().send(nearNode,res,ctx.ioPolicy());
+    if (!nearNode.id().equals(ctx.nodeId()) && !X.hasCause(err,GridDistributedLockCancelledException.class)) {
+      ctx.io().send(nearNode,res,ctx.ioPolicy());
+      if (txLockMsgLog.isDebugEnabled()) {
+        txLockMsgLog.debug("Sent near lock response [txId=" + req.version() + ", inTx="+ req.inTx()+ ", node="+ nearNode.id()+ ']');
+      }
+    }
+ else {
+      if (txLockMsgLog.isDebugEnabled() && !nearNode.id().equals(ctx.nodeId())) {
+        txLockMsgLog.debug("Skip send near lock response [txId=" + req.version() + ", inTx="+ req.inTx()+ ", node="+ nearNode.id()+ ", err="+ err+ ']');
+      }
+    }
   }
  catch (  IgniteCheckedException e) {
-    U.error(log,"Failed to send lock reply to originating node (will rollback transaction) [node=" + U.toShortString(nearNode) + ", req="+ req+ ']',e);
+    U.error(txLockMsgLog,"Failed to send near lock response (will rollback transaction) [" + "txId=" + req.version() + ", inTx="+ req.inTx()+ ", node="+ nearNode.id()+ ", res="+ res+ ']',e);
     if (tx != null)     tx.rollbackAsync();
     throw new GridClosureException(e);
   }

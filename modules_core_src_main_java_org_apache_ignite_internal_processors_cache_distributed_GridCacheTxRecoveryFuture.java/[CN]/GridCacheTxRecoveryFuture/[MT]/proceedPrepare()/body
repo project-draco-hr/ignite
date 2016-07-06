@@ -10,11 +10,17 @@
         GridCacheTxRecoveryRequest req=new GridCacheTxRecoveryRequest(tx,nodeTransactions(id),false,futureId(),fut.futureId(),tx.activeCachesDeploymentEnabled());
         try {
           cctx.io().send(id,req,tx.ioPolicy());
+          if (msgLog.isDebugEnabled()) {
+            msgLog.debug("Recovery fut, sent request to backup [txId=" + tx.nearXidVersion() + ", dhtTxId="+ tx.xidVersion()+ ", node="+ id+ ']');
+          }
         }
  catch (        ClusterTopologyCheckedException ignored) {
           fut.onNodeLeft(id);
         }
 catch (        IgniteCheckedException e) {
+          if (msgLog.isDebugEnabled()) {
+            msgLog.debug("Recovery fut, failed to send request to backup [txId=" + tx.nearXidVersion() + ", dhtTxId="+ tx.xidVersion()+ ", node="+ id+ ", err="+ e+ ']');
+          }
           fut.onError(e);
           break;
         }
@@ -26,11 +32,17 @@ catch (        IgniteCheckedException e) {
       GridCacheTxRecoveryRequest req=new GridCacheTxRecoveryRequest(tx,nodeTransactions(nodeId),false,futureId(),fut.futureId(),tx.activeCachesDeploymentEnabled());
       try {
         cctx.io().send(nodeId,req,tx.ioPolicy());
+        if (msgLog.isDebugEnabled()) {
+          msgLog.debug("Recovery fut, sent request to primary [txId=" + tx.nearXidVersion() + ", dhtTxId="+ tx.xidVersion()+ ", node="+ nodeId+ ']');
+        }
       }
  catch (      ClusterTopologyCheckedException ignored) {
         fut.onNodeLeft(nodeId);
       }
 catch (      IgniteCheckedException e) {
+        if (msgLog.isDebugEnabled()) {
+          msgLog.debug("Recovery fut, failed to send request to primary [txId=" + tx.nearXidVersion() + ", dhtTxId="+ tx.xidVersion()+ ", node="+ nodeId+ ", err="+ e+ ']');
+        }
         fut.onError(e);
         break;
       }

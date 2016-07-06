@@ -58,12 +58,22 @@ case DUMP_STATS:
     GridSelectorNioSessionImpl ses=(GridSelectorNioSessionImpl)key.attachment();
     MessageWriter writer=ses.meta(MSG_WRITER.ordinal());
     MessageReader reader=ses.meta(GridDirectParser.READER_META_KEY);
-    sb.append("    Connection info [").append("rmtAddr=").append(ses.remoteAddress()).append(", locAddr=").append(ses.localAddress()).append(", msgWriter=").append(writer != null ? writer.toString() : "null").append(", msgReader=").append(reader != null ? reader.toString() : "null").append(", bytesRcvd=").append(ses.bytesReceived()).append(", bytesSent=").append(ses.bytesSent());
+    sb.append("    Connection info [").append("rmtAddr=").append(ses.remoteAddress()).append(", locAddr=").append(ses.localAddress());
     GridNioRecoveryDescriptor desc=ses.recoveryDescriptor();
     if (desc != null) {
       sb.append(", msgsSent=").append(desc.sent()).append(", msgsAckedByRmt=").append(desc.acked()).append(", msgsRcvd=").append(desc.received()).append(", descIdHash=").append(System.identityHashCode(desc));
     }
  else     sb.append(", recoveryDesc=null");
+    sb.append(", bytesRcvd=").append(ses.bytesReceived()).append(", bytesSent=").append(ses.bytesSent()).append(", opQueueSize=").append(ses.writeQueueSize()).append(", msgWriter=").append(writer != null ? writer.toString() : "null").append(", msgReader=").append(reader != null ? reader.toString() : "null");
+    int cnt=0;
+    for (    GridNioFuture<?> fut : ses.writeQueue()) {
+      if (cnt == 0)       sb.append(",\n opQueue=[").append(fut);
+ else       sb.append(',').append(fut);
+      if (++cnt == 5) {
+        sb.append(']');
+        break;
+      }
+    }
     sb.append("]").append(U.nl());
   }
   U.warn(log,sb.toString());

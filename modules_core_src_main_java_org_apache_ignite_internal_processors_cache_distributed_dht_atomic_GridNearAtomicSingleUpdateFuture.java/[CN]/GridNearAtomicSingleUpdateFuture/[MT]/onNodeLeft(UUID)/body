@@ -1,7 +1,8 @@
 {
   GridNearAtomicUpdateResponse res=null;
+  GridNearAtomicUpdateRequest req;
 synchronized (mux) {
-    GridNearAtomicUpdateRequest req=this.req != null && this.req.nodeId().equals(nodeId) ? this.req : null;
+    req=this.req != null && this.req.nodeId().equals(nodeId) ? this.req : null;
     if (req != null && req.response() == null) {
       res=new GridNearAtomicUpdateResponse(cctx.cacheId(),nodeId,req.futureVersion(),cctx.deploymentEnabled());
       ClusterTopologyCheckedException e=new ClusterTopologyCheckedException("Primary node left grid " + "before response is received: " + nodeId);
@@ -9,6 +10,11 @@ synchronized (mux) {
       res.addFailedKeys(req.keys(),e);
     }
   }
-  if (res != null)   onResult(nodeId,res,true);
+  if (res != null) {
+    if (msgLog.isDebugEnabled()) {
+      msgLog.debug("Near update single fut, node left [futId=" + req.futureVersion() + ", writeVer="+ req.updateVersion()+ ", node="+ nodeId+ ']');
+    }
+    onResult(nodeId,res,true);
+  }
   return false;
 }

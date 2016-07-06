@@ -1,13 +1,27 @@
 {
   List<TcpDiscoveryNodeFailedMessage> msgs=null;
 synchronized (mux) {
-    for (Iterator<TcpDiscoveryNode> it=failedNodes.iterator(); it.hasNext(); ) {
-      TcpDiscoveryNode node=it.next();
-      if (ring.node(node.id()) != null) {
-        if (msgs == null)         msgs=new ArrayList<>(failedNodes.size());
-        msgs.add(new TcpDiscoveryNodeFailedMessage(getLocalNodeId(),node.id(),node.internalOrder()));
+    if (!failedNodes.isEmpty()) {
+      for (Iterator<Map.Entry<TcpDiscoveryNode,UUID>> it=failedNodes.entrySet().iterator(); it.hasNext(); ) {
+        Map.Entry<TcpDiscoveryNode,UUID> e=it.next();
+        TcpDiscoveryNode node=e.getKey();
+        UUID failSndNode=e.getValue();
+        if (ring.node(node.id()) == null) {
+          it.remove();
+          continue;
+        }
+        if (!nodeAlive(failSndNode) && !failedNodesMsgSent.contains(node.id())) {
+          if (msgs == null)           msgs=new ArrayList<>();
+          msgs.add(new TcpDiscoveryNodeFailedMessage(getLocalNodeId(),node.id(),node.internalOrder()));
+          failedNodesMsgSent.add(node.id());
+        }
       }
- else       it.remove();
+    }
+    if (!failedNodesMsgSent.isEmpty()) {
+      for (Iterator<UUID> it=failedNodesMsgSent.iterator(); it.hasNext(); ) {
+        UUID nodeId=it.next();
+        if (ring.node(nodeId) == null)         it.remove();
+      }
     }
   }
   if (msgs != null) {

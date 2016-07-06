@@ -21,11 +21,17 @@
       GridCacheTxRecoveryRequest req=new GridCacheTxRecoveryRequest(tx,0,true,futureId(),fut.futureId(),tx.activeCachesDeploymentEnabled());
       try {
         cctx.io().send(nearNodeId,req,tx.ioPolicy());
+        if (msgLog.isDebugEnabled()) {
+          msgLog.debug("Recovery fut, sent request near tx [txId=" + tx.nearXidVersion() + ", dhtTxId="+ tx.xidVersion()+ ", node="+ nearNodeId+ ']');
+        }
       }
  catch (      ClusterTopologyCheckedException ignore) {
         fut.onNodeLeft(nearNodeId);
       }
 catch (      IgniteCheckedException e) {
+        if (msgLog.isDebugEnabled()) {
+          msgLog.debug("Recovery fut, failed to send request near tx [txId=" + tx.nearXidVersion() + ", dhtTxId="+ tx.xidVersion()+ ", node="+ nearNodeId+ ", err="+ e+ ']');
+        }
         fut.onError(e);
       }
       markInitialized();

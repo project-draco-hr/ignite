@@ -4,9 +4,12 @@
       TcpDiscoveryNode failedNode=ring.node(nodeId);
       if (failedNode != null) {
         if (!failedNode.isLocal()) {
-          boolean added;
+          boolean added=false;
 synchronized (mux) {
-            added=failedNodes.add(failedNode);
+            if (!failedNodes.containsKey(failedNode)) {
+              failedNodes.put(failedNode,msg.senderNodeId() != null ? msg.senderNodeId() : getLocalNodeId());
+              added=true;
+            }
           }
           if (added && log.isDebugEnabled())           log.debug("Added node to failed nodes list [node=" + failedNode + ", msg="+ msg+ ']');
         }

@@ -1,7 +1,7 @@
 {
   GridNearAtomicUpdateResponse res=null;
+  GridNearAtomicUpdateRequest req;
 synchronized (mux) {
-    GridNearAtomicUpdateRequest req;
     if (singleReq != null)     req=singleReq.nodeId().equals(nodeId) ? singleReq : null;
  else     req=mappings != null ? mappings.get(nodeId) : null;
     if (req != null && req.response() == null) {
@@ -11,6 +11,11 @@ synchronized (mux) {
       res.addFailedKeys(req.keys(),e);
     }
   }
-  if (res != null)   onResult(nodeId,res,true);
+  if (res != null) {
+    if (msgLog.isDebugEnabled()) {
+      msgLog.debug("Near update fut, node left [futId=" + req.futureVersion() + ", writeVer="+ req.updateVersion()+ ", node="+ nodeId+ ']');
+    }
+    onResult(nodeId,res,true);
+  }
   return false;
 }
