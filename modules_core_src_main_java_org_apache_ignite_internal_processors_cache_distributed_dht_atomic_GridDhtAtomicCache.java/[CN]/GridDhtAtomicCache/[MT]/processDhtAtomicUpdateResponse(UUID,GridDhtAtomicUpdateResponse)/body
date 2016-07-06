@@ -1,6 +1,12 @@
 {
-  if (log.isDebugEnabled())   log.debug("Processing dht atomic update response [nodeId=" + nodeId + ", res="+ res+ ']');
   GridDhtAtomicUpdateFuture updateFut=(GridDhtAtomicUpdateFuture)ctx.mvcc().atomicFuture(res.futureVersion());
-  if (updateFut != null)   updateFut.onResult(nodeId,res);
- else   U.warn(log,"Failed to find DHT update future for update response [nodeId=" + nodeId + ", res="+ res+ ']');
+  if (updateFut != null) {
+    if (msgLog.isDebugEnabled()) {
+      msgLog.debug("Received DHT atomic update response [futId=" + res.futureVersion() + ", writeVer="+ updateFut.writeVersion()+ ", node="+ nodeId+ ']');
+    }
+    updateFut.onResult(nodeId,res);
+  }
+ else {
+    U.warn(msgLog,"Failed to find DHT update future for update response [futId=" + res.futureVersion() + ", node="+ nodeId+ ", res="+ res+ ']');
+  }
 }

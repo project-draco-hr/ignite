@@ -4,19 +4,26 @@
     ctx.kernalContext().gateway().readLock();
     try {
       ctx.io().send(nodeId,msg,ctx.ioPolicy());
+      if (msgLog.isDebugEnabled()) {
+        msgLog.debug("Sent deferred DHT update response [futIds=" + msg.futureVersions() + ", node="+ nodeId+ ']');
+      }
     }
   finally {
       ctx.kernalContext().gateway().readUnlock();
     }
   }
  catch (  IllegalStateException ignored) {
-    if (log.isDebugEnabled())     log.debug("Failed to send deferred dht update response to remote node (grid is stopping) " + "[nodeId=" + nodeId + ", msg="+ msg+ ']');
+    if (msgLog.isDebugEnabled()) {
+      msgLog.debug("Failed to send deferred DHT update response, node is stopping [" + "futIds=" + msg.futureVersions() + ", node="+ nodeId+ ']');
+    }
   }
 catch (  ClusterTopologyCheckedException ignored) {
-    if (log.isDebugEnabled())     log.debug("Failed to send deferred dht update response to remote node (did node leave grid?) " + "[nodeId=" + nodeId + ", msg="+ msg+ ']');
+    if (msgLog.isDebugEnabled()) {
+      msgLog.debug("Failed to send deferred DHT update response, node left [" + "futIds=" + msg.futureVersions() + ", node="+ nodeId+ ']');
+    }
   }
 catch (  IgniteCheckedException e) {
-    U.error(log,"Failed to send deferred dht update response to remote node [nodeId=" + nodeId + ", msg="+ msg+ ']',e);
+    U.error(log,"Failed to send deferred DHT update response to remote node [" + "futIds=" + msg.futureVersions() + ", node="+ nodeId+ ']',e);
   }
   pendingResponses.remove(nodeId,this);
 }

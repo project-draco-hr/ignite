@@ -1,7 +1,15 @@
 {
   if (!tx.nearNodeId().equals(cctx.localNodeId())) {
     Throwable err=this.err;
-    if (err != null && err instanceof IgniteFutureCancelledException)     return;
+    if (err != null && err instanceof IgniteFutureCancelledException) {
+      if (msgLog.isDebugEnabled()) {
+        msgLog.debug("DHT prepare fut, skip send response [txId=" + tx.nearXidVersion() + ", dhtTxId="+ tx.xidVersion()+ ", node="+ tx.nearNodeId()+ ", err="+ err+ ", res="+ res+ ']');
+      }
+      return;
+    }
     cctx.io().send(tx.nearNodeId(),res,tx.ioPolicy());
+    if (msgLog.isDebugEnabled()) {
+      msgLog.debug("DHT prepare fut, sent response [txId=" + tx.nearXidVersion() + ", dhtTxId="+ tx.xidVersion()+ ", node="+ tx.nearNodeId()+ ", res="+ res+ ']');
+    }
   }
 }

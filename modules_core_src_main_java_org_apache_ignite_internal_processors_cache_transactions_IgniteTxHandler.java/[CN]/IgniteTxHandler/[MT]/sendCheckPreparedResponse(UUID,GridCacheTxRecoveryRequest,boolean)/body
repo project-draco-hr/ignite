@@ -1,13 +1,15 @@
 {
   GridCacheTxRecoveryResponse res=new GridCacheTxRecoveryResponse(req.version(),req.futureId(),req.miniId(),prepared,req.deployInfo() != null);
   try {
-    if (log.isDebugEnabled())     log.debug("Sending check prepared transaction response [nodeId=" + nodeId + ", res="+ res+ ']');
     ctx.io().send(nodeId,res,req.system() ? UTILITY_CACHE_POOL : SYSTEM_POOL);
+    if (txRecoveryMsgLog.isDebugEnabled()) {
+      txRecoveryMsgLog.debug("Sent tx recovery response [txId=" + req.nearXidVersion() + ", node="+ nodeId+ ", res="+ res+ ']');
+    }
   }
  catch (  ClusterTopologyCheckedException ignored) {
-    if (log.isDebugEnabled())     log.debug("Failed to send check prepared transaction response (did node leave grid?) [nodeId=" + nodeId + ", res="+ res+ ']');
+    if (txRecoveryMsgLog.isDebugEnabled())     txRecoveryMsgLog.debug("Failed to send tx recovery response, node failed [" + ", txId=" + req.nearXidVersion() + ", node="+ nodeId+ ", res="+ res+ ']');
   }
 catch (  IgniteCheckedException e) {
-    U.error(log,"Failed to send response to node [nodeId=" + nodeId + ", res="+ res+ ']',e);
+    U.error(txRecoveryMsgLog,"Failed to send tx recovery response [txId=" + req.nearXidVersion() + ", node="+ nodeId+ ", req="+ req+ ", res="+ res+ ']',e);
   }
 }

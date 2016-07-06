@@ -1,8 +1,11 @@
 {
+  if (txFinishMsgLog.isDebugEnabled())   txFinishMsgLog.debug("Received near finish response [txId=" + res.xid() + ", node="+ nodeId+ ']');
   ctx.tm().onFinishedRemote(nodeId,res.threadId());
   GridNearTxFinishFuture fut=(GridNearTxFinishFuture)ctx.mvcc().<IgniteInternalTx>future(res.futureId());
   if (fut == null) {
-    if (log.isDebugEnabled())     log.debug("Failed to find future for finish response [sender=" + nodeId + ", res="+ res+ ']');
+    if (txFinishMsgLog.isDebugEnabled()) {
+      txFinishMsgLog.debug("Failed to find future for near finish response [txId=" + res.xid() + ", node="+ nodeId+ ", res="+ res+ ']');
+    }
     return;
   }
   fut.onResult(nodeId,res);

@@ -1,5 +1,7 @@
 {
-  if (log.isDebugEnabled())   log.debug("Processing dht atomic update request [nodeId=" + nodeId + ", req="+ req+ ']');
+  if (msgLog.isDebugEnabled()) {
+    msgLog.debug("Received DHT atomic update request [futId=" + req.futureVersion() + ", writeVer="+ req.writeVersion()+ ", node="+ nodeId+ ']');
+  }
   GridCacheVersion ver=req.writeVersion();
   GridDhtAtomicUpdateResponse res=new GridDhtAtomicUpdateResponse(ctx.cacheId(),req.futureVersion(),ctx.deploymentEnabled());
   Boolean replicate=ctx.isDrEnabled();
@@ -41,15 +43,23 @@ catch (    IgniteCheckedException e) {
   }
   if (isNearEnabled(cacheCfg))   ((GridNearAtomicCache<K,V>)near()).processDhtAtomicUpdateRequest(nodeId,req,res);
   try {
-    if (res.failedKeys() != null || res.nearEvicted() != null || req.writeSynchronizationMode() == FULL_SYNC)     ctx.io().send(nodeId,res,ctx.ioPolicy());
+    if (res.failedKeys() != null || res.nearEvicted() != null || req.writeSynchronizationMode() == FULL_SYNC) {
+      ctx.io().send(nodeId,res,ctx.ioPolicy());
+      if (msgLog.isDebugEnabled()) {
+        msgLog.debug("Sent DHT atomic update response [futId=" + req.futureVersion() + ", writeVer="+ req.writeVersion()+ ", node="+ nodeId+ ']');
+      }
+    }
  else {
+      if (msgLog.isDebugEnabled()) {
+        msgLog.debug("Will send deferred DHT atomic update response [futId=" + req.futureVersion() + ", writeVer="+ req.writeVersion()+ ", node="+ nodeId+ ']');
+      }
       sendDeferredUpdateResponse(nodeId,req.futureVersion());
     }
   }
  catch (  ClusterTopologyCheckedException ignored) {
-    U.warn(log,"Failed to send DHT atomic update response to node because it left grid: " + req.nodeId());
+    U.warn(msgLog,"Failed to send DHT atomic update response, node left [futId=" + req.futureVersion() + ", node="+ req.nodeId()+ ']');
   }
 catch (  IgniteCheckedException e) {
-    U.error(log,"Failed to send DHT atomic update response (did node leave grid?) [nodeId=" + nodeId + ", req="+ req+ ']',e);
+    U.error(msgLog,"Failed to send DHT atomic update response [futId=" + req.futureVersion() + ", node="+ nodeId+ ", res="+ res+ ']',e);
   }
 }

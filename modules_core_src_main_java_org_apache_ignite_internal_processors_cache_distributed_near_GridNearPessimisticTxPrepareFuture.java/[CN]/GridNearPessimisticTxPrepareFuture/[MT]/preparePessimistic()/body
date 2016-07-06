@@ -47,12 +47,18 @@
  else {
       try {
         cctx.io().send(node,req,tx.ioPolicy());
+        if (msgLog.isDebugEnabled()) {
+          msgLog.debug("Near pessimistic prepare, sent request [txId=" + tx.nearXidVersion() + ", node="+ node.id()+ ']');
+        }
       }
  catch (      ClusterTopologyCheckedException e) {
         e.retryReadyFuture(cctx.nextAffinityReadyFuture(topVer));
         fut.onNodeLeft(e);
       }
 catch (      IgniteCheckedException e) {
+        if (msgLog.isDebugEnabled()) {
+          msgLog.debug("Near pessimistic prepare, failed send request [txId=" + tx.nearXidVersion() + ", node="+ node.id()+ ", err="+ e+ ']');
+        }
         fut.onError(e);
       }
     }

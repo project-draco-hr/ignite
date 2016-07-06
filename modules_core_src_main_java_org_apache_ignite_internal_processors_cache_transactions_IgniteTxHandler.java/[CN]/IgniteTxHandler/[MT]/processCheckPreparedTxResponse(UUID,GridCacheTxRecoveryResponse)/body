@@ -1,8 +1,12 @@
 {
-  if (log.isDebugEnabled())   log.debug("Processing check prepared transaction response [nodeId=" + nodeId + ", res="+ res+ ']');
+  if (txRecoveryMsgLog.isDebugEnabled()) {
+    txRecoveryMsgLog.debug("Received tx recovery response [txId=" + res.version() + ", node="+ nodeId+ ", res="+ res+ ']');
+  }
   GridCacheTxRecoveryFuture fut=(GridCacheTxRecoveryFuture)ctx.mvcc().future(res.futureId());
   if (fut == null) {
-    if (log.isDebugEnabled())     log.debug("Received response for unknown future (will ignore): " + res);
+    if (txRecoveryMsgLog.isDebugEnabled()) {
+      txRecoveryMsgLog.debug("Failed to find future for tx recovery response [txId=" + res.version() + ", node="+ nodeId+ ", res="+ res+ ']');
+    }
     return;
   }
   fut.onResult(nodeId,res);

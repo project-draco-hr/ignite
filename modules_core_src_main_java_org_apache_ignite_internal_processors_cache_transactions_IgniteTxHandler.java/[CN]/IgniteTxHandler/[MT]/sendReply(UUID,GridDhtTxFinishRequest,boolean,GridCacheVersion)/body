@@ -1,0 +1,34 @@
+{
+  if (req.replyRequired() || req.checkCommitted()) {
+    GridDhtTxFinishResponse res=new GridDhtTxFinishResponse(req.version(),req.futureId(),req.miniId());
+    if (req.checkCommitted()) {
+      res.checkCommitted(true);
+      if (!committed) {
+        ClusterTopologyCheckedException cause=new ClusterTopologyCheckedException("Primary node left grid.");
+        res.checkCommittedError(new IgniteTxRollbackCheckedException("Failed to commit transaction " + "(transaction has been rolled back on backup node): " + req.version(),cause));
+      }
+    }
+    try {
+      ctx.io().send(nodeId,res,req.policy());
+      if (txFinishMsgLog.isDebugEnabled()) {
+        txFinishMsgLog.debug("Sent dht tx finish response [txId=" + nearTxId + ", dhtTxId="+ req.version()+ ", node="+ nodeId+ ", checkCommitted="+ req.checkCommitted()+ ']');
+      }
+    }
+ catch (    Throwable e) {
+      if (ctx.discovery().node(nodeId) == null) {
+        if (txFinishMsgLog.isDebugEnabled()) {
+          txFinishMsgLog.debug("Node left while send dht tx finish response [txId=" + nearTxId + ", dhtTxId="+ req.version()+ ", node="+ nodeId+ ']');
+        }
+      }
+ else {
+        U.error(log,"Failed to send finish response to node [txId=" + nearTxId + ", dhtTxId="+ req.version()+ ", nodeId="+ nodeId+ ", res="+ res+ ']',e);
+      }
+      if (e instanceof Error)       throw (Error)e;
+    }
+  }
+ else {
+    if (txFinishMsgLog.isDebugEnabled()) {
+      txFinishMsgLog.debug("Skip send dht tx finish response [txId=" + nearTxId + ", dhtTxId="+ req.version()+ ", node="+ nodeId+ ']');
+    }
+  }
+}

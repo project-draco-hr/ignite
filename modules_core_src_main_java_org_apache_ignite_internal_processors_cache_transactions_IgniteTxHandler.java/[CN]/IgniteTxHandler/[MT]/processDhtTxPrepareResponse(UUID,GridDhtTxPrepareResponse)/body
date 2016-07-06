@@ -1,8 +1,11 @@
 {
   GridDhtTxPrepareFuture fut=(GridDhtTxPrepareFuture)ctx.mvcc().mvccFuture(res.version(),res.futureId());
   if (fut == null) {
-    if (log.isDebugEnabled())     log.debug("Received response for unknown future (will ignore): " + res);
+    if (txPrepareMsgLog.isDebugEnabled()) {
+      txPrepareMsgLog.debug("Failed to find future for dht prepare response [txId=null" + ", dhtTxId=" + res.version() + ", node="+ nodeId+ ", res="+ res+ ']');
+    }
     return;
   }
+ else   if (txPrepareMsgLog.isDebugEnabled())   txPrepareMsgLog.debug("Received dht prepare response [txId=" + fut.tx().nearXidVersion() + ", node="+ nodeId+ ']');
   fut.onResult(nodeId,res);
 }
