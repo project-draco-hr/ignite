@@ -29,12 +29,6 @@
       U.close(sock,log);
     }
     if (e != null)     filterChain.onExceptionCaught(ses,e);
-    try {
-      filterChain.onSessionClosed(ses);
-    }
- catch (    IgniteCheckedException e1) {
-      filterChain.onExceptionCaught(ses,e1);
-    }
     ses.removeMeta(BUF_META_KEY);
     NioOperationFuture<?> fut=ses.removeMeta(NIO_OPERATION.ordinal());
     GridNioRecoveryDescriptor recovery=ses.recoveryDescriptor();
@@ -51,6 +45,12 @@
  else {
       if (fut != null)       fut.connectionClosed();
       while ((fut=(NioOperationFuture<?>)ses.pollFuture()) != null)       fut.connectionClosed();
+    }
+    try {
+      filterChain.onSessionClosed(ses);
+    }
+ catch (    IgniteCheckedException e1) {
+      filterChain.onExceptionCaught(ses,e1);
     }
     return true;
   }

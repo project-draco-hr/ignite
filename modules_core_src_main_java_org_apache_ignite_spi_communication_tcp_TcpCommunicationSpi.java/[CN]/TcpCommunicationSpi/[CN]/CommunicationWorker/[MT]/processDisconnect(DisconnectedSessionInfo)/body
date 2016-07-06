@@ -1,0 +1,29 @@
+{
+  GridCommunicationClient client=clients.get(sesInfo.nodeId);
+  if (client instanceof GridTcpNioCommunicationClient && ((GridTcpNioCommunicationClient)client).session() == sesInfo.ses)   clients.remove(sesInfo.nodeId,client);
+  if (sesInfo.reconnect) {
+    GridNioRecoveryDescriptor recoveryDesc=sesInfo.recoveryDesc;
+    ClusterNode node=recoveryDesc.node();
+    if (!recoveryDesc.nodeAlive(getSpiContext().node(node.id())))     return;
+    try {
+      if (log.isDebugEnabled())       log.debug("Recovery reconnect [rmtNode=" + recoveryDesc.node().id() + ']');
+      client=reserveClient(node);
+      client.release();
+    }
+ catch (    IgniteCheckedException|IgniteException e) {
+      try {
+        if (recoveryDesc.nodeAlive(getSpiContext().node(node.id())) && getSpiContext().pingNode(node.id())) {
+          if (log.isDebugEnabled())           log.debug("Recovery reconnect failed, will retry " + "[rmtNode=" + recoveryDesc.node().id() + ", err="+ e+ ']');
+          addProcessDisconnectRequest(sesInfo);
+        }
+ else {
+          if (log.isDebugEnabled())           log.debug("Recovery reconnect failed, " + "node left [rmtNode=" + recoveryDesc.node().id() + ", err="+ e+ ']');
+          onException("Recovery reconnect failed, node left [rmtNode=" + recoveryDesc.node().id() + "]",e);
+        }
+      }
+ catch (      IgniteClientDisconnectedException e0) {
+        if (log.isDebugEnabled())         log.debug("Failed to ping node, client disconnected.");
+      }
+    }
+  }
+}
