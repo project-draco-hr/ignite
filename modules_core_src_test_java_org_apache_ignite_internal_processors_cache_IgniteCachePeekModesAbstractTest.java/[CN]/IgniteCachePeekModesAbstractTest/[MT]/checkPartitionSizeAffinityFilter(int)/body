@@ -1,0 +1,106 @@
+{
+  IgniteCache<Integer,String> cache0=jcache(nodeIdx);
+  final int PUT_KEYS=10;
+  int part=nodeIdx;
+  List<Integer> keys=null;
+  try {
+    if (cacheMode() == REPLICATED) {
+      keys=backupKeys(cache0,10,0);
+      for (      Integer key : keys)       cache0.put(key,String.valueOf(key));
+      int partSize=0;
+      for (      Integer key : keys) {
+        int keyPart=ignite(nodeIdx).affinity(null).partition(key);
+        if (keyPart == part)         partSize++;
+      }
+      assertEquals(PUT_KEYS,cache0.localSize(BACKUP));
+      assertEquals(PUT_KEYS,cache0.localSize(ALL));
+      assertEquals(partSize,cache0.localSizeLong(part,BACKUP));
+      assertEquals(partSize,cache0.localSizeLong(part,ALL));
+      assertEquals(0,cache0.localSizeLong(part,PRIMARY));
+      assertEquals(0,cache0.localSizeLong(part,NEAR));
+      for (int i=0; i < gridCount(); i++) {
+        IgniteCache<Integer,String> cache=jcache(i);
+        assertEquals(0,cache.size(NEAR));
+        assertEquals(partSize,cache.sizeLong(part,PRIMARY));
+        assertEquals(partSize * (gridCount() - 1),cache.sizeLong(part,BACKUP));
+        assertEquals(partSize * gridCount(),cache.sizeLong(part,PRIMARY,BACKUP));
+        assertEquals(partSize * gridCount(),cache.sizeLong(part,ALL));
+      }
+    }
+ else {
+      keys=nearKeys(cache0,PUT_KEYS,0);
+      for (      Integer key : keys)       cache0.put(key,String.valueOf(key));
+      int partSize=0;
+      for (      Integer key : keys) {
+        int keyPart=ignite(nodeIdx).affinity(null).partition(key);
+        if (keyPart == part)         partSize++;
+      }
+      if (hasNearCache()) {
+        assertEquals(0,cache0.localSize());
+        assertEquals(0,cache0.localSizeLong(part,ALL));
+        assertEquals(0,cache0.localSizeLong(part,NEAR));
+        for (int i=0; i < gridCount(); i++) {
+          IgniteCache<Integer,String> cache=jcache(i);
+          assertEquals(0,cache.sizeLong(part,NEAR));
+          assertEquals(partSize,cache.sizeLong(part,BACKUP));
+          assertEquals(partSize * 2,cache.sizeLong(part,PRIMARY,BACKUP));
+          assertEquals(partSize * 2,cache.sizeLong(part,ALL));
+        }
+      }
+ else {
+        assertEquals(0,cache0.localSize());
+        assertEquals(0,cache0.localSizeLong(part,NEAR));
+        for (int i=0; i < gridCount(); i++) {
+          IgniteCache<Integer,String> cache=jcache(i);
+          assertEquals(0,cache.size(NEAR));
+          assertEquals(partSize,cache.sizeLong(part,BACKUP));
+          assertEquals(partSize * 2,cache.sizeLong(part,PRIMARY,BACKUP));
+          assertEquals(partSize * 2,cache.sizeLong(part,ALL));
+        }
+      }
+      assertEquals(0,cache0.localSize(BACKUP));
+      assertEquals(0,cache0.localSize(PRIMARY));
+    }
+    checkPrimarySize(PUT_KEYS);
+    Affinity<Integer> aff=ignite(0).affinity(null);
+    for (int i=0; i < gridCount(); i++) {
+      if (i == nodeIdx)       continue;
+      ClusterNode node=ignite(i).cluster().localNode();
+      int primary=0;
+      int backups=0;
+      for (      Integer key : keys) {
+        if (aff.isPrimary(node,key) && aff.partition(key) == part)         primary++;
+ else         if (aff.isBackup(node,key) && aff.partition(key) == part)         backups++;
+      }
+      IgniteCache<Integer,String> cache=jcache(i);
+      assertEquals(primary,cache.localSizeLong(part,PRIMARY));
+      assertEquals(backups,cache.localSizeLong(part,BACKUP));
+      assertEquals(primary + backups,cache.localSizeLong(part,PRIMARY,BACKUP));
+      assertEquals(primary + backups,cache.localSizeLong(part,BACKUP,PRIMARY));
+      assertEquals(primary + backups,cache.localSizeLong(part,ALL));
+    }
+    cache0.remove(keys.get(0));
+    keys.remove(0);
+    checkPrimarySize(PUT_KEYS - 1);
+    int primary=0;
+    int backups=0;
+    ClusterNode node=ignite(nodeIdx).cluster().localNode();
+    for (    Integer key : keys) {
+      if (aff.isPrimary(node,key) && aff.partition(key) == part)       primary++;
+ else       if (aff.isBackup(node,key) && aff.partition(key) == part)       backups++;
+    }
+    if (cacheMode() == REPLICATED) {
+      assertEquals(primary + backups,cache0.localSizeLong(part,ALL));
+      assertEquals(primary,cache0.localSizeLong(part,PRIMARY));
+      assertEquals(backups,cache0.localSizeLong(part,BACKUP));
+    }
+ else {
+      if (hasNearCache())       assertEquals(0,cache0.localSizeLong(part,ALL));
+ else       assertEquals(0,cache0.localSizeLong(part,ALL));
+    }
+  }
+  finally {
+    if (keys != null)     cache0.removeAll(new HashSet<>(keys));
+  }
+  checkEmpty();
+}

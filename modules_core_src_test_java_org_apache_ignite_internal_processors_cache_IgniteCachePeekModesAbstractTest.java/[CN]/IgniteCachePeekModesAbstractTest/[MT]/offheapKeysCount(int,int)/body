@@ -1,0 +1,12 @@
+{
+  GridCacheContext ctx=((IgniteEx)ignite(nodeIdx)).context().cache().internalCache().context();
+  GridCacheSwapManager swapMgr=ctx.isNear() ? ctx.near().dht().context().swap() : ctx.swap();
+  int cnt=(int)swapMgr.offheapEntriesCount(part);
+  GridCacheAffinityManager affinity=ctx.affinity();
+  AffinityTopologyVersion topVer=affinity.affinityTopologyVersion();
+  int primaryCnt=0;
+  int backupCnt=0;
+  if (affinity.primary(ctx.localNode(),part,topVer))   primaryCnt=cnt;
+ else   if (affinity.backup(ctx.localNode(),part,topVer))   backupCnt=cnt;
+  return new T2<>(primaryCnt,backupCnt);
+}
