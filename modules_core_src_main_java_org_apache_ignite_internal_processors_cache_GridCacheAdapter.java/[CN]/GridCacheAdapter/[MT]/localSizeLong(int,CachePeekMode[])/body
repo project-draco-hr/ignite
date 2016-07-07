@@ -1,0 +1,24 @@
+{
+  PeekModes modes=parsePeekModes(peekModes,true);
+  long size=0;
+  AffinityTopologyVersion topVer=ctx.affinity().affinityTopologyVersion();
+  GridCacheSwapManager swapMgr=ctx.isNear() ? ctx.near().dht().context().swap() : ctx.swap();
+  if (ctx.isLocal()) {
+    modes.primary=true;
+    modes.backup=true;
+    if (modes.heap)     size+=size();
+    if (modes.swap)     size+=swapMgr.swapEntriesCount(0);
+    if (modes.offheap)     size+=swapMgr.offheapEntriesCount(0);
+  }
+ else {
+    GridDhtLocalPartition dhtPart=ctx.topology().localPartition(part,topVer,false);
+    if (dhtPart != null) {
+      if (modes.primary && dhtPart.primary(topVer) || modes.backup && dhtPart.backup(topVer)) {
+        if (modes.heap)         size+=dhtPart.publicSize();
+        if (modes.swap)         size+=swapMgr.swapEntriesCount(part);
+        if (modes.offheap)         size+=swapMgr.offheapEntriesCount(part);
+      }
+    }
+  }
+  return size;
+}

@@ -1,0 +1,42 @@
+{
+  if (cacheMode() != LOCAL)   return;
+  awaitPartitionMapExchange();
+  checkEmpty();
+  int part=0;
+  IgniteCache<Integer,String> cache0=jcache(0);
+  IgniteCache<Integer,String> cacheAsync0=cache0.withAsync();
+  for (int i=0; i < HEAP_ENTRIES; i++) {
+    cache0.put(i,String.valueOf(i));
+    final long size=i + 1;
+    assertEquals(size,cache0.localSize());
+    assertEquals(size,cache0.localSizeLong(part,PRIMARY));
+    assertEquals(size,cache0.localSizeLong(part,BACKUP));
+    assertEquals(size,cache0.localSizeLong(part,NEAR));
+    assertEquals(size,cache0.localSizeLong(part,ALL));
+    assertEquals(size,cache0.size());
+    assertEquals(size,cache0.sizeLong(part,PRIMARY));
+    assertEquals(size,cache0.sizeLong(part,BACKUP));
+    assertEquals(size,cache0.sizeLong(part,NEAR));
+    assertEquals(size,cache0.sizeLong(part,ALL));
+    cacheAsync0.size();
+    assertEquals(size,(long)cacheAsync0.<Integer>future().get());
+    cacheAsync0.sizeLong(part,PRIMARY);
+    assertEquals(size,cacheAsync0.future().get());
+  }
+  for (int i=0; i < HEAP_ENTRIES; i++) {
+    cache0.remove(i,String.valueOf(i));
+    final int size=HEAP_ENTRIES - i - 1;
+    assertEquals(size,cache0.localSize());
+    assertEquals(size,cache0.localSizeLong(part,PRIMARY));
+    assertEquals(size,cache0.localSizeLong(part,BACKUP));
+    assertEquals(size,cache0.localSizeLong(part,NEAR));
+    assertEquals(size,cache0.localSizeLong(part,ALL));
+    assertEquals(size,cache0.size());
+    assertEquals(size,cache0.sizeLong(part,PRIMARY));
+    assertEquals(size,cache0.sizeLong(part,BACKUP));
+    assertEquals(size,cache0.sizeLong(part,NEAR));
+    assertEquals(size,cache0.sizeLong(part,ALL));
+    cacheAsync0.size();
+    assertEquals(size,(long)cacheAsync0.<Integer>future().get());
+  }
+}
