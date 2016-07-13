@@ -1,0 +1,29 @@
+{
+  Ignite node1=startGrid("node1",getConfiguration("node1",true,null));
+  CacheConfiguration<Integer,Integer> ccfg=new CacheConfiguration<>();
+  ccfg.setName("attrsTestCache");
+  ccfg.setNodeFilter(new IgnitePredicate<ClusterNode>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public boolean apply(    ClusterNode node){
+      return "data".equals(node.attribute("node-type"));
+    }
+  }
+);
+  IgniteCache<Integer,Integer> cache=node1.createCache(ccfg);
+  ContinuousQuery<Integer,Integer> qry=new ContinuousQuery<>();
+  qry.setRemoteFilterFactory(new RemoteFilterFactory());
+  qry.setLocalListener(new CacheEntryUpdatedListener<Integer,Integer>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void onUpdated(    Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> evts){
+    }
+  }
+);
+  RemoteFilterFactory.clsLdr=getExternalClassLoader();
+  cache.query(qry);
+  RemoteFilterFactory.clsLdr=getClass().getClassLoader();
+  return node1;
+}
