@@ -1,0 +1,23 @@
+{
+  Ignite ignite=startGrid(1);
+  boolean thrown=false;
+  IgniteDataStreamer ldr=ignite.dataStreamer(CACHE_NAME);
+  try {
+    ldr.timeout(TIMEOUT);
+    ldr.receiver(new TestDataReceiver());
+    ldr.perNodeBufferSize(ENTRY_AMOUNT / 2);
+    ldr.perNodeParallelOperations(1);
+    try {
+      for (int i=0; i < ENTRY_AMOUNT; i++)       ldr.addData(i,i);
+    }
+ catch (    IgniteDataStreamerTimeoutException e) {
+      assertEquals(e.getMessage(),"Data streamer exceeded timeout when starts parallel operation.");
+      thrown=true;
+    }
+  }
+  finally {
+    if (thrown)     ldr.close(true);
+    stopAllGrids();
+  }
+  assertTrue(thrown);
+}
