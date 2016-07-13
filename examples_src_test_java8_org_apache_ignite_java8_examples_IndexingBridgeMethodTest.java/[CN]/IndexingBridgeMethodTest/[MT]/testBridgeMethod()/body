@@ -1,0 +1,11 @@
+{
+  Ignite ignite=startGrid();
+  CacheConfiguration<Integer,MyType> ccfg=new CacheConfiguration<>();
+  ccfg.setName("mytype");
+  ccfg.setIndexedTypes(Integer.class,MyType.class);
+  IgniteCache<Integer,MyType> c=ignite.getOrCreateCache(ccfg);
+  for (int i=0; i < 100; i++)   c.put(i,new MyType(i));
+  assertEquals(100L,c.query(new SqlFieldsQuery("select count(*) from MyType")).getAll().get(0).get(0));
+  assertEquals(15,c.query(new SqlFieldsQuery("select id from MyType where _key = 15")).getAll().get(0).get(0));
+  assertEquals(25,c.query(new SqlFieldsQuery("select _key from MyType where id = 25")).getAll().get(0).get(0));
+}
