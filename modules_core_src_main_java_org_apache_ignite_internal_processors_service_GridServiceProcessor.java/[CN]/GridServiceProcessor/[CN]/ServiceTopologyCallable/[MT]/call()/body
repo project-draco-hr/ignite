@@ -1,3 +1,23 @@
 {
-  return serviceTopology(ignite.context().cache().utilityCache(),svcName);
+  IgniteInternalCache<Object,Object> cache=ignite.context().cache().utilityCache();
+  if (cache == null) {
+    List<ComputeJobContext> pendingCtxs=ignite.context().service().pendingJobCtxs;
+synchronized (pendingCtxs) {
+      cache=ignite.context().cache().utilityCache();
+      if (cache == null) {
+        if (!waitedCacheInit) {
+          log.debug("Utility cache hasn't been initialized yet. Waiting.");
+          jCtx.holdcc(60 * 1000);
+          pendingCtxs.add(jCtx);
+          waitedCacheInit=true;
+          return null;
+        }
+ else {
+          log.error("Failed to gather service topology. Utility " + "cache initialization is stuck.");
+          throw new IgniteCheckedException("Failed to gather service topology. Utility " + "cache initialization is stuck.");
+        }
+      }
+    }
+  }
+  return serviceTopology(cache,svcName);
 }
