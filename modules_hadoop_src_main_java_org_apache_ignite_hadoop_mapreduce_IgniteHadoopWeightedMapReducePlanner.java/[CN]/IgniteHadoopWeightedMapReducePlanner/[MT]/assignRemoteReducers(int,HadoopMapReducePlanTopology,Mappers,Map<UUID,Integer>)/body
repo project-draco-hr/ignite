@@ -1,0 +1,32 @@
+{
+  TreeSet<HadoopMapReducePlanGroup> set=new TreeSet<>(new GroupWeightComparator());
+  set.addAll(top.groups());
+  while (cnt-- > 0) {
+    HadoopMapReducePlanGroup grp=set.first();
+    List<UUID> splitNodeIds=null;
+    for (int i=0; i < grp.nodeCount(); i++) {
+      UUID nodeId=grp.nodeId(i);
+      if (mappers.nodeToSplits.containsKey(nodeId)) {
+        if (splitNodeIds == null)         splitNodeIds=new ArrayList<>(2);
+        splitNodeIds.add(nodeId);
+      }
+    }
+    UUID id;
+    int newWeight;
+    if (splitNodeIds != null) {
+      id=splitNodeIds.get(ThreadLocalRandom.current().nextInt(splitNodeIds.size()));
+      newWeight=grp.weight() + locReducerWeight;
+    }
+ else {
+      id=grp.nodeId(ThreadLocalRandom.current().nextInt(grp.nodeCount()));
+      newWeight=grp.weight() + rmtReducerWeight;
+    }
+    boolean rmv=set.remove(grp);
+    assert rmv;
+    grp.weight(newWeight);
+    boolean add=set.add(grp);
+    assert add;
+    Integer res=resMap.get(id);
+    resMap.put(id,res == null ? 1 : res + 1);
+  }
+}

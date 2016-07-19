@@ -1,0 +1,9 @@
+{
+  List<HadoopInputSplit> splits=HadoopUtils.sortInputSplits(job.input());
+  int reducerCnt=job.info().reducers();
+  if (reducerCnt < 0)   throw new IgniteCheckedException("Number of reducers must be non-negative, actual: " + reducerCnt);
+  HadoopMapReducePlanTopology top=topology(nodes);
+  Mappers mappers=assignMappers(splits,top);
+  Map<UUID,int[]> reducers=assignReducers(splits,top,mappers,reducerCnt);
+  return new HadoopDefaultMapReducePlan(mappers.nodeToSplits,reducers);
+}

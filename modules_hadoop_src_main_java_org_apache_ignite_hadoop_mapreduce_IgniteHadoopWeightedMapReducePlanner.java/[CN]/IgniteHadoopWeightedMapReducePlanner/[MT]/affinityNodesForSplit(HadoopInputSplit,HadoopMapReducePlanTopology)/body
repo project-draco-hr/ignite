@@ -1,0 +1,16 @@
+{
+  Collection<UUID> igfsNodeIds=igfsAffinityNodesForSplit(split);
+  if (igfsNodeIds != null)   return igfsNodeIds;
+  Map<NodeIdAndLength,UUID> res=new TreeMap<>();
+  for (  String host : split.hosts()) {
+    long len=split instanceof HadoopFileBlock ? ((HadoopFileBlock)split).length() : 0L;
+    HadoopMapReducePlanGroup grp=top.groupForHost(host);
+    if (grp != null) {
+      for (int i=0; i < grp.nodeCount(); i++) {
+        UUID nodeId=grp.nodeId(i);
+        res.put(new NodeIdAndLength(nodeId,len),nodeId);
+      }
+    }
+  }
+  return new LinkedHashSet<>(res.values());
+}
