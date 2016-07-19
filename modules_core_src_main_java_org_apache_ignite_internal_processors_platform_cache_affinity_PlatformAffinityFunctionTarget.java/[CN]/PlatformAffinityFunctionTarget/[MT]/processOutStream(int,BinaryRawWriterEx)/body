@@ -1,0 +1,10 @@
+{
+  if (type == OP_ASSIGN_PARTITIONS) {
+    AffinityFunctionContext affCtx=currentAffCtx.get();
+    if (affCtx == null)     throw new IgniteException("Thread-local AffinityFunctionContext is null. " + "This may indicate an unsupported call to the base AffinityFunction.");
+    final List<List<ClusterNode>> partitions=baseFunc.assignPartitions(affCtx);
+    PlatformAffinityUtils.writePartitionAssignment(partitions,writer,platformContext());
+    return;
+  }
+  super.processOutStream(type,writer);
+}
