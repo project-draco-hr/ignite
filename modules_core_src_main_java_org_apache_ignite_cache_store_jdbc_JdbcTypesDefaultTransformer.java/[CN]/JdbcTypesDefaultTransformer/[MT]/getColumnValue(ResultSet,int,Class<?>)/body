@@ -28,5 +28,13 @@
     if (val instanceof String)     return UUID.fromString((String)val);
   }
   if (type == java.sql.Date.class && val instanceof java.util.Date)   return new java.sql.Date(((java.util.Date)val).getTime());
+  if (type == Timestamp.class && !(val instanceof Timestamp) && val.getClass().getName().startsWith("oracle.sql.TIMESTAMP")) {
+    try {
+      return val.getClass().getMethod("timestampValue").invoke(val);
+    }
+ catch (    Exception e) {
+      throw new SQLException("Failed to read data of oracle.sql.TIMESTAMP type.",e);
+    }
+  }
   return val;
 }
