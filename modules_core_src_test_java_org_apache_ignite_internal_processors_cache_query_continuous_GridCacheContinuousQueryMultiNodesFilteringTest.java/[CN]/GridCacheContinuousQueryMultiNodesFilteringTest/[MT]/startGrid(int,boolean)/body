@@ -1,0 +1,39 @@
+{
+  String gridName=getTestGridName(idx);
+  IgniteConfiguration cfg=optimize(getConfiguration(gridName)).setClientMode(isClientMode);
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(IP_FINDER);
+  cfg.setUserAttributes(Collections.singletonMap("idx",idx));
+  Ignite node=startGrid(gridName,cfg);
+  IgnitePredicate<ClusterNode> nodeFilter=new NodeFilter(idx);
+  String partCacheName="part" + idx;
+  IgniteCache partCache=node.createCache(defaultCacheConfiguration().setName("part" + idx).setCacheMode(PARTITIONED).setBackups(1).setNodeFilter(nodeFilter));
+  opCounts.put(partCacheName + "_ins",new AtomicInteger());
+  opCounts.put(partCacheName + "_upd",new AtomicInteger());
+  opCounts.put(partCacheName + "_rmv",new AtomicInteger());
+  partCache.registerCacheEntryListener(new ListenerConfiguration(partCacheName,ListenerConfiguration.Op.INSERT));
+  partCache.registerCacheEntryListener(new ListenerConfiguration(partCacheName,ListenerConfiguration.Op.UPDATE));
+  partCache.registerCacheEntryListener(new ListenerConfiguration(partCacheName,ListenerConfiguration.Op.REMOVE));
+  String replCacheName="repl" + idx;
+  IgniteCache replCache=node.createCache(defaultCacheConfiguration().setName("repl" + idx).setCacheMode(REPLICATED).setNodeFilter(nodeFilter));
+  opCounts.put(replCacheName + "_ins",new AtomicInteger());
+  opCounts.put(replCacheName + "_upd",new AtomicInteger());
+  opCounts.put(replCacheName + "_rmv",new AtomicInteger());
+  replCache.registerCacheEntryListener(new ListenerConfiguration(replCacheName,ListenerConfiguration.Op.INSERT));
+  replCache.registerCacheEntryListener(new ListenerConfiguration(replCacheName,ListenerConfiguration.Op.UPDATE));
+  replCache.registerCacheEntryListener(new ListenerConfiguration(replCacheName,ListenerConfiguration.Op.REMOVE));
+  opCounts.put("qry" + idx + "_total",new AtomicInteger());
+  ContinuousQuery qry=new ContinuousQuery();
+  qry.setRemoteFilterFactory(new EntryEventFilterFactory(idx));
+  qry.setLocalListener(new CacheEntryUpdatedListener(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public void onUpdated(    Iterable evts){
+      opCounts.get("qry" + idx + "_total").incrementAndGet();
+    }
+  }
+);
+  partCache.query(qry);
+  replCache.query(qry);
+  return node;
+}

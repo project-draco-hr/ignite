@@ -1,0 +1,15 @@
+{
+  IgfsMock igfs=LocationsBuilder.create().add(0,NODE_1).add(50,NODE_2).add(100,NODE_3).buildIgfs();
+  final List<HadoopInputSplit> splits=new ArrayList<>();
+  splits.add(new HadoopFileBlock(new String[]{HOST_1,HOST_2,HOST_3},URI.create("hfds://" + HOST_1 + "/x"),0,50));
+  splits.add(new HadoopFileBlock(new String[]{HOST_2,HOST_3,HOST_4},URI.create("hfds://" + HOST_2 + "/x"),50,100));
+  splits.add(new HadoopFileBlock(new String[]{HOST_3,HOST_4,HOST_5},URI.create("hfds://" + HOST_3 + "/x"),100,37));
+  splits.add(new HadoopFileBlock(new String[]{HOST_4,HOST_5,HOST_1},URI.create("hfds://" + HOST_4 + "/x"),138,2));
+  splits.add(new HadoopFileBlock(new String[]{HOST_5,HOST_1,HOST_2},URI.create("hfds://" + HOST_5 + "/x"),140,3));
+  final int expReducers=8;
+  HadoopPlannerMockJob job=new HadoopPlannerMockJob(splits,expReducers);
+  IgniteHadoopWeightedMapReducePlanner planner=createPlanner(igfs);
+  final HadoopMapReducePlan plan=planner.preparePlan(job,NODES,null);
+  checkPlanMappers(plan,splits,NODES,true);
+  checkPlanReducers(plan,NODES,expReducers,true);
+}

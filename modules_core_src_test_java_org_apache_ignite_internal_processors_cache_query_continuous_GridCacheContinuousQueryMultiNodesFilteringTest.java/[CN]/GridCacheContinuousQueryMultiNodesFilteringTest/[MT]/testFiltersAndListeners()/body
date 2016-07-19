@@ -1,0 +1,39 @@
+{
+  for (int i=1; i <= SERVER_GRIDS_COUNT; i++)   startGrid(i,false);
+  startGrid(SERVER_GRIDS_COUNT + 1,true);
+  for (int i=1; i <= SERVER_GRIDS_COUNT + 1; i++) {
+    for (int j=0; j < i; j++) {
+      jcache(i,"part" + i).put("k" + j,"v0");
+      jcache(i,"repl" + i).put("k" + j,"v0");
+      jcache(i,"part" + i).put("k" + j,"v1");
+      jcache(i,"repl" + i).put("k" + j,"v1");
+      jcache(i,"part" + i).remove("k" + j);
+      jcache(i,"repl" + i).remove("k" + j);
+    }
+  }
+  for (int i=1; i <= SERVER_GRIDS_COUNT + 1; i++) {
+    final int expTotal=i * 3 * 2;
+    final int i0=i;
+    GridTestUtils.waitForCondition(new GridAbsPredicate(){
+      @Override public boolean apply(){
+        return opCounts.get("qry" + i0 + "_total").get() == expTotal;
+      }
+    }
+,5000);
+    int partInserts=opCounts.get("part" + i + "_ins").get();
+    int replInserts=opCounts.get("repl" + i + "_ins").get();
+    int partUpdates=opCounts.get("part" + i + "_upd").get();
+    int replUpdates=opCounts.get("repl" + i + "_upd").get();
+    int partRemoves=opCounts.get("part" + i + "_rmv").get();
+    int replRemoves=opCounts.get("repl" + i + "_rmv").get();
+    int totalQryOps=opCounts.get("qry" + i + "_total").get();
+    assertEquals(i,partInserts);
+    assertEquals(i,replInserts);
+    assertEquals(i,partUpdates);
+    assertEquals(i,replUpdates);
+    assertEquals(i,partRemoves);
+    assertEquals(i,replRemoves);
+    assertEquals(expTotal,totalQryOps);
+    assertEquals(totalQryOps,partInserts + replInserts + partUpdates+ replUpdates+ partRemoves+ replRemoves);
+  }
+}

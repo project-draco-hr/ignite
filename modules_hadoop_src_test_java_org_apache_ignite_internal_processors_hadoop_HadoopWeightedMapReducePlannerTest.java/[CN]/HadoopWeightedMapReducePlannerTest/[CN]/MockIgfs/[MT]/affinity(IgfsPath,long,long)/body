@@ -1,0 +1,24 @@
+{
+  Collection<IgfsBlockLocation> res=new ArrayList<>();
+  long cur=start;
+  long remaining=len;
+  long prevLocStart=-1;
+  Collection<MockNode> prevLocNodes=null;
+  for (  Map.Entry<Long,Collection<MockNode>> locEntry : locs.entrySet()) {
+    long locStart=locEntry.getKey();
+    Collection<MockNode> locNodes=locEntry.getValue();
+    if (prevLocNodes != null) {
+      if (cur < locStart) {
+        long prevLen=locStart - prevLocStart;
+        res.add(new IgfsBlockLocationMock(cur,prevLen,prevLocNodes));
+        cur=locStart;
+        remaining-=prevLen;
+      }
+    }
+    prevLocStart=locStart;
+    prevLocNodes=locNodes;
+    if (remaining == 0)     break;
+  }
+  if (remaining != 0)   res.add(new IgfsBlockLocationMock(cur,remaining,prevLocNodes));
+  return res;
+}

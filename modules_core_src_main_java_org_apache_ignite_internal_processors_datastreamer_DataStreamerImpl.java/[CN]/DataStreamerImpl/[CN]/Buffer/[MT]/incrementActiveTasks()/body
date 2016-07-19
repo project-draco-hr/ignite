@@ -1,3 +1,7 @@
 {
-  U.acquire(sem);
+  if (timeout == DFLT_UNLIMIT_TIMEOUT)   U.acquire(sem);
+ else   if (!U.tryAcquire(sem,timeout,TimeUnit.MILLISECONDS)) {
+    if (log.isDebugEnabled())     log.debug("Failed to add parallel operation.");
+    throw new IgniteDataStreamerTimeoutException("Data streamer exceeded timeout when starts parallel operation.");
+  }
 }

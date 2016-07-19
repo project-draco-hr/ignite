@@ -1,0 +1,44 @@
+{
+  super(new Factory<CacheEntryListener>(){
+    /** 
+ * {@inheritDoc} 
+ */
+    @Override public CacheEntryListener create(){
+switch (op) {
+case INSERT:
+        return new CacheEntryCreatedListener(){
+          /** 
+ * {@inheritDoc} 
+ */
+          @Override public void onCreated(          Iterable iterable){
+            for (            Object evt : iterable)             opCounts.get(cacheName + "_ins").getAndIncrement();
+          }
+        }
+;
+case UPDATE:
+      return new CacheEntryUpdatedListener(){
+        /** 
+ * {@inheritDoc} 
+ */
+        @Override public void onUpdated(        Iterable iterable){
+          for (          Object evt : iterable)           opCounts.get(cacheName + "_upd").getAndIncrement();
+        }
+      }
+;
+case REMOVE:
+    return new CacheEntryRemovedListener(){
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public void onRemoved(      Iterable iterable){
+        for (        Object evt : iterable)         opCounts.get(cacheName + "_rmv").getAndIncrement();
+      }
+    }
+;
+default :
+  throw new IgniteException(new IllegalArgumentException());
+}
+}
+}
+,null,true,false);
+}

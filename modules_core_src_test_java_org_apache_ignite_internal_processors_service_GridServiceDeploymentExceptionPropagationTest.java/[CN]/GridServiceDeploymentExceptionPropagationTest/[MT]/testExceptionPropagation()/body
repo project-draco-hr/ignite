@@ -1,0 +1,15 @@
+{
+  try (Ignite srv=startGrid("server")){
+    GridStringLogger log=new GridStringLogger();
+    try (Ignite client=startGrid("client",getConfiguration("client").setGridLogger(log).setClientMode(true))){
+      try {
+        client.services().deployClusterSingleton("my-service",new ServiceImpl());
+      }
+ catch (      IgniteException e) {
+        assertTrue(log.toString().contains("ServiceImpl init exception"));
+        return;
+      }
+      fail("https://issues.apache.org/jira/browse/IGNITE-3392");
+    }
+   }
+ }
