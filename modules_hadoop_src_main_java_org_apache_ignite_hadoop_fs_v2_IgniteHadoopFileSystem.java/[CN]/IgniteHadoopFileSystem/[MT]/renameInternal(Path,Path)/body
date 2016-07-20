@@ -5,15 +5,10 @@
   try {
     IgfsPath srcPath=convert(src);
     IgfsPath dstPath=convert(dst);
-    Set<IgfsMode> childrenModes=modeRslvr.resolveChildrenModes(srcPath);
-    if (childrenModes.contains(PROXY)) {
-      if (clientLog.isLogEnabled())       clientLog.logRename(srcPath,PROXY,dstPath);
-      secondaryFileSystem().rename(toSecondary(src),toSecondary(dst));
-    }
- else {
-      if (clientLog.isLogEnabled())       clientLog.logRename(srcPath,modeRslvr.resolveMode(srcPath),dstPath);
-      rmtClient.rename(srcPath,dstPath);
-    }
+    IgfsMode srcMode=modeRslvr.resolveMode(srcPath);
+    if (clientLog.isLogEnabled())     clientLog.logRename(srcPath,srcMode,dstPath);
+    if (srcMode == PROXY)     secondaryFileSystem().rename(toSecondary(src),toSecondary(dst));
+ else     rmtClient.rename(srcPath,dstPath);
   }
   finally {
     leaveBusy();
