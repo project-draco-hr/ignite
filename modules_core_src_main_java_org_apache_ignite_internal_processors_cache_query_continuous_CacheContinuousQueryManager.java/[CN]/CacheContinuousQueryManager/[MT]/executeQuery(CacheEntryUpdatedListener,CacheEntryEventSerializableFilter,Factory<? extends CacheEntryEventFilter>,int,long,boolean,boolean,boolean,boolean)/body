@@ -3,11 +3,11 @@
   if (rmtFilterFactory != null)   clsr=new IgniteClosure<Boolean,CacheContinuousQueryHandler>(){
     @Override public CacheContinuousQueryHandler apply(    Boolean v2){
       CacheContinuousQueryHandler hnd;
-      if (v2)       hnd=new CacheContinuousQueryHandlerV2(cctx.name(),TOPIC_CACHE.topic(topicPrefix,cctx.localNodeId(),seq.getAndIncrement()),locLsnr,rmtFilterFactory,true,false,true,false,null);
+      if (v2)       hnd=new CacheContinuousQueryHandlerV2(cctx.name(),TOPIC_CACHE.topic(topicPrefix,cctx.localNodeId(),seq.getAndIncrement()),locLsnr,rmtFilterFactory,true,false,!includeExpired,false,null);
  else {
         CacheEntryEventFilter fltr=rmtFilterFactory.create();
         if (!(fltr instanceof CacheEntryEventSerializableFilter))         throw new IgniteException("Topology has nodes of the old versions. In this case " + "EntryEventFilter should implement " + "org.apache.ignite.cache.CacheEntryEventSerializableFilter interface. Filter: "+ fltr);
-        hnd=new CacheContinuousQueryHandler(cctx.name(),TOPIC_CACHE.topic(topicPrefix,cctx.localNodeId(),seq.getAndIncrement()),locLsnr,(CacheEntryEventSerializableFilter)fltr,true,false,true,false);
+        hnd=new CacheContinuousQueryHandler(cctx.name(),TOPIC_CACHE.topic(topicPrefix,cctx.localNodeId(),seq.getAndIncrement()),locLsnr,(CacheEntryEventSerializableFilter)fltr,true,false,!includeExpired,false);
       }
       return hnd;
     }
@@ -15,7 +15,7 @@
 ;
  else   clsr=new IgniteClosure<Boolean,CacheContinuousQueryHandler>(){
     @Override public CacheContinuousQueryHandler apply(    Boolean ignore){
-      return new CacheContinuousQueryHandler(cctx.name(),TOPIC_CACHE.topic(topicPrefix,cctx.localNodeId(),seq.getAndIncrement()),locLsnr,rmtFilter,true,false,true,false);
+      return new CacheContinuousQueryHandler(cctx.name(),TOPIC_CACHE.topic(topicPrefix,cctx.localNodeId(),seq.getAndIncrement()),locLsnr,rmtFilter,true,false,!includeExpired,false);
     }
   }
 ;
