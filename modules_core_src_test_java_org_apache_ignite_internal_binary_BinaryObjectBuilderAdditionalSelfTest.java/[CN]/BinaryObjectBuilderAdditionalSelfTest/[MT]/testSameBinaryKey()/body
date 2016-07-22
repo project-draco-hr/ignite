@@ -1,0 +1,12 @@
+{
+  IgniteCache<BinaryObject,BinaryObject> replicatedCache=jcache(0).withKeepBinary();
+  IgniteCache<BinaryObject,BinaryObject> partitionedCache=jcache(0,"partitioned").withKeepBinary();
+  BinaryObjectBuilder keyBuilder=ignite(0).binary().builder("keyType").setField("F1","V1").hashCode("V1".hashCode());
+  BinaryObjectBuilder valBuilder=ignite(0).binary().builder("valueType").setField("F2","V2").setField("F3","V3");
+  BinaryObject key=keyBuilder.build();
+  BinaryObject val=valBuilder.build();
+  replicatedCache.put(key,val);
+  partitionedCache.put(key,val);
+  assertNotNull(replicatedCache.get(key));
+  assertNotNull(partitionedCache.get(key));
+}
