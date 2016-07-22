@@ -5,8 +5,9 @@
     @Override public Boolean call() throws Exception {
       if (log.isDebugEnabled())       log.debug("Deleting file [path=" + path + ", recursive="+ recursive+ ']');
       if (IgfsPath.SLASH.equals(path.toString()))       return false;
-      Set<IgfsMode> childrenModes=modeRslvr.resolveChildrenModes(path);
-      boolean dual=childrenModes.contains(DUAL_SYNC) || childrenModes.contains(DUAL_ASYNC);
+      IgfsMode mode=resolveMode(path);
+      boolean dual=IgfsUtils.isDualMode(mode);
+      ;
       if (dual)       await(path);
       IgfsDeleteResult res=meta.softDelete(path,recursive,dual ? secondaryFs : null);
       if (res.success() && res.info() != null)       IgfsUtils.sendEvents(igfsCtx.kernalContext(),path,res.info().isFile() ? EVT_IGFS_FILE_DELETED : EVT_IGFS_DIR_DELETED);
