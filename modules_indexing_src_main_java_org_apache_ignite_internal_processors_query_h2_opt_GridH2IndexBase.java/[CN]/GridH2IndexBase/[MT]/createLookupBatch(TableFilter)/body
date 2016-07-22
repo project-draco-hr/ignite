@@ -1,0 +1,18 @@
+{
+  GridH2QueryContext qctx=GridH2QueryContext.get();
+  if (qctx == null || !qctx.distributedJoins() || !getTable().isPartitioned())   return null;
+  IndexColumn affCol=getTable().getAffinityKeyColumn();
+  int affColId;
+  boolean ucast;
+  if (affCol != null) {
+    affColId=affCol.column.getColumnId();
+    int[] masks=filter.getMasks();
+    ucast=masks != null && masks[affColId] == IndexCondition.EQUALITY;
+  }
+ else {
+    affColId=-1;
+    ucast=false;
+  }
+  GridCacheContext<?,?> cctx=getTable().rowDescriptor().context();
+  return new DistributedLookupBatch(cctx,ucast,affColId);
+}

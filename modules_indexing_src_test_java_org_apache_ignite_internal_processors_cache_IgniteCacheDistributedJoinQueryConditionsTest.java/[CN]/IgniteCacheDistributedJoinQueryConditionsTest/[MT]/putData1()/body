@@ -1,0 +1,22 @@
+{
+  total=0;
+  Ignite client=grid(2);
+  Affinity<Object> aff=client.affinity(PERSON_CACHE);
+  IgniteCache<Object,Object> personCache=client.cache(PERSON_CACHE);
+  IgniteCache<Object,Object> orgCache=client.cache(ORG_CACHE);
+  AtomicInteger pKey=new AtomicInteger();
+  AtomicInteger orgKey=new AtomicInteger();
+  ClusterNode node0=ignite(0).cluster().localNode();
+  ClusterNode node1=ignite(1).cluster().localNode();
+  List<Integer> data=new ArrayList<>();
+  for (int i=0; i < 5; i++) {
+    int orgId=keyForNode(aff,orgKey,node0);
+    orgCache.put(orgId,new Organization("obj-" + orgId));
+    for (int j=0; j < i; j++) {
+      personCache.put(keyForNode(aff,pKey,node1),new Person(orgId,"obj-" + orgId));
+      total++;
+    }
+    data.add(orgId);
+  }
+  return data;
+}

@@ -1,0 +1,28 @@
+{
+  SqlFieldsQuery qry;
+  if (escape) {
+    qry=new SqlFieldsQuery("select o.\"name\", p.\"name\" " + "from \"Organization\" o, \"Person\" p " + "where p.\"orgId\" = o._key and o._key=?");
+  }
+ else {
+    qry=new SqlFieldsQuery("select o.name, p.name " + "from Organization o, Person p " + "where p.orgId = o._key and o._key=?");
+  }
+  qry.setDistributedJoins(true);
+  long total=0;
+  for (int i=0; i < cnts.size(); i++) {
+    qry.setArgs(i);
+    List<List<Object>> res=cache.query(qry).getAll();
+    assertEquals((int)cnts.get(i),res.size());
+    total+=res.size();
+  }
+  SqlFieldsQuery qry2;
+  if (escape) {
+    qry2=new SqlFieldsQuery("select count(*) " + "from \"Organization\" o, \"Person\" p where p.\"orgId\" = o._key");
+  }
+ else {
+    qry2=new SqlFieldsQuery("select count(*) " + "from Organization o, Person p where p.orgId = o._key");
+  }
+  qry2.setDistributedJoins(true);
+  List<List<Object>> res=cache.query(qry2).getAll();
+  assertEquals(1,res.size());
+  assertEquals(total,res.get(0).get(0));
+}

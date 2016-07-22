@@ -1,0 +1,14 @@
+{
+  if (qry instanceof GridSqlUnion) {
+    GridSqlUnion union=(GridSqlUnion)qry;
+    collectAllTables(union.left(),schemas,tbls);
+    collectAllTables(union.right(),schemas,tbls);
+  }
+ else {
+    GridSqlSelect select=(GridSqlSelect)qry;
+    collectAllTablesInFrom(select.from(),schemas,tbls);
+    for (    GridSqlElement el : select.columns(false))     collectAllTablesInSubqueries(el,schemas,tbls);
+    collectAllTablesInSubqueries(select.where(),schemas,tbls);
+  }
+  return qry;
+}

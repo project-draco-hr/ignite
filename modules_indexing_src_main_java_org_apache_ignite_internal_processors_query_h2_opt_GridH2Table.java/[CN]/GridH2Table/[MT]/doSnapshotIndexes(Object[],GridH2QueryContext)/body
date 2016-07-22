@@ -1,0 +1,17 @@
+{
+  assert snapshotEnabled;
+  if (snapshots == null)   snapshots=new Object[idxs.size() - 1];
+  for (int i=1, len=idxs.size(); i < len; i++) {
+    Object s=snapshots[i - 1];
+    boolean reuseExisting=s != null;
+    s=index(i).takeSnapshot(s,qctx);
+    if (reuseExisting && s == null) {
+      if (qctx != null)       qctx.clearSnapshots();
+      for (int j=1; j < i; j++)       index(j).releaseSnapshot();
+      actualSnapshot.compareAndSet(snapshots,null);
+      return null;
+    }
+    snapshots[i - 1]=s;
+  }
+  return snapshots;
+}

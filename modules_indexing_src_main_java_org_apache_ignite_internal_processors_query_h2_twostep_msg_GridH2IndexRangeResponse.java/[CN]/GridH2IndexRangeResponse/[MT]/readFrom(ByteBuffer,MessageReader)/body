@@ -1,0 +1,31 @@
+{
+  reader.setBuffer(buf);
+  if (!reader.beforeMessageRead())   return false;
+switch (reader.state()) {
+case 0:
+    batchLookupId=reader.readInt("batchLookupId");
+  if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 1:
+err=reader.readString("err");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 2:
+originNodeId=reader.readUuid("originNodeId");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 3:
+qryId=reader.readLong("qryId");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 4:
+ranges=reader.readCollection("ranges",MessageCollectionItemType.MSG);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 5:
+status=reader.readByte("status");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+}
+return reader.afterMessageRead(GridH2IndexRangeResponse.class);
+}

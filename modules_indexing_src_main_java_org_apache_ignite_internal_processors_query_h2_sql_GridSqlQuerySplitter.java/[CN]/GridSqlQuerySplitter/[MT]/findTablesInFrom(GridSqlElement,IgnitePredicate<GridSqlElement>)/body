@@ -1,0 +1,12 @@
+{
+  if (from == null)   return false;
+  if (from instanceof GridSqlTable || from instanceof GridSqlSubquery)   return c.apply(from);
+  if (from instanceof GridSqlJoin) {
+    if (findTablesInFrom(from.child(0),c))     return true;
+    if (findTablesInFrom(from.child(1),c))     return true;
+    return false;
+  }
+ else   if (from instanceof GridSqlAlias)   return findTablesInFrom(from.child(),c);
+ else   if (from instanceof GridSqlFunction)   return false;
+  throw new IllegalStateException(from.getClass().getName() + " : " + from.getSQL());
+}

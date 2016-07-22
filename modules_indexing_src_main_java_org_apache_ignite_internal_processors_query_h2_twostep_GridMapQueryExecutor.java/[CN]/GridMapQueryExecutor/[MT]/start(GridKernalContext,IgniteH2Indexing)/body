@@ -2,12 +2,14 @@
   this.ctx=ctx;
   this.h2=h2;
   log=ctx.log(GridMapQueryExecutor.class);
+  final UUID locNodeId=ctx.localNodeId();
   ctx.event().addLocalEventListener(new GridLocalEventListener(){
     @Override public void onEvent(    final Event evt){
       UUID nodeId=((DiscoveryEvent)evt).eventNode().id();
-      ConcurrentMap<Long,QueryResults> nodeRess=qryRess.remove(nodeId);
+      GridH2QueryContext.clearAfterDeadNode(locNodeId,nodeId);
+      NodeResults nodeRess=qryRess.remove(nodeId);
       if (nodeRess == null)       return;
-      for (      QueryResults ress : nodeRess.values())       ress.cancel();
+      for (      QueryResults ress : nodeRess.results().values())       ress.cancel();
     }
   }
 ,EventType.EVT_NODE_FAILED,EventType.EVT_NODE_LEFT);
@@ -15,6 +17,7 @@
     @Override public void onMessage(    UUID nodeId,    Object msg){
       if (!busyLock.enterBusy())       return;
       try {
+        if (msg instanceof GridCacheQueryMarshallable)         ((GridCacheQueryMarshallable)msg).unmarshall(ctx.config().getMarshaller(),ctx);
         GridMapQueryExecutor.this.onMessage(nodeId,msg);
       }
   finally {

@@ -1,19 +1,20 @@
 {
   if (!snapshotEnabled)   return;
-  GridUnsafeMemory memory=desc == null ? null : desc.memory();
-  lock.writeLock().lock();
+  Lock l=lock(true,Long.MAX_VALUE);
+  ArrayList<Index> idxs0=new ArrayList<>(idxs);
   try {
-    if (memory == null && actualSnapshot == null)     actualSnapshot=takeIndexesSnapshot();
+    snapshotIndexes(null);
     for (int i=1, len=idxs.size(); i < len; i++) {
       GridH2IndexBase newIdx=index(i).rebuild();
       idxs.set(i,newIdx);
       if (i == 1)       idxs.set(0,new ScanIndex(newIdx));
     }
   }
- catch (  InterruptedException ignored) {
+ catch (  InterruptedException e) {
+    throw new IgniteInterruptedException(e);
   }
  finally {
-    lock.writeLock().unlock();
-    actualSnapshot=null;
+    releaseSnapshots0(idxs0);
+    unlock(l);
   }
 }

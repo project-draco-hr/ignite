@@ -1,0 +1,14 @@
+{
+  if (args == null)   args=new Object[]{null};
+  List<List<?>> h2Res=executeH2Query(sql,args);
+  List<List<?>> cacheRes=cache.query(new SqlFieldsQuery(sql).setArgs(args).setDistributedJoins(distrib).setEnforceJoinOrder(enforceJoinOrder)).getAll();
+  try {
+    assertRsEquals(h2Res,cacheRes,ordering);
+  }
+ catch (  AssertionFailedError e) {
+    X.println("Sql query:\n" + sql + "\nargs="+ Arrays.toString(args));
+    X.println("[h2Res=" + h2Res + ", cacheRes="+ cacheRes+ "]");
+    throw e;
+  }
+  return h2Res;
+}

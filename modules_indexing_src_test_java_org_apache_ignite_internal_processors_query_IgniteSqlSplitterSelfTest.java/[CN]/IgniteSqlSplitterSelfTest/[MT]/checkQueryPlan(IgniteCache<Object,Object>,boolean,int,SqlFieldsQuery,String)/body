@@ -1,0 +1,15 @@
+{
+  qry.setEnforceJoinOrder(enforceJoinOrder);
+  qry.setDistributedJoins(true);
+  String plan=queryPlan(cache,qry);
+  log.info("Plan: " + plan);
+  assertEquals("Unexpected number of batched joins in plan [plan=" + plan + ", qry="+ qry+ ']',expBatchedJoins,StringUtils.countOccurrencesOf(plan,"batched"));
+  int startIdx=0;
+  for (  String exp : expText) {
+    int idx=plan.indexOf(exp,startIdx);
+    if (idx == -1) {
+      fail("Plan does not contain expected string [startIdx=" + startIdx + ", plan="+ plan+ ", exp="+ exp+ ']');
+    }
+    startIdx=idx + 1;
+  }
+}

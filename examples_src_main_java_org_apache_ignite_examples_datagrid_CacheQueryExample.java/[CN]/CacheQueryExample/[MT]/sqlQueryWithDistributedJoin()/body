@@ -1,0 +1,9 @@
+{
+  IgniteCache<AffinityKey<Long>,Person> cache=Ignition.ignite().cache(PERSON_CACHE);
+  String joinSql="from Person, \"" + ORG_CACHE + "\".Organization as org "+ "where Person.orgId = org.id "+ "and lower(org.name) = lower(?)";
+  SqlQuery qry=new SqlQuery<AffinityKey<Long>,Person>(Person.class,joinSql).setArgs("ApacheIgnite");
+  qry.setDistributedJoins(true);
+  print("Following people are 'ApacheIgnite' employees (distributed join): ",cache.query(qry).getAll());
+  qry.setArgs("Other");
+  print("Following people are 'Other' employees (distributed join): ",cache.query(qry).getAll());
+}

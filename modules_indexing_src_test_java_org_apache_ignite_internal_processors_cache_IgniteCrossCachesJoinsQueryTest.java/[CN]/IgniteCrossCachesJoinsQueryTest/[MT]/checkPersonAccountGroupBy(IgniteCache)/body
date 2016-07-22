@@ -1,0 +1,20 @@
+{
+  if (skipQuery(cache,PERSON_CACHE_NAME,ACC_CACHE_NAME))   return;
+  qry="checkPersonAccountGroupBy";
+  SqlFieldsQuery q=new SqlFieldsQuery("select count(a.id) " + "from \"" + PERSON_CACHE_NAME + "\".Person p join \""+ ACC_CACHE_NAME+ "\".Account a "+ "on p.strId = a.personStrId "+ "group by p.name "+ "having p.id = ?");
+  q.setDistributedJoins(distributedJoins());
+  List<Integer> keys=new ArrayList<>(data.accountsPerPerson.keySet());
+  for (int i=0; i < 10; i++) {
+    Integer personId=keys.get(rnd.nextInt(keys.size()));
+    Integer cnt=data.accountsPerPerson.get(personId);
+    q.setArgs(personId);
+    List<List<?>> res=cache.query(q).getAll();
+    String errMsg="Expected data [personId=" + personId + ", cnt="+ cnt+ ", data="+ data+ "]";
+    if (cnt > 0) {
+      assertEquals(errMsg,1,res.size());
+      assertEquals(errMsg,1,res.get(0).size());
+      assertEquals(errMsg,(long)cnt,res.get(0).get(0));
+    }
+ else     assertEquals(errMsg,0,res.size());
+  }
+}

@@ -1,0 +1,27 @@
+{
+  Map<Integer,Integer> orgPersons=new HashMap<>();
+  Map<Object,Integer> personAccounts=new HashMap<>();
+  final int ORG_CNT=10;
+  for (int i=0; i < ORG_CNT; i++)   cache.put(i,new Organization("org-" + i));
+  Set<Integer> personIds=new HashSet<>();
+  Set<Integer> accountIds=new HashSet<>();
+  for (int i=0; i < ORG_CNT; i++) {
+    int persons=ThreadLocalRandom.current().nextInt(100);
+    for (int p=0; p < persons; p++) {
+      int personId=ThreadLocalRandom.current().nextInt();
+      while (!personIds.add(personId))       personId=ThreadLocalRandom.current().nextInt();
+      Object personKey=affKey ? new TestKeyWithAffinity(personId) : new TestKey(personId);
+      String name="person-" + personId;
+      cache.put(personKey,new Person(i,name));
+      int accounts=ThreadLocalRandom.current().nextInt(10);
+      for (int a=0; a < accounts; a++) {
+        int accountId=ThreadLocalRandom.current().nextInt();
+        while (!accountIds.add(accountId))         accountId=ThreadLocalRandom.current().nextInt();
+        cache.put(accountId,affKey ? new AccountKeyWithAffinity(personKey) : new Account(personKey));
+      }
+      personAccounts.put(personKey,accounts);
+    }
+    orgPersons.put(i,persons);
+  }
+  return new PutData(orgPersons,personAccounts);
+}

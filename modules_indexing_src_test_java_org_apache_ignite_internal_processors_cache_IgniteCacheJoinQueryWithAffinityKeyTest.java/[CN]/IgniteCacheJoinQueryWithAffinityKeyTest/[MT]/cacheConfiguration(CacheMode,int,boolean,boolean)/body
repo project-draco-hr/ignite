@@ -1,0 +1,29 @@
+{
+  CacheConfiguration ccfg=new CacheConfiguration();
+  ccfg.setCacheMode(cacheMode);
+  if (cacheMode == PARTITIONED)   ccfg.setBackups(backups);
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  String personKeyType=affKey ? TestKeyWithAffinity.class.getName() : TestKey.class.getName();
+  QueryEntity account=new QueryEntity();
+  account.setKeyType(Integer.class.getName());
+  account.setValueType(affKey ? AccountKeyWithAffinity.class.getName() : Account.class.getName());
+  account.addQueryField("personKey",personKeyType,null);
+  account.addQueryField("personId",Integer.class.getName(),null);
+  account.setIndexes(F.asList(new QueryIndex("personKey"),new QueryIndex("personId")));
+  QueryEntity person=new QueryEntity();
+  person.setKeyType(personKeyType);
+  person.setValueType(Person.class.getName());
+  person.addQueryField("orgId",Integer.class.getName(),null);
+  person.addQueryField("id",Integer.class.getName(),null);
+  person.addQueryField("name",String.class.getName(),null);
+  person.setIndexes(F.asList(new QueryIndex("orgId"),new QueryIndex("id"),new QueryIndex("name")));
+  if (affKey && includeAffKey)   person.addQueryField("affKey",Integer.class.getName(),null);
+  QueryEntity org=new QueryEntity();
+  org.setKeyType(Integer.class.getName());
+  org.setValueType(Organization.class.getName());
+  org.addQueryField("name",String.class.getName(),null);
+  org.setIndexes(F.asList(new QueryIndex("name")));
+  ccfg.setQueryEntities(F.asList(account,person,org));
+  ccfg.setSqlEscapeAll(escape);
+  return ccfg;
+}

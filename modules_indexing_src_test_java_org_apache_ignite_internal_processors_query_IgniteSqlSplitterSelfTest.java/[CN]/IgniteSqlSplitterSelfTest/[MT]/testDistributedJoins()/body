@@ -1,0 +1,16 @@
+{
+  CacheConfiguration ccfg=cacheConfig("persOrg",true,Integer.class,Person2.class,Integer.class,Organization.class);
+  IgniteCache<Integer,Object> c=ignite(0).getOrCreateCache(ccfg);
+  try {
+    awaitPartitionMapExchange();
+    doTestDistributedJoins(c,30,100,1000,false);
+    doTestDistributedJoins(c,30,100,1000,true);
+    doTestDistributedJoins(c,3,10,3,false);
+    doTestDistributedJoins(c,3,10,3,true);
+    doTestDistributedJoins(c,300,2000,5,false);
+    doTestDistributedJoins(c,300,2000,5,true);
+  }
+  finally {
+    c.destroy();
+  }
+}

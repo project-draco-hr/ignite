@@ -1,0 +1,13 @@
+{
+  final SqlFieldsQuery qry=new SqlFieldsQuery(sql);
+  qry.setDistributedJoins(true);
+  qry.setEnforceJoinOrder(enforceJoinOrder);
+  Throwable err=GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      cache.query(qry);
+      return null;
+    }
+  }
+,CacheException.class,null);
+  assertTrue("Unexpected error message: " + err.getMessage(),err.getMessage().contains("can not use distributed joins for cache with custom AffinityKeyMapper configured."));
+}

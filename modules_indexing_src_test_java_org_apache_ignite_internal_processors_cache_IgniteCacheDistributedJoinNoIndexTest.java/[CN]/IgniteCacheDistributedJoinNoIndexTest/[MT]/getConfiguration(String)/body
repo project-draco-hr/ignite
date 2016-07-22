@@ -1,0 +1,28 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  TcpDiscoverySpi spi=((TcpDiscoverySpi)cfg.getDiscoverySpi());
+  spi.setIpFinder(IP_FINDER);
+  List<CacheConfiguration> ccfgs=new ArrayList<>();
+{
+    CacheConfiguration ccfg=configuration(PERSON_CACHE);
+    QueryEntity entity=new QueryEntity();
+    entity.setKeyType(Integer.class.getName());
+    entity.setValueType(Person.class.getName());
+    entity.addQueryField("orgId",Integer.class.getName(),null);
+    entity.addQueryField("orgName",String.class.getName(),null);
+    ccfg.setQueryEntities(F.asList(entity));
+    ccfgs.add(ccfg);
+  }
+{
+    CacheConfiguration ccfg=configuration(ORG_CACHE);
+    QueryEntity entity=new QueryEntity();
+    entity.setKeyType(Integer.class.getName());
+    entity.setValueType(Organization.class.getName());
+    entity.addQueryField("name",String.class.getName(),null);
+    ccfg.setQueryEntities(F.asList(entity));
+    ccfgs.add(ccfg);
+  }
+  cfg.setCacheConfiguration(ccfgs.toArray(new CacheConfiguration[ccfgs.size()]));
+  cfg.setClientMode(client);
+  return cfg;
+}

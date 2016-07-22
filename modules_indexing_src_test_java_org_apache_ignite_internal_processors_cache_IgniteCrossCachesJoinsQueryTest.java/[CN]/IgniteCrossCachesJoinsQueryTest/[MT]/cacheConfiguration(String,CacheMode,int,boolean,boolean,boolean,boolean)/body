@@ -1,0 +1,54 @@
+{
+  CacheConfiguration ccfg=new CacheConfiguration();
+  ccfg.setName(cacheName);
+  ccfg.setMemoryMode(memMode);
+  ccfg.setCacheMode(cacheMode);
+  if (cacheMode == PARTITIONED)   ccfg.setBackups(backups);
+  ccfg.setWriteSynchronizationMode(FULL_SYNC);
+  List<QueryEntity> entities=new ArrayList<>();
+  if (accountCache) {
+    QueryEntity account=new QueryEntity();
+    account.setKeyType(useCollocatedData() ? AffinityKey.class.getName() : Integer.class.getName());
+    account.setValueType(Account.class.getName());
+    account.addQueryField("id",Integer.class.getName(),null);
+    account.addQueryField("personId",Integer.class.getName(),null);
+    account.addQueryField("personDateId",Date.class.getName(),null);
+    account.addQueryField("personStrId",String.class.getName(),null);
+    if (idx) {
+      account.setIndexes(F.asList(new QueryIndex("id"),new QueryIndex("personId"),new QueryIndex("personDateId"),new QueryIndex("personStrId")));
+    }
+    entities.add(account);
+  }
+  if (personCache) {
+    QueryEntity person=new QueryEntity();
+    person.setKeyType(useCollocatedData() ? AffinityKey.class.getName() : Integer.class.getName());
+    person.setValueType(Person.class.getName());
+    person.addQueryField("id",Integer.class.getName(),null);
+    person.addQueryField("dateId",Date.class.getName(),null);
+    person.addQueryField("strId",String.class.getName(),null);
+    person.addQueryField("orgId",Integer.class.getName(),null);
+    person.addQueryField("orgDateId",Date.class.getName(),null);
+    person.addQueryField("orgStrId",String.class.getName(),null);
+    person.addQueryField("name",String.class.getName(),null);
+    person.addQueryField("salary",Integer.class.getName(),null);
+    if (idx) {
+      person.setIndexes(F.asList(new QueryIndex("id"),new QueryIndex("dateId"),new QueryIndex("strId"),new QueryIndex("orgId"),new QueryIndex("orgDateId"),new QueryIndex("orgStrId"),new QueryIndex("name"),new QueryIndex("salary")));
+    }
+    entities.add(person);
+  }
+  if (orgCache) {
+    QueryEntity org=new QueryEntity();
+    org.setKeyType(Integer.class.getName());
+    org.setValueType(Organization.class.getName());
+    org.addQueryField("id",Integer.class.getName(),null);
+    org.addQueryField("dateId",Date.class.getName(),null);
+    org.addQueryField("strId",String.class.getName(),null);
+    org.addQueryField("name",String.class.getName(),null);
+    if (idx) {
+      org.setIndexes(F.asList(new QueryIndex("id"),new QueryIndex("dateId"),new QueryIndex("strId"),new QueryIndex("name")));
+    }
+    entities.add(org);
+  }
+  ccfg.setQueryEntities(entities);
+  return ccfg;
+}

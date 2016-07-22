@@ -1,0 +1,15 @@
+{
+  Ignite ignite=ignite(0);
+  IgniteCache<Integer,A> a=ignite.cache("a");
+  IgniteCache<Integer,B> b=ignite.cache("b");
+  IgniteCache<Integer,C> c=ignite.cache("c");
+  Statement s=conn.createStatement();
+  checkSameResult(s,a,"select a.c, b.b, c.a from a.a, b.b, c.c where a.a = b.a and b.c = c.c order by a.c, b.b, c.a");
+  checkSameResult(s,b,"select a.a, b.c, c.b from a.a, b.b, c.c where a.b = b.b and b.a = c.a order by a.a, b.c, c.b");
+  checkSameResult(s,c,"select a.b, b.a, c.c from a.a, b.b, c.c where a.c = b.c and b.b = c.b order by a.b, b.a, c.c");
+  for (int i=0; i < 150; i++) {
+    checkSameResult(s,a,"select a.c, b.b, c.a from a.a, b.b, c.c where " + i + " = a.c and a.a = b.a and b.c = c.c order by a.c, b.b, c.a");
+    checkSameResult(s,b,"select a.a, b.c, c.b from a.a, b.b, c.c where " + i + " = c.b and a.b = b.b and b.a = c.a order by a.a, b.c, c.b");
+    checkSameResult(s,c,"select a.b, b.a, c.c from a.a, b.b, c.c where " + i + " = b.c and a.c = b.c and b.b = c.b order by a.b, b.a, c.c");
+  }
+}

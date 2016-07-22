@@ -1,7 +1,12 @@
 {
-  if (stopped.compareAndSet(false,true)) {
-    lock.writeLock().lock();
+  Lock l=lock.writeLock();
+  l.lock();
+  try {
+    if (stopped)     return false;
+    stopped=true;
     return true;
   }
-  return false;
+  finally {
+    l.unlock();
+  }
 }

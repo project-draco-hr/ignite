@@ -1,0 +1,18 @@
+{
+  Ignite client=grid(2);
+  try {
+    CacheConfiguration ccfg1=cacheConfiguration(PERSON_CACHE).setQueryEntities(F.asList(personEntity(true,true)));
+    CacheConfiguration ccfg2=cacheConfiguration(ORG_CACHE).setQueryEntities(F.asList(organizationEntity(true)));
+    IgniteCache<Object,Object> pCache=client.createCache(ccfg1);
+    client.createCache(ccfg2);
+    putData1();
+    checkQuery("select _key, name from \"org\".Organization o " + "inner join (select orgId from Person) p on p.orgId = o._key",pCache,total);
+    checkQuery("select o._key, o.name from (select _key, name from \"org\".Organization) o " + "inner join Person p on p.orgId = o._key",pCache,total);
+    checkQuery("select o._key, o.name from (select _key, name from \"org\".Organization) o " + "inner join (select orgId from Person) p on p.orgId = o._key",pCache,total);
+    checkQuery("select * from " + "(select _key, name from \"org\".Organization) o " + "inner join "+ "(select orgId from Person) p "+ "on p.orgId = o._key",pCache,total);
+  }
+  finally {
+    client.destroyCache(PERSON_CACHE);
+    client.destroyCache(ORG_CACHE);
+  }
+}

@@ -1,0 +1,29 @@
+{
+  Ignite client=grid(2);
+  try {
+    CacheConfiguration ccfg1=cacheConfiguration(PERSON_CACHE).setQueryEntities(F.asList(personEntity(false,true)));
+    CacheConfiguration ccfg2=cacheConfiguration(ORG_CACHE).setQueryEntities(F.asList(organizationEntity(false)));
+    IgniteCache<Object,Object> pCache=client.createCache(ccfg1);
+    IgniteCache<Object,Object> orgCache=client.createCache(ccfg2);
+    ClusterNode node0=ignite(0).cluster().localNode();
+    ClusterNode node1=ignite(1).cluster().localNode();
+    Affinity<Object> aff=client.affinity(PERSON_CACHE);
+    AtomicInteger orgKey=new AtomicInteger();
+    AtomicInteger pKey=new AtomicInteger();
+    List<Integer> pIds=new ArrayList<>();
+    for (int i=0; i < 3; i++) {
+      Integer orgId=keyForNode(aff,orgKey,node0);
+      orgCache.put(orgId,new Organization("org-" + orgId));
+      Integer pId=keyForNode(aff,pKey,node1);
+      pCache.put(pId,new Person(orgId,"p-" + orgId));
+      pIds.add(pId);
+    }
+    checkQuery("select o._key, o.name, p._key, p.name " + "from \"org\".Organization o, Person p " + "where p.orgId = o._key and p._key >= 0",pCache,3);
+    checkQuery("select o._key, o.name, p._key, p.name " + "from \"org\".Organization o, Person p " + "where p.orgId = o._key and p._key="+ pIds.get(0),pCache,1);
+    checkQuery("select o._key, o.name, p._key, p.name " + "from \"org\".Organization o, Person p " + "where p.orgId = o._key and p._key in (" + pIds.get(0) + ", "+ pIds.get(1)+ ")",pCache,2);
+  }
+  finally {
+    client.destroyCache(PERSON_CACHE);
+    client.destroyCache(ORG_CACHE);
+  }
+}

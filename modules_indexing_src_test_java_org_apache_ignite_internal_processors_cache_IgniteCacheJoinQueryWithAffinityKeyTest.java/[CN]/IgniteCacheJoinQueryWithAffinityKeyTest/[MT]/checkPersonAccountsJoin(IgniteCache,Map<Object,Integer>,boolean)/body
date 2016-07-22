@@ -1,0 +1,48 @@
+{
+  String sql1;
+  if (escape) {
+    sql1="select p.\"name\" from \"Person\" p, \"" + (affKey ? "AccountKeyWithAffinity" : "Account") + "\" a "+ "where p._key = a.\"personKey\" and p._key=?";
+  }
+ else {
+    sql1="select p.name from Person p, " + (affKey ? "AccountKeyWithAffinity" : "Account") + " a "+ "where p._key = a.personKey and p._key=?";
+  }
+  SqlFieldsQuery qry1=new SqlFieldsQuery(sql1);
+  qry1.setDistributedJoins(true);
+  String sql2;
+  if (escape) {
+    sql2="select p.\"name\" from \"Person\" p, \"" + (affKey ? "AccountKeyWithAffinity" : "Account") + "\" a "+ "where p.\"id\" = a.\"personId\" and p.\"id\"=?";
+  }
+ else {
+    sql2="select p.name from Person p, " + (affKey ? "AccountKeyWithAffinity" : "Account") + " a "+ "where p.id = a.personId and p.id=?";
+  }
+  SqlFieldsQuery qry2=new SqlFieldsQuery(sql2);
+  qry2.setDistributedJoins(true);
+  Ignite ignite=(Ignite)cache.unwrap(Ignite.class);
+  boolean binary=ignite.configuration().getMarshaller() instanceof BinaryMarshaller;
+  long total=0;
+  for (  Map.Entry<Object,Integer> e : cnts.entrySet()) {
+    Object arg=binary ? ignite.binary().toBinary(e.getKey()) : e.getKey();
+    qry1.setArgs(arg);
+    List<List<Object>> res=cache.query(qry1).getAll();
+    assertEquals((int)e.getValue(),res.size());
+    total+=res.size();
+    qry2.setArgs(((Id)e.getKey()).id());
+    res=cache.query(qry2).getAll();
+    assertEquals((int)e.getValue(),res.size());
+  }
+  SqlFieldsQuery[] qrys=new SqlFieldsQuery[2];
+  if (escape) {
+    qrys[0]=new SqlFieldsQuery("select count(*) " + "from \"Person\" p, \"" + (affKey ? "AccountKeyWithAffinity" : "Account") + "\" a "+ "where p.\"id\" = a.\"personId\"");
+    qrys[1]=new SqlFieldsQuery("select count(*) " + "from \"Person\" p, \"" + (affKey ? "AccountKeyWithAffinity" : "Account") + "\" a "+ "where p._key = a.\"personKey\"");
+  }
+ else {
+    qrys[0]=new SqlFieldsQuery("select count(*) " + "from Person p, " + (affKey ? "AccountKeyWithAffinity" : "Account") + " a "+ "where p.id = a.personId");
+    qrys[1]=new SqlFieldsQuery("select count(*) " + "from Person p, " + (affKey ? "AccountKeyWithAffinity" : "Account") + " a "+ "where p._key = a.personKey");
+  }
+  for (  SqlFieldsQuery qry : qrys) {
+    qry.setDistributedJoins(true);
+    List<List<Object>> res=cache.query(qry).getAll();
+    assertEquals(1,res.size());
+    assertEquals(total,res.get(0).get(0));
+  }
+}

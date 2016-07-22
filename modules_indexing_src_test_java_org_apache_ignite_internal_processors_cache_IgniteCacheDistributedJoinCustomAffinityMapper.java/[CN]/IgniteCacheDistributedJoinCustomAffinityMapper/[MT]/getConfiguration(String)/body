@@ -1,0 +1,46 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(IP_FINDER);
+  List<CacheConfiguration> ccfgs=new ArrayList<>();
+{
+    CacheConfiguration ccfg=configuration(PERSON_CACHE);
+    QueryEntity entity=new QueryEntity();
+    entity.setKeyType(Integer.class.getName());
+    entity.setValueType(Person.class.getName());
+    entity.addQueryField("orgId",Integer.class.getName(),null);
+    entity.setIndexes(F.asList(new QueryIndex("orgId")));
+    ccfg.setQueryEntities(F.asList(entity));
+    ccfgs.add(ccfg);
+  }
+{
+    CacheConfiguration ccfg=configuration(PERSON_CACHE_CUSTOM_AFF);
+    ccfg.setAffinityMapper(new TestMapper());
+    QueryEntity entity=new QueryEntity();
+    entity.setKeyType(Integer.class.getName());
+    entity.setValueType(Person.class.getName());
+    entity.addQueryField("orgId",Integer.class.getName(),null);
+    entity.setIndexes(F.asList(new QueryIndex("orgId")));
+    ccfg.setQueryEntities(F.asList(entity));
+    ccfgs.add(ccfg);
+  }
+{
+    CacheConfiguration ccfg=configuration(ORG_CACHE);
+    QueryEntity entity=new QueryEntity();
+    entity.setKeyType(Integer.class.getName());
+    entity.setValueType(Organization.class.getName());
+    ccfg.setQueryEntities(F.asList(entity));
+    ccfgs.add(ccfg);
+  }
+{
+    CacheConfiguration ccfg=configuration(ORG_CACHE_REPL_CUSTOM);
+    ccfg.setCacheMode(REPLICATED);
+    ccfg.setAffinityMapper(new TestMapper());
+    QueryEntity entity=new QueryEntity();
+    entity.setKeyType(Integer.class.getName());
+    entity.setValueType(Organization.class.getName());
+    ccfg.setQueryEntities(F.asList(entity));
+    ccfgs.add(ccfg);
+  }
+  cfg.setCacheConfiguration(ccfgs.toArray(new CacheConfiguration[ccfgs.size()]));
+  return cfg;
+}

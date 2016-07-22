@@ -1,0 +1,39 @@
+{
+  info("Checking cross cache joins [accCache=" + accCacheType + ", personCache="+ personCacheType+ ", orgCache="+ orgCacheType+ "]");
+  Collection<TestCache> cacheTypes=F.asList(personCacheType,accCacheType,orgCacheType);
+  for (  TestCache cache : cacheTypes) {
+    CacheConfiguration cc=cacheConfiguration(cache.cacheName,cache.type.cacheMode,cache.type.backups,idx,cache == accCacheType,cache == personCacheType,cache == orgCacheType);
+    ignite(0).getOrCreateCache(cc);
+    info("Created cache [name=" + cache.cacheName + ", mode="+ cache.type+ "]");
+  }
+  initCachesData();
+  List<String> cacheNames=new ArrayList<>();
+  cacheNames.add(personCacheType.cacheName);
+  cacheNames.add(orgCacheType.cacheName);
+  cacheNames.add(accCacheType.cacheName);
+  for (int i=0; i < NODES; i++) {
+    Ignite testNode=ignite(i);
+    log.info("Test node [idx=" + i + ", isClient="+ testNode.configuration().isClientMode()+ "]");
+    for (    String cacheName : cacheNames) {
+      cache=testNode.cache(cacheName);
+      log.info("Use cache: " + cache.getName());
+      boolean distributeJoins0=distributedJoins;
+      if (replicated(cache)) {
+        if (!testNode.configuration().isClientMode())         assertProperException(cache);
+        boolean all3CachesAreReplicated=replicated(ignite(0).cache(ACC_CACHE_NAME)) && replicated(ignite(0).cache(PERSON_CACHE_NAME)) && replicated(ignite(0).cache(ORG_CACHE_NAME));
+        if (distributeJoins0 && !all3CachesAreReplicated)         continue;
+ else         distributedJoins=false;
+      }
+      if (!cache.getName().equals(orgCacheType.cacheName))       checkPersonAccountsJoin(cache,data.accountsPerPerson);
+      if (!cache.getName().equals(accCacheType.cacheName))       checkOrganizationPersonsJoin(cache);
+      checkOrganizationPersonAccountJoin(cache);
+      checkUnion();
+      checkUnionAll();
+      if (!cache.getName().equals(orgCacheType.cacheName))       checkPersonAccountCrossJoin(cache);
+      if (!cache.getName().equals(accCacheType.cacheName))       checkPersonOrganizationGroupBy(cache);
+      if (!cache.getName().equals(orgCacheType.cacheName))       checkPersonAccountGroupBy(cache);
+      checkGroupBy();
+      distributedJoins=distributeJoins0;
+    }
+  }
+}

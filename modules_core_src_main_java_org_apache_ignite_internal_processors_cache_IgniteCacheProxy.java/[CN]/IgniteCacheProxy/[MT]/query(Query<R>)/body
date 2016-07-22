@@ -8,6 +8,7 @@
     final CacheOperationContext opCtxCall=ctx.operationContextPerCall();
     if (qry instanceof ContinuousQuery)     return (QueryCursor<R>)queryContinuous((ContinuousQuery<K,V>)qry,qry.isLocal(),opCtxCall != null && opCtxCall.isKeepBinary());
     if (qry instanceof SqlQuery) {
+      if (isReplicatedDataNode() && ((SqlQuery)qry).isDistributedJoins())       throw new CacheException("Queries using distributed JOINs have to be run on partitioned cache, " + "not on replicated.");
       final SqlQuery p=(SqlQuery)qry;
       if (isReplicatedDataNode() || ctx.isLocal() || qry.isLocal())       return (QueryCursor<R>)new QueryCursorImpl<>(new Iterable<Cache.Entry<K,V>>(){
         @Override public Iterator<Cache.Entry<K,V>> iterator(){
@@ -18,6 +19,7 @@
       return (QueryCursor<R>)ctx.kernalContext().query().queryTwoStep(ctx,p);
     }
     if (qry instanceof SqlFieldsQuery) {
+      if (isReplicatedDataNode() && ((SqlFieldsQuery)qry).isDistributedJoins())       throw new CacheException("Queries using distributed JOINs have to be run on partitioned cache, " + "not on replicated.");
       SqlFieldsQuery p=(SqlFieldsQuery)qry;
       if (isReplicatedDataNode() || ctx.isLocal() || qry.isLocal())       return (QueryCursor<R>)ctx.kernalContext().query().queryLocalFields(ctx,p);
       return (QueryCursor<R>)ctx.kernalContext().query().queryTwoStep(ctx,p);

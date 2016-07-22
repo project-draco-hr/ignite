@@ -1,0 +1,16 @@
+{
+  Map<UUID,int[]> partMap=qctx.partitionsMap();
+  List<ClusterNode> res;
+  if (partMap == null)   res=new ArrayList<>(CU.affinityNodes(cctx,qctx.topologyVersion()));
+ else {
+    res=new ArrayList<>(partMap.size());
+    GridKernalContext ctx=kernalContext();
+    for (    UUID nodeId : partMap.keySet()) {
+      ClusterNode node=ctx.discovery().node(nodeId);
+      if (node == null)       throw new GridH2RetryException("Failed to find node.");
+      res.add(node);
+    }
+  }
+  if (F.isEmpty(res))   throw new GridH2RetryException("Failed to collect affinity nodes.");
+  return res;
+}

@@ -1,0 +1,22 @@
+{
+  if (skipQuery(cache,PERSON_CACHE_NAME,ORG_CACHE_NAME,ACC_CACHE_NAME))   return;
+  qry="checkOrganizationPersonAccountJoin";
+  List<String> sqlFields=new ArrayList<>();
+  sqlFields.add("select o.name, p.name, a._key " + "from " + "\"" + ORG_CACHE_NAME + "\".Organization o, "+ "\""+ PERSON_CACHE_NAME+ "\".Person p, "+ "\""+ ACC_CACHE_NAME+ "\".Account a "+ "where p.orgId = o.id and p.id = a.personId and o.id = ?");
+  sqlFields.add("select o.name, p.name, a._key " + "from " + "\"" + ORG_CACHE_NAME + "\".Organization o, "+ "\""+ PERSON_CACHE_NAME+ "\".Person p, "+ "\""+ ACC_CACHE_NAME+ "\".Account a "+ "where p.orgDateId = o.dateId and p.strId = a.personStrId and o.id = ?");
+  sqlFields.add("select o.name, p.name, a._key " + "from " + "\"" + ORG_CACHE_NAME + "\".Organization o, "+ "\""+ PERSON_CACHE_NAME+ "\".Person p, "+ "\""+ ACC_CACHE_NAME+ "\".Account a "+ "where p.orgStrId = o.strId and p.id = a.personId and o.id = ?");
+  for (  Organization org : data.orgs) {
+    for (    String sql : sqlFields)     compareQueryRes0(cache,sql,distributedJoins(),new Object[]{org.id},Ordering.RANDOM);
+  }
+  if (ACC_CACHE_NAME.equals(cache.getName())) {
+    for (int orgId=0; orgId < data.accountsPerOrg.size(); orgId++) {
+      SqlQuery q=new SqlQuery(Account.class,"from " + "\"" + ORG_CACHE_NAME + "\".Organization , "+ "\""+ PERSON_CACHE_NAME+ "\".Person , "+ "\""+ ACC_CACHE_NAME+ "\".Account  "+ "where Person.orgId = Organization.id and Person.id = Account.personId and Organization.id = ?");
+      q.setDistributedJoins(distributedJoins());
+      q.setArgs(orgId);
+      List<List<Object>> res=cache.query(q).getAll();
+      assertEquals((int)data.accountsPerOrg.get(orgId),res.size());
+    }
+  }
+  String sql="select count(*) " + "from " + "\"" + ORG_CACHE_NAME + "\".Organization o, "+ "\""+ PERSON_CACHE_NAME+ "\".Person p, "+ "\""+ ACC_CACHE_NAME+ "\".Account a "+ "where p.orgId = o.id and p.id = a.personId";
+  compareQueryRes0(cache,sql,distributedJoins(),new Object[0],Ordering.RANDOM);
+}

@@ -1,7 +1,10 @@
 {
   try {
     GridQueryFailResponse msg=new GridQueryFailResponse(qryReqId,err);
-    if (node.isLocal())     h2.reduceQueryExecutor().onMessage(ctx.localNodeId(),msg);
+    if (node.isLocal()) {
+      U.error(log,"Failed to run map query on local node.",err);
+      h2.reduceQueryExecutor().onMessage(ctx.localNodeId(),msg);
+    }
  else     ctx.io().send(node,GridTopic.TOPIC_QUERY,msg,QUERY_POOL);
   }
  catch (  Exception e) {

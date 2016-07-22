@@ -1,0 +1,13 @@
+{
+  Throwable err=GridTestUtils.assertThrows(log,new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      SqlFieldsQuery qry=new SqlFieldsQuery(sql);
+      qry.setDistributedJoins(true);
+      cache.query(qry).getAll();
+      return null;
+    }
+  }
+,CacheException.class,null);
+  log.info("Error: " + err.getMessage());
+  assertTrue("Unexpected error message: " + err.getMessage(),err.getMessage().contains("join condition does not use index"));
+}

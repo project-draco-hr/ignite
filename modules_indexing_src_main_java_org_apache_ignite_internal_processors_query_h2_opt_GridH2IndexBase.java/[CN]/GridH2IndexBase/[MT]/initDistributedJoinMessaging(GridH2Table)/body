@@ -1,0 +1,27 @@
+{
+  final GridH2RowDescriptor desc=tbl.rowDescriptor();
+  if (desc != null && desc.context() != null) {
+    GridKernalContext ctx=desc.context().kernalContext();
+    log=ctx.log(getClass());
+    msgTopic=new IgniteBiTuple<>(GridTopic.TOPIC_QUERY,tbl.identifier() + '.' + getName());
+    msgLsnr=new GridMessageListener(){
+      @Override public void onMessage(      UUID nodeId,      Object msg){
+        GridSpinBusyLock l=desc.indexing().busyLock();
+        if (!l.enterBusy())         return;
+        try {
+          onMessage0(nodeId,msg);
+        }
+  finally {
+          l.leaveBusy();
+        }
+      }
+    }
+;
+    ctx.io().addMessageListener(msgTopic,msgLsnr);
+  }
+ else {
+    msgTopic=null;
+    msgLsnr=null;
+    log=new NullLogger();
+  }
+}

@@ -1,6 +1,12 @@
 {
-  ConcurrentMap<Long,QueryResults> nodeRess=resultsForNode(node.id());
-  QueryResults results=nodeRess.remove(msg.queryRequestId());
+  long qryReqId=msg.queryRequestId();
+  NodeResults nodeRess=resultsForNode(node.id());
+  boolean clear=GridH2QueryContext.clear(ctx.localNodeId(),node.id(),qryReqId,MAP);
+  if (!clear) {
+    nodeRess.onCancel(qryReqId);
+    GridH2QueryContext.clear(ctx.localNodeId(),node.id(),qryReqId,MAP);
+  }
+  QueryResults results=nodeRess.results().remove(qryReqId);
   if (results == null)   return;
   results.cancel();
 }

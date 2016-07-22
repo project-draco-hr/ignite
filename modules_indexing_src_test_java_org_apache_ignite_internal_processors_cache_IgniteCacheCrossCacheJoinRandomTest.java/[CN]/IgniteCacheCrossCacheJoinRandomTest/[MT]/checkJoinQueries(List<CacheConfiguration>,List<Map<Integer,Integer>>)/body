@@ -1,0 +1,40 @@
+{
+  Ignite client=ignite(SRVS);
+  final int CACHES=ccfgs.size();
+  try {
+    IgniteCache cache=null;
+    boolean hasReplicated=false;
+    for (int i=0; i < CACHES; i++) {
+      CacheConfiguration ccfg=ccfgs.get(i);
+      IgniteCache cache0=client.createCache(ccfg);
+      if (ccfg.getCacheMode() == REPLICATED)       hasReplicated=true;
+      if (cache == null && ccfg.getCacheMode() == PARTITIONED)       cache=cache0;
+      insertCache(cachesData.get(i),cache0);
+    }
+    boolean distributedJoin=true;
+    if (cache == null) {
+      cache=client.cache(ccfgs.get(0).getName());
+      distributedJoin=false;
+    }
+    Object[] args={};
+    compareQueryRes0(cache,createQuery(CACHES,false,null),distributedJoin,false,args,Ordering.RANDOM);
+    if (!hasReplicated) {
+      compareQueryRes0(cache,createQuery(CACHES,false,null),distributedJoin,true,args,Ordering.RANDOM);
+      compareQueryRes0(cache,createQuery(CACHES,true,null),distributedJoin,true,args,Ordering.RANDOM);
+    }
+    Map<Integer,Integer> data=cachesData.get(CACHES - 1);
+    final int QRY_CNT=CACHES > 4 ? 2 : 50;
+    int cnt=0;
+    for (    Integer objId : data.keySet()) {
+      compareQueryRes0(cache,createQuery(CACHES,false,objId),distributedJoin,false,args,Ordering.RANDOM);
+      if (!hasReplicated) {
+        compareQueryRes0(cache,createQuery(CACHES,false,objId),distributedJoin,true,args,Ordering.RANDOM);
+        compareQueryRes0(cache,createQuery(CACHES,true,objId),distributedJoin,true,args,Ordering.RANDOM);
+      }
+      if (cnt++ == QRY_CNT)       break;
+    }
+  }
+  finally {
+    for (    CacheConfiguration ccfg : ccfgs)     client.destroyCache(ccfg.getName());
+  }
+}

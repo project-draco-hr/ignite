@@ -1,0 +1,16 @@
+{
+  findTablesInFrom(from,new IgnitePredicate<GridSqlElement>(){
+    @Override public boolean apply(    GridSqlElement el){
+      if (el instanceof GridSqlTable) {
+        GridSqlTable tbl=(GridSqlTable)el;
+        String schema=tbl.schema();
+        boolean addSchema=tbls == null;
+        if (tbls != null)         addSchema=tbls.add(tbl.dataTable().identifier());
+        if (addSchema && schema != null && schemas != null)         schemas.add(schema);
+      }
+ else       if (el instanceof GridSqlSubquery)       collectAllTables(((GridSqlSubquery)el).select(),schemas,tbls);
+      return false;
+    }
+  }
+);
+}

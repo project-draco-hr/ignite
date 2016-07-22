@@ -1,0 +1,14 @@
+{
+  Ignite ignite=ignite(0);
+  IgniteCache<Object,Object> cache=ignite.cache(PERSON_CACHE);
+  checkQueryFails(cache,"select o._key k1, p._key k2 " + "from \"org\".Organization o, \"personCustomAff\".Person p where o._key=p.orgId",false);
+  checkQueryFails(cache,"select o._key k1, p._key k2 " + "from \"personCustomAff\".Person p, \"org\".Organization o where o._key=p.orgId",false);
+{
+    SqlFieldsQuery qry=new SqlFieldsQuery("select o._key k1, p._key k2 " + "from \"org\".Organization o, \"personCustomAff\".Person p where o._key=p.orgId");
+    cache.query(qry).getAll();
+  }
+{
+    SqlFieldsQuery qry=new SqlFieldsQuery("select o1._key k1, p._key k2, o2._key k3 " + "from \"org\".Organization o1, \"person\".Person p, \"orgReplCustomAff\".Organization o2 where " + "o1._key=p.orgId and o2._key=p.orgId");
+    cache.query(qry).getAll();
+  }
+}

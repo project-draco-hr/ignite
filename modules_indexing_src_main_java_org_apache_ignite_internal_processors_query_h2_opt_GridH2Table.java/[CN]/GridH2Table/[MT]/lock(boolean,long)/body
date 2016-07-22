@@ -1,0 +1,15 @@
+{
+  if (!snapshotEnabled)   return null;
+  Lock l=exclusive ? lock.writeLock() : lock.readLock();
+  try {
+    if (!l.tryLock(waitMillis,TimeUnit.MILLISECONDS))     return null;
+  }
+ catch (  InterruptedException e) {
+    throw new IgniteInterruptedException("Thread got interrupted while trying to acquire table lock.",e);
+  }
+  if (destroyed) {
+    unlock(l);
+    throw new IllegalStateException("Table " + identifier() + " already destroyed.");
+  }
+  return l;
+}

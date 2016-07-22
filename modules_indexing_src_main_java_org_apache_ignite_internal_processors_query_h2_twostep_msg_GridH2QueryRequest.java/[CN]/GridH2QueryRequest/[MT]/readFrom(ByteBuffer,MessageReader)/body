@@ -1,0 +1,39 @@
+{
+  reader.setBuffer(buf);
+  if (!reader.beforeMessageRead())   return false;
+switch (reader.state()) {
+case 0:
+    caches=reader.readCollection("caches",MessageCollectionItemType.INT);
+  if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 1:
+flags=reader.readByte("flags");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 2:
+pageSize=reader.readInt("pageSize");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 3:
+parts=reader.readMap("parts",MessageCollectionItemType.UUID,MessageCollectionItemType.INT_ARR,false);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 4:
+qrys=reader.readCollection("qrys",MessageCollectionItemType.MSG);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 5:
+reqId=reader.readLong("reqId");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 6:
+tbls=reader.readCollection("tbls",MessageCollectionItemType.STRING);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 7:
+topVer=reader.readMessage("topVer");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+}
+return reader.afterMessageRead(GridH2QueryRequest.class);
+}

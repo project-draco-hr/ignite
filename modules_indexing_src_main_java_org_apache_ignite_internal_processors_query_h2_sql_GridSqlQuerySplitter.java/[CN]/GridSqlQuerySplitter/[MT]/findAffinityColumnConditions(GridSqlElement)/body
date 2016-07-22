@@ -1,0 +1,22 @@
+{
+  if (el == null)   return;
+  el=GridSqlAlias.unwrap(el);
+  if (el instanceof GridSqlJoin) {
+    GridSqlJoin join=(GridSqlJoin)el;
+    findAffinityColumnConditions(join.leftTable());
+    findAffinityColumnConditions(join.rightTable());
+    findAffinityColumnConditions(join.on());
+  }
+ else   if (el instanceof GridSqlOperation) {
+    GridSqlOperationType type=((GridSqlOperation)el).operationType();
+switch (type) {
+case AND:
+      findAffinityColumnConditions(el.child(0));
+    findAffinityColumnConditions(el.child(1));
+  break;
+case EQUAL:
+findAffinityColumn(el.child(0));
+findAffinityColumn(el.child(1));
+}
+}
+}

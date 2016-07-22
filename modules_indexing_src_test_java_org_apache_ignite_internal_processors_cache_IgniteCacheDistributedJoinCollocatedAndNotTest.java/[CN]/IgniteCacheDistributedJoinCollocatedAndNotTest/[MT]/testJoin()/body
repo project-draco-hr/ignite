@@ -1,0 +1,21 @@
+{
+  Ignite client=grid(2);
+  IgniteCache<Object,Object> personCache=client.cache(PERSON_CACHE);
+  IgniteCache<Object,Object> orgCache=client.cache(ORG_CACHE);
+  IgniteCache<Object,Object> accCache=client.cache(ACCOUNT_CACHE);
+  Affinity<Object> aff=client.affinity(PERSON_CACHE);
+  AtomicInteger orgKey=new AtomicInteger();
+  AtomicInteger accKey=new AtomicInteger();
+  ClusterNode node0=ignite(0).cluster().localNode();
+  ClusterNode node1=ignite(1).cluster().localNode();
+  int orgId1=keyForNode(aff,orgKey,node0);
+  orgCache.put(orgId1,new Organization("obj-" + orgId1));
+  personCache.put(new PersonKey(1,orgId1),new Person(1,"o1-p1"));
+  personCache.put(new PersonKey(2,orgId1),new Person(2,"o1-p2"));
+  accCache.put(keyForNode(aff,accKey,node0),new Account(1,"a0"));
+  accCache.put(keyForNode(aff,accKey,node1),new Account(1,"a1"));
+  String qry="select o.name, p._key, p.name " + "from \"org\".Organization o, \"person\".Person p " + "where p.affKey = o._key";
+  assertFalse(plan(qry,orgCache,false).contains("batched"));
+  checkQuery(qry,orgCache,false,2);
+  checkQuery("select o.name, p._key, p.name, a.name " + "from \"org\".Organization o, \"person\".Person p, \"acc\".Account a " + "where p.affKey = o._key and p.id = a.personId",orgCache,true,2);
+}

@@ -1,0 +1,43 @@
+{
+  boolean ok=true;
+  if (specialize == null && msg instanceof GridCacheQueryMarshallable)   ((GridCacheQueryMarshallable)msg).marshall(marshaller);
+  ClusterNode locNode=null;
+  for (  ClusterNode node : nodes) {
+    if (node.isLocal()) {
+      locNode=node;
+      continue;
+    }
+    try {
+      if (specialize != null) {
+        msg=specialize.apply(node,msg);
+        if (msg instanceof GridCacheQueryMarshallable)         ((GridCacheQueryMarshallable)msg).marshall(marshaller);
+      }
+      ctx.io().send(node,topic,topicOrd,msg,plc);
+    }
+ catch (    IgniteCheckedException e) {
+      ok=false;
+      U.warn(log,"Failed to send message [node=" + node + ", msg="+ msg+ ", errMsg="+ e.getMessage()+ "]");
+    }
+  }
+  if (locNode != null) {
+    if (specialize != null)     msg=specialize.apply(locNode,msg);
+    if (runLocParallel) {
+      final ClusterNode finalLocNode=locNode;
+      final Message finalMsg=msg;
+      try {
+        ctx.closure().runLocal(new GridPlainRunnable(){
+          @Override public void run(){
+            locNodeHnd.apply(finalLocNode,finalMsg);
+          }
+        }
+,plc).listen(logger);
+      }
+ catch (      IgniteCheckedException e) {
+        ok=false;
+        U.error(log,"Failed to execute query locally.",e);
+      }
+    }
+ else     locNodeHnd.apply(locNode,msg);
+  }
+  return ok;
+}

@@ -1,0 +1,23 @@
+{
+  SqlFieldsQuery qry;
+  String sql;
+  if (broadcast) {
+    sql="select p.id, p.orgId, p.firstName, p.lastName, o.name " + "from Person p " + "join Organization o "+ "on p.orgId = o.id "+ "where o.id=?";
+  }
+ else {
+    sql="select p.id, p.orgId, p.firstName, p.lastName, o.name " + "from Organization o " + "join Person p "+ "on p.orgId = o._key "+ "where o._key=?";
+  }
+  qry=new SqlFieldsQuery(planOnly ? ("explain " + sql) : sql);
+  qry.setDistributedJoins(true);
+  qry.setArgs(orgId);
+  if (planOnly) {
+    String plan=(String)cache.query(qry).getAll().get(0).get(0);
+    println("Query execution plan:\n" + plan);
+    if (broadcast) {
+      if (plan.contains("batched:unicast") || !plan.contains("batched:broadcast"))       throw new Exception("Unexpected query plan: " + plan);
+    }
+ else     if (!plan.contains("batched:unicast") || plan.contains("batched:broadcast"))     throw new Exception("Unexpected query plan: " + plan);
+    return null;
+  }
+ else   return cache.query(qry).getAll();
+}

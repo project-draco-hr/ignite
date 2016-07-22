@@ -1,0 +1,15 @@
+{
+  s.executeUpdate("SET SCHEMA " + c.getName());
+  try (ResultSet rs1=s.executeQuery(qry);QueryCursor<List<?>> rs2=c.query(new SqlFieldsQuery(qry).setDistributedJoins(true))){
+    Iterator<List<?>> iter=rs2.iterator();
+    for (; ; ) {
+      if (!rs1.next()) {
+        assertFalse(iter.hasNext());
+        return;
+      }
+      assertTrue(iter.hasNext());
+      List<?> row=iter.next();
+      for (int i=0; i < row.size(); i++)       assertEquals(rs1.getLong(i + 1),row.get(i));
+    }
+  }
+ }

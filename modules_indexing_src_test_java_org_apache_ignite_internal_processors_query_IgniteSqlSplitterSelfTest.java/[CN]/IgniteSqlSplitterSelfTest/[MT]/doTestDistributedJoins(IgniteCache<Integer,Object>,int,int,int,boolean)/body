@@ -1,0 +1,25 @@
+{
+  assertEquals(0,c.size(CachePeekMode.ALL));
+  int key=0;
+  for (int i=0; i < orgs; i++) {
+    Organization o=new Organization();
+    o.name="Org" + i;
+    c.put(key++,o);
+  }
+  Random rnd=new GridRandom();
+  for (int i=0; i < persons; i++) {
+    Person2 p=new Person2();
+    p.name="Person" + i;
+    p.orgId=rnd.nextInt(orgs);
+    c.put(key++,p);
+  }
+  String select="select count(*) from Organization o, Person2 p where p.orgId = o._key";
+  String plan=(String)c.query(new SqlFieldsQuery("explain " + select).setDistributedJoins(true).setEnforceJoinOrder(enforceJoinOrder).setPageSize(pageSize)).getAll().get(0).get(0);
+  X.println("Plan : " + plan);
+  if (enforceJoinOrder)   assertTrue(plan,plan.contains("batched:broadcast"));
+ else   assertTrue(plan,plan.contains("batched:unicast"));
+  assertEquals(Long.valueOf(persons),c.query(new SqlFieldsQuery(select).setDistributedJoins(true).setEnforceJoinOrder(enforceJoinOrder).setPageSize(pageSize)).getAll().get(0).get(0));
+  c.clear();
+  assertEquals(0,c.size(CachePeekMode.ALL));
+  assertEquals(0L,c.query(new SqlFieldsQuery(select).setDistributedJoins(true).setEnforceJoinOrder(enforceJoinOrder).setPageSize(pageSize)).getAll().get(0).get(0));
+}

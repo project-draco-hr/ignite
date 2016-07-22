@@ -1,0 +1,19 @@
+{
+  if (skipQuery(cache,PERSON_CACHE_NAME,ORG_CACHE_NAME))   return;
+  qry="checkPersonOrganizationGroupBy";
+  SqlFieldsQuery q=new SqlFieldsQuery("select max(p.salary) " + "from \"" + PERSON_CACHE_NAME + "\".Person p join \""+ ORG_CACHE_NAME+ "\".Organization o "+ "on p.orgId = o.id "+ "group by o.name "+ "having o.id = ?");
+  q.setDistributedJoins(distributedJoins());
+  for (  Map.Entry<Integer,Integer> e : data.maxSalaryPerOrg.entrySet()) {
+    Integer orgId=e.getKey();
+    Integer maxSalary=e.getValue();
+    q.setArgs(orgId);
+    List<List<?>> res=cache.query(q).getAll();
+    String errMsg="Expected data [orgId=" + orgId + ", maxSalary="+ maxSalary+ ", data="+ data+ "]";
+    if (maxSalary > 0) {
+      assertEquals(errMsg,1,res.size());
+      assertEquals(errMsg,1,res.get(0).size());
+      assertEquals(errMsg,maxSalary,res.get(0).get(0));
+    }
+ else     assertEquals(errMsg,0,res.size());
+  }
+}

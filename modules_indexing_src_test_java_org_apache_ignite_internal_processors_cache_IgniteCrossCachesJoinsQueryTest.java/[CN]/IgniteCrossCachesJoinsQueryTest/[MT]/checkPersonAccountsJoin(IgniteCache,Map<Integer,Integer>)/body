@@ -1,0 +1,45 @@
+{
+  if (skipQuery(cache,PERSON_CACHE_NAME,ACC_CACHE_NAME))   return;
+  qry="checkPersonAccountsJoin";
+  List<Query> qrys=new ArrayList<>();
+  qrys.add(new SqlFieldsQuery("select p.name from " + "\"" + PERSON_CACHE_NAME + "\".Person p, "+ "\""+ ACC_CACHE_NAME+ "\".Account a "+ "where p.id = a.personId and p.id=?"));
+  qrys.add(new SqlFieldsQuery("select p.name from " + "\"" + PERSON_CACHE_NAME + "\".Person p, "+ "\""+ ACC_CACHE_NAME+ "\".Account a "+ "where p.dateId = a.personDateId and p.id=?"));
+  qrys.add(new SqlFieldsQuery("select p.name from " + "\"" + PERSON_CACHE_NAME + "\".Person p, "+ "\""+ ACC_CACHE_NAME+ "\".Account a "+ "where p.strId = a.personStrId and p.id=?"));
+  qrys.add(new SqlFieldsQuery("select p.name from " + "\"" + PERSON_CACHE_NAME + "\".Person p, "+ "\""+ ACC_CACHE_NAME+ "\".Account a "+ "where p.id = a.personId and p.id=?"));
+  qrys.add(new SqlFieldsQuery("select p.name from " + "\"" + PERSON_CACHE_NAME + "\".Person p, "+ "\""+ ACC_CACHE_NAME+ "\".Account a "+ "where p.dateId = a.personDateId and p.id=?"));
+  qrys.add(new SqlFieldsQuery("select p.name from " + "\"" + PERSON_CACHE_NAME + "\".Person p, "+ "\""+ ACC_CACHE_NAME+ "\".Account a "+ "where p.strId = a.personStrId and p.id=?"));
+  if (PERSON_CACHE_NAME.equals(cache.getName())) {
+    qrys.add(new SqlQuery(Person.class,"from \"" + PERSON_CACHE_NAME + "\".Person , \""+ ACC_CACHE_NAME+ "\".Account  "+ "where Person.id = Account.personId and Person.id=?"));
+    qrys.add(new SqlQuery(Person.class,"from \"" + PERSON_CACHE_NAME + "\".Person , \""+ ACC_CACHE_NAME+ "\".Account  "+ "where Person.id = Account.personId and Person.id=?"));
+  }
+  List<Integer> keys=new ArrayList<>(cnts.keySet());
+  for (int i=0; i < 10; i++) {
+    Integer key=keys.get(rnd.nextInt(keys.size()));
+    List<List<Object>> res;
+    for (    Query q : qrys) {
+      if (q instanceof SqlFieldsQuery) {
+        ((SqlFieldsQuery)q).setDistributedJoins(distributedJoins());
+        ((SqlFieldsQuery)q).setArgs(key);
+      }
+ else {
+        ((SqlQuery)q).setDistributedJoins(distributedJoins());
+        ((SqlQuery)q).setArgs(key);
+      }
+      res=cache.query(q).getAll();
+      assertEquals((int)cnts.get(key),res.size());
+    }
+  }
+  qrys.clear();
+  qrys.add(new SqlFieldsQuery("select count(*) " + "from \"" + PERSON_CACHE_NAME + "\".Person p, \""+ ACC_CACHE_NAME+ "\".Account"+ " a "+ "where p.id = a.personId"));
+  qrys.add(new SqlFieldsQuery("select count(*) " + "from \"" + PERSON_CACHE_NAME + "\".Person p, \""+ ACC_CACHE_NAME+ "\".Account"+ " a "+ "where p.Dateid = a.personDateId"));
+  qrys.add(new SqlFieldsQuery("select count(*) " + "from \"" + PERSON_CACHE_NAME + "\".Person p, \""+ ACC_CACHE_NAME+ "\".Account"+ " a "+ "where p.strId = a.personStrId"));
+  qrys.add(new SqlFieldsQuery("select count(*) " + "from \"" + PERSON_CACHE_NAME + "\".Person p, \""+ ACC_CACHE_NAME+ "\".Account"+ " a "+ "where p.id = a.personId"));
+  long total=0;
+  for (  Integer cnt : data.accountsPerPerson.values())   total+=cnt;
+  for (  Query q : qrys) {
+    ((SqlFieldsQuery)q).setDistributedJoins(distributedJoins());
+    List<List<Object>> res=cache.query(q).getAll();
+    assertEquals(1,res.size());
+    assertEquals(total,res.get(0).get(0));
+  }
+}

@@ -1,0 +1,43 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  CacheKeyConfiguration keyCfg=new CacheKeyConfiguration(PersonKey.class.getName(),"affKey");
+  cfg.setCacheKeyConfiguration(keyCfg);
+  TcpDiscoverySpi spi=((TcpDiscoverySpi)cfg.getDiscoverySpi());
+  spi.setIpFinder(IP_FINDER);
+  List<CacheConfiguration> ccfgs=new ArrayList<>();
+{
+    CacheConfiguration ccfg=configuration(PERSON_CACHE);
+    QueryEntity entity=new QueryEntity();
+    entity.setKeyType(PersonKey.class.getName());
+    entity.setValueType(Person.class.getName());
+    entity.addQueryField("id",Integer.class.getName(),null);
+    entity.addQueryField("affKey",Integer.class.getName(),null);
+    entity.addQueryField("name",String.class.getName(),null);
+    ccfg.setQueryEntities(F.asList(entity));
+    ccfgs.add(ccfg);
+  }
+{
+    CacheConfiguration ccfg=configuration(ORG_CACHE);
+    QueryEntity entity=new QueryEntity();
+    entity.setKeyType(Integer.class.getName());
+    entity.setValueType(Organization.class.getName());
+    entity.addQueryField("name",String.class.getName(),null);
+    entity.setIndexes(F.asList(new QueryIndex("name")));
+    ccfg.setQueryEntities(F.asList(entity));
+    ccfgs.add(ccfg);
+  }
+{
+    CacheConfiguration ccfg=configuration(ACCOUNT_CACHE);
+    QueryEntity entity=new QueryEntity();
+    entity.setKeyType(Integer.class.getName());
+    entity.setValueType(Account.class.getName());
+    entity.addQueryField("personId",Integer.class.getName(),null);
+    entity.addQueryField("name",String.class.getName(),null);
+    entity.setIndexes(F.asList(new QueryIndex("personId"),new QueryIndex("name")));
+    ccfg.setQueryEntities(F.asList(entity));
+    ccfgs.add(ccfg);
+  }
+  cfg.setCacheConfiguration(ccfgs.toArray(new CacheConfiguration[ccfgs.size()]));
+  cfg.setClientMode(client);
+  return cfg;
+}

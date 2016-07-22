@@ -1,0 +1,35 @@
+{
+  for (; ; ) {
+    if (rangeId == cursorRangeId) {
+      if (cursor.next())       return true;
+    }
+ else     if (rangeId < cursorRangeId)     return false;
+    cursor=GridH2Cursor.EMPTY;
+    while (!ranges.hasNext()) {
+      if (remainingRanges == 0) {
+        ranges=emptyIterator();
+        return false;
+      }
+      ranges=awaitForResponse().ranges().iterator();
+    }
+    GridH2RowRange range=ranges.next();
+    cursorRangeId=range.rangeId();
+    if (!F.isEmpty(range.rows())) {
+      final Iterator<GridH2RowMessage> it=range.rows().iterator();
+      if (it.hasNext()) {
+        cursor=new GridH2Cursor(new Iterator<Row>(){
+          @Override public boolean hasNext(){
+            return it.hasNext();
+          }
+          @Override public Row next(){
+            return toRow(it.next());
+          }
+          @Override public void remove(){
+            throw new UnsupportedOperationException();
+          }
+        }
+);
+      }
+    }
+  }
+}

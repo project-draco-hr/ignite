@@ -1,0 +1,14 @@
+{
+  if (params == null)   params=GridCacheSqlQuery.EMPTY_PARAMS;
+  Set<String> tbls=new HashSet<>();
+  Set<String> schemas=new HashSet<>();
+  final Prepared prepared=prepared(stmt);
+  GridSqlQuery qry=new GridSqlQueryParser().parse(prepared);
+  qry=collectAllTables(qry,schemas,tbls);
+  GridCacheTwoStepQuery res=new GridCacheTwoStepQuery(schemas,tbls);
+  final GridSqlSelect mapQry=wrapUnion(qry);
+  GridCacheSqlQuery rdc=split(res,0,mapQry,params,collocatedGrpBy);
+  res.reduceQuery(rdc);
+  res.distributedJoins(distributedJoins && !isCollocated(query(prepared)));
+  return res;
+}

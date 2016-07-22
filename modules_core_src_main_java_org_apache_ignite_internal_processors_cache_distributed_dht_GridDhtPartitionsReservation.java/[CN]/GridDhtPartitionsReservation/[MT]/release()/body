@@ -3,7 +3,7 @@
     int r=reservations.get();
     if (r <= 0)     throw new IllegalStateException("Method 'reserve' must be called before 'release'.");
     if (reservations.compareAndSet(r,r - 1)) {
-      if (r == 1 && !topVer.equals(cctx.topology().topologyVersion()))       tryEvict(parts.get());
+      if (r == 1 && !cctx.kernalContext().isStopping() && !topVer.equals(cctx.topology().topologyVersion()))       tryEvict(parts.get());
       return;
     }
   }

@@ -1,0 +1,17 @@
+{
+  if (exp instanceof GridSqlColumn) {
+    GridSqlColumn col=(GridSqlColumn)exp;
+    GridSqlElement from=col.expressionInFrom();
+    if (from instanceof GridSqlTable) {
+      GridSqlTable fromTbl=(GridSqlTable)from;
+      GridH2Table tbl=fromTbl.dataTable();
+      if (tbl != null) {
+        IndexColumn affKeyCol=tbl.getAffinityKeyColumn();
+        Column expCol=col.column();
+        if (affKeyCol != null && expCol != null && affKeyCol.column.getColumnId() == expCol.getColumnId()) {
+          fromTbl.affinityKeyCondition(true);
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  Column col=expCol.getColumn();
+  if (col == null)   return false;
+  Table t=col.getTable();
+  if (t.isView()) {
+    Query qry;
+    if (f.getIndex() != null)     qry=getSubQuery(f);
+ else     qry=GridSqlQueryParser.VIEW_QUERY.get((TableView)t);
+    return isAffinityColumn(qry,expCol,validate);
+  }
+  if (t instanceof GridH2Table) {
+    if (validate && ((GridH2Table)t).rowDescriptor().context().customAffinityMapper())     throw customAffinityError(((GridH2Table)t).spaceName());
+    IndexColumn affCol=((GridH2Table)t).getAffinityKeyColumn();
+    return affCol != null && col.getColumnId() == affCol.column.getColumnId();
+  }
+  return false;
+}

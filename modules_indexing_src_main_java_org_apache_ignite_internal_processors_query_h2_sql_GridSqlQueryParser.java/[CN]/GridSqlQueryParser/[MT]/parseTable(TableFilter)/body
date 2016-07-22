@@ -2,10 +2,12 @@
   GridSqlElement res=(GridSqlElement)h2ObjToGridObj.get(filter);
   if (res == null) {
     Table tbl=filter.getTable();
-    if (tbl instanceof TableBase)     res=new GridSqlTable(tbl.getSchema().getName(),tbl.getName());
+    if (tbl instanceof TableBase)     res=new GridSqlTable(tbl);
  else     if (tbl instanceof TableView) {
       Query qry=VIEW_QUERY.get((TableView)tbl);
-      res=new GridSqlSubquery(parse(qry));
+      Index idx=filter.getIndex();
+      Query idxQry=idx instanceof ViewIndex ? ((ViewIndex)idx).getQuery() : null;
+      res=new GridSqlSubquery(parse(qry,idxQry));
     }
  else     if (tbl instanceof FunctionTable)     res=parseExpression(FUNC_EXPR.get((FunctionTable)tbl),false);
  else     if (tbl instanceof RangeTable) {

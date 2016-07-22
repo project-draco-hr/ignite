@@ -1,0 +1,14 @@
+{
+  final TableDescriptor tbl=tableDescriptor(spaceName,type);
+  if (tbl == null)   throw new CacheException("Failed to find SQL table for type: " + type.name());
+  String sql=generateQuery(qry,tbl);
+  Connection conn=connectionForThread(tbl.schemaName());
+  initLocalQueryContext(conn,false,filter);
+  try {
+    ResultSet rs=executeSqlQueryWithTimer(spaceName,conn,sql,params,true);
+    return new KeyValIterator(rs);
+  }
+  finally {
+    GridH2QueryContext.clearThreadLocal();
+  }
+}

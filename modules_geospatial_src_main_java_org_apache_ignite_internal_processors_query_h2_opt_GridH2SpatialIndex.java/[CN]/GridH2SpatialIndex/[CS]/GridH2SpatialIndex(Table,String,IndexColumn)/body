@@ -1,0 +1,13 @@
+{
+  if (cols.length > 1)   throw DbException.getUnsupportedException("can only do one column");
+  if ((cols[0].sortType & SortOrder.DESCENDING) != 0)   throw DbException.getUnsupportedException("cannot do descending");
+  if ((cols[0].sortType & SortOrder.NULLS_FIRST) != 0)   throw DbException.getUnsupportedException("cannot do nulls first");
+  if ((cols[0].sortType & SortOrder.NULLS_LAST) != 0)   throw DbException.getUnsupportedException("cannot do nulls last");
+  initBaseIndex(tbl,0,idxName,cols,IndexType.createNonUnique(false,false,true));
+  table=tbl;
+  if (cols[0].column.getType() != Value.GEOMETRY) {
+    throw DbException.getUnsupportedException("spatial index on non-geometry column, " + cols[0].column.getCreateSQL());
+  }
+  store=MVStore.open(null);
+  treeMap=store.openMap("spatialIndex",new MVRTreeMap.Builder<Long>());
+}

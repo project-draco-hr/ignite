@@ -1,0 +1,17 @@
+{
+  if (row == null)   return null;
+  List<GridH2ValueMessage> vals=new ArrayList<>(indexColumns.length);
+  for (  IndexColumn idxCol : indexColumns) {
+    Value val=row.getValue(idxCol.column.getColumnId());
+    if (val == null)     break;
+    try {
+      vals.add(GridH2ValueMessageFactory.toMessage(val));
+    }
+ catch (    IgniteCheckedException e) {
+      throw new CacheException(e);
+    }
+  }
+  GridH2RowMessage res=new GridH2RowMessage();
+  res.values(vals);
+  return res;
+}

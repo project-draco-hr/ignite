@@ -1,0 +1,28 @@
+{
+  if (skipQuery(cache,PERSON_CACHE_NAME,ORG_CACHE_NAME))   return;
+  qry="checkOrganizationPersonsJoin";
+  SqlFieldsQuery qry=new SqlFieldsQuery("select o.name, p.name " + "from \"" + ORG_CACHE_NAME + "\".Organization o, \""+ PERSON_CACHE_NAME+ "\".Person p "+ "where p.orgId = o._key and o._key=?");
+  qry.setDistributedJoins(distributedJoins());
+  SqlQuery qry2=null;
+  if (PERSON_CACHE_NAME.equals(cache.getName())) {
+    qry2=new SqlQuery(Person.class,"from \"" + ORG_CACHE_NAME + "\".Organization, \""+ PERSON_CACHE_NAME+ "\".Person "+ "where Person.orgId = Organization._key and Organization._key=?");
+    qry2.setDistributedJoins(distributedJoins());
+  }
+  long total=0;
+  for (int i=0; i < data.personsPerOrg.size(); i++) {
+    qry.setArgs(i);
+    if (qry2 != null)     qry2.setArgs(i);
+    List<List<Object>> res=cache.query(qry).getAll();
+    assertEquals((int)data.personsPerOrg.get(i),res.size());
+    if (qry2 != null) {
+      List<List<Object>> res2=cache.query(qry2).getAll();
+      assertEquals((int)data.personsPerOrg.get(i),res2.size());
+    }
+    total+=res.size();
+  }
+  SqlFieldsQuery qry3=new SqlFieldsQuery("select count(*) " + "from \"" + ORG_CACHE_NAME + "\".Organization o, \""+ PERSON_CACHE_NAME+ "\".Person p where p.orgId = o._key");
+  qry3.setDistributedJoins(distributedJoins());
+  List<List<Object>> res=cache.query(qry3).getAll();
+  assertEquals(1,res.size());
+  assertEquals(total,res.get(0).get(0));
+}

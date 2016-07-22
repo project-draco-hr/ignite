@@ -1,0 +1,31 @@
+{
+  GridSqlSelect res=(GridSqlSelect)h2ObjToGridObj.get(select);
+  if (res != null)   return res;
+  res=new GridSqlSelect();
+  h2ObjToGridObj.put(select,res);
+  res.distinct(select.isDistinct());
+  Expression where=CONDITION.get(select);
+  res.where(parseExpression(where,false));
+  GridSqlElement from=null;
+  TableFilter filter=select.getTopTableFilter();
+  if (idxQry instanceof Select)   filter=((Select)idxQry).getTopTableFilter();
+  do {
+    assert0(filter != null,select);
+    assert0(filter.getNestedJoin() == null,select);
+    GridSqlElement gridFilter=parseTable(filter);
+    from=from == null ? gridFilter : new GridSqlJoin(from,gridFilter,filter.isJoinOuter(),parseExpression(filter.getJoinCondition(),false));
+    filter=filter.getJoin();
+  }
+ while (filter != null);
+  res.from(from);
+  ArrayList<Expression> expressions=select.getExpressions();
+  for (int i=0; i < expressions.size(); i++)   res.addColumn(parseExpression(expressions.get(i),true),i < select.getColumnCount());
+  int[] grpIdx=GROUP_INDEXES.get(select);
+  if (grpIdx != null)   res.groupColumns(grpIdx);
+  int havingIdx=HAVING_INDEX.get(select);
+  if (havingIdx >= 0)   res.havingColumn(havingIdx);
+  processSortOrder(select.getSortOrder(),res);
+  res.limit(parseExpression(select.getLimit(),false));
+  res.offset(parseExpression(select.getOffset(),false));
+  return res;
+}

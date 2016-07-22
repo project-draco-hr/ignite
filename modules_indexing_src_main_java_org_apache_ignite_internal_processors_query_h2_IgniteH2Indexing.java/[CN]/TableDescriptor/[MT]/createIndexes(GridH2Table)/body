@@ -1,7 +1,10 @@
 {
   this.tbl=tbl;
   ArrayList<Index> idxs=new ArrayList<>();
-  idxs.add(new GridH2TreeIndex("_key_PK",tbl,true,KEY_COL,VAL_COL,tbl.indexColumn(0,ASCENDING)));
+  IndexColumn keyCol=tbl.indexColumn(KEY_COL,SortOrder.ASCENDING);
+  IndexColumn affCol=tbl.getAffinityKeyColumn();
+  if (affCol != null && equal(affCol,keyCol))   affCol=null;
+  idxs.add(new GridH2TreeIndex("_key_PK",tbl,true,treeIndexColumns(new ArrayList<IndexColumn>(2),keyCol,affCol)));
   if (type().valueClass() == String.class) {
     try {
       luceneIdx=new GridLuceneIndex(ctx,schema.offheap,schema.spaceName,type);
@@ -10,6 +13,7 @@
       throw new IgniteException(e1);
     }
   }
+  boolean affIdxFound=false;
   for (  Map.Entry<String,GridQueryIndexDescriptor> e : type.indexes().entrySet()) {
     String name=e.getKey();
     GridQueryIndexDescriptor idx=e.getValue();
@@ -22,18 +26,24 @@
       }
     }
  else {
-      IndexColumn[] cols=new IndexColumn[idx.fields().size()];
-      int i=0;
+      List<IndexColumn> cols=new ArrayList<>(idx.fields().size() + 2);
       boolean escapeAll=schema.escapeAll();
       for (      String field : idx.fields()) {
         String fieldName=escapeAll ? field : escapeName(field,false).toUpperCase();
         Column col=tbl.getColumn(fieldName);
-        cols[i++]=tbl.indexColumn(col.getColumnId(),idx.descending(field) ? DESCENDING : ASCENDING);
+        cols.add(tbl.indexColumn(col.getColumnId(),idx.descending(field) ? SortOrder.DESCENDING : SortOrder.ASCENDING));
       }
-      if (idx.type() == SORTED)       idxs.add(new GridH2TreeIndex(name,tbl,false,KEY_COL,VAL_COL,cols));
- else       if (idx.type() == GEO_SPATIAL)       idxs.add(createH2SpatialIndex(tbl,name,cols,KEY_COL,VAL_COL));
- else       throw new IllegalStateException();
+      if (idx.type() == SORTED) {
+        affIdxFound|=affCol != null && equal(cols.get(0),affCol);
+        cols=treeIndexColumns(cols,keyCol,affCol);
+        idxs.add(new GridH2TreeIndex(name,tbl,false,cols));
+      }
+ else       if (idx.type() == GEO_SPATIAL)       idxs.add(createH2SpatialIndex(tbl,name,cols.toArray(new IndexColumn[cols.size()])));
+ else       throw new IllegalStateException("Index type: " + idx.type());
     }
+  }
+  if (affCol != null && !affIdxFound) {
+    idxs.add(new GridH2TreeIndex("AFFINITY_KEY",tbl,false,treeIndexColumns(new ArrayList<IndexColumn>(2),affCol,keyCol)));
   }
   return idxs;
 }

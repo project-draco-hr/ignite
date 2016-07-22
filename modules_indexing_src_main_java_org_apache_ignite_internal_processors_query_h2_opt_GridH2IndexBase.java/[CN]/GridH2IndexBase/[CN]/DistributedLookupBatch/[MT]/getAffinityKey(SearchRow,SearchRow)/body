@@ -1,0 +1,16 @@
+{
+  if (firstRow == null || lastRow == null)   return null;
+  Value affKeyFirst=firstRow.getValue(affColId);
+  Value affKeyLast=lastRow.getValue(affColId);
+  if (affKeyFirst != null && equal(affKeyFirst,affKeyLast))   return affKeyFirst == ValueNull.INSTANCE ? EXPLICIT_NULL : affKeyFirst.getObject();
+  if (affColId == KEY_COL)   return null;
+  Value pkFirst=firstRow.getValue(KEY_COL);
+  Value pkLast=lastRow.getValue(KEY_COL);
+  if (pkFirst == ValueNull.INSTANCE || pkLast == ValueNull.INSTANCE)   return EXPLICIT_NULL;
+  if (pkFirst == null || pkLast == null || !equal(pkFirst,pkLast))   return null;
+  Object pkAffKeyFirst=cctx.affinity().affinityKey(pkFirst.getObject());
+  Object pkAffKeyLast=cctx.affinity().affinityKey(pkLast.getObject());
+  if (pkAffKeyFirst == null || pkAffKeyLast == null)   throw new CacheException("Cache key without affinity key.");
+  if (pkAffKeyFirst.equals(pkAffKeyLast))   return pkAffKeyFirst;
+  return null;
+}

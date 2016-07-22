@@ -1,0 +1,19 @@
+{
+  reader.setBuffer(buf);
+  if (!reader.beforeMessageRead())   return false;
+switch (reader.state()) {
+case 0:
+    flags=reader.readByte("flags");
+  if (!reader.isLastRead())   return false;
+reader.incrementState();
+case 1:
+rangeId=reader.readInt("rangeId");
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+case 2:
+rows=reader.readCollection("rows",MessageCollectionItemType.MSG);
+if (!reader.isLastRead()) return false;
+reader.incrementState();
+}
+return reader.afterMessageRead(GridH2RowRange.class);
+}

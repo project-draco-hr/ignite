@@ -1,0 +1,28 @@
+{
+  CacheConfiguration ccfg=cacheConfiguration(cacheMode,backups,affKey,includeAffKey);
+  log.info("Test cache [mode=" + cacheMode + ", backups="+ backups+ ']');
+  IgniteCache cache=ignite(0).createCache(ccfg);
+  try {
+    final PutData putData=putData(cache,affKey);
+    for (int i=0; i < NODES; i++) {
+      log.info("Test node: " + i);
+      final IgniteCache cache0=ignite(i).cache(ccfg.getName());
+      if (cacheMode == REPLICATED && !ignite(i).configuration().isClientMode()) {
+        GridTestUtils.assertThrows(log,new Callable<Object>(){
+          @Override public Object call() throws Exception {
+            checkPersonAccountsJoin(cache0,putData.personAccounts,affKey);
+            return null;
+          }
+        }
+,CacheException.class,"Queries using distributed JOINs have to be run on partitioned cache");
+      }
+ else {
+        checkPersonAccountsJoin(cache0,putData.personAccounts,affKey);
+        checkOrganizationPersonsJoin(cache0,putData.orgPersons);
+      }
+    }
+  }
+  finally {
+    ignite(0).destroyCache(ccfg.getName());
+  }
+}

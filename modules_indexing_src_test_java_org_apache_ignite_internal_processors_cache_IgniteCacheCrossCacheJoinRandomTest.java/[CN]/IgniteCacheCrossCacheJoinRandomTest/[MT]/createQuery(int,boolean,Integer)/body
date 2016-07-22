@@ -1,0 +1,18 @@
+{
+  StringBuilder qry=new StringBuilder("select ");
+  for (int i=0; i < caches; i++) {
+    if (i != 0)     qry.append(", ");
+    qry.append("o" + i + "._key");
+  }
+  qry.append(" from \"cache0\".TestObject o0 ");
+  for (int i=1; i < caches; i++) {
+    String cacheName="cache" + i;
+    String cur="o" + i;
+    String prev="o" + (i - 1);
+    qry.append(outer ? "left outer join " : "inner join ");
+    qry.append("\"" + cacheName + "\".TestObject "+ cur);
+    if (i == caches - 1 && objId != null)     qry.append(" on (" + prev + ".parentId="+ cur+ "._key and "+ cur+ "._key="+ objId+ ") ");
+ else     qry.append(" on (" + prev + ".parentId="+ cur+ "._key) ");
+  }
+  return qry.toString();
+}
