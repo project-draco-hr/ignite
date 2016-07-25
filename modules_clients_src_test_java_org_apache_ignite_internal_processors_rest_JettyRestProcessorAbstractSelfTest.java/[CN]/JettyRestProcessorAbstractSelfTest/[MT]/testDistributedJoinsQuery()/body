@@ -1,0 +1,15 @@
+{
+  String qry="select * from Person, \"organization\".Organization " + "where \"organization\".Organization.id = Person.orgId " + "and \"organization\".Organization.name = ?";
+  Map<String,String> params=new HashMap<>();
+  params.put("cmd",GridRestCommand.EXECUTE_SQL_QUERY.key());
+  params.put("type","Person");
+  params.put("distributedJoins","true");
+  params.put("pageSize","10");
+  params.put("cacheName","person");
+  params.put("qry",URLEncoder.encode(qry,CHARSET));
+  params.put("arg1","o1");
+  String ret=content(params);
+  JsonNode items=jsonResponse(ret).get("items");
+  assertEquals(2,items.size());
+  assertFalse(queryCursorFound());
+}
