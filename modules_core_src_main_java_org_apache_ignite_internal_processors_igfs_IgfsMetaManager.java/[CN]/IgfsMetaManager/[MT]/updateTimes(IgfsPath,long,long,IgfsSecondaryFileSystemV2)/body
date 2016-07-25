@@ -1,0 +1,42 @@
+{
+  while (true) {
+    if (busyLock.enterBusy()) {
+      try {
+        validTxState(false);
+        IgfsPathIds pathIds=pathIds(path);
+        Set<IgniteUuid> lockIds=new TreeSet<>(PATH_ID_SORTING_COMPARATOR);
+        pathIds.addExistingIds(lockIds,relaxed);
+        try (IgniteInternalTx tx=startTx()){
+          Map<IgniteUuid,IgfsEntryInfo> lockInfos=lockIds(lockIds);
+          if (secondaryFs != null && isRetryForSecondary(pathIds,lockInfos))           continue;
+          if (!pathIds.verifyIntegrity(lockInfos,relaxed))           continue;
+          if (pathIds.allExists()) {
+            if (secondaryFs != null)             secondaryFs.setTimes(path,accessTime,modificationTime);
+            IgniteUuid targetId=pathIds.lastExistingId();
+            IgfsEntryInfo targetInfo=lockInfos.get(targetId);
+            id2InfoPrj.invoke(targetId,new IgfsMetaUpdateTimesProcessor(accessTime == -1 ? targetInfo.accessTime() : accessTime,modificationTime == -1 ? targetInfo.modificationTime() : modificationTime));
+            tx.commit();
+            return;
+          }
+ else {
+            if (secondaryFs != null) {
+              secondaryFs.setTimes(path,accessTime,modificationTime);
+              return;
+            }
+ else             throw new IgfsPathNotFoundException("Failed to update times (path not found): " + path);
+          }
+        }
+       }
+ catch (      IgniteException|IgniteCheckedException e) {
+        throw e;
+      }
+catch (      Exception e) {
+        throw new IgniteCheckedException("setTimes failed due to unexpected exception: " + path,e);
+      }
+ finally {
+        busyLock.leaveBusy();
+      }
+    }
+ else     throw new IllegalStateException("Failed to update times because Grid is stopping: " + path);
+  }
+}
