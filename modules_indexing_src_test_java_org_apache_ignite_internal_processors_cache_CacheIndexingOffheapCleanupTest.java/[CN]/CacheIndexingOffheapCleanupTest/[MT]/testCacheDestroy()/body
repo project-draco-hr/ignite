@@ -1,0 +1,12 @@
+{
+  Ignite ignite=ignite(0);
+  for (int i=0; i < 5; i++) {
+    log.info("Iteration: " + i);
+    IgniteCache cache=ignite.createCache(cacheConfiguration());
+    for (int k=0; k < 100; k++)     cache.put(k,new TestType());
+    GridUnsafeMemory mem=schemaMemory(ignite,cache.getName());
+    assertTrue(mem.allocatedSize() > 0);
+    ignite.destroyCache(cache.getName());
+    assertEquals(0,mem.allocatedSize());
+  }
+}
