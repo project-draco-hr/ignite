@@ -1,15 +1,21 @@
 {
   log.info("Test cache: " + cacheName);
+  Affinity<Object> aff0=ignite(0).affinity(cacheName);
   Ignite client=ignite(NODE_CNT - 1);
   assertTrue(client.configuration().isClientMode());
   ClusterNode clientNode=client.cluster().localNode();
   for (int i=0; i < NODE_CNT; i++) {
     Ignite ignite=ignite(i);
-    Affinity<Integer> aff=ignite.affinity(cacheName);
+    Affinity<Object> aff=ignite.affinity(cacheName);
     for (int part=0; part < aff.partitions(); part++) {
       Collection<ClusterNode> nodes=aff.mapPartitionToPrimaryAndBackups(part);
       assertEquals(expNodes,nodes.size());
+      assertEquals(aff0.mapPartitionToPrimaryAndBackups(part),nodes);
       assertFalse(nodes.contains(clientNode));
+      assertEquals(aff0.partition(part),aff.partition(part));
+      TestKey key=new TestKey(part,part + 1);
+      assertEquals(aff0.partition(key),aff.partition(key));
+      assertEquals(aff0.mapKeyToPrimaryAndBackups(key),aff.mapKeyToPrimaryAndBackups(key));
     }
   }
 }

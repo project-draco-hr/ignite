@@ -1,0 +1,17 @@
+{
+  if (!((CacheObjectBinaryContext)ctx).binaryEnabled())   return super.toCacheKeyObject(ctx,cctx,obj,userObj);
+  if (obj instanceof KeyCacheObject) {
+    KeyCacheObject key=(KeyCacheObject)obj;
+    if (key instanceof BinaryObjectImpl) {
+      key=key.copy(partition(ctx,cctx,key));
+    }
+ else     if (key.partition() == -1)     key.partition(partition(ctx,cctx,key));
+    return key;
+  }
+  obj=toBinary(obj);
+  if (obj instanceof BinaryObjectImpl) {
+    ((BinaryObjectImpl)obj).partition(partition(ctx,cctx,obj));
+    return (KeyCacheObject)obj;
+  }
+  return toCacheKeyObject0(ctx,cctx,obj,userObj);
+}
