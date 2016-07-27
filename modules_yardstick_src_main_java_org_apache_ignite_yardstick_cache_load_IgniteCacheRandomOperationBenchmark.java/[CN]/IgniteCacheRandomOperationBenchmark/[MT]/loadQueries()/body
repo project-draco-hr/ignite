@@ -6,7 +6,16 @@
         String line;
         while ((line=br.readLine()) != null) {
           if (line.trim().isEmpty())           continue;
-          queries.add(line.trim());
+          boolean distributedJoins=false;
+          int commentIdx=line.lastIndexOf('#');
+          if (commentIdx >= 0) {
+            if (line.toUpperCase().indexOf("DISTRIBUTEDJOINS",commentIdx) > 0)             distributedJoins=true;
+            line=line.substring(0,commentIdx);
+          }
+          line=line.trim();
+          TestQuery qry=new TestQuery(line,distributedJoins);
+          queries.add(qry);
+          BenchmarkUtils.println("Loaded query: " + qry);
         }
       }
      }
