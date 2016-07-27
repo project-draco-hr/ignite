@@ -3,11 +3,15 @@
   try {
     Map<Integer,ClusterNode> map=new HashMap<>();
     if (!F.isEmpty(parts)) {
-      for (      int p : parts)       map.put(p,mapPartitionToNode(p));
+      AffinityInfo aff=cache();
+      for (      int p : parts)       map.put(p,F.first(aff.assignment().get(p)));
     }
     return map;
   }
-  finally {
+ catch (  IgniteCheckedException e) {
+    throw new IgniteException(e);
+  }
+ finally {
     ctx.gateway().readUnlock();
   }
 }
