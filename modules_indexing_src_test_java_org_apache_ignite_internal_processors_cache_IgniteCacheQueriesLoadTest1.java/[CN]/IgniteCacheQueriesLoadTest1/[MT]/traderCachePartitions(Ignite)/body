@@ -1,0 +1,16 @@
+{
+  Affinity<?> affinity=ignite.affinity(TRADER_CACHE);
+  List<Integer> partNumbers=new ArrayList<>(affinity.partitions());
+  for (int i=0; i < affinity.partitions(); i++)   partNumbers.add(i);
+  Map<Integer,ClusterNode> partPerNodes=affinity.mapPartitionsToNodes(partNumbers);
+  Map<UUID,List<Integer>> nodesToPart=new HashMap<>();
+  for (  Map.Entry<Integer,ClusterNode> entry : partPerNodes.entrySet()) {
+    List<Integer> nodeParts=nodesToPart.get(entry.getValue().id());
+    if (nodeParts == null) {
+      nodeParts=new ArrayList<>();
+      nodesToPart.put(entry.getValue().id(),nodeParts);
+    }
+    nodeParts.add(entry.getKey());
+  }
+  return nodesToPart;
+}

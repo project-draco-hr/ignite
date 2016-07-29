@@ -1,0 +1,29 @@
+{
+  try {
+    IgniteCache traders=node.cache(TRADER_CACHE).withKeepBinary();
+    IgniteCache<String,BinaryObject> depositCache=node.cache(DEPOSIT_CACHE).withKeepBinary();
+    List<Integer> myPartitions=cachePart.get(node.cluster().localNode().id());
+    for (    Integer part : myPartitions) {
+      ScanQuery scanQry=new ScanQuery();
+      scanQry.setPartition(part);
+      try (QueryCursor<Cache.Entry<String,BinaryObject>> cursor=traders.query(scanQry)){
+        for (        Cache.Entry<String,BinaryObject> entry : cursor) {
+          String traderId=entry.getKey();
+          SqlFieldsQuery findDepositQry=new SqlFieldsQuery(FIND_DEPOSIT_SQL).setLocal(true);
+          try (QueryCursor cursor1=depositCache.query(findDepositQry.setArgs(traderId))){
+            for (            Object obj : cursor1) {
+              List<String> depositIds=(List<String>)obj;
+              for (              String depositId : depositIds) {
+                updateDeposit(depositCache,depositId);
+                checkDeposit(depositCache,depositId);
+              }
+            }
+          }
+         }
+      }
+     }
+  }
+ catch (  Exception e) {
+    throw new IgniteException(e);
+  }
+}

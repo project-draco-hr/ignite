@@ -1,0 +1,17 @@
+{
+  IgniteConfiguration cfg=super.getConfiguration(gridName);
+  cfg.setIncludeEventTypes();
+  cfg.setMarshaller(null);
+  ((TcpDiscoverySpi)cfg.getDiscoverySpi()).setIpFinder(IP_FINDER);
+  RendezvousAffinityFunction aff=new RendezvousAffinityFunction();
+  aff.setPartitions(3000);
+  CacheConfiguration<Object,Object> parentCfg=new CacheConfiguration<>();
+  parentCfg.setAffinity(aff);
+  parentCfg.setAtomicityMode(TRANSACTIONAL);
+  parentCfg.setCacheMode(PARTITIONED);
+  parentCfg.setMemoryMode(OFFHEAP_TIERED);
+  parentCfg.setBackups(2);
+  parentCfg.setWriteSynchronizationMode(FULL_SYNC);
+  cfg.setCacheConfiguration(getTraderCfg(parentCfg),getDepositCfg(parentCfg),getDepositHistoryCfg(parentCfg));
+  return cfg;
+}

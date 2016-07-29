@@ -1,0 +1,19 @@
+{
+  IgniteCache histCache=node.cache(DEPOSIT_HISTORY_CACHE).withKeepBinary();
+  BinaryObject deposit=depositCache.get(depositKey);
+  BigDecimal startBalance=deposit.field(BALANCE_ON_DAY_OPEN);
+  BigDecimal balance=deposit.field(BALANCE);
+  BigDecimal rate=deposit.field(MARGIN_RATE);
+  BigDecimal expBalance;
+  SqlFieldsQuery findDepositHist=new SqlFieldsQuery(DEPOSIT_OPERATION_COUNT_SQL);
+  try (QueryCursor cursor1=histCache.query(findDepositHist.setArgs(depositKey))){
+    Long cnt=(Long)((ArrayList)cursor1.iterator().next()).get(0);
+    expBalance=startBalance.multiply(rate.add(BigDecimal.ONE).pow(cnt.intValue()));
+  }
+   expBalance=expBalance.setScale(2,BigDecimal.ROUND_DOWN);
+  balance=balance.setScale(2,BigDecimal.ROUND_DOWN);
+  if (checkBalance && !expBalance.equals(balance)) {
+    node.log().error("Deposit " + depositKey + " has incorrect balance "+ balance+ " when expected "+ expBalance,null);
+    throw new IgniteException("Deposit " + depositKey + " has incorrect balance "+ balance+ " when expected "+ expBalance);
+  }
+}

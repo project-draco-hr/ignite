@@ -1,0 +1,34 @@
+{
+  final Thread preloadAccount=new Thread(){
+    @Override public void run(){
+      setName("preloadTraders");
+      Ignite ignite=ignite(0);
+      try (IgniteDataStreamer dataLdr=ignite.dataStreamer(TRADER_CACHE)){
+        for (int i=0; i < preloadAmount && !isInterrupted(); i++) {
+          String traderKey="traderId=" + i;
+          dataLdr.addData(traderKey,createTrader(ignite,traderKey));
+        }
+      }
+     }
+  }
+;
+  preloadAccount.start();
+  Thread preloadTrade=new Thread(){
+    @Override public void run(){
+      setName("preloadDeposits");
+      Ignite ignite=ignite(0);
+      try (IgniteDataStreamer dataLdr=ignite.dataStreamer(DEPOSIT_CACHE)){
+        for (int i=0; i < preloadAmount && !isInterrupted(); i++) {
+          int traderId=nextRandom(preloadAmount);
+          String traderKey="traderId=" + traderId;
+          String key=traderKey + "&depositId=" + i;
+          dataLdr.addData(key,createDeposit(ignite,key,traderKey,i));
+        }
+      }
+     }
+  }
+;
+  preloadTrade.start();
+  preloadTrade.join();
+  preloadAccount.join();
+}

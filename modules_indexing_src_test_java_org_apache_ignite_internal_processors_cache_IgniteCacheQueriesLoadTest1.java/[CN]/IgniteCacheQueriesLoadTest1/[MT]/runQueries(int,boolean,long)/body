@@ -1,0 +1,14 @@
+{
+  final Ignite ignite=grid(0);
+  GridTestUtils.runMultiThreaded(new Callable<Object>(){
+    @Override public Object call(){
+      long endTime=System.currentTimeMillis() + time;
+      while (System.currentTimeMillis() < endTime) {
+        ScanQueryBroadcastClosure c=new ScanQueryBroadcastClosure(partitionsMap,checkBalance);
+        ignite.compute().broadcast(c);
+      }
+      return null;
+    }
+  }
+,threads,"test-thread");
+}
