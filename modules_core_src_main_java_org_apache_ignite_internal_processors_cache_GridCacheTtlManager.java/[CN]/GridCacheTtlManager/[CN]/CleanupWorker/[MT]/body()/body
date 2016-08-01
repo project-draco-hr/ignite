@@ -1,11 +1,25 @@
 {
   while (!isCancelled()) {
     expire();
-    EntryWrapper first=pendingEntries.firstx();
-    if (first != null) {
-      long waitTime=first.expireTime - U.currentTimeMillis();
-      if (waitTime > 0)       U.sleep(waitTime);
+    long waitTime;
+    while (true) {
+      long curTime=U.currentTimeMillis();
+      GridCacheTtlManager.EntryWrapper first=pendingEntries.firstx();
+      if (first == null) {
+        waitTime=500;
+        nextExpireTime=curTime + 500;
+      }
+ else {
+        long expireTime=first.expireTime;
+        waitTime=expireTime - curTime;
+        nextExpireTime=expireTime;
+      }
+synchronized (mux) {
+        if (pendingEntries.firstx() == first) {
+          if (waitTime > 0)           mux.wait(waitTime);
+          break;
+        }
+      }
     }
- else     U.sleep(500);
   }
 }
