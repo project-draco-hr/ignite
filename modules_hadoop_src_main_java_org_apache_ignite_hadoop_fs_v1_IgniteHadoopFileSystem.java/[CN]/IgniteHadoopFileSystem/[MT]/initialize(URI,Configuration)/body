@@ -30,7 +30,12 @@
       clientLog=IgfsLogger.logger(uriAuthority,handshake.igfsName(),logDir,batchSize);
     }
  else     clientLog=IgfsLogger.disabledLogger();
-    modeRslvr=new IgfsModeResolver(paths.defaultMode(),paths.pathModes());
+    try {
+      modeRslvr=new IgfsModeResolver(paths.defaultMode(),paths.pathModes());
+    }
+ catch (    IgniteCheckedException ice) {
+      throw new IOException(ice);
+    }
     boolean initSecondary=paths.defaultMode() == PROXY;
     if (!initSecondary && paths.pathModes() != null && !paths.pathModes().isEmpty()) {
       for (      T2<IgfsPath,IgfsMode> pathMode : paths.pathModes()) {
