@@ -1,0 +1,20 @@
+{
+  GridTestUtils.runMultiThreaded(new Runnable(){
+    @Override public void run(){
+      final int key=42;
+      IgniteTransactions txs=grid(0).transactions();
+      cache.put(key,new TestValue(key));
+      long stopTime=System.currentTimeMillis() + 3000;
+      while (System.currentTimeMillis() < stopTime) {
+        try (Transaction tx=txs.txStart(OPTIMISTIC,txIsolation)){
+          cache.get(key);
+          tx.commit();
+        }
+ catch (        TransactionOptimisticException e) {
+          fail("Should not throw optimistic exception in only read TX. Tx isolation: " + txIsolation);
+        }
+      }
+    }
+  }
+,10,"tx-thread");
+}
