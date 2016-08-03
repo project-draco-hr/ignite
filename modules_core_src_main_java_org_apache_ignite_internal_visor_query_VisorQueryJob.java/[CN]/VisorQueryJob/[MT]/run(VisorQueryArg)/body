@@ -1,13 +1,22 @@
 {
   try {
     UUID nid=ignite.localNode().id();
-    boolean near=SCAN_NEAR_CACHE.equalsIgnoreCase(arg.queryTxt());
-    boolean scan=arg.queryTxt() == null;
-    String qryId=((scan || near) ? SCAN_QRY_NAME : SQL_QRY_NAME) + "-" + UUID.randomUUID();
+    String qryTxt=arg.queryTxt();
+    boolean scan=qryTxt == null;
+    boolean scanWithFilter=qryTxt != null && qryTxt.startsWith(SCAN_CACHE_WITH_FILTER);
+    boolean near=qryTxt != null && qryTxt.startsWith(SCAN_NEAR_CACHE);
+    boolean scanAny=scan || scanWithFilter || near;
+    String qryId=(scanAny ? SCAN_QRY_NAME : SQL_QRY_NAME) + "-" + UUID.randomUUID();
     IgniteCache<Object,Object> c=cache(arg.cacheName());
-    if (near || scan) {
+    if (scanAny) {
       long start=U.currentTimeMillis();
-      VisorQueryCursor<Cache.Entry<Object,Object>> cur=new VisorQueryCursor<>(near ? near(c) : scan(c,arg));
+      IgniteBiPredicate<Object,Object> filter=null;
+      if (scanWithFilter) {
+        boolean caseSensitive=qryTxt.startsWith(SCAN_CACHE_WITH_FILTER_CASE_SENSITIVE);
+        String ptrn=caseSensitive ? qryTxt.substring(SCAN_CACHE_WITH_FILTER_CASE_SENSITIVE.length()) : qryTxt.substring(SCAN_CACHE_WITH_FILTER.length());
+        filter=new VisorQueryScanSubstringFilter(caseSensitive,ptrn);
+      }
+      VisorQueryCursor<Cache.Entry<Object,Object>> cur=new VisorQueryCursor<>(near ? near(c) : scan(c,arg,filter));
       List<Object[]> rows=fetchScanQueryRows(cur,arg.pageSize());
       long duration=U.currentTimeMillis() - start;
       boolean hasNext=cur.hasNext();
