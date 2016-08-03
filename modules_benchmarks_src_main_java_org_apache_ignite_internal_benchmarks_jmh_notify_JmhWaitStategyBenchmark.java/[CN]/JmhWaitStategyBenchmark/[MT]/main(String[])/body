@@ -1,0 +1,22 @@
+{
+  List<String> policies=Arrays.asList("inc","dec","r25","r50","r75");
+  int[] threads={2,4,8,16,32};
+  List<RunResult> results=new ArrayList<>();
+  for (  String policy : policies) {
+    for (    int thread : threads) {
+      ChainedOptionsBuilder builder=new OptionsBuilder().jvmArgs().timeUnit(TimeUnit.MILLISECONDS).measurementIterations(10).measurementTime(TimeValue.seconds(20)).warmupIterations(5).warmupTime(TimeValue.seconds(10)).jvmArgs("-Dbench.exp.policy=" + policy).forks(1).threads(thread).mode(Mode.Throughput).include(JmhWaitStategyBenchmark.class.getSimpleName());
+      results.addAll(new Runner(builder.build()).run());
+    }
+  }
+  for (  RunResult result : results) {
+    BenchmarkParams params=result.getParams();
+    Collection<String> args1=params.getJvmArgs();
+    for (    String s : args1) {
+      System.out.print(s.substring(s.length() - 3,s.length()));
+      System.out.print(" x ");
+    }
+    System.out.print(params.getThreads());
+    System.out.print("\t\t");
+    System.out.println(result.getPrimaryResult().toString());
+  }
+}
