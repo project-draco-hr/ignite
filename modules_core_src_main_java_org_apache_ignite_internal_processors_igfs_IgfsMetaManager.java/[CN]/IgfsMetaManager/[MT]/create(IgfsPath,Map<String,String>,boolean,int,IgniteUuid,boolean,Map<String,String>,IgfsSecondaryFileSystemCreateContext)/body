@@ -36,22 +36,17 @@
             int newBlockSize;
             if (secondaryCtx != null) {
               secondaryOut=secondaryCtx.create();
-              IgfsFile secondaryFile=secondaryCtx.info();
-              if (secondaryFile == null)               throw fsException("Failed to open output stream to the file created in " + "the secondary file system because it no longer exists: " + path);
- else               if (secondaryFile.isDirectory())               throw fsException("Failed to open output stream to the file created in " + "the secondary file system because the path points to a directory: " + path);
-              newAccessTime=secondaryFile.accessTime();
-              newModificationTime=secondaryFile.modificationTime();
-              newProps=secondaryFile.properties();
-              newLen=secondaryFile.length();
-              newBlockSize=secondaryFile.blockSize();
+              newAccessTime=0L;
+              newModificationTime=0L;
+              newProps=null;
             }
  else {
               newAccessTime=System.currentTimeMillis();
               newModificationTime=newAccessTime;
               newProps=fileProps;
-              newLen=0L;
-              newBlockSize=blockSize;
             }
+            newLen=0L;
+            newBlockSize=blockSize;
             IgfsEntryInfo newInfo=invokeAndGet(overwriteId,new IgfsMetaFileCreateProcessor(newAccessTime,newModificationTime,newProps,newBlockSize,affKey,newLockId,evictExclude,newLen));
             tx.commit();
             IgfsUtils.sendEvents(igfsCtx.kernalContext(),path,EventType.EVT_IGFS_FILE_OPENED_WRITE);
