@@ -1,10 +1,15 @@
 {
-  OdbcHandshakeResult res;
-  if (req.version() == OdbcMessageParser.PROTO_VER)   res=new OdbcHandshakeResult(true,null,null);
- else {
+  OdbcProtocolVersion version=req.version();
+  if (version.isUnknown()) {
     IgniteProductVersion ver=ctx.grid().version();
     String verStr=Byte.toString(ver.major()) + '.' + ver.minor()+ '.'+ ver.maintenance();
-    res=new OdbcHandshakeResult(false,OdbcMessageParser.PROTO_VER_SINCE,verStr);
+    OdbcHandshakeResult res=new OdbcHandshakeResult(false,OdbcProtocolVersion.current().since(),verStr);
+    return new OdbcResponse(res);
+  }
+  OdbcHandshakeResult res=new OdbcHandshakeResult(true,null,null);
+  if (version.isDistributedJoinsSupported()) {
+    distributedJoins=req.distributedJoins();
+    enforceJoinOrder=req.enforceJoinOrder();
   }
   return new OdbcResponse(res);
 }
