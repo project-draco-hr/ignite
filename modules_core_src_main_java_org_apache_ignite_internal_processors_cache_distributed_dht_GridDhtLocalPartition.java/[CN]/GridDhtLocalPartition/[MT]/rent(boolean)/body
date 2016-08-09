@@ -1,13 +1,12 @@
 {
-  while (true) {
-    long reservations=state.get();
-    int ord=(int)(reservations >> 32);
-    if (ord == RENTING.ordinal() || ord == EVICTED.ordinal())     return rent;
-    if (casState(reservations,RENTING)) {
-      if (log.isDebugEnabled())       log.debug("Moved partition to RENTING state: " + this);
-      tryEvictAsync(updateSeq);
-      break;
-    }
+  long reservations=state.get();
+  int ord=(int)(reservations >> 32);
+  if (ord == RENTING.ordinal() || ord == EVICTED.ordinal())   return rent;
+  shouldBeRenting=true;
+  if ((reservations & 0xFFFF) == 0 && casState(reservations,RENTING)) {
+    shouldBeRenting=false;
+    if (log.isDebugEnabled())     log.debug("Moved partition to RENTING state: " + this);
+    tryEvictAsync(updateSeq);
   }
   return rent;
 }

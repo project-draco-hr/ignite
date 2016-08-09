@@ -1,0 +1,43 @@
+{
+  final int orgId=primaryKey(grid(1).cache(Organization.class.getSimpleName()));
+  try {
+    grid(0).compute().affinityRun(Arrays.asList(Organization.class.getSimpleName(),Person.class.getSimpleName()),new Integer(orgId),new IgniteRunnable(){
+      @IgniteInstanceResource IgniteEx ignite;
+      @Override public void run(){
+        try {
+          checkPartitionsReservations(ignite,orgId,1);
+        }
+ catch (        Exception e) {
+          e.printStackTrace();
+          fail("Unexpected exception");
+        }
+        throw new Error("Test job throws error");
+      }
+    }
+);
+    fail("Error must be thrown");
+  }
+ catch (  Throwable e) {
+    checkPartitionsReservations(grid(1),orgId,0);
+  }
+  try {
+    grid(0).compute().affinityCall(Arrays.asList(Organization.class.getSimpleName(),Person.class.getSimpleName()),new Integer(orgId),new IgniteCallable<Object>(){
+      @IgniteInstanceResource IgniteEx ignite;
+      @Override public Object call(){
+        try {
+          checkPartitionsReservations(ignite,orgId,1);
+        }
+ catch (        Exception e) {
+          e.printStackTrace();
+          fail("Unexpected exception");
+        }
+        throw new Error("Test job throws error");
+      }
+    }
+);
+    fail("Error must be thrown");
+  }
+ catch (  Throwable e) {
+    checkPartitionsReservations(grid(1),orgId,0);
+  }
+}

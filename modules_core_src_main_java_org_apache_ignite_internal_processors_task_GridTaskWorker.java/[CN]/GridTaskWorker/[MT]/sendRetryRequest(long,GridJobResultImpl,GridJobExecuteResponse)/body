@@ -1,0 +1,21 @@
+{
+  ctx.timeout().schedule(new Runnable(){
+    @Override public void run(){
+      ctx.closure().runLocalSafe(new Runnable(){
+        @Override public void run(){
+          try {
+            ClusterNode newNode=ctx.affinity().mapPartitionToNode(affCacheName,affPartId,mapTopVer);
+            if (!checkTargetNode(resp,jRes,newNode))             return;
+            sendRequest(jRes);
+          }
+ catch (          Exception e) {
+            U.error(log,"Failed to re-map job or retry request [ses=" + ses + "]",e);
+            finishTask(null,e);
+          }
+        }
+      }
+,false);
+    }
+  }
+,waitms,-1);
+}

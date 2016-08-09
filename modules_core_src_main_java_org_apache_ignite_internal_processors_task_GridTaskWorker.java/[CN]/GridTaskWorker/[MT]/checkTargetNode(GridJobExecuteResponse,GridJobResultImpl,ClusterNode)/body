@@ -1,0 +1,18 @@
+{
+  if (node == null) {
+    String msg="Failed to failover a job to another node (failover SPI returned null) [job=" + jobRes.getJob() + ", node="+ jobRes.getNode()+ ']';
+    if (log.isDebugEnabled())     log.debug(msg);
+    Throwable e=new ClusterTopologyCheckedException(msg,jobRes.getException());
+    finishTask(null,e);
+    return false;
+  }
+  if (log.isDebugEnabled())   log.debug("Resolved job failover [newNode=" + node + ", oldNode="+ jobRes.getNode()+ ", job="+ jobRes.getJob()+ ", resMsg="+ res+ ']');
+synchronized (mux) {
+    jobRes.setNode(node);
+    jobRes.resetResponse();
+    if (!resCache) {
+      this.jobRes.put(res.getJobId(),jobRes);
+    }
+  }
+  return true;
+}
