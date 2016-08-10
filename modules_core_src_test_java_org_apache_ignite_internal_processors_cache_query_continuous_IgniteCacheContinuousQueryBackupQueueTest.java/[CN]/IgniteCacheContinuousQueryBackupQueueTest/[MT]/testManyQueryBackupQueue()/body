@@ -1,0 +1,17 @@
+{
+  List<QueryCursor> qryCursors=new ArrayList<>();
+  for (int i=0; i < QUERY_COUNT; i++) {
+    ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+    qry.setLocalListener(new CacheEventListener());
+    qry.setRemoteFilterFactory(new AlwaysFalseFilterFactory());
+    qryCursors.add(grid(0).cache(CACHE_NAME).query(qry));
+  }
+  for (int i=0; i < KEYS_COUNT; i++) {
+    log.info("Put key: " + i);
+    for (int j=0; j < 150; j++)     grid(ThreadLocalRandom.current().nextInt(GRID_COUNT)).cache(CACHE_NAME).put(i,new byte[1024 * 50]);
+  }
+  int size=backupQueueSize();
+  assertTrue(size > 0);
+  assertTrue(size <= BACKUP_ACK_THRESHOLD * QUERY_COUNT * 1024);
+  for (  QueryCursor qry : qryCursors)   qry.close();
+}

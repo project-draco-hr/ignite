@@ -1,13 +1,12 @@
 {
-  startGridsMultiThreaded(GRID_COUNT);
   final CacheEventListener lsnr=new CacheEventListener();
   ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
   qry.setLocalListener(lsnr);
-  qry.setRemoteFilterFactory(new FilterFactory());
-  try (QueryCursor<?> ignore=grid(0).cache(null).query(qry)){
+  qry.setRemoteFilterFactory(new AlwaysFalseFilterFactory());
+  try (QueryCursor<?> ignore=grid(0).cache(CACHE_NAME).query(qry)){
     for (int i=0; i < KEYS_COUNT; i++) {
       log.info("Put key: " + i);
-      for (int j=0; j < 100; j++)       grid(i % GRID_COUNT).cache(null).put(i,new byte[1024 * 50]);
+      for (int j=0; j < 100; j++)       grid(j % GRID_COUNT).cache(CACHE_NAME).put(i,new byte[1024 * 50]);
     }
     log.info("Finish.");
   }
