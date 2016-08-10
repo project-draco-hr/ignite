@@ -1,0 +1,33 @@
+{
+  final int orgId=primaryKey(grid(0).cache(Organization.class.getSimpleName()));
+  try {
+    grid(1).compute().withAsync().affinityRun(Arrays.asList(Organization.class.getSimpleName(),Person.class.getSimpleName()),new Integer(orgId),new RunnableWithMasterLeave(){
+      @IgniteInstanceResource private Ignite ignite;
+      @Override public void onMasterNodeLeft(      ComputeTaskSession ses) throws IgniteException {
+      }
+      @Override public void run(){
+        try {
+          checkPartitionsReservations((IgniteEx)ignite,orgId,1);
+        }
+ catch (        Exception e) {
+          e.printStackTrace();
+          fail("Unexpected exception");
+        }
+        try {
+          Thread.sleep(1000);
+        }
+ catch (        InterruptedException e) {
+        }
+      }
+    }
+);
+    stopGrid(1,true);
+    Thread.sleep(3000);
+    awaitPartitionMapExchange();
+    checkPartitionsReservations(grid(0),orgId,0);
+  }
+  finally {
+    startGrid(1);
+    awaitPartitionMapExchange();
+  }
+}

@@ -1,0 +1,39 @@
+{
+  boolean reserved=false;
+  try {
+    for (int i=0; i < cacheIds.length; ++i) {
+      GridCacheContext<?,?> cctx=ctx.cache().context().cacheContext(cacheIds[i]);
+      if (cctx == null)       return reserved;
+      if (!cctx.started())       return reserved;
+      if (cctx.isLocal() || !cctx.rebalanceEnabled())       continue;
+      boolean checkPartMapping=false;
+      try {
+        if (cctx.isReplicated()) {
+          GridDhtLocalPartition part=cctx.topology().localPartition(partId,topVer,false);
+          if (part == null || part.state() != OWNING) {
+            checkPartMapping=true;
+            return reserved;
+          }
+        }
+        GridDhtLocalPartition part=cctx.topology().localPartition(partId,topVer,false);
+        if (part == null || part.state() != OWNING || !part.reserve()) {
+          checkPartMapping=true;
+          return reserved;
+        }
+        partititons[i]=part;
+        if (part.state() != OWNING) {
+          checkPartMapping=true;
+          return reserved;
+        }
+      }
+  finally {
+        if (checkPartMapping && !cctx.affinity().primary(partId,topVer).id().equals(ctx.localNodeId()))         throw new IgniteCheckedException("Failed partition reservation. " + "Partition is not primary on the node. [partition=" + partId + ", cacheName="+ cctx.name()+ ", nodeId="+ ctx.localNodeId()+ ", topology="+ topVer+ ']');
+      }
+    }
+    reserved=true;
+  }
+  finally {
+    if (!reserved)     release();
+  }
+  return true;
+}

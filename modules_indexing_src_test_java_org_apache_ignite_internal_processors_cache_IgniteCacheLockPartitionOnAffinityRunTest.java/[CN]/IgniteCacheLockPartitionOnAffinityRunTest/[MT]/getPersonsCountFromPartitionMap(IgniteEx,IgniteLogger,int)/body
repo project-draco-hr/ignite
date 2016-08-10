@@ -1,0 +1,12 @@
+{
+  int part=ignite.affinity(Organization.class.getSimpleName()).partition(orgId);
+  GridCacheAdapter<?,?> cacheAdapterPers=ignite.context().cache().internalCache(Person.class.getSimpleName());
+  GridDhtLocalPartition pPers=cacheAdapterPers.context().topology().localPartition(part,AffinityTopologyVersion.NONE,false);
+  int cnt=0;
+  for (  GridCacheMapEntry e : pPers.entries()) {
+    Person.Key k=(Person.Key)e.keyValue(false);
+    Person p=e.val.value(ignite.context().cacheObjects().contextForCache(cacheAdapterPers.cacheCfg),false);
+    if (p != null && p.getOrgId() == orgId && k.orgId == orgId)     ++cnt;
+  }
+  return cnt;
+}
