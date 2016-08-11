@@ -1,0 +1,25 @@
+{
+  stopRestartThread.set(false);
+  nodeRestartFut=GridTestUtils.runAsync(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      int restartGrid=GRID_CNT - RESTARTED_NODE_CNT;
+      while (!stopRestartThread.get() && System.currentTimeMillis() < endTime) {
+        log.info("Restart grid: " + restartGrid);
+        stopGrid(restartGrid);
+        Thread.sleep(500);
+        startGrid(restartGrid);
+        GridTestUtils.waitForCondition(new GridAbsPredicate(){
+          @Override public boolean apply(){
+            return !stopRestartThread.get();
+          }
+        }
+,RESTART_TIMEOUT);
+        restartGrid++;
+        if (restartGrid >= GRID_CNT)         restartGrid=GRID_CNT - RESTARTED_NODE_CNT;
+        awaitPartitionMapExchange();
+      }
+      return null;
+    }
+  }
+,"restart-node");
+}

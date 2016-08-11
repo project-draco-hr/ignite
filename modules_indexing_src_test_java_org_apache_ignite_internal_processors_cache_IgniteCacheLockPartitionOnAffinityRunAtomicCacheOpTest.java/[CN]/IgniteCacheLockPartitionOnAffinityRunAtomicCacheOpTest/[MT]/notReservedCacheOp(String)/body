@@ -1,0 +1,26 @@
+{
+  grid(0).compute().affinityRun(Arrays.asList(Person.class.getSimpleName(),Organization.class.getSimpleName()),new Integer(orgIds.get(0)),new NotReservedCacheOpAffinityRun(0,0,cacheName));
+  beginNodesRestart();
+  grid(0).cache(cacheName).clear();
+  IgniteInternalFuture<Long> affFut=null;
+  try {
+    affFut=GridTestUtils.runMultiThreadedAsync(new Runnable(){
+      @Override public void run(){
+        for (int i=0; i < PARTS_CNT; ++i) {
+          grid(0).compute().affinityRun(Arrays.asList(Organization.class.getSimpleName(),Person.class.getSimpleName()),new Integer(i),new NotReservedCacheOpAffinityRun(i,key.getAndIncrement() * KEYS_CNT,cacheName));
+        }
+      }
+    }
+,AFFINITY_THREADS_CNT,"affinity-run");
+  }
+  finally {
+    if (affFut != null)     affFut.get();
+    stopRestartThread.set(true);
+    nodeRestartFut.get();
+    Thread.sleep(5000);
+    log.info("Final await. Timed out if failed");
+    awaitPartitionMapExchange();
+    IgniteCache cache=grid(0).cache(cacheName);
+    cache.clear();
+  }
+}

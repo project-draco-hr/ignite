@@ -1,0 +1,33 @@
+{
+  try {
+    client=true;
+    Ignite client=startGrid(GRID_COUNT);
+    awaitPartitionMapExchange();
+    List<QueryCursor> qryCursors=new ArrayList<>();
+    for (int i=0; i < QUERY_COUNT; i++) {
+      ContinuousQuery<Object,Object> qry=new ContinuousQuery<>();
+      qry.setLocalListener(new CacheEventListener());
+      qry.setRemoteFilterFactory(new AlwaysFalseFilterFactory());
+      qry.setAutoUnsubscribe(false);
+      qryCursors.add(client.cache(CACHE_NAME).query(qry));
+    }
+    for (int i=0; i < KEYS_COUNT; i++) {
+      log.info("Put key: " + i);
+      grid(i % GRID_COUNT).cache(CACHE_NAME).put(i,new byte[1024 * 50]);
+    }
+    int size=backupQueueSize();
+    assertTrue(size > 0);
+    assertTrue(size <= BACKUP_ACK_THRESHOLD * QUERY_COUNT * 1024);
+    stopGrid(GRID_COUNT);
+    awaitPartitionMapExchange();
+    for (int i=0; i < KEYS_COUNT; i++) {
+      log.info("Put key: " + i);
+      grid(i % GRID_COUNT).cache(CACHE_NAME).put(i,new byte[1024 * 50]);
+    }
+    size=backupQueueSize();
+    assertEquals(-1,size);
+  }
+  finally {
+    stopGrid(GRID_COUNT);
+  }
+}
