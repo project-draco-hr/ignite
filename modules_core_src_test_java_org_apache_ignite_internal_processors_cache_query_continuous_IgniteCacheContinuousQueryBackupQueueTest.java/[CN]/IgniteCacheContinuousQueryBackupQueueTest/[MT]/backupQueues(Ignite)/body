@@ -1,0 +1,17 @@
+{
+  GridContinuousProcessor proc=((IgniteKernal)ignite).context().continuous();
+  Map<Object,Object> infos=new HashMap<>();
+  Map<Object,Object> rmtInfos=GridTestUtils.getFieldValue(proc,"rmtInfos");
+  Map<Object,Object> locInfos=GridTestUtils.getFieldValue(proc,"locInfos");
+  infos.putAll(rmtInfos);
+  infos.putAll(locInfos);
+  List<Collection<Object>> backupQueues=new ArrayList<>();
+  for (  Object info : infos.values()) {
+    GridContinuousHandler hnd=GridTestUtils.getFieldValue(info,"hnd");
+    if (hnd.isQuery() && hnd.cacheName().equals(CACHE_NAME)) {
+      Collection<Object> q=GridTestUtils.getFieldValue(hnd,CacheContinuousQueryHandler.class,"backupQueue");
+      if (q != null)       backupQueues.add(q);
+    }
+  }
+  return backupQueues;
+}
