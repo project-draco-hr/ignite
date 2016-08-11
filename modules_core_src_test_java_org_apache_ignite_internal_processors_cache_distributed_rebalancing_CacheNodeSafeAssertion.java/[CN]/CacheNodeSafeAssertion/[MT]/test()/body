@@ -1,0 +1,31 @@
+{
+  Affinity<?> affinity=ignite.affinity(cacheName);
+  int partCnt=affinity.partitions();
+  boolean hostSafe=true;
+  boolean nodeSafe=true;
+  for (int x=0; x < partCnt; ++x) {
+    Collection<ClusterNode> results=affinity.mapPartitionToPrimaryAndBackups(x);
+    Iterator<ClusterNode> nodes=results.iterator();
+    boolean newHostSafe=false;
+    boolean newNodeSafe=false;
+    if (nodes.hasNext()) {
+      ClusterNode primary=nodes.next();
+      Collection<ClusterNode> neighbors=hostSafe ? ignite.cluster().forHost(primary).nodes() : null;
+      while (nodes.hasNext()) {
+        ClusterNode backup=nodes.next();
+        if (hostSafe) {
+          if (!neighbors.contains(backup))           newHostSafe=true;
+        }
+        if (nodeSafe) {
+          if (!backup.equals(primary))           newNodeSafe=true;
+        }
+      }
+    }
+    hostSafe=newHostSafe;
+    nodeSafe=newNodeSafe;
+    if (!hostSafe && !nodeSafe)     break;
+  }
+  if (hostSafe)   return;
+  if (nodeSafe)   return;
+  throw new AssertionError("Cache " + cacheName + " is endangered!");
+}

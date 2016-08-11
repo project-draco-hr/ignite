@@ -1,0 +1,14 @@
+{
+  return new IgnitePredicate<Ignite>(){
+    @Override public boolean apply(    final Ignite ignite){
+      Collection<ClusterNode> srvs=ignite.cluster().forServers().nodes();
+      if (srvs.size() < serverCount())       return false;
+      for (      ClusterNode node : srvs) {
+        int[] primaries=ignite.affinity(CACHE_NAME).primaryPartitions(node);
+        if (primaries == null || primaries.length == 0)         return false;
+      }
+      return true;
+    }
+  }
+;
+}

@@ -1,0 +1,47 @@
+{
+  Ignite ignite=grid(0);
+  ignite.log().info(getName() + ": started.");
+  IgnitePredicate<Ignite> restartCheck=getRestartCheck();
+  Assertion restartAssertion=getRestartAssertion();
+  while (isRunning) {
+    try {
+      if (getRestartInterval() > 0)       Thread.sleep(getRestartInterval());
+ else       Thread.yield();
+      if (restartCheck.apply(ignite)) {
+        restartAssertion.test();
+        int restartGrid=nextGridToRestart();
+        stopGrid(restartGrid);
+        ignite.log().info(getName() + ": stopped a process.");
+        startGrid(restartGrid);
+        ignite.log().info(getName() + ": started a process.");
+        int restartCnt=++restartTotal;
+        if (getMaxRestarts() > 0 && restartCnt >= getMaxRestarts())         isRunning=false;
+      }
+    }
+ catch (    RuntimeException e) {
+      if (isRunning) {
+        StringWriter sw=new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        ignite.log().info(getName() + ": caught exception: " + sw.toString());
+      }
+ else       ignite.log().info(getName() + ": caught exception while exiting: " + e);
+    }
+catch (    InterruptedException e) {
+      Thread.currentThread().interrupt();
+      if (isRunning) {
+        StringWriter sw=new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        ignite.log().info(getName() + ": was interrupted: " + sw.toString());
+      }
+ else       ignite.log().info(getName() + ": was interrupted while exiting: " + e);
+      isRunning=false;
+    }
+catch (    AssertionError e) {
+      StringWriter sw=new StringWriter();
+      e.printStackTrace(new PrintWriter(sw));
+      ignite.log().info(getName() + ": assertion failed: " + sw.toString());
+      isRunning=false;
+    }
+  }
+  ignite.log().info(getName() + ": exited.");
+}

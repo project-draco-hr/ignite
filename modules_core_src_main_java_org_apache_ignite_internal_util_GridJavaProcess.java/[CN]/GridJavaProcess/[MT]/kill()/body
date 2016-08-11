@@ -1,2 +1,11 @@
 {
+  Process killProc=U.isWindows() ? Runtime.getRuntime().exec(new String[]{"taskkill","/pid",pid,"/f","/t"}) : Runtime.getRuntime().exec(new String[]{"kill","-9",pid});
+  killProc.waitFor();
+  int exitVal=killProc.exitValue();
+  if (exitVal != 0)   log.info(String.format("Abnormal exit value of %s for pid %s",exitVal,pid));
+  if (procKilledC != null)   procKilledC.apply();
+  U.interrupt(osGrabber);
+  U.interrupt(esGrabber);
+  U.join(osGrabber,log);
+  U.join(esGrabber,log);
 }
