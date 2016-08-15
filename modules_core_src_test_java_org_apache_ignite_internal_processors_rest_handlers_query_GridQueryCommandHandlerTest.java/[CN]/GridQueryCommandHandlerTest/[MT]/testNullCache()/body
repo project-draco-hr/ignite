@@ -1,0 +1,18 @@
+{
+  QueryCommandHandler cmdHnd=new QueryCommandHandler(grid().context());
+  Integer arg1=1000;
+  Object[] arr=new Object[]{arg1,arg1};
+  RestQueryRequest req=new RestQueryRequest();
+  req.command(GridRestCommand.EXECUTE_SQL_QUERY);
+  req.queryType(RestQueryRequest.QueryType.SCAN);
+  req.typeName(Integer.class.getName());
+  req.pageSize(10);
+  req.sqlQuery("salary+>+%3F+and+salary+<%3D+%3F");
+  req.arguments(arr);
+  req.cacheName(null);
+  IgniteInternalFuture<GridRestResponse> resp=cmdHnd.handleAsync(req);
+  resp.get();
+  assertEquals("Failed to find cache with name: null",resp.result().getError());
+  assertEquals(GridRestResponse.STATUS_FAILED,resp.result().getSuccessStatus());
+  assertNull(resp.result().getResponse());
+}
