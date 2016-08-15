@@ -1,0 +1,22 @@
+{
+  grid().getOrCreateCache(getName());
+  QueryCommandHandler cmdHnd=new QueryCommandHandler(grid().context());
+  Integer arg1=1000;
+  Object[] arr=new Object[]{arg1,arg1};
+  RestQueryRequest req=new RestQueryRequest();
+  req.command(GridRestCommand.EXECUTE_SQL_QUERY);
+  req.queryType(RestQueryRequest.QueryType.SCAN);
+  req.typeName(Integer.class.getName());
+  req.pageSize(null);
+  req.sqlQuery("salary+>+%3F+and+salary+<%3D+%3F");
+  req.arguments(arr);
+  req.cacheName(getName());
+  req.pageSize(10);
+  IgniteInternalFuture<GridRestResponse> resp=cmdHnd.handleAsync(req);
+  resp.get();
+  assertNull(resp.result().getError());
+  assertEquals(GridRestResponse.STATUS_SUCCESS,resp.result().getSuccessStatus());
+  assertNotNull(resp.result().getResponse());
+  CacheQueryResult res=(CacheQueryResult)resp.result().getResponse();
+  assertTrue(res.getLast());
+}
