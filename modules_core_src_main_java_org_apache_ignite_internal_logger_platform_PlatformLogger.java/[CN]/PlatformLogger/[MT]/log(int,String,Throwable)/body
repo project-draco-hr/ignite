@@ -1,0 +1,17 @@
+{
+  String errorInfo=null;
+  if (e != null)   errorInfo=X.getFullStackTrace(e);
+  PlatformNativeException e0=X.cause(e,PlatformNativeException.class);
+  if (ctx != null && e0 != null) {
+    try (PlatformMemory mem=ctx.memory().allocate()){
+      PlatformOutputStream out=mem.output();
+      BinaryRawWriterEx writer=ctx.writer(out);
+      writer.writeObject(e0.cause());
+      out.synchronize();
+      gate.loggerLog(level,msg,category,errorInfo,mem.pointer());
+    }
+   }
+ else {
+    gate.loggerLog(level,msg,category,errorInfo,0);
+  }
+}
