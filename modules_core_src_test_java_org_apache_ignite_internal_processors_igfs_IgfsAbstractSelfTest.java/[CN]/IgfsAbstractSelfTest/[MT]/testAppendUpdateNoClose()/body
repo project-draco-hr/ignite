@@ -1,14 +1,17 @@
 {
-  Map<String,String> props=properties("owner","group","0555");
-  create(igfs,paths(DIR,SUBDIR),null);
-  createFile(igfs.asSecondary(),FILE,false);
-  IgfsOutputStream os=null;
-  try {
-    os=igfs.append(FILE,false);
-    igfs.update(FILE,props);
-    os.close();
-  }
+  if (dual)   return;
+  if (appendSupported()) {
+    Map<String,String> props=properties("owner","group","0555");
+    create(igfs,paths(DIR,SUBDIR),null);
+    createFile(igfs.asSecondary(),FILE,false);
+    IgfsOutputStream os=null;
+    try {
+      os=igfs.append(FILE,false);
+      if (permissionsSupported())       igfs.update(FILE,props);
+      os.close();
+    }
   finally {
-    U.closeQuiet(os);
+      U.closeQuiet(os);
+    }
   }
 }
