@@ -4,6 +4,10 @@
     BinaryRawWriterEx writer=platformCtx.writer(out);
     task.apply(writer);
     out.synchronize();
-    return platformCtx.gateway().cacheStoreInvoke(ptr,mem.pointer(),cb);
+    int res=platformCtx.gateway().cacheStoreInvoke(ptr,mem.pointer(),cb);
+    if (res != 0) {
+      Object nativeErr=platformCtx.reader(mem.input()).readObjectDetached();
+      throw platformCtx.createNativeException(nativeErr);
+    }
   }
  }
