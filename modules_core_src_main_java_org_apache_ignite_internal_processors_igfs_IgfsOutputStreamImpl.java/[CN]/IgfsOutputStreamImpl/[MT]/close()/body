@@ -14,6 +14,7 @@ synchronized (mux) {
  catch (    Exception e) {
       err=new IOException("Failed to flush data during stream close [path=" + path + ", fileInfo="+ fileInfo+ ']',e);
     }
+    if (batch != null)     batch.finish();
     try {
       if (flushSuccess && space > 0)       igfsCtx.meta().unlock(fileInfo.id(),fileInfo.lockId(),System.currentTimeMillis(),true,space,streamRange);
  else       igfsCtx.meta().unlock(fileInfo.id(),fileInfo.lockId(),System.currentTimeMillis());
@@ -23,7 +24,6 @@ synchronized (mux) {
  else       err.addSuppressed(e);
     }
     if (batch != null) {
-      batch.finish();
       if (mode == DUAL_SYNC) {
         try {
           batch.await();
