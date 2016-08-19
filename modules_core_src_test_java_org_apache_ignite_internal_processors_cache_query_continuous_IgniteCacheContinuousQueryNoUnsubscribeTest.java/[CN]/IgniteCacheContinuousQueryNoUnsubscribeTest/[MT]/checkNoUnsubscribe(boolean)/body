@@ -1,0 +1,27 @@
+{
+  cntr.set(0);
+  this.client=client;
+  try (Ignite ignite=startGrid(3)){
+    ContinuousQuery qry=new ContinuousQuery();
+    qry.setLocalListener(new CacheEntryUpdatedListener(){
+      @Override public void onUpdated(      Iterable evts){
+      }
+    }
+);
+    qry.setRemoteFilterFactory(FactoryBuilder.factoryOf(CacheTestRemoteFilter.class));
+    qry.setAutoUnsubscribe(false);
+    ignite.cache(null).query(qry);
+    ignite.cache(null).put(1,1);
+    assertEquals(1,cntr.get());
+  }
+   this.client=false;
+  try (Ignite newSrv=startGrid(3)){
+    Integer key=primaryKey(newSrv.cache(null));
+    newSrv.cache(null).put(key,1);
+    assertEquals(2,cntr.get());
+    for (int i=0; i < 10; i++)     ignite(0).cache(null).put(i,1);
+    assertEquals(12,cntr.get());
+  }
+   for (int i=10; i < 20; i++)   ignite(0).cache(null).put(i,1);
+  assertEquals(22,cntr.get());
+}
