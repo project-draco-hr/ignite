@@ -1,0 +1,14 @@
+{
+  try (Ignite client=startGrid("client")){
+    IgniteCache<Integer,Value> cache=client.cache(null);
+    List<Cache.Entry<Integer,Value>> all=cache.query(new SqlQuery<Integer,Value>(Value.class,"select * from Value")).getAll();
+    assertEquals(KEYS,all.size());
+    for (    Cache.Entry<Integer,Value> entry : all)     entry.getValue().str="after";
+    check(cache);
+    QueryCursor<List<?>> qry=cache.query(new SqlFieldsQuery("select _val from Value"));
+    List<List<?>> all0=qry.getAll();
+    assertEquals(KEYS,all0.size());
+    for (    List<?> entry : all0)     ((Value)entry.get(0)).str="after";
+    check(cache);
+  }
+ }
