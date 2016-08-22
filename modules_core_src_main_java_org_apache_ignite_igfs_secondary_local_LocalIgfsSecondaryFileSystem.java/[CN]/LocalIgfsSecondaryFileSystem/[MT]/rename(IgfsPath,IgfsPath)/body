@@ -1,0 +1,13 @@
+{
+  File srcFile=fileForPath(src);
+  File destFile=fileForPath(dest);
+  if (!srcFile.exists())   throw new IgfsPathNotFoundException("Failed to perform rename because source path not found: " + src);
+  if (srcFile.isDirectory() && destFile.isFile())   throw new IgfsPathIsNotDirectoryException("Failed to perform rename because destination path is " + "directory and source path is file [src=" + src + ", dest="+ dest+ ']');
+  try {
+    if (destFile.isDirectory())     Files.move(srcFile.toPath(),destFile.toPath().resolve(srcFile.getName()));
+ else     if (!srcFile.renameTo(destFile))     throw new IgfsException("Failed to perform rename (underlying file system returned false) " + "[src=" + src + ", dest="+ dest+ ']');
+  }
+ catch (  IOException e) {
+    throw handleSecondaryFsError(e,"Failed to rename [src=" + src + ", dest="+ dest+ ']');
+  }
+}

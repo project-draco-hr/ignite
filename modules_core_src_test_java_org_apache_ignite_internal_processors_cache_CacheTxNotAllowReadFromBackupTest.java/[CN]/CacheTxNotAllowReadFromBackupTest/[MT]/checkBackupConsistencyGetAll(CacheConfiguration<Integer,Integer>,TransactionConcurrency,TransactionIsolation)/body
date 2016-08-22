@@ -1,0 +1,21 @@
+{
+  IgniteCache<Integer,Integer> cache=grid(0).getOrCreateCache(ccfg);
+  int nodeIdx=ThreadLocalRandom.current().nextInt(NODES);
+  try {
+    for (int i=0; i < ITERATION_CNT; i++) {
+      log.info("Iteration: " + i);
+      List<Set<Integer>> batches=createBatches();
+      try (Transaction tx=grid(nodeIdx).transactions().txStart(txConcurrency,txIsolation)){
+        for (int key=0; key < KEYS; key++)         cache.put(key,key);
+        tx.commit();
+      }
+       try (Transaction tx=grid(nodeIdx).transactions().txStart(txConcurrency,txIsolation)){
+        for (        Set<Integer> batch : batches)         assertEquals("Failed. Found missing entries.",batch.size(),cache.getAll(batch).size());
+        tx.commit();
+      }
+     }
+  }
+  finally {
+    grid(0).destroyCache(ccfg.getName());
+  }
+}

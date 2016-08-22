@@ -2,7 +2,8 @@
   int msgIdx=cacheMsg.lookupIndex();
   IgniteBiInClosure<UUID,GridCacheMessage> c=null;
   if (msgIdx >= 0) {
-    IgniteBiInClosure[] cacheClsHandlers=idxClsHandlers.get(cacheMsg.cacheId());
+    Map<Integer,IgniteBiInClosure[]> idxClsHandlers0=idxClsHandlers;
+    IgniteBiInClosure[] cacheClsHandlers=idxClsHandlers0.get(cacheMsg.cacheId());
     if (cacheClsHandlers != null)     c=cacheClsHandlers[msgIdx];
   }
   if (c == null)   c=clsHandlers.get(new ListenerKey(cacheMsg.cacheId(),cacheMsg.getClass()));
@@ -11,10 +12,13 @@
     StringBuilder msg0=new StringBuilder("Received message without registered handler (will ignore) [");
     appendMessageInfo(cacheMsg,nodeId,msg0);
     msg0.append(", locTopVer=").append(cctx.exchange().readyAffinityVersion()).append(", msgTopVer=").append(cacheMsg.topologyVersion()).append(", cacheDesc=").append(cctx.cache().cacheDescriptor(cacheMsg.cacheId())).append(']');
+    msg0.append(U.nl()).append("Registered listeners:");
+    Map<Integer,IgniteBiInClosure[]> idxClsHandlers0=idxClsHandlers;
+    for (    Map.Entry<Integer,IgniteBiInClosure[]> e : idxClsHandlers0.entrySet())     msg0.append(U.nl()).append(e.getKey()).append("=").append(Arrays.toString(e.getValue()));
     if (cctx.kernalContext().isStopping()) {
       if (log.isDebugEnabled())       log.debug(msg0.toString());
     }
- else     U.warn(log,msg0.toString());
+ else     U.error(log,msg0.toString());
     return;
   }
   onMessage0(nodeId,cacheMsg,c);

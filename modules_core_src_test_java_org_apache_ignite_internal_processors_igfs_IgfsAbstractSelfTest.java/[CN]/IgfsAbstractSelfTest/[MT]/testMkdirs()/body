@@ -1,4 +1,5 @@
 {
+  if (!propertiesSupported())   return;
   Map<String,String> props=properties(null,null,"0555");
   igfs.mkdirs(new IgfsPath("/x"),null);
   checkExist(igfs,igfsSecondary,new IgfsPath("/x"));
@@ -34,6 +35,8 @@ catch (  IgfsException ignore) {
   create(igfs,paths(DIR,SUBDIR),null);
   igfs.mkdirs(SUBSUBDIR,props);
   checkExist(igfs,igfsSecondary,SUBSUBDIR);
-  if (dual)   assertEquals(props.get(IgfsUtils.PROP_PERMISSION),igfsSecondary.properties(SUBSUBDIR.toString()).get(IgfsUtils.PROP_PERMISSION));
-  assertEquals(props.get(IgfsUtils.PROP_PERMISSION),igfs.info(SUBSUBDIR).properties().get(IgfsUtils.PROP_PERMISSION));
+  if (permissionsSupported()) {
+    if (dual)     assertEquals(props.get(IgfsUtils.PROP_PERMISSION),igfsSecondary.permissions(SUBSUBDIR.toString()));
+    assertEquals(props.get(IgfsUtils.PROP_PERMISSION),igfs.info(SUBSUBDIR).properties().get(IgfsUtils.PROP_PERMISSION));
+  }
 }

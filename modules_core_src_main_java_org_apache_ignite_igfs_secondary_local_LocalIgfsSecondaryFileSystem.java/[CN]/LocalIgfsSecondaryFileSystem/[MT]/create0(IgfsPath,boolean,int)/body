@@ -1,0 +1,17 @@
+{
+  File file=fileForPath(path);
+  boolean exists=file.exists();
+  if (exists) {
+    if (!overwrite)     throw new IgfsPathAlreadyExistsException("Failed to create a file because it already exists: " + path);
+  }
+ else {
+    File parent=file.getParentFile();
+    if (!mkdirs0(parent))     throw new IgfsException("Failed to create parent directory for file (underlying file system " + "returned false): " + path);
+  }
+  try {
+    return new BufferedOutputStream(new FileOutputStream(file),bufSize);
+  }
+ catch (  IOException e) {
+    throw handleSecondaryFsError(e,"Failed to create file [path=" + path + ", overwrite="+ overwrite+ ']');
+  }
+}
