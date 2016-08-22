@@ -19,7 +19,6 @@
       Collection<EntryMapping> entryMappings=mappings.values();
       for (      EntryMapping em : entryMappings) {
         if (parallelLoadCacheMinThreshold > 0) {
-          if (log.isDebugEnabled())           log.debug("Multithread loading entries from db [cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]");
           Connection conn=null;
           try {
             conn=connection();
@@ -27,31 +26,30 @@
             stmt.setInt(1,parallelLoadCacheMinThreshold);
             ResultSet rs=stmt.executeQuery();
             if (rs.next()) {
+              if (log.isDebugEnabled())               log.debug("Multithread loading entries from db [cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]");
               int keyCnt=em.keyCols.size();
               Object[] upperBound=new Object[keyCnt];
               for (int i=0; i < keyCnt; i++)               upperBound[i]=rs.getObject(i + 1);
-              futs.add(pool.submit(loadCacheRange(em,clo,null,upperBound)));
+              futs.add(pool.submit(loadCacheRange(em,clo,null,upperBound,0)));
               while (rs.next()) {
                 Object[] lowerBound=upperBound;
                 upperBound=new Object[keyCnt];
                 for (int i=0; i < keyCnt; i++)                 upperBound[i]=rs.getObject(i + 1);
-                futs.add(pool.submit(loadCacheRange(em,clo,lowerBound,upperBound)));
+                futs.add(pool.submit(loadCacheRange(em,clo,lowerBound,upperBound,0)));
               }
-              futs.add(pool.submit(loadCacheRange(em,clo,upperBound,null)));
+              futs.add(pool.submit(loadCacheRange(em,clo,upperBound,null,0)));
+              continue;
             }
- else             futs.add(pool.submit(loadCacheFull(em,clo)));
           }
- catch (          SQLException ignored) {
-            futs.add(pool.submit(loadCacheFull(em,clo)));
+ catch (          SQLException e) {
+            log.warning("Failed to load entries from db in multithreaded mode [cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]",e);
           }
  finally {
             U.closeQuiet(conn);
           }
         }
- else {
-          if (log.isDebugEnabled())           log.debug("Single thread loading entries from db [cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]");
-          futs.add(pool.submit(loadCacheFull(em,clo)));
-        }
+        if (log.isDebugEnabled())         log.debug("Single thread loading entries from db [cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]");
+        futs.add(pool.submit(loadCacheFull(em,clo)));
       }
     }
     for (    Future<?> fut : futs)     U.get(fut);
