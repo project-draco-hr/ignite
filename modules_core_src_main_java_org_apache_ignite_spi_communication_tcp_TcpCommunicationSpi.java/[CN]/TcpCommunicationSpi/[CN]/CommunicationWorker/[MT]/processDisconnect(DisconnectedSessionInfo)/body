@@ -1,13 +1,11 @@
 {
-  GridCommunicationClient client=clients.get(sesInfo.nodeId);
-  if (client instanceof GridTcpNioCommunicationClient && ((GridTcpNioCommunicationClient)client).session() == sesInfo.ses)   clients.remove(sesInfo.nodeId,client);
   if (sesInfo.reconnect) {
     GridNioRecoveryDescriptor recoveryDesc=sesInfo.recoveryDesc;
     ClusterNode node=recoveryDesc.node();
     if (!recoveryDesc.nodeAlive(getSpiContext().node(node.id())))     return;
     try {
       if (log.isDebugEnabled())       log.debug("Recovery reconnect [rmtNode=" + recoveryDesc.node().id() + ']');
-      client=reserveClient(node);
+      GridCommunicationClient client=reserveClient(node);
       client.release();
     }
  catch (    IgniteCheckedException|IgniteException e) {

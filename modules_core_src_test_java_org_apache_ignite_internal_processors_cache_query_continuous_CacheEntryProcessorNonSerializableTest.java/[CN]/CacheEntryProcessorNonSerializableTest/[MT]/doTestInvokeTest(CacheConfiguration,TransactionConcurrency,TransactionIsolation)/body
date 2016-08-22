@@ -1,0 +1,54 @@
+{
+  IgniteEx cln=grid(getServerNodeCount());
+  grid(0).createCache(ccfg);
+  IgniteCache clnCache;
+  if (ccfg.getNearConfiguration() != null)   clnCache=cln.createNearCache(ccfg.getName(),ccfg.getNearConfiguration());
+ else   clnCache=cln.cache(ccfg.getName());
+  putKeys(clnCache,EXPECTED_VALUE);
+  try {
+    for (int i=0; i < ITERATION_CNT; i++) {
+      try (final Transaction tx=cln.transactions().txStart(txConcurrency,txIsolation)){
+        putKeys(clnCache,WRONG_VALUE);
+        clnCache.invoke(KEYS,new NonSerialazibleEntryProcessor());
+        GridTestUtils.assertThrowsWithCause(new Callable<Object>(){
+          @Override public Object call() throws Exception {
+            tx.commit();
+            return null;
+          }
+        }
+,NotSerializableException.class);
+      }
+       checkKeys(clnCache,EXPECTED_VALUE);
+    }
+    Ignite grid=grid(ThreadLocalRandom.current().nextInt(NODES));
+    final IgniteCache cache=grid.cache(ccfg.getName());
+    for (int i=0; i < ITERATION_CNT; i++) {
+      try (final Transaction tx=grid.transactions().txStart(txConcurrency,txIsolation)){
+        putKeys(cache,WRONG_VALUE);
+        cache.invoke(KEYS,new NonSerialazibleEntryProcessor());
+        GridTestUtils.assertThrowsWithCause(new Callable<Object>(){
+          @Override public Object call() throws Exception {
+            tx.commit();
+            return null;
+          }
+        }
+,NotSerializableException.class);
+      }
+       checkKeys(cache,EXPECTED_VALUE);
+    }
+    final IgniteCache clnCache0=clnCache;
+    for (int i=0; i < ITERATION_CNT; i++) {
+      GridTestUtils.assertThrowsWithCause(new Callable<Object>(){
+        @Override public Object call() throws Exception {
+          clnCache0.invoke(KEYS,new NonSerialazibleEntryProcessor());
+          return null;
+        }
+      }
+,NotSerializableException.class);
+    }
+    checkKeys(clnCache,EXPECTED_VALUE);
+  }
+  finally {
+    grid(0).destroyCache(ccfg.getName());
+  }
+}
