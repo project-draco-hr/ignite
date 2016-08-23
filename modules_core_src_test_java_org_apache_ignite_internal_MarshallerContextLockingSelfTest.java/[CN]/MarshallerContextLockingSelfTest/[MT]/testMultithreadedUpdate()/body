@@ -1,0 +1,16 @@
+{
+  multithreaded(new Callable<Object>(){
+    @Override public Object call() throws Exception {
+      GridTestClassLoader classLoader=new GridTestClassLoader(InternalExecutor.class.getName(),MarshallerContextImpl.class.getName(),MarshallerContextImpl.ContinuousQueryListener.class.getName());
+      Thread.currentThread().setContextClassLoader(classLoader);
+      Class clazz=classLoader.loadClass(InternalExecutor.class.getName());
+      Object internelExecutor=clazz.newInstance();
+      clazz.getMethod("executeTest",GridTestLog4jLogger.class).invoke(internelExecutor,log);
+      return null;
+    }
+  }
+,4);
+  assertTrue(InternalExecutor.counter.get() == 0);
+  assertTrue(innerLog.contains("File already locked"));
+  assertTrue(!innerLog.contains("Exception"));
+}
