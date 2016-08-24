@@ -48,22 +48,33 @@
     }
   }
 ,loc ? 2 : txCnt,"tx-thread");
-  fut.get();
+  try {
+    fut.get();
+  }
+ catch (  IgniteCheckedException e) {
+    U.error(null,"Unexpected exception",e);
+    fail();
+  }
   U.sleep(1000);
   TransactionDeadlockException deadlockE=deadlockErr.get();
   assertNotNull(deadlockE);
+  boolean fail=false;
   for (int i=0; i < NODES_CNT * 2; i++) {
     Ignite ignite=ignite(i);
     int cacheId=((IgniteCacheProxy)ignite.cache(CACHE_NAME)).context().cacheId();
-    IgniteTxManager txMgr=((IgniteKernal)ignite).context().cache().context().tm();
+    GridCacheSharedContext<Object,Object> cctx=((IgniteKernal)ignite).context().cache().context();
+    IgniteTxManager txMgr=cctx.tm();
     Collection<IgniteInternalTx> activeTxs=txMgr.activeTransactions();
     for (    IgniteInternalTx tx : activeTxs) {
       Collection<IgniteTxEntry> entries=tx.allEntries();
       for (      IgniteTxEntry entry : entries) {
-        if (entry.cacheId() == cacheId)         fail("Transaction still exists: " + tx);
+        if (entry.cacheId() == cacheId) {
+          fail=true;
+          U.error(log,"Transaction still exists: " + "\n" + tx.xidVersion() + "\n"+ tx.nearXidVersion()+ "\n nodeId="+ cctx.localNodeId()+ "\n tx="+ tx);
+        }
       }
     }
-    ConcurrentMap<Long,TxDeadlockDetection.TxDeadlockFuture> futs=GridTestUtils.getFieldValue(txMgr,IgniteTxManager.class,"deadlockDetectFuts");
+    Collection<IgniteInternalFuture<?>> futs=txMgr.deadlockDetectionFutures();
     assertTrue(futs.isEmpty());
     GridCacheAdapter<Object,Integer> intCache=internalCache(i,CACHE_NAME);
     GridCacheConcurrentMap map=intCache.map();
@@ -74,6 +85,7 @@
       if (entry != null)       assertNull("Entry still has locks " + entry,entry.mvccAllLocal());
     }
   }
+  if (fail)   fail("Some transactions still exist");
   String msg=deadlockE.getMessage();
   for (  IgniteInternalTx tx : involvedTxs)   assertTrue(msg.contains("[txId=" + tx.xidVersion() + ", nodeId="+ tx.nodeId()+ ", threadId="+ tx.threadId()+ ']'));
   for (  Integer key : involvedKeys) {

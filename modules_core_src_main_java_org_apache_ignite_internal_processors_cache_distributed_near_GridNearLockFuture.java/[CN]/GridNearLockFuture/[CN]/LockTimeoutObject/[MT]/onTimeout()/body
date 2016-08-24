@@ -1,5 +1,30 @@
 {
   if (log.isDebugEnabled())   log.debug("Timed out waiting for lock response: " + this);
   timedOut=true;
-  onComplete(false,true);
+  if (inTx() && cctx.tm().deadlockDetectionEnabled()) {
+synchronized (futs) {
+      requestedKeys=requestedKeys0();
+      futs.clear();
+    }
+    Set<IgniteTxKey> keys=new HashSet<>();
+    for (    IgniteTxEntry txEntry : tx.allEntries()) {
+      if (!txEntry.locked())       keys.add(txEntry.txKey());
+    }
+    IgniteInternalFuture<TxDeadlock> fut=cctx.tm().detectDeadlock(tx,keys);
+    fut.listen(new IgniteInClosure<IgniteInternalFuture<TxDeadlock>>(){
+      @Override public void apply(      IgniteInternalFuture<TxDeadlock> fut){
+        try {
+          TxDeadlock deadlock=fut.get();
+          if (deadlock != null)           err=new TransactionDeadlockException(deadlock.toString(cctx.shared()));
+        }
+ catch (        IgniteCheckedException e) {
+          err=e;
+          U.warn(log,"Failed to detect deadlock.",e);
+        }
+        onComplete(false,true);
+      }
+    }
+);
+  }
+ else   onComplete(false,true);
 }

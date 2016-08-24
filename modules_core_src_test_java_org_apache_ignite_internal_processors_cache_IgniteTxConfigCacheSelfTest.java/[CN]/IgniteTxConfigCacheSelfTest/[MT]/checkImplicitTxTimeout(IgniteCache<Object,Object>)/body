@@ -1,20 +1,14 @@
 {
+  TestCommunicationSpi.delay=true;
+  Integer key=primaryKey(ignite(1).cache(CACHE_NAME));
   try {
-    cache.invoke("key",new EntryProcessor<Object,Object,Object>(){
-      @Override public Object process(      final MutableEntry<Object,Object> entry,      final Object... args) throws EntryProcessorException {
-        try {
-          sleepForTxFailure();
-        }
- catch (        InterruptedException e) {
-          throw new EntryProcessorException(e);
-        }
-        return null;
-      }
-    }
-);
+    cache.put(key,0);
     fail("Timeout exception must be thrown");
   }
  catch (  CacheException e) {
+  }
+ finally {
+    TestCommunicationSpi.delay=false;
   }
   cache.clear();
 }

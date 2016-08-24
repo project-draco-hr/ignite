@@ -1,0 +1,35 @@
+{
+  if (cctx.tm().deadlockDetectionEnabled()) {
+    Set<IgniteTxKey> keys=null;
+    if (keyLockFut != null)     keys=new HashSet<>(keyLockFut.lockKeys);
+ else {
+      if (futs != null && !futs.isEmpty()) {
+        for (int i=0; i < futs.size(); i++) {
+          IgniteInternalFuture<GridNearTxPrepareResponse> fut=futs.get(i);
+          if (isMini(fut) && !fut.isDone()) {
+            MiniFuture miniFut=(MiniFuture)fut;
+            Collection<IgniteTxEntry> entries=miniFut.mapping().entries();
+            keys=U.newHashSet(entries.size());
+            for (            IgniteTxEntry entry : entries)             keys.add(entry.txKey());
+            break;
+          }
+        }
+      }
+    }
+    add(new GridEmbeddedFuture<>(new IgniteBiClosure<TxDeadlock,Exception,GridNearTxPrepareResponse>(){
+      @Override public GridNearTxPrepareResponse apply(      TxDeadlock deadlock,      Exception e){
+        if (e != null)         U.warn(log,"Failed to detect deadlock.",e);
+ else {
+          e=new IgniteTxTimeoutCheckedException("Failed to acquire lock within provided timeout for " + "transaction [timeout=" + tx.timeout() + ", tx="+ tx+ ']',deadlock != null ? new TransactionDeadlockException(deadlock.toString(cctx)) : null);
+        }
+        onDone(null,e);
+        return null;
+      }
+    }
+,cctx.tm().detectDeadlock(tx,keys)));
+  }
+ else {
+    ERR_UPD.compareAndSet(this,null,new IgniteTxTimeoutCheckedException("Failed to acquire lock " + "within provided timeout for transaction [timeout=" + tx.timeout() + ", tx="+ tx+ ']'));
+    onComplete(false);
+  }
+}
