@@ -3,7 +3,9 @@
   if (maxCursors > 0 && cursorCnt >= maxCursors)   return new OdbcResponse(OdbcResponse.STATUS_FAILED,"Too many opened cursors (either close other " + "opened cursors or increase the limit through OdbcConfiguration.setMaxOpenCursors()) " + "[maximum=" + maxCursors + ", current="+ cursorCnt+ ']');
   long qryId=QRY_ID_GEN.getAndIncrement();
   try {
-    SqlFieldsQuery qry=new SqlFieldsQuery(req.sqlQuery());
+    String sql=OdbcEscapeUtils.parse(req.sqlQuery());
+    if (log.isDebugEnabled())     log.debug("ODBC query parsed [reqId=" + reqId + ", original="+ req.sqlQuery()+ ", parsed="+ sql+ ']');
+    SqlFieldsQuery qry=new SqlFieldsQuery(sql);
     qry.setArgs(req.arguments());
     IgniteCache<Object,Object> cache=ctx.grid().cache(req.cacheName());
     if (cache == null)     return new OdbcResponse(OdbcResponse.STATUS_FAILED,"Cache doesn't exist (did you configure it?): " + req.cacheName());

@@ -1,0 +1,43 @@
+{
+  StringBuilder res=new StringBuilder();
+  int curPos=startPos;
+  int plainPos=startPos;
+  int openPos=-1;
+  LinkedList<OdbcEscapeParseResult> nested=null;
+  while (curPos < text.length()) {
+    char curChar=text.charAt(curPos);
+    if (curChar == '{') {
+      if (openPos == -1) {
+        res.append(text,plainPos,curPos);
+        openPos=curPos;
+      }
+ else {
+        OdbcEscapeParseResult nestedRes=parse0(text,curPos,true);
+        if (nested == null)         nested=new LinkedList<>();
+        nested.add(nestedRes);
+        curPos+=nestedRes.originalLength() - 1;
+        plainPos=curPos + 1;
+      }
+    }
+ else     if (curChar == '}') {
+      if (openPos == -1)       throw new IgniteException("Malformed escape sequence " + "(closing curly brace without opening curly brace): " + text);
+ else {
+        String parseRes;
+        if (nested == null)         parseRes=parseExpression(text,openPos,curPos - openPos);
+ else {
+          String res0=appendNested(text,openPos,curPos + 1,nested);
+          nested=null;
+          parseRes=parseExpression(res0,0,res0.length() - 1);
+        }
+        if (earlyExit)         return new OdbcEscapeParseResult(startPos,curPos - startPos + 1,parseRes);
+ else         res.append(parseRes);
+        openPos=-1;
+        plainPos=curPos + 1;
+      }
+    }
+    curPos++;
+  }
+  if (openPos != -1)   throw new IgniteException("Malformed escape sequence (closing curly brace missing): " + text);
+  if (curPos > plainPos)   res.append(text,plainPos,curPos);
+  return new OdbcEscapeParseResult(startPos,curPos - startPos + 1,res.toString());
+}
