@@ -1,10 +1,10 @@
 {
+  if (local() && !dht() && remainingTime() == -1)   state(MARKED_ROLLBACK,true);
   if (isRollbackOnly()) {
-    if (timedOut())     throw new IgniteTxTimeoutCheckedException("Cache transaction timed out: " + this);
+    if (remainingTime() == -1)     throw new IgniteTxTimeoutCheckedException("Cache transaction timed out: " + this);
     TransactionState state=state();
     if (state == ROLLING_BACK || state == ROLLED_BACK)     throw new IgniteTxRollbackCheckedException("Cache transaction is marked as rollback-only " + "(will be rolled back automatically): " + this);
     if (state == UNKNOWN)     throw new IgniteTxHeuristicCheckedException("Cache transaction is in unknown state " + "(remote transactions will be invalidated): " + this);
     throw new IgniteCheckedException("Cache transaction marked as rollback-only: " + this);
   }
-  if (remainingTime() == -1 && setRollbackOnly())   throw new IgniteTxTimeoutCheckedException("Cache transaction timed out " + "(was rolled back automatically): " + this);
 }

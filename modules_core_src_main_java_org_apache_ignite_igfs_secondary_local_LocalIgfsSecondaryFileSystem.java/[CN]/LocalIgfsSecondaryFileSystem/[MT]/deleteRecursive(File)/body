@@ -1,0 +1,18 @@
+{
+  BasicFileAttributes attrs;
+  try {
+    attrs=Files.readAttributes(f.toPath(),BasicFileAttributes.class,LinkOption.NOFOLLOW_LINKS);
+  }
+ catch (  IOException ignore) {
+    return false;
+  }
+  if (!attrs.isDirectory() || attrs.isSymbolicLink())   return f.delete();
+  File[] entries=f.listFiles();
+  if (entries != null) {
+    for (    File entry : entries) {
+      boolean res=deleteRecursive(entry);
+      if (!res)       return false;
+    }
+  }
+  return f.delete();
+}

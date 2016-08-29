@@ -21,9 +21,11 @@
   }
   tx.transactionNodes(txMapping.transactionNodes());
   checkOnePhase();
+  long timeout=tx.remainingTime();
+  if (timeout == -1)   onDone(new IgniteTxTimeoutCheckedException("Transaction timed out and was rolled back: " + tx));
   for (  final GridDistributedTxMapping m : mappings.values()) {
     final ClusterNode node=m.node();
-    GridNearTxPrepareRequest req=new GridNearTxPrepareRequest(futId,tx.topologyVersion(),tx,m.reads(),m.writes(),m.near(),txMapping.transactionNodes(),true,tx.onePhaseCommit(),tx.needReturnValue() && tx.implicit(),tx.implicitSingle(),m.explicitLock(),tx.subjectId(),tx.taskNameHash(),false,tx.activeCachesDeploymentEnabled());
+    GridNearTxPrepareRequest req=new GridNearTxPrepareRequest(futId,tx.topologyVersion(),tx,timeout,m.reads(),m.writes(),m.near(),txMapping.transactionNodes(),true,tx.onePhaseCommit(),tx.needReturnValue() && tx.implicit(),tx.implicitSingle(),m.explicitLock(),tx.subjectId(),tx.taskNameHash(),false,tx.activeCachesDeploymentEnabled());
     for (    IgniteTxEntry txEntry : m.entries()) {
       if (txEntry.op() == TRANSFORM)       req.addDhtVersion(txEntry.txKey(),null);
     }

@@ -1,6 +1,10 @@
 {
   if (log.isDebugEnabled())   log.debug("Timed out waiting for lock response: " + this);
-  timedOut=true;
+synchronized (sync) {
+    timedOut=true;
+    pendingLocks.clear();
+    clear();
+  }
   boolean releaseLocks=!(inTx() && cctx.tm().deadlockDetectionEnabled());
   onComplete(false,false,releaseLocks);
 }

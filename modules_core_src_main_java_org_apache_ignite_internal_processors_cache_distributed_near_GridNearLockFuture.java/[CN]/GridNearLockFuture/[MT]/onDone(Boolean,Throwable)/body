@@ -1,5 +1,6 @@
 {
   if (log.isDebugEnabled())   log.debug("Received onDone(..) callback [success=" + success + ", err="+ err+ ", fut="+ this+ ']');
+  if (inTx() && cctx.tm().deadlockDetectionEnabled() && (this.err instanceof IgniteTxTimeoutCheckedException || timedOut))   return false;
   if (isDone() || (err == null && success && !checkLocks()))   return false;
   if (err != null && !(err instanceof GridCacheLockTimeoutException))   onError(err);
   if (err != null)   success=false;
