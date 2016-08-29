@@ -1,0 +1,23 @@
+{
+  List<List<Integer>> keySets=new ArrayList<>();
+  if (loc) {
+    List<Integer> keys=primaryKeys(ignite(0).cache(CACHE_NAME),2);
+    keySets.add(new ArrayList<>(keys));
+    Collections.reverse(keys);
+    keySets.add(keys);
+  }
+ else {
+    for (int i=0; i < nodesCnt; i++) {
+      List<Integer> keys=new ArrayList<>(2);
+      int n1=i + 1;
+      int n2=n1 + 1;
+      int i1=n1 < nodesCnt ? n1 : n1 - nodesCnt;
+      int i2=n2 < nodesCnt ? n2 : n2 - nodesCnt;
+      keys.add(primaryKey(ignite(i1).cache(CACHE_NAME)));
+      keys.add(primaryKey(ignite(i2).cache(CACHE_NAME)));
+      if (reverse)       Collections.reverse(keys);
+      keySets.add(keys);
+    }
+  }
+  return keySets;
+}

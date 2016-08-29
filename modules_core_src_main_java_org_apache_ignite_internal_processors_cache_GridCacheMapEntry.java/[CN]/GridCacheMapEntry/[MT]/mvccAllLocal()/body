@@ -1,6 +1,12 @@
 {
   GridCacheMvcc mvcc=extras != null ? extras.mvcc() : null;
   if (mvcc == null)   return null;
-  List<GridCacheMvccCandidate> locs=mvcc.allLocal();
-  return (locs == null || locs.isEmpty()) ? null : new ArrayList<>(locs);
+  List<GridCacheMvccCandidate> allLocs=mvcc.allLocal();
+  if (allLocs == null || allLocs.isEmpty())   return null;
+  List<GridCacheMvccCandidate> locs=new ArrayList<>(allLocs.size());
+  for (int i=0; i < allLocs.size(); i++) {
+    GridCacheMvccCandidate loc=allLocs.get(i);
+    if (!loc.nearLocal())     locs.add(loc);
+  }
+  return locs.isEmpty() ? null : locs;
 }

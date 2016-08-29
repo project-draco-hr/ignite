@@ -1,2 +1,23 @@
 {
+  if (txLocks == null || txLocks.isEmpty())   return;
+  for (  Map.Entry<IgniteTxKey,TxLockList> e : txLocks.entrySet()) {
+    GridCacheVersion txOwner=null;
+    for (    TxLock lock : e.getValue().txLocks()) {
+      if (lock.owner() && txOwner == null) {
+        txOwner=lock.txId();
+        if (keys.contains(e.getKey()) && !txId.equals(lock.txId())) {
+          Set<GridCacheVersion> waitingTxs=wfg.get(txId);
+          if (waitingTxs == null)           wfg.put(txId,waitingTxs=new HashSet<>());
+          waitingTxs.add(lock.txId());
+        }
+        continue;
+      }
+      if (lock.candiate() || lock.owner()) {
+        GridCacheVersion txId0=lock.txId();
+        Set<GridCacheVersion> waitForTxs=wfg.get(txId0);
+        if (waitForTxs == null)         wfg.put(txId0,waitForTxs=new HashSet<>());
+        waitForTxs.add(txOwner);
+      }
+    }
+  }
 }

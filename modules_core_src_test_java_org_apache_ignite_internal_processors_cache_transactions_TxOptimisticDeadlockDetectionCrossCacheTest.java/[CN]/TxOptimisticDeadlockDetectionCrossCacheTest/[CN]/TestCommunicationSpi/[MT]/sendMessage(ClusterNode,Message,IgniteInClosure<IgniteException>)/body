@@ -1,0 +1,25 @@
+{
+  if (msg instanceof GridIoMessage) {
+    Message msg0=((GridIoMessage)msg).message();
+    if (msg0 instanceof GridNearTxPrepareRequest) {
+      final GridNearTxPrepareRequest req=(GridNearTxPrepareRequest)msg0;
+      GridCacheVersion txId=req.version();
+      if (TX_IDS.contains(txId)) {
+        while (TX_IDS.size() < TX_CNT) {
+          try {
+            U.sleep(50);
+          }
+ catch (          IgniteInterruptedCheckedException e) {
+            e.printStackTrace();
+          }
+        }
+      }
+    }
+ else     if (msg0 instanceof GridNearTxPrepareResponse) {
+      GridNearTxPrepareResponse res=(GridNearTxPrepareResponse)msg0;
+      GridCacheVersion txId=res.version();
+      TX_IDS.add(txId);
+    }
+  }
+  super.sendMessage(node,msg,ackC);
+}

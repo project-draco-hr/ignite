@@ -1,9 +1,9 @@
 {
-  if (isDone())   return false;
+  if (isDone() || (inTx() && tx.remainingTime() == -1))   return false;
   if (log.isDebugEnabled())   log.debug("Received onOwnerChanged() callback [entry=" + entry + ", owner="+ owner+ "]");
   if (owner != null && owner.version().equals(lockVer)) {
-synchronized (this) {
-      pendingLocks.remove(entry.key());
+synchronized (futs) {
+      if (!pendingLocks.remove(entry.key()))       return false;
     }
     if (checkLocks())     map(entries());
     return true;
