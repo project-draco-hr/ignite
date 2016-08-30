@@ -1,0 +1,14 @@
+{
+  final Collection<ResourceType> required=Arrays.asList(ResourceType.IGNITE_INSTANCE,ResourceType.CACHE_NAME,ResourceType.LOGGER,ResourceType.SERVICE);
+  final CacheEventListener lsnr=new CacheEventListener();
+  IgniteEvents evts=ignite.events(ignite.cluster());
+  UUID opId=evts.remoteListen(lsnr,null,EventType.EVT_CACHE_OBJECT_READ);
+  try {
+    checkResourceInjectionOnInvoke(cache,required);
+    checkResourceInjectionOnInvokeAll(cache,required);
+    checkResourceInjectionOnInvokeAllMap(cache,required);
+  }
+  finally {
+    evts.stopRemoteListen(opId);
+  }
+}

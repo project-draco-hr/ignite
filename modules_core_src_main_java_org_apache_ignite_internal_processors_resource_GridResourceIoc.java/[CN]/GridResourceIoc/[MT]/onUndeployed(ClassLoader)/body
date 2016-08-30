@@ -1,7 +1,15 @@
 {
   Set<Class<?>> clss=taskMap.remove(ldr);
   if (clss != null) {
-    clsDescs.keySet().removeAll(clss);
-    annCache.keySet().removeAll(clss);
+    Map<Class<?>,ClassDescriptor> newMap, oldMap;
+    do {
+      oldMap=clsDescs.get();
+      if (oldMap == null)       break;
+      newMap=new HashMap<>(oldMap.size() - clss.size());
+      for (      Map.Entry<Class<?>,ClassDescriptor> entry : oldMap.entrySet()) {
+        if (!clss.contains(entry.getKey()))         newMap.put(entry.getKey(),entry.getValue());
+      }
+    }
+ while (!clsDescs.compareAndSet(oldMap,newMap));
   }
 }

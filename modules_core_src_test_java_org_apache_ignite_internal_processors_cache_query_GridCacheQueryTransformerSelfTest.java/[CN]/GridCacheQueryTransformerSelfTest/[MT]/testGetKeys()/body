@@ -1,0 +1,19 @@
+{
+  IgniteCache<Integer,String> cache=grid().createCache("test-cache");
+  try {
+    for (int i=0; i < 50; i++)     cache.put(i,"val" + i);
+    IgniteClosure<Cache.Entry<Integer,String>,Integer> transformer=new IgniteClosure<Cache.Entry<Integer,String>,Integer>(){
+      @Override public Integer apply(      Cache.Entry<Integer,String> e){
+        return e.getKey();
+      }
+    }
+;
+    List<Integer> keys=cache.query(new ScanQuery<Integer,String>(),transformer).getAll();
+    assertEquals(50,keys.size());
+    Collections.sort(keys);
+    for (int i=0; i < 50; i++)     assertEquals(i,keys.get(i).intValue());
+  }
+  finally {
+    cache.destroy();
+  }
+}

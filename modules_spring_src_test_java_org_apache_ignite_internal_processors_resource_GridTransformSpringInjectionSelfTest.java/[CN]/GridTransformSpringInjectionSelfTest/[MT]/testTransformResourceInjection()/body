@@ -1,0 +1,26 @@
+{
+  Ignite grid=grid(0);
+  IgniteCache<String,Integer> cache=grid.createCache(cacheConfiguration(ATOMIC));
+  try {
+    doTransformResourceInjection(cache);
+  }
+  finally {
+    cache.destroy();
+  }
+  cache=grid.createCache(cacheConfiguration(TRANSACTIONAL));
+  try {
+    doTransformResourceInjection(cache);
+    for (    TransactionConcurrency concurrency : TransactionConcurrency.values()) {
+      for (      TransactionIsolation isolation : TransactionIsolation.values()) {
+        IgniteTransactions txs=grid.transactions();
+        try (Transaction tx=txs.txStart(concurrency,isolation)){
+          doTransformResourceInjection(cache);
+          tx.commit();
+        }
+       }
+    }
+  }
+  finally {
+    cache.destroy();
+  }
+}

@@ -4,6 +4,7 @@
   if (val == null && op != GridCacheOperation.DELETE)   throw new NullPointerException("Null value.");
   KeyCacheObject cacheKey=cctx.toCacheKeyObject(key);
   if (op != TRANSFORM)   val=cctx.toCacheObject(val);
+ else   val=EntryProcessorResourceInjectorProxy.wrap(cctx.kernalContext(),(EntryProcessor)val);
   ClusterNode primary=cctx.affinity().primary(cacheKey,topVer);
   if (primary == null)   throw new ClusterTopologyServerNotFoundException("Failed to map keys for cache (all partition nodes " + "left the grid).");
   GridNearAtomicUpdateRequest req=new GridNearAtomicUpdateRequest(cctx.cacheId(),primary.id(),futVer,false,updVer,topVer,topLocked,syncMode,op,retval,expiryPlc,invokeArgs,filter,subjId,taskNameHash,skipStore,keepBinary,cctx.kernalContext().clientNode(),cctx.deploymentEnabled(),1);
