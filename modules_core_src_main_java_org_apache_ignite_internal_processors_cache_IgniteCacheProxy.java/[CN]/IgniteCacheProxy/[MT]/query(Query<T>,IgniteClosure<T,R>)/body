@@ -1,0 +1,19 @@
+{
+  A.notNull(qry,"qry");
+  A.notNull(transformer,"transformer");
+  if (!(qry instanceof ScanQuery))   throw new UnsupportedOperationException("Transformers are supported only for SCAN queries.");
+  GridCacheGateway<K,V> gate=this.gate;
+  CacheOperationContext prev=onEnter(gate,opCtx);
+  try {
+    ctx.checkSecurity(SecurityPermission.CACHE_READ);
+    validate(qry);
+    return query((ScanQuery<K,V>)qry,transformer,projection(qry.isLocal()));
+  }
+ catch (  Exception e) {
+    if (e instanceof CacheException)     throw (CacheException)e;
+    throw new CacheException(e);
+  }
+ finally {
+    onLeave(gate,prev);
+  }
+}
