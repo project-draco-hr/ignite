@@ -1,11 +1,18 @@
 {
-  ClassDescriptor res=clsDescs.get(cls);
-  if (res == null) {
+  Map<Class<?>,ClassDescriptor> newMap, oldMap;
+  ClassDescriptor res, newDesc=null;
+  do {
+    oldMap=clsDescs.get();
+    if (oldMap != null && (res=oldMap.get(cls)) != null)     break;
     if (dep != null) {
       Set<Class<?>> classes=F.addIfAbsent(taskMap,dep.classLoader(),F.<Class<?>>newCSet());
       classes.add(cls);
+      dep=null;
     }
-    res=F.addIfAbsent(clsDescs,cls,new ClassDescriptor(cls));
+    if (oldMap == null)     newMap=new HashMap<>();
+ else     (newMap=new HashMap<>(oldMap.size() + 1)).putAll(oldMap);
+    newMap.put(cls,res=newDesc == null ? (newDesc=new ClassDescriptor(cls)) : newDesc);
   }
+ while (!clsDescs.compareAndSet(oldMap,newMap));
   return res;
 }

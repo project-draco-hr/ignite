@@ -1,0 +1,15 @@
+{
+  Map<String,EntryProcessorResult<Integer>> results;
+  Map<String,EntryProcessor<String,Integer,Integer>> map=new HashMap<>();
+  map.put(UUID.randomUUID().toString(),new ResourceInjectionEntryProcessor());
+  map.put(UUID.randomUUID().toString(),new ResourceInjectionEntryProcessor());
+  map.put(UUID.randomUUID().toString(),new ResourceInjectionEntryProcessor());
+  map.put(UUID.randomUUID().toString(),new ResourceInjectionEntryProcessor());
+  results=cache.invokeAll(map);
+  if (cache.isAsync())   results=cache.<Map<String,EntryProcessorResult<Integer>>>future().get();
+  assertEquals(map.size(),results.size());
+  for (  EntryProcessorResult<Integer> res : results.values()) {
+    Collection<ResourceType> notInjected=ResourceInfoSet.valueOf(res.get()).notInjected(required);
+    if (!notInjected.isEmpty())     fail("Can't inject resource(s): " + Arrays.toString(notInjected.toArray()));
+  }
+}

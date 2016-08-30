@@ -36,4 +36,21 @@
     GridResourceMethod[] mtds=GridResourceMethod.toArray(entry.getValue().get2());
     this.annMap.put(entry.getKey(),new T2<>(fields,mtds));
   }
+  T2<GridResourceField[],GridResourceMethod[]>[] annArr=null;
+  if (annMap.isEmpty())   containsAnnSets=null;
+ else {
+    int annotationsBits=0;
+    for (    ResourceAnnotation ann : ResourceAnnotation.values()) {
+      T2<GridResourceField[],GridResourceMethod[]> member=annotatedMembers(ann.clazz);
+      if (member != null) {
+        if (annArr == null)         annArr=new T2[ResourceAnnotation.values().length];
+        annArr[ann.ordinal()]=member;
+        annotationsBits|=1 << ann.ordinal();
+      }
+    }
+    AnnotationSet[] annotationSets=AnnotationSet.values();
+    containsAnnSets=new int[annotationSets.length];
+    for (int i=0; i < annotationSets.length; i++)     containsAnnSets[i]=annotationsBits & annotationSets[i].annotationsBitSet;
+  }
+  this.annArr=annArr;
 }
