@@ -1,0 +1,25 @@
+{
+  IgniteCache<Integer,String> cache=grid().createCache("test-cache");
+  try {
+    for (int i=0; i < 50; i++)     cache.put(i,"val" + i);
+    IgniteBiPredicate<Integer,String> filter=new IgniteBiPredicate<Integer,String>(){
+      @Override public boolean apply(      Integer k,      String v){
+        return k % 10 == 0;
+      }
+    }
+;
+    IgniteClosure<Cache.Entry<Integer,String>,Integer> transformer=new IgniteClosure<Cache.Entry<Integer,String>,Integer>(){
+      @Override public Integer apply(      Cache.Entry<Integer,String> e){
+        return e.getKey();
+      }
+    }
+;
+    List<Integer> keys=cache.query(new ScanQuery<>(filter),transformer).getAll();
+    assertEquals(5,keys.size());
+    Collections.sort(keys);
+    for (int i=0; i < 5; i++)     assertEquals(i * 10,keys.get(i).intValue());
+  }
+  finally {
+    cache.destroy();
+  }
+}

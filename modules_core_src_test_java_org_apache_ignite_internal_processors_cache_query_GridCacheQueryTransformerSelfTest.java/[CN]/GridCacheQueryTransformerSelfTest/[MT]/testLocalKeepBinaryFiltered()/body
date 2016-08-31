@@ -1,0 +1,32 @@
+{
+  IgniteCache<Integer,Value> cache=grid().createCache("test-cache");
+  try {
+    for (int i=0; i < 50; i++)     cache.put(i,new Value("str" + i,i * 100));
+    Collection<List<Integer>> lists=grid().compute().broadcast(new IgniteCallable<List<Integer>>(){
+      @IgniteInstanceResource private Ignite ignite;
+      @Override public List<Integer> call() throws Exception {
+        IgniteBiPredicate<Integer,BinaryObject> filter=new IgniteBiPredicate<Integer,BinaryObject>(){
+          @Override public boolean apply(          Integer k,          BinaryObject v){
+            return v.<Integer>field("idx") % 1000 == 0;
+          }
+        }
+;
+        IgniteClosure<Cache.Entry<Integer,BinaryObject>,Integer> transformer=new IgniteClosure<Cache.Entry<Integer,BinaryObject>,Integer>(){
+          @Override public Integer apply(          Cache.Entry<Integer,BinaryObject> e){
+            return e.getValue().field("idx");
+          }
+        }
+;
+        return ignite.cache("test-cache").withKeepBinary().query(new ScanQuery<>(filter).setLocal(true),transformer).getAll();
+      }
+    }
+);
+    List<Integer> res=new ArrayList<>(F.flatCollections(lists));
+    assertEquals(5,res.size());
+    Collections.sort(res);
+    for (int i=0; i < 5; i++)     assertEquals(i * 1000,res.get(i).intValue());
+  }
+  finally {
+    cache.destroy();
+  }
+}
