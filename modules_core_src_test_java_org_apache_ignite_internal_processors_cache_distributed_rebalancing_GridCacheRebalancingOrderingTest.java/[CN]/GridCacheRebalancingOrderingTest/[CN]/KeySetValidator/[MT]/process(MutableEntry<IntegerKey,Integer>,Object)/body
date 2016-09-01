@@ -1,0 +1,35 @@
+{
+  try {
+    Ignite ignite=entry.unwrap(Ignite.class);
+    PartitionObserver observer=ignite.services().service(PartitionObserver.class.getName());
+    assertNotNull(observer);
+    IgniteCache<IntegerKey,Integer> cache=ignite.cache(TEST_CACHE_NAME);
+    Affinity<IntegerKey> affinity=ignite.affinity(TEST_CACHE_NAME);
+    Set<IntegerKey> exp=this.keys;
+    Set<IntegerKey> missing=getMissingKeys(cache,exp);
+    IntegerKey key=entry.getKey();
+    int part=affinity.partition(key);
+    String ownership=affinity.isPrimary(ignite.cluster().localNode(),key) ? "primary" : "backup";
+    if (!observer.getIgniteLocalSyncListener().isSynced()) {
+      ignite.log().info("Retrying validation for " + ownership + " partition "+ part+ " due to initial sync");
+      return Result.RETRY;
+    }
+    if (observer.getLoadingMap().containsKey(part)) {
+      ignite.log().info("Retrying validation due to forming partition [ownership=" + ownership + ", partition="+ part+ ", expKeys="+ exp+ ", loadedKeys="+ observer.getLoadingMap().get(part)+ ", missingLocalKeys="+ missing+ ']');
+      return Result.RETRY;
+    }
+    if (!observer.getPartitionMap().containsKey(part)) {
+      ignite.log().info("Retrying validation due to newly arrived partition [ownership=" + ownership + ", partition="+ part+ ", missingLocalKeys="+ missing+ ']');
+      return Result.RETRY;
+    }
+    Set<IntegerKey> curr=observer.ensureKeySet(part);
+    if (curr.equals(exp) && missing.isEmpty())     return Result.OK;
+    String msg=String.format("For %s partition %s:\n\texpected  %s,\n\t" + "but found %s;\n\tmissing local keys: %s",ownership,part,new TreeSet<>(exp),new TreeSet<>(curr),new TreeSet<>(missing));
+    ignite.log().info(">>> " + msg);
+    throw new EntryProcessorException(msg);
+  }
+ catch (  NullPointerException e) {
+    e.printStackTrace();
+    throw e;
+  }
+}

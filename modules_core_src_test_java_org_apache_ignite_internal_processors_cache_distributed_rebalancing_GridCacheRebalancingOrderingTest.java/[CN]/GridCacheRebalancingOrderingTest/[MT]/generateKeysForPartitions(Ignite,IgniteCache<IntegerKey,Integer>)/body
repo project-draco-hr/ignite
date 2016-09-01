@@ -1,0 +1,22 @@
+{
+  Affinity<IntegerKey> affinity=ignite.affinity(cache.getName());
+  int parts=affinity.partitions();
+  Map<Integer,IntegerKey> keyMap=new HashMap<>(parts);
+  for (int i=0; i < parts; i++) {
+    boolean found=false;
+    do {
+      IntegerKey key=new IntegerKey(RANDOM.nextInt(10000));
+      if (affinity.partition(key) == i) {
+        keyMap.put(i,key);
+        found=true;
+      }
+    }
+ while (!found);
+  }
+  if (keyMap.size() != affinity.partitions())   throw new IllegalStateException("Inconsistent partition count");
+  for (int i=0; i < parts; i++) {
+    IntegerKey key=keyMap.get(i);
+    if (affinity.partition(key) != i)     throw new IllegalStateException("Inconsistent partition");
+  }
+  return keyMap;
+}

@@ -1,0 +1,24 @@
+{
+  if (!this.isSynced) {
+synchronized (this) {
+      if (!this.isSynced) {
+        Collection<Event> evts=ignite().events().localQuery(new IgnitePredicate<Event>(){
+          @Override public boolean apply(          final Event evt){
+            return true;
+          }
+        }
+,this.causes);
+        for (        Event event : evts) {
+          try {
+            applyInternal(event);
+          }
+  finally {
+            this.syncedId=event.localOrder();
+          }
+        }
+        this.isSynced=true;
+        notifyAll();
+      }
+    }
+  }
+}
