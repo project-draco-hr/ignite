@@ -1,5 +1,4 @@
 {
-  fail("https://issues.apache.org/jira/browse/IGNITE-613");
   Ignite g=startGrid("client");
   try {
     assertTrue(g.configuration().isClientMode());
@@ -8,8 +7,10 @@
     assertEquals(0,cache.localSize());
     QueryCursor<Cache.Entry<Integer,Integer>> q=cache.query(new SqlQuery<Integer,Integer>(Integer.class,"_key >= 0 order by _key").setPageSize(10));
     assertEquals(0,(int)q.iterator().next().getKey());
-    ConcurrentMap<UUID,ConcurrentMap<Long,?>> map=U.field(((IgniteH2Indexing)U.field(U.field(grid(0).context(),"qryProc"),"idx")).mapQueryExecutor(),"qryRess");
-    assertEquals(1,map.size());
+    ConcurrentMap<?,?> mapNode1=queryResultMap(0);
+    ConcurrentMap<?,?> mapNode2=queryResultMap(1);
+    ConcurrentMap<?,?> mapNode3=queryResultMap(2);
+    assertEquals(1,mapNode1.size() + mapNode2.size() + mapNode3.size());
     final UUID nodeId=g.cluster().localNode().id();
     final CountDownLatch latch=new CountDownLatch(1);
     grid(0).events().localListen(new IgnitePredicate<Event>(){
@@ -21,7 +22,9 @@
 ,EVT_NODE_LEFT);
     stopGrid("client");
     latch.await();
-    assertEquals(0,map.size());
+    assertEquals(0,mapNode1.size());
+    assertEquals(0,mapNode2.size());
+    assertEquals(0,mapNode3.size());
   }
   finally {
     stopGrid("client");
