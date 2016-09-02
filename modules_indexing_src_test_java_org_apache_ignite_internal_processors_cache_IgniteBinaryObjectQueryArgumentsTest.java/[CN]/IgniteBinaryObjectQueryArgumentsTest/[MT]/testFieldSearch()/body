@@ -1,0 +1,17 @@
+{
+  final IgniteCache<Integer,SearchValue> cache=ignite(0).cache(FIELD_CACHE);
+  final Map<Integer,SearchValue> map=new HashMap<>();
+  for (int i=0; i < 10; i++) {
+    map.put(i,new SearchValue(UUID.randomUUID(),String.valueOf(i),new BigDecimal(i * 0.1),i,new Date(i),new Timestamp(i),new Person(String.valueOf("name-" + i)),i % 2 == 0 ? EnumKey.KEY1 : EnumKey.KEY2));
+  }
+  cache.putAll(map);
+  SqlQuery<Integer,SearchValue> qry=new SqlQuery<>(SearchValue.class,"where uuid=? and str=? and decimal=? and integer=? and date=? and ts=? and person=? and enumKey=?");
+  final int k=ThreadLocalRandom.current().nextInt(10);
+  final SearchValue val=map.get(k);
+  qry.setLocal(isLocal());
+  qry.setArgs(val.uuid,val.str,val.decimal,val.integer,val.date,val.ts,val.person,val.enumKey);
+  final List<Cache.Entry<Integer,SearchValue>> res=cache.query(qry).getAll();
+  assertEquals(1,res.size());
+  assertEquals(val.integer,res.get(0).getKey());
+  assertEquals(val,res.get(0).getValue());
+}
