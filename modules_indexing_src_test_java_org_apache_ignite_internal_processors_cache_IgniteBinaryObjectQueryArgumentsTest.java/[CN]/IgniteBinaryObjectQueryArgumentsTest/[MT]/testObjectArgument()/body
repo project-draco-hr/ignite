@@ -1,15 +1,3 @@
 {
-  IgniteCache<TestKey,Person> cache=ignite(0).cache(null);
-  for (int i=0; i < 100; i++)   cache.put(new TestKey(i),new Person("name-" + i));
-  SqlQuery<TestKey,Person> qry=new SqlQuery<>(Person.class,"where _key=?");
-  IgniteBinary binary=ignite(0).binary();
-  for (int i=0; i < 100; i++) {
-    Object key=new TestKey(i);
-    if (i % 2 == 0)     key=binary.toBinary(key);
-    qry.setArgs(key);
-    List<Cache.Entry<TestKey,Person>> res=cache.query(qry).getAll();
-    assertEquals(1,res.size());
-    Person p=res.get(0).getValue();
-    assertEquals("name-" + i,p.name);
-  }
+  testKeyQuery(OBJECT_CACHE,new TestKey(1),new TestKey(2));
 }
