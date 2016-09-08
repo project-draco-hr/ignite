@@ -6,8 +6,8 @@
       if (log.isDebugEnabled())       log.debug("Deleting file [path=" + path + ", recursive="+ recursive+ ']');
       if (IgfsPath.SLASH.equals(path.toString()))       return false;
       IgfsMode mode=resolveMode(path);
+      if (mode == PROXY)       return secondaryFs.delete(path,recursive);
       boolean dual=IgfsUtils.isDualMode(mode);
-      ;
       if (dual)       await(path);
       IgfsDeleteResult res=meta.softDelete(path,recursive,dual ? secondaryFs : null);
       if (res.success() && res.info() != null)       IgfsUtils.sendEvents(igfsCtx.kernalContext(),path,res.info().isFile() ? EVT_IGFS_FILE_DELETED : EVT_IGFS_DIR_DELETED);
