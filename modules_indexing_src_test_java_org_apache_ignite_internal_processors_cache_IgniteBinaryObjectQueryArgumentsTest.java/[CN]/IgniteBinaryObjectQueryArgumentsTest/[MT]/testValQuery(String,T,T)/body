@@ -1,0 +1,23 @@
+{
+  final IgniteCache<Person,T> cache=ignite(0).cache(cacheName);
+  final Class<?> valType=val1.getClass();
+  final Person p1=new Person("p1");
+  final Person p2=new Person("p2");
+  cache.put(p1,val1);
+  cache.put(p2,val2);
+  final SqlQuery<Person,T> qry=new SqlQuery<>(valType,"where _val=?");
+  final SqlFieldsQuery fieldsQry=new SqlFieldsQuery("select * from " + valType.getSimpleName() + " where _val=?");
+  qry.setLocal(isLocal());
+  fieldsQry.setLocal(isLocal());
+  qry.setArgs(val1);
+  fieldsQry.setArgs(val1);
+  final List<Cache.Entry<Person,T>> res=cache.query(qry).getAll();
+  final List<List<?>> fieldsRes=cache.query(fieldsQry).getAll();
+  assertEquals(1,res.size());
+  assertEquals(1,fieldsRes.size());
+  assertEquals(p1,res.get(0).getKey());
+  assertEquals(val1,res.get(0).getValue());
+  assertTrue(fieldsRes.get(0).size() >= 2);
+  assertEquals(p1,fieldsRes.get(0).get(0));
+  assertEquals(val1,fieldsRes.get(0).get(1));
+}

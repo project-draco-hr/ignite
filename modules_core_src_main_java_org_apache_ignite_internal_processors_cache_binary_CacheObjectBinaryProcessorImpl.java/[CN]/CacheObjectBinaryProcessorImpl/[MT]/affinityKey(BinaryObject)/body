@@ -1,14 +1,27 @@
 {
+  if (po instanceof BinaryObjectEx) {
+    int typeId=((BinaryObjectEx)po).typeId();
+    T1<BinaryField> fieldHolder=affKeyFields.get(typeId);
+    if (fieldHolder != null) {
+      BinaryField field=fieldHolder.get();
+      return field != null ? field.value(po) : po;
+    }
+  }
   try {
     BinaryType meta=po instanceof BinaryObjectEx ? ((BinaryObjectEx)po).rawType() : po.type();
     if (meta != null) {
-      String affKeyFieldName=meta.affinityKeyFieldName();
-      if (affKeyFieldName != null)       return po.field(affKeyFieldName);
+      String name=meta.affinityKeyFieldName();
+      if (name != null) {
+        BinaryField field=meta.field(name);
+        affKeyFields.putIfAbsent(meta.typeId(),new T1<>(field));
+        return field.value(po);
+      }
+ else       affKeyFields.putIfAbsent(meta.typeId(),new T1<BinaryField>(null));
     }
  else     if (po instanceof BinaryObjectEx) {
-      int id=((BinaryObjectEx)po).typeId();
-      String affKeyFieldName=binaryCtx.affinityKeyFieldName(id);
-      if (affKeyFieldName != null)       return po.field(affKeyFieldName);
+      int typeId=((BinaryObjectEx)po).typeId();
+      String name=binaryCtx.affinityKeyFieldName(typeId);
+      if (name != null)       return po.field(name);
     }
   }
  catch (  BinaryObjectException e) {

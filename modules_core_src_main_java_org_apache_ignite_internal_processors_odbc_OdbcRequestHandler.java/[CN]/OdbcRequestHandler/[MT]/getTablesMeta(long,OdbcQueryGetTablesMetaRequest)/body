@@ -1,0 +1,22 @@
+{
+  try {
+    List<OdbcTableMeta> meta=new ArrayList<>();
+    String realSchema=OdbcUtils.removeQuotationMarksIfNeeded(req.schema());
+    for (    String cacheName : ctx.cache().cacheNames()) {
+      if (!matches(cacheName,realSchema))       continue;
+      Collection<GridQueryTypeDescriptor> tablesMeta=ctx.query().types(cacheName);
+      for (      GridQueryTypeDescriptor table : tablesMeta) {
+        if (!matches(table.name(),req.table()))         continue;
+        if (!matches("TABLE",req.tableType()))         continue;
+        OdbcTableMeta tableMeta=new OdbcTableMeta(req.catalog(),cacheName,table.name(),"TABLE");
+        if (!meta.contains(tableMeta))         meta.add(tableMeta);
+      }
+    }
+    OdbcQueryGetTablesMetaResult res=new OdbcQueryGetTablesMetaResult(meta);
+    return new OdbcResponse(res);
+  }
+ catch (  Exception e) {
+    U.error(log,"Failed to get tables metadata [reqId=" + reqId + ", req="+ req+ ']',e);
+    return new OdbcResponse(OdbcResponse.STATUS_FAILED,e.getMessage());
+  }
+}

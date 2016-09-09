@@ -1,0 +1,136 @@
+{
+  Object obj;
+  byte flag=in.readByte();
+switch (flag) {
+case NULL:
+    obj=null;
+  break;
+case HANDLE:
+int handlePos=start - in.readInt();
+obj=getHandle(handlePos);
+if (obj == null) {
+int retPos=in.position();
+streamPosition(handlePos);
+obj=BinaryUtils.doReadObject(in,ctx,ldr,this);
+streamPosition(retPos);
+}
+break;
+case OBJ:
+if (desc == null) desc=ctx.descriptorForTypeId(userType,typeId,ldr,true);
+streamPosition(dataStart);
+if (desc == null) throw new BinaryInvalidTypeException("Unknown type ID: " + typeId);
+obj=desc.read(this);
+streamPosition(footerStart + footerLen);
+break;
+case BYTE:
+obj=in.readByte();
+break;
+case SHORT:
+obj=in.readShort();
+break;
+case INT:
+obj=in.readInt();
+break;
+case LONG:
+obj=in.readLong();
+break;
+case FLOAT:
+obj=in.readFloat();
+break;
+case DOUBLE:
+obj=in.readDouble();
+break;
+case CHAR:
+obj=in.readChar();
+break;
+case BOOLEAN:
+obj=in.readBoolean();
+break;
+case DECIMAL:
+obj=BinaryUtils.doReadDecimal(in);
+break;
+case STRING:
+obj=BinaryUtils.doReadString(in);
+break;
+case UUID:
+obj=BinaryUtils.doReadUuid(in);
+break;
+case DATE:
+obj=BinaryUtils.doReadDate(in);
+break;
+case TIMESTAMP:
+obj=BinaryUtils.doReadTimestamp(in);
+break;
+case BYTE_ARR:
+obj=BinaryUtils.doReadByteArray(in);
+break;
+case SHORT_ARR:
+obj=BinaryUtils.doReadShortArray(in);
+break;
+case INT_ARR:
+obj=BinaryUtils.doReadIntArray(in);
+break;
+case LONG_ARR:
+obj=BinaryUtils.doReadLongArray(in);
+break;
+case FLOAT_ARR:
+obj=BinaryUtils.doReadFloatArray(in);
+break;
+case DOUBLE_ARR:
+obj=BinaryUtils.doReadDoubleArray(in);
+break;
+case CHAR_ARR:
+obj=BinaryUtils.doReadCharArray(in);
+break;
+case BOOLEAN_ARR:
+obj=BinaryUtils.doReadBooleanArray(in);
+break;
+case DECIMAL_ARR:
+obj=BinaryUtils.doReadDecimalArray(in);
+break;
+case STRING_ARR:
+obj=BinaryUtils.doReadStringArray(in);
+break;
+case UUID_ARR:
+obj=BinaryUtils.doReadUuidArray(in);
+break;
+case DATE_ARR:
+obj=BinaryUtils.doReadDateArray(in);
+break;
+case TIMESTAMP_ARR:
+obj=BinaryUtils.doReadTimestampArray(in);
+break;
+case OBJ_ARR:
+obj=BinaryUtils.doReadObjectArray(in,ctx,ldr,this,true);
+break;
+case COL:
+obj=BinaryUtils.doReadCollection(in,ctx,ldr,this,true,null);
+break;
+case MAP:
+obj=BinaryUtils.doReadMap(in,ctx,ldr,this,true,null);
+break;
+case BINARY_OBJ:
+obj=BinaryUtils.doReadBinaryObject(in,ctx);
+((BinaryObjectImpl)obj).context(ctx);
+if (!GridBinaryMarshaller.KEEP_BINARIES.get()) obj=((BinaryObject)obj).deserialize();
+break;
+case ENUM:
+obj=BinaryUtils.doReadEnum(in,BinaryUtils.doReadClass(in,ctx,ldr));
+break;
+case ENUM_ARR:
+obj=BinaryUtils.doReadEnumArray(in,ctx,ldr,BinaryUtils.doReadClass(in,ctx,ldr));
+break;
+case CLASS:
+obj=BinaryUtils.doReadClass(in,ctx,ldr);
+break;
+case PROXY:
+obj=BinaryUtils.doReadProxy(in,ctx,ldr,this);
+break;
+case OPTM_MARSH:
+obj=BinaryUtils.doReadOptimized(in,ctx,ldr);
+break;
+default :
+throw new BinaryObjectException("Invalid flag value: " + flag);
+}
+return obj;
+}

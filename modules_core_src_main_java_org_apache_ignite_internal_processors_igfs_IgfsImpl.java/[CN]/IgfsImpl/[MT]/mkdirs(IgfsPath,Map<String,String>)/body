@@ -1,2 +1,29 @@
 {
+  A.notNull(path,"path");
+  if (meta.isClient()) {
+    meta.runClientTask(new IgfsClientMkdirsCallable(cfg.getName(),path,props));
+    return;
+  }
+  safeOp(new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      if (log.isDebugEnabled())       log.debug("Make directories: " + path);
+      final Map<String,String> props0=props == null ? DFLT_DIR_META : new HashMap<>(props);
+      IgfsMode mode=resolveMode(path);
+switch (mode) {
+case PRIMARY:
+        meta.mkdirs(path,props0);
+      break;
+case DUAL_ASYNC:
+case DUAL_SYNC:
+    await(path);
+  meta.mkdirsDual(secondaryFs,path,props0);
+break;
+case PROXY:
+secondaryFs.mkdirs(path,props0);
+break;
+}
+return null;
+}
+}
+);
 }
