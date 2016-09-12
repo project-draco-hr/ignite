@@ -6,19 +6,14 @@
     GridFutureAdapter<Object> resFut=new GridFutureAdapter<>();
     resFut.listen(rmvActiveFut);
     activeFuts.add(resFut);
-    Collection<KeyCacheObject> keys=null;
-    if (entries.size() > 1) {
-      keys=new GridConcurrentHashSet<>(entries.size(),U.capacity(entries.size()),1);
-      for (      Map.Entry<K,V> entry : entries)       keys.add(cacheObjProc.toCacheKeyObject(cacheObjCtx,null,entry.getKey(),true));
+    Collection<KeyCacheObjectWrapper> keys=new GridConcurrentHashSet<>(entries.size(),U.capacity(entries.size()),1);
+    Collection<DataStreamerEntry> entries0=new ArrayList<>(entries.size());
+    for (    Map.Entry<K,V> entry : entries) {
+      KeyCacheObject key=cacheObjProc.toCacheKeyObject(cacheObjCtx,null,entry.getKey(),true);
+      CacheObject val=cacheObjProc.toCacheObject(cacheObjCtx,entry.getValue(),true);
+      keys.add(new KeyCacheObjectWrapper(key));
+      entries0.add(new DataStreamerEntry(key,val));
     }
-    Collection<? extends DataStreamerEntry> entries0=F.viewReadOnly(entries,new C1<Entry<K,V>,DataStreamerEntry>(){
-      @Override public DataStreamerEntry apply(      Entry<K,V> e){
-        KeyCacheObject key=cacheObjProc.toCacheKeyObject(cacheObjCtx,null,e.getKey(),true);
-        CacheObject val=cacheObjProc.toCacheObject(cacheObjCtx,e.getValue(),true);
-        return new DataStreamerEntry(key,val);
-      }
-    }
-);
     load0(entries0,resFut,keys,0);
     return new IgniteCacheFutureImpl<>(resFut);
   }
