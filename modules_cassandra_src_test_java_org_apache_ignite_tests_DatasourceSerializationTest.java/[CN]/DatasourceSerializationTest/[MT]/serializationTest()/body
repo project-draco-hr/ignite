@@ -1,0 +1,23 @@
+{
+  DataSource src=new DataSource();
+  Credentials cred=new CassandraAdminCredentials();
+  String[] points=new String[]{"127.0.0.1","10.0.0.2","10.0.0.3"};
+  LoadBalancingPolicy plc=new MyLoadBalancingPolicy();
+  src.setCredentials(cred);
+  src.setContactPoints(points);
+  src.setReadConsistency("ONE");
+  src.setWriteConsistency("QUORUM");
+  src.setLoadBalancingPolicy(plc);
+  JavaSerializer serializer=new JavaSerializer();
+  ByteBuffer buff=serializer.serialize(src);
+  DataSource _src=(DataSource)serializer.deserialize(buff);
+  Credentials _cred=(Credentials)getFieldValue(_src,"creds");
+  List<InetAddress> _points=(List<InetAddress>)getFieldValue(_src,"contactPoints");
+  ConsistencyLevel _readCons=(ConsistencyLevel)getFieldValue(_src,"readConsistency");
+  ConsistencyLevel _writeCons=(ConsistencyLevel)getFieldValue(_src,"writeConsistency");
+  LoadBalancingPolicy _plc=(LoadBalancingPolicy)getFieldValue(_src,"loadBalancingPlc");
+  assertTrue("Incorrectly serialized/deserialized credentials for Cassandra DataSource",cred.getPassword().equals(_cred.getPassword()) && cred.getUser().equals(_cred.getUser()));
+  assertTrue("Incorrectly serialized/deserialized contact points for Cassandra DataSource","/127.0.0.1".equals(_points.get(0).toString()) && "/10.0.0.2".equals(_points.get(1).toString()) && "/10.0.0.3".equals(_points.get(2).toString()));
+  assertTrue("Incorrectly serialized/deserialized consistency levels for Cassandra DataSource",ConsistencyLevel.ONE == _readCons && ConsistencyLevel.QUORUM == _writeCons);
+  assertTrue("Incorrectly serialized/deserialized load balancing policy for Cassandra DataSource",_plc instanceof MyLoadBalancingPolicy);
+}
