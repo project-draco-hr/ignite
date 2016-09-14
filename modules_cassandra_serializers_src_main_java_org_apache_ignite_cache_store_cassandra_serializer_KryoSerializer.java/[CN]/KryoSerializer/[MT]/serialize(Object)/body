@@ -1,16 +1,16 @@
 {
   if (obj == null)   return null;
   ByteArrayOutputStream stream=null;
-  ObjectOutputStream out=null;
+  Output out=null;
   try {
     stream=new ByteArrayOutputStream(DFLT_BUFFER_SIZE);
-    out=new ObjectOutputStream(stream);
-    out.writeObject(obj);
+    out=new Output(stream);
+    kryos.get().writeClassAndObject(out,obj);
     out.flush();
     return ByteBuffer.wrap(stream.toByteArray());
   }
- catch (  IOException e) {
-    throw new IgniteException("Failed to serialize object of the class '" + obj.getClass().getName() + "'",e);
+ catch (  Throwable e) {
+    throw new IllegalStateException("Failed to serialize object of the class '" + obj.getClass().getName() + "'",e);
   }
  finally {
     U.closeQuiet(out);

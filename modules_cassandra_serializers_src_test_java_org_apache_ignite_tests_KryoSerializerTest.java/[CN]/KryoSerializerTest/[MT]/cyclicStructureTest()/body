@@ -1,0 +1,12 @@
+{
+  MyPojo pojo1=new MyPojo("123",1,123423453467L,new Date(),null);
+  MyPojo pojo2=new MyPojo("321",2,123456L,new Date(),pojo1);
+  pojo1.setRef(pojo2);
+  KryoSerializer ser=new KryoSerializer();
+  ByteBuffer buff1=ser.serialize(pojo1);
+  ByteBuffer buff2=ser.serialize(pojo2);
+  MyPojo pojo3=(MyPojo)ser.deserialize(buff1);
+  MyPojo pojo4=(MyPojo)ser.deserialize(buff2);
+  if (!pojo1.equals(pojo3) || !pojo1.getRef().equals(pojo3.getRef()))   throw new RuntimeException("Kryo cyclic structure serialization test failed");
+  if (!pojo2.equals(pojo4) || !pojo2.getRef().equals(pojo4.getRef()))   throw new RuntimeException("Kryo cyclic structure serialization test failed");
+}
