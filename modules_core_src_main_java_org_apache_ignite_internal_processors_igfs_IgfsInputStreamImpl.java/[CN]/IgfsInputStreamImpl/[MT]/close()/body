@@ -1,33 +1,39 @@
 {
-  try {
-    if (secReader != null) {
-      secReader.close();
-      for (      IgniteInternalFuture<byte[]> fut : locCache.values()) {
-        try {
-          fut.get();
+  if (!closed) {
+    try {
+      if (secReader != null) {
+        secReader.close();
+        for (        IgniteInternalFuture<byte[]> fut : locCache.values()) {
+          try {
+            fut.get();
+          }
+ catch (          IgniteCheckedException ignore) {
+          }
         }
- catch (        IgniteCheckedException ignore) {
-        }
-      }
-      while (!pendingFuts.isEmpty()) {
-        pendingFutsLock.lock();
-        try {
-          pendingFutsCond.await(100,TimeUnit.MILLISECONDS);
-        }
- catch (        InterruptedException ignore) {
-        }
+        while (!pendingFuts.isEmpty()) {
+          pendingFutsLock.lock();
+          try {
+            pendingFutsCond.await(100,TimeUnit.MILLISECONDS);
+          }
+ catch (          InterruptedException ignore) {
+          }
  finally {
-          pendingFutsLock.unlock();
+            pendingFutsLock.unlock();
+          }
         }
       }
     }
-  }
- catch (  Exception e) {
-    throw new IOException("File to close the file: " + path,e);
-  }
+ catch (    Exception e) {
+      throw new IOException("File to close the file: " + path,e);
+    }
  finally {
-    closed=true;
-    metrics.addReadBytesTime(bytes,time);
-    locCache.clear();
+      closed=true;
+      IgfsLocalMetrics metrics=igfsCtx.metrics();
+      metrics.addReadBytesTime(bytes,time);
+      metrics.decrementFilesOpenedForRead();
+      locCache.clear();
+      GridEventStorageManager evts=igfsCtx.kernalContext().event();
+      if (evts.isRecordable(EVT_IGFS_FILE_CLOSED_READ))       evts.record(new IgfsEvent(path,igfsCtx.localNode(),EVT_IGFS_FILE_CLOSED_READ,bytes()));
+    }
   }
 }
