@@ -9,7 +9,13 @@
       if (args.length % 2 != 0)       throw new CacheLoaderException("Expected even number of arguments, but found: " + args.length);
       if (log.isDebugEnabled())       log.debug("Start loading entries from db using user queries from arguments...");
       for (int i=0; i < args.length; i+=2) {
-        String keyType=args[i].toString();
+        final String keyType=args[i].toString();
+        if (!F.exist(mappings.values(),new IgnitePredicate<EntryMapping>(){
+          @Override public boolean apply(          EntryMapping em){
+            return em.keyType().equals(keyType);
+          }
+        }
+))         throw new CacheLoaderException("Provided key type is not found in store or cache configuration " + "[cache=" + U.maskName(cacheName) + ", key="+ keyType+ "]");
         String selQry=args[i + 1].toString();
         EntryMapping em=entryMapping(cacheName,typeIdForTypeName(kindForName(keyType),keyType));
         futs.add(pool.submit(new LoadCacheCustomQueryWorker<>(em,selQry,clo)));
@@ -42,7 +48,7 @@
             }
           }
  catch (          SQLException e) {
-            log.warning("Failed to load entries from db in multithreaded mode [cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]",e);
+            log.warning("Failed to load entries from db in multithreaded mode " + "[cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]",e);
           }
  finally {
             U.closeQuiet(conn);

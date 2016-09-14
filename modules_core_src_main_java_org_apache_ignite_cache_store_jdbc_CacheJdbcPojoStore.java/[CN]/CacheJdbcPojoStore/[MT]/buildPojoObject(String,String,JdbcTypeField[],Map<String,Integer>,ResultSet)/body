@@ -9,19 +9,19 @@
       String fldJavaName=fld.getJavaFieldName();
       ClassProperty prop=ppc.props.get(fldJavaName);
       if (prop == null)       throw new IllegalStateException("Failed to find property in POJO class [type=" + typeName + ", prop="+ fldJavaName+ "]");
-      String fldDbName=fld.getDatabaseFieldName();
-      Integer colIdx=loadColIdxs.get(fldDbName);
+      String dbName=fld.getDatabaseFieldName();
+      Integer colIdx=columnIndex(loadColIdxs,dbName);
       try {
         Object colVal=transformer.getColumnValue(rs,colIdx,fld.getJavaFieldType());
         try {
           prop.set(obj,colVal);
         }
  catch (        Exception e) {
-          throw new CacheLoaderException("Failed to set property in POJO class [type=" + typeName + ", prop="+ fldJavaName+ ", col="+ colIdx+ ", dbName="+ fldDbName+ "]",e);
+          throw new CacheLoaderException("Failed to set property in POJO class [type=" + typeName + ", prop="+ fldJavaName+ ", col="+ colIdx+ ", dbName="+ dbName+ "]",e);
         }
       }
  catch (      SQLException e) {
-        throw new CacheLoaderException("Failed to read object property [type= " + typeName + ", prop="+ fldJavaName+ ", col="+ colIdx+ ", dbName="+ fldDbName+ "]",e);
+        throw new CacheLoaderException("Failed to read object property [type= " + typeName + ", prop="+ fldJavaName+ ", col="+ colIdx+ ", dbName="+ dbName+ "]",e);
       }
     }
     return obj;
