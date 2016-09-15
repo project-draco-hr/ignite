@@ -9,7 +9,7 @@ break;
 default :
 locDir=jobLocalDir(locNodeId,taskInfo().jobId());
 }
-Thread.currentThread().setContextClassLoader(jobConf().getClassLoader());
+ClassLoader oldLdr=HadoopUtils.setContextClassLoader(jobConf().getClassLoader());
 try {
 FileSystem.get(jobConf());
 LocalFileSystem locFs=FileSystem.getLocal(jobConf());
@@ -20,6 +20,6 @@ if (e instanceof Error) throw (Error)e;
 throw transformException(e);
 }
  finally {
-Thread.currentThread().setContextClassLoader(null);
+HadoopUtils.restoreContextClassLoader(oldLdr);
 }
 }
