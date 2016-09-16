@@ -1,10 +1,13 @@
 {
   File[] files=dir.listFiles(new FilenameFilter(){
     @Override public boolean accept(    File dir,    String name){
-      return filter == null || name.startsWith(filter);
+      return filter.test(name);
     }
   }
 );
-  if (files == null)   throw new IOException("Path is not a directory. [dir=" + dir + ']');
-  return files;
+  if (files == null) {
+    if (strict)     throw new IOException("Failed to get directory files [dir=" + dir + ']');
+ else     return new File[0];
+  }
+ else   return files;
 }
