@@ -1,0 +1,61 @@
+{
+switch (type) {
+case OP_LOCK:
+{
+      String key=reader.readString();
+      UUID lockNodeId=reader.readUuid();
+      long lockId=reader.readLong();
+      Timestamp lockTime=reader.readTimestamp();
+      final PlatformDotNetSessionLockResult res=(PlatformDotNetSessionLockResult)target.rawCache().invoke(key,new PlatformDotNetSessionLockProcessor(lockNodeId,lockId,lockTime));
+      return target.writeResult(mem,res,new PlatformWriterClosure(){
+        @Override public void write(        BinaryRawWriterEx writer,        Object val){
+          res.writeBinary(writer);
+        }
+      }
+);
+    }
+case OP_SET_AND_UNLOCK:
+{
+    String key=reader.readString();
+    PlatformDotNetSessionSetAndUnlockProcessor proc;
+    if (reader.readBoolean()) {
+      PlatformDotNetSessionData data=new PlatformDotNetSessionData();
+      data.readBinary(reader);
+      proc=new PlatformDotNetSessionSetAndUnlockProcessor(data);
+    }
+ else {
+      UUID lockNodeId=reader.readUuid();
+      long lockId=reader.readLong();
+      proc=new PlatformDotNetSessionSetAndUnlockProcessor(lockNodeId,lockId);
+    }
+    target.rawCache().invoke(key,proc);
+    return target.writeResult(mem,null);
+  }
+case OP_GET:
+{
+  String key=reader.readString();
+  final PlatformDotNetSessionData data=(PlatformDotNetSessionData)target.rawCache().get(key);
+  return target.writeResult(mem,data,new PlatformWriterClosure(){
+    @Override public void write(    BinaryRawWriterEx writer,    Object val){
+      data.writeBinary(writer);
+    }
+  }
+);
+}
+case OP_PUT:
+{
+String key=reader.readString();
+PlatformDotNetSessionData data=new PlatformDotNetSessionData();
+data.readBinary(reader);
+target.rawCache().put(key,data);
+return target.writeResult(mem,null);
+}
+case OP_REMOVE:
+{
+String key=reader.readString();
+target.rawCache().remove(key);
+return target.writeResult(mem,null);
+}
+}
+throw new IgniteCheckedException("Unsupported operation type: " + type);
+}
