@@ -1,11 +1,11 @@
 {
   JobConf cfg=ctx.getJobConf();
-  Thread.currentThread().setContextClassLoader(cfg.getClassLoader());
+  ClassLoader oldLdr=HadoopUtils.setContextClassLoader(cfg.getClassLoader());
   try {
     cfg.set(HadoopFileSystemsUtils.LOC_FS_WORK_DIR_PROP,dir.getAbsolutePath());
     if (!cfg.getBoolean(FILE_DISABLE_CACHING_PROPERTY_NAME,false))     FileSystem.getLocal(cfg).setWorkingDirectory(new Path(dir.getAbsolutePath()));
   }
   finally {
-    Thread.currentThread().setContextClassLoader(null);
+    HadoopUtils.restoreContextClassLoader(oldLdr);
   }
 }
