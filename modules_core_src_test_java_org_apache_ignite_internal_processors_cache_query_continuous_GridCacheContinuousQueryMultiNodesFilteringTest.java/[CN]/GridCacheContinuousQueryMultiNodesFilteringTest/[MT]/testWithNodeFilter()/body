@@ -1,0 +1,60 @@
+{
+  List<QueryCursor> qryCursors=new ArrayList<>();
+  final int nodesCnt=3;
+  startGridsMultiThreaded(nodesCnt);
+  awaitPartitionMapExchange();
+  CacheConfiguration ccfg=cacheConfiguration(new NodeFilterByRegexp(".*(0|1)$"));
+  grid(0).createCache(ccfg);
+  final AtomicInteger cntr=new AtomicInteger();
+  final ConcurrentMap<ClusterNode,Set<Integer>> maps=new ConcurrentHashMap<>();
+  final AtomicBoolean doubleNtfFail=new AtomicBoolean(false);
+  CacheEntryUpdatedListener<Integer,Integer> lsnr=new CacheEntryUpdatedListener<Integer,Integer>(){
+    @Override public void onUpdated(    Iterable<CacheEntryEvent<? extends Integer,? extends Integer>> evts) throws CacheEntryListenerException {
+      for (      CacheEntryEvent<? extends Integer,? extends Integer> e : evts) {
+        cntr.incrementAndGet();
+        ClusterNode node=((Ignite)e.getSource().unwrap(Ignite.class)).cluster().localNode();
+        Set<Integer> set=maps.get(node);
+        if (set == null) {
+          set=new ConcurrentSkipListSet<>();
+          Set<Integer> oldVal=maps.putIfAbsent(node,set);
+          set=oldVal != null ? oldVal : set;
+        }
+        if (!set.add(e.getValue()))         doubleNtfFail.set(false);
+      }
+    }
+  }
+;
+  for (int i=0; i < nodesCnt; i++) {
+    ContinuousQuery<Integer,Integer> qry=new ContinuousQuery<>();
+    qry.setLocalListener(lsnr);
+    Ignite ignite=grid(i);
+    log.info("Try to start CQ on node: " + ignite.cluster().localNode().id());
+    qryCursors.add(ignite.cache(ccfg.getName()).query(qry));
+    log.info("CQ started on node: " + ignite.cluster().localNode().id());
+  }
+  client=true;
+  startGrid(nodesCnt);
+  awaitPartitionMapExchange();
+  ContinuousQuery<Integer,Integer> qry=new ContinuousQuery<>();
+  qry.setLocalListener(lsnr);
+  qryCursors.add(grid(nodesCnt).cache(ccfg.getName()).query(qry));
+  for (int i=0; i <= nodesCnt; i++) {
+    for (int key=0; key < KEYS; key++) {
+      int val=(i * KEYS) + key;
+      grid(i).cache(ccfg.getName()).put(val,val);
+    }
+  }
+  assertTrue(GridTestUtils.waitForCondition(new PA(){
+    @Override public boolean apply(){
+      return cntr.get() >= 2 * (nodesCnt + 1) * KEYS;
+    }
+  }
+,5000L));
+  assertFalse("Got duplicate",doubleNtfFail.get());
+  for (int i=0; i < (nodesCnt + 1) * KEYS; i++) {
+    for (    Map.Entry<ClusterNode,Set<Integer>> e : maps.entrySet())     assertTrue("Lost event on node: " + e.getKey().id() + ", event: "+ i,e.getValue().remove(i));
+  }
+  for (  Map.Entry<ClusterNode,Set<Integer>> e : maps.entrySet())   assertTrue("Unexpected event on node: " + e.getKey(),e.getValue().isEmpty());
+  assertEquals("Not expected count of CQ",nodesCnt + 1,qryCursors.size());
+  for (  QueryCursor cur : qryCursors)   cur.close();
+}
