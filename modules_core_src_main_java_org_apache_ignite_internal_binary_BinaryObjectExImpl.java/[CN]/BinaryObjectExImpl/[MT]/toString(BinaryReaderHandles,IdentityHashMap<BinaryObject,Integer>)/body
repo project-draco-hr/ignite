@@ -1,2 +1,24 @@
 {
+  int idHash=System.identityHashCode(this);
+  int hash=hashCode();
+  BinaryType meta;
+  try {
+    meta=rawType();
+  }
+ catch (  BinaryObjectException ignore) {
+    meta=null;
+  }
+  if (meta == null)   return BinaryObject.class.getSimpleName() + " [idHash=" + idHash+ ", hash="+ hash+ ", typeId="+ typeId()+ ']';
+  handles.put(this,idHash);
+  SB buf=new SB(meta.typeName());
+  if (meta.fieldNames() != null) {
+    buf.a(" [idHash=").a(idHash).a(", hash=").a(hash);
+    for (    String name : meta.fieldNames()) {
+      Object val=field(ctx,name);
+      buf.a(", ").a(name).a('=');
+      appendValue(val,buf,ctx,handles);
+    }
+    buf.a(']');
+  }
+  return buf.toString();
 }
