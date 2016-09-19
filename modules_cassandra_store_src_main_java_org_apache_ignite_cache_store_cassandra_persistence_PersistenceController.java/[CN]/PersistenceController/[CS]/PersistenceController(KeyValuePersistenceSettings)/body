@@ -1,4 +1,30 @@
 {
   if (settings == null)   throw new IllegalArgumentException("Persistent settings can't be null");
-  this.persistenceSettings=settings;
+  persistenceSettings=settings;
+  String[] loadStatements=prepareLoadStatements();
+  loadStatementWithKeyFields=loadStatements[0];
+  loadStatement=loadStatements[1];
+  writeStatement=prepareWriteStatement();
+  delStatement=prepareDeleteStatement();
+  keyUniquePojoFields=settings.getKeyPersistenceSettings().cassandraUniqueFields();
+  List<PojoField> _valUniquePojoFields=settings.getValuePersistenceSettings().cassandraUniqueFields();
+  if (_valUniquePojoFields == null || _valUniquePojoFields.isEmpty()) {
+    valUniquePojoFields=_valUniquePojoFields;
+    return;
+  }
+  List<String> keyColumns=new LinkedList<>();
+  if (keyUniquePojoFields == null)   keyColumns.add(settings.getKeyPersistenceSettings().getColumn());
+ else {
+    for (    PojoField field : keyUniquePojoFields)     keyColumns.add(field.getColumn());
+  }
+  List<PojoField> fields=new LinkedList<>(_valUniquePojoFields);
+  for (  String column : keyColumns) {
+    for (int i=0; i < fields.size(); i++) {
+      if (column.equals(fields.get(i).getColumn())) {
+        fields.remove(i);
+        break;
+      }
+    }
+  }
+  valUniquePojoFields=fields.isEmpty() ? null : Collections.unmodifiableList(fields);
 }

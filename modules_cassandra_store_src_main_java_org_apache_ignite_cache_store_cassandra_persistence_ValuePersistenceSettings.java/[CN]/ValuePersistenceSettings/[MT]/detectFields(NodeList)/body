@@ -2,7 +2,10 @@
   List<PojoField> list=new LinkedList<>();
   if (fieldNodes == null || fieldNodes.getLength() == 0) {
     List<PropertyDescriptor> primitivePropDescriptors=PropertyMappingHelper.getPojoPropertyDescriptors(getJavaClass(),true);
-    for (    PropertyDescriptor descriptor : primitivePropDescriptors)     list.add(new PojoValueField(descriptor));
+    for (    PropertyDescriptor desc : primitivePropDescriptors) {
+      boolean valid=desc.getWriteMethod() != null || desc.getReadMethod().getAnnotation(QuerySqlField.class) != null;
+      if (valid)       list.add(new PojoValueField(desc));
+    }
     return list;
   }
   List<PropertyDescriptor> allPropDescriptors=PropertyMappingHelper.getPojoPropertyDescriptors(getJavaClass(),false);

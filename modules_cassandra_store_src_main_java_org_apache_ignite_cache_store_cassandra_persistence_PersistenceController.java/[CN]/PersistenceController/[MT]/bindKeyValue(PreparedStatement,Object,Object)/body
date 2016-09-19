@@ -1,17 +1,8 @@
 {
-  KeyPersistenceSettings keySettings=persistenceSettings.getKeyPersistenceSettings();
-  Object[] keyValues=getBindingValues(keySettings.getStrategy(),keySettings.getSerializer(),keySettings.getFields(),key);
-  ValuePersistenceSettings valSettings=persistenceSettings.getValuePersistenceSettings();
-  Object[] valValues=getBindingValues(valSettings.getStrategy(),valSettings.getSerializer(),valSettings.getFields(),val);
-  Object[] values=new Object[keyValues.length + valValues.length];
-  int i=0;
-  for (  Object keyVal : keyValues) {
-    values[i]=keyVal;
-    i++;
-  }
-  for (  Object valVal : valValues) {
-    values[i]=valVal;
-    i++;
-  }
+  Object[] values=new Object[persistenceSettings.getTableColumns().size()];
+  PersistenceSettings keySettings=persistenceSettings.getKeyPersistenceSettings();
+  PersistenceSettings valSettings=persistenceSettings.getValuePersistenceSettings();
+  int offset=bindValues(keySettings.getStrategy(),keySettings.getSerializer(),keyUniquePojoFields,key,values,0);
+  bindValues(valSettings.getStrategy(),valSettings.getSerializer(),valUniquePojoFields,val,values,offset);
   return statement.bind(values);
 }

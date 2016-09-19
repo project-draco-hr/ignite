@@ -1,11 +1,11 @@
 {
   if (row == null)   return null;
-  PersistenceStrategy stgy=settings.getStrategy();
+  PersistenceStrategy stg=settings.getStrategy();
   Class clazz=settings.getJavaClass();
   String col=settings.getColumn();
+  if (PersistenceStrategy.PRIMITIVE == stg)   return PropertyMappingHelper.getCassandraColumnValue(row,col,clazz,null);
+  if (PersistenceStrategy.BLOB == stg)   return settings.getSerializer().deserialize(row.getBytes(col));
   List<PojoField> fields=settings.getFields();
-  if (PersistenceStrategy.PRIMITIVE.equals(stgy))   return PropertyMappingHelper.getCassandraColumnValue(row,col,clazz,null);
-  if (PersistenceStrategy.BLOB.equals(stgy))   return settings.getSerializer().deserialize(row.getBytes(col));
   Object obj;
   try {
     obj=clazz.newInstance();
@@ -13,6 +13,8 @@
  catch (  Throwable e) {
     throw new IgniteException("Failed to instantiate object of type '" + clazz.getName() + "' using reflection",e);
   }
-  for (  PojoField field : fields)   field.setValueFromRow(row,obj,settings.getSerializer());
+  for (  PojoField field : fields) {
+    if (!field.calculatedField())     field.setValueFromRow(row,obj,settings.getSerializer());
+  }
   return obj;
 }

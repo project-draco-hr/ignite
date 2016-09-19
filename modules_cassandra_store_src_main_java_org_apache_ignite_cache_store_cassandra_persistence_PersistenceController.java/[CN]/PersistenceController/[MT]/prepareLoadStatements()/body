@@ -1,0 +1,36 @@
+{
+  PersistenceSettings settings=persistenceSettings.getKeyPersistenceSettings();
+  boolean pojoStrategy=PersistenceStrategy.POJO == settings.getStrategy();
+  Collection<String> keyCols=settings.getTableColumns();
+  StringBuilder hdrWithKeyFields=new StringBuilder();
+  for (  String column : keyCols) {
+    if (pojoStrategy && settings.getFieldByColumn(column).calculatedField())     continue;
+    if (hdrWithKeyFields.length() > 0)     hdrWithKeyFields.append(", ");
+    hdrWithKeyFields.append("\"").append(column).append("\"");
+  }
+  settings=persistenceSettings.getValuePersistenceSettings();
+  pojoStrategy=PersistenceStrategy.POJO == settings.getStrategy();
+  Collection<String> valCols=settings.getTableColumns();
+  StringBuilder hdr=new StringBuilder();
+  for (  String column : valCols) {
+    if (pojoStrategy && settings.getFieldByColumn(column).calculatedField())     continue;
+    if (hdr.length() > 0)     hdr.append(", ");
+    hdr.append("\"").append(column).append("\"");
+    if (!keyCols.contains(column))     hdrWithKeyFields.append(", \"").append(column).append("\"");
+  }
+  hdrWithKeyFields.insert(0,"select ");
+  hdr.insert(0,"select ");
+  StringBuilder statement=new StringBuilder();
+  statement.append(" from \"");
+  statement.append(persistenceSettings.getKeyspace());
+  statement.append("\".\"").append(persistenceSettings.getTable());
+  statement.append("\" where ");
+  int i=0;
+  for (  String column : keyCols) {
+    if (i > 0)     statement.append(" and ");
+    statement.append("\"").append(column).append("\"=?");
+    i++;
+  }
+  statement.append(";");
+  return new String[]{hdrWithKeyFields + statement.toString(),hdr + statement.toString()};
+}
