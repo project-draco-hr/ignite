@@ -1,5 +1,42 @@
 {
   super.start();
+  deferredUpdateMessageSender=new GridDeferredAckMessageSender(ctx.time(),ctx.closures()){
+    @Override public int getTimeout(){
+      return DEFERRED_UPDATE_RESPONSE_TIMEOUT;
+    }
+    @Override public int getBufferSize(){
+      return DEFERRED_UPDATE_RESPONSE_BUFFER_SIZE;
+    }
+    @Override public void finish(    UUID nodeId,    ConcurrentLinkedDeque8<GridCacheVersion> vers){
+      GridDhtAtomicDeferredUpdateResponse msg=new GridDhtAtomicDeferredUpdateResponse(ctx.cacheId(),vers,ctx.deploymentEnabled());
+      try {
+        ctx.kernalContext().gateway().readLock();
+        try {
+          ctx.io().send(nodeId,msg,ctx.ioPolicy());
+          if (msgLog.isDebugEnabled()) {
+            msgLog.debug("Sent deferred DHT update response [futIds=" + msg.futureVersions() + ", node="+ nodeId+ ']');
+          }
+        }
+  finally {
+          ctx.kernalContext().gateway().readUnlock();
+        }
+      }
+ catch (      IllegalStateException ignored) {
+        if (msgLog.isDebugEnabled()) {
+          msgLog.debug("Failed to send deferred DHT update response, node is stopping [" + "futIds=" + msg.futureVersions() + ", node="+ nodeId+ ']');
+        }
+      }
+catch (      ClusterTopologyCheckedException ignored) {
+        if (msgLog.isDebugEnabled()) {
+          msgLog.debug("Failed to send deferred DHT update response, node left [" + "futIds=" + msg.futureVersions() + ", node="+ nodeId+ ']');
+        }
+      }
+catch (      IgniteCheckedException e) {
+        U.error(log,"Failed to send deferred DHT update response to remote node [" + "futIds=" + msg.futureVersions() + ", node="+ nodeId+ ']',e);
+      }
+    }
+  }
+;
   CacheMetricsImpl m=new CacheMetricsImpl(ctx);
   if (ctx.dht().near() != null)   m.delegate(ctx.dht().near().metrics0());
   metrics=m;

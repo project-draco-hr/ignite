@@ -1,0 +1,23 @@
+{
+  readLock().lock();
+  boolean snd=false;
+  try {
+    if (guard.get())     return false;
+    vers.add(ver);
+    if (vers.sizex() > getBufferSize() && guard.compareAndSet(false,true))     snd=true;
+  }
+  finally {
+    readLock().unlock();
+  }
+  if (snd) {
+    writeLock().lock();
+    try {
+      finish0();
+      time.removeTimeoutObject(this);
+    }
+  finally {
+      writeLock().unlock();
+    }
+  }
+  return true;
+}
