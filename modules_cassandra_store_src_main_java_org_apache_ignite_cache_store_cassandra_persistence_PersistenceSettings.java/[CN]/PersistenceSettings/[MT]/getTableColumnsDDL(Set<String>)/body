@@ -1,0 +1,19 @@
+{
+  if (PersistenceStrategy.BLOB == stgy)   return "  \"" + col + "\" "+ DataType.Name.BLOB.toString();
+  if (PersistenceStrategy.PRIMITIVE == stgy)   return "  \"" + col + "\" "+ PropertyMappingHelper.getCassandraType(javaCls);
+  List<PojoField> fields=getFields();
+  if (fields == null || fields.isEmpty()) {
+    throw new IllegalStateException("There are no POJO fields found for '" + javaCls.toString() + "' class to be presented as a Cassandra primary key");
+  }
+  Set<String> processedColumns=new HashSet<>();
+  StringBuilder builder=new StringBuilder();
+  for (  PojoField field : fields) {
+    if ((ignoreColumns != null && ignoreColumns.contains(field.getColumn())) || processedColumns.contains(field.getColumn())) {
+      continue;
+    }
+    if (builder.length() > 0)     builder.append(",\n");
+    builder.append("  ").append(field.getColumnDDL());
+    processedColumns.add(field.getColumn());
+  }
+  return builder.toString();
+}
