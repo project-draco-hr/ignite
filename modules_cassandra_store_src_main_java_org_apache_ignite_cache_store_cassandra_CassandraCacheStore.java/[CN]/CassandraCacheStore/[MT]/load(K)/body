@@ -3,21 +3,45 @@
   CassandraSession ses=getCassandraSession();
   try {
     return ses.execute(new ExecutionAssistant<V>(){
+      /** 
+ * {@inheritDoc} 
+ */
       @Override public boolean tableExistenceRequired(){
         return false;
       }
-      @Override public String getStatement(){
-        return controller.getLoadStatement(false);
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public String getTable(){
+        return cassandraTable();
       }
+      /** 
+ * {@inheritDoc} 
+ */
+      @Override public String getStatement(){
+        return controller.getLoadStatement(cassandraTable(),false);
+      }
+      /** 
+ * {@inheritDoc} 
+ */
       @Override public BoundStatement bindStatement(      PreparedStatement statement){
         return controller.bindKey(statement,key);
       }
+      /** 
+ * {@inheritDoc} 
+ */
       @Override public KeyValuePersistenceSettings getPersistenceSettings(){
         return controller.getPersistenceSettings();
       }
+      /** 
+ * {@inheritDoc} 
+ */
       @Override public String operationName(){
         return "READ";
       }
+      /** 
+ * {@inheritDoc} 
+ */
       @Override public V process(      Row row){
         return row == null ? null : (V)controller.buildValueObject(row);
       }

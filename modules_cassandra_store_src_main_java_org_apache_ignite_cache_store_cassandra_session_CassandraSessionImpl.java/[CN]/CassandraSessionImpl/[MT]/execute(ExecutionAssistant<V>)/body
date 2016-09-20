@@ -11,7 +11,7 @@
         log.warning("Trying " + (attempt + 1) + " attempt to execute Cassandra CQL statement: "+ assistant.getStatement());
       }
       try {
-        PreparedStatement preparedSt=prepareStatement(assistant.getStatement(),assistant.getPersistenceSettings(),assistant.tableExistenceRequired());
+        PreparedStatement preparedSt=prepareStatement(assistant.getTable(),assistant.getStatement(),assistant.getPersistenceSettings(),assistant.tableExistenceRequired());
         if (preparedSt == null)         return null;
         Statement statement=tuneStatementExecutionOptions(assistant.bindStatement(preparedSt));
         ResultSet res=session().execute(statement);
@@ -25,7 +25,7 @@
             log.warning(errorMsg,e);
             return null;
           }
-          handleTableAbsenceError(assistant.getPersistenceSettings());
+          handleTableAbsenceError(assistant.getTable(),assistant.getPersistenceSettings());
         }
  else         if (CassandraHelper.isHostsAvailabilityError(e))         handleHostsAvailabilityError(e,attempt,errorMsg);
  else         if (CassandraHelper.isPreparedStatementClusterError(e))         handlePreparedStatementClusterError(e);

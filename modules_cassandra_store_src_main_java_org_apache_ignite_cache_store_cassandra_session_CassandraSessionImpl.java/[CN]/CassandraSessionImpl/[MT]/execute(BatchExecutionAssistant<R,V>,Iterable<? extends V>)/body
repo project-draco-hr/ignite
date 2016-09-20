@@ -16,7 +16,7 @@
       Throwable hostsAvailEx=null;
       Throwable prepStatEx=null;
       List<Cache.Entry<Integer,ResultSetFuture>> futResults=new LinkedList<>();
-      PreparedStatement preparedSt=prepareStatement(assistant.getStatement(),assistant.getPersistenceSettings(),assistant.tableExistenceRequired());
+      PreparedStatement preparedSt=prepareStatement(assistant.getTable(),assistant.getStatement(),assistant.getPersistenceSettings(),assistant.tableExistenceRequired());
       if (preparedSt == null)       return null;
       int seqNum=0;
       for (      V obj : data) {
@@ -30,7 +30,7 @@
             if (CassandraHelper.isTableAbsenceError(e)) {
               if (!assistant.tableExistenceRequired())               return assistant.processedData();
               tblAbsenceEx=e;
-              handleTableAbsenceError(assistant.getPersistenceSettings());
+              handleTableAbsenceError(assistant.getTable(),assistant.getPersistenceSettings());
             }
  else             if (CassandraHelper.isHostsAvailabilityError(e)) {
               hostsAvailEx=e;
@@ -72,7 +72,7 @@
       if (tblAbsenceEx != null) {
         if (!assistant.tableExistenceRequired())         return assistant.processedData();
         error=tblAbsenceEx;
-        handleTableAbsenceError(assistant.getPersistenceSettings());
+        handleTableAbsenceError(assistant.getTable(),assistant.getPersistenceSettings());
       }
       if (hostsAvailEx != null) {
         error=hostsAvailEx;

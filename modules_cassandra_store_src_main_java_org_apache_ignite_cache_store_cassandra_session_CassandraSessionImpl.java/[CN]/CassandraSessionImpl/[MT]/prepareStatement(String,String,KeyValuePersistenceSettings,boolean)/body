@@ -1,0 +1,36 @@
+{
+  int attempt=0;
+  Throwable error=null;
+  String errorMsg="Failed to prepare Cassandra CQL statement: " + statement;
+  RandomSleeper sleeper=newSleeper();
+  incrementSessionRefs();
+  try {
+synchronized (sesStatements) {
+      if (sesStatements.containsKey(statement))       return sesStatements.get(statement);
+    }
+    while (attempt < CQL_EXECUTION_ATTEMPTS_COUNT) {
+      try {
+        PreparedStatement prepStatement=session().prepare(statement);
+synchronized (sesStatements) {
+          sesStatements.put(statement,prepStatement);
+        }
+        return prepStatement;
+      }
+ catch (      Throwable e) {
+        if (CassandraHelper.isTableAbsenceError(e)) {
+          if (!tblExistenceRequired)           return null;
+          handleTableAbsenceError(table,settings);
+        }
+ else         if (CassandraHelper.isHostsAvailabilityError(e))         handleHostsAvailabilityError(e,attempt,errorMsg);
+ else         throw new IgniteException(errorMsg,e);
+        error=e;
+      }
+      sleeper.sleep();
+      attempt++;
+    }
+  }
+  finally {
+    decrementSessionRefs();
+  }
+  throw new IgniteException(errorMsg,error);
+}
