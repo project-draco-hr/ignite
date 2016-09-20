@@ -1,0 +1,13 @@
+{
+  memoryMode=OFFHEAP_VALUES;
+  evictionPlc=null;
+  try (Ignite g=startGrid(0)){
+    IgniteCache<Integer,String> cache=g.getOrCreateCache(createCacheConfiguration());
+    cache.put(1,"value_1");
+    cache.put(2,"value_2");
+    GridCacheContext ctx=GridTestUtils.cacheContext(cache);
+    GridUnsafeMemory unsafeMemory=ctx.unsafeMemory();
+    g.destroyCache(null);
+    if (unsafeMemory != null)     assertEquals("Unsafe memory not freed",0,unsafeMemory.allocatedSize());
+  }
+ }
