@@ -1,7 +1,17 @@
 {
   lock.lock();
   try {
-    while (size + val.len > maxSize)     mayAdd.await();
+    boolean largeVal=val.len > maxSize;
+    if (largeVal) {
+      if (!queueSizeWarn) {
+        U.warn(log,"Trying to save in swap entry which have size more than write queue size. " + "You may wish to increase 'maxWriteQueueSize' in FileSwapSpaceSpi configuration " + "[queueMaxSize=" + maxSize + ", valSize="+ val.len+ ']');
+        queueSizeWarn=true;
+      }
+      while (size >= minTakeSize)       mayAdd.await();
+    }
+ else {
+      while (size + val.len > maxSize)       mayAdd.await();
+    }
     size+=val.len;
     deq.addLast(val);
     if (size >= minTakeSize)     mayTake.signalAll();
