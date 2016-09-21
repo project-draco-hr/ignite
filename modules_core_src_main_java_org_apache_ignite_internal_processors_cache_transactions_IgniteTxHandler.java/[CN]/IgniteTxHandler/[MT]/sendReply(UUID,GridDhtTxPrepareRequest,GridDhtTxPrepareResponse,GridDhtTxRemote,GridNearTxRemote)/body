@@ -1,0 +1,20 @@
+{
+  try {
+    ctx.io().send(nodeId,res,req.policy());
+    if (txPrepareMsgLog.isDebugEnabled()) {
+      txPrepareMsgLog.debug("Sent dht prepare response [txId=" + req.nearXidVersion() + ", dhtTxId="+ req.version()+ ", node="+ nodeId+ ']');
+    }
+  }
+ catch (  IgniteCheckedException e) {
+    if (e instanceof ClusterTopologyCheckedException) {
+      if (txPrepareMsgLog.isDebugEnabled()) {
+        txPrepareMsgLog.debug("Failed to send dht prepare response, node left [txId=" + req.nearXidVersion() + ", dhtTxId="+ req.version()+ ", node="+ nodeId+ ']');
+      }
+    }
+ else {
+      U.warn(log,"Failed to send tx response to remote node (will rollback transaction) [" + "txId=" + req.nearXidVersion() + ", dhtTxId="+ req.version()+ ", node="+ nodeId+ ", err="+ e.getMessage()+ ']');
+    }
+    if (nearTx != null)     nearTx.rollback();
+    if (dhtTx != null)     dhtTx.rollback();
+  }
+}

@@ -1,0 +1,13 @@
+{
+  super.setUp(cfg);
+  if (!IgniteSystemProperties.getBoolean("SKIP_MAP_CHECK"))   ignite().compute().broadcast(new WaitMapExchangeFinishCallable());
+  txs=ignite().transactions();
+  clo=new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      int key=nextRandom(args.range());
+      cache.invoke(key,new SetValueEntryProcessor(new SampleValue(key)));
+      return null;
+    }
+  }
+;
+}

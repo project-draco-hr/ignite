@@ -1,0 +1,15 @@
+{
+  while (true) {
+    DeferredAckMessageBuffer buf=deferredAckMsgBuffers.get(nodeId);
+    if (buf == null) {
+      buf=new DeferredAckMessageBuffer(nodeId);
+      DeferredAckMessageBuffer old=deferredAckMsgBuffers.putIfAbsent(nodeId,buf);
+      if (old == null) {
+        time.addTimeoutObject(buf);
+      }
+ else       buf=old;
+    }
+    if (!buf.add(ver))     deferredAckMsgBuffers.remove(nodeId,buf);
+ else     break;
+  }
+}
