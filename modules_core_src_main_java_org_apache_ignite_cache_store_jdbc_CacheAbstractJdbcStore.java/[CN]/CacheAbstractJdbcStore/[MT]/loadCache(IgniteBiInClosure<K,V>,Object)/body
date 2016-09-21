@@ -16,14 +16,19 @@
           }
         }
 ))         throw new CacheLoaderException("Provided key type is not found in store or cache configuration " + "[cache=" + U.maskName(cacheName) + ", key="+ keyType+ "]");
-        String selQry=args[i + 1].toString();
+        String qry=args[i + 1].toString();
         EntryMapping em=entryMapping(cacheName,typeIdForTypeName(kindForName(keyType),keyType));
-        futs.add(pool.submit(new LoadCacheCustomQueryWorker<>(em,selQry,clo)));
+        if (log.isInfoEnabled())         log.info("Started load cache using custom query [cache=" + U.maskName(cacheName) + ", keyType="+ keyType+ ", query="+ qry+ "]");
+        futs.add(pool.submit(new LoadCacheCustomQueryWorker<>(em,qry,clo)));
       }
     }
  else {
-      Collection<EntryMapping> entryMappings=mappings.values();
-      for (      EntryMapping em : entryMappings) {
+      Collection<String> processedKeyTypes=new HashSet<>();
+      for (      EntryMapping em : mappings.values()) {
+        String keyType=em.keyType();
+        if (processedKeyTypes.contains(keyType))         continue;
+        processedKeyTypes.add(keyType);
+        if (log.isInfoEnabled())         log.info("Started load cache [cache=" + U.maskName(cacheName) + ", keyType="+ keyType+ "]");
         if (parallelLoadCacheMinThreshold > 0) {
           Connection conn=null;
           try {
@@ -32,7 +37,7 @@
             stmt.setInt(1,parallelLoadCacheMinThreshold);
             ResultSet rs=stmt.executeQuery();
             if (rs.next()) {
-              if (log.isDebugEnabled())               log.debug("Multithread loading entries from db [cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]");
+              if (log.isDebugEnabled())               log.debug("Multithread loading entries from db [cache=" + U.maskName(cacheName) + ", keyType="+ keyType+ "]");
               int keyCnt=em.keyCols.size();
               Object[] upperBound=new Object[keyCnt];
               for (int i=0; i < keyCnt; i++)               upperBound[i]=rs.getObject(i + 1);
@@ -44,22 +49,22 @@
                 futs.add(pool.submit(loadCacheRange(em,clo,lowerBound,upperBound,0)));
               }
               futs.add(pool.submit(loadCacheRange(em,clo,upperBound,null,0)));
-              continue;
             }
+            continue;
           }
  catch (          SQLException e) {
-            log.warning("Failed to load entries from db in multithreaded mode " + "[cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]",e);
+            log.warning("Failed to load entries from db in multithreaded mode, will try in single thread " + "[cache=" + U.maskName(cacheName) + ", keyType="+ keyType+ " ]",e);
           }
  finally {
             U.closeQuiet(conn);
           }
         }
-        if (log.isDebugEnabled())         log.debug("Single thread loading entries from db [cache=" + U.maskName(cacheName) + ", keyType="+ em.keyType()+ " ]");
+        if (log.isDebugEnabled())         log.debug("Single thread loading entries from db [cache=" + U.maskName(cacheName) + ", keyType="+ keyType+ "]");
         futs.add(pool.submit(loadCacheFull(em,clo)));
       }
     }
     for (    Future<?> fut : futs)     U.get(fut);
-    if (log.isDebugEnabled())     log.debug("Cache loaded from db: " + U.maskName(cacheName));
+    if (log.isInfoEnabled())     log.info("Finished load cache: " + U.maskName(cacheName));
   }
  catch (  IgniteCheckedException e) {
     throw new CacheLoaderException("Failed to load cache: " + U.maskName(cacheName),e.getCause());
