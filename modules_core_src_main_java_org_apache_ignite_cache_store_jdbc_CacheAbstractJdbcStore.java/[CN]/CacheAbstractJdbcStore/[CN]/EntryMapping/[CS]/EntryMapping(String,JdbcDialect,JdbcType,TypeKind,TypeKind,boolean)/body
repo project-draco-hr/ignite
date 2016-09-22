@@ -1,0 +1,46 @@
+{
+  this.cacheName=cacheName;
+  this.dialect=dialect;
+  this.typeMeta=typeMeta;
+  this.keyKind=keyKind;
+  this.valKind=valKind;
+  JdbcTypeField[] keyFields=typeMeta.getKeyFields();
+  JdbcTypeField[] valFields=typeMeta.getValueFields();
+  keyCols=databaseColumns(F.asList(keyFields));
+  uniqValFlds=F.view(F.asList(valFields),new IgnitePredicate<JdbcTypeField>(){
+    @Override public boolean apply(    JdbcTypeField col){
+      return !keyCols.contains(col.getDatabaseFieldName());
+    }
+  }
+);
+  String schema=typeMeta.getDatabaseSchema();
+  String tblName=typeMeta.getDatabaseTable();
+  Collection<String> uniqueValCols=databaseColumns(uniqValFlds);
+  cols=F.concat(false,keyCols,uniqueValCols);
+  loadColIdxs=U.newHashMap(cols.size());
+  int idx=1;
+  for (  String col : cols)   loadColIdxs.put(col.toUpperCase(),idx++);
+  fullTblName=F.isEmpty(schema) ? tblName : schema + "." + tblName;
+  Collection<String> sqlUniqueValCols;
+  if (escape) {
+    sqlFullTblName=F.isEmpty(schema) ? dialect.escape(tblName) : dialect.escape(schema) + "." + dialect.escape(tblName);
+    sqlCols=escape(dialect,cols);
+    sqlKeyCols=escape(dialect,keyCols);
+    sqlUniqueValCols=escape(dialect,uniqueValCols);
+  }
+ else {
+    sqlFullTblName=fullTblName;
+    sqlCols=cols;
+    sqlKeyCols=keyCols;
+    sqlUniqueValCols=uniqueValCols;
+  }
+  loadCacheQry=dialect.loadCacheQuery(sqlFullTblName,sqlCols);
+  loadCacheSelRangeQry=dialect.loadCacheSelectRangeQuery(sqlFullTblName,sqlKeyCols);
+  loadQrySingle=dialect.loadQuery(sqlFullTblName,sqlKeyCols,sqlCols,1);
+  maxKeysPerStmt=dialect.getMaxParameterCount() / sqlKeyCols.size();
+  loadQry=dialect.loadQuery(sqlFullTblName,sqlKeyCols,sqlCols,maxKeysPerStmt);
+  insQry=dialect.insertQuery(sqlFullTblName,sqlKeyCols,sqlUniqueValCols);
+  updQry=dialect.updateQuery(sqlFullTblName,sqlKeyCols,sqlUniqueValCols);
+  mergeQry=dialect.mergeQuery(sqlFullTblName,sqlKeyCols,sqlUniqueValCols);
+  remQry=dialect.removeQuery(sqlFullTblName,sqlKeyCols);
+}

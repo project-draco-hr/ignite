@@ -1,0 +1,23 @@
+{
+synchronized (mux) {
+    if (closed)     return;
+    closed=true;
+    IOException err=null;
+    try {
+      sendBufferIfNotEmpty();
+    }
+ catch (    Exception e) {
+      err=new IOException("Failed to flush data during stream close [path=" + path + ", fileInfo="+ info+ ']',e);
+    }
+    batch.finish();
+    try {
+      batch.await();
+    }
+ catch (    IgniteCheckedException e) {
+      if (err == null)       err=new IOException("Failed to close secondary file system stream [path=" + path + ", fileInfo="+ info+ ']',e);
+ else       err.addSuppressed(e);
+    }
+    if (err != null)     throw err;
+    updateMetricsOnClose();
+  }
+}
