@@ -1,8 +1,8 @@
 {
   DatabaseMetaData dbMeta=conn.getMetaData();
   Set<String> sys=systemSchemas();
-  Collection<DbTable> tbls=new ArrayList<>();
   if (schemas.isEmpty())   schemas.add(null);
+  Collection<DbTable> tbls=new ArrayList<>();
   for (  String toSchema : schemas) {
     try (ResultSet tblsRs=dbMeta.getTables(useCatalog() ? toSchema : null,useSchema() ? toSchema : null,"%",tblsOnly ? TABLES_ONLY : TABLES_AND_VIEWS)){
       while (tblsRs.next()) {
@@ -11,15 +11,16 @@
         String tblName=tblsRs.getString(TBL_NAME_IDX);
         String schema=tblSchema != null ? tblSchema : tblCatalog;
         if (sys.contains(schema))         continue;
-        Set<String> pkCols=new HashSet<>();
+        Collection<String> pkCols=new HashSet<>();
         try (ResultSet pkRs=dbMeta.getPrimaryKeys(tblCatalog,tblSchema,tblName)){
           while (pkRs.next())           pkCols.add(pkRs.getString(PK_COL_NAME_IDX));
         }
-         List<DbColumn> cols=new ArrayList<>();
+         Collection<DbColumn> cols=new ArrayList<>();
+        Collection<String> unsignedTypes=unsignedTypes(dbMeta);
         try (ResultSet colsRs=dbMeta.getColumns(tblCatalog,tblSchema,tblName,null)){
           while (colsRs.next()) {
             String colName=colsRs.getString(COL_NAME_IDX);
-            cols.add(new DbColumn(colName,colsRs.getInt(COL_DATA_TYPE_IDX),pkCols.contains(colName),colsRs.getInt(COL_NULLABLE_IDX) == DatabaseMetaData.columnNullable));
+            cols.add(new DbColumn(colName,colsRs.getInt(COL_DATA_TYPE_IDX),pkCols.contains(colName),colsRs.getInt(COL_NULLABLE_IDX) == DatabaseMetaData.columnNullable,unsignedTypes.contains(colsRs.getString(COL_TYPE_NAME_IDX))));
           }
         }
          Map<String,QueryIndex> idxs=new LinkedHashMap<>();
