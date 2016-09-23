@@ -4,15 +4,15 @@
     attrs=Files.readAttributes(f.toPath(),BasicFileAttributes.class,LinkOption.NOFOLLOW_LINKS);
   }
  catch (  IOException ignore) {
-    return false;
+    return deleteIfExists && !f.exists();
   }
-  if (!attrs.isDirectory() || attrs.isSymbolicLink())   return f.delete();
+  if (!attrs.isDirectory() || attrs.isSymbolicLink())   return f.delete() || (deleteIfExists && !f.exists());
   File[] entries=f.listFiles();
   if (entries != null) {
     for (    File entry : entries) {
-      boolean res=deleteRecursive(entry);
+      boolean res=deleteRecursive(entry,true);
       if (!res)       return false;
     }
   }
-  return f.delete();
+  return f.delete() || (deleteIfExists && !f.exists());
 }
