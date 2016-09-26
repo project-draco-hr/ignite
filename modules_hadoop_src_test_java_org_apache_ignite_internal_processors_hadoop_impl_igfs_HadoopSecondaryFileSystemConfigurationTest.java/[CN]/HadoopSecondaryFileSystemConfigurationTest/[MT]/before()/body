@@ -1,0 +1,15 @@
+{
+  initSecondary();
+  if (passPrimaryConfiguration) {
+    Configuration primaryFsCfg=configuration(primaryCfgScheme,primaryCfgAuthority,skipEmbed,skipLocShmem);
+    primaryConfFullPath=writeConfiguration(primaryFsCfg,PRIMARY_CFG_PATH);
+  }
+ else   primaryConfFullPath=null;
+  CachingHadoopFileSystemFactory fac=new CachingHadoopFileSystemFactory();
+  fac.setConfigPaths(primaryConfFullPath);
+  fac.setUri(primaryFsUriStr);
+  HadoopFileSystemFactoryDelegate facDelegate=HadoopDelegateUtils.fileSystemFactoryDelegate(fac);
+  facDelegate.start();
+  primaryFs=(FileSystem)facDelegate.get(null);
+  primaryFsUri=primaryFs.getUri();
+}

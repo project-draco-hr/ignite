@@ -1,0 +1,24 @@
+{
+  ClassLoader oldLdr=HadoopCommonUtils.setContextClassLoader(jobConf().getClassLoader());
+  try {
+    try {
+      task=createTask();
+    }
+ catch (    Throwable e) {
+      if (e instanceof Error)       throw e;
+      throw transformException(e);
+    }
+    if (cancelled)     throw new HadoopTaskCancelledException("Task cancelled.");
+    try {
+      task.run(this);
+    }
+ catch (    Throwable e) {
+      if (e instanceof Error)       throw e;
+      throw transformException(e);
+    }
+  }
+  finally {
+    task=null;
+    HadoopCommonUtils.restoreContextClassLoader(oldLdr);
+  }
+}

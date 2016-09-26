@@ -1,5 +1,11 @@
 {
-  dfltUsrName=IgfsUtils.fixUserName(dfltUsrName);
-  if (fsFactory == null)   fsFactory=new CachingHadoopFileSystemFactory();
-  if (fsFactory instanceof LifecycleAware)   ((LifecycleAware)fsFactory).start();
+  HadoopClassLoader ldr=ctx.hadoopHelper().commonClassLoader();
+  ClassLoader oldLdr=HadoopCommonUtils.setContextClassLoader(ldr);
+  try {
+    target=HadoopDelegateUtils.secondaryFileSystemDelegate(ldr,this);
+    target.start();
+  }
+  finally {
+    HadoopCommonUtils.restoreContextClassLoader(oldLdr);
+  }
 }

@@ -1,0 +1,14 @@
+{
+synchronized (getClassLoadingLock(originalName)) {
+    Class c=findLoadedClass(originalName);
+    if (c != null)     return c;
+    byte[] bytes=bytesCache.get(originalName);
+    if (bytes == null) {
+      InputStream in=helper.loadClassBytes(this,replaceName);
+      if (in == null)       throw new IgniteException("Failed to replace class [originalName=" + originalName + ", replaceName="+ replaceName+ ']');
+      bytes=helper.loadReplace(in,originalName,replaceName);
+      bytesCache.put(originalName,bytes);
+    }
+    return defineClass(originalName,bytes,0,bytes.length);
+  }
+}
