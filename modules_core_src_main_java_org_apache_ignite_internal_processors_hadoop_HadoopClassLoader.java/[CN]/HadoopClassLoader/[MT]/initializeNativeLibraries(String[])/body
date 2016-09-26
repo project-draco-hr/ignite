@@ -1,0 +1,18 @@
+{
+  Collection<Object> res;
+synchronized (LIBS_MUX) {
+    if (NATIVE_LIBS == null) {
+      LinkedList<NativeLibrary> libs=new LinkedList<>();
+      for (      String lib : PREDEFINED_NATIVE_LIBS)       libs.add(new NativeLibrary(lib,true));
+      if (!F.isEmpty(usrLibs)) {
+        for (        String usrLib : usrLibs)         libs.add(new NativeLibrary(usrLib,false));
+      }
+      NATIVE_LIBS=initializeNativeLibraries0(libs);
+    }
+    res=NATIVE_LIBS;
+  }
+  Vector<Object> ldrLibs=nativeLibraries(this);
+synchronized (ldrLibs) {
+    ldrLibs.addAll(res);
+  }
+}

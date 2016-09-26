@@ -1,0 +1,12 @@
+{
+  Configuration conf=baseConfiguration();
+  conf.set("fs.defaultFS","igfs://secondary:secondary@127.0.0.1:11500/");
+  writeConfigurationToFile(conf);
+  CachingHadoopFileSystemFactory delegate=new CachingHadoopFileSystemFactory();
+  delegate.setUri("igfs://secondary:secondary@127.0.0.1:11500/");
+  delegate.setConfigPaths(SECONDARY_CFG_PATH);
+  TestFactory factory=new TestFactory(delegate);
+  IgniteHadoopIgfsSecondaryFileSystem secondaryFs=new IgniteHadoopIgfsSecondaryFileSystem();
+  secondaryFs.setFileSystemFactory(factory);
+  return start("primary",10500,IgfsMode.DUAL_ASYNC,secondaryFs);
+}

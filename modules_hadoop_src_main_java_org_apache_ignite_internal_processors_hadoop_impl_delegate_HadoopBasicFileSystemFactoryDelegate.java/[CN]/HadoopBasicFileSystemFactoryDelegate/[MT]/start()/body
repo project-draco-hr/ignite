@@ -1,0 +1,27 @@
+{
+  BasicHadoopFileSystemFactory proxy0=(BasicHadoopFileSystemFactory)proxy;
+  cfg=HadoopUtils.safeCreateConfiguration();
+  if (proxy0.getConfigPaths() != null) {
+    for (    String cfgPath : proxy0.getConfigPaths()) {
+      if (cfgPath == null)       throw new NullPointerException("Configuration path cannot be null: " + Arrays.toString(proxy0.getConfigPaths()));
+ else {
+        URL url=U.resolveIgniteUrl(cfgPath);
+        if (url == null) {
+          throw new IgniteException("Failed to resolve secondary file system configuration path " + "(ensure that it exists locally and you have read access to it): " + cfgPath);
+        }
+        cfg.addResource(url);
+      }
+    }
+  }
+  if (proxy0.getUri() == null)   fullUri=FileSystem.getDefaultUri(cfg);
+ else {
+    try {
+      fullUri=new URI(proxy0.getUri());
+    }
+ catch (    URISyntaxException use) {
+      throw new IgniteException("Failed to resolve secondary file system URI: " + proxy0.getUri());
+    }
+  }
+  usrNameMapper=proxy0.getUserNameMapper();
+  if (usrNameMapper != null && usrNameMapper instanceof LifecycleAware)   ((LifecycleAware)usrNameMapper).start();
+}

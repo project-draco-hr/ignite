@@ -1,0 +1,38 @@
+{
+  return new RecordReader<YearTemperature,Text>(){
+    /** 
+ */
+    int cnt;
+    /** 
+ */
+    Random rnd=new GridRandom();
+    /** 
+ */
+    YearTemperature key=new YearTemperature();
+    /** 
+ */
+    Text val=new Text();
+    @Override public void initialize(    InputSplit split,    TaskAttemptContext context){
+    }
+    @Override public boolean nextKeyValue() throws IOException, InterruptedException {
+      return cnt++ < split.getLength();
+    }
+    @Override public YearTemperature getCurrentKey(){
+      key.year=1990 + rnd.nextInt(10);
+      key.temperature=10 + rnd.nextInt(20);
+      return key;
+    }
+    @Override public Text getCurrentValue(){
+      UUID id=UUID.randomUUID();
+      assertTrue(HadoopGroupingTestState.values().add(id));
+      val.set(id.toString());
+      return val;
+    }
+    @Override public float getProgress(){
+      return 0;
+    }
+    @Override public void close(){
+    }
+  }
+;
+}

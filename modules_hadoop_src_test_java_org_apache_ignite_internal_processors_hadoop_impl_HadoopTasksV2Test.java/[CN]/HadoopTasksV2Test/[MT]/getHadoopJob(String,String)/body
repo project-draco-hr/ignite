@@ -1,0 +1,16 @@
+{
+  Job job=Job.getInstance();
+  job.setOutputKeyClass(Text.class);
+  job.setOutputValueClass(IntWritable.class);
+  HadoopWordCount2.setTasksClasses(job,true,true,true,false);
+  Configuration conf=job.getConfiguration();
+  setupFileSystems(conf);
+  FileInputFormat.setInputPaths(job,new Path(inFile));
+  FileOutputFormat.setOutputPath(job,new Path(outFile));
+  job.setJarByClass(HadoopWordCount2.class);
+  Job hadoopJob=HadoopWordCount2.getJob(inFile,outFile);
+  HadoopDefaultJobInfo jobInfo=createJobInfo(hadoopJob.getConfiguration());
+  UUID uuid=new UUID(0,0);
+  HadoopJobId jobId=new HadoopJobId(uuid,0);
+  return jobInfo.createJob(HadoopV2Job.class,jobId,log,null,new HadoopHelperImpl());
+}

@@ -7,5 +7,17 @@
  catch (  IOException ioe) {
     throw new IgniteCheckedException(ioe.getMessage(),ioe);
   }
+  try {
+    Class cls=Class.forName(HADOOP_PROBE_CLS,false,getClass().getClassLoader());
+    try {
+      String path=cls.getProtectionDomain().getCodeSource().getLocation().toString();
+      U.warn(log,"Hadoop libraries are found in Ignite classpath, this could lead to class loading " + "errors (please remove all Hadoop libraries from Ignite classpath) [path=" + path + ']');
+    }
+ catch (    Throwable ignore) {
+      U.warn(log,"Hadoop libraries are found in Ignite classpath, this could lead to class loading " + "errors (please remove all Hadoop libraries from Ignite classpath)");
+    }
+  }
+ catch (  Throwable ignore) {
+  }
   HadoopClassLoader.hadoopUrls();
 }

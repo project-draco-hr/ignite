@@ -1,0 +1,22 @@
+{
+  super(taskInfo,job);
+  this.locNodeId=locNodeId;
+  ClassLoader oldLdr=HadoopCommonUtils.setContextClassLoader(getClass().getClassLoader());
+  try {
+    JobConf jobConf=new JobConf();
+    try {
+      jobConf.readFields(jobConfDataInput);
+    }
+ catch (    IOException e) {
+      throw new IgniteCheckedException(e);
+    }
+    jobConf.setBooleanIfUnset(PARAM_IGFS_PREFER_LOCAL_WRITES,true);
+    jobCtx=new JobContextImpl(jobConf,new JobID(jobId.globalId().toString(),jobId.localId()));
+    useNewMapper=jobConf.getUseNewMapper();
+    useNewReducer=jobConf.getUseNewReducer();
+    useNewCombiner=jobConf.getCombinerClass() == null;
+  }
+  finally {
+    HadoopCommonUtils.restoreContextClassLoader(oldLdr);
+  }
+}
