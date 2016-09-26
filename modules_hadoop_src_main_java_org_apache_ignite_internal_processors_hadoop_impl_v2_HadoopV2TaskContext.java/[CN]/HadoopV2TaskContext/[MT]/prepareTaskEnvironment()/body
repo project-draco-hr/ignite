@@ -1,0 +1,25 @@
+{
+  File locDir;
+switch (taskInfo().type()) {
+case MAP:
+case REDUCE:
+    job().prepareTaskEnvironment(taskInfo());
+  locDir=taskLocalDir(locNodeId,taskInfo());
+break;
+default :
+locDir=jobLocalDir(locNodeId,taskInfo().jobId());
+}
+ClassLoader oldLdr=HadoopCommonUtils.setContextClassLoader(jobConf().getClassLoader());
+try {
+FileSystem.get(jobConf());
+LocalFileSystem locFs=FileSystem.getLocal(jobConf());
+locFs.setWorkingDirectory(new Path(locDir.getAbsolutePath()));
+}
+ catch (Throwable e) {
+if (e instanceof Error) throw (Error)e;
+throw transformException(e);
+}
+ finally {
+HadoopCommonUtils.restoreContextClassLoader(oldLdr);
+}
+}

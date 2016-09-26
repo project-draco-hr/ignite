@@ -1,0 +1,18 @@
+{
+  try {
+    FileStatus[] statuses=fileSystemForUser().listStatus(convert(path));
+    if (statuses == null)     throw new IgfsPathNotFoundException("Failed to list files (path not found): " + path);
+    Collection<IgfsFile> res=new ArrayList<>(statuses.length);
+    for (    FileStatus s : statuses) {
+      IgfsEntryInfo fsInfo=s.isDirectory() ? IgfsUtils.createDirectory(IgniteUuid.randomUuid(),null,properties(s),s.getAccessTime(),s.getModificationTime()) : IgfsUtils.createFile(IgniteUuid.randomUuid(),(int)s.getBlockSize(),s.getLen(),null,null,false,properties(s),s.getAccessTime(),s.getModificationTime());
+      res.add(new IgfsFileImpl(new IgfsPath(path,s.getPath().getName()),fsInfo,1));
+    }
+    return res;
+  }
+ catch (  FileNotFoundException ignored) {
+    throw new IgfsPathNotFoundException("Failed to list files (path not found): " + path);
+  }
+catch (  IOException e) {
+    throw handleSecondaryFsError(e,"Failed to list statuses due to secondary file system exception: " + path);
+  }
+}

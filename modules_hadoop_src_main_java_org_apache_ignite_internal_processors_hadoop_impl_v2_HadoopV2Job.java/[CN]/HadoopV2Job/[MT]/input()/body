@@ -1,0 +1,37 @@
+{
+  ClassLoader oldLdr=HadoopCommonUtils.setContextClassLoader(jobConf.getClassLoader());
+  try {
+    String jobDirPath=jobConf.get(MRJobConfig.MAPREDUCE_JOB_DIR);
+    if (jobDirPath == null) {
+      if (jobConf.getUseNewMapper())       return HadoopV2Splitter.splitJob(jobCtx);
+ else       return HadoopV1Splitter.splitJob(jobConf);
+    }
+    Path jobDir=new Path(jobDirPath);
+    try {
+      FileSystem fs=fileSystem(jobDir.toUri(),jobConf);
+      JobSplit.TaskSplitMetaInfo[] metaInfos=SplitMetaInfoReader.readSplitMetaInfo(hadoopJobID,fs,jobConf,jobDir);
+      if (F.isEmpty(metaInfos))       throw new IgniteCheckedException("No input splits found.");
+      Path splitsFile=JobSubmissionFiles.getJobSplitFile(jobDir);
+      try (FSDataInputStream in=fs.open(splitsFile)){
+        Collection<HadoopInputSplit> res=new ArrayList<>(metaInfos.length);
+        for (        JobSplit.TaskSplitMetaInfo metaInfo : metaInfos) {
+          long off=metaInfo.getStartOffset();
+          String[] hosts=metaInfo.getLocations();
+          in.seek(off);
+          String clsName=Text.readString(in);
+          HadoopFileBlock block=HadoopV1Splitter.readFileBlock(clsName,in,hosts);
+          if (block == null)           block=HadoopV2Splitter.readFileBlock(clsName,in,hosts);
+          res.add(block != null ? block : new HadoopExternalSplit(hosts,off));
+        }
+        return res;
+      }
+     }
+ catch (    Throwable e) {
+      if (e instanceof Error)       throw (Error)e;
+ else       throw transformException(e);
+    }
+  }
+  finally {
+    HadoopCommonUtils.restoreContextClassLoader(oldLdr);
+  }
+}

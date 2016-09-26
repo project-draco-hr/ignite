@@ -1,0 +1,24 @@
+{
+  ClassReader rdr;
+  try {
+    rdr=new ClassReader(in);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  ClassWriter w=new ClassWriter(Opcodes.ASM4);
+  rdr.accept(new RemappingClassAdapter(w,new Remapper(){
+    /** 
+ */
+    String replaceType=replaceName.replace('.','/');
+    /** 
+ */
+    String nameType=originalName.replace('.','/');
+    @Override public String map(    String type){
+      if (type.equals(replaceType))       return nameType;
+      return type;
+    }
+  }
+),ClassReader.EXPAND_FRAMES);
+  return w.toByteArray();
+}

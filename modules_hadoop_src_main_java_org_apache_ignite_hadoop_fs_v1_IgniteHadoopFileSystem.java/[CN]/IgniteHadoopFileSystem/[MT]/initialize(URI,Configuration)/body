@@ -48,15 +48,16 @@
     }
     if (initSecondary) {
       try {
-        factory=(HadoopFileSystemFactory)paths.getPayload(getClass().getClassLoader());
+        HadoopFileSystemFactory factory0=(HadoopFileSystemFactory)paths.getPayload(getClass().getClassLoader());
+        factory=HadoopDelegateUtils.fileSystemFactoryDelegate(factory0);
       }
  catch (      IgniteCheckedException e) {
         throw new IOException("Failed to get secondary file system factory.",e);
       }
       if (factory == null)       throw new IOException("Failed to get secondary file system factory (did you set " + IgniteHadoopIgfsSecondaryFileSystem.class.getName() + " as \"secondaryFIleSystem\" in "+ FileSystemConfiguration.class.getName()+ "?)");
-      if (factory instanceof LifecycleAware)       ((LifecycleAware)factory).start();
+      factory.start();
       try {
-        FileSystem secFs=factory.get(user);
+        FileSystem secFs=(FileSystem)factory.get(user);
         secondaryUri=secFs.getUri();
         A.ensure(secondaryUri != null,"Secondary file system uri should not be null.");
       }
