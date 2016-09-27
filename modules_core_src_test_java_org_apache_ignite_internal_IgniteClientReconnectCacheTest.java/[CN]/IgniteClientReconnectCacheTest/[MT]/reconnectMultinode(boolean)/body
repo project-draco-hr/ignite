@@ -1,0 +1,68 @@
+{
+  grid(0).createCache(new CacheConfiguration<>());
+  clientMode=true;
+  final int CLIENTS=5;
+  List<Ignite> clients=new ArrayList<>();
+  for (int i=0; i < CLIENTS; i++) {
+    Ignite client=startGrid(SRV_CNT + i);
+    assertNotNull(client.getOrCreateCache(new CacheConfiguration<>()));
+    clients.add(client);
+  }
+  if (longHist) {
+    final AtomicInteger nodeIdx=new AtomicInteger(SRV_CNT + CLIENTS);
+    GridTestUtils.runMultiThreaded(new Callable<Void>(){
+      @Override public Void call() throws Exception {
+        int idx=nodeIdx.incrementAndGet();
+        for (int i=0; i < 25; i++) {
+          startGrid(idx);
+          stopGrid(idx);
+        }
+        return null;
+      }
+    }
+,4,"restart-thread");
+  }
+  int nodes=SRV_CNT + CLIENTS;
+  int srvNodes=SRV_CNT;
+  for (int iter=0; iter < 5; iter++) {
+    log.info("Iteration: " + iter);
+    reconnectClientNodes(log,clients,grid(0),null);
+    final int expNodes=CLIENTS + srvNodes;
+    for (    final Ignite client : clients) {
+      IgniteCache<Object,Object> cache=client.cache(null);
+      assertNotNull(cache);
+      cache.put(client.name(),1);
+      assertEquals(1,cache.get(client.name()));
+      GridTestUtils.waitForCondition(new GridAbsPredicate(){
+        @Override public boolean apply(){
+          ClusterGroup grp=client.cluster().forCacheNodes(null);
+          return grp.nodes().size() == expNodes;
+        }
+      }
+,5000);
+      ClusterGroup grp=client.cluster().forCacheNodes(null);
+      assertEquals(CLIENTS + srvNodes,grp.nodes().size());
+      grp=client.cluster().forClientNodes(null);
+      assertEquals(CLIENTS,grp.nodes().size());
+    }
+    for (int i=0; i < nodes; i++) {
+      final Ignite ignite=grid(i);
+      GridTestUtils.waitForCondition(new GridAbsPredicate(){
+        @Override public boolean apply(){
+          ClusterGroup grp=ignite.cluster().forCacheNodes(null);
+          return grp.nodes().size() == expNodes;
+        }
+      }
+,5000);
+      ClusterGroup grp=ignite.cluster().forCacheNodes(null);
+      assertEquals(CLIENTS + srvNodes,grp.nodes().size());
+      grp=ignite.cluster().forClientNodes(null);
+      assertEquals(CLIENTS,grp.nodes().size());
+    }
+    clientMode=false;
+    startGrid(nodes++);
+    srvNodes++;
+    clientMode=true;
+    startGrid(nodes++);
+  }
+}
