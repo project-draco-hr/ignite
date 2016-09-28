@@ -1,2 +1,17 @@
 {
+  final IgniteCache<String,Integer> cache=jcache();
+  final String key=F.first(primaryKeysForCache(cache,1));
+  cache.put(key,1);
+  long ttl=500;
+  final ExpiryPolicy expiry=new TouchedExpiryPolicy(new Duration(MILLISECONDS,ttl));
+  grid(0).cache(null).withExpiryPolicy(expiry).put(key,1);
+  waitForCondition(new GridAbsPredicate(){
+    @Override public boolean apply(){
+      return cache.localPeek(key) == null;
+    }
+  }
+,ttl + 1000);
+  assertNull(cache.localPeek(key));
+  assertEquals(0,cache.localSize());
+  cache.remove(key);
 }

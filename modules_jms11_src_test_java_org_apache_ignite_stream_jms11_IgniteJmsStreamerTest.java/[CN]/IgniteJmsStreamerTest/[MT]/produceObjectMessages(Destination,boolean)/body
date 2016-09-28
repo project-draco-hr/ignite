@@ -1,23 +1,23 @@
 {
-  Session session=connectionFactory.createConnection().createSession(false,Session.AUTO_ACKNOWLEDGE);
-  MessageProducer mp=session.createProducer(destination);
+  Session ses=connFactory.createConnection().createSession(false,Session.AUTO_ACKNOWLEDGE);
+  MessageProducer mp=ses.createProducer(dest);
   HashSet<TestTransformers.TestObject> set=new HashSet<>();
   for (  String key : TEST_DATA.keySet()) {
     TestTransformers.TestObject to=new TestTransformers.TestObject(key,TEST_DATA.get(key));
     set.add(to);
   }
   int messagesSent;
-  if (singleMessage) {
-    mp.send(session.createObjectMessage(set));
+  if (singleMsg) {
+    mp.send(ses.createObjectMessage(set));
     messagesSent=1;
   }
  else {
-    for (    TestTransformers.TestObject to : set)     mp.send(session.createObjectMessage(to));
+    for (    TestTransformers.TestObject to : set)     mp.send(ses.createObjectMessage(to));
     messagesSent=set.size();
   }
-  if (destination instanceof Queue) {
+  if (dest instanceof Queue) {
     try {
-      assertEquals(messagesSent,broker.getBroker().getDestinationMap().get(destination).getDestinationStatistics().getMessages().getCount());
+      assertEquals(messagesSent,broker.getBroker().getDestinationMap().get(dest).getDestinationStatistics().getMessages().getCount());
     }
  catch (    Exception e) {
       fail(e.toString());

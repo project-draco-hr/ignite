@@ -8,19 +8,21 @@
     if (pendingEntries.remove(e)) {
       if (obsoleteVer == null)       obsoleteVer=cctx.versions().next();
       if (log.isTraceEnabled())       log.trace("Trying to remove expired entry from cache: " + e);
-      boolean touch=false;
-      GridCacheEntryEx entry=e.ctx.cache().entryEx(e.key);
-      while (true) {
-        try {
-          if (entry.onTtlExpired(obsoleteVer))           touch=false;
-          break;
+      boolean touch=e.ctx.isSwapOrOffheapEnabled();
+      GridCacheEntryEx entry=touch ? e.ctx.cache().entryEx(e.key) : e.ctx.cache().peekEx(e.key);
+      if (entry != null) {
+        while (true) {
+          try {
+            if (entry.onTtlExpired(obsoleteVer))             touch=false;
+            break;
+          }
+ catch (          GridCacheEntryRemovedException e0) {
+            entry=entry.context().cache().entryEx(entry.key());
+            touch=true;
+          }
         }
- catch (        GridCacheEntryRemovedException e0) {
-          entry=entry.context().cache().entryEx(entry.key());
-          touch=true;
-        }
+        if (touch)         entry.context().evicts().touch(entry,null);
       }
-      if (touch)       entry.context().evicts().touch(entry,null);
     }
   }
   if (amount != -1) {

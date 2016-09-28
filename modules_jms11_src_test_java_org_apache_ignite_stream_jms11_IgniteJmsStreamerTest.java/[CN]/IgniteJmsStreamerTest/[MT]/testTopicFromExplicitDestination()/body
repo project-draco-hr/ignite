@@ -1,11 +1,11 @@
 {
-  Destination destination=new ActiveMQTopic(TOPIC_NAME);
+  Destination dest=new ActiveMQTopic(TOPIC_NAME);
   try (IgniteDataStreamer<String,String> dataStreamer=grid().dataStreamer(null)){
     JmsStreamer<ObjectMessage,String,String> jmsStreamer=newJmsStreamer(ObjectMessage.class,dataStreamer);
-    jmsStreamer.setDestination(destination);
+    jmsStreamer.setDestination(dest);
     CountDownLatch latch=subscribeToPutEvents(CACHE_ENTRY_COUNT);
     jmsStreamer.start();
-    produceObjectMessages(destination,false);
+    produceObjectMessages(dest,false);
     latch.await(10,TimeUnit.SECONDS);
     assertAllCacheEntriesLoaded();
     jmsStreamer.stop();

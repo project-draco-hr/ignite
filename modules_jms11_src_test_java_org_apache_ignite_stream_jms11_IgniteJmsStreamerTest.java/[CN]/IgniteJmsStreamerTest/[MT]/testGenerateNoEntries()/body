@@ -1,10 +1,10 @@
 {
-  Destination destination=new ActiveMQQueue(QUEUE_NAME);
-  produceStringMessages(destination,false);
+  Destination dest=new ActiveMQQueue(QUEUE_NAME);
+  produceStringMessages(dest,false);
   try (IgniteDataStreamer<String,String> dataStreamer=grid().dataStreamer(null)){
     JmsStreamer<TextMessage,String,String> jmsStreamer=newJmsStreamer(TextMessage.class,dataStreamer);
     jmsStreamer.setTransformer(TestTransformers.generateNoEntries());
-    jmsStreamer.setDestination(destination);
+    jmsStreamer.setDestination(dest);
     CountDownLatch latch=subscribeToPutEvents(1);
     jmsStreamer.start();
     assertFalse(latch.await(3,TimeUnit.SECONDS));
