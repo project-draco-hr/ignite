@@ -11,6 +11,19 @@
   if (cfg.getCollisionSpi() == null)   cfg.setCollisionSpi(new NoopCollisionSpi());
   if (cfg.getFailoverSpi() == null)   cfg.setFailoverSpi(new AlwaysFailoverSpi());
   if (cfg.getLoadBalancingSpi() == null)   cfg.setLoadBalancingSpi(new RoundRobinLoadBalancingSpi());
+ else {
+    Collection<LoadBalancingSpi> spis=new ArrayList<>();
+    boolean dfltLoadBalancingSpi=false;
+    for (    LoadBalancingSpi spi : cfg.getLoadBalancingSpi()) {
+      spis.add(spi);
+      if (spi instanceof RoundRobinLoadBalancingSpi) {
+        dfltLoadBalancingSpi=true;
+        break;
+      }
+    }
+    if (!dfltLoadBalancingSpi)     spis.add(new RoundRobinLoadBalancingSpi());
+    cfg.setLoadBalancingSpi(spis.toArray(new LoadBalancingSpi[spis.size()]));
+  }
   if (cfg.getIndexingSpi() == null)   cfg.setIndexingSpi(new NoopIndexingSpi());
   if (cfg.getSwapSpaceSpi() == null) {
     boolean needSwap=false;
