@@ -1,9 +1,9 @@
 {
-  Destination destination=new ActiveMQQueue(QUEUE_NAME);
-  produceStringMessages(destination,false);
+  Destination dest=new ActiveMQQueue(QUEUE_NAME);
+  produceStringMessages(dest,false);
   try (IgniteDataStreamer<String,String> dataStreamer=grid().dataStreamer(null)){
     JmsStreamer<TextMessage,String,String> jmsStreamer=newJmsStreamer(TextMessage.class,dataStreamer);
-    jmsStreamer.setDestination(destination);
+    jmsStreamer.setDestination(dest);
     jmsStreamer.setBatched(true);
     jmsStreamer.setBatchClosureSize(99);
     jmsStreamer.setBatchClosureMillis(0);
@@ -11,7 +11,7 @@
     jmsStreamer.start();
     latch.await(10,TimeUnit.SECONDS);
     assertAllCacheEntriesLoaded();
-    DestinationStatistics qStats=broker.getBroker().getDestinationMap().get(destination).getDestinationStatistics();
+    DestinationStatistics qStats=broker.getBroker().getDestinationMap().get(dest).getDestinationStatistics();
     assertEquals(1,qStats.getMessages().getCount());
     assertEquals(1,qStats.getInflight().getCount());
     jmsStreamer.stop();
