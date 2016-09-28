@@ -1,0 +1,14 @@
+{
+  customLoadBalancer=true;
+  ignite=startGrids(GRID_CNT);
+  assertEquals(TASK_RESULT,ignite.compute().execute(GridInternalTestTask.class.getName(),null));
+  UUID nid=ignite.cluster().localNode().id();
+  GridTuple3<Boolean,Long,Long> ping=ignite.compute().execute(VisorNodePingTask.class.getName(),new VisorTaskArgument<>(nid,nid,false));
+  assertTrue(ping.get1());
+  try {
+    ignite.compute().execute(CustomTestTask.class.getName(),null);
+  }
+ catch (  IgniteException e) {
+    assertTrue(e.getMessage().startsWith("Node can not be null [mappedJob=org.apache.ignite.spi.loadbalancing.internal.GridInternalTasksLoadBalancingSelfTest$CustomTestJob"));
+  }
+}
