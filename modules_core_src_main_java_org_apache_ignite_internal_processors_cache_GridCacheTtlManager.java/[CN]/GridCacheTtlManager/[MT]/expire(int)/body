@@ -1,0 +1,31 @@
+{
+  long now=U.currentTimeMillis();
+  GridCacheVersion obsoleteVer=null;
+  int limit=(-1 != amount) ? amount : pendingEntries.sizex();
+  for (int cnt=limit; cnt > 0; cnt--) {
+    EntryWrapper e=pendingEntries.firstx();
+    if (e == null || e.expireTime > now)     return false;
+    if (pendingEntries.remove(e)) {
+      if (obsoleteVer == null)       obsoleteVer=cctx.versions().next();
+      if (log.isTraceEnabled())       log.trace("Trying to remove expired entry from cache: " + e);
+      boolean touch=false;
+      GridCacheEntryEx entry=e.ctx.cache().entryEx(e.key);
+      while (true) {
+        try {
+          if (entry.onTtlExpired(obsoleteVer))           touch=false;
+          break;
+        }
+ catch (        GridCacheEntryRemovedException e0) {
+          entry=entry.context().cache().entryEx(entry.key());
+          touch=true;
+        }
+      }
+      if (touch)       entry.context().evicts().touch(entry,null);
+    }
+  }
+  if (amount != -1) {
+    EntryWrapper e=pendingEntries.firstx();
+    return e != null && e.expireTime <= now;
+  }
+  return false;
+}
