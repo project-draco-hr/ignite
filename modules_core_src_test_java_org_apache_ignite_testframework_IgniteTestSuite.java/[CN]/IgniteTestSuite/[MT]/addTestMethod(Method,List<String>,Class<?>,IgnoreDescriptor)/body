@@ -1,0 +1,29 @@
+{
+  String name=m.getName();
+  if (names.contains(name))   return false;
+  if (!isPublicTestMethod(m)) {
+    if (isTestMethod(m))     addTest(warning("Test method isn't public: " + m.getName() + "("+ theClass.getCanonicalName()+ ")"));
+    return false;
+  }
+  names.add(name);
+  IgnoreDescriptor ignore=IgnoreDescriptor.forMethod(theClass,m);
+  if (ignore == null)   ignore=clsIgnore;
+  if (ignoredOnly) {
+    if (ignore != null) {
+      Test test=createTest(theClass,name);
+      if (ignore.forceFailure()) {
+        if (test instanceof GridAbstractTest)         ((GridAbstractTest)test).forceFailure(ignore.reason());
+ else         test=new ForcedFailure(name,ignore.reason());
+      }
+      addTest(test);
+      return true;
+    }
+  }
+ else {
+    if (ignore == null) {
+      addTest(createTest(theClass,name));
+      return true;
+    }
+  }
+  return false;
+}
