@@ -1,9 +1,9 @@
 {
   String name=m.getName();
-  if (names.contains(name))   return false;
+  if (names.contains(name))   return new AddResult(false,null);
   if (!isPublicTestMethod(m)) {
     if (isTestMethod(m))     addTest(warning("Test method isn't public: " + m.getName() + "("+ theClass.getCanonicalName()+ ")"));
-    return false;
+    return new AddResult(false,null);
   }
   names.add(name);
   IgnoreDescriptor ignore=IgnoreDescriptor.forMethod(theClass,m);
@@ -16,14 +16,15 @@
  else         test=new ForcedFailure(name,ignore.reason());
       }
       addTest(test);
-      return true;
+      return new AddResult(true,test);
     }
   }
  else {
     if (ignore == null) {
-      addTest(createTest(theClass,name));
-      return true;
+      Test test=createTest(theClass,name);
+      addTest(test);
+      return new AddResult(true,test);
     }
   }
-  return false;
+  return new AddResult(false,null);
 }
