@@ -1,0 +1,17 @@
+{
+  try (Ignite g=startGrid()){
+    for (int iter=0; iter < 3; iter++) {
+      IgniteCache cache=g.getOrCreateCache(createCacheConfiguration());
+      for (int i=0; i < 20; i++) {
+        assertNull(cache.get(i));
+        cache.put(i,i);
+      }
+      String spaceName=CU.swapSpaceName(internalCache(cache).context());
+      GridSwapSpaceManager swapSpaceMgr=((IgniteEx)g).context().swap();
+      assertEquals(10,swapSpaceMgr.swapKeys(spaceName));
+      g.destroyCache(cache.getName());
+      assertEquals(0,swapSpaceMgr.swapKeys(spaceName));
+      assertEquals(0,swapSpaceMgr.swapSize(spaceName));
+    }
+  }
+ }
