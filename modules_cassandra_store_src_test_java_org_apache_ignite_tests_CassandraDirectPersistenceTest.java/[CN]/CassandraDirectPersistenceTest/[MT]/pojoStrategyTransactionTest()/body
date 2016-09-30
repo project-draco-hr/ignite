@@ -1,0 +1,156 @@
+{
+  Map<Object,Object> sessionProps=U.newHashMap(1);
+  Transaction sessionTx=new TestTransaction();
+  CacheStore productStore=CacheStoreHelper.createCacheStore("product",new ClassPathResource("org/apache/ignite/tests/persistence/pojo/product.xml"),CassandraHelper.getAdminDataSrc(),new TestCacheSession("product",sessionTx,sessionProps));
+  CacheStore orderStore=CacheStoreHelper.createCacheStore("order",new ClassPathResource("org/apache/ignite/tests/persistence/pojo/order.xml"),CassandraHelper.getAdminDataSrc(),new TestCacheSession("order",sessionTx,sessionProps));
+  List<CacheEntryImpl<Long,Product>> productEntries=TestsHelper.generateProductEntries();
+  Map<Long,List<CacheEntryImpl<Long,ProductOrder>>> ordersPerProduct=TestsHelper.generateOrdersPerProductEntries(productEntries,2);
+  Collection<Long> productIds=TestsHelper.getProductIds(productEntries);
+  Collection<Long> orderIds=TestsHelper.getOrderIds(ordersPerProduct);
+  LOGGER.info("Running POJO strategy transaction write tests");
+  LOGGER.info("Running single write operation tests");
+  CassandraHelper.dropTestKeyspaces();
+  Product product=productEntries.iterator().next().getValue();
+  ProductOrder order=ordersPerProduct.get(product.getId()).iterator().next().getValue();
+  productStore.write(productEntries.iterator().next());
+  orderStore.write(ordersPerProduct.get(product.getId()).iterator().next());
+  if (productStore.load(product.getId()) != null || orderStore.load(order.getId()) != null) {
+    throw new RuntimeException("Single write operation test failed. Transaction wasn't committed yet, but " + "objects were already persisted into Cassandra");
+  }
+  Map<Long,Product> products=(Map<Long,Product>)productStore.loadAll(productIds);
+  Map<Long,ProductOrder> orders=(Map<Long,ProductOrder>)orderStore.loadAll(orderIds);
+  if ((products != null && !products.isEmpty()) || (orders != null && !orders.isEmpty())) {
+    throw new RuntimeException("Single write operation test failed. Transaction wasn't committed yet, but " + "objects were already persisted into Cassandra");
+  }
+  orderStore.sessionEnd(true);
+  productStore.sessionEnd(true);
+  Product product1=(Product)productStore.load(product.getId());
+  ProductOrder order1=(ProductOrder)orderStore.load(order.getId());
+  if (product1 == null || order1 == null) {
+    throw new RuntimeException("Single write operation test failed. Transaction was committed, but " + "no objects were persisted into Cassandra");
+  }
+  if (!product.equals(product1) || !order.equals(order1)) {
+    throw new RuntimeException("Single write operation test failed. Transaction was committed, but " + "objects were incorrectly persisted/loaded to/from Cassandra");
+  }
+  products=(Map<Long,Product>)productStore.loadAll(productIds);
+  orders=(Map<Long,ProductOrder>)orderStore.loadAll(orderIds);
+  if (products == null || products.isEmpty() || orders == null || orders.isEmpty()) {
+    throw new RuntimeException("Single write operation test failed. Transaction was committed, but " + "no objects were persisted into Cassandra");
+  }
+  if (products.size() > 1 || orders.size() > 1) {
+    throw new RuntimeException("Single write operation test failed. There were committed more objects " + "into Cassandra than expected");
+  }
+  product1=products.entrySet().iterator().next().getValue();
+  order1=orders.entrySet().iterator().next().getValue();
+  if (!product.equals(product1) || !order.equals(order1)) {
+    throw new RuntimeException("Single write operation test failed. Transaction was committed, but " + "objects were incorrectly persisted/loaded to/from Cassandra");
+  }
+  LOGGER.info("Single write operation tests passed");
+  LOGGER.info("Running bulk write operation tests");
+  CassandraHelper.dropTestKeyspaces();
+  sessionProps.clear();
+  productStore.writeAll(productEntries);
+  for (  Long productId : ordersPerProduct.keySet())   orderStore.writeAll(ordersPerProduct.get(productId));
+  for (  Long productId : productIds) {
+    if (productStore.load(productId) != null) {
+      throw new RuntimeException("Bulk write operation test failed. Transaction wasn't committed yet, but " + "objects were already persisted into Cassandra");
+    }
+  }
+  for (  Long orderId : orderIds) {
+    if (orderStore.load(orderId) != null) {
+      throw new RuntimeException("Bulk write operation test failed. Transaction wasn't committed yet, but " + "objects were already persisted into Cassandra");
+    }
+  }
+  products=(Map<Long,Product>)productStore.loadAll(productIds);
+  orders=(Map<Long,ProductOrder>)orderStore.loadAll(orderIds);
+  if ((products != null && !products.isEmpty()) || (orders != null && !orders.isEmpty())) {
+    throw new RuntimeException("Bulk write operation test failed. Transaction wasn't committed yet, but " + "objects were already persisted into Cassandra");
+  }
+  productStore.sessionEnd(true);
+  orderStore.sessionEnd(true);
+  for (  CacheEntryImpl<Long,Product> entry : productEntries) {
+    product=(Product)productStore.load(entry.getKey());
+    if (!entry.getValue().equals(product)) {
+      throw new RuntimeException("Bulk write operation test failed. Transaction was committed, but " + "not all objects were persisted into Cassandra");
+    }
+  }
+  for (  Long productId : ordersPerProduct.keySet()) {
+    for (    CacheEntryImpl<Long,ProductOrder> entry : ordersPerProduct.get(productId)) {
+      order=(ProductOrder)orderStore.load(entry.getKey());
+      if (!entry.getValue().equals(order)) {
+        throw new RuntimeException("Bulk write operation test failed. Transaction was committed, but " + "not all objects were persisted into Cassandra");
+      }
+    }
+  }
+  products=(Map<Long,Product>)productStore.loadAll(productIds);
+  orders=(Map<Long,ProductOrder>)orderStore.loadAll(orderIds);
+  if (products == null || products.isEmpty() || orders == null || orders.isEmpty()) {
+    throw new RuntimeException("Bulk write operation test failed. Transaction was committed, but " + "no objects were persisted into Cassandra");
+  }
+  if (products.size() < productIds.size() || orders.size() < orderIds.size()) {
+    throw new RuntimeException("Bulk write operation test failed. There were committed less objects " + "into Cassandra than expected");
+  }
+  if (products.size() > productIds.size() || orders.size() > orderIds.size()) {
+    throw new RuntimeException("Bulk write operation test failed. There were committed more objects " + "into Cassandra than expected");
+  }
+  for (  CacheEntryImpl<Long,Product> entry : productEntries) {
+    product=products.get(entry.getKey());
+    if (!entry.getValue().equals(product)) {
+      throw new RuntimeException("Bulk write operation test failed. Transaction was committed, but " + "some objects were incorrectly persisted/loaded to/from Cassandra");
+    }
+  }
+  for (  Long productId : ordersPerProduct.keySet()) {
+    for (    CacheEntryImpl<Long,ProductOrder> entry : ordersPerProduct.get(productId)) {
+      order=orders.get(entry.getKey());
+      if (!entry.getValue().equals(order)) {
+        throw new RuntimeException("Bulk write operation test failed. Transaction was committed, but " + "some objects were incorrectly persisted/loaded to/from Cassandra");
+      }
+    }
+  }
+  LOGGER.info("Bulk write operation tests passed");
+  LOGGER.info("POJO strategy transaction write tests passed");
+  LOGGER.info("Running POJO strategy transaction delete tests");
+  LOGGER.info("Running single delete tests");
+  sessionProps.clear();
+  Product deletedProduct=productEntries.remove(0).getValue();
+  ProductOrder deletedOrder=ordersPerProduct.get(deletedProduct.getId()).remove(0).getValue();
+  productStore.delete(deletedProduct.getId());
+  orderStore.delete(deletedOrder.getId());
+  if (productStore.load(deletedProduct.getId()) == null || orderStore.load(deletedOrder.getId()) == null) {
+    throw new RuntimeException("Single delete operation test failed. Transaction wasn't committed yet, but " + "objects were already deleted from Cassandra");
+  }
+  products=(Map<Long,Product>)productStore.loadAll(productIds);
+  orders=(Map<Long,ProductOrder>)orderStore.loadAll(orderIds);
+  if (products.size() != productIds.size() || orders.size() != orderIds.size()) {
+    throw new RuntimeException("Single delete operation test failed. Transaction wasn't committed yet, but " + "objects were already deleted from Cassandra");
+  }
+  productStore.sessionEnd(true);
+  orderStore.sessionEnd(true);
+  if (productStore.load(deletedProduct.getId()) != null || orderStore.load(deletedOrder.getId()) != null) {
+    throw new RuntimeException("Single delete operation test failed. Transaction was committed, but " + "objects were not deleted from Cassandra");
+  }
+  products=(Map<Long,Product>)productStore.loadAll(productIds);
+  orders=(Map<Long,ProductOrder>)orderStore.loadAll(orderIds);
+  if (products.get(deletedProduct.getId()) != null || orders.get(deletedOrder.getId()) != null) {
+    throw new RuntimeException("Single delete operation test failed. Transaction was committed, but " + "objects were not deleted from Cassandra");
+  }
+  LOGGER.info("Single delete tests passed");
+  LOGGER.info("Running bulk delete tests");
+  sessionProps.clear();
+  productStore.deleteAll(productIds);
+  orderStore.deleteAll(orderIds);
+  products=(Map<Long,Product>)productStore.loadAll(productIds);
+  orders=(Map<Long,ProductOrder>)orderStore.loadAll(orderIds);
+  if (products == null || products.isEmpty() || orders == null || orders.isEmpty()) {
+    throw new RuntimeException("Bulk delete operation test failed. Transaction wasn't committed yet, but " + "objects were already deleted from Cassandra");
+  }
+  orderStore.sessionEnd(true);
+  productStore.sessionEnd(true);
+  products=(Map<Long,Product>)productStore.loadAll(productIds);
+  orders=(Map<Long,ProductOrder>)orderStore.loadAll(orderIds);
+  if ((products != null && !products.isEmpty()) || (orders != null && !orders.isEmpty())) {
+    throw new RuntimeException("Bulk delete operation test failed. Transaction was committed, but " + "objects were not deleted from Cassandra");
+  }
+  LOGGER.info("Bulk delete tests passed");
+  LOGGER.info("POJO strategy transaction delete tests passed");
+}

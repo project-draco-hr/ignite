@@ -1,5 +1,9 @@
 {
   if (entry == null || entry.getKey() == null)   return;
+  if (storeSes.isWithinTransaction()) {
+    accumulate(new WriteMutation(entry,cassandraTable(),controller));
+    return;
+  }
   CassandraSession ses=getCassandraSession();
   try {
     ses.execute(new ExecutionAssistant<Void>(){
@@ -49,6 +53,6 @@
 );
   }
   finally {
-    closeCassandraSession(ses);
+    U.closeQuiet(ses);
   }
 }

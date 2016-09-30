@@ -1,5 +1,13 @@
 {
-  if (storeSes == null || storeSes.transaction() == null)   return;
-  CassandraSession cassandraSes=(CassandraSession)storeSes.properties().remove(ATTR_CONN_PROP);
-  U.closeQuiet(cassandraSes);
+  if (!storeSes.isWithinTransaction())   return;
+  List<Mutation> mutations=mutations();
+  if (mutations == null || mutations.isEmpty())   return;
+  CassandraSession ses=getCassandraSession();
+  try {
+    ses.execute(mutations);
+  }
+  finally {
+    mutations.clear();
+    U.closeQuiet(ses);
+  }
 }

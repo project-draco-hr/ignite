@@ -1,5 +1,9 @@
 {
   if (entries == null || entries.isEmpty())   return;
+  if (storeSes.isWithinTransaction()) {
+    for (    Cache.Entry<?,?> entry : entries)     accumulate(new WriteMutation(entry,cassandraTable(),controller));
+    return;
+  }
   CassandraSession ses=getCassandraSession();
   try {
     ses.execute(new GenericBatchExecutionAssistant<Void,Cache.Entry<? extends K,? extends V>>(){
@@ -43,6 +47,6 @@
 ,entries);
   }
   finally {
-    closeCassandraSession(ses);
+    U.closeQuiet(ses);
   }
 }

@@ -1,5 +1,9 @@
 {
   if (keys == null || keys.isEmpty())   return;
+  if (storeSes.isWithinTransaction()) {
+    for (    Object key : keys)     accumulate(new DeleteMutation(key,cassandraTable(),controller));
+    return;
+  }
   CassandraSession ses=getCassandraSession();
   try {
     ses.execute(new GenericBatchExecutionAssistant<Void,Object>(){
@@ -37,6 +41,6 @@
 ,keys);
   }
   finally {
-    closeCassandraSession(ses);
+    U.closeQuiet(ses);
   }
 }

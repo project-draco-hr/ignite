@@ -1,6 +1,13 @@
 {
   while (e != null) {
-    if (e instanceof InvalidQueryException && (TABLE_EXIST_ERROR.matcher(e.getMessage()).matches() || KEYSPACE_EXIST_ERROR1.matcher(e.getMessage()).matches() || KEYSPACE_EXIST_ERROR2.matcher(e.getMessage()).matches()))     return true;
+    if (e instanceof InvalidQueryException && (TABLE_EXIST_ERROR1.matcher(e.getMessage()).matches() || KEYSPACE_EXIST_ERROR1.matcher(e.getMessage()).matches() || KEYSPACE_EXIST_ERROR2.matcher(e.getMessage()).matches()))     return true;
+    if (e instanceof NoHostAvailableException && ((NoHostAvailableException)e).getErrors() != null) {
+      NoHostAvailableException ex=(NoHostAvailableException)e;
+      for (      Map.Entry<InetSocketAddress,Throwable> entry : ex.getErrors().entrySet()) {
+        Throwable error=entry.getValue();
+        if (error instanceof DriverException && (error.getMessage().contains(TABLE_EXIST_ERROR2) || KEYSPACE_EXIST_ERROR3.matcher(error.getMessage()).matches()))         return true;
+      }
+    }
     e=e.getCause();
   }
   return false;
