@@ -1,0 +1,55 @@
+{
+  short flags;
+  boolean useCompactFooter;
+  if (userType) {
+    if (ctx.isCompactFooter()) {
+      flags=BinaryUtils.FLAG_USR_TYP | BinaryUtils.FLAG_COMPACT_FOOTER;
+      useCompactFooter=true;
+    }
+ else {
+      flags=BinaryUtils.FLAG_USR_TYP;
+      useCompactFooter=false;
+    }
+  }
+ else {
+    flags=0;
+    useCompactFooter=false;
+  }
+  int finalSchemaId;
+  int offset;
+  if (fieldCnt != 0) {
+    finalSchemaId=schemaId;
+    offset=out.position() - start;
+    flags|=BinaryUtils.FLAG_HAS_SCHEMA;
+    int offsetByteCnt=schema.write(out,fieldCnt,useCompactFooter);
+    if (offsetByteCnt == BinaryUtils.OFFSET_1)     flags|=BinaryUtils.FLAG_OFFSET_ONE_BYTE;
+ else     if (offsetByteCnt == BinaryUtils.OFFSET_2)     flags|=BinaryUtils.FLAG_OFFSET_TWO_BYTES;
+    if (rawOffPos != 0) {
+      flags|=BinaryUtils.FLAG_HAS_RAW;
+      out.writeInt(rawOffPos - start);
+    }
+  }
+ else {
+    if (rawOffPos != 0) {
+      finalSchemaId=0;
+      offset=rawOffPos - start;
+      flags|=BinaryUtils.FLAG_HAS_RAW;
+    }
+ else {
+      finalSchemaId=0;
+      offset=0;
+    }
+  }
+  if (!isHashCodeSet)   flags|=BinaryUtils.FLAG_EMPTY_HASH_CODE;
+  int retPos=out.position();
+  out.unsafePosition(start);
+  out.unsafeWriteByte(GridBinaryMarshaller.OBJ);
+  out.unsafeWriteByte(GridBinaryMarshaller.PROTO_VER);
+  out.unsafeWriteShort(flags);
+  out.unsafeWriteInt(registered ? typeId : GridBinaryMarshaller.UNREGISTERED_TYPE_ID);
+  out.unsafeWriteInt(hashCode);
+  out.unsafeWriteInt(retPos - start);
+  out.unsafeWriteInt(finalSchemaId);
+  out.unsafeWriteInt(offset);
+  out.unsafePosition(retPos);
+}
