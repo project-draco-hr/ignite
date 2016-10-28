@@ -1,0 +1,16 @@
+{
+  A.notNull(cacheCfgs,"cacheCfgs");
+  guard();
+  try {
+    ctx.cache().dynamicStartCaches(cacheCfgs,false,true).get();
+    List<IgniteCache> createdCaches=new ArrayList<>(cacheCfgs.size());
+    for (    CacheConfiguration cacheCfg : cacheCfgs)     createdCaches.add(ctx.cache().publicJCache(cacheCfg.getName()));
+    return createdCaches;
+  }
+ catch (  IgniteCheckedException e) {
+    throw CU.convertToCacheException(e);
+  }
+ finally {
+    unguard();
+  }
+}

@@ -1,0 +1,13 @@
+{
+  if (checkThreadTx)   checkEmptyTransactions();
+  List<DynamicCacheChangeRequest> reqs=new ArrayList<>(cacheNames.size());
+  for (  String cacheName : cacheNames) {
+    DynamicCacheChangeRequest t=new DynamicCacheChangeRequest(cacheName,ctx.localNodeId());
+    t.stop(true);
+    reqs.add(t);
+  }
+  GridCompoundFuture<?,?> compoundFut=new GridCompoundFuture<>();
+  for (  DynamicCacheStartFuture fut : initiateCacheChanges(reqs,false))   compoundFut.add((IgniteInternalFuture)fut);
+  compoundFut.markInitialized();
+  return compoundFut;
+}

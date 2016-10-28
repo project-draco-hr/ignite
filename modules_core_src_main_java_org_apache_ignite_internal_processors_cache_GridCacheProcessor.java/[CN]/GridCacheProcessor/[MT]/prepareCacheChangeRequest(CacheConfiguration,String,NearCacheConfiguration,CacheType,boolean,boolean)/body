@@ -1,0 +1,51 @@
+{
+  DynamicCacheDescriptor desc=registeredCaches.get(maskNull(cacheName));
+  DynamicCacheChangeRequest req=new DynamicCacheChangeRequest(cacheName,ctx.localNodeId());
+  req.failIfExists(failIfExists);
+  if (ccfg != null) {
+    cloneCheckSerializable(ccfg);
+    if (desc != null) {
+      if (failIfExists) {
+        throw new CacheExistsException("Failed to start cache " + "(a cache with the same name is already started): " + cacheName);
+      }
+ else {
+        CacheConfiguration descCfg=desc.cacheConfiguration();
+        if (nearCfg != null) {
+          if (CU.affinityNode(ctx.discovery().localNode(),descCfg.getNodeFilter())) {
+            if (descCfg.getNearConfiguration() != null)             return null;
+ else             throw new IgniteCheckedException("Failed to start near " + "cache (local node is an affinity node for cache): " + cacheName);
+          }
+ else           req.clientStartOnly(true);
+        }
+ else         req.clientStartOnly(true);
+        req.deploymentId(desc.deploymentId());
+        req.startCacheConfiguration(descCfg);
+      }
+    }
+ else {
+      req.deploymentId(IgniteUuid.randomUuid());
+      CacheConfiguration cfg=new CacheConfiguration(ccfg);
+      CacheObjectContext cacheObjCtx=ctx.cacheObjects().contextForCache(cfg);
+      initialize(false,cfg,cacheObjCtx);
+      req.startCacheConfiguration(cfg);
+    }
+  }
+ else {
+    req.clientStartOnly(true);
+    if (desc != null)     ccfg=desc.cacheConfiguration();
+    if (ccfg == null) {
+      if (failIfNotStarted) {
+        throw new CacheExistsException("Failed to start client cache " + "(a cache with the given name is not started): " + cacheName);
+      }
+ else       return null;
+    }
+    req.deploymentId(desc.deploymentId());
+    req.startCacheConfiguration(ccfg);
+  }
+  if (ccfg.isSwapEnabled())   for (  ClusterNode n : ctx.discovery().allNodes())   if (!GridCacheUtils.clientNode(n) && !GridCacheUtils.isSwapEnabled(n)) {
+    throw new IgniteCheckedException("Failed to start cache " + cacheName + " with swap enabled: Remote Node with ID "+ n.id().toString().toUpperCase()+ " has not swap SPI configured");
+  }
+  if (nearCfg != null)   req.nearCacheConfiguration(nearCfg);
+  req.cacheType(cacheType);
+  return req;
+}

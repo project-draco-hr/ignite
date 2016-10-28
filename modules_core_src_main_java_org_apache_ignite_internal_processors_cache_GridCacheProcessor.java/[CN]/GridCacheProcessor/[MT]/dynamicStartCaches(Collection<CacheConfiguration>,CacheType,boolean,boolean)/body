@@ -1,0 +1,20 @@
+{
+  if (checkThreadTx)   checkEmptyTransactions();
+  List<DynamicCacheChangeRequest> reqList=new ArrayList<>(ccfgList.size());
+  try {
+    for (    CacheConfiguration ccfg : ccfgList) {
+      DynamicCacheChangeRequest req=prepareCacheChangeRequest(ccfg,ccfg.getName(),null,cacheType,failIfExists,true);
+      if (req != null)       reqList.add(req);
+    }
+  }
+ catch (  Exception e) {
+    return new GridFinishedFuture<>(e);
+  }
+  if (!reqList.isEmpty()) {
+    GridCompoundFuture<?,?> compoundFut=new GridCompoundFuture<>();
+    for (    DynamicCacheStartFuture fut : initiateCacheChanges(reqList,failIfExists))     compoundFut.add((IgniteInternalFuture)fut);
+    compoundFut.markInitialized();
+    return compoundFut;
+  }
+ else   return new GridFinishedFuture<>();
+}

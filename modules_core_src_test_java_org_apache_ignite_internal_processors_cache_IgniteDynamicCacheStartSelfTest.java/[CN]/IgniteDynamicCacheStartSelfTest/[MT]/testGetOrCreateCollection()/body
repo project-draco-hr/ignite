@@ -1,0 +1,22 @@
+{
+  final int cacheCnt=3;
+  try {
+    final Collection<CacheConfiguration> ccfgs=new ArrayList<>();
+    for (int i=0; i < cacheCnt; i++) {
+      final CacheConfiguration cfg=new CacheConfiguration();
+      cfg.setName(DYNAMIC_CACHE_NAME + Integer.toString(i));
+      cfg.setNodeFilter(NODE_FILTER);
+      ccfgs.add(cfg);
+      grid(0).getOrCreateCaches(ccfgs);
+    }
+    for (int i=0; i < cacheCnt; i++) {
+      assertNotNull(grid(0).cache(DYNAMIC_CACHE_NAME + Integer.toString(i)));
+      IgniteCache<Object,Object> jcache=grid(0).cache(DYNAMIC_CACHE_NAME + Integer.toString(i));
+      jcache.put(Integer.toString(i),Integer.toString(i));
+      assertEquals(jcache.get(Integer.toString(i)),Integer.toString(i));
+    }
+  }
+  finally {
+    for (int i=0; i < cacheCnt; i++)     grid(0).destroyCache(DYNAMIC_CACHE_NAME + Integer.toString(i));
+  }
+}
